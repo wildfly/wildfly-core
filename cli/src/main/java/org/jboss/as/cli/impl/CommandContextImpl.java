@@ -190,13 +190,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
      * Interact             - Interactive UI
      *
      * Silent               - Only send input. No output.
-     * Output Only          - Only send output. Don't echo input or use prompts.
      * Error On Interact    - If non-interactive mode requests user interaction, throw an error.
      */
     private boolean INTERACT          = false;
 
     private boolean SILENT            = false;
-    private boolean OUTPUT_ONLY       = false;
     private boolean ERROR_ON_INTERACT = false;
 
     /** the cli configuration */
@@ -307,7 +305,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         addressResolver = ControllerAddressResolver.newInstance(config, null);
         resolveParameterValues = config.isResolveParameterValues();
         SILENT = config.isSilent();
-        OUTPUT_ONLY = config.isOutputOnly();
         ERROR_ON_INTERACT = config.isErrorOnInteract();
         username = null;
         password = null;
@@ -336,11 +333,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         this.clientBindAddress = configuration.getClientBindAddress();
 
         SILENT = config.isSilent();
-        OUTPUT_ONLY = config.isOutputOnly();
         ERROR_ON_INTERACT = config.isErrorOnInteract();
 
         resolveParameterValues = config.isResolveParameterValues();
-
         cliPrintStream = configuration.getConsoleOutput() == null ? new CLIPrintStream() : new CLIPrintStream(configuration.getConsoleOutput());
         initStdIO();
         try {
@@ -378,9 +373,12 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     protected void initBasicConsole(InputStream consoleInput) throws CliInitializationException {
+        // this method shouldn't be called twice during the session
+        assert console == null : "the console has already been initialized";
         Settings settings = createSettings(consoleInput);
         this.console = Console.Factory.getConsole(this, settings);
         console.setCallback(initCallback());
+        console.start();
     }
 
     private ConsoleCallback initCallback() {
@@ -400,16 +398,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         terminateSession();
                     else {
                         handleSafe(output.getBuffer().trim());
-                        // Non-interactive handles prompts differently
                         if (INTERACT && !terminate) {
                             console.setPrompt(getPrompt());
-                        }else{
-                            // Clear the prompt for non-interactive so it does not re-appear automatically.
-                            console.setPrompt("");
-                            // non-interactive mode fails on any command failure
-                            if(getExitCode() != 0){
-                                terminateSession();
-                            }
                         }
                     }
                     return 0;
@@ -886,10 +876,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             initBasicConsole(null);
         }
 
-        if(!console.running()){
-            console.start();
-        }
-
         if (password) {
             return console.readLine(prompt, (char) 0x00);
         } else {
@@ -1091,7 +1077,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
      *
      * @return true if the certificate validation should be retried.
      */
-    private boolean handleSSLFailure(Certificate[] lastChain) throws CommandLineException {
+    private void handleSSLFailure(Certificate[] lastChain) throws CommandLineException {
         printLine("Unable to connect due to unrecognised server certificate");
         for (Certificate current : lastChain) {
             if (current instanceof X509Certificate) {
@@ -1117,18 +1103,18 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             }
 
             if (response == null)
-                return false;
+                break;
             else if (response.length() == 1) {
                 switch (response.toLowerCase(Locale.ENGLISH).charAt(0)) {
                     case 'n':
-                        return false;
+                        break;
                     case 't':
                         trustManager.storeChainTemporarily(lastChain);
-                        return true;
+                        break;
                     case 'p':
                         if (trustManager.isModifyTrustStore()) {
                             trustManager.storeChainPermenantly(lastChain);
-                            return true;
+                            break;
                         }
                 }
             }
@@ -1289,10 +1275,13 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public CommandHistory getHistory() {
+        if( !INTERACT ){
+            return null;
+        }
+
         if(console == null) {
             try {
                 initBasicConsole(null);
-                console.start();
             } catch (CliInitializationException e) {
                 throw new IllegalStateException("Failed to initialize console.", e);
             }
@@ -1417,55 +1406,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     @Override
-    public void pushToInput(String line) {
-        if(cmdCompleter == null) {
-            throw new IllegalStateException("The console hasn't been initialized at construction time.");
-        }
-
-        if(!console.running()) {
-            console.start();
-        }
-
-        // Create prompt before the command is pushed, for pretty output
-        if(!OUTPUT_ONLY) {
-            console.setPrompt(getPrompt());
-        }else{
-            console.setPrompt("", (char) 0x00);
-        }
-
-        // Wait till the console is ready, then push the line
-        boolean pushed = false;
-        while(!pushed){
-            try{
-                if(console.isWaitingWithoutBackgroundProcess()){
-                    console.pushToInput(line + System.lineSeparator());
-                    pushed = true;
-                }
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // While the console is processing, and still running, don't return
-        while(console.running() && !console.isWaitingWithoutBackgroundProcess()){
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Clear the prompt, so it doesn't show up in the output if this is the last command
-        if(!OUTPUT_ONLY) {
-            console.setPrompt("");
-        }
-    }
-
-    @Override
     public void interact() {
         INTERACT = true;
-
         if(cmdCompleter == null) {
             throw new IllegalStateException("The console hasn't been initialized at construction time.");
         }
@@ -1473,10 +1415,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         if (this.client == null) {
             printLine("You are disconnected at the moment. Type 'connect' to connect to the server or"
                     + " 'help' for the list of supported commands.");
-        }
-
-        if(!console.running()) {
-            console.start();
         }
 
         console.setPrompt(getPrompt());
@@ -1542,10 +1480,13 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public int getTerminalWidth() {
+        if( !INTERACT ){
+            return 0;
+        }
+
         if(console == null) {
             try {
-                initBasicConsole(null);
-                console.start();
+                this.initBasicConsole(null);
             } catch (CliInitializationException e) {
                 this.error("Failed to initialize the console: " + e.getLocalizedMessage());
                 return 80;
@@ -1556,10 +1497,13 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public int getTerminalHeight() {
+        if( !INTERACT ){
+            return 0;
+        }
+
         if(console == null) {
             try {
-                initBasicConsole(null);
-                console.start();
+                this.initBasicConsole(null);
             } catch (CliInitializationException e) {
                 this.error("Failed to initialize the console: " + e.getLocalizedMessage());
                 return 24;
@@ -1685,7 +1629,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             console.getHistory().setUseHistory(true);
                             console.setCompletion(true);
                         } catch (CommandLineException e) {
-                            throw new IOException("Failed to read username.", e);
+                            // the messages of the cause are lost if nested here
+                            throw new IOException("Failed to read username: " + e.getLocalizedMessage());
                         }
                         if (username == null || username.length() == 0) {
                             throw new SaslException("No username supplied.");
@@ -1706,7 +1651,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             console.getHistory().setUseHistory(true);
                             console.setCompletion(true);
                         } catch (CommandLineException e) {
-                            throw new IOException("Failed to read password.", e);
+                            // the messages of the cause are lost if nested here
+                            throw new IOException("Failed to read password: " + e.getLocalizedMessage());
                         }
                         if (temp != null) {
                             password = temp.toCharArray();

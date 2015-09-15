@@ -162,18 +162,6 @@ public interface CliConfig {
     /**
      * Non-Interactive only, using --file or --commands
      *
-     * If true, the CLI will only output command results
-     * This reduces output clutter in non-interactive situations,
-     * but does allow commands to offer their own internal prompts
-     * for situations like security user/pass input or certificate approval/rejection
-     *
-     * @return
-     */
-    boolean isOutputOnly();
-
-    /**
-     * Non-Interactive only, using --file or --commands
-     *
      * If true, disables all user interaction in non-interactive mode.
      * CLI will error if any user interaction is expected from the commands
      *

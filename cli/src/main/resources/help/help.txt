@@ -6,6 +6,7 @@ Usage:
                      [--command=command_or_operation]
                      [--user=username --password=password]
                      [--no-local-auth]
+                     [--error-on-interact]
                      [--timeout=timeout]
 
  --help (-h)     - prints (this) basic description of the command line utility.
@@ -48,13 +49,8 @@ Usage:
                    comma-separated list at the end of the argument list will be
                    assumed to be the list of commands and operations.
 
- --output-only   - Simplifies non-interactive output by removing prompts and
-                   input-echoed commands from the stream. Leaving only the
-                   command output for simple string parsing into ModelNode
-                   objects or for extracting specific data.
-
- --error-on-interact   - disable prompts for security related input (username,
-                         password, acceptance of unrecognized certificates) in
+ --error-on-interact  - disable prompts for security related input (username,
+                        password, acceptance of unrecognized certificates) in
                    non-interactive mode. In case the argument is preset and an
                    input is required to proceed, the CLI process will terminate
                    abruptly with an error.

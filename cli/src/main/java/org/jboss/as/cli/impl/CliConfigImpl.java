@@ -104,7 +104,7 @@ class CliConfigImpl implements CliConfig {
         if (jbossCliFile == null) {
             System.err.println("WARN: can't find " + JBOSS_CLI_FILE + ". Using default configuration values.");
             config = new CliConfigImpl();
-        }else {
+        } else {
             config = parse(ctx, jbossCliFile);
         }
 
@@ -180,7 +180,6 @@ class CliConfigImpl implements CliConfig {
         // This is to prevent a default Configuration option from overriding an Option defined in the config file.
         cliConfig.connectionTimeout = configuration.getConnectionTimeout() != -1    ? configuration.getConnectionTimeout()  : cliConfig.getConnectionTimeout();
         cliConfig.silent            = configuration.isSilent()                      ? configuration.isSilent()              : cliConfig.silent;
-        cliConfig.outputOnly        = configuration.isOutputOnly()                  ? configuration.isOutputOnly()          : cliConfig.outputOnly;
         cliConfig.errorOnInteract   = configuration.isErrorOnInteract()             ? configuration.isErrorOnInteract()     : cliConfig.errorOnInteract;
 
         return cliConfig;
@@ -234,7 +233,6 @@ class CliConfigImpl implements CliConfig {
     private SSLConfig sslConfig;
 
     private boolean silent;
-    private boolean outputOnly;
     private boolean errorOnInteract;
 
     private boolean accessControl = true;
@@ -315,11 +313,6 @@ class CliConfigImpl implements CliConfig {
     @Override
     public boolean isSilent() {
         return silent;
-    }
-
-    @Override
-    public boolean isOutputOnly() {
-        return outputOnly;
     }
 
     @Override

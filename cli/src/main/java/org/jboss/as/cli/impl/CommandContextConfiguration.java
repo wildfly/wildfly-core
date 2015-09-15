@@ -38,7 +38,6 @@ public class CommandContextConfiguration {
     private final boolean disableLocalAuth;
     private final int connectionTimeout;
     private boolean silent;
-    private boolean outputOnly;
     private boolean errorOnInteract;
 
     private CommandContextConfiguration(String controller, String username, char[] password, String clientBindAddress, boolean disableLocalAuth, boolean initConsole, int connectionTimeout, InputStream consoleInput, OutputStream consoleOutput) {
@@ -93,10 +92,6 @@ public class CommandContextConfiguration {
         return silent;
     }
 
-    public boolean isOutputOnly() {
-        return outputOnly;
-    }
-
     public boolean isErrorOnInteract() {
         return errorOnInteract;
     }
@@ -112,9 +107,8 @@ public class CommandContextConfiguration {
         private boolean disableLocalAuth;
         private int connectionTimeout = -1;
         private boolean disableLocalAuthUnset = true;
-        private boolean silent = false;
-        private boolean outputOnly = false;
-        private boolean errorOnInteract = false;
+        private boolean silent;
+        private boolean errorOnInteract;
 
         public Builder() {
         }
@@ -123,15 +117,12 @@ public class CommandContextConfiguration {
             if(disableLocalAuthUnset) {
                 this.disableLocalAuth = username != null;
             }
-
             final CommandContextConfiguration config = new CommandContextConfiguration(controller, username, password, clientBindAddress, disableLocalAuth,
                     initConsole, connectionTimeout, consoleInput, consoleOutput);
             config.silent = silent;
-            config.outputOnly = outputOnly;
             config.errorOnInteract = errorOnInteract;
             return config;
         }
-
         public Builder setController(String controller) {
             this.controller = controller;
             return this;
@@ -178,21 +169,14 @@ public class CommandContextConfiguration {
             return this;
         }
 
-        public Builder setSilent(boolean silent){
+        public Builder setSilent(boolean silent) {
             this.silent = silent;
             return this;
         }
 
-        public Builder setOutputOnly(boolean outputOnly){
-            this.outputOnly = outputOnly;
-            return this;
-        }
-
-        public Builder setErrorOnInteract(boolean errorOnInteract){
+        public Builder setErrorOnInteract(boolean errorOnInteract) {
             this.errorOnInteract = errorOnInteract;
             return this;
         }
-
     }
-
 }
