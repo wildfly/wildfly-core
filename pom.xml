@@ -108,7 +108,7 @@
         <version.org.jboss.logmanager.log4j-jboss-logmanager>1.1.2.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
         <version.org.jboss.marshalling.jboss-marshalling>1.4.10.Final</version.org.jboss.marshalling.jboss-marshalling>
         <!-- this is test only dependancy -->
-        <version.org.jboss.metadata.jboss-metadata-common>10.0.0.Beta3</version.org.jboss.metadata.jboss-metadata-common>
+        <version.org.jboss.metadata.jboss-metadata-common>10.0.0.CR1</version.org.jboss.metadata.jboss-metadata-common>
         <version.org.jboss.modules.jboss-modules>1.4.4.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.2.6.Final</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>4.0.10.Final</version.org.jboss.remoting>
