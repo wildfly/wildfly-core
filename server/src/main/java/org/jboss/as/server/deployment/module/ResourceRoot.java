@@ -27,7 +27,7 @@ import java.util.List;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.SimpleAttachable;
-import org.jboss.modules.ResourceLoader;
+import org.jboss.as.server.loaders.ResourceLoader;
 import org.jboss.vfs.VirtualFile;
 
 /**

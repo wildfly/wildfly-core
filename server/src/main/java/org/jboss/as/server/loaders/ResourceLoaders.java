@@ -92,8 +92,8 @@ public final class ResourceLoaders {
      * @param originalLoader the original loader to apply to
      * @return the filtered resource loader
      */
-    public static ResourceLoader newFilteredResourceLoader(final PathFilter pathFilter, final IterableResourceLoader originalLoader) {
-        return new FilteredIterableResourceLoader(pathFilter, originalLoader);
+    public static ResourceLoader newFilteredResourceLoader(final PathFilter pathFilter, final ResourceLoader originalLoader) {
+        return new FilteredResourceLoader(pathFilter, originalLoader);
     }
 
     /**
@@ -119,8 +119,8 @@ public final class ResourceLoaders {
         final Collection<String> paths = parentLoader.getPaths();
         IterableResourceLoader loader = parentLoader;
         while (true) {
-            if (loader instanceof FilteredIterableResourceLoader) {
-                loader = ((FilteredIterableResourceLoader)loader).getLoader();
+            if (loader instanceof FilteredResourceLoader) {
+                loader = ((FilteredResourceLoader)loader).getLoader();
                 continue;
             }
             if (loader instanceof DelegatingResourceLoader) {

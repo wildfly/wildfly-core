@@ -23,7 +23,6 @@
 package org.jboss.as.server.loaders;
 
 import org.jboss.modules.ClassSpec;
-import org.jboss.modules.IterableResourceLoader;
 import org.jboss.modules.PackageSpec;
 import org.jboss.modules.Resource;
 
@@ -38,13 +37,13 @@ import java.util.Iterator;
  */
 class DelegatingResourceLoader implements ResourceLoader {
 
-    private final IterableResourceLoader delegate;
+    private final ResourceLoader delegate;
 
-    DelegatingResourceLoader(final IterableResourceLoader delegate) {
+    DelegatingResourceLoader(final ResourceLoader delegate) {
         this.delegate = delegate;
     }
 
-    final IterableResourceLoader getDelegate() {
+    final ResourceLoader getDelegate() {
         return delegate;
     }
 
@@ -90,7 +89,7 @@ class DelegatingResourceLoader implements ResourceLoader {
 
     @Override
     public ResourceLoader getParent() {
-        return null;
+        return getDelegate().getParent();
     }
 
 }
