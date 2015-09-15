@@ -23,13 +23,14 @@
 package org.jboss.as.controller.client.helpers.domain;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
- * Identifying information for a server in a domain. A bit of a misnomer, as
- * the server's name is sufficient identification since all servers in a
- * domain must have unique names.
+ * Identifying information for a server in a domain. The unique identity is defined the by
+ * {@link #getHostName() host name} and the {@link #getServerName() server name}.
  *
  * @author Brian Stansberry
+ * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class ServerIdentity implements Serializable {
 
@@ -57,18 +58,24 @@ public class ServerIdentity implements Serializable {
         return serverName;
     }
 
-    /**
-     * Only uses the {@link #getServerName() serverName} value in the equality
-     * comparison, since within a domain all servers should have a unique name.
-     */
     @Override
-    public boolean equals(Object other) {
-        return (other instanceof ServerIdentity && serverName.equals(((ServerIdentity) other).serverName));
+    public int hashCode() {
+        int result = 17;
+        result += 31 * serverName.hashCode();
+        result += 31 * hostName.hashCode();
+        return result;
     }
 
     @Override
-    public int hashCode() {
-        return serverName.hashCode();
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+
+        if (obj instanceof ServerIdentity) {
+            ServerIdentity other = (ServerIdentity) obj;
+            return Objects.equals(serverName, other.serverName) && Objects.equals(hostName, other.hostName);
+        }
+        return false;
     }
 
     @Override
