@@ -740,4 +740,7 @@ public interface DomainControllerLogger extends BasicLogger {
 
     @Message(id = 77, value = "Duplicate included socket binding group '%s'")
     XMLStreamException duplicateSocketBindingGroupInclude(String s);
+
+    @Message(id = 78, value = "The profile clone operation is not available on the host '%s'")
+    String cloneOperationNotSupportedOnHost(String hostName);
 }
