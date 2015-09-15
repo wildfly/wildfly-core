@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.StringTokenizer;
 import java.util.jar.JarFile;
 
-import org.jboss.modules.IterableResourceLoader;
 import org.jboss.modules.PathUtils;
 import org.jboss.modules.Resource;
 import org.jboss.modules.filter.PathFilter;
@@ -105,7 +104,7 @@ public final class ResourceLoaders {
      * @param subresourcePath subresource path that will behave like the root of the archive
      * @return a subresource filtered view of an iterable resource loader.
      */
-    public static ResourceLoader newResourceLoader(final String name, final IterableResourceLoader parentLoader, final String subresourcePath) throws IOException {
+    public static ResourceLoader newResourceLoader(final String name, final ResourceLoader parentLoader, final String subresourcePath) throws IOException {
         if (name == null || parentLoader == null || subresourcePath == null) {
             throw new NullPointerException("Method parameter cannot be null");
         }
@@ -117,7 +116,7 @@ public final class ResourceLoaders {
             throw new IllegalArgumentException("Subresource path parameter cannot end with '/' character");
         }
         final Collection<String> paths = parentLoader.getPaths();
-        IterableResourceLoader loader = parentLoader;
+        ResourceLoader loader = parentLoader;
         while (true) {
             if (loader instanceof FilteredResourceLoader) {
                 loader = ((FilteredResourceLoader)loader).getLoader();
@@ -145,11 +144,11 @@ public final class ResourceLoaders {
                 throw new IllegalArgumentException("Subresource '" + subResPath + "' does not exist");
             }
             if (loader instanceof FileResourceLoader) {
-                return new JarFileResourceLoader((ResourceLoader)loader, name, new JarFile(resource.getURL().getFile()));
+                return new JarFileResourceLoader(loader, name, new JarFile(resource.getURL().getFile()));
             } else if (loader instanceof JarFileResourceLoader) {
                 final File tempFile = new File(TMP_ROOT, getLastToken(subResPath) + ".tmp" + System.currentTimeMillis());
                 IOUtils.copyAndClose(resource.openStream(), new FileOutputStream(tempFile));
-                return new DelegatingResourceLoader(new JarFileResourceLoader((ResourceLoader)loader, name, new JarFile(tempFile))) {
+                return new DelegatingResourceLoader(new JarFileResourceLoader(loader, name, new JarFile(tempFile))) {
                     @Override
                     public void close() {
                         try {

@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.jboss.modules.ClassSpec;
-import org.jboss.modules.IterableResourceLoader;
 import org.jboss.modules.PackageSpec;
 import org.jboss.modules.PathUtils;
 import org.jboss.modules.Resource;
@@ -86,7 +85,7 @@ final class FilteredResourceLoader implements ResourceLoader {
         return loader.getParent();
     }
 
-    IterableResourceLoader getLoader() {
+    ResourceLoader getLoader() {
         return loader;
     }
 

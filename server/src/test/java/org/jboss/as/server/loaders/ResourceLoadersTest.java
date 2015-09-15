@@ -25,7 +25,6 @@ package org.jboss.as.server.loaders;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
-import org.jboss.modules.IterableResourceLoader;
 import org.jboss.modules.Resource;
 import org.jboss.modules.PathUtils;
 import org.junit.Test;
@@ -108,15 +107,15 @@ public class ResourceLoadersTest {
         return new File(getClass().getResource(path).toURI());
     }
 
-    private IterableResourceLoader wrap(File resourceRoot) throws IOException {
+    private ResourceLoader wrap(File resourceRoot) throws IOException {
         return ResourceLoaders.newResourceLoader(EAR_RESOURCE_NAME, resourceRoot);
     }
 
-    private IterableResourceLoader nest(String subResourceLoaderName, IterableResourceLoader delegate, String subResourcePath) throws IOException {
+    private ResourceLoader nest(String subResourceLoaderName, ResourceLoader delegate, String subResourcePath) throws IOException {
         return ResourceLoaders.newResourceLoader(subResourceLoaderName, delegate, subResourcePath);
     }
 
-    private void dumpResourceLoader(IterableResourceLoader loader) throws Exception {
+    private void dumpResourceLoader(ResourceLoader loader) throws Exception {
         synchronized (System.out) {
             System.out.println("------------------------------");
             System.out.println(loader.getRootName() + " paths: ");
@@ -136,7 +135,7 @@ public class ResourceLoadersTest {
 
     private void test(String ear) throws Exception {
         File earRoot = getResourceRoot(ear);
-        IterableResourceLoader earLoader = wrap(earRoot);
+        ResourceLoader earLoader = wrap(earRoot);
         dumpResourceLoader(earLoader);
         // test ear resources
         for (String earRN : EAR_RESOURCE_NAMES) {
@@ -161,7 +160,7 @@ public class ResourceLoadersTest {
             assertFalse(isDirectory(earResource));
         }
         String warLoaderName = PathUtils.canonicalize(EAR_RESOURCE_NAME + "/" + WAR_RESOURCE_NAME);
-        IterableResourceLoader warLoader = nest(warLoaderName, earLoader, WAR_RESOURCE_NAME);
+        ResourceLoader warLoader = nest(warLoaderName, earLoader, WAR_RESOURCE_NAME);
         dumpResourceLoader(warLoader);
         // test ear paths
         Collection<String> earPaths = earLoader.getPaths();
@@ -213,7 +212,7 @@ public class ResourceLoadersTest {
             }
         }
         String jarLoaderName = PathUtils.canonicalize(warLoaderName + "/" + JAR_RESOURCE_NAME);
-        IterableResourceLoader jarLoader = nest(jarLoaderName, warLoader, JAR_RESOURCE_NAME);
+        ResourceLoader jarLoader = nest(jarLoaderName, warLoader, JAR_RESOURCE_NAME);
         dumpResourceLoader(jarLoader);
         // test war paths
         Collection<String> warPaths = warLoader.getPaths();
@@ -311,7 +310,7 @@ public class ResourceLoadersTest {
         return resource.getName().endsWith("/");
     }
 
-    private Resource getResource(IterableResourceLoader loader, String resourceName) {
+    private Resource getResource(ResourceLoader loader, String resourceName) {
         Iterator<Resource> i = loader.iterateResources("", true);
         Resource resource;
         while (i.hasNext()) {
@@ -321,7 +320,7 @@ public class ResourceLoadersTest {
         throw new IllegalStateException();
     }
 
-    private int getResourcesIteratorSize(IterableResourceLoader loader) {
+    private int getResourcesIteratorSize(ResourceLoader loader) {
         Iterator<Resource> i = loader.iterateResources("", true);
         int retVal = 0;
         while (i.hasNext()) {
