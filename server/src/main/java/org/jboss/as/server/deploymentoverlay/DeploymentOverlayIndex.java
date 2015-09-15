@@ -27,6 +27,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.jboss.modules.PathUtils;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -105,7 +106,8 @@ public class DeploymentOverlayIndex {
             } catch (OperationFailedException e) {
                 throw new RuntimeException(e);
             }
-            String key = contentItem.startsWith("/") ? contentItem.substring(1) : contentItem;
+            String key = PathUtils.relativize(PathUtils.canonicalize(contentItem));
+            key = key.endsWith("/") ? key.substring(0, key.length() - 1) : key;
             contentMap.put(key, sha.asBytes());
         }
     }

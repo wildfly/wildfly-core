@@ -35,6 +35,7 @@ import java.util.Set;
 
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.deployment.module.ResourceRoot;
+import org.jboss.modules.PathUtils;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
 
@@ -79,10 +80,9 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
         }
         final Set<String> paths = new HashSet<String>();
 
-        for (final Map.Entry<String, byte[]> entry : overlayEntries.entrySet()) {
-            String path = entry.getKey();
-            if (path.startsWith("/")) {
-                path = path.substring(1);
+            String path = PathUtils.relativize(PathUtils.canonicalize(entry.getKey()));
+            if (path.endsWith("/")) {
+                path = path.substring(0, path.length() - 1);
             }
             try {
                 if (!paths.contains(path)) {
