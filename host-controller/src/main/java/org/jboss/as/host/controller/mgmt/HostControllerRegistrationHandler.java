@@ -304,7 +304,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             }
             // Initialize the transformers
             final TransformationTarget target = TransformationTargetImpl.create(hostInfo.getHostName(), transformerRegistry, ModelVersion.create(major, minor, micro),
-                    Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTarget.TransformationTargetType.HOST);
+                    Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTarget.TransformationTargetType.HOST, hostInfo.isIgnoreUnaffectedConfig());
             final Transformers transformers = Transformers.Factory.create(target);
             try {
                 SlaveChannelAttachments.attachSlaveInfo(handler.getChannel(), registrationContext.hostName, transformers);

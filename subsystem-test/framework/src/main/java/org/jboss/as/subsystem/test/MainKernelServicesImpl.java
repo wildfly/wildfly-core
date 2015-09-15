@@ -105,7 +105,7 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
 
             final Map<PathAddress, ModelVersion> subsystem = Collections.singletonMap(PathAddress.EMPTY_ADDRESS.append(pathElement), modelVersion);
             final TransformationTarget transformationTarget = TransformationTargetImpl.create(null, extensionRegistry.getTransformerRegistry(), getCoreModelVersionByLegacyModelVersion(modelVersion),
-                    subsystem, TransformationTarget.TransformationTargetType.SERVER);
+                    subsystem, TransformationTarget.TransformationTargetType.SERVER, false);
 
             final Transformers transformers = Transformers.Factory.create(transformationTarget);
             final TransformationContext transformationContext = createTransformationContext(transformationTarget, attachment);
