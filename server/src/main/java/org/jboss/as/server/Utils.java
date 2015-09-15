@@ -47,4 +47,14 @@ public final class Utils {
         }
     }
 
+    public static void safeClose(final AutoCloseable closeable) {
+        if(closeable != null) {
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                ServerLogger.ROOT_LOGGER.trace("Failed to close resource", e);
+            }
+        }
+    }
+
 }
