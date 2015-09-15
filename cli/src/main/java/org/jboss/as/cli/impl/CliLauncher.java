@@ -56,20 +56,21 @@ public class CliLauncher {
             String argError = null;
             List<String> commands = null;
             File file = null;
-            boolean outputOnly = false;
-            boolean errorOnInteract = false;
             boolean connect = false;
+            String defaultController = null;
             boolean version = false;
+            String username = null;
+            char[] password = null;
+            boolean noLocalAuth = false;
             int connectionTimeout = -1;
-
-            final CommandContextConfiguration.Builder ctxBuilder = new CommandContextConfiguration.Builder();
+            String clientBindAddress = null;
 
             for(String arg : args) {
                 if(arg.startsWith("--controller=") || arg.startsWith("controller=")) {
                     if(arg.startsWith("--")) {
-                        ctxBuilder.setController(arg.substring(13));
+                        defaultController = arg.substring(13);
                     } else {
-                        ctxBuilder.setController(arg.substring(11));
+                        defaultController = arg.substring(11);
                     }
                 } else if("--connect".equals(arg) || "-c".equals(arg)) {
                     connect = true;
@@ -124,42 +125,36 @@ public class CliLauncher {
                     commands = Collections.singletonList(value);
                 } else if (arg.startsWith("--user")) {
                     if(arg.length() > 6 && arg.charAt(6) == '=') {
-                        ctxBuilder.setUsername(arg.substring(7));
-                        ctxBuilder.setDisableLocalAuth(true);
+                        username = arg.substring(7);
+                        noLocalAuth = true;
                     } else {
                         argError = "'=' is missing after --user";
                         break;
                     }
                 } else if (arg.startsWith("--password")) {
                     if(arg.length() > 10 && arg.charAt(10) == '=') {
-                        ctxBuilder.setPassword(arg.substring(11).toCharArray());
+                        password = arg.substring(11).toCharArray();
                     } else {
                         argError = "'=' is missing after --password";
                         break;
                     }
                 } else if (arg.startsWith("-u")) {
                     if(arg.length() > 2 && arg.charAt(2) == '=') {
-                        ctxBuilder.setUsername(arg.substring(3));
-                        ctxBuilder.setDisableLocalAuth(true);
+                        username = arg.substring(3);
+                        noLocalAuth = true;
                     } else {
                         argError = "'=' is missing after -u";
                         break;
                     }
                 } else if (arg.startsWith("-p")) {
                     if(arg.length() > 2 && arg.charAt(2) == '=') {
-                        ctxBuilder.setPassword(arg.substring(3).toCharArray());
+                        password = arg.substring(3).toCharArray();
                     } else {
                         argError = "'=' is missing after -p";
                         break;
                     }
                 } else if (arg.equals("--no-local-auth")) {
-                    ctxBuilder.setDisableLocalAuth(true);
-                } else if (arg.equals("--error-on-interact")) {
-                    ctxBuilder.setErrorOnInteract(true);
-                    errorOnInteract = true;
-                } else if (arg.equals("--output-only")) {
-                    ctxBuilder.setOutputOnly(true);
-                    outputOnly = true;
+                    noLocalAuth = true;
                 } else if (arg.startsWith("--timeout")) {
                     if (connectionTimeout > 0) {
                         argError = "Duplicate argument '--timeout'";
@@ -181,7 +176,7 @@ public class CliLauncher {
                         break;
                     }
                 } else if(arg.startsWith("--bind=")) {
-                    ctxBuilder.setClientBindAddress(arg.substring(7));
+                    clientBindAddress = arg.substring(7);
                 } else if (arg.equals("--help") || arg.equals("-h")) {
                     commands = Collections.singletonList("help");
                 } else if (arg.startsWith("--properties=")) {
@@ -242,17 +237,6 @@ public class CliLauncher {
                 }
             }
 
-            if(outputOnly && file == null && commands == null){
-                argError = "--output-only function is only available in non-interactive mode, using --file or --command(s).";
-            }
-
-            if(errorOnInteract && file == null && commands == null) {
-                argError = "--error-on-interact function is only available in non-interactive mode, using --file or --command(s).";
-            }
-
-
-            ctxBuilder.setConnectionTimeout(connectionTimeout);
-
             if(argError != null) {
                 System.err.println(argError);
                 exitCode = 1;
@@ -260,31 +244,31 @@ public class CliLauncher {
             }
 
             if(version) {
-                cmdCtx = initCommandContext(connect, ctxBuilder.setInitConsole(false).build());
+                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, connect, connectionTimeout, clientBindAddress);
                 VersionHandler.INSTANCE.handle(cmdCtx);
                 return;
             }
 
             if(file != null) {
-                cmdCtx = initCommandContext(connect, ctxBuilder.setInitConsole(true).build());
+                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, connect, connectionTimeout, clientBindAddress);
                 processFile(file, cmdCtx);
                 return;
             }
 
             if(commands != null) {
-                cmdCtx = initCommandContext(connect, ctxBuilder.setInitConsole(true).build());
+                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, connect, connectionTimeout, clientBindAddress);
                 processCommands(commands, cmdCtx);
                 return;
             }
 
             if (gui) {
-                cmdCtx = initCommandContext(true, ctxBuilder.setInitConsole(false).build());
+                cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, false, true, connectionTimeout, clientBindAddress);
                 processGui(cmdCtx);
                 return;
             }
 
             // Interactive mode
-            cmdCtx = initCommandContext(connect, ctxBuilder.setInitConsole(true).build());
+            cmdCtx = initCommandContext(defaultController, username, password, noLocalAuth, true, connect, connectionTimeout, clientBindAddress);
             cmdCtx.interact();
         } catch(Throwable t) {
             System.out.println(Util.getMessagesFromThrowable(t));
@@ -303,8 +287,17 @@ public class CliLauncher {
         System.exit(exitCode);
     }
 
-    private static CommandContext initCommandContext(boolean connect, CommandContextConfiguration configuration) throws CliInitializationException {
-        final CommandContext cmdCtx = CommandContextFactory.getInstance().newCommandContext(configuration);
+    private static CommandContext initCommandContext(String defaultController, String username, char[] password, boolean disableLocalAuth, boolean initConsole, boolean connect, final int connectionTimeout, final String clientBindAddress) throws CliInitializationException {
+        final CommandContext cmdCtx = CommandContextFactory.getInstance().newCommandContext(
+                new CommandContextConfiguration.Builder()
+                .setController(defaultController)
+                .setUsername(username)
+                .setPassword(password)
+                .setClientBindAddress(clientBindAddress)
+                .setDisableLocalAuth(disableLocalAuth)
+                .setInitConsole(initConsole)
+                .setConnectionTimeout(connectionTimeout)
+                .build());
         if(connect) {
             try {
                 cmdCtx.connectController();
@@ -326,18 +319,19 @@ public class CliLauncher {
     private static void processCommands(List<String> commands, CommandContext cmdCtx) {
         int i = 0;
         while (cmdCtx.getExitCode() == 0 && i < commands.size() && !cmdCtx.isTerminated()) {
-            cmdCtx.pushToInput(commands.get(i));
+            cmdCtx.handleSafe(commands.get(i));
             ++i;
         }
     }
 
     private static void processFile(File file, final CommandContext cmdCtx) {
+
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(file));
             String line = reader.readLine();
             while (cmdCtx.getExitCode() == 0 && !cmdCtx.isTerminated() && line != null) {
-                cmdCtx.pushToInput(line.trim());
+                cmdCtx.handleSafe(line.trim());
                 line = reader.readLine();
             }
         } catch (Throwable e) {
@@ -380,26 +374,10 @@ public class CliLauncher {
         }
 
         if(jbossCliRcFile != null) {
-            processRCFile(jbossCliRcFile, ctx);
+            processFile(jbossCliRcFile, ctx);
             if(ctx.getExitCode() != 0) {
                 throw new CliInitializationException("Failed to process " + jbossCliRcFile.getAbsoluteFile());
             }
-        }
-    }
-
-    private static void processRCFile(File file, final CommandContext cmdCtx) {
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new FileReader(file));
-            String line = reader.readLine();
-            while (cmdCtx.getExitCode() == 0 && !cmdCtx.isTerminated() && line != null) {
-                cmdCtx.handleSafe(line.trim());
-                line = reader.readLine();
-            }
-        } catch (Throwable e) {
-            throw new IllegalStateException("Failed to process file '" + file.getAbsolutePath() + "'", e);
-        } finally {
-            StreamUtils.safeClose(reader);
         }
     }
 }

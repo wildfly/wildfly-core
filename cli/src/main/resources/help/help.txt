@@ -48,17 +48,6 @@ Usage:
                    comma-separated list at the end of the argument list will be
                    assumed to be the list of commands and operations.
 
- --output-only   - Simplifies non-interactive output by removing prompts and
-                   input-echoed commands from the stream. Leaving only the
-                   command output for simple string parsing into ModelNode
-                   objects or for extracting specific data.
-
- --error-on-interact   - disable prompts for security related input (username,
-                         password, acceptance of unrecognized certificates) in
-                   non-interactive mode. In case the argument is preset and an
-                   input is required to proceed, the CLI process will terminate
-                   abruptly with an error.
-
  --user (-u)     - if the controller requires user authentication, this argument
                    can be used to specify the user name as a command line
                    argument. If the argument isn't specified and the

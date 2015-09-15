@@ -110,16 +110,6 @@ public class MockCliConfig implements CliConfig {
     }
 
     @Override
-    public boolean isOutputOnly() {
-        return false;
-    }
-
-    @Override
-    public boolean isErrorOnInteract() {
-        return false;
-    }
-
-    @Override
     public boolean isAccessControl() {
         return false;
     }

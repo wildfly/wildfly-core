@@ -337,11 +337,6 @@ public class MockCommandContext implements CommandContext {
     }
 
     @Override
-    public void pushToInput(String line) {
-
-    }
-
-    @Override
     public void interact() {
         // TODO Auto-generated method stub
 
