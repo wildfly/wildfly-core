@@ -303,7 +303,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         final ManagementResourceRegistration coreMgmt = resourceRegistration.registerSubModel(CoreManagementResourceDefinition.forDomain(authorizer));
         coreMgmt.registerSubModel(new HostConnectionResourceDefinition(hostRegistrations));
 
-        resourceRegistration.registerSubModel(new ProfileResourceDefinition(extensionRegistry));
+        resourceRegistration.registerSubModel(new ProfileResourceDefinition(hostControllerInfo, ignoredDomainResourceRegistry));
         resourceRegistration.registerSubModel(PathResourceDefinition.createNamed(pathManager));
         ResourceDefinition domainDeploymentDefinition = isMaster
                 ? DomainDeploymentResourceDefinition.createForDomainMaster(contentRepo)

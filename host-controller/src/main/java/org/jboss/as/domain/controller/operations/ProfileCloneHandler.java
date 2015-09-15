@@ -44,7 +44,9 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.resources.DomainResolver;
+import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -53,21 +55,38 @@ import org.jboss.dmr.ModelType;
  */
 public class ProfileCloneHandler implements OperationStepHandler {
 
-    public static final ProfileCloneHandler INSTANCE = new ProfileCloneHandler();
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(CLONE, DomainResolver.getResolver(PROFILE, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)
             .addParameter(SimpleAttributeDefinitionBuilder.create(TO_PROFILE, ModelType.STRING).build())
             // .setPrivateEntry()
             .build();
 
+    private final LocalHostControllerInfo hostInfo;
+    private final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
+
+    public ProfileCloneHandler(LocalHostControllerInfo hostInfo, IgnoredDomainResourceRegistry ignoredDomainResourceRegistry) {
+        this.hostInfo = hostInfo;
+        this.ignoredDomainResourceRegistry = ignoredDomainResourceRegistry;
+    }
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-
         final String profileName = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
         final String newProfile = operation.require(TO_PROFILE).asString();
         final String operationName = GenericModelDescribeOperationHandler.DEFINITION.getName();
         final PathAddress address = PathAddress.pathAddress(PathElement.pathElement(PROFILE, profileName));
+        final PathAddress newPA = PathAddress.pathAddress(PROFILE, newProfile);
+
+        if (!hostInfo.isMasterDomainController()) {
+            if (ignoredDomainResourceRegistry.isResourceExcluded(address) || ignoredDomainResourceRegistry.isResourceExcluded(newPA)) {
+                return;
+            }
+            if (hostInfo.isRemoteDomainControllerIgnoreUnaffectedConfiguration()) {
+                //Since the cloned profile is a new one, we don't need to do anything. It is guaranteed to be unused,
+                //and thus should be ignored
+                return;
+            }
+        }
 
         final ModelNode describeOp = new ModelNode();
         describeOp.get(OP).set(operationName);
