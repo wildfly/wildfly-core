@@ -365,7 +365,7 @@ public class ReadMasterDomainModelUtil {
      * @param local    whether the operation is executed on the slave host locally
      * @return
      */
-    public static Transformers.ResourceIgnoredTransformationRegistry createHostIgnoredRegistry(final HostInfo hostInfo, final RequiredConfigurationHolder rc, final boolean local) {
+    public static Transformers.ResourceIgnoredTransformationRegistry createHostIgnoredRegistry(final HostInfo hostInfo, final RequiredConfigurationHolder rc) {
         return new Transformers.ResourceIgnoredTransformationRegistry() {
             @Override
             public boolean isResourceTransformationIgnored(PathAddress address) {
@@ -416,7 +416,7 @@ public class ReadMasterDomainModelUtil {
      * @param delegate the delegate ignored resource transformation registry for manually ignored resources
      * @return
      */
-    public static Transformers.ResourceIgnoredTransformationRegistry createServerIgnoredRegistry(final RequiredConfigurationHolder rc, final boolean local, final Transformers.ResourceIgnoredTransformationRegistry delegate) {
+    public static Transformers.ResourceIgnoredTransformationRegistry createServerIgnoredRegistry(final RequiredConfigurationHolder rc, final Transformers.ResourceIgnoredTransformationRegistry delegate) {
         return new Transformers.ResourceIgnoredTransformationRegistry() {
             @Override
             public boolean isResourceTransformationIgnored(PathAddress address) {

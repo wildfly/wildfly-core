@@ -84,7 +84,7 @@ public class SyncServerGroupOperationHandler extends SyncModelHandlerBase {
                 return parameters.getIgnoredResourceRegistry().isResourceExcluded(address);
             }
         };
-        return ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, true, delegate);
+        return ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, delegate);
     }
 
 }
