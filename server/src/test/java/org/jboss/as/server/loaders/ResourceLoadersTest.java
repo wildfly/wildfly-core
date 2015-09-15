@@ -86,22 +86,22 @@ public class ResourceLoadersTest {
 
     @Test
     public void testExplodedEar() throws Exception {
-        test("/loader-test-exploded/" + EAR_RESOURCE_NAME, WAR_RESOURCE_NAME + "/", JAR_RESOURCE_NAME + "/");
+        test("/loader-test-exploded/" + EAR_RESOURCE_NAME);
     }
 
     @Test
     public void testPackagedEar() throws Exception {
-        test("/loader-test-packaged/" + EAR_RESOURCE_NAME, WAR_RESOURCE_NAME, JAR_RESOURCE_NAME);
+        test("/loader-test-packaged/" + EAR_RESOURCE_NAME);
     }
 
     @Test
     public void testMixed1Ear() throws Exception {
-        test("/loader-test-mixed1/" + EAR_RESOURCE_NAME, WAR_RESOURCE_NAME + "/", JAR_RESOURCE_NAME);
+        test("/loader-test-mixed1/" + EAR_RESOURCE_NAME);
     }
 
     @Test
     public void testMixed2Ear() throws Exception {
-        test("/loader-test-mixed2/" + EAR_RESOURCE_NAME, WAR_RESOURCE_NAME, JAR_RESOURCE_NAME + "/");
+        test("/loader-test-mixed2/" + EAR_RESOURCE_NAME);
     }
 
     private File getResourceRoot(String path) throws URISyntaxException {
@@ -134,7 +134,7 @@ public class ResourceLoadersTest {
         }
     }
 
-    private void test(String ear, String war, String jar) throws Exception {
+    private void test(String ear) throws Exception {
         File earRoot = getResourceRoot(ear);
         IterableResourceLoader earLoader = wrap(earRoot);
         dumpResourceLoader(earLoader);
@@ -149,19 +149,19 @@ public class ResourceLoadersTest {
             assertTrue(earResource.getName().equals(earRN));
             assertFalse(isDirectory(earResource));
         }
-        boolean explodedWar = war.endsWith("/");
+        boolean explodedWar = earLoader.getPaths().contains(WAR_RESOURCE_NAME);
         if (!explodedWar) {
             // direct access
-            Resource earResource = earLoader.getResource(war);
-            assertTrue(earResource.getName().equals(war));
+            Resource earResource = earLoader.getResource(WAR_RESOURCE_NAME);
+            assertTrue(earResource.getName().equals(WAR_RESOURCE_NAME));
             assertFalse(isDirectory(earResource));
             // iterator access
-            earResource = getResource(earLoader, war);
-            assertTrue(earResource.getName().equals(war));
+            earResource = getResource(earLoader, WAR_RESOURCE_NAME);
+            assertTrue(earResource.getName().equals(WAR_RESOURCE_NAME));
             assertFalse(isDirectory(earResource));
         }
-        String warLoaderName = PathUtils.canonicalize(EAR_RESOURCE_NAME + "/" + war);
-        IterableResourceLoader warLoader = nest(warLoaderName, earLoader, war);
+        String warLoaderName = PathUtils.canonicalize(EAR_RESOURCE_NAME + "/" + WAR_RESOURCE_NAME);
+        IterableResourceLoader warLoader = nest(warLoaderName, earLoader, WAR_RESOURCE_NAME);
         dumpResourceLoader(warLoader);
         // test ear paths
         Collection<String> earPaths = earLoader.getPaths();
@@ -181,46 +181,46 @@ public class ResourceLoadersTest {
             assertFalse(isDirectory(warResource));
             if (explodedWar) {
                 // direct access
-                Resource earResource = earLoader.getResource(war + warRN);
-                assertTrue(earResource.getName().equals(war + warRN));
+                Resource earResource = earLoader.getResource(WAR_RESOURCE_NAME + "/" + warRN);
+                assertTrue(earResource.getName().equals(WAR_RESOURCE_NAME + "/" + warRN));
                 assertFalse(isDirectory(earResource));
                 // iterator access
-                earResource = getResource(earLoader, war + warRN);
-                assertTrue(earResource.getName().equals(war + warRN));
+                earResource = getResource(earLoader, WAR_RESOURCE_NAME + "/" + warRN);
+                assertTrue(earResource.getName().equals(WAR_RESOURCE_NAME + "/" + warRN));
                 assertFalse(isDirectory(earResource));
             }
         }
-        boolean explodedJar = jar.endsWith("/");
+        boolean explodedJar = warLoader.getPaths().contains(JAR_RESOURCE_NAME);
         if (!explodedJar) {
             if (!explodedWar) {
                 // direct access
-                Resource warResource = warLoader.getResource(jar);
-                assertTrue(warResource.getName().equals(jar));
+                Resource warResource = warLoader.getResource(JAR_RESOURCE_NAME);
+                assertTrue(warResource.getName().equals(JAR_RESOURCE_NAME));
                 assertFalse(isDirectory(warResource));
                 // iterator access
-                warResource = getResource(warLoader, jar);
-                assertTrue(warResource.getName().equals(jar));
+                warResource = getResource(warLoader, JAR_RESOURCE_NAME);
+                assertTrue(warResource.getName().equals(JAR_RESOURCE_NAME));
                 assertFalse(isDirectory(warResource));
             } else {
                 // direct access
-                Resource earResource = earLoader.getResource(war + jar);
-                assertTrue(earResource.getName().equals(war + jar));
+                Resource earResource = earLoader.getResource(WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME);
+                assertTrue(earResource.getName().equals(WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME));
                 assertFalse(isDirectory(earResource));
                 // iterator access
-                earResource = getResource(earLoader, war + jar);
-                assertTrue(earResource.getName().equals(war + jar));
+                earResource = getResource(earLoader, WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME);
+                assertTrue(earResource.getName().equals(WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME));
                 assertFalse(isDirectory(earResource));
             }
         }
-        String jarLoaderName = PathUtils.canonicalize(warLoaderName + "/" + jar);
-        IterableResourceLoader jarLoader = nest(jarLoaderName, warLoader, jar);
+        String jarLoaderName = PathUtils.canonicalize(warLoaderName + "/" + JAR_RESOURCE_NAME);
+        IterableResourceLoader jarLoader = nest(jarLoaderName, warLoader, JAR_RESOURCE_NAME);
         dumpResourceLoader(jarLoader);
         // test war paths
         Collection<String> warPaths = warLoader.getPaths();
         for (String warPath : WAR_PATHS) {
             assertTrue(warPaths.contains(warPath));
             if (explodedWar) {
-                String earResourceName = warPath.equals("") ? WAR_RESOURCE_NAME : war + warPath;
+                String earResourceName = warPath.equals("") ? WAR_RESOURCE_NAME : WAR_RESOURCE_NAME + "/" + warPath;
                 assertTrue(earPaths.contains(earResourceName));
             }
         }
@@ -236,21 +236,21 @@ public class ResourceLoadersTest {
             assertFalse(isDirectory(jarResource));
             if (explodedJar) {
                 // direct access
-                Resource warResource = warLoader.getResource(jar + jarRN);
-                assertTrue(warResource.getName().equals(jar + jarRN));
+                Resource warResource = warLoader.getResource(JAR_RESOURCE_NAME + "/" + jarRN);
+                assertTrue(warResource.getName().equals(JAR_RESOURCE_NAME + "/" + jarRN));
                 assertFalse(isDirectory(warResource));
                 // iterator access
-                warResource = getResource(warLoader, jar + jarRN);
-                assertTrue(warResource.getName().equals(jar + jarRN));
+                warResource = getResource(warLoader, JAR_RESOURCE_NAME + "/" + jarRN);
+                assertTrue(warResource.getName().equals(JAR_RESOURCE_NAME + "/" + jarRN));
                 assertFalse(isDirectory(warResource));
                 if (explodedWar) {
                     // direct access
-                    Resource earResource = earLoader.getResource(war + jar + jarRN);
-                    assertTrue(earResource.getName().equals(war + jar + jarRN));
+                    Resource earResource = earLoader.getResource(WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME + "/" + jarRN);
+                    assertTrue(earResource.getName().equals(WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME + "/" + jarRN));
                     assertFalse(isDirectory(earResource));
                     // iterator access
-                    earResource = getResource(earLoader, war + jar + jarRN);
-                    assertTrue(earResource.getName().equals(war + jar + jarRN));
+                    earResource = getResource(earLoader, WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME + "/" + jarRN);
+                    assertTrue(earResource.getName().equals(WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME + "/" + jarRN));
                     assertFalse(isDirectory(earResource));
                 }
             }
@@ -260,10 +260,10 @@ public class ResourceLoadersTest {
         for (String jarPath : JAR_PATHS) {
             assertTrue(jarPaths.contains(jarPath));
             if (explodedJar) {
-                String warResourceName = jarPath.equals("") ? JAR_RESOURCE_NAME : jar + jarPath;
+                String warResourceName = jarPath.equals("") ? JAR_RESOURCE_NAME : JAR_RESOURCE_NAME + "/" + jarPath;
                 assertTrue(warPaths.contains(warResourceName));
                 if (explodedWar) {
-                    String earResourceName = jarPath.equals("") ? war + JAR_RESOURCE_NAME : war + jar + jarPath;
+                    String earResourceName = WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME + (jarPath.equals("") ? "" : "/" + jarPath);
                     assertTrue(earPaths.contains(earResourceName));
                 }
             }

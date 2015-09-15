@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.FileOutputStream;
 import java.security.AccessController;
+import java.util.Collection;
 import java.util.StringTokenizer;
 import java.util.jar.JarFile;
 
@@ -112,10 +113,10 @@ public final class ResourceLoaders {
         if (subResPath.equals("")) {
             throw new IllegalArgumentException("Cannot create subresource loader for archive root");
         }
-        final Resource resource = parentLoader.getResource(subResPath);
-        if (resource == null) {
-            throw new IllegalArgumentException("Subresource '" + subResPath + "' does not exist");
+        if (subResPath.endsWith("/")) {
+            throw new IllegalArgumentException("Subresource path parameter cannot end with '/' character");
         }
+        final Collection<String> paths = parentLoader.getPaths();
         IterableResourceLoader loader = parentLoader;
         while (true) {
             if (loader instanceof FilteredIterableResourceLoader) {
@@ -128,15 +129,21 @@ public final class ResourceLoaders {
             }
             break;
         }
-        if (subResPath.endsWith("/")) {
+        if (paths.contains(subResPath)) {
             if (loader instanceof FileResourceLoader) {
-                return new FileResourceLoader((ResourceLoader)loader, name, new File(resource.getURL().getFile()), AccessController.getContext());
+                final FileResourceLoader fileLoader = (FileResourceLoader) loader;
+                return new FileResourceLoader(fileLoader, name, new File(fileLoader.getRoot(), subResPath), AccessController.getContext());
             } else if (loader instanceof JarFileResourceLoader) {
-                return new JarFileResourceLoader((ResourceLoader)loader, name, new JarFile(((JarFileResourceLoader) loader).getFile()), subResPath);
+                final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
+                return new JarFileResourceLoader(jarLoader, name, new JarFile(jarLoader.getFile()), subResPath);
             } else {
                 throw new UnsupportedOperationException();
             }
         } else {
+            final Resource resource = parentLoader.getResource(subResPath);
+            if (resource == null) {
+                throw new IllegalArgumentException("Subresource '" + subResPath + "' does not exist");
+            }
             if (loader instanceof FileResourceLoader) {
                 return new JarFileResourceLoader((ResourceLoader)loader, name, new JarFile(resource.getURL().getFile()));
             } else if (loader instanceof JarFileResourceLoader) {

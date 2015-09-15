@@ -105,6 +105,10 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         codeSource = new CodeSource(rootUrl, (CodeSigner[])null);
     }
 
+    File getRoot() {
+        return root;
+    }
+
     @Override
     public ResourceLoader getParent() {
         return parent;
@@ -202,7 +206,9 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     }
 
     public Resource getResource(final String name) {
+        if (name == null) throw new NullPointerException("Resource name cannot be null");
         final String canonPath = PathUtils.canonicalize(PathUtils.relativize(name));
+        if (name.endsWith("/")) throw new IllegalArgumentException("Resource name cannot end with '/' character");
         final File file = new File(root, canonPath);
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
