@@ -37,9 +37,9 @@ import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.operations.DomainIncludesValidationWriteAttributeHandler;
 import org.jboss.as.domain.controller.operations.GenericModelDescribeOperationHandler;
 import org.jboss.as.domain.controller.operations.ProfileAddHandler;
@@ -47,6 +47,7 @@ import org.jboss.as.domain.controller.operations.ProfileCloneHandler;
 import org.jboss.as.domain.controller.operations.ProfileDescribeHandler;
 import org.jboss.as.domain.controller.operations.ProfileModelDescribeHandler;
 import org.jboss.as.domain.controller.operations.ProfileRemoveHandler;
+import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -83,18 +84,22 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
 
     public static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {INCLUDES};
 
-    private final ExtensionRegistry extensionRegistry;
+    private final LocalHostControllerInfo hostInfo;
 
-    public ProfileResourceDefinition(ExtensionRegistry extensionRegistry) {
+    private final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
+
+
+    public ProfileResourceDefinition(LocalHostControllerInfo hostInfo, IgnoredDomainResourceRegistry ignoredDomainResourceRegistry) {
         super(PATH, DomainResolver.getResolver(PROFILE, false), ProfileAddHandler.INSTANCE, ProfileRemoveHandler.INSTANCE);
-        this.extensionRegistry = extensionRegistry;
+        this.hostInfo = hostInfo;
+        this.ignoredDomainResourceRegistry = ignoredDomainResourceRegistry;
     }
 
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(DESCRIBE, ProfileDescribeHandler.INSTANCE);
-        resourceRegistration.registerOperationHandler(ProfileCloneHandler.DEFINITION, ProfileCloneHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(ProfileCloneHandler.DEFINITION, new ProfileCloneHandler(hostInfo, ignoredDomainResourceRegistry));
         resourceRegistration.registerOperationHandler(GenericModelDescribeOperationHandler.DEFINITION, ProfileModelDescribeHandler.INSTANCE);
     }
 
