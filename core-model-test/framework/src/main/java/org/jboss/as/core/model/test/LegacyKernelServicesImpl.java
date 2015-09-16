@@ -281,6 +281,11 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
                 return Collections.EMPTY_LIST;
             }
 
+            @Override
+            public boolean isBackupDc() {
+                return false;
+            }
+
         });
 
         for (IgnoreDomainResourceTypeResource resource : ignoredResources) {

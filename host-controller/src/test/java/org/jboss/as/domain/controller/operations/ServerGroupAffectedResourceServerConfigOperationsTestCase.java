@@ -530,6 +530,11 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         public Collection<String> getAllowedOrigins() {
             return Collections.EMPTY_LIST;
         }
+
+        @Override
+        public boolean isBackupDc() {
+            return false;
+        }
     }
 
     private static class ServerInventoryMock implements ServerInventory {

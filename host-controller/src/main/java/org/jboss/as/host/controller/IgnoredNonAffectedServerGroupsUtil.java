@@ -147,7 +147,7 @@ public class IgnoredNonAffectedServerGroupsUtil {
             return ignoreSocketBindingGroups(domainResource, serverConfigs, pathAddress.getElement(0).getValue());
         default:
             return false;
-        }
+       }
     }
 
     private boolean ignoreProfile(final Resource domainResource, final Collection<ServerConfigInfo> serverConfigs, final String name) {

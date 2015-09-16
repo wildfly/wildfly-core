@@ -153,6 +153,12 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
         return remoteIgnoreUnaffectedConfiguration;
     }
 
+    @Override
+    // started with --backup
+    public boolean isBackupDc() {
+        return hostEnvironment == null ? false : hostEnvironment.isBackupDomainFiles();
+    }
+
     public AdminOnlyDomainConfigPolicy getAdminOnlyDomainConfigPolicy() {
         return adminOnlyDomainConfigPolicy;
     }
