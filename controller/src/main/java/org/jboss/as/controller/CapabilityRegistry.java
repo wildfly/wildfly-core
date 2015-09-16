@@ -472,18 +472,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             }
             publishedFullRegistry.writeLock.lock();
             try {
-                CapabilityRegistry published = publishedFullRegistry;
-                published.capabilities.clear();
-                published.capabilities.putAll(capabilities);
-
-                published.possibleCapabilities.clear();
-                published.possibleCapabilities.putAll(possibleCapabilities);
-
-                published.requirements.clear();
-                published.requirements.putAll(requirements);
-
-                published.runtimeOnlyRequirements.clear();
-                published.runtimeOnlyRequirements.putAll(runtimeOnlyRequirements);
+                publishedFullRegistry.clear();
+                copy(this, publishedFullRegistry);
                 modified = false;
             } finally {
                 publishedFullRegistry.writeLock.unlock();
