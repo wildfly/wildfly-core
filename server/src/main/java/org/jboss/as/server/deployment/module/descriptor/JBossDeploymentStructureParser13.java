@@ -39,6 +39,8 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.jboss.as.server.loaders.ResourceLoader;
+import org.jboss.as.server.loaders.ResourceLoaders;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -757,27 +759,34 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
         while (reader.hasNext()) {
             switch (reader.nextTag()) {
                 case XMLStreamConstants.END_ELEMENT: {
-                    try {
-                        final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
-                        final VirtualFile deploymentRootFile = deploymentRoot.getRoot();
-                        final VirtualFile child = deploymentRootFile.getChild(path);
-                        Map<String, MountedDeploymentOverlay> overlays = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_OVERLAY_LOCATIONS);
-                        MountedDeploymentOverlay overlay = overlays.get(path);
-                        Closeable closable = null;
-                        if(overlay != null) {
-                            overlay.remountAsZip();
-                        } else if(child.isFile()) {
-                            closable = VFS.mountZip(child, child);
+                    if (path.startsWith("/")) {
+                        throw ServerLogger.ROOT_LOGGER.externalResourceRootsNotSupported(path);
+                    } else {
+                        try {
+                            final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
+                            final VirtualFile deploymentRootFile = deploymentRoot.getRoot();
+                            final VirtualFile child = deploymentRootFile.getChild(path);
+                            Map<String, MountedDeploymentOverlay> overlays = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_OVERLAY_LOCATIONS);
+                            MountedDeploymentOverlay overlay = overlays.get(path);
+                            Closeable closable = null;
+                            final ResourceLoader loader = overlay == null
+                                    ? ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), path)
+                                    : ResourceLoaders.newResourceLoader(name, overlay.getFile(), deploymentRoot.getLoader());
+                            if (overlay != null) {
+                                overlay.remountAsZip();
+                            } else if (child.isFile()) {
+                                closable = VFS.mountZip(child, child);
+                            }
+                            final MountHandle mountHandle = new MountHandle(closable);
+                            final ResourceRoot resourceRoot = new ResourceRoot(loader, name, child, mountHandle);
+                            for (final FilterSpecification filter : resourceFilters) {
+                                resourceRoot.getExportFilters().add(filter);
+                            }
+                            resourceRoot.setUsePhysicalCodeSource(usePhysicalCodeSource);
+                            specBuilder.addResourceRoot(resourceRoot);
+                        } catch (IOException e) {
+                            throw new XMLStreamException(e);
                         }
-                        final MountHandle mountHandle = new MountHandle(closable);
-                        final ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);
-                        for (final FilterSpecification filter : resourceFilters) {
-                            resourceRoot.getExportFilters().add(filter);
-                        }
-                        resourceRoot.setUsePhysicalCodeSource(usePhysicalCodeSource);
-                        specBuilder.addResourceRoot(resourceRoot);
-                    } catch (IOException e) {
-                        throw new XMLStreamException(e);
                     }
                     return;
                 }

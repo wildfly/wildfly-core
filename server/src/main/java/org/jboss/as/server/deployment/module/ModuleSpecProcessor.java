@@ -22,7 +22,6 @@
 
 package org.jboss.as.server.deployment.module;
 
-import java.io.IOException;
 import java.security.Permission;
 import java.security.Permissions;
 import java.util.ArrayList;
@@ -330,18 +329,14 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
     }
 
     private void addResourceRoot(final ModuleSpec.Builder specBuilder, final ResourceRoot resource) throws DeploymentUnitProcessingException {
-        try {
-            if (resource.getExportFilters().isEmpty()) {
-                specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(new VFSResourceLoader(resource)));
-            } else {
-                final MultiplePathFilterBuilder filterBuilder = PathFilters.multiplePathFilterBuilder(true);
-                for (final FilterSpecification filter : resource.getExportFilters()) {
-                    filterBuilder.addFilter(filter.getPathFilter(), filter.isInclude());
-                }
-                specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(new VFSResourceLoader(resource), filterBuilder.create()));
+        if (resource.getExportFilters().isEmpty()) {
+            specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(resource.getLoader()));
+        } else {
+            final MultiplePathFilterBuilder filterBuilder = PathFilters.multiplePathFilterBuilder(true);
+            for (final FilterSpecification filter : resource.getExportFilters()) {
+                filterBuilder.addFilter(filter.getPathFilter(), filter.isInclude());
             }
-        } catch (IOException e) {
-            throw ServerLogger.ROOT_LOGGER.failedToCreateVFSResourceLoader(resource.getRootName(), e);
+            specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(resource.getLoader(), filterBuilder.create()));
         }
     }
 

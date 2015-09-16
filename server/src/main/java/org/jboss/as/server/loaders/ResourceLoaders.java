@@ -65,7 +65,7 @@ public final class ResourceLoaders {
      * @throws IOException if some I/O error occurs
      */
     public static ResourceLoader newResourceLoader(final File root) throws IOException {
-        return newResourceLoader(root.getName(), root);
+        return newResourceLoader(root, null);
     }
 
     /**
@@ -76,10 +76,31 @@ public final class ResourceLoaders {
      * @throws IOException if some I/O error occurs
      */
     public static ResourceLoader newResourceLoader(final String name, final File root) throws IOException {
+        return newResourceLoader(name, root, null);
+    }
+
+    /**
+     * Creates a new deployment resource loader.
+     * @param root deployment file or directory
+     * @return new deployment resource loader
+     * @throws IOException if some I/O error occurs
+     */
+    public static ResourceLoader newResourceLoader(final File root, final ResourceLoader parent) throws IOException {
+        return newResourceLoader(root.getName(), root, parent);
+    }
+
+    /**
+     * Creates a new deployment resource loader.
+     * @param name deployment loader name
+     * @param root deployment file or directory
+     * @return new deployment resource loader
+     * @throws IOException if some I/O error occurs
+     */
+    public static ResourceLoader newResourceLoader(final String name, final File root, final ResourceLoader parent) throws IOException {
         if (root.isDirectory()) {
-            return new FileResourceLoader(null, name, root, AccessController.getContext());
+            return new FileResourceLoader(parent, name, root, AccessController.getContext());
         } else {
-            return new JarFileResourceLoader(null, name, new JarFile(root));
+            return new JarFileResourceLoader(parent, name, new JarFile(root));
         }
     }
 

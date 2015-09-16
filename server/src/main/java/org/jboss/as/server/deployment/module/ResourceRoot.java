@@ -44,19 +44,12 @@ public final class ResourceRoot extends SimpleAttachable {
     private final List<FilterSpecification> exportFilters = new ArrayList<FilterSpecification>();
     private boolean usePhysicalCodeSource;
 
-    public ResourceRoot(final VirtualFile root, final MountHandle mountHandle) {
-        this(root.getName(), root, mountHandle);
-    }
-
     public ResourceRoot(final ResourceLoader loader, final VirtualFile root, final MountHandle mountHandle) {
         this(loader, root.getName(), root, mountHandle);
     }
 
-    public ResourceRoot(final String rootName, final VirtualFile root, final MountHandle mountHandle) {
-        this(null, rootName, root, mountHandle);
-    }
-
     public ResourceRoot(final ResourceLoader loader, final String rootName, final VirtualFile root, final MountHandle mountHandle) {
+        if (loader == null) throw new NullPointerException();
         this.rootName = rootName;
         this.root = root;
         this.mountHandle = mountHandle;

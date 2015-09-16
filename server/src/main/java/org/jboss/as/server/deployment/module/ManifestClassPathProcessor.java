@@ -32,6 +32,8 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import org.jboss.as.server.loaders.ResourceLoader;
+import org.jboss.as.server.loaders.ResourceLoaders;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachable;
 import org.jboss.as.server.deployment.Attachments;
@@ -83,7 +85,8 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final DeploymentUnit parent = deploymentUnit.getParent();
         final DeploymentUnit topLevelDeployment = parent == null ? deploymentUnit : parent;
-        final VirtualFile topLevelRoot = topLevelDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT).getRoot();
+        final VirtualFile topLevelRoot = topLevelDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT).getRoot(); // TODO: remove
+        final ResourceLoader topLevelLoader = topLevelDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT).getLoader();
         final ExternalModuleService externalModuleService = topLevelDeployment.getAttachment(Attachments.EXTERNAL_MODULE_SERVICE);
         final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
 
@@ -141,63 +144,71 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             }
 
             final String[] items = getClassPathEntries(resourceRoot);
+            boolean classPathItemExists, topLevelClassPathItemExists;
             for (final String item : items) {
                 if (item.isEmpty() || item.equals(".")) { //a class path of . causes problems and is unnecessary, see WFLY-2725
                     continue;
                 }
-                //first try and resolve relative to the manifest resource root
-                final VirtualFile classPathFile = resourceRoot.getRoot().getParent().getChild(item);
-                //then resolve relative to the deployment root
-                final VirtualFile topLevelClassPathFile = deploymentRoot.getRoot().getParent().getChild(item);
+                if (item.contains("../") || item.endsWith("/")) {
+                    ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getLoader().getRootName());
+                }
                 if (item.startsWith("/")) {
                     if (externalModuleService.isValid(item)) {
                         final ModuleIdentifier moduleIdentifier = externalModuleService.addExternalModule(item);
                         target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, moduleIdentifier);
-                        ServerLogger.DEPLOYMENT_LOGGER.debugf("Resource %s added as external jar %s", classPathFile, resourceRoot.getRoot());
+                        ServerLogger.DEPLOYMENT_LOGGER.debugf("Resource %s added as external jar %s", item, resourceRoot.getRoot());
                     } else {
-                        ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getRoot().getPathName());
+                        ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getLoader().getRootName());
                     }
                 } else {
-                    if (classPathFile.exists()) {
+                    //first try and resolve relative to the manifest resource root
+                    final VirtualFile classPathFile = resourceRoot.getRoot().getParent().getChild(item); //TODO: remove
+                    classPathItemExists = resourceOrPathExists(resourceRoot.getLoader(), item);
+                    //then resolve relative to the deployment root
+                    final VirtualFile topLevelClassPathFile = deploymentRoot.getRoot().getParent().getChild(item); //TODO: remove
+                    topLevelClassPathItemExists = resourceOrPathExists(deploymentRoot.getLoader(), item);
+                    if (classPathItemExists) {
                         //we need to check that this class path item actually lies within the deployment
                         boolean found = false;
-                        VirtualFile file = classPathFile.getParent();
-                        while (file != null) {
-                            if (file.equals(topLevelRoot)) {
+                        ResourceLoader loader = resourceRoot.getLoader();
+                        while (loader != null) {
+                            if (loader == topLevelLoader) {
                                 found = true;
                             }
-                            file = file.getParent();
+                            loader = loader.getParent();
                         }
                         if (!found) {
-                            ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getRoot().getPathName());
+                            ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getLoader().getRootName());
                         } else {
                             final String relativePath = classPathFile.getPathNameRelativeTo(topLevelRoot);
-                            handlingExistingClassPathEntry(resourceRoots, topLevelDeployment, relativePath, subDeployments, additionalModules, existingAccessibleRoots, resourceRoot, target, classPathFile);
+                            final ResourceLoader itemLoader = createResourceLoader(classPathFile.getName(), resourceRoot.getLoader(), item); // TODO: fix loader name creation
+                            handlingExistingClassPathEntry(resourceRoots, topLevelDeployment, relativePath, subDeployments, additionalModules, existingAccessibleRoots, resourceRoot, target, classPathFile, itemLoader);
                         }
-                    } else if (topLevelClassPathFile.exists()) {
+                    } else if (topLevelClassPathItemExists) {
                         boolean found = false;
-                        VirtualFile file = topLevelClassPathFile.getParent();
-                        while (file != null) {
-                            if (file.equals(topLevelRoot)) {
+                        ResourceLoader loader = deploymentRoot.getLoader();
+                        while (loader != null) {
+                            if (loader == topLevelLoader) {
                                 found = true;
                             }
-                            file = file.getParent();
+                            loader = loader.getParent();
                         }
                         if (!found) {
-                            ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getRoot().getPathName());
+                            ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getLoader().getRootName());
                         } else {
                             final String relativePath = topLevelClassPathFile.getPathNameRelativeTo(topLevelRoot);
-                            handlingExistingClassPathEntry(resourceRoots, topLevelDeployment, relativePath, subDeployments, additionalModules, existingAccessibleRoots, resourceRoot, target, topLevelClassPathFile);
+                            final ResourceLoader itemLoader = createResourceLoader(topLevelClassPathFile.getName(), deploymentRoot.getLoader(), item); // TODO: fix loader name creation
+                            handlingExistingClassPathEntry(resourceRoots, topLevelDeployment, relativePath, subDeployments, additionalModules, existingAccessibleRoots, resourceRoot, target, topLevelClassPathFile, itemLoader);
                         }
                     } else {
-                        ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getRoot().getPathName());
+                        ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getLoader().getRootName());
                     }
                 }
             }
         }
     }
 
-    private void handlingExistingClassPathEntry(final ArrayDeque<RootEntry> resourceRoots, final DeploymentUnit topLevelDeployment, final String relativePath, final Map<VirtualFile, ResourceRoot> subDeployments, final Map<VirtualFile, AdditionalModuleSpecification> additionalModules, final Set<VirtualFile> existingAccessibleRoots, final ResourceRoot resourceRoot, final Attachable target, final VirtualFile classPathFile) throws DeploymentUnitProcessingException {
+    private void handlingExistingClassPathEntry(final ArrayDeque<RootEntry> resourceRoots, final DeploymentUnit topLevelDeployment, final String relativePath, final Map<VirtualFile, ResourceRoot> subDeployments, final Map<VirtualFile, AdditionalModuleSpecification> additionalModules, final Set<VirtualFile> existingAccessibleRoots, final ResourceRoot resourceRoot, final Attachable target, final VirtualFile classPathFile, final ResourceLoader itemLoader) throws DeploymentUnitProcessingException {
         if (existingAccessibleRoots.contains(classPathFile)) {
             ServerLogger.DEPLOYMENT_LOGGER.debugf("Class-Path entry %s in %s ignored, as target is already accessible", classPathFile, resourceRoot.getRoot());
         } else if (additionalModules.containsKey(classPathFile)) {
@@ -208,16 +219,24 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             //now we need to calculate the sub deployment module identifier
             //unfortunately the sub deployment has not been setup yet, so we cannot just
             //get it from the sub deployment directly
-            target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, createModuleIdentifier(classPathFile, topLevelDeployment, relativePath));
+            target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, createModuleIdentifier(topLevelDeployment, relativePath));
         } else {
-            ModuleIdentifier identifier = createAdditionalModule(resourceRoot, topLevelDeployment, relativePath, additionalModules, classPathFile, resourceRoots);
+            ModuleIdentifier identifier = createAdditionalModule(resourceRoot, topLevelDeployment, relativePath, additionalModules, classPathFile, resourceRoots, itemLoader);
             target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, identifier);
         }
     }
 
-    private ModuleIdentifier createAdditionalModule(final ResourceRoot resourceRoot, final DeploymentUnit topLevelDeployment, final String relativePath, final Map<VirtualFile, AdditionalModuleSpecification> additionalModules, final VirtualFile classPathFile, final ArrayDeque<RootEntry> resourceRoots) throws DeploymentUnitProcessingException {
-        final ResourceRoot root = createResourceRoot(classPathFile, topLevelDeployment, relativePath);
-        ModuleIdentifier identifier = createModuleIdentifier(classPathFile, topLevelDeployment, relativePath);
+    private static ResourceLoader createResourceLoader(final String loaderName, final ResourceLoader parentLoader, final String subresourcePath) throws DeploymentUnitProcessingException {
+        try {
+            return ResourceLoaders.newResourceLoader(loaderName, parentLoader, subresourcePath);
+        } catch (IOException e) {
+            throw ServerLogger.DEPLOYMENT_LOGGER.errorCreatingResourceLoader(subresourcePath, e);
+        }
+    }
+
+    private ModuleIdentifier createAdditionalModule(final ResourceRoot resourceRoot, final DeploymentUnit topLevelDeployment, final String relativePath, final Map<VirtualFile, AdditionalModuleSpecification> additionalModules, final VirtualFile classPathFile, final ArrayDeque<RootEntry> resourceRoots, final ResourceLoader itemLoader) throws DeploymentUnitProcessingException {
+        final ResourceRoot root = createResourceRoot(classPathFile, topLevelDeployment, relativePath, itemLoader);
+        ModuleIdentifier identifier = createModuleIdentifier(topLevelDeployment, relativePath);
         AdditionalModuleSpecification module = new AdditionalModuleSpecification(identifier, root);
         topLevelDeployment.addToAttachmentList(Attachments.ADDITIONAL_MODULES, module);
         additionalModules.put(classPathFile, module);
@@ -228,7 +247,11 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         return identifier;
     }
 
-    private static ModuleIdentifier createModuleIdentifier(final VirtualFile classPathFile, final DeploymentUnit topLevelDeployment, final String relativePath) {
+    private static boolean resourceOrPathExists(final ResourceLoader loader, final String resourceOrPath) {
+        return loader.getResource(resourceOrPath) != null || loader.getPaths().contains(resourceOrPath);
+    }
+
+    private static ModuleIdentifier createModuleIdentifier(final DeploymentUnit topLevelDeployment, final String relativePath) {
         return ModuleIdentifier.create(ServiceModuleLoader.MODULE_PREFIX + topLevelDeployment.getName() + '.' + relativePath.replace('/', '.'));
     }
 
@@ -261,19 +284,21 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
      * @return Returns the created {@link ResourceRoot}
      * @throws java.io.IOException
      */
-    private synchronized ResourceRoot createResourceRoot(final VirtualFile file, final DeploymentUnit deploymentUnit, final String relativePath) throws DeploymentUnitProcessingException {
+    private synchronized ResourceRoot createResourceRoot(final VirtualFile file, final DeploymentUnit deploymentUnit, final String relativePath, final ResourceLoader itemLoader) throws DeploymentUnitProcessingException {
         try {
             Map<String, MountedDeploymentOverlay> overlays = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_OVERLAY_LOCATIONS);
 
             MountedDeploymentOverlay overlay = overlays.get(relativePath);
             Closeable closable = null;
+            ResourceLoader loader = itemLoader;
             if(overlay != null) {
                 overlay.remountAsZip();
+                loader = ResourceLoaders.newResourceLoader(itemLoader.getRootName(), overlay.getFile(), itemLoader.getParent());
             } else if(file.isFile()) {
                 closable = VFS.mountZip(file, file);
             }
             final MountHandle mountHandle = new MountHandle(closable);
-            final ResourceRoot resourceRoot = new ResourceRoot(file, mountHandle);
+            final ResourceRoot resourceRoot = new ResourceRoot(loader, file, mountHandle);
             ModuleRootMarker.mark(resourceRoot);
             ResourceRootIndexer.indexResourceRoot(resourceRoot);
             return resourceRoot;

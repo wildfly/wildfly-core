@@ -1190,4 +1190,10 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 241, value = "Shutting down in response to management operation '%s'")
     void shuttingDownInResponseToManagementRequest(String op);
 
+    @Message(id = 242, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
+    @Message(id = 243, value = "Error creating resource loader for classpath item '%s'")
+    DeploymentUnitProcessingException errorCreatingResourceLoader(String classpathItem, @Cause IOException cause);
+
 }

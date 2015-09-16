@@ -38,6 +38,8 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.jboss.as.server.loaders.ResourceLoader;
+import org.jboss.as.server.loaders.ResourceLoaders;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -515,17 +517,20 @@ public class JBossDeploymentStructureParser10 implements XMLElementReader<ParseR
                         try {
                             final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
                             final VirtualFile deploymentRootFile = deploymentRoot.getRoot();
-                            VirtualFile child = deploymentRootFile.getChild(path);
+                            final VirtualFile child = deploymentRootFile.getChild(path);
                             Map<String, MountedDeploymentOverlay> overlays = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_OVERLAY_LOCATIONS);
                             MountedDeploymentOverlay overlay = overlays.get(path);
                             Closeable closable = null;
-                            if(overlay != null) {
+                            final ResourceLoader loader = overlay == null
+                                    ? ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), path)
+                                    : ResourceLoaders.newResourceLoader(name, overlay.getFile(), deploymentRoot.getLoader());
+                            if (overlay != null) {
                                 overlay.remountAsZip();
-                            } else if(child.isFile()) {
+                            } else if (child.isFile()) {
                                 closable = VFS.mountZip(child, child);
                             }
                             final MountHandle mountHandle = new MountHandle(closable);
-                            ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);
+                            ResourceRoot resourceRoot = new ResourceRoot(loader, name, child, mountHandle);
                             for (FilterSpecification filter : resourceFilters) {
                                 resourceRoot.getExportFilters().add(filter);
                             }

@@ -29,6 +29,10 @@ public class MountedDeploymentOverlay implements Closeable {
         closeable = VFS.mountZip(realFile, mountPoint);
     }
 
+    public File getFile() {
+        return realFile;
+    }
+
     @Override
     public void close() throws IOException {
         closeable.close();
