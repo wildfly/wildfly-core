@@ -473,8 +473,6 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
             ScheduledExecutorService scheduledExecutorService = scheduledExecutorInjector.getValue();
             this.responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorService);
 
-            // Include additional local host information when registering at the DC
-            final ModelNode hostInfo = HostInfo.createLocalHostHostInfo(localHostInfo, productConfig, ignoredDomainResourceRegistry, ReadRootResourceHandler.grabDomainResource(operationExecutor).getChildren(HOST).iterator().next());
             final OptionMap options = OptionMap.builder()
                     .set(RemotingOptions.HEARTBEAT_INTERVAL, 15000)
                     .set(Options.READ_TIMEOUT, 45000)
@@ -489,10 +487,21 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
 
             final SecurityRealm realm = securityRealmInjector.getOptionalValue();
             // Create the remote domain channel strategy
-            connection = new RemoteDomainConnection(localHostInfo.getLocalHostName(), hostInfo, configuration, realm,
+            connection = new RemoteDomainConnection(localHostInfo.getLocalHostName(), configuration, realm,
                     localHostInfo.getRemoteDomainControllerUsername(),
                     localHostInfo.getRemoteDomainControllerDiscoveryOptions(), executor, scheduledExecutorService,
                     new RemoteDomainConnection.HostRegistrationCallback() {
+                /**
+                 * Calculates the metadata required when connecting to the master {@link org.jboss.as.domain.controller.DomainController}
+                 * This value does not require locking during use, as {@link org.jboss.as.host.controller.mgmt.HostInfo createLocalHostHostInfo()} uses
+                 * '/domain-controller', which is read-only, and '/core-service=ignored-resources/ignored-resource-type' which has handlers on
+                 * add, remove and write-attribute that will place the host into reload-required.
+                 * @return the recalulated {@link ModelNode} for this host, reflecting any changes since boot
+                 */
+                @Override
+                public ModelNode createLocalHostInfo() {
+                    return HostInfo.createLocalHostHostInfo(localHostInfo, productConfig, ignoredDomainResourceRegistry, ReadRootResourceHandler.grabDomainResource(operationExecutor).getChildren(HOST).iterator().next());
+                }
 
                 @Override
                 public ModelNode resolveSubsystemVersions(ModelNode extensions) {
@@ -502,7 +511,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                 @Override
                 public boolean applyDomainModel(final List<ModelNode> bootOperations) {
                     // Apply the model..
-                    final HostInfo info = HostInfo.fromModelNode(hostInfo);
+                    final HostInfo info = HostInfo.fromModelNode(createLocalHostInfo());
                     return applyRemoteDomainModel(bootOperations, info);
                 }
 
