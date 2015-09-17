@@ -35,6 +35,7 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
@@ -60,6 +61,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
             .build();
     protected static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
+            .setValidator(new IntRangeValidator(-1))
             .setAllowNull(true)
             .build();
 

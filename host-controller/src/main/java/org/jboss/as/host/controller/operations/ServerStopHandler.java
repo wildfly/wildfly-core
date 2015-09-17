@@ -34,6 +34,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.dmr.ModelNode;
@@ -48,6 +49,7 @@ public class ServerStopHandler implements OperationStepHandler {
 
     private static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
+            .setValidator(new IntRangeValidator(-1))
             .setAllowNull(true)
             .build();
 

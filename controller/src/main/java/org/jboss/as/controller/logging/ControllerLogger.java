@@ -3368,4 +3368,16 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 405, value = "Couldn't find a transformer to %s, falling back to %s")
     void couldNotFindTransformerRegistryFallingBack(ModelVersion currentVersion, ModelVersion fallbackVersion);
+
+    /**
+     * A message indicating an illegal value, represented by the {@code value} parameter, for the element, represented
+     * by the {@code element} parameter.
+     *
+     * @param value   the illegal value.
+     * @param element the element.
+     *
+     * @return the message.
+     */
+    @Message(id = 406, value = "Illegal value %s for element %s")
+    String illegalValue(Object value, String element);
 }
