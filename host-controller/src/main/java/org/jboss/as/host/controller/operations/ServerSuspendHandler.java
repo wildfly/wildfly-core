@@ -36,6 +36,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.descriptions.HostResolver;
@@ -51,6 +52,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = ModelDescriptionConstants.SUSPEND;
     private static final AttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT, true)
             .setDefaultValue(new ModelNode(0))
+            .setValidator(new IntRangeValidator(-1))
             .build();
 
     public static final OperationDefinition DEFINITION = getOperationDefinition();
