@@ -206,9 +206,9 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     }
 
     public Resource getResource(final String name) {
-        if (name == null) throw new NullPointerException("Resource name cannot be null");
+        if (name == null) return null;
         final String canonPath = PathUtils.canonicalize(PathUtils.relativize(name));
-        if (name.endsWith("/")) throw new IllegalArgumentException("Resource name cannot end with '/' character");
+        if (canonPath.endsWith("/")) return null;
         final File file = new File(root, canonPath);
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {

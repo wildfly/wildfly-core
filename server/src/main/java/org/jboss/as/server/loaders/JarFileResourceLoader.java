@@ -229,10 +229,10 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     }
 
     public Resource getResource(String name) {
-        if (name == null) throw new NullPointerException("Resource name cannot be null");
+        if (name == null) return null;
         try {
             name = PathUtils.canonicalize(PathUtils.relativize(name));
-            if (name.endsWith("/")) throw new IllegalArgumentException("Resource name cannot end with '/' character");
+            if (name.endsWith("/")) return null;
             final JarFile jarFile = this.jarFile;
             final JarEntry entry = getJarEntry(name);
             if (entry == null) {
