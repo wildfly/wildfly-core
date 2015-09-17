@@ -53,11 +53,6 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
     private final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry;
 
     static ResourceTransformationContext create(final OperationContext context, final TransformationTarget target,
-                                                final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) {
-        return create(context, target, PathAddress.EMPTY_ADDRESS, PathAddress.EMPTY_ADDRESS, ignoredTransformationRegistry);
-    }
-
-    static ResourceTransformationContext create(final OperationContext context, final TransformationTarget target,
                                                 final PathAddress current, final PathAddress read,
                                                 final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) {
         final Resource root = Resource.Factory.create();
