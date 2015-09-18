@@ -34,11 +34,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.TransformingProxyController;
 import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.controller.transform.OperationTransformer;
+import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
@@ -172,8 +172,10 @@ public final class MultiphaseOverallContext {
     /*
      * Transform an operation for a server. This will also delegate to the host-controller result-transformer.
      */
-    public OperationTransformer.TransformedOperation transformServerOperation(final String hostName, final TransformingProxyController remoteProxyController, final OperationContext context, final ModelNode original) throws OperationFailedException {
-        final OperationTransformer.TransformedOperation transformed = remoteProxyController.transformOperation(context, original);
+    public OperationTransformer.TransformedOperation transformServerOperation(final String hostName, final TransformingProxyController remoteProxyController,
+                                                                              final Transformers.TransformationInputs transformationInputs,
+                                                                              final ModelNode original) throws OperationFailedException {
+        final OperationTransformer.TransformedOperation transformed = remoteProxyController.transformOperation(transformationInputs, original);
         final HostControllerUpdateTask.ExecutedHostRequest hostRequest = finalResultFutures.get(hostName);
         if(hostRequest == null) {
             // in case it's local hosts-controller
