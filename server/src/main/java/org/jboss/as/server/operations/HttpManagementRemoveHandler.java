@@ -22,18 +22,17 @@
 
 package org.jboss.as.server.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.domain.management.access.RbacSanityCheckOperation;
-import org.jboss.as.remoting.RemotingHttpUpgradeService;
-import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
-import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -50,30 +49,16 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
     }
 
     @Override
-    protected void performRemove(OperationContext context, ModelNode operation, ModelNode model)
-            throws OperationFailedException {
+    protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         RbacSanityCheckOperation.addOperation(context);
+        PathAddress nativeAddress = context.getCurrentAddress().getParent().append(PathElement.pathElement(MANAGEMENT_INTERFACE, NATIVE_INTERFACE));
+        ManagementRemotingServices.isManagementResourceRemoveable(context, nativeAddress);
         super.performRemove(context, operation, model);
+        context.reloadRequired();
     }
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return context.getProcessType() != ProcessType.EMBEDDED_SERVER || context.getRunningMode() != RunningMode.ADMIN_ONLY;
-    }
-
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-
-        context.removeService(UndertowHttpManagementService.SERVICE_NAME);
-        context.removeService(UndertowHttpManagementService.SERVICE_NAME.append("shutdown"));
-        context.removeService(UndertowHttpManagementService.SERVICE_NAME.append("requests"));
-
-        RemotingServices.removeConnectorServices(context, ManagementRemotingServices.HTTP_CONNECTOR);
-        context.removeService(RemotingHttpUpgradeService.UPGRADE_SERVICE_NAME.append(ManagementRemotingServices.HTTP_CONNECTOR));
-    }
-
-    @Override
-    protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        HttpManagementAddHandler.INSTANCE.performRuntime(context, operation, model);
+        return false;
     }
 }

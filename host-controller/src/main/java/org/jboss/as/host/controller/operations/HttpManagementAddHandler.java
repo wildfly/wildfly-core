@@ -25,9 +25,11 @@ package org.jboss.as.host.controller.operations;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
+
 import io.undertow.server.ListenerRegistry;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -100,8 +102,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
 
     @Override
     protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
-
-        HttpManagementRemoveHandler.clearHostControllerInfo(hostControllerInfo);
+        clearHostControllerInfo(hostControllerInfo);
     }
 
     static void populateHostControllerInfo(final LocalHostControllerInfoImpl hostControllerInfo, final OperationContext context, final ModelNode model) throws OperationFailedException {
@@ -212,4 +213,12 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         return builder.getMap();
     }
 
+    static void clearHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo) {
+        hostControllerInfo.setHttpManagementInterface(null);
+        hostControllerInfo.setHttpManagementPort(0);
+        hostControllerInfo.setHttpManagementSecureInterface(null);
+        hostControllerInfo.setHttpManagementSecurePort(0);
+        hostControllerInfo.setHttpManagementSecurityRealm(null);
+        hostControllerInfo.setAllowedOrigins(Collections.emptyList());
+    }
 }

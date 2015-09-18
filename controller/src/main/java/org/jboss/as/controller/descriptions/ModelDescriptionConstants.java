@@ -282,6 +282,7 @@ public class ModelDescriptionConstants {
     public static final String NATIVE = "native";
     public static final String NATIVE_INTERFACE = "native-interface";
     public static final String NATIVE_REMOTING_INTERFACE = "native-remoting-interface";
+    public static final String NATIVE_SUPPORT = "native-support";
     public static final String NETWORK = "network";
     public static final String NILLABLE = "nillable";
     public static final String NIL_SIGNIFICANT = "nil-significant";

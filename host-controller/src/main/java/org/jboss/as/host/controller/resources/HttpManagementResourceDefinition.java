@@ -144,8 +144,8 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
         super(RESOURCE_PATH,
                 HostModelUtil.getResourceDescriptionResolver("core", "management", "http-interface"),
                 new HttpManagementAddHandler(hostControllerInfo, environment),
-                new HttpManagementRemoveHandler(hostControllerInfo, environment),
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
+                HttpManagementRemoveHandler.INSTANCE,
+                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
         setDeprecated(ModelVersion.create(1, 7));
     }
@@ -161,10 +161,5 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
     @Override
     public List<AccessConstraintDefinition> getAccessConstraints() {
         return accessConstraints;
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(HTTP_MANAGEMENT_CAPABILITY);
     }
 }
