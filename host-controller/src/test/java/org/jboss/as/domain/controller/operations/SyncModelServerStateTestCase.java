@@ -142,7 +142,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
     }
 
     private void executeTriggerSyncOperation(Resource rootResource) throws Exception {
-        ReadMasterDomainModelUtil util = ReadMasterDomainModelUtil.readMasterDomainResourcesForInitialConnect(null, new NoopTransformers(), rootResource, null);
+        ReadMasterDomainModelUtil util = ReadMasterDomainModelUtil.readMasterDomainResourcesForInitialConnect(new NoopTransformers(), null, null, rootResource);
         ModelNode op = Util.createEmptyOperation(TRIGGER_SYNC.getName(), PathAddress.EMPTY_ADDRESS);
         op.get(DOMAIN_MODEL).set(util.getDescribedResources());
         executeForResult(op);
