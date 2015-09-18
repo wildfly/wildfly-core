@@ -43,6 +43,7 @@ import org.junit.runners.Suite;
         DirectoryGroupingByTypeTestCase.class,
         ExtensionManagementTestCase.class,
         HcExtensionAndSubsystemManagementTestCase.class,
+        IgnoreUnusedConfigurationTestCase.class,
         IgnoredResourcesTestCase.class,
         JMXHostSubsystemTestCase.class,
         ManagementAccessTestCase.class,
