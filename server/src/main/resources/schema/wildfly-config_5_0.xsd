@@ -2337,11 +2337,17 @@
         </xs:attribute>
         <xs:attribute name="security-realm" type="xs:string" use="optional" />
         <xs:attribute name="username" type="xs:string" use="optional" />
-        <xs:attribute name="ignore-unused-configuration" type="xs:boolean" default="false">
+        <xs:attribute name="ignore-unused-configuration" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Set to true to instruct the master Host Controller to automatically not forward configuration and
+                    When set to true, this instructs the master Host Controller to not forward configuration and
                     operations for profiles, socket binding groups and server groups which do not affect our servers.
+                    Setting to false will ensure that all of this configuration information is copied. Note that using
+                    the '--backup' startup option on the command line will set this to false if the value is unspecified
+                    in host.xml. If the value is specified in host.xml, then using '--backup' will not override the
+                    specified value (for example: setting ignore-unused-configuration="true" and using --backup will
+                    not override the value of ignore-unused-configuration, which will remain true). If --backup is not
+                    used, this value will be true at runtime.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
