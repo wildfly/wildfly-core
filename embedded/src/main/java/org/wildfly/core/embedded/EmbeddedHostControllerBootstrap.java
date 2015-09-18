@@ -62,7 +62,7 @@ public class EmbeddedHostControllerBootstrap {
         ServiceTarget target = serviceContainer.subTarget();
 
         final ServiceController<ControlledProcessStateService> serviceController = ControlledProcessStateService.addService(target, processState);
-        final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, true, futureContainer);
+        final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, futureContainer);
         target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
         return futureContainer;
     }
