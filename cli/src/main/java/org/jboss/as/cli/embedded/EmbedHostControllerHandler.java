@@ -155,7 +155,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
             // Create our own LogContext
             final LogContext embeddedLogContext = LogContext.create();
-            // Set up logging from standalone/configuration/logging.properties
+            // Set up logging from domain/configuration/logging.properties
             configureLogContext(embeddedLogContext, jbossHome, ctx);
 
             Contexts localContexts = new Contexts(embeddedLogContext, discardStdoutContext);
@@ -264,9 +264,14 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     }
 
     private void configureLogContext(LogContext embeddedLogContext, File jbossHome, CommandContext ctx) {
-        File standaloneDir =  new File(jbossHome, "domain");
-        File configDir =  new File(standaloneDir, "configuration");
-        File logDir =  new File(standaloneDir, "log");
+
+        final String domainBaseDir = WildFlySecurityManager.getPropertyPrivileged("jboss.server.base.dir", jbossHome.getAbsolutePath() + File.separator + "domain");
+        final String domainConfigDir = WildFlySecurityManager.getPropertyPrivileged("jboss.server.configuration.dir", "configuration");
+        final String domainLogDir = WildFlySecurityManager.getPropertyPrivileged("jboss.server.log.dir", "log");
+
+        File domainDir = new File(domainBaseDir);
+        File configDir = new File(domainDir, "configuration");
+        File logDir =  new File(domainDir, "log");
         File bootLog = new File(logDir, "boot.log");
         File loggingProperties = new File(configDir, "logging.properties");
         if (loggingProperties.exists()) {

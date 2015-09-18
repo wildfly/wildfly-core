@@ -267,9 +267,14 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     }
 
     private void configureLogContext(LogContext embeddedLogContext, File jbossHome, CommandContext ctx) {
-        File standaloneDir =  new File(jbossHome, "standalone");
-        File configDir =  new File(standaloneDir, "configuration");
-        File logDir =  new File(standaloneDir, "log");
+
+        final String serverBaseDir = WildFlySecurityManager.getPropertyPrivileged("jboss.server.base.dir", jbossHome.getAbsolutePath() + File.separator + "standalone");
+        final String serverConfigDir = WildFlySecurityManager.getPropertyPrivileged("jboss.server.configuration.dir", "configuration");
+        final String serverLogDir = WildFlySecurityManager.getPropertyPrivileged("jboss.server.log.dir", "log");
+
+        File standaloneDir =  new File(serverBaseDir);
+        File configDir =  new File(standaloneDir, serverConfigDir);
+        File logDir =  new File(standaloneDir, serverLogDir);
         File bootLog = new File(logDir, "boot.log");
         File loggingProperties = new File(configDir, "logging.properties");
         if (loggingProperties.exists()) {
