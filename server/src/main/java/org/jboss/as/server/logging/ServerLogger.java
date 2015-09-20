@@ -1060,8 +1060,8 @@ public interface ServerLogger extends BasicLogger {
     IllegalStateException serverAlreadyPaused();
 
     @LogMessage(level = INFO)
-    @Message(id = 211, value = "Suspending server")
-    void suspendingServer();
+    @Message(id = 211, value = "Suspending server with %dms timeout.")
+    void suspendingServer(long timeoutMillis);
 
     @LogMessage(level = INFO)
     @Message(id = 212, value = "Resuming server")
