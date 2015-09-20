@@ -268,6 +268,10 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
                             // Acquire controller lock
                             context.acquireControllerLock();
                             // Check if the server is still in sync with the domain model
+                            // TODO WFCORE-990 this should involve shipping the resource tree to the server, which then compares
+                            // its local model. This would be done in the prepare phase of a transactional request.
+                            // The ResultHandler of this step would then publish the server's state, and register
+                            // the server's proxy controller with DomainModelControllerService
                             final byte param;
                             if(serverInventory.serverReconnected(serverName, channelHandler)) {
                                 param = DomainServerProtocol.PARAM_OK;
