@@ -32,7 +32,6 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.ProxyController.ProxyOperationControl;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
@@ -116,7 +115,7 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
         }
 
         @Override
-        protected OperationResponse internalExecute(final Operation operation, final ManagementRequestContext<?> context, final OperationMessageHandler messageHandler, final ProxyOperationControl control) {
+        protected OperationResponse internalExecute(final Operation operation, final ManagementRequestContext<?> context, final OperationMessageHandler messageHandler, final ModelController.OperationTransactionControl control) {
 
             final ModelNode operationNode = operation.getOperation();
             final OperationStepHandler handler;
