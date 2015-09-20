@@ -1130,22 +1130,42 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             builder.setOperationName(Util.READ_ATTRIBUTE);
             builder.addProperty(Util.NAME, Util.NAME);
 
-            final ModelNode response = client.execute(builder.buildRequest());
-            if(!Util.isSuccess(response)) {
-                // here we check whether the error is related to the access control permissions
-                // WFLYCTL0332: Permission denied
-                // WFLYCTL0313: Unauthorized to execute operation
-                final String failure = Util.getFailureDescription(response);
-                if(failure.contains("WFLYCTL0332")) {
-                    StreamUtils.safeClose(client);
-                    throw new CommandLineException("Connection refused based on the insufficient user permissions." +
-                        " Please, make sure the security-realm attribute is specified for the relevant management interface" +
-                        " (standalone.xml/host.xml) and review the access-control configuration (standalone.xml/domain.xml).");
+            final long start = System.currentTimeMillis();
+            final long timeoutMillis = config.getConnectionTimeout() + 1000;
+            boolean tryConnection = true;
+            int i = 1;
+            while (tryConnection) {
+                final ModelNode response = client.execute(builder.buildRequest());
+                if (!Util.isSuccess(response)) {
+                    // here we check whether the error is related to the access control permissions
+                    // WFLYCTL0332: Permission denied
+                    // WFLYCTL0313: Unauthorized to execute operation
+                    final String failure = Util.getFailureDescription(response);
+                    if (failure.contains("WFLYCTL0332")) {
+                        StreamUtils.safeClose(client);
+                        throw new CommandLineException(
+                                "Connection refused based on the insufficient user permissions."
+                                        + " Please, make sure the security-realm attribute is specified for the relevant management interface"
+                                        + " (standalone.xml/host.xml) and review the access-control configuration (standalone.xml/domain.xml).");
+                    } else if (failure.contains("WFLYCTL0379")) { // system boot is in process
+                        if (System.currentTimeMillis() - start > timeoutMillis) {
+                            throw new CommandLineException("Timeout waiting for the system to boot.");
+                        }
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            disconnectController();
+                            throw new CommandLineException("Interrupted while pausing before trying connection.", e);
+                        }
+                    } else {
+                        // Otherwise, on one hand, we don't actually care what the response is,
+                        // we just want to be sure the ModelControllerClient does not throw an Exception.
+                        // On the other hand, reading name attribute is a very basic one which should always work
+                        printLine("Warning! The connection check resulted in failure: " + Util.getFailureDescription(response));
+                        tryConnection = false;
+                    }
                 } else {
-                    // Otherwise, on one hand, we don't actually care what the response is,
-                    // we just want to be sure the ModelControllerClient does not throw an Exception.
-                    // On the other hand, reading name attribute is a very basic one which should always work
-                    printLine("Warning! The connection check resulted in failure: " + Util.getFailureDescription(response));
+                    tryConnection = false;
                 }
             }
         } catch (Exception e) {
