@@ -23,6 +23,7 @@
 package org.jboss.as.cli.embedded;
 
 import org.wildfly.core.embedded.EmbeddedServerReference;
+import org.wildfly.core.embedded.HostController;
 import org.wildfly.core.embedded.StandaloneServer;
 
 /**
@@ -60,5 +61,10 @@ public class EmbeddedServerLaunch {
             return;
         server.start();
     }
+
+    public HostController getHostController() {
+        return server.getHostController();
+    }
+
 
 }

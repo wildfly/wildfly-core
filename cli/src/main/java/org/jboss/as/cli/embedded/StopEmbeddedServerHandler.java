@@ -52,7 +52,7 @@ class StopEmbeddedServerHandler extends CommandHandlerWithHelp {
     @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
         EmbeddedServerLaunch serverLaunch = serverReference.get();
-        if (serverLaunch != null) {
+        if (serverLaunch != null && serverLaunch.getServer() != null) {
             ctx.disconnectController();
         }
     }
@@ -61,7 +61,8 @@ class StopEmbeddedServerHandler extends CommandHandlerWithHelp {
         EmbeddedServerLaunch serverLaunch = serverReference.get();
         if (serverLaunch != null) {
             try {
-                serverLaunch.stop();
+                if (serverLaunch.getServer() != null)
+                    serverLaunch.stop();
             } finally {
                 try {
                     serverLaunch.getEnvironmentRestorer().restoreEnvironment();
