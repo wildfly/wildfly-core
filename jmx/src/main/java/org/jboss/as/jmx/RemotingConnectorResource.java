@@ -18,7 +18,7 @@
 * License along with this software; if not, write to the Free
 * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
-*/
+ */
 package org.jboss.as.jmx;
 
 import static org.jboss.as.jmx.CommonAttributes.JMX;
@@ -45,8 +45,8 @@ import org.jboss.dmr.ModelType;
 public class RemotingConnectorResource extends SimpleResourceDefinition {
 
     static final PathElement REMOTE_CONNECTOR_CONFIG_PATH = PathElement.pathElement(REMOTING_CONNECTOR, JMX);
-    static final SimpleAttributeDefinition USE_MANAGEMENT_ENDPOINT =
-            new SimpleAttributeDefinitionBuilder(CommonAttributes.USE_MANAGEMENT_ENDPOINT, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition USE_MANAGEMENT_ENDPOINT
+            = new SimpleAttributeDefinitionBuilder(CommonAttributes.USE_MANAGEMENT_ENDPOINT, ModelType.BOOLEAN, true)
             .setDefaultValue(new ModelNode(true))
             .setAllowExpression(true)
             .build();
@@ -67,7 +67,7 @@ public class RemotingConnectorResource extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(USE_MANAGEMENT_ENDPOINT){
+        final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(USE_MANAGEMENT_ENDPOINT) {
             @Override
             protected void recordCapabilitiesAndRequirements(OperationContext context, AttributeDefinition attributeDefinition, ModelNode newValue, ModelNode oldValue) {
                 super.recordCapabilitiesAndRequirements(context, attributeDefinition, newValue, oldValue);

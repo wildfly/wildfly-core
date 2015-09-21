@@ -32,6 +32,7 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -129,4 +130,7 @@ public interface RemotingLogger extends BasicLogger {
     @Message(id = 24, value = "The remoting subsystem is present but no io subsystem was found. An io subsystem " +
             "was not required when remoting schema '%s' was current but now is, so a default subsystem is being added.")
     void addingIOSubsystem(String legacyNS);
+
+    @Message(id = 25, value = "Can't remove %s as JMX uses it as a remoting endpoint")
+    OperationFailedException couldNotRemoveResource(PathAddress address);
 }

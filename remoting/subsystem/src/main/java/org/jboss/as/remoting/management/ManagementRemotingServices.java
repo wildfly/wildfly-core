@@ -23,18 +23,25 @@
 package org.jboss.as.remoting.management;
 
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 import static org.jboss.msc.service.ServiceController.Mode.ON_DEMAND;
 
+import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.remote.AbstractModelControllerOperationHandlerFactoryService;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.as.remoting.RemotingServices;
+import org.jboss.as.remoting.logging.RemotingLogger;
+import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -156,5 +163,32 @@ public final class ManagementRemotingServices extends RemotingServices {
         removeManagementChannelOpenListenerService(context, endpointName, channelName);
         final ServiceName operationHandlerName = endpointName.append(channelName).append(ModelControllerClientOperationHandlerFactoryService.OPERATION_HANDLER_NAME_SUFFIX);
         context.removeService(operationHandlerName);
+    }
+
+    private static final String USE_MGMT_ENDPOINT = "use-management-endpoint";
+
+    /**
+     * Manual check because introducing a capability can't be done without a full refactoring.
+     * This has to go as soon as the management interfaces are redesigned.
+     * @param context the OperationContext
+     * @param otherManagementEndpoint : the address to check that may provide an exposed jboss-remoting endpoint.
+     * @throws OperationFailedException in case we can't remove the management resource.
+     */
+    public static void isManagementResourceRemoveable(OperationContext context, PathAddress otherManagementEndpoint) throws OperationFailedException {
+        ModelNode remotingConnector;
+        try {
+            remotingConnector = context.readResourceFromRoot(
+                    PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "jmx"), PathElement.pathElement("remoting-connector", "jmx")), false).getModel();
+        } catch (NoSuchElementException ex) {
+            return;
+        }
+        if (!remotingConnector.hasDefined(USE_MGMT_ENDPOINT) ||
+                (remotingConnector.hasDefined(USE_MGMT_ENDPOINT) && context.resolveExpressions(remotingConnector.get(USE_MGMT_ENDPOINT)).asBoolean(true))) {
+            try {
+                context.readResourceFromRoot(otherManagementEndpoint, false);
+            } catch (NoSuchElementException ex) {
+                throw RemotingLogger.ROOT_LOGGER.couldNotRemoveResource(context.getCurrentAddress());
+            }
+        }
     }
 }
