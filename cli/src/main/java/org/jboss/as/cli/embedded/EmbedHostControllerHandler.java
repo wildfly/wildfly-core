@@ -107,14 +107,6 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     }
 
     @Override
-    protected void recognizeArguments(CommandContext ctx) throws CommandFormatException {
-        final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
-        if(parsedCmd.getOtherProperties().size() > 1) {
-            throw new CommandFormatException("The command accepts only one argument but received: " + parsedCmd.getOtherProperties());
-        }
-    }
-
-    @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
 
         final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
@@ -128,8 +120,8 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
         final List<String> args = parsedCmd.getOtherProperties();
         if (!args.isEmpty()) {
-            if (args.size() != 1) {
-                throw new CommandFormatException("The command expects only one argument but got " + args);
+            if (args.size() != 0) {
+                throw new CommandFormatException("The command accepts 0 unnamed argument(s) but received: " + args);
             }
         }
 
