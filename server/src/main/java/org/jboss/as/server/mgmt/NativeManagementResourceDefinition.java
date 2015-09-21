@@ -104,7 +104,7 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
         super(RESOURCE_PATH,
                 ServerDescriptions.getResourceDescriptionResolver("core.management.native-interface"),
                 NativeManagementAddHandler.INSTANCE, NativeManagementRemoveHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
+                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
         setDeprecated(ModelVersion.create(3));
     }

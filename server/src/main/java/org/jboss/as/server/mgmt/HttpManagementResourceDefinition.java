@@ -131,7 +131,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
         super(RESOURCE_PATH,
                 ServerDescriptions.getResourceDescriptionResolver("core.management.http-interface"),
                 HttpManagementAddHandler.INSTANCE, HttpManagementRemoveHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
+                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
         setDeprecated(ModelVersion.create(1, 7));
     }
