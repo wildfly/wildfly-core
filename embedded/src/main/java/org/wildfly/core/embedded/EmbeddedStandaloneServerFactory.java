@@ -79,11 +79,11 @@ import org.wildfly.core.embedded.logging.EmbeddedLogger;
  * @author Thomas.Diesler@jboss.com
  * @see EmbeddedServerFactory
  */
-public class EmbeddedStandAloneServerFactory {
+public class EmbeddedStandaloneServerFactory {
 
     public static final String JBOSS_EMBEDDED_ROOT = "jboss.embedded.root";
 
-    private EmbeddedStandAloneServerFactory() {
+    private EmbeddedStandaloneServerFactory() {
     }
 
     public static StandaloneServer create(final File jbossHomeDir, final ModuleLoader moduleLoader, final Properties systemProps, final Map<String, String> systemEnv, final String[] cmdargs) {
