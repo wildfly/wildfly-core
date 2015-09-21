@@ -37,12 +37,14 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses ({
         AuditLogTestCase.class,
+        IgnoredResourcesProfileCloneTestCase.class,
         CompositeOperationTestCase.class,
         CoreResourceManagementTestCase.class,
         DeploymentRolloutFailureTestCase.class,
         DirectoryGroupingByTypeTestCase.class,
         ExtensionManagementTestCase.class,
         HcExtensionAndSubsystemManagementTestCase.class,
+        IgnoreUnusedConfigurationTestCase.class,
         IgnoredResourcesTestCase.class,
         JMXHostSubsystemTestCase.class,
         ManagementAccessTestCase.class,
