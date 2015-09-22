@@ -1,0 +1,11 @@
+SYNOPSIS
+
+   stop-embedded-host-controller
+
+DESCRIPTION
+
+   Stop the host controller process currently embedded in the CLI process.
+
+ARGUMENTS
+
+   n/a.
