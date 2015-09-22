@@ -49,7 +49,6 @@ import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
-import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -254,7 +253,7 @@ public abstract class AbstractControllerTestBase {
         }
 
         @Override
-        public OperationTransformer.TransformedOperation transformOperation(OperationContext operationContext, ModelNode operation)
+        public OperationTransformer.TransformedOperation transformOperation(TransformationInputs transformationInputs, ModelNode operation)
                 throws OperationFailedException {
             return new OperationTransformer.TransformedOperation(operation, OperationTransformer.TransformedOperation.ORIGINAL_RESULT);
         }
@@ -266,13 +265,13 @@ public abstract class AbstractControllerTestBase {
         }
 
         @Override
-        public Resource transformRootResource(OperationContext operationContext, Resource resource)
+        public Resource transformRootResource(TransformationInputs transformationInputs, Resource resource)
                 throws OperationFailedException {
             return resource;
         }
 
         @Override
-        public Resource transformRootResource(OperationContext operationContext, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
+        public Resource transformRootResource(TransformationInputs transformationInputs, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
             return resource;
         }
     }

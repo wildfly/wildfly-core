@@ -51,6 +51,7 @@ import org.jboss.as.controller.operations.DomainOperationTransformer;
 import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
+import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.dmr.ModelNode;
 
@@ -83,6 +84,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
         final List<TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation>> results = new ArrayList<TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation>>();
         final Map<String, HostControllerUpdateTask.ExecutedHostRequest> finalResults = new HashMap<String, HostControllerUpdateTask.ExecutedHostRequest>();
         final HostControllerUpdateTask.ProxyOperationListener listener = new HostControllerUpdateTask.ProxyOperationListener();
+        final Transformers.TransformationInputs transformationInputs = Transformers.TransformationInputs.getOrCreate(context);
         for (Map.Entry<String, ProxyController> entry : hostProxies.entrySet()) {
             // Create the proxy task
             final String host = entry.getKey();
@@ -99,7 +101,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
 
             ModelNode clonedOp = op.clone();
             clonedOp.get(OPERATION_HEADERS, DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID).set(CurrentOperationIdHolder.getCurrentOperationID());
-            final HostControllerUpdateTask task = new HostControllerUpdateTask(host, clonedOp, context, proxyController);
+            final HostControllerUpdateTask task = new HostControllerUpdateTask(host, clonedOp, context, proxyController, transformationInputs);
             // Execute the operation on the remote host
             final HostControllerUpdateTask.ExecutedHostRequest finalResult = task.execute(listener);
             multiphaseContext.recordHostRequest(host, finalResult);
