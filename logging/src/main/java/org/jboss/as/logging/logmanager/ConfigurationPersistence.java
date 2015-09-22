@@ -377,6 +377,9 @@ public class ConfigurationPersistence implements Configurator, LogContextConfigu
                 loggingConfig = FileResolver.resolvePath(context, "jboss.server.data.dir", PROPERTIES_FILE);
                 break;
             }
+            case EMBEDDED_SERVER: {
+                return;
+            }
             default: {
                 loggingConfig = FileResolver.resolvePath(context, "jboss.server.config.dir", PROPERTIES_FILE);
             }
