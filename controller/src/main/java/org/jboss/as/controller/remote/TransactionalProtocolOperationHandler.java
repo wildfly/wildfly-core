@@ -272,6 +272,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                     ControllerLogger.MGMT_OP_LOGGER.tracef("aborting (cancel received before request) for %d", context.getOperationId());
                     ModelNode response = new ModelNode();
                     response.get(OUTCOME).set(CANCELLED);
+                    context.getAttachment().initialize(context);
                     context.getAttachment().failed(response);
                 }
             } else {
