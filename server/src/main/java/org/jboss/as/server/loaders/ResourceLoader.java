@@ -2,6 +2,8 @@ package org.jboss.as.server.loaders;
 
 import org.jboss.modules.IterableResourceLoader;
 
+import java.io.File;
+
 /**
  * Resource loader.
  *
@@ -10,5 +12,7 @@ import org.jboss.modules.IterableResourceLoader;
 public interface ResourceLoader extends IterableResourceLoader {
 
     ResourceLoader getParent();
+
+    void addOverlay(String path, File content);
 
 }

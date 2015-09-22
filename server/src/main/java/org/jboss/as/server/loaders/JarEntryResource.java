@@ -24,6 +24,8 @@ package org.jboss.as.server.loaders;
 
 import org.jboss.modules.Resource;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -37,30 +39,38 @@ import java.util.jar.JarFile;
 final class JarEntryResource implements Resource {
     private final JarFile jarFile;
     private final JarEntry entry;
-    private final String relativePath;
+    private final String entryName;
     private final URL resourceURL;
+    private final File overlay;
+    private final URL overlayURL;
 
-    JarEntryResource(final JarFile jarFile, final JarEntry entry, final String relativePath, final URL resourceURL) {
+    JarEntryResource(final JarFile jarFile, final JarEntry entry, final String entryName, final URL resourceURL, final File overlay, final URL overlayURL) {
         this.jarFile = jarFile;
         this.entry = entry;
+        this.entryName = entryName;
         this.resourceURL = resourceURL;
-        this.relativePath = relativePath;
+        this.overlay = overlay;
+        this.overlayURL = overlayURL;
     }
 
     public String getName() {
-        return relativePath == null ? entry.getName() : entry.getName().substring(relativePath.length() + 1);
+        return entryName;
     }
 
     public URL getURL() {
-        return resourceURL;
+        return overlayURL != null ? overlayURL : resourceURL;
     }
 
     public InputStream openStream() throws IOException {
-        return jarFile.getInputStream(entry);
+        return overlay != null ? new FileInputStream(overlay) : jarFile.getInputStream(entry);
     }
 
     public long getSize() {
-        final long size = entry.getSize();
+        final long size = overlay != null ? overlay.length() : entry.getSize();
         return size == -1 ? 0 : size;
+    }
+
+    JarEntry getEntry() {
+        return entry;
     }
 }

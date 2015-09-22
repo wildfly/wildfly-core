@@ -69,6 +69,10 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     private static final String INDEX_FILE = "META-INF/PATHS.LIST";
 
     private final ResourceLoader parent;
+    // protected by {@code children}
+    private final Map<String, ResourceLoader> children = new HashMap<>();
+    // protected by {@code overlays}
+    private final Map<String, File> overlays = new HashMap<>();
     private final JarFile jarFile;
     private final String rootName;
     private final URL rootUrl;
@@ -102,6 +106,46 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
             throw new IllegalArgumentException("Invalid root file specified", e);
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Invalid root file specified", e);
+        }
+    }
+
+    void addChild(final String path, final ResourceLoader loader) {
+        synchronized (children) {
+            if (children.get(path) != null) {
+                throw new IllegalStateException("Child loader for '" + path + "' already registered"); // TODO: remove this check?
+            }
+            children.put(path, loader);
+        }
+        synchronized (overlays) {
+            for (final String overlayPath : overlays.keySet()) {
+                if (overlayPath.startsWith(path)) {
+                    loader.addOverlay(overlayPath.substring(path.length() + 1), overlays.get(overlayPath));
+                }
+            }
+        }
+    }
+
+    @Override
+    public void addOverlay(final String resourcePath, final File content) {
+        synchronized (children) {
+            if (children.size() > 0) {
+                for (final String path : children.keySet()) {
+                    if (resourcePath.startsWith(path)) {
+                        if (resourcePath.length() == path.length())
+                            throw new UnsupportedOperationException(); // TODO: remove this check?
+                        children.get(path).addOverlay(resourcePath.substring(path.length() + 1), content);
+                        return;
+                    }
+                }
+                return;
+            }
+        }
+        if (resourcePath.endsWith("/")) {
+            // TODO: remove this check? Shouldn't be validated in DUP?
+            throw new IllegalArgumentException("Invalid overlay path: '" + resourcePath + "'");
+        }
+        synchronized (overlays) {
+            overlays.put(resourcePath, content);
         }
     }
 
@@ -142,15 +186,15 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
 
     public synchronized ClassSpec getClassSpec(final String fileName) throws IOException {
         final ClassSpec spec = new ClassSpec();
-        final JarEntry entry = getJarEntry(fileName);
-        if (entry == null) {
+        final JarEntryResource resource = (JarEntryResource) getResource(fileName);
+        if (resource == null) {
             // no such entry
             return null;
         }
-        final long size = entry.getSize();
-        final InputStream is = jarFile.getInputStream(entry);
+        final long size = resource.getSize();
+        final InputStream is = resource.openStream();
         try {
-            if (size == -1) {
+            if (size == 0) {
                 // size unknown
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 final byte[] buf = new byte[16384];
@@ -159,7 +203,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
                     baos.write(buf, 0, res);
                 }
                 // done
-                CodeSource codeSource = createCodeSource(entry);
+                CodeSource codeSource = createCodeSource(resource.getEntry());
                 baos.close();
                 is.close();
                 spec.setBytes(baos.toByteArray());
@@ -175,7 +219,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
                 // consume remainder so that cert check doesn't fail in case of wonky JARs
                 while (is.read() != -1) {}
                 // done
-                CodeSource codeSource = createCodeSource(entry);
+                CodeSource codeSource = createCodeSource(resource.getEntry());
                 is.close();
                 spec.setBytes(bytes);
                 spec.setCodeSource(codeSource);
@@ -190,7 +234,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
 
     // this MUST only be called after the input stream is fully read (see MODULES-201)
     private CodeSource createCodeSource(final JarEntry entry) {
-        final CodeSigner[] entryCodeSigners = entry.getCodeSigners();
+        final CodeSigner[] entryCodeSigners = entry != null ? entry.getCodeSigners() : null;
         final CodeSigners codeSigners = entryCodeSigners == null || entryCodeSigners.length == 0 ? EMPTY_CODE_SIGNERS : new CodeSigners(entryCodeSigners);
         CodeSource codeSource = codeSources.get(codeSigners);
         if (codeSource == null) {
@@ -205,10 +249,19 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
 
     public PackageSpec getPackageSpec(final String name) throws IOException {
         final Manifest manifest;
-        if (relativePath == null) {
-            manifest = jarFile.getManifest();
+        File overlay;
+        synchronized (overlays) {
+            overlay = overlays.get(JarFile.MANIFEST_NAME);
+        }
+        if (overlay != null) {
+            InputStream inputStream = new FileInputStream(overlay);
+            try {
+                manifest = new Manifest(inputStream);
+            } finally {
+                IOUtils.safeClose(inputStream);
+            }
         } else {
-            JarEntry jarEntry = getJarEntry("META-INF/MANIFEST.MF");
+            JarEntry jarEntry = getJarEntry(JarFile.MANIFEST_NAME);
             if (jarEntry == null) {
                 manifest = null;
             } else {
@@ -235,7 +288,11 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
             if (name.endsWith("/")) return null;
             final JarFile jarFile = this.jarFile;
             final JarEntry entry = getJarEntry(name);
-            if (entry == null) {
+            File overlay;
+            synchronized (overlays) {
+                overlay = overlays.get(name);
+            }
+            if (entry == null && overlay == null) {
                 return null;
             }
             final URI uri;
@@ -259,7 +316,9 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
             } catch (URISyntaxException x) {
                 throw new IllegalStateException(x);
             }
-            return new JarEntryResource(jarFile, entry, relativePath, new URL(null, getJarURI(uri, entry.getName()).toString(), (URLStreamHandler) null));
+            final URL overlayURL = overlay != null ? overlay.toURI().toURL() : null;
+            final URL entryURL = entry != null ? new URL(null, getJarURI(uri, entry.getName()).toString(), (URLStreamHandler) null) : null;
+            return new JarEntryResource(jarFile, entry, name, entryURL, overlay, overlayURL);
         } catch (MalformedURLException e) {
             // must be invalid...?  (todo: check this out)
             return null;
@@ -278,22 +337,38 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
             private Resource next;
 
             public boolean hasNext() {
-                while (next == null) {
-                    if (! entries.hasMoreElements()) {
-                        return false;
-                    }
-                    final JarEntry entry = entries.nextElement();
-                    final String name = entry.getName();
-                    if ((recursive ? PathUtils.isChild(startName, name) : PathUtils.isDirectChild(startName, name))) {
-                        if (!entry.isDirectory()) {
-                            try {
-                                next = new JarEntryResource(jarFile, entry, relativePath, getJarURI(new File(jarFile.getName()).toURI(), entry.getName()).toURL());
-                            } catch (Exception ignored) {
+                synchronized (overlays) {
+                    final Iterator<String> overlayPaths = overlays.keySet().iterator();
+                    while (next == null) {
+                        if (!entries.hasMoreElements() && !overlayPaths.hasNext()) {
+                            return false;
+                        }
+                        if (overlayPaths.hasNext()) {
+                            final String overlayPath = overlayPaths.next();
+                            if ((recursive ? PathUtils.isChild(startName, overlayPath) : PathUtils.isDirectChild(startName, overlayPath))) {
+                                try {
+                                    final File overlay = overlays.get(overlayPath);
+                                    final URL overlayURL = overlay != null ? overlay.toURI().toURL() : null;
+                                    next = new JarEntryResource(jarFile, null, null, null, overlay, overlayURL);
+                                } catch (Exception ignored) {
+                                }
+                            }
+                        } else if (entries.hasMoreElements()) {
+                            final JarEntry entry = entries.nextElement();
+                            final String name = (relativePath != null && entry.getName().startsWith(relativePath)) ? entry.getName().substring(relativePath.length() + 1) : entry.getName();
+                            final boolean isOverlayed = overlays.containsKey(name);
+                            if (!isOverlayed && (recursive ? PathUtils.isChild(startName, entry.getName()) : PathUtils.isDirectChild(startName, entry.getName()))) {
+                                if (!entry.isDirectory()) {
+                                    try {
+                                        next = new JarEntryResource(jarFile, entry, name, getJarURI(new File(jarFile.getName()).toURI(), entry.getName()).toURL(), null, null);
+                                    } catch (Exception ignored) {
+                                    }
+                                }
                             }
                         }
                     }
+                    return true;
                 }
-                return true;
             }
 
             public Resource next() {

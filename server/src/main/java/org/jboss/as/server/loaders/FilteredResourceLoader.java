@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.loaders;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -87,6 +88,10 @@ final class FilteredResourceLoader implements ResourceLoader {
 
     ResourceLoader getLoader() {
         return loader;
+    }
+
+    public void addOverlay(final String path, final File content) {
+        loader.addOverlay(path, content);
     }
 
 }

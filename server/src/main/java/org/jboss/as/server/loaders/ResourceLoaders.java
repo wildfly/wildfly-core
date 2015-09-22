@@ -152,10 +152,14 @@ public final class ResourceLoaders {
         if (paths.contains(subResPath)) {
             if (loader instanceof FileResourceLoader) {
                 final FileResourceLoader fileLoader = (FileResourceLoader) loader;
-                return new FileResourceLoader(fileLoader, name, new File(fileLoader.getRoot(), subResPath), AccessController.getContext());
+                final FileResourceLoader newFileLoader = new FileResourceLoader(fileLoader, name, new File(fileLoader.getRoot(), subResPath), AccessController.getContext());
+                fileLoader.addChild(subResPath, newFileLoader);
+                return newFileLoader;
             } else if (loader instanceof JarFileResourceLoader) {
                 final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
-                return new JarFileResourceLoader(jarLoader, name, new JarFile(jarLoader.getFile()), subResPath);
+                final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(jarLoader, name, new JarFile(jarLoader.getFile()), subResPath);
+                jarLoader.addChild(subResPath, newJarLoader);
+                return newJarLoader;
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -165,11 +169,17 @@ public final class ResourceLoaders {
                 throw new IllegalArgumentException("Subresource '" + subResPath + "' does not exist");
             }
             if (loader instanceof FileResourceLoader) {
-                return new JarFileResourceLoader(loader, name, new JarFile(resource.getURL().getFile()));
+                final FileResourceLoader fileLoader = (FileResourceLoader) loader;
+                final JarFileResourceLoader newLoader = new JarFileResourceLoader(loader, name, new JarFile(resource.getURL().getFile()));
+                fileLoader.addChild(subResPath, newLoader);
+                return newLoader;
             } else if (loader instanceof JarFileResourceLoader) {
                 final File tempFile = new File(TMP_ROOT, getLastToken(subResPath) + ".tmp" + System.currentTimeMillis());
                 IOUtils.copyAndClose(resource.openStream(), new FileOutputStream(tempFile));
-                return new DelegatingResourceLoader(new JarFileResourceLoader(loader, name, new JarFile(tempFile))) {
+                final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
+                final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(loader, name, new JarFile(tempFile));
+                jarLoader.addChild(subResPath, newJarLoader);
+                return new DelegatingResourceLoader(newJarLoader) {
                     @Override
                     public void close() {
                         try {

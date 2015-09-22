@@ -26,6 +26,7 @@ import org.jboss.modules.ClassSpec;
 import org.jboss.modules.PackageSpec;
 import org.jboss.modules.Resource;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -92,4 +93,8 @@ class DelegatingResourceLoader implements ResourceLoader {
         return getDelegate().getParent();
     }
 
+    @Override
+    public void addOverlay(String path, File content) {
+        getDelegate().addOverlay(path, content);
+    }
 }

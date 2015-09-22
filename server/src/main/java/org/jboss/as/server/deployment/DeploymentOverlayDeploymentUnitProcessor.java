@@ -79,8 +79,9 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
             return;
         }
         final Set<String> paths = new HashSet<String>();
-
-            String path = PathUtils.relativize(PathUtils.canonicalize(entry.getKey()));
+        for (final Map.Entry<String, byte[]> entry : overlayEntries.entrySet()) {
+            if (entry.getKey().endsWith("/")) throw new UnsupportedOperationException("Damn!");
+            String path = PathUtils.relativize(PathUtils.canonicalize(entry.getKey())); // TODO: eliminate - should be optimized in management code
             if (path.endsWith("/")) {
                 path = path.substring(0, path.length() - 1);
             }
@@ -90,6 +91,7 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
 
                     paths.add(path);
                     File content = contentRepository.getContent(entry.getValue());
+                    deploymentRoot.getLoader().addOverlay(path, content);
                     VirtualFile parent = mountPoint.getParent();
                     List<VirtualFile> createParents = new ArrayList<>();
                     while (!parent.exists()) {

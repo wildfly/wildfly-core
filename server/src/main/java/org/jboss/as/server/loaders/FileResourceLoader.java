@@ -51,8 +51,11 @@ import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.NoSuchElementException;
 import java.util.jar.Manifest;
 
@@ -68,6 +71,10 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     private final Manifest manifest;
     private final CodeSource codeSource;
     private final AccessControlContext context;
+    // protected by {@code children}
+    private final Map<String, ResourceLoader> children = new HashMap<>();
+    // protected by {@code overlays}
+    private final Map<String, File> overlays = new HashMap<>();
 
     FileResourceLoader(final ResourceLoader parent, final String rootName, final File root, final AccessControlContext context) {
         if (root == null) {
@@ -103,6 +110,46 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
         this.context = context;
         codeSource = new CodeSource(rootUrl, (CodeSigner[])null);
+    }
+
+    void addChild(final String path, final ResourceLoader loader) {
+        synchronized (children) {
+            if (children.get(path) != null) {
+                throw new IllegalStateException("Child loader for '" + path + "' already registered"); // TODO: remove this check?
+            }
+            children.put(path, loader);
+        }
+        synchronized (overlays) {
+            for (final String overlayPath : overlays.keySet()) {
+                if (overlayPath.startsWith(path)) {
+                    loader.addOverlay(overlayPath.substring(path.length() + 1), overlays.get(overlayPath));
+                }
+            }
+        }
+    }
+
+    @Override
+    public void addOverlay(final String resourcePath, final File content) {
+        synchronized (children) {
+            if (children.size() > 0) {
+                for (final String path : children.keySet()) {
+                    if (resourcePath.startsWith(path)) {
+                        if (resourcePath.length() == path.length())
+                            throw new UnsupportedOperationException(); // TODO: remove this check?
+                        children.get(path).addOverlay(resourcePath.substring(path.length() + 1), content);
+                        return;
+                    }
+                }
+                return;
+            }
+        }
+        if (resourcePath.endsWith("/")) {
+            // TODO: remove this check? Shouldn't be validated in DUP?
+            throw new IllegalArgumentException("Invalid overlay path: '" + resourcePath + "'");
+        }
+        synchronized (overlays) {
+            overlays.put(resourcePath, content);
+        }
     }
 
     File getRoot() {
@@ -152,14 +199,14 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     }
 
     private ClassSpec doGetClassSpec(final String fileName) throws IOException {
-        final File file = new File(root, fileName);
-        if (! file.exists()) {
+        final Resource resource = getResource(fileName);
+        if (resource == null) {
             return null;
         }
-        final long size = file.length();
+        final long size = resource.getSize();
         final ClassSpec spec = new ClassSpec();
         spec.setCodeSource(codeSource);
-        final InputStream is = new FileInputStream(file);
+        final InputStream is = resource.openStream();
         try {
             if (size <= (long) Integer.MAX_VALUE) {
                 final int castSize = (int) size;
@@ -209,7 +256,8 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         if (name == null) return null;
         final String canonPath = PathUtils.canonicalize(PathUtils.relativize(name));
         if (canonPath.endsWith("/")) return null;
-        final File file = new File(root, canonPath);
+        final File overlay = overlays.get(canonPath);
+        final File file = overlay != null ? overlay : new File(root, canonPath);
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             return doPrivileged(new PrivilegedAction<Resource>() {
@@ -237,18 +285,22 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     }
 
     class Itr implements Iterator<Resource> {
+        private final String startName;
         private final String base;
         private final String[] names;
         private final boolean recursive;
         private int i = 0;
         private Itr nested;
         private Resource next;
+        private Iterator<String> overlayPaths;
 
-        Itr(final String base, final String[] names, final boolean recursive) {
+        Itr(final String startName, final String base, final String[] names, final Iterator<String> overlayPaths, final boolean recursive) {
             assert PathUtils.isRelative(base);
             assert names != null && names.length > 0;
+            this.startName = startName;
             this.base = base;
             this.names = names;
+            this.overlayPaths = overlayPaths;
             this.recursive = recursive;
         }
 
@@ -257,15 +309,31 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
             if (next != null) {
                 return true;
             }
+            String overlayPath;
+            while (overlayPaths != null && overlayPaths.hasNext()) {
+                overlayPath = overlayPaths.next();
+                if ((recursive ? PathUtils.isChild(startName, overlayPath) : PathUtils.isDirectChild(startName, overlayPath))) {
+                    try {
+                        final File overlay = overlays.get(overlayPath);
+                        final URL overlayURL = overlay.toURI().toURL();
+                        next = new FileEntryResource(overlayPath, overlay, overlayURL, context);
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
             final String base = this.base;
             while (i < names.length) {
                 final String current = names[i];
                 final String full = base.isEmpty() ? current : base + "/" + current;
+                if (FileResourceLoader.this.overlays.containsKey(full)) {
+                    i++;
+                    continue;
+                }
                 final File file = new File(root, full);
                 if (recursive && nested == null) {
                     final String[] children = file.list();
                     if (children != null && children.length > 0) {
-                        nested = new Itr(full, children, recursive);
+                        nested = new Itr(startName, full, children, null, recursive);
                     }
                 }
                 if (nested != null) {
@@ -306,10 +374,14 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         final String canonPath = PathUtils.canonicalize(PathUtils.relativize(startPath));
         final File start = new File(root, canonPath);
         final String[] children = start.list();
-        if (children == null || children.length == 0) {
+        final Set<String> overlayPaths;
+        synchronized (overlays) {
+            overlayPaths = overlays.keySet();
+        }
+        if (overlayPaths.size() == 0 && (children == null || children.length == 0)) {
             return Collections.<Resource>emptySet().iterator();
         }
-        return new Itr(canonPath, children, recursive);
+        return new Itr(startPath, canonPath, children, overlayPaths.iterator(), recursive);
     }
 
     public Collection<String> getPaths() {
