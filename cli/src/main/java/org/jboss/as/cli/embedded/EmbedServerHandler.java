@@ -275,7 +275,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         File standaloneDir =  new File(jbossHome, "standalone");
         File configDir =  new File(standaloneDir, "configuration");
         File logDir =  new File(standaloneDir, "log");
-        File bootLog = new File(logDir, "boot.log");
+        File bootLog = new File(logDir, "server.log");
         File loggingProperties = new File(configDir, "logging.properties");
         if (loggingProperties.exists()) {
 
