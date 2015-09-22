@@ -134,7 +134,7 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
     @Override
     public void handleEnd(final Channel channel) {
         try {
-            channel.close();
+            channel.writeShutdown();
         } catch (IOException e) {
             ProtocolLogger.ROOT_LOGGER.errorClosingChannel(e.getMessage());
         }
