@@ -503,6 +503,7 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
         op.get(OP_ADDR).set(address);
 
         boolean foundMaxThreads = false;
+        boolean foundCoreThreads = false;
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             Element element = nextElement(reader, expectedNs);
             switch (element) {
@@ -510,6 +511,12 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
                     String scaledCount = parseCount(reader, threadsNamespace);
                     PoolAttributeDefinitions.MAX_THREADS.parseAndSetParameter(scaledCount, op, reader);
                     foundMaxThreads = true;
+                    break;
+                }
+                case CORE_THREADS: {
+                    String scaledCount = parseCount(reader, threadsNamespace);
+                    PoolAttributeDefinitions.CORE_THREADS.parseAndSetParameter(scaledCount, op, reader);
+                    foundCoreThreads = true;
                     break;
                 }
                 case KEEPALIVE_TIME: {
