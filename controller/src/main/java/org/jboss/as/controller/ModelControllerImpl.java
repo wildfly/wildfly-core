@@ -388,6 +388,7 @@ class ModelControllerImpl implements ModelController {
                     }
 
                     context.addStep(responseNode, operation, prepareStep, OperationContext.Stage.MODEL);
+                    ControllerLogger.MGMT_OP_LOGGER.tracef("Executing %s", operation);
                     context.executeOperation();
                     responseStreams = context.getResponseStreams();
                 } finally {

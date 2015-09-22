@@ -68,6 +68,7 @@ import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.controller.transform.OperationTransformer;
+import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.plan.RolloutPlanController;
@@ -292,6 +293,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                 HOST_CONTROLLER_LOGGER.tracef("Rollout plan is %s", rolloutPlan);
             }
 
+            final Transformers.TransformationInputs transformationInputs = Transformers.TransformationInputs.getOrCreate(context);
             final ServerTaskExecutor taskExecutor = new ServerTaskExecutor(context, submittedTasks, preparedResults) {
 
                 @Override
@@ -312,7 +314,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                     }
                     // Transform the server-results
                     final TransformingProxyController remoteProxyController = (TransformingProxyController) proxy;
-                    final OperationTransformer.TransformedOperation transformed = multiphaseContext.transformServerOperation(hostName, remoteProxyController, context, original);
+                    final OperationTransformer.TransformedOperation transformed = multiphaseContext.transformServerOperation(hostName, remoteProxyController, transformationInputs, original);
                     final ModelNode transformedOperation = transformed.getTransformedOperation();
                     final OperationResultTransformer resultTransformer = transformed.getResultTransformer();
                     final TransactionalProtocolClient client = remoteProxyController.getProtocolClient();

@@ -29,16 +29,16 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
-import javax.security.auth.Subject;
 import java.io.DataInput;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.CountDownLatch;
 
+import javax.security.auth.Subject;
+
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
-import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
@@ -176,17 +176,18 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                 final ModelNode failure = new ModelNode();
                 failure.get(OUTCOME).set(FAILED);
                 failure.get(FAILURE_DESCRIPTION).set(e.getClass().getName() + ":" + e.getMessage());
-                control.operationFailed(failure);
+                executeRequestContext.failed(failure);
                 attachmentsProxy.shutdown(e);
                 return;
             }
 
-            if (result.getResponseNode().hasDefined(FAILURE_DESCRIPTION)) {
-                control.operationFailed(result.getResponseNode());
+            // At this point the transactional request either failed prior to preparing the transaction,
+            // or it has completed.
+            if (!executeRequestContext.prepared) {
+                // If internalExecute did not result in a prepare, it failed
+                executeRequestContext.failed(result.getResponseNode());
             } else {
-                // controller.execute() will block in OperationControl.prepared until the {@code ProxyController}
-                // sent a CompleteTxRequest, which will either commit or rollback the operation
-                control.operationCompleted(result);
+                executeRequestContext.completed(result);
             }
         }
     }
@@ -228,7 +229,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
      * @param control the operation transaction control
      * @return the result of the executed operation
      */
-    protected OperationResponse internalExecute(final Operation operation, final ManagementRequestContext<?> context, final OperationMessageHandler messageHandler, final ProxyController.ProxyOperationControl control) {
+    protected OperationResponse internalExecute(final Operation operation, final ManagementRequestContext<?> context, final OperationMessageHandler messageHandler, final ModelController.OperationTransactionControl control) {
         // Execute the operation
         return controller.execute(
                 operation,
@@ -288,25 +289,17 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
 
     }
 
-    static class ProxyOperationControlProxy implements ProxyController.ProxyOperationControl {
+    static class ProxyOperationControlProxy implements ModelController.OperationTransactionControl {
 
         private final ExecuteRequestContext requestContext;
+
         ProxyOperationControlProxy(ExecuteRequestContext requestContext) {
             this.requestContext = requestContext;
         }
 
         @Override
-        public void operationFailed(final ModelNode response) {
-            requestContext.failed(response);
-        }
-
-        @Override
-        public void operationCompleted(final OperationResponse response) {
-            requestContext.completed(response);
-        }
-
-        @Override
         public void operationPrepared(final ModelController.OperationTransaction transaction, final ModelNode result) {
+
             requestContext.prepare(transaction, result);
             try {
                 // Wait for the commit or rollback message
@@ -391,20 +384,26 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             assert activeTx == null;
             // 1) initialize (set the response information)
             this.responseChannel = context;
+            ControllerLogger.MGMT_OP_LOGGER.tracef("Initialized for %d", getOperationId());
+
         }
 
         synchronized void prepare(final ModelController.OperationTransaction tx, final ModelNode result) {
+            assert !prepared;
             if(rollbackOnPrepare) {
+                prepared = true; // we count as prepared no matter what. Prepare was invoked
+                                 // and the other side has told us it's not expecting a prepare message,
+                                 // so the 'prepare' communication work this object tracks is done
                 try {
                     tx.rollback();
+                    ControllerLogger.MGMT_OP_LOGGER.tracef("rolled back on prepare for %d  --- interrupted: %s", getOperationId(), (Object) Thread.currentThread().isInterrupted());
                 } finally {
                     txCompletedLatch.countDown();
                 }
 
-                // TODO send response ?
+                // no response to remote side here; the response will come when the now rolled-back op returns
 
             } else {
-                assert !prepared;
                 assert activeTx == null;
                 assert responseChannel != null;
                 ControllerLogger.MGMT_OP_LOGGER.tracef("sending prepared response for %d  --- interrupted: %s", getOperationId(), (Object) Thread.currentThread().isInterrupted());
@@ -412,7 +411,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                     // 2) send the operation-prepared notification (just clear response info)
                     sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_PREPARED, result);
                     activeTx = tx;
-                    prepared = true;
+                    prepared = true; // Here we only mark the op prepared once the message the other side expects has gone out
                 } catch (IOException e) {
                     getResultHandler().failed(e);
                 } finally {
@@ -434,7 +433,6 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             } else if (txCompleted) {
                 // A 2nd call means a cancellation from the remote side after the tx was committed/rolled back
                 // This would usually mean the completion of the request is hanging for some reason
-                assert !commit; // can only be rollback if this has already been called
                 ControllerLogger.MGMT_OP_LOGGER.tracef("completeTx (post-commit cancel) for %d", getOperationId());
                 cancel(context);
             } else {
@@ -471,9 +469,10 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         }
 
         synchronized void completed(final OperationResponse response) {
+
             assert prepared;
             assert responseChannel != null;
-            ControllerLogger.MGMT_OP_LOGGER.tracef("sending completed response for %d  --- interrupted: %s", getOperationId(), (Object) Thread.currentThread().isInterrupted());
+            ControllerLogger.MGMT_OP_LOGGER.tracef("sending completed response %s for %d  --- interrupted: %s", response.getResponseNode(), getOperationId(), (Object) Thread.currentThread().isInterrupted());
 
             streamSupport.registerStreams(operation.getOperationId(), response.getInputStreams());
 

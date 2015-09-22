@@ -149,6 +149,13 @@ public class DomainLifecycleUtil {
                         .addProcessControllerJavaOptions(javaOpts);
             }
 
+            if (configuration.isEnableAssertions()) {
+                commandBuilder.addProcessControllerJavaOption("-ea");
+                commandBuilder.addHostControllerJavaOption("-ea");
+                // This doesn't work; the HC Main class treats this as an invalid param
+                //commandBuilder.addServerArgument("-ea");
+            }
+
             final String jbossArgs = System.getProperty("jboss.domain.server.args");
             if (jbossArgs != null) {
                 commandBuilder.addServerArguments(jbossArgs.split("\\s+"));

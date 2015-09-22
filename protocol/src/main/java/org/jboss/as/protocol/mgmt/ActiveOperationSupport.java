@@ -148,7 +148,10 @@ class ActiveOperationSupport {
     protected <T, A> ActiveOperation<T, A> registerActiveOperation(final Integer id, A attachment, ActiveOperation.CompletedCallback<T> callback) {
         lock.lock(); try {
             // Check that we still allow registration
-            assert ! shutdown;
+            // TODO WFCORE-199 distinguish client uses from server uses and limit this check to server uses
+            // Using id==null may be one way to do this, but we need to consider ops that involve multiple requests
+            // TODO WFCORE-845 consider using an IllegalStateException for this
+            //assert ! shutdown;
             final Integer operationId;
             if(id == null) {
                 // If we did not get an operationId, create a new one

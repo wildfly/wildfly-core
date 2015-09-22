@@ -51,6 +51,7 @@ import org.jboss.as.controller.operations.DomainOperationTransformer;
 import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
+import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.dmr.ModelNode;
 
@@ -83,6 +84,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
         final List<TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation>> results = new ArrayList<TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation>>();
         final Map<String, HostControllerUpdateTask.ExecutedHostRequest> finalResults = new HashMap<String, HostControllerUpdateTask.ExecutedHostRequest>();
         final HostControllerUpdateTask.ProxyOperationListener listener = new HostControllerUpdateTask.ProxyOperationListener();
+        final Transformers.TransformationInputs transformationInputs = Transformers.TransformationInputs.getOrCreate(context);
         for (Map.Entry<String, ProxyController> entry : hostProxies.entrySet()) {
             // Create the proxy task
             final String host = entry.getKey();
@@ -99,7 +101,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
 
             ModelNode clonedOp = op.clone();
             clonedOp.get(OPERATION_HEADERS, DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID).set(CurrentOperationIdHolder.getCurrentOperationID());
-            final HostControllerUpdateTask task = new HostControllerUpdateTask(host, clonedOp, context, proxyController);
+            final HostControllerUpdateTask task = new HostControllerUpdateTask(host, clonedOp, context, proxyController, transformationInputs);
             // Execute the operation on the remote host
             final HostControllerUpdateTask.ExecutedHostRequest finalResult = task.execute(listener);
             multiphaseContext.recordHostRequest(host, finalResult);
@@ -211,13 +213,16 @@ public class DomainSlaveHandler implements OperationStepHandler {
                 }
             }
             // Now get the final results from the hosts
-            boolean patient = !interruptThread;
+            // If we've been interrupted, only wait 50 ms for a final response, otherwise wait indefinitely
+            // Before WFCORE-996 was analyzed, in the interrupted case we would wait 0 ms. 50 ms is a
+            // workaround attempt to avoid a race
+            int patient = interruptThread ? 50 : -1;
             for(final TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared : results) {
                 final String hostName = prepared.getOperation().getName();
                 final HostControllerUpdateTask.ExecutedHostRequest request = finalResults.get(hostName);
                 final Future<OperationResponse> future = prepared.getFinalResult();
                 try {
-                    final OperationResponse finalResponse = patient ? future.get() : future.get(0, TimeUnit.MILLISECONDS);
+                    final OperationResponse finalResponse = patient < 0 ? future.get() : future.get(patient, TimeUnit.MILLISECONDS);
                     final ModelNode transformedResult = request.transformResult(finalResponse.getResponseNode());
                     multiphaseContext.addHostControllerFinalResult(hostName, transformedResult);
 
@@ -233,13 +238,14 @@ public class DomainSlaveHandler implements OperationStepHandler {
                     future.cancel(true);
                     // We suppressed an interrupt, so don't block indefinitely waiting for other responses;
                     // just grab them if they are already available
-                    patient = false;
+                    patient = patient == 0 ? 0 : 50; // if we were already really impatient, we still are
                     HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
                 } catch (ExecutionException e) {
                     HOST_CONTROLLER_LOGGER.caughtExceptionAwaitingFinalResponse(e.getCause(), hostName);
                 } catch (TimeoutException e) {
                     // This only happens if we were interrupted previously, so treat it that way
                     future.cancel(true);
+                    patient = 0; // we already waited 50 ms since we sent out commit/rollback msgs; don't need to wait so long any more
                     HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
                 }
             }
