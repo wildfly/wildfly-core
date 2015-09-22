@@ -213,13 +213,16 @@ public class DomainSlaveHandler implements OperationStepHandler {
                 }
             }
             // Now get the final results from the hosts
-            boolean patient = !interruptThread;
+            // If we've been interrupted, only wait 50 ms for a final response, otherwise wait indefinitely
+            // Before WFCORE-996 was analyzed, in the interrupted case we would wait 0 ms. 50 ms is a
+            // workaround attempt to avoid a race
+            int patient = interruptThread ? 50 : -1;
             for(final TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared : results) {
                 final String hostName = prepared.getOperation().getName();
                 final HostControllerUpdateTask.ExecutedHostRequest request = finalResults.get(hostName);
                 final Future<OperationResponse> future = prepared.getFinalResult();
                 try {
-                    final OperationResponse finalResponse = patient ? future.get() : future.get(0, TimeUnit.MILLISECONDS);
+                    final OperationResponse finalResponse = patient < 0 ? future.get() : future.get(patient, TimeUnit.MILLISECONDS);
                     final ModelNode transformedResult = request.transformResult(finalResponse.getResponseNode());
                     multiphaseContext.addHostControllerFinalResult(hostName, transformedResult);
 
@@ -235,13 +238,14 @@ public class DomainSlaveHandler implements OperationStepHandler {
                     future.cancel(true);
                     // We suppressed an interrupt, so don't block indefinitely waiting for other responses;
                     // just grab them if they are already available
-                    patient = false;
+                    patient = patient == 0 ? 0 : 50; // if we were already really impatient, we still are
                     HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
                 } catch (ExecutionException e) {
                     HOST_CONTROLLER_LOGGER.caughtExceptionAwaitingFinalResponse(e.getCause(), hostName);
                 } catch (TimeoutException e) {
                     // This only happens if we were interrupted previously, so treat it that way
                     future.cancel(true);
+                    patient = 0; // we already waited 50 ms since we sent out commit/rollback msgs; don't need to wait so long any more
                     HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
                 }
             }

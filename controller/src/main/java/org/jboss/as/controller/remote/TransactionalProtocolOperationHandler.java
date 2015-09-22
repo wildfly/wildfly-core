@@ -433,7 +433,6 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             } else if (txCompleted) {
                 // A 2nd call means a cancellation from the remote side after the tx was committed/rolled back
                 // This would usually mean the completion of the request is hanging for some reason
-                assert !commit; // can only be rollback if this has already been called
                 ControllerLogger.MGMT_OP_LOGGER.tracef("completeTx (post-commit cancel) for %d", getOperationId());
                 cancel(context);
             } else {
