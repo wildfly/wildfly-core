@@ -41,12 +41,12 @@ public class ThreadsSubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("threads-subsystem-2_0.xml");
+        return readResource("threads-subsystem-2_1.xml");
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-threads_2_0.xsd";
+        return "schema/wildfly-threads_2_1.xsd";
     }
 
     // TODO WFCORE-1353 means this doesn't have to always fail now; consider just deleting this

@@ -512,6 +512,11 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
                     foundMaxThreads = true;
                     break;
                 }
+                case CORE_THREADS: {
+                    String scaledCount = parseCount(reader, threadsNamespace);
+                    PoolAttributeDefinitions.CORE_THREADS.parseAndSetParameter(scaledCount, op, reader);
+                    break;
+                }
                 case KEEPALIVE_TIME: {
                     PoolAttributeDefinitions.KEEPALIVE_TIME.parseAndSetParameter(op, reader);
                     break;

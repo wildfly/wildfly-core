@@ -32,7 +32,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.threads.JBossThreadPoolExecutor;
+import org.jboss.threads.JBossThreadPoolExecutorReuseIdleThreads;
 
 /**
  * Service responsible for creating, starting and stopping a thread pool executor with an unbounded queue.
@@ -45,17 +45,26 @@ public class UnboundedQueueThreadPoolService implements Service<ManagedJBossThre
     private ManagedJBossThreadPoolExecutorService executor;
 
     private int maxThreads;
+    private int coreThreads;
     private TimeSpec keepAlive;
 
     public UnboundedQueueThreadPoolService(int maxThreads, TimeSpec keepAlive) {
         this.maxThreads = maxThreads;
+        this.keepAlive = keepAlive;
+        this.coreThreads = maxThreads;
+    }
+
+    public UnboundedQueueThreadPoolService(int coreThreads, int maxThreads, TimeSpec keepAlive) {
+        this.maxThreads = maxThreads;
+        this.coreThreads = coreThreads;
         this.keepAlive = keepAlive;
     }
 
     public synchronized void start(final StartContext context) throws StartException {
         final TimeSpec keepAliveSpec = keepAlive;
         long keepAliveTime = keepAliveSpec == null ? Long.MAX_VALUE : keepAliveSpec.getUnit().toNanos(keepAliveSpec.getDuration());
-        final JBossThreadPoolExecutor jbossExecutor = new JBossThreadPoolExecutor(maxThreads, maxThreads, keepAliveTime, TimeUnit.NANOSECONDS, new LinkedBlockingQueue<Runnable>(), threadFactoryValue.getValue());
+        final JBossThreadPoolExecutorReuseIdleThreads jbossExecutor = new JBossThreadPoolExecutorReuseIdleThreads(coreThreads, maxThreads, keepAliveTime, TimeUnit.NANOSECONDS,
+              new LinkedBlockingQueue<Runnable>(), threadFactoryValue.getValue());
         executor = new ManagedJBossThreadPoolExecutorService(jbossExecutor);
     }
 
@@ -86,14 +95,24 @@ public class UnboundedQueueThreadPoolService implements Service<ManagedJBossThre
         final ManagedJBossThreadPoolExecutorService executor = this.executor;
         if(executor != null) {
             if (maxThreads < this.maxThreads) {
-                executor.setCoreThreads(maxThreads);
+                executor.setCoreThreads(coreThreads);
                 executor.setMaxThreads(maxThreads);
             } else {
                 executor.setMaxThreads(maxThreads);
-                executor.setCoreThreads(maxThreads);
+                executor.setCoreThreads(coreThreads);
             }
         }
         this.maxThreads = maxThreads;
+    }
+
+    public synchronized void setCoreThreads(final int coreThreads) {
+        final ManagedJBossThreadPoolExecutorService executor = this.executor;
+        if(executor != null) {
+            if (coreThreads != this.coreThreads) {
+                executor.setCoreThreads(coreThreads);
+            }
+        }
+        this.coreThreads = coreThreads;
     }
 
     public synchronized void setKeepAlive(final TimeSpec keepAlive) {
@@ -127,6 +146,11 @@ public class UnboundedQueueThreadPoolService implements Service<ManagedJBossThre
     public int getLargestThreadCount() {
         final ManagedJBossThreadPoolExecutorService executor = getValue();
         return executor.getLargestThreadCount();
+    }
+
+    public int getCoreThreads() {
+        final ManagedJBossThreadPoolExecutorService executor = getValue();
+        return executor.getCoreThreads();
     }
 
     public int getRejectedCount() {
