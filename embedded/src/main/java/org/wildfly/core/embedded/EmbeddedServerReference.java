@@ -67,12 +67,16 @@ public final class EmbeddedServerReference implements StandaloneServer, HostCont
     }
 
     public StandaloneServer getStandaloneServer() {
-        return (StandaloneServer) server;
+        if (server instanceof StandaloneServer)
+            return (StandaloneServer) server;
+        return null;
     }
 
     @Override
     public HostController getHostController() {
-        return (HostController) server;
+        if (server instanceof HostController)
+            return (HostController) server;
+        return null;
     }
 
     private Object invokeOnServer(final Method method, Object... args) {

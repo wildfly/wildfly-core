@@ -52,7 +52,7 @@ class StopEmbeddedHostControllerHandler extends CommandHandlerWithHelp {
     @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
         EmbeddedServerLaunch hostControllerLaunch = hostControllerReference.get();
-        if (hostControllerLaunch != null) {
+        if (hostControllerLaunch != null && hostControllerLaunch.getHostController() != null) {
             ctx.disconnectController();
         }
     }
@@ -61,7 +61,8 @@ class StopEmbeddedHostControllerHandler extends CommandHandlerWithHelp {
         EmbeddedServerLaunch hostControllerLaunch = hostControllerReference.get();
         if (hostControllerLaunch != null) {
             try {
-                hostControllerLaunch.stop();
+                if (hostControllerLaunch.getHostController() != null)
+                    hostControllerLaunch.stop();
             } finally {
                 try {
                     hostControllerLaunch.getEnvironmentRestorer().restoreEnvironment();
