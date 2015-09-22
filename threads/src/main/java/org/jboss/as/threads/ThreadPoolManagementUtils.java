@@ -170,6 +170,12 @@ class ThreadPoolManagementUtils {
         params.threadFactory = tfNode.isDefined() ? tfNode.asString() : null;
         params.maxThreads = PoolAttributeDefinitions.MAX_THREADS.resolveModelAttribute(context, model).asInt();
 
+        try {
+            params.coreThreads = PoolAttributeDefinitions.CORE_THREADS.resolveModelAttribute(context, model).asInt();
+        } catch (Exception e) {
+            params.coreThreads = params.maxThreads;
+        }
+
         if (model.hasDefined(KEEPALIVE_TIME)) {
             ModelNode keepaliveTime = model.get(KEEPALIVE_TIME);
             if (!keepaliveTime.hasDefined(TIME)) {
@@ -194,6 +200,8 @@ class ThreadPoolManagementUtils {
         String getThreadFactory();
 
         int getMaxThreads();
+
+        int getCoreThreads();
 
         TimeSpec getKeepAliveTime();
     }
