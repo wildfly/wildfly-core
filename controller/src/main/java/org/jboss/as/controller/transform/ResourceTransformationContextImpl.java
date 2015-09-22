@@ -405,7 +405,7 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         private final ImmutableManagementResourceRegistration registration;
 
         OriginalModel(Resource original, RunningMode mode, ProcessType type, TransformationTarget target, ImmutableManagementResourceRegistration registration) {
-            this.original = original;
+            this.original = original.clone();
             this.mode = mode;
             this.type = type;
             this.target = target;
