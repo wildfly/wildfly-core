@@ -377,8 +377,18 @@ public class ConfigurationPersistence implements Configurator, LogContextConfigu
                 loggingConfig = FileResolver.resolvePath(context, "jboss.server.data.dir", PROPERTIES_FILE);
                 break;
             }
-            default: {
+            case STANDALONE_SERVER: {
                 loggingConfig = FileResolver.resolvePath(context, "jboss.server.config.dir", PROPERTIES_FILE);
+                break;
+            }
+            default: {
+                /*
+                For every case other than domain or standalone servers, (embedded, appclient etc.) this leave loggingConfig
+                unset and returns. Allowing the config to be set here, will result in the respective {standalone|domain}/configuration/
+                logging.properties being overwritten with a basic empty logging template, which may cause unexpected and missing logging
+                output on the next startup. (This is caused in the embedded case by nothing being committed on the LogContext being used.)
+                */
+                return;
             }
         }
         if (loggingConfig == null) {
