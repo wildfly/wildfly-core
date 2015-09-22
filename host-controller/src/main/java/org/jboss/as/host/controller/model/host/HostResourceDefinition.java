@@ -30,6 +30,7 @@ import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
@@ -324,8 +325,10 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         StartServersHandler ssh = new StartServersHandler(environment, serverInventory, runningModeControl);
         hostRegistration.registerOperationHandler(StartServersHandler.DEFINITION, ssh);
 
-        HostShutdownHandler hsh = new HostShutdownHandler(domainController);
-        hostRegistration.registerOperationHandler(HostShutdownHandler.DEFINITION, hsh);
+        if (environment.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER) {
+            HostShutdownHandler hsh = new HostShutdownHandler(domainController);
+            hostRegistration.registerOperationHandler(HostShutdownHandler.DEFINITION, hsh);
+        }
 
         HostProcessReloadHandler reloadHandler = new HostProcessReloadHandler(HostControllerService.HC_SERVICE_NAME, runningModeControl, processState);
         hostRegistration.registerOperationHandler(HostProcessReloadHandler.getDefinition(hostControllerInfo), reloadHandler);
