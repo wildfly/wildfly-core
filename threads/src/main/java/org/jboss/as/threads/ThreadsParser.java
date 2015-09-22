@@ -64,6 +64,7 @@ import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
+import org.wildfly.common.cpu.ProcessorInfo;
 
 /**
  * Parser for the threads subsystem or for other subsystems that use pieces of the basic threads subsystem
@@ -822,14 +823,14 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
         int fullCount = getScaledCount(count, perCpu);
         if (!perCpu.equals(new BigDecimal(0))) {
             ThreadsLogger.ROOT_LOGGER.perCpuNotSupported(Attribute.PER_CPU, count, Attribute.COUNT,
-                    perCpu, Attribute.PER_CPU, Runtime.getRuntime().availableProcessors(), fullCount, Attribute.COUNT);
+                    perCpu, Attribute.PER_CPU, ProcessorInfo.availableProcessors(), fullCount, Attribute.COUNT);
         }
 
         return String.valueOf(fullCount);
     }
 
     private static int getScaledCount(BigDecimal count, BigDecimal perCpu) {
-        return count.add(perCpu.multiply(BigDecimal.valueOf((long) Runtime.getRuntime().availableProcessors()), MathContext.DECIMAL64), MathContext.DECIMAL64).round(MathContext.DECIMAL64).intValueExact();
+        return count.add(perCpu.multiply(BigDecimal.valueOf((long) ProcessorInfo.availableProcessors()), MathContext.DECIMAL64), MathContext.DECIMAL64).round(MathContext.DECIMAL64).intValueExact();
     }
 
     private void parseProperties(final XMLExtendedStreamReader reader, final Namespace threadsNamespace) throws XMLStreamException {

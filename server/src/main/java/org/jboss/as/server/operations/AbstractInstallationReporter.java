@@ -65,6 +65,7 @@ import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.security.manager.action.ReadEnvironmentPropertyAction;
 import org.wildfly.security.manager.action.ReadPropertyAction;
 
@@ -123,7 +124,7 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
     private ModelNode createCPUNode() throws OperationFailedException {
         ModelNode cpu = new ModelNode().setEmptyObject();
         cpu.get(ARCH).set(getProperty("os.arch"));
-        cpu.get(AVAILABLE_PROCESSORS).set(Runtime.getRuntime().availableProcessors());
+        cpu.get(AVAILABLE_PROCESSORS).set(ProcessorInfo.availableProcessors());
         return cpu;
     }
 
