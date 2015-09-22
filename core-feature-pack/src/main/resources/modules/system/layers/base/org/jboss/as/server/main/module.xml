@@ -36,8 +36,11 @@
 
     <dependencies>
         <module name="javax.api"/>
-        <!--this needs to remain here until common-beans is fixed to use passed classloader -->
-        <module name="org.jboss.common-beans" services="export" optional="true"/>
+        <!--
+                Xalan is optional dependancy and would need to be present in cases where runtime code needs xslt transformation otherwise
+                xslt parser will fallback to JDK provided xalan, which can cause issues.
+                 -->
+        <module name="org.apache.xalan" services="import" optional="true"/>
         <module name="org.jboss.staxmapper"/>
         <module name="org.jboss.dmr"/>
         <module name="org.jboss.invocation"/>
