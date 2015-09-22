@@ -37,6 +37,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.common.cpu.ProcessorInfo;
 import org.xnio.OptionMap;
 import org.xnio.Options;
 import org.xnio.Sequence;
@@ -81,8 +82,8 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
         workerServiceController.setMode(ServiceController.Mode.ACTIVE);
         workerServiceController.awaitValue();
         XnioWorker worker = workerServiceController.getService().getValue();
-        Assert.assertEquals(Runtime.getRuntime().availableProcessors() * 2, worker.getIoThreadCount());
-        Assert.assertEquals(Runtime.getRuntime().availableProcessors() * 16, worker.getOption(Options.WORKER_TASK_MAX_THREADS).intValue());
+        Assert.assertEquals(ProcessorInfo.availableProcessors() * 2, worker.getIoThreadCount());
+        Assert.assertEquals(ProcessorInfo.availableProcessors() * 16, worker.getOption(Options.WORKER_TASK_MAX_THREADS).intValue());
     }
 
     @Override

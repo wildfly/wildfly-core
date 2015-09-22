@@ -45,6 +45,7 @@ import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.extension.io.logging.IOLogger;
 import org.xnio.Option;
 import org.xnio.OptionMap;
@@ -77,7 +78,7 @@ class WorkerAdd extends AbstractAddStepHandler {
         return -1;
     }
     private static int getCpuCount(){
-        return Runtime.getRuntime().availableProcessors();
+        return ProcessorInfo.availableProcessors();
     }
 
     private static int getMaxPossibleThreadCount(int maxFD) {
