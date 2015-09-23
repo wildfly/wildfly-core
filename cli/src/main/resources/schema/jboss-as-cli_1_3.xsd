@@ -149,6 +149,7 @@
         </xs:annotation>
     </xs:element>
     
+
     <xs:complexType name="vaultType">
         <xs:annotation>
             <xs:documentation>
@@ -163,12 +164,11 @@
             <xs:element name="vault-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="code" type="xs:string" use="optional"/>
-        <xs:attribute name="module" type="xs:string" use="optional"/>    
+        <xs:attribute name="module" type="xs:string" use="optional"/>
     </xs:complexType>
-    
+
     <xs:complexType name="propertyType">
         <xs:attribute name="name" use="required"/>
         <xs:attribute name="value" use="optional"/>
     </xs:complexType>
-    
 </xs:schema>
