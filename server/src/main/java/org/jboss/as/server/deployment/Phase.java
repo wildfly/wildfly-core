@@ -250,7 +250,6 @@ public enum Phase {
     public static final int STRUCTURE_GLOBAL_REQUEST_CONTROLLER         = 0x2000;
     public static final int STRUCTURE_WS_SERVICES_DEPS                  = 0x2100;
     public static final int STRUCTURE_DEPENDENCIES_MANIFEST             = 0x2200;
-    public static final int STRUCTURE_DEFERRED_DEPLOYMENT_OVERLAY       = 0xF000; //needs to run after all structure processors
 
     // PARSE
     public static final int PARSE_SECURITY_ENABLED                      = 0x0080;

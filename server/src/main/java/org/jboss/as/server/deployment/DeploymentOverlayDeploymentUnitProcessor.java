@@ -35,7 +35,6 @@ import java.util.Set;
 
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.modules.PathUtils;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
 
@@ -79,12 +78,9 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
             return;
         }
         final Set<String> paths = new HashSet<String>();
+        String path;
         for (final Map.Entry<String, byte[]> entry : overlayEntries.entrySet()) {
-            if (entry.getKey().endsWith("/")) throw new UnsupportedOperationException("Damn!");
-            String path = PathUtils.relativize(PathUtils.canonicalize(entry.getKey())); // TODO: eliminate - should be optimized in management code
-            if (path.endsWith("/")) {
-                path = path.substring(0, path.length() - 1);
-            }
+            path = entry.getKey();
             try {
                 if (!paths.contains(path)) {
                     VirtualFile mountPoint = deploymentRoot.getRoot().getChild(path);
