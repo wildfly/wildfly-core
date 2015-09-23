@@ -54,6 +54,11 @@ class DelegatingResourceLoader implements ResourceLoader {
     }
 
     @Override
+    public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
+        return getDelegate().iteratePaths(startPath, recursive);
+    }
+
+    @Override
     public String getRootName() {
         return getDelegate().getRootName();
     }
@@ -97,4 +102,5 @@ class DelegatingResourceLoader implements ResourceLoader {
     public void addOverlay(String path, File content) {
         getDelegate().addOverlay(path, content);
     }
+
 }

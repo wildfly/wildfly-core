@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
@@ -123,6 +125,11 @@ public class ResourceLoadersTest {
             for (String path : paths) {
                 System.out.println(" * " + path);
             }
+            System.out.println(loader.getRootName() + " iteratePaths: ");
+            Collection<String> iteratePaths = iteratorToCollection(loader.iteratePaths("", true));
+            for (String path : iteratePaths) {
+                System.out.println(" * " + path);
+            }
             System.out.println(loader.getRootName() + " resources: ");
             Iterator<Resource> i = loader.iterateResources("", true);
             Resource r;
@@ -164,8 +171,10 @@ public class ResourceLoadersTest {
         dumpResourceLoader(warLoader);
         // test ear paths
         Collection<String> earPaths = earLoader.getPaths();
+        Collection<String> iteratorEarPaths = iteratorToCollection(earLoader.iteratePaths("", true));
         for (String earPath : EAR_PATHS) {
             assertTrue(earPaths.contains(earPath));
+            assertTrue(iteratorEarPaths.contains(earPath));
         }
         earLoader.getPaths();
         // test war resources
@@ -216,11 +225,16 @@ public class ResourceLoadersTest {
         dumpResourceLoader(jarLoader);
         // test war paths
         Collection<String> warPaths = warLoader.getPaths();
+        Collection<String> iteratorWarPaths = iteratorToCollection(warLoader.iteratePaths("", true));
+        Collection<String> iteratorEarWarPaths = iteratorToCollection(earLoader.iteratePaths(WAR_RESOURCE_NAME, true));
         for (String warPath : WAR_PATHS) {
             assertTrue(warPaths.contains(warPath));
+            assertTrue(iteratorWarPaths.contains(warPath));
             if (explodedWar) {
+                assertTrue(iteratorEarWarPaths.contains(warPath));
                 String earResourceName = warPath.equals("") ? WAR_RESOURCE_NAME : WAR_RESOURCE_NAME + "/" + warPath;
                 assertTrue(earPaths.contains(earResourceName));
+                assertTrue(iteratorEarPaths.contains(earResourceName));
             }
         }
         // test jar resources
@@ -256,32 +270,58 @@ public class ResourceLoadersTest {
         }
         // test jar paths
         Collection<String> jarPaths = jarLoader.getPaths();
+        Collection<String> iteratorJarPaths = iteratorToCollection(jarLoader.iteratePaths("", true));
+        Collection<String> iteratorWarJarPaths = iteratorToCollection(warLoader.iteratePaths(JAR_RESOURCE_NAME, true));
+        Collection<String> iteratorEarJarPaths = iteratorToCollection(earLoader.iteratePaths(WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME, true));
+
         for (String jarPath : JAR_PATHS) {
             assertTrue(jarPaths.contains(jarPath));
+            assertTrue(iteratorJarPaths.contains(jarPath));
             if (explodedJar) {
+                assertTrue(iteratorWarJarPaths.contains(jarPath));
                 String warResourceName = jarPath.equals("") ? JAR_RESOURCE_NAME : JAR_RESOURCE_NAME + "/" + jarPath;
                 assertTrue(warPaths.contains(warResourceName));
+                assertTrue(iteratorWarPaths.contains(warResourceName));
                 if (explodedWar) {
+                    assertTrue(iteratorEarJarPaths.contains(jarPath));
+                    assertTrue(iteratorEarWarPaths.contains(warResourceName));
                     String earResourceName = WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME + (jarPath.equals("") ? "" : "/" + jarPath);
                     assertTrue(earPaths.contains(earResourceName));
+                    assertTrue(iteratorEarPaths.contains(earResourceName));
                 }
             }
         }
         // assert loaders paths count
         assertTrue(jarPaths.size() == JAR_PATHS.length);
+        assertTrue(iteratorJarPaths.size() == JAR_PATHS.length);
         if (explodedJar) {
+            assertTrue(iteratorWarJarPaths.size() == JAR_PATHS.length);
             assertTrue(warPaths.size() == (WAR_PATHS.length + JAR_PATHS.length));
+            assertTrue(iteratorWarPaths.size() == (WAR_PATHS.length + JAR_PATHS.length));
             if (explodedWar) {
+                assertTrue(iteratorEarJarPaths.size() == JAR_PATHS.length);
+                assertTrue(iteratorEarWarPaths.size() == (WAR_PATHS.length + JAR_PATHS.length));
                 assertTrue(earPaths.size() == (EAR_PATHS.length + WAR_PATHS.length + JAR_PATHS.length));
+                assertTrue(iteratorEarPaths.size() == (EAR_PATHS.length + WAR_PATHS.length + JAR_PATHS.length));
             } else {
+                assertTrue(iteratorEarJarPaths.size() == 0);
+                assertTrue(iteratorEarWarPaths.size() == 0);
                 assertTrue(earPaths.size() == (EAR_PATHS.length));
+                assertTrue(iteratorEarPaths.size() == (EAR_PATHS.length));
             }
         } else {
+            assertTrue(iteratorWarJarPaths.size() == 0);
+            assertTrue(iteratorEarJarPaths.size() == 0);
             assertTrue(warPaths.size() == WAR_PATHS.length);
+            assertTrue(iteratorWarPaths.size() == WAR_PATHS.length);
             if (explodedWar) {
+                assertTrue(iteratorEarWarPaths.size() == WAR_PATHS.length);
                 assertTrue(earPaths.size() == (EAR_PATHS.length + WAR_PATHS.length));
+                assertTrue(iteratorEarPaths.size() == (EAR_PATHS.length + WAR_PATHS.length));
             } else {
+                assertTrue(iteratorEarWarPaths.size() == 0);
                 assertTrue(earPaths.size() == (EAR_PATHS.length));
+                assertTrue(iteratorEarPaths.size() == (EAR_PATHS.length));
             }
         }
         // assert loaders resource iterator size
@@ -326,6 +366,14 @@ public class ResourceLoadersTest {
         while (i.hasNext()) {
             i.next();
             retVal++;
+        }
+        return retVal;
+    }
+
+    private static Collection<String> iteratorToCollection(final Iterator<String> iterator) {
+        final List<String> retVal = new ArrayList<>();
+        while (iterator.hasNext()) {
+            retVal.add(iterator.next());
         }
         return retVal;
     }

@@ -367,7 +367,18 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
 
         public void remove() {
+            throw new UnsupportedOperationException();
         }
+    }
+
+    public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
+        final String canonPath = PathUtils.canonicalize(PathUtils.relativize(startPath));
+        final File start = new File(root, canonPath);
+        final List<String> index = new ArrayList<String>();
+        if (!start.exists() || !start.isDirectory()) return Collections.emptyIterator();
+        index.add("");
+        buildIndex(index, start, "", recursive);
+        return index.iterator();
     }
 
     public Iterator<Resource> iterateResources(final String startPath, final boolean recursive) {
@@ -409,7 +420,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
         // Manually build index, starting with the root path
         index.add("");
-        buildIndex(index, root, "");
+        buildIndex(index, root, "", true);
         if (ResourceLoaders.WRITE_INDEXES) {
             // Now try to write it
             boolean ok = false;
@@ -449,12 +460,12 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         return index;
     }
 
-    private void buildIndex(final List<String> index, final File root, final String pathBase) {
+    private void buildIndex(final List<String> index, final File root, final String pathBase, boolean recursive) {
         File[] files = root.listFiles();
         if (files != null) for (File file : files) {
             if (file.isDirectory()) {
                 index.add(pathBase + file.getName());
-                buildIndex(index, file, pathBase + file.getName() + "/");
+                if (recursive) buildIndex(index, file, pathBase + file.getName() + "/", recursive);
             }
         }
     }

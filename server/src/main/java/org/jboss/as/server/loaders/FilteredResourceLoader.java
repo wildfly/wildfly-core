@@ -26,13 +26,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.jboss.modules.ClassSpec;
 import org.jboss.modules.PackageSpec;
 import org.jboss.modules.PathUtils;
 import org.jboss.modules.Resource;
 import org.jboss.modules.filter.PathFilter;
-import org.jboss.modules.filter.PathFilters;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -75,7 +75,11 @@ final class FilteredResourceLoader implements ResourceLoader {
     }
 
     public Iterator<Resource> iterateResources(final String startPath, final boolean recursive) {
-        return PathFilters.filtered(filter, loader.iterateResources(PathUtils.relativize(PathUtils.canonicalize(startPath)), recursive));
+        return filteredResource(filter, loader.iterateResources(startPath, recursive));
+    }
+
+    public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
+        return filteredPath(filter, loader.iteratePaths(startPath, recursive));
     }
 
     public void close() {
@@ -92,6 +96,70 @@ final class FilteredResourceLoader implements ResourceLoader {
 
     public void addOverlay(final String path, final File content) {
         loader.addOverlay(path, content);
+    }
+
+    private static Iterator<Resource> filteredResource(final PathFilter filter, final Iterator<Resource> original) {
+        return new Iterator<Resource>() {
+            private Resource next;
+
+            public boolean hasNext() {
+                Resource next;
+                while (this.next == null && original.hasNext()) {
+                    next = original.next();
+                    if (filter.accept(next.getName())) {
+                        this.next = next;
+                    }
+                }
+                return this.next != null;
+            }
+
+            public Resource next() {
+                if (! hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                try {
+                    return next;
+                } finally {
+                    next = null;
+                }
+            }
+
+            public void remove() {
+                original.remove();
+            }
+        };
+    }
+
+    private static Iterator<String> filteredPath(final PathFilter filter, final Iterator<String> original) {
+        return new Iterator<String>() {
+            private String next;
+
+            public boolean hasNext() {
+                String next;
+                while (this.next == null && original.hasNext()) {
+                    next = original.next();
+                    if (filter.accept(next)) {
+                        this.next = next;
+                    }
+                }
+                return this.next != null;
+            }
+
+            public String next() {
+                if (! hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                try {
+                    return next;
+                } finally {
+                    next = null;
+                }
+            }
+
+            public void remove() {
+                original.remove();
+            }
+        };
     }
 
 }

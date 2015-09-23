@@ -47,6 +47,7 @@ import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -388,10 +389,20 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         };
     }
 
+    public Iterator<String> iteratePaths(String startPath, final boolean recursive) {
+        if (startPath == null) throw new NullPointerException("Method parameter cannot be null");
+        if (relativePath != null) startPath = startPath.equals("") ? relativePath : relativePath + "/" + startPath;
+        final String startName = PathUtils.canonicalize(PathUtils.relativize(startPath));
+        if (!"".equals(startName) && jarFile.getJarEntry(startName) == null) return Collections.emptyIterator();
+        final Collection<String> index = new HashSet<String>();
+        extractJarPaths(jarFile, startName, index, recursive);
+        return index.iterator();
+    }
+
     public Collection<String> getPaths() {
         final Collection<String> index = new HashSet<String>();
         index.add("");
-        String relativePath = this.relativePath;
+        String relativePath = this.relativePath != null ? this.relativePath : "";
         // First check for an external index
         final JarFile jarFile = this.jarFile;
         final String jarFileName = jarFile.getName();
@@ -417,7 +428,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
             }
         }
         // Next just read the JAR
-        extractJarPaths(jarFile, relativePath, index);
+        extractJarPaths(jarFile, relativePath, index, true);
 
         if (ResourceLoaders.WRITE_INDEXES && relativePath == null) {
             writeExternalIndex(indexFile, index);
@@ -439,8 +450,8 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     }
 
     static void extractJarPaths(final JarFile jarFile, String relativePath,
-            final Collection<String> index) {
-        index.add("");
+            final Collection<String> index, final boolean recursive) {
+        relativePath = "".equals(relativePath) ? relativePath : relativePath + "/";
         final Enumeration<JarEntry> entries = jarFile.entries();
         while (entries.hasMoreElements()) {
             final JarEntry jarEntry = entries.nextElement();
@@ -452,13 +463,16 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
                 // invalid name, just skip...
                 continue;
             }
-            if (relativePath == null) {
-                index.add(path);
-            } else {
-                if (path.startsWith(relativePath + "/")) {
-                    index.add(path.substring(relativePath.length() + 1));
+            if (recursive ? PathUtils.isChild(relativePath, path) : PathUtils.isDirectChild(relativePath, path)) {
+                if (relativePath.equals("")) {
+                    index.add(path);
+                } else {
+                    index.add(path.substring(relativePath.length()));
                 }
             }
+        }
+        if (index.size() > 0) {
+            index.add("");
         }
     }
 
