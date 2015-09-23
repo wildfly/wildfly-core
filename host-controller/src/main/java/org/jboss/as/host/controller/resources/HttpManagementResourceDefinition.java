@@ -108,7 +108,6 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
                 .build();
 
     public static final SimpleAttributeDefinition HTTP_UPGRADE_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED, ModelType.BOOLEAN, true)
-                    .setAllowExpression(true)
                     .setXmlName(Attribute.HTTP_UPGRADE_ENABLED.getLocalName())
                     .setDefaultValue(new ModelNode(false))
                     .build();
