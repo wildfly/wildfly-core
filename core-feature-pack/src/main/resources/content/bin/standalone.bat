@@ -248,7 +248,6 @@ echo.
 :RESTART
 rem if x%XLOGGC% == x (
   "%JAVA%" %JAVA_OPTS% ^
-   "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\server.log" ^
    "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
       -jar "%JBOSS_HOME%\jboss-modules.jar" ^
       %MODULE_OPTS% ^
@@ -258,7 +257,6 @@ rem if x%XLOGGC% == x (
        %SERVER_OPTS%
 rem ) else (
   rem "%JAVA%" -Xloggc:%XLOGGC% %JAVA_OPTS% ^
-   rem "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\server.log" ^
    rem "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
       rem -jar "%JBOSS_HOME%\jboss-modules.jar" ^
       rem %MODULE_OPTS% ^
