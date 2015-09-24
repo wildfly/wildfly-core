@@ -100,7 +100,7 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
         }
         ResourceLoader loader;
         try {
-            loader = ResourceLoaders.newResourceLoader(deploymentContentsFile);
+            loader = ResourceLoaders.newResourceLoader(deploymentName, deploymentContentsFile);
         } catch (IOException e) {
             throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
         }
