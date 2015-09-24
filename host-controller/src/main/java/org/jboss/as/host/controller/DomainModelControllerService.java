@@ -227,8 +227,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                                             final HostRunningModeControl runningModeControl,
                                                             final ControlledProcessState processState,
                                                             final BootstrapListener bootstrapListener,
-                                                            final PathManagerService pathManager,
-                                                            final boolean isEmbedded){
+                                                            final PathManagerService pathManager){
         final ConcurrentMap<String, ProxyController> hostProxies = new ConcurrentHashMap<String, ProxyController>();
         final Map<String, ProxyController> serverProxies = new ConcurrentHashMap<String, ProxyController>();
         final LocalHostControllerInfoImpl hostControllerInfo = new LocalHostControllerInfoImpl(processState, environment);
@@ -239,10 +238,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ManagedAuditLogger auditLogger = createAuditLogger(environment);
         final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
         final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
-        ProcessType processType = ProcessType.HOST_CONTROLLER;
-        if (isEmbedded) {
-            processType = ProcessType.EMBEDDED_HOST_CONTROLLER;
-        }
+        final ProcessType processType = environment.getProcessType();
         final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final ExtensionRegistry extensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         CapabilityRegistry capabilityRegistry = new CapabilityRegistry(processType.isServer());
@@ -252,7 +248,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final DomainModelControllerService service = new DomainModelControllerService(environment, runningModeControl, processState,
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
                 ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
-                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, isEmbedded, capabilityRegistry);
+                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, capabilityRegistry);
         return serviceTarget.addService(SERVICE_NAME, service)
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
@@ -279,9 +275,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final ExtensionRegistry extensionRegistry,
                                          final ManagedAuditLogger auditLogger,
                                          final DelegatingConfigurableAuthorizer authorizer,
-                                         final boolean isEmbedded,
                                          final CapabilityRegistry capabilityRegistry) {
-        super(isEmbedded ? ProcessType.EMBEDDED_HOST_CONTROLLER : ProcessType.HOST_CONTROLLER, runningModeControl, null, processState,
+        super(environment.getProcessType(), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer, capabilityRegistry);
         this.environment = environment;
         this.runningModeControl = runningModeControl;

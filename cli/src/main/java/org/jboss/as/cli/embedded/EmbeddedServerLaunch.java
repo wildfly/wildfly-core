@@ -65,4 +65,13 @@ public class EmbeddedServerLaunch {
     public HostController getHostController() {
         return server.getHostController();
     }
+
+    public boolean isHostController() {
+        return server.isHostController();
+    }
+
+    public boolean isStandalone() {
+        return !server.isHostController();
+    }
+
 }

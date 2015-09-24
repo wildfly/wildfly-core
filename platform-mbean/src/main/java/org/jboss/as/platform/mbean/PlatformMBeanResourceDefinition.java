@@ -12,8 +12,8 @@ public class PlatformMBeanResourceDefinition extends SimpleResourceDefinition {
     static final PlatformMBeanResourceDefinition INSTANCE = new PlatformMBeanResourceDefinition();
 
     private PlatformMBeanResourceDefinition() {
-        super(PlatformMBeanConstants.PLATFORM_MBEAN_PATH,
-                PlatformMBeanUtil.getResolver("platform-mbeans"));
+        super(new Parameters(PlatformMBeanConstants.PLATFORM_MBEAN_PATH,
+                PlatformMBeanUtil.getResolver("platform-mbeans")).setRuntime());
     }
 
     @Override
@@ -32,8 +32,5 @@ public class PlatformMBeanResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(ThreadResourceDefinition.INSTANCE);
 
         resourceRegistration.registerSubModel(BufferPoolRootResourceDefinition.INSTANCE);
-
-        // HACK -- workaround WFCORE-17
-        resourceRegistration.setRuntimeOnly(true);
     }
 }

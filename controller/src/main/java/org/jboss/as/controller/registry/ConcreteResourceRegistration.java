@@ -46,8 +46,8 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
@@ -85,11 +85,11 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, AttributeAccess> attributesUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "attributes"));
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, Empty> orderedChildUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "orderedChildTypes"));
 
-    private final Set<Capability>  capabilities = new CopyOnWriteArraySet<>();
+    private final Set<RuntimeCapability>  capabilities = new CopyOnWriteArraySet<>();
 
     ConcreteResourceRegistration(final String valueString, final NodeSubregistry parent, final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
-                                 final boolean runtimeOnly, final boolean ordered, CapabilityRegistry capabilityRegistry) {
+                                 final boolean ordered, CapabilityRegistry capabilityRegistry) {
         super(valueString, parent);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
@@ -99,9 +99,19 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         notificationsUpdater.clear(this);
         orderedChildUpdater.clear(this);
         this.resourceDefinition = definition;
-        this.runtimeOnly.set(runtimeOnly);
+        this.runtimeOnly.set(definition.isRuntime());
         this.accessConstraintDefinitions = buildAccessConstraints();
         this.ordered = ordered;
+    }
+
+    @Override
+    public int getMaxOccurs() {
+        return resourceDefinition.getMaxOccurs();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return resourceDefinition.getMinOccurs();
     }
 
     @Override
@@ -168,7 +178,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (address == null) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodelWithNullPath();
         }
-        if (isRuntimeOnly()) {
+        if (isRuntimeOnly() && !resourceDefinition.isRuntime()) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodel();
         }
         final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
@@ -179,7 +189,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         final NodeSubregistry child = getOrCreateSubregistry(key);
         final boolean ordered = resourceDefinition.isOrderedChild();
         final ManagementResourceRegistration resourceRegistration =
-                child.register(address.getValue(), resourceDefinition, false, ordered);
+                child.register(address.getValue(), resourceDefinition, ordered);
         if (ordered) {
             AbstractResourceRegistration parentRegistration = child.getParent();
             parentRegistration.setOrderedChild(key);
@@ -460,7 +470,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public void registerCapability(Capability capability){
+    public void registerCapability(RuntimeCapability capability){
         capabilities.add(capability);
         if (capabilityRegistry != null) {
             capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
@@ -659,7 +669,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public Set<Capability> getCapabilities() {
+    public Set<RuntimeCapability> getCapabilities() {
         return Collections.unmodifiableSet(capabilities);
     }
 

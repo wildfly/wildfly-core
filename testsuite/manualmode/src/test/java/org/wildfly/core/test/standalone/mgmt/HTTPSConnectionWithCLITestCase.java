@@ -101,8 +101,6 @@ public class HTTPSConnectionWithCLITestCase {
 
     @BeforeClass
     public static void prepareServer() throws Exception {
-
-        LOGGER.info("*** starting server");
         containerController.start();
         ManagementClient mgmtClient = containerController.getClient();
         //final ModelControllerClient client = mgmtClient.getControllerClient();
@@ -112,7 +110,6 @@ public class HTTPSConnectionWithCLITestCase {
 
         // To apply new security realm settings for http interface reload of
         // server is required
-        LOGGER.info("*** reload server");
         reloadServer();
         picketLinkModule = PicketBoxModuleUtil.createTestModule();
     }
@@ -124,7 +121,6 @@ public class HTTPSConnectionWithCLITestCase {
      */
     @Test
     public void testDefaultCLIConfiguration() throws InterruptedException, IOException {
-
         String cliOutput = CustomCLIExecutor.execute(null, TESTING_OPERATION, HTTPS_CONTROLLER, true, "N");
         assertThat("Untrusted client should not be authenticated.", cliOutput, not(containsString("\"outcome\" => \"success\"")));
 
@@ -137,7 +133,6 @@ public class HTTPSConnectionWithCLITestCase {
      */
     @Test
     public void testUntrustedCLICertificate() throws InterruptedException, IOException {
-
         String cliOutput = CustomCLIExecutor.execute(UNTRUSTED_JBOSS_CLI_FILE, TESTING_OPERATION, HTTPS_CONTROLLER);
         assertThat("Untrusted client should not be authenticated.", cliOutput, not(containsString("\"outcome\" => \"success\"")));
 
@@ -150,7 +145,6 @@ public class HTTPSConnectionWithCLITestCase {
      */
     @Test
     public void testTrustedCLICertificate() throws InterruptedException, IOException {
-
         String cliOutput = CustomCLIExecutor.execute(TRUSTED_JBOSS_CLI_FILE, TESTING_OPERATION, HTTPS_CONTROLLER);
         assertThat("Client with valid certificate should be authenticated.", cliOutput, containsString("\"outcome\" => \"success\""));
 
@@ -158,8 +152,6 @@ public class HTTPSConnectionWithCLITestCase {
 
     @AfterClass
     public static void resetTestConfiguration() throws Exception {
-
-        LOGGER.info("*** reseting test configuration");
         ModelControllerClient client = HTTPSManagementInterfaceTestCase.getNativeModelControllerClient();
         ManagementClient managementClient = new ManagementClient(client, TestSuiteEnvironment.getServerAddress(),
                 MANAGEMENT_NATIVE_PORT, "remoting");
@@ -172,7 +164,6 @@ public class HTTPSConnectionWithCLITestCase {
         keystoreFilesSetup.tearDown(managementClient);
         managementNativeRealmSetup.tearDown(managementClient);
 
-        LOGGER.info("*** stopping container");
         containerController.stop();
         picketLinkModule.remove();
         FileUtils.deleteDirectory(WORK_DIR);

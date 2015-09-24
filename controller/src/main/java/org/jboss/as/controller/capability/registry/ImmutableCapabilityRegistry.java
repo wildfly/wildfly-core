@@ -21,6 +21,7 @@ package org.jboss.as.controller.capability.registry;
 import java.util.Set;
 
 import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -84,4 +85,12 @@ public interface ImmutableCapabilityRegistry {
      *             is not {@code null} and the type of the service the capability provides is not assignable from it
      */
     ServiceName getCapabilityServiceName(String capabilityName, CapabilityScope scope, Class<?> serviceType);
+
+    /**
+     * Returns possible provider points for passed capabilityId
+     * @param capabilityId id of capability
+     * @return set of PathAddress-es where capability could be registered, will not return <code>null</code> but can be empty
+     */
+
+    Set<PathAddress> getPossibleProviderPoints(CapabilityId capabilityId);
 }

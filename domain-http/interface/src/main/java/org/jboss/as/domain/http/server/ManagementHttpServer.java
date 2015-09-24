@@ -284,7 +284,7 @@ public class ManagementHttpServer {
                         break;
                     case DIGEST:
                         List<DigestAlgorithm> digestAlgorithms = Collections.singletonList(DigestAlgorithm.MD5);
-                        List<DigestQop> digestQops = Collections.emptyList();
+                        List<DigestQop> digestQops = Collections.singletonList(DigestQop.AUTH);
                         undertowMechanisms.add(wrap(new DigestAuthenticationMechanism(digestAlgorithms, digestQops,
                                 securityRealm.getName(), "/management", new SimpleNonceManager()), current));
                         break;

@@ -66,7 +66,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
@@ -486,16 +486,21 @@ public class ExtensionRegistry {
         }
 
         @Override
+        @Deprecated
+        @SuppressWarnings("deprecation")
         public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion) throws IllegalArgumentException, IllegalStateException {
             return registerSubsystem(name, majorVersion, minorVersion, 0);
         }
 
         @Override
+        @Deprecated
+        @SuppressWarnings("deprecation")
         public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion) {
             return registerSubsystem(name, majorVersion, minorVersion, microVersion, false);
         }
 
         @Override
+        @Deprecated
         public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion, boolean deprecated) {
             return registerSubsystem(name, ModelVersion.create(majorVersion, minorVersion, microVersion), deprecated);
         }
@@ -544,6 +549,7 @@ public class ExtensionRegistry {
         }
 
         @Override
+        @Deprecated
         public boolean isRegisterTransformers() {
             return registerTransformers;
         }
@@ -706,6 +712,7 @@ public class ExtensionRegistry {
         }
 
         @Override
+        @Deprecated
         public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
             modelsRegistered = true;
             checkHostCapable();
@@ -784,11 +791,22 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public int getMaxOccurs() {
+            return deployments.getMaxOccurs();
+        }
+
+        @Override
+        public int getMinOccurs() {
+            return deployments.getMinOccurs();
+        }
+
+        @Override
         public boolean isRuntimeOnly() {
             return deployments.isRuntimeOnly();
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public void setRuntimeOnly(final boolean runtimeOnly) {
             deployments.setRuntimeOnly(runtimeOnly);
             subdeployments.setRuntimeOnly(runtimeOnly);
@@ -995,7 +1013,7 @@ public class ExtensionRegistry {
         }
 
         @Override
-        public void registerCapability(Capability capability) {
+        public void registerCapability(RuntimeCapability capability) {
             deployments.registerCapability(capability);
             subdeployments.registerCapability(capability);
         }
@@ -1011,7 +1029,7 @@ public class ExtensionRegistry {
         }
 
         @Override
-        public Set<Capability> getCapabilities() {
+        public Set<RuntimeCapability> getCapabilities() {
             return deployments.getCapabilities();
         }
     }

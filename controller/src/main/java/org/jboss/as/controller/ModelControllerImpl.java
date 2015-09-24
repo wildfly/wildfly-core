@@ -241,6 +241,7 @@ class ModelControllerImpl implements ModelController {
      * @param operationId the id of the current transaction
      * @return the result of the operation
      */
+    @SuppressWarnings("deprecation")
     protected ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control, final OperationStepHandler prepareStep, final int operationId) {
         final AbstractOperationContext delegateContext = getDelegateContext(operationId);
         CurrentOperationIdHolder.setCurrentOperationID(operationId);
@@ -250,7 +251,7 @@ class ModelControllerImpl implements ModelController {
             CurrentOperationIdHolder.setCurrentOperationID(null);
         }
     }
-
+    @SuppressWarnings("deprecation")
     protected ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationTransactionControl control, final OperationStepHandler prepareStep) {
         final AbstractOperationContext delegateContext = getDelegateContext(CurrentOperationIdHolder.getCurrentOperationID());
         return executeReadOnlyOperation(operation, delegateContext.getManagementModel(), control, prepareStep, delegateContext);
@@ -258,6 +259,7 @@ class ModelControllerImpl implements ModelController {
 
     protected ModelNode executeReadOnlyOperation(final ModelNode operation, final Resource resource, final OperationTransactionControl control, final OperationStepHandler prepareStep) {
         // Get the primary context to delegate the reads to
+        @SuppressWarnings("deprecation")
         final int operationId = CurrentOperationIdHolder.getCurrentOperationID();
         final AbstractOperationContext delegateContext = getDelegateContext(operationId);
         final ManagementModelImpl current = delegateContext.getManagementModel();
@@ -267,6 +269,7 @@ class ModelControllerImpl implements ModelController {
 
     protected ModelNode executeReadOnlyOperation(final ModelNode operation, final ManagementModelImpl model, final OperationTransactionControl control, final OperationStepHandler prepareStep, AbstractOperationContext delegateContext) {
         final ModelNode response = new ModelNode();
+        @SuppressWarnings("deprecation")
         final int operationId = CurrentOperationIdHolder.getCurrentOperationID();
         final OperationTransactionControl txControl = control == null ? null : new OperationTransactionControl() {
             @Override
@@ -371,6 +374,7 @@ class ModelControllerImpl implements ModelController {
                     false, extraValidationStepHandler, partialModel);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
+                //noinspection deprecation
                 CurrentOperationIdHolder.setCurrentOperationID(operationID);
                 boolean shouldUnlock = false;
                 try {
@@ -404,6 +408,7 @@ class ModelControllerImpl implements ModelController {
                         controllerLock.unlock(operationID);
                     }
                     activeOperations.remove(operationID);
+                    //noinspection deprecation
                     CurrentOperationIdHolder.setCurrentOperationID(null);
                 }
                 break;

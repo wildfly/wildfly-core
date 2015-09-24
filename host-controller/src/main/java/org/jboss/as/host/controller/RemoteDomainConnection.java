@@ -103,7 +103,6 @@ class RemoteDomainConnection extends FutureManagementChannel {
     private final String username;
     private final SecurityRealm realm;
 
-    private final ModelNode localHostInfo;
     private final RemoteDomainConnection.HostRegistrationCallback callback;
     private final ProtocolConnectionManager connectionManager;
     private final ProtocolChannelClient.Configuration configuration;
@@ -115,16 +114,14 @@ class RemoteDomainConnection extends FutureManagementChannel {
     private final RunningMode runningMode;
     private URI uri;
 
-    RemoteDomainConnection(final String localHostName, final ModelNode localHostInfo,
-                           final ProtocolChannelClient.Configuration configuration, final SecurityRealm realm,
-                           final String username, final List<DiscoveryOption> discoveryOptions,
+    RemoteDomainConnection(final String localHostName, final ProtocolChannelClient.Configuration configuration,
+                           final SecurityRealm realm,  final String username, final List<DiscoveryOption> discoveryOptions,
                            final ExecutorService executorService,
                            final ScheduledExecutorService scheduledExecutorService,
                            final HostRegistrationCallback callback,
                            final RunningMode runningMode) {
         this.callback = callback;
         this.localHostName = localHostName;
-        this.localHostInfo = localHostInfo;
         this.configuration = configuration;
         this.username = username;
         this.realm = realm;
@@ -348,6 +345,11 @@ class RemoteDomainConnection extends FutureManagementChannel {
          */
         void registrationComplete(ManagementChannelHandler handler);
 
+        /**
+         * Recalculates metadata as needed to reflect any local changes since boot
+         * @return the current host metadata
+         */
+        ModelNode createLocalHostInfo();
     }
 
     /**
@@ -359,7 +361,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
          protected void sendRequest(final ActiveOperation.ResultHandler<Void> resultHandler, final ManagementRequestContext<Void> context, final FlushableDataOutput output) throws IOException {
              output.write(DomainControllerProtocol.PARAM_HOST_ID);
              output.writeUTF(localHostName);
-             ModelNode hostInfo = localHostInfo.clone();
+             ModelNode hostInfo = callback.createLocalHostInfo();
              hostInfo.get(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID).set(pongHandler.getConnectionId());
              hostInfo.writeExternal(output);
          }

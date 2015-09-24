@@ -77,9 +77,9 @@ import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -338,7 +338,9 @@ final class OperationContextImpl extends AbstractOperationContext {
                             String formattedCapability = ignoreContext
                                     ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(reqReq.getRequiredName())
                                     : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(reqReq.getRequiredName(), reqReq.getDependentContext().getName());
-                            unexplainedProblem = unexplainedProblem.append('\n').append(formattedCapability);
+
+                            Set<PathAddress> possiblePoints = managementModel.getCapabilityRegistry().getPossibleProviderPoints(reqReq.getDependentId());
+                            appendPossibleProviderPoints(unexplainedProblem, formattedCapability, possiblePoints);
                         }
                     }
                 }
@@ -358,11 +360,12 @@ final class OperationContextImpl extends AbstractOperationContext {
                     String formattedCapability = ignoreContext
                             ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(id.getName())
                             : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getScope().getName());
+                    Set<PathAddress> possiblePoints = managementModel.getCapabilityRegistry().getPossibleProviderPoints(id);
                     if (msg != null) {
-                        msg = msg.append('\n').append(formattedCapability);
+                        msg = appendPossibleProviderPoints(msg, formattedCapability, possiblePoints);
                     }
                     if (bootMsg != null) {
-                        bootMsg = bootMsg.append(System.lineSeparator()).append(formattedCapability);
+                        bootMsg = appendPossibleProviderPoints(bootMsg, formattedCapability, possiblePoints);
                     }
                 }
                 if (msg != null) {
@@ -425,6 +428,18 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
         return ok || ignoreFailures;
 
+    }
+    private static StringBuilder appendPossibleProviderPoints(StringBuilder sb, String formattedCapability, Set<PathAddress> possible){
+        //"you wanted X and it doesn't exist; here's where you can add X"
+        sb = sb.append(System.lineSeparator()).append(formattedCapability);
+        if (possible.isEmpty()){
+            return sb.append(ControllerLogger.ROOT_LOGGER.noKnownProviderPoints());
+        }
+        StringBuffer points = new StringBuffer();
+        for (PathAddress c: possible){
+            points = points.append(System.lineSeparator()).append("\t\t").append(c.toCLIStyleString());
+        }
+        return sb.append(ControllerLogger.ROOT_LOGGER.possibleCapabilityProviderPoints(points.toString()));
     }
 
     private Step findCapabilityRemovalStep(CapabilityId missingRequirement, boolean ignoreContext, CapabilityResolutionContext resolutionContext) {
@@ -1090,6 +1105,19 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
+    void handleUncaughtException(RuntimeException e) {
+        try {
+            if (lockStep != null) {
+                releaseModelControllerLock();
+            }
+        } finally {
+            if (containerMonitorStep != null) {
+                resetContainerStateChanges();
+            }
+        }
+    }
+
+    @Override
     void releaseStepLocks(AbstractOperationContext.Step step) {
         boolean interrupted = false;
         try {
@@ -1122,15 +1150,12 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
 
             if (this.lockStep == step) {
-                modelController.releaseLock(operationId);
-                exclusiveStartTime = -1;
-                lockStep = null;
+                releaseModelControllerLock();
             }
         } finally {
             try {
                 if (this.containerMonitorStep == step) {
-                    modelController.logContainerStateChangesAndReset();
-                    containerMonitorStep = null;
+                    resetContainerStateChanges();
                 }
             } finally {
                 if (interrupted) {
@@ -1138,6 +1163,17 @@ final class OperationContextImpl extends AbstractOperationContext {
                 }
             }
         }
+    }
+
+    private void releaseModelControllerLock() {
+        modelController.releaseLock(operationId);
+        exclusiveStartTime = -1;
+        lockStep = null;
+    }
+
+    private void resetContainerStateChanges() {
+        modelController.logContainerStateChangesAndReset();
+        containerMonitorStep = null;
     }
 
     @Override
@@ -1368,8 +1404,14 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
+    @Deprecated
     public void registerCapability(RuntimeCapability capability, String attribute) {
         registerCapability(capability, activeStep, attribute);
+    }
+
+    @Override
+    public void registerCapability(RuntimeCapability capability) {
+        registerCapability(capability, activeStep, null);
     }
 
     void registerCapability(RuntimeCapability capability, Step step, String attribute) {
@@ -1411,11 +1453,6 @@ final class OperationContextImpl extends AbstractOperationContext {
         synchronized (dependents) {
             dependents.add(step);
         }
-    }
-
-    @Override
-    public boolean requestOptionalCapability(String required, String dependent, String attribute) {
-        return requestOptionalCapability(required, dependent, false, activeStep, attribute);
     }
 
     @Override

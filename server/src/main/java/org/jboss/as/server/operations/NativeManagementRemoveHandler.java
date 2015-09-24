@@ -22,24 +22,28 @@
 
 package org.jboss.as.server.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.NATIVE_MANAGEMENT_RUNTIME_CAPABILITY;
 
-import org.jboss.as.controller.AbstractRemoveStepHandler;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.domain.management.access.RbacSanityCheckOperation;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceName;
 
 /**
  * Removes the native management interface.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class NativeManagementRemoveHandler extends AbstractRemoveStepHandler {
+public class NativeManagementRemoveHandler extends ReloadRequiredRemoveStepHandler {
 
     public static final NativeManagementRemoveHandler INSTANCE = new NativeManagementRemoveHandler();
 
@@ -51,6 +55,10 @@ public class NativeManagementRemoveHandler extends AbstractRemoveStepHandler {
     protected void performRemove(OperationContext context, ModelNode operation, ModelNode model)
             throws OperationFailedException {
         RbacSanityCheckOperation.addOperation(context);
+        final PathAddress httpAddress = context.getCurrentAddress().getParent().append(PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE));
+        context.addStep((OperationContext opContext, ModelNode op) -> {
+            ManagementRemotingServices.isManagementResourceRemoveable(opContext, httpAddress);
+        }, OperationContext.Stage.MODEL, false);
         super.performRemove(context, operation, model);
     }
 
@@ -59,25 +67,4 @@ public class NativeManagementRemoveHandler extends AbstractRemoveStepHandler {
         return context.getProcessType() != ProcessType.EMBEDDED_SERVER || context.getRunningMode() != RunningMode.ADMIN_ONLY;
     }
 
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-
-        final ServiceName endpointName = ManagementRemotingServices.MANAGEMENT_ENDPOINT;
-
-        // Remove management Channel
-        // ManagementRemotingServices.removeManagementChannelServices(context, endpointName, ManagementRemotingServices.MANAGEMENT_CHANNEL);
-
-        // Remove management Connector
-        ManagementRemotingServices.removeConnectorServices(context, ManagementRemotingServices.MANAGEMENT_CONNECTOR);
-
-        // We don't remove the endpoint or other remoting services, as it may still be in use by the HTTP upgrade handler.
-        // TODO: figure out some way of removing it if it is not in use
-        // context.removeService(endpointName);
-
-    }
-
-    @Override
-    protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        NativeManagementAddHandler.INSTANCE.performRuntime(context, operation, model);
-    }
 }

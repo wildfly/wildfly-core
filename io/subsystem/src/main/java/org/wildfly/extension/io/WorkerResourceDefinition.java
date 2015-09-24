@@ -83,7 +83,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
         super(IOExtension.WORKER_PATH,
                 IOExtension.getResolver(Constants.WORKER),
                 WorkerAdd.INSTANCE,
-                new ReloadRequiredRemoveStepHandler(IO_WORKER_RUNTIME_CAPABILITY)
+                new ReloadRequiredRemoveStepHandler()
         );
     }
 

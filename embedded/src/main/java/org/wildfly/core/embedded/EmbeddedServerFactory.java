@@ -162,10 +162,10 @@ public class EmbeddedServerFactory {
         final Class<?> embeddedServerFactoryClass;
         final Class<?> standaloneServerClass;
         try {
-            embeddedServerFactoryClass = embeddedModuleCL.loadClass(EmbeddedStandAloneServerFactory.class.getName());
+            embeddedServerFactoryClass = embeddedModuleCL.loadClass(EmbeddedStandaloneServerFactory.class.getName());
             standaloneServerClass = embeddedModuleCL.loadClass(StandaloneServer.class.getName());
         } catch (final ClassNotFoundException cnfe) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotLoadEmbeddedServerFactory(cnfe, EmbeddedStandAloneServerFactory.class.getName());
+            throw EmbeddedLogger.ROOT_LOGGER.cannotLoadEmbeddedServerFactory(cnfe, EmbeddedStandaloneServerFactory.class.getName());
         }
 
         // Get a handle to the method which will create the server

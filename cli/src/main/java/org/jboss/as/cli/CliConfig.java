@@ -160,6 +160,16 @@ public interface CliConfig {
     boolean isSilent();
 
     /**
+     * Non-Interactive only, using --file or --commands
+     *
+     * If true, disables all user interaction in non-interactive mode.
+     * CLI will error if any user interaction is expected from the commands
+     *
+     * @return
+     */
+    boolean isErrorOnInteract();
+
+    /**
      * Whether the role based access control should be used
      * to check the availability of the commands (for tab-completion).
      *

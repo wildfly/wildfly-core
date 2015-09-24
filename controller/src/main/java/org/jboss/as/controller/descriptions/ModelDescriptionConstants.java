@@ -122,7 +122,9 @@ public class ModelDescriptionConstants {
     public static final String DEFAULT_REQUIRES_ADDRESSABLE = "default-requires-addressable";
     public static final String DEPLOY = "deploy";
     public static final String DEPLOYMENT = "deployment";
+    public static final String DEPLOYMENT_DEPLOYED_NOTIFICATION = "deployment-deployed";
     public static final String DEPLOYMENT_OVERLAY = "deployment-overlay";
+    public static final String DEPLOYMENT_UNDEPLOYED_NOTIFICATION = "deployment-undeployed";
     public static final String DEPRECATED = "deprecated";
     public static final String DESCRIBE = "describe";
     public static final String DESCRIPTION = "description";
@@ -412,6 +414,7 @@ public class ModelDescriptionConstants {
     public static final String SENSITIVITY_CLASSIFICATION = "sensitivity-classification";
     public static final String SERVER = "server";
     public static final String SERVERS = "servers";
+    public static final String SERVER_BOOTING = "server-booting";
     public static final String SERVER_CONFIG = "server-config";
     public static final String SERVER_GROUP = "server-group";
     public static final String SERVER_GROUPS = "server-groups";

@@ -76,9 +76,11 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
     private final List<AccessConstraintDefinition> accessConstraints;
 
     public AbstractSocketBindingGroupResourceDefinition(final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
-        super(PATH,
-                ControllerResolver.getResolver(ModelDescriptionConstants.SOCKET_BINDING_GROUP),
-                addHandler, removeHandler, OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_ALL_SERVICES);
+        super(new Parameters(PATH, ControllerResolver.getResolver(ModelDescriptionConstants.SOCKET_BINDING_GROUP))
+                .setAddHandler(addHandler)
+                .setRemoveHandler(removeHandler)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG.wrapAsList();
     }
 

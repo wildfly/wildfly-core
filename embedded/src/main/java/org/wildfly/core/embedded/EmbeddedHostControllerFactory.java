@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
@@ -283,7 +284,7 @@ public class EmbeddedHostControllerFactory {
                 final String authCode = Base64.getEncoder().encodeToString(authBytes);
 
                 // Determine the ServerEnvironment
-                HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, authCode);
+                HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, authCode, startTime);
                 FutureServiceContainer futureContainer = new FutureServiceContainer();
                 EmbeddedHostControllerBootstrap hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, authCode);
                 hostControllerBootstrap.bootstrap();
@@ -433,7 +434,7 @@ public class EmbeddedHostControllerFactory {
             return hostSystemProperties;
         }
 
-        private static HostControllerEnvironment createHostControllerEnvironment(File jbossHome, String[] cmdargs, String hostName) {
+        private static HostControllerEnvironment createHostControllerEnvironment(File jbossHome, String[] cmdargs, String hostName, long startTime) {
             try {
                 // for SecurityActions.getSystemProperty("jboss.home.dir") in InstallationManagerService
                 System.setProperty("jboss.home.dir", jbossHome.getAbsolutePath());
@@ -483,7 +484,7 @@ public class EmbeddedHostControllerFactory {
                 ProductConfig productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath()), hostSystemProperties);
                 return new HostControllerEnvironment(props, isRestart, modulePath, processControllerAddress, processControllerPort,
                         hostControllerAddress, hostControllerPort, defaultJVM, domainConfig, initialDomainConfig, hostConfig, initialHostConfig,
-                        initialRunningMode, backupDomainFiles, useCachedDc, productConfig);
+                        initialRunningMode, backupDomainFiles, useCachedDc, productConfig, false, startTime, ProcessType.EMBEDDED_HOST_CONTROLLER);
             } catch (UnknownHostException e) {
                 throw new RuntimeException(e);
             }

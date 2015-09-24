@@ -23,13 +23,8 @@ package org.jboss.as.test.integration.management.cli.ifelse;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.ByteArrayOutputStream;
-
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -39,23 +34,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Alexey Loubyansky
  */
 @RunWith(WildflyTestRunner.class)
-public class NonExistingPathComparisonTestCase {
-
-    private static final String RESPONSE_VALUE_PREFIX = "\"value\" => \"";
-
-    private static final String PROP_NAME = "jboss-cli-test";
-
-    private static ByteArrayOutputStream cliOut;
-
-    @BeforeClass
-    public static void setup() throws Exception {
-        cliOut = new ByteArrayOutputStream();
-    }
-
-    @AfterClass
-    public static void tearDown() throws Exception {
-        cliOut = null;
-    }
+public class NonExistingPathComparisonTestCase extends CLISystemPropertyTestBase {
 
     @Test
     public void testEquals() throws Exception {
@@ -101,6 +80,7 @@ public class NonExistingPathComparisonTestCase {
             cliOut.reset();
         }
     }
+
     @Test
     public void testGreaterThan() throws Exception {
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
@@ -175,37 +155,5 @@ public class NonExistingPathComparisonTestCase {
                 append(logical).
                 append(" result.value2 ").append(comparison).append(' ').append(value).
                 append(") of ").append(getReadPropertyReq()).toString();
-    }
-
-    protected String getAddPropertyReqWithoutValue() {
-        return "/system-property=" + PROP_NAME + ":add()";
-    }
-    protected String getAddPropertyReq(String value) {
-        return "/system-property=" + PROP_NAME + ":add(value=" + value + ")";
-    }
-
-    protected String getReadPropertyReq() {
-        return "/system-property=" + PROP_NAME + ":read-resource";
-    }
-
-    protected String getRemovePropertyReq() {
-        return "/system-property=" + PROP_NAME + ":remove";
-    }
-
-    protected String getWritePropertyReq(String value) {
-        return "/system-property=" + PROP_NAME + ":write-attribute(name=\"value\",value=" + value + ")";
-    }
-
-    protected String getValue() {
-        final String response = cliOut.toString();
-        final int start = response.indexOf(RESPONSE_VALUE_PREFIX);
-        if(start < 0) {
-            return "undefined";//Assert.fail("Value not found in the response: " + response);
-        }
-        final int end = response.indexOf('"', start + RESPONSE_VALUE_PREFIX.length() + 1);
-        if(end < 0) {
-            Assert.fail("Couldn't locate the closing quote: " + response);
-        }
-        return response.substring(start + RESPONSE_VALUE_PREFIX.length(), end);
     }
 }

@@ -107,7 +107,7 @@ class ModuleUpdateTask extends AbstractModuleTask {
         } else {
             type = ModificationType.MODIFY;
         }
-        return new ContentModification(item, targetHash, type);
+        return new ContentModification(item, targetHash, type, original.getCondition());
     }
 
 }

@@ -287,6 +287,7 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
          *
          * @throws java.lang.IllegalArgumentException if {@code elementValidator} is {@code null}
          */
+        @SuppressWarnings("unchecked")
         public final BUILDER setElementValidator(ParameterValidator elementValidator) {
             if (elementValidator == null) {
                 throw ControllerLogger.ROOT_LOGGER.nullVar("elementValidator");
@@ -350,6 +351,7 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
          * @param allowNullElement whether undefined elements are valid
          * @return a builder that can be used to continue building the attribute definition
          */
+        @SuppressWarnings("unchecked")
         public BUILDER setAllowNullElement(boolean allowNullElement) {
             this.allowNullElement = allowNullElement;
             return (BUILDER) this;

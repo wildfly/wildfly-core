@@ -111,14 +111,6 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     }
 
     @Override
-    protected void recognizeArguments(CommandContext ctx) throws CommandFormatException {
-        final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
-        if(parsedCmd.getOtherProperties().size() > 1) {
-            throw new CommandFormatException("The command accepts only one argument but received: " + parsedCmd.getOtherProperties());
-        }
-    }
-
-    @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
 
         final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
@@ -138,7 +130,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         final List<String> args = parsedCmd.getOtherProperties();
         if (!args.isEmpty()) {
             if (args.size() != 1) {
-                throw new CommandFormatException("The command expects only one argument but got " + args);
+                throw new CommandFormatException("The command accepts 0 unnamed argument(s) but received: " + args);
             }
         }
 
@@ -175,9 +167,22 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             LogContext.setLogContextSelector(contextSelector);
 
             List<String> cmdsList = new ArrayList<>();
-            if (xml != null && xml.trim().length() > 0) {
-                cmdsList.add("--server-config=" + xml.trim());
+
+            if (xml == null && (parsedCmd.hasProperty("--server-config") || parsedCmd.hasProperty("-c"))) {
+                throw new CommandFormatException("The --server-config (or -c) parameter requires a value.");
             }
+
+            if (xml != null) {
+                xml = xml.trim();
+                if (xml.length() == 0) {
+                    throw new CommandFormatException("The --server-config parameter requires a value.");
+                }
+                if (!xml.endsWith(".xml")) {
+                    throw new CommandFormatException("The --server-config filename must end with .xml.");
+                }
+                cmdsList.add("--server-config=" + xml);
+            }
+
             if (adminOnlySetting) {
                 cmdsList.add("--admin-only");
             }
@@ -270,7 +275,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         File standaloneDir =  new File(jbossHome, "standalone");
         File configDir =  new File(standaloneDir, "configuration");
         File logDir =  new File(standaloneDir, "log");
-        File bootLog = new File(logDir, "boot.log");
+        File bootLog = new File(logDir, "server.log");
         File loggingProperties = new File(configDir, "logging.properties");
         if (loggingProperties.exists()) {
 

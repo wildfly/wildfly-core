@@ -18,6 +18,10 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
@@ -59,8 +63,8 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .build();
 
     private static final RuntimeCapability<Void> IO_WORKER_RUNTIME_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.io.worker", true, XnioWorker.class).build();
-    private static final RuntimeCapability<Void> IO_POOL_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.io.buffer-pool", true, Pool.class).build();
+            RuntimeCapability.Builder.of("org.wildfly.io.worker", false, XnioWorker.class).build();
+    private static final RuntimeCapability<Void> IO_POOL_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.io.buffer-pool", false, Pool.class).build();
     private static final RuntimeCapability<Void> TEST_CAPABILITY1 = RuntimeCapability.Builder.of("org.wildfly.test.capability1", true, Void.class).build();
     private static final RuntimeCapability<Void> TEST_CAPABILITY2 = RuntimeCapability.Builder.of("org.wildfly.test.capability2", true, Void.class).build();
     private static final RuntimeCapability<Void> TEST_CAPABILITY3 = RuntimeCapability.Builder.of("org.wildfly.test.capability3", true, Void.class).build();
@@ -68,6 +72,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
     private static PathAddress TEST_ADDRESS1 = PathAddress.pathAddress("subsystem", "test1");
     private static PathAddress TEST_ADDRESS2 = PathAddress.pathAddress("subsystem", "test2");
     private static PathAddress TEST_ADDRESS3 = PathAddress.pathAddress("sub", "resource");
+    private static PathAddress TEST_ADDRESS4 = PathAddress.pathAddress("subsystem", "test4");
 
     private static ResourceDefinition TEST_RESOURCE1 = ResourceBuilder.Factory.create(TEST_ADDRESS1.getElement(0),
             new NonResolvingResourceDescriptionResolver())
@@ -117,6 +122,27 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
                     })
             .build();
 
+    private static ResourceDefinition TEST_RESOURCE4 = ResourceBuilder.Factory.create(TEST_ADDRESS4.getElement(0),
+            new NonResolvingResourceDescriptionResolver())
+            .setAddOperation(new AbstractAddStepHandler(new HashSet<>(Arrays.asList(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY)), ad, other) {
+        @Override
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+            if(operation.hasDefined("fail")) {
+                throw new OperationFailedException("Let's rollback");
+            }
+        }
+
+        @Override
+        protected boolean requiresRuntime(OperationContext context) {
+            return true;
+        }
+            })
+            .setRemoveOperation(new ReloadRequiredRemoveStepHandler(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY))
+            .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
+            .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
+            .addCapability(IO_POOL_RUNTIME_CAPABILITY)
+            .addCapability(IO_WORKER_RUNTIME_CAPABILITY)
+            .build();
 
     private ManagementResourceRegistration rootRegistration;
 
@@ -132,12 +158,14 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
             mrr.unregisterSubModel(TEST_ADDRESS1.getElement(0));
             mrr.unregisterSubModel(TEST_ADDRESS2.getElement(0));
+            mrr.unregisterSubModel(TEST_ADDRESS4.getElement(0));
         });
 
         rootRegistration.registerOperationHandler(new SimpleOperationDefinition("create", new NonResolvingResourceDescriptionResolver()), (context, operation) -> {
             ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
             mrr.registerSubModel(TEST_RESOURCE1);
             mrr.registerSubModel(TEST_RESOURCE2);
+            mrr.registerSubModel(TEST_RESOURCE4);
         });
 
     }
@@ -165,7 +193,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(3, capabilityRegistry.getPossibleCapabilities().size());  //resource1 has 2 + 1 from resource 2
         Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
 
-        ModelNode addOp = createOperation("add", TEST_ADDRESS1);
+        ModelNode addOp = createOperation(ADD, TEST_ADDRESS1);
         addOp.get("test").set("some test value");
         addOp.get("other").set("other value");
         executeCheckNoFailure(addOp);
@@ -177,10 +205,10 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(4, capabilityRegistry.getPossibleCapabilities().size());
 
 
-        executeCheckNoFailure(createOperation("remove", TEST_ADDRESS1));
+        executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS1));
         Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
 
-        ModelNode add2Op = createOperation("add", TEST_ADDRESS2);
+        ModelNode add2Op = createOperation(ADD, TEST_ADDRESS2);
         add2Op.get("test").set("some test value");
         executeCheckNoFailure(add2Op);
 
@@ -198,27 +226,53 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(4, capabilityRegistry.getPossibleCapabilities().size());
 
         //remove test2 resource so capabilites are moved
-        executeCheckNoFailure(createOperation("remove", TEST_ADDRESS2));
+        executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS2));
         Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
     }
 
     @Test
     public void testRollBack() throws OperationFailedException {
-        ModelNode addOp1 = createOperation("add", TEST_ADDRESS1);
+        ModelNode addOp1 = createOperation(ADD, TEST_ADDRESS1);
         addOp1.get("test").set("some test value");
         addOp1.get("other").set("break"); //this value will throw exception and rollback should happen
         executeCheckForFailure(addOp1);
         Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
 
-        ModelNode addOp2 = createOperation("add", TEST_ADDRESS2);
+        ModelNode addOp2 = createOperation(ADD, TEST_ADDRESS2);
         addOp1.get("test").set("some test value");
 
 
         ModelNode composite = createOperation(ModelDescriptionConstants.COMPOSITE);
-        composite.get("steps").add(addOp2);//adds one capability,
-        composite.get("steps").add(addOp1); //breaks which causes operation to be rollbacked, so previously added capability shouldn't be represent.
+        composite.get(STEPS).add(addOp2);//adds one capability,
+        composite.get(STEPS).add(addOp1); //breaks which causes operation to be rollbacked, so previously added capability shouldn't be represent.
         executeCheckForFailure(composite);
         Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
     }
 
+    @Test
+    public void testRollBackAfterPublish() throws OperationFailedException {
+        ModelNode addOp1 = createOperation(ADD, TEST_ADDRESS1);
+        addOp1.get("test").set("some test value");
+        addOp1.get("other").set("other value");
+        executeCheckNoFailure(addOp1);
+        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size());
+
+        ModelNode addOp4 = createOperation(ADD, TEST_ADDRESS4);
+        addOp4.get("test").set("some test value");
+        addOp4.get("other").set("other value");
+        addOp4.get("fail").set("true");
+        executeCheckForFailure(addOp4); //Rollbacking
+        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size()); //Should remove the new RegistrationPoints
+
+        addOp4 = createOperation(ADD, TEST_ADDRESS4);
+        addOp4.get("test").set("some test value");
+        addOp4.get("other").set("other value");
+        executeCheckNoFailure(addOp4); //Will fail if rollback didn't work as epxected
+        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size());
+
+        executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS4));
+        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size());
+        executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS1));
+        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+    }
 }

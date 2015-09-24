@@ -27,7 +27,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DefaultResourceAddDescriptionProvider;
 import org.jboss.as.controller.descriptions.DefaultResourceDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -58,7 +58,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private final boolean runtime;
     private volatile DeprecationData deprecationData;
     private final boolean orderedChild;
-    private final Capability[] capabilities;
+    private final RuntimeCapability[] capabilities;
 
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionProvider} to describe the resource.
@@ -84,7 +84,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.deprecationData = null;
         this.runtime = false;
         this.orderedChild = false;
-        this.capabilities = new Capability[0];
+        this.capabilities = new RuntimeCapability[0];
     }
 
     /**
@@ -273,7 +273,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.deprecationData = deprecationData;
         this.runtime = runtime;
         this.orderedChild = false;
-        this.capabilities = new Capability[0];
+        this.capabilities = new RuntimeCapability[0];
     }
 
     /**
@@ -342,7 +342,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     @Override
     public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
         if (capabilities!=null) {
-            for (Capability c : capabilities) {
+            for (RuntimeCapability c : capabilities) {
                 resourceRegistration.registerCapability(c);
             }
         }
@@ -489,7 +489,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         private boolean runtime;
         private DeprecationData deprecationData;
         private boolean orderedChildResource;
-        private Capability[] capabilities;
+        private RuntimeCapability[] capabilities;
 
         /**
          * Creates a Parameters object
@@ -634,7 +634,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @param capabilities capabilities to register
          * @return Parameters object
          */
-        public Parameters setCapabilities(Capability ... capabilities){
+        public Parameters setCapabilities(RuntimeCapability ... capabilities){
             this.capabilities = capabilities;
             return this;
         }

@@ -99,6 +99,9 @@ public class ModelTestModelDescriptionValidator {
         validResourceKeys.put(HEAD_COMMENT_ALLOWED, BooleanDescriptorValidator.INSTANCE);
         validResourceKeys.put(TAIL_COMMENT_ALLOWED, BooleanDescriptorValidator.INSTANCE);
         validResourceKeys.put(NAMESPACE, NullDescriptorValidator.INSTANCE);
+        validResourceKeys.put(MIN_OCCURS, SimpleIntDescriptorValidator.INSTANCE);
+        validResourceKeys.put(MAX_OCCURS, SimpleIntDescriptorValidator.INSTANCE);
+        validResourceKeys.put(NAMESPACE, NullDescriptorValidator.INSTANCE);
         validResourceKeys.put(CAPABILITIES, CapabilitiesValidator.INSTANCE);
         validResourceKeys.put(ATTRIBUTES, NullDescriptorValidator.INSTANCE);
         validResourceKeys.put(OPERATIONS, NullDescriptorValidator.INSTANCE);
@@ -112,8 +115,6 @@ public class ModelTestModelDescriptionValidator {
         Map<String, ArbitraryDescriptorValidator> validChildTypeKeys = new HashMap<String, ModelTestModelDescriptionValidator.ArbitraryDescriptorValidator>();
         validChildTypeKeys.put(DESCRIPTION, NullDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(MODEL_DESCRIPTION, NullDescriptorValidator.INSTANCE);
-        validChildTypeKeys.put(MIN_OCCURS, SimpleIntDescriptorValidator.INSTANCE);
-        validChildTypeKeys.put(MAX_OCCURS, SimpleIntDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(ALLOWED, StringListValidator.INSTANCE);
         validChildTypeKeys.put(FILESYSTEM_PATH, BooleanDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(WEB_URL, BooleanDescriptorValidator.INSTANCE);

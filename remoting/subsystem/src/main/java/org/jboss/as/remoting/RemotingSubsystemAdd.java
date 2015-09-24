@@ -51,7 +51,7 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
     static final OperationContext.AttachmentKey<Boolean> RUNTIME_KEY = OperationContext.AttachmentKey.create(Boolean.class);
 
     private RemotingSubsystemAdd() {
-        super(RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY, RemotingSubsystemRootResource.ATTRIBUTES);
+        super(RemotingSubsystemRootResource.ATTRIBUTES);
     }
 
     @Override

@@ -106,7 +106,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
         super(IOExtension.BUFFER_POOL_PATH,
                 IOExtension.getResolver(Constants.BUFFER_POOL),
                 new BufferPoolAdd(),
-                new ReloadRequiredRemoveStepHandler(IO_POOL_RUNTIME_CAPABILITY)
+                new ReloadRequiredRemoveStepHandler()
         );
     }
 
@@ -123,7 +123,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
     private static class BufferPoolAdd extends AbstractAddStepHandler {
 
         private BufferPoolAdd() {
-            super(BufferPoolResourceDefinition.IO_POOL_RUNTIME_CAPABILITY, BufferPoolResourceDefinition.ATTRIBUTES);
+            super(BufferPoolResourceDefinition.ATTRIBUTES);
         }
 
         @Override

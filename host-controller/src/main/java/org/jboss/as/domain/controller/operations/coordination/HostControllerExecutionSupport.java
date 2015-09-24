@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -90,6 +91,21 @@ interface HostControllerExecutionSupport {
     ModelNode getFormattedDomainResult(ModelNode resultNode);
 
     /**
+     * Returns whether the operation puts the host in the reload-required state.
+     *
+     * @return {@code true} if the operation puts the host in the reload-required state
+     */
+    boolean isReloadRequired();
+
+    /**
+     * Callback for then the controller transaction has completed.
+     *
+     * @param rollback Whether the transaction rolled back or not. {@code true} indicates it was rolled back; {@code false}
+     *                 indicates it was committed.
+     */
+    void complete(boolean rollback);
+
+    /**
      * Provider of server level operations necessary to effect a given domain or host level operation on the servers
      * managed by this host controller.
      */
@@ -121,6 +137,8 @@ interface HostControllerExecutionSupport {
         /**
          * Create a HostControllerExecutionSupport for a given operation.
          *
+         *
+         * @param context
          * @param operation the operation
          * @param hostName the name of the host executing the operation
          * @param domainModelProvider source for the domain model
@@ -129,7 +147,7 @@ interface HostControllerExecutionSupport {
          *
          * @return the HostControllerExecutionSupport
          */
-        public static HostControllerExecutionSupport create(final ModelNode operation,
+        public static HostControllerExecutionSupport create(OperationContext context, final ModelNode operation,
                                                             final String hostName,
                                                             final DomainModelProvider domainModelProvider,
                                                             final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
@@ -162,20 +180,20 @@ interface HostControllerExecutionSupport {
 
             if (targetHost != null && !hostName.equals(targetHost)) {
                 // HostControllerExecutionSupport representing another host
-                result = new IgnoredOpExecutionSupport();
+                result = new IgnoredOpExecutionSupport(ignoredDomainResourceRegistry);
             }
             else if (runningServerTarget != null) {
                 // HostControllerExecutionSupport representing a server op
                 final Resource domainModel = domainModelProvider.getDomainModel();
                 final Resource hostModel = domainModel.getChild(PathElement.pathElement(HOST, targetHost));
                 if (runningServerTarget.isMultiTarget()) {
-                    return new DomainOpExecutionSupport(operation, PathAddress.EMPTY_ADDRESS);
+                    return new DomainOpExecutionSupport(ignoredDomainResourceRegistry, operation, PathAddress.EMPTY_ADDRESS);
                 } else {
                     final String serverName = runningServerTarget.getValue();
                     // TODO prevent NPE
                     final String serverGroup = hostModel.getChild(PathElement.pathElement(SERVER_CONFIG, serverName)).getModel().require(GROUP).asString();
                     final ServerIdentity serverIdentity = new ServerIdentity(targetHost, serverGroup, serverName);
-                    result = new DirectServerOpExecutionSupport(serverIdentity, runningServerOp);
+                    result = new DirectServerOpExecutionSupport(ignoredDomainResourceRegistry, serverIdentity, runningServerOp);
                 }
             }
             else if (COMPOSITE.equals(operation.require(OP).asString())) {
@@ -188,27 +206,30 @@ interface HostControllerExecutionSupport {
                             step = step.clone();
                             step.get(OPERATION_HEADERS, CALLER_TYPE).set(USER);
                         }
-                        parsedSteps.add(create(step, hostName, domainModelProvider, ignoredDomainResourceRegistry, isRemoteDomainControllerIgnoreUnaffectedConfiguration, extensionRegistry));
+                        parsedSteps.add(create(context, step, hostName, domainModelProvider, ignoredDomainResourceRegistry, isRemoteDomainControllerIgnoreUnaffectedConfiguration, extensionRegistry));
                     }
-                    result = new MultiStepOpExecutionSupport(parsedSteps);
+                    result = new MultiStepOpExecutionSupport(ignoredDomainResourceRegistry, parsedSteps);
                 }
                 else {
                     // Will fail later
-                    result = new DomainOpExecutionSupport(operation, address);
+                    result = new DomainOpExecutionSupport(ignoredDomainResourceRegistry, operation, address);
                 }
             }
-            else if (targetHost == null && isResourceExcluded(ignoredDomainResourceRegistry, isRemoteDomainControllerIgnoreUnaffectedConfiguration, domainModelProvider, hostName, address, extensionRegistry)) {
-                result = new IgnoredOpExecutionSupport();
+            else if (targetHost == null && isResourceExcluded(context, ignoredDomainResourceRegistry, isRemoteDomainControllerIgnoreUnaffectedConfiguration, domainModelProvider, hostName, address, extensionRegistry, operation)) {
+                result = new IgnoredOpExecutionSupport(ignoredDomainResourceRegistry);
             }
             else {
-                result = new DomainOpExecutionSupport(operation, address);
+                result = new DomainOpExecutionSupport(ignoredDomainResourceRegistry, operation, address);
             }
 
             return result;
 
         }
 
-        private static boolean isResourceExcluded(IgnoredDomainResourceRegistry ignoredDomainResourceRegistry, boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration, DomainModelProvider domainModelProvider, String hostName, PathAddress address, ExtensionRegistry extensionRegistry) {
+        private static boolean isResourceExcluded(OperationContext context, IgnoredDomainResourceRegistry ignoredDomainResourceRegistry, boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration, DomainModelProvider domainModelProvider, String hostName, PathAddress address, ExtensionRegistry extensionRegistry, ModelNode operation) {
+            if (ignoredDomainResourceRegistry.getIgnoredClonedProfileRegistry().checkIgnoredProfileClone(operation)) {
+                return true;
+            }
             if (ignoredDomainResourceRegistry.isResourceExcluded(address)) {
                 return true;
             }
@@ -220,9 +241,28 @@ interface HostControllerExecutionSupport {
             return false;
         }
 
+        private abstract static class AbstractOpExecutionSupport implements HostControllerExecutionSupport {
+            private final IgnoredDomainResourceRegistry.IgnoredClonedProfileRegistry ignoredClonedProfileRegistry;
+
+            private AbstractOpExecutionSupport(final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry) {
+                this.ignoredClonedProfileRegistry = ignoredDomainResourceRegistry.getIgnoredClonedProfileRegistry();
+            }
+
+            @Override
+            public boolean isReloadRequired() {
+                return ignoredClonedProfileRegistry.isReloadRequired();
+            }
+
+            @Override
+            public void complete(boolean rollback) {
+                ignoredClonedProfileRegistry.complete(rollback);
+            }
+        }
+
         private static class IgnoredOpExecutionSupport extends SimpleOpExecutionSupport {
 
-            private IgnoredOpExecutionSupport() {
+            private IgnoredOpExecutionSupport(final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry) {
+                super(ignoredDomainResourceRegistry);
             }
 
             @Override
@@ -239,7 +279,9 @@ interface HostControllerExecutionSupport {
         private static class DirectServerOpExecutionSupport extends SimpleOpExecutionSupport {
             private Map<ServerIdentity, ModelNode> serverOps;
 
-            private DirectServerOpExecutionSupport(final ServerIdentity serverIdentity, ModelNode serverOp) {
+            private DirectServerOpExecutionSupport(final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
+                                                   final ServerIdentity serverIdentity, ModelNode serverOp) {
+                super(ignoredDomainResourceRegistry);
                 this.serverOps = Collections.singletonMap(serverIdentity, serverOp);
             }
 
@@ -259,7 +301,9 @@ interface HostControllerExecutionSupport {
             private final ModelNode domainOp;
             private final PathAddress domainOpAddress;
 
-            private DomainOpExecutionSupport(ModelNode domainOp, final PathAddress domainOpAddress) {
+            private DomainOpExecutionSupport(final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
+                                             ModelNode domainOp, final PathAddress domainOpAddress) {
+                super(ignoredDomainResourceRegistry);
                 this.domainOp = domainOp;
                 this.domainOpAddress = domainOpAddress;
             }
@@ -284,9 +328,10 @@ interface HostControllerExecutionSupport {
             }
         }
 
-        private abstract static class SimpleOpExecutionSupport implements HostControllerExecutionSupport {
 
-            private SimpleOpExecutionSupport() {
+        private abstract static class SimpleOpExecutionSupport extends AbstractOpExecutionSupport {
+            private SimpleOpExecutionSupport(final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry) {
+                super(ignoredDomainResourceRegistry);
             }
 
             @Override
@@ -295,11 +340,13 @@ interface HostControllerExecutionSupport {
             }
         }
 
-        private static class MultiStepOpExecutionSupport implements HostControllerExecutionSupport {
+        private static class MultiStepOpExecutionSupport extends AbstractOpExecutionSupport {
 
             private final List<HostControllerExecutionSupport> steps;
 
-            private MultiStepOpExecutionSupport(final List<HostControllerExecutionSupport> steps) {
+            private MultiStepOpExecutionSupport(final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
+                                                final List<HostControllerExecutionSupport> steps) {
+                super(ignoredDomainResourceRegistry);
                 this.steps = steps;
             }
 

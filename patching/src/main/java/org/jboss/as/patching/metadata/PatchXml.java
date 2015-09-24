@@ -62,16 +62,20 @@ public class PatchXml {
     static {
         MAPPER.registerRootElement(new QName(Namespace.PATCH_1_0.getNamespace(), PatchXml_1_0.Element.PATCH.name), XML1_0);
         MAPPER.registerRootElement(new QName(Namespace.PATCH_1_1.getNamespace(), PatchXml_1_0.Element.PATCH.name), XML1_0);
+        MAPPER.registerRootElement(new QName(Namespace.PATCH_1_2.getNamespace(), PatchXml_1_0.Element.PATCH.name), XML1_0);
         MAPPER.registerRootElement(new QName(Namespace.ROLLBACK_1_0.getNamespace(), PatchXml_1_0.Element.PATCH.name), ROLLBACK_1_0);
         MAPPER.registerRootElement(new QName(Namespace.ROLLBACK_1_1.getNamespace(), PatchXml_1_0.Element.PATCH.name), ROLLBACK_1_0);
+        MAPPER.registerRootElement(new QName(Namespace.ROLLBACK_1_2.getNamespace(), PatchXml_1_0.Element.PATCH.name), ROLLBACK_1_0);
     }
 
     public enum Namespace {
 
         PATCH_1_0("urn:jboss:patch:1.0"),
         PATCH_1_1("urn:jboss:patch:1.1"),
+        PATCH_1_2("urn:jboss:patch:1.2"),
         ROLLBACK_1_0("urn:jboss:patch:rollback:1.0"),
         ROLLBACK_1_1("urn:jboss:patch:rollback:1.1"),
+        ROLLBACK_1_2("urn:jboss:patch:rollback:1.2"),
         PATCH_BUNDLE_1_0("urn:jboss:patch:bundle:1.0"),
         UNKNOWN(null),
         ;

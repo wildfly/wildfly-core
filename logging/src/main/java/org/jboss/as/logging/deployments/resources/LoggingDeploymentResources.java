@@ -47,7 +47,7 @@ import org.jboss.logmanager.config.PropertyConfigurable;
  */
 public class LoggingDeploymentResources {
 
-    public static final SimpleResourceDefinition CONFIGURATION = new SimpleResourceDefinition(PathElement.pathElement("configuration"), LoggingExtension.getResourceDescriptionResolver("deployment"));
+    public static final SimpleResourceDefinition CONFIGURATION = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("configuration"), LoggingExtension.getResourceDescriptionResolver("deployment")).setRuntime());
 
     public static final SimpleResourceDefinition HANDLER = new HandlerResourceDefinition();
 
@@ -146,7 +146,7 @@ public class LoggingDeploymentResources {
                 .build();
 
         public PropertiesResourceDefinition(final String name) {
-            super(PathElement.pathElement(name), LoggingExtension.getResourceDescriptionResolver("deployment", name));
+            super(new Parameters(PathElement.pathElement(name), LoggingExtension.getResourceDescriptionResolver("deployment", name)).setRuntime());
         }
 
         @Override

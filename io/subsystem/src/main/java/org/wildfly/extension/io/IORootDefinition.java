@@ -32,12 +32,20 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  */
 class IORootDefinition extends PersistentResourceDefinition {
+    static final String IO_MAX_THREADS_RUNTIME_CAPABILITY_NAME = "org.wildfly.io.max-threads";
+
+    static final RuntimeCapability<Void> IO_MAX_THREADS_RUNTIME_CAPABILITY =
+               RuntimeCapability.Builder.of(IO_MAX_THREADS_RUNTIME_CAPABILITY_NAME, false, Integer.class).build();
+
+
     static final IORootDefinition INSTANCE = new IORootDefinition();
 
     static final PersistentResourceDefinition[] CHILDREN = {
@@ -62,5 +70,10 @@ class IORootDefinition extends PersistentResourceDefinition {
     @Override
     protected List<? extends PersistentResourceDefinition> getChildren() {
         return Arrays.asList(CHILDREN);
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(IO_MAX_THREADS_RUNTIME_CAPABILITY);
     }
 }

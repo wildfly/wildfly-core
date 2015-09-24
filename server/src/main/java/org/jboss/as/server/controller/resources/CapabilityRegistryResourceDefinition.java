@@ -93,6 +93,7 @@ public class CapabilityRegistryResourceDefinition extends SimpleResourceDefiniti
     }
 
     private static void populateCapabilities(Set<CapabilityRegistration> caps, ModelNode res) {
+        // TODO WFCORE-960 We need to account for CapabilityScope
         for (CapabilityRegistration cr : caps) {
             ModelNode cap = res.add();
             cap.get(NAME.getName()).set(cr.getCapabilityName());

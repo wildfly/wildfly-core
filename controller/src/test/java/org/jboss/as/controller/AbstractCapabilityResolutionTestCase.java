@@ -41,6 +41,10 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
@@ -68,6 +72,7 @@ abstract class AbstractCapabilityResolutionTestCase {
     protected static final PathElement SBG_B = PathElement.pathElement(SOCKET_BINDING_GROUP, "b");
     protected static final PathElement SBG_C = PathElement.pathElement(SOCKET_BINDING_GROUP, "c");
     protected static final PathElement SBG_D = PathElement.pathElement(SOCKET_BINDING_GROUP, "d");
+    protected static final PathElement SBG_F = PathElement.pathElement(SUBSYSTEM, "only-registered");
     protected static final PathAddress GLOBAL_A = PathAddress.pathAddress(PathElement.pathElement(GLOBAL, "a"));
     protected static final PathAddress SUBSYSTEM_A_1 = PathAddress.pathAddress(PROFILE_A, PathElement.pathElement(SUBSYSTEM, "1"));
     protected static final PathAddress SUBSYSTEM_A_2 = PathAddress.pathAddress(PROFILE_A, PathElement.pathElement(SUBSYSTEM, "2"));
@@ -112,6 +117,8 @@ abstract class AbstractCapabilityResolutionTestCase {
             }
         }
     }
+
+
 
     protected static ModelNode getCapabilityOperation(PathAddress pathAddress, String capability) {
         return getCapabilityOperation(pathAddress, capability, null);
@@ -233,7 +240,36 @@ abstract class AbstractCapabilityResolutionTestCase {
             rootResource.registerChild(SBG_B, Resource.Factory.create());
             rootResource.registerChild(SBG_C, Resource.Factory.create());
             rootResource.registerChild(SBG_D, Resource.Factory.create());
+
+            // Add capabilities for each of the profiles and sbgs
+            RuntimeCapabilityRegistry capabilityRegistry = managementModel.getCapabilityRegistry();
+            registerCapability(capabilityRegistry, PROFILE_A);
+            registerCapability(capabilityRegistry, PROFILE_B);
+            registerCapability(capabilityRegistry, SBG_A);
+            registerCapability(capabilityRegistry, SBG_B);
+            registerCapability(capabilityRegistry, SBG_C);
+            registerCapability(capabilityRegistry, SBG_D);
+            registerCapability(capabilityRegistry, SBG_F, false);
         }
+    }
+    private static void registerCapability(RuntimeCapabilityRegistry registry, PathElement element){
+         registerCapability(registry, element, true);
+    }
+
+    private static void registerCapability(RuntimeCapabilityRegistry registry, PathElement element, boolean registerRuntime){
+        RuntimeCapabilityRegistration registration = getCapabilityRegistration(element);
+        ((CapabilityRegistry)registry).registerPossibleCapability(registration.getCapability(), registration.getOldestRegistrationPoint().getAddress());
+        if (registerRuntime) {
+            registry.registerCapability(registration);
+        }
+    }
+
+    private static RuntimeCapabilityRegistration getCapabilityRegistration(PathElement pe) {
+        RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(pe.getKey() + "." + pe.getValue()).build();
+        PathAddress pa = PathAddress.pathAddress(pe);
+        CapabilityScope scope = CapabilityScope.Factory.create(ProcessType.EMBEDDED_HOST_CONTROLLER, pa);
+        RegistrationPoint rp = new RegistrationPoint(pa, null);
+        return  new RuntimeCapabilityRegistration(capability, scope, rp);
     }
 
     private static class CapabilityOSH implements OperationStepHandler {
@@ -258,7 +294,7 @@ abstract class AbstractCapabilityResolutionTestCase {
                 context.getResult().set(true);
             }
             if (capName != null) {
-                context.registerCapability(rcb.build(), null);
+                context.registerCapability(rcb.build());
             }
         }
     }
@@ -268,7 +304,22 @@ abstract class AbstractCapabilityResolutionTestCase {
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
-            resource.getModel().get(INCLUDES).set(operation.get(INCLUDES));
+            ModelNode oldIncludes = resource.getModel().get(INCLUDES);
+            PathElement pe = context.getCurrentAddress().getElement(0);
+            String type = pe.getKey();
+            String dependent = type + "." + pe.getValue();
+            if (oldIncludes.isDefined()) {
+                for (ModelNode included : oldIncludes.asList()) {
+                    context.deregisterCapabilityRequirement(type + "." + included.asString(), dependent);
+                }
+            }
+            ModelNode newIncludes = operation.get(INCLUDES);
+            oldIncludes.set(operation.get(INCLUDES));
+            if (newIncludes.isDefined()) {
+                for (ModelNode included : newIncludes.asList()) {
+                    context.registerAdditionalCapabilityRequirement(type + "." + included.asString(), dependent, null);
+                }
+            }
         }
     }
 }

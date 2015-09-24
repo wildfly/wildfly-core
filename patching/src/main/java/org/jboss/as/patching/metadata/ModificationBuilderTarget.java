@@ -114,8 +114,12 @@ public abstract class ModificationBuilderTarget<T> {
      * @return the builder
      */
     public T addFile(final String name, final List<String> path, final byte[] newHash, final boolean isDirectory) {
+        return addFile(name, path, newHash, isDirectory, null);
+    }
+
+    public T addFile(final String name, final List<String> path, final byte[] newHash, final boolean isDirectory, ModificationCondition condition) {
         final ContentItem item = createMiscItem(name, path, newHash, isDirectory);
-        addContentModification(createContentModification(item, ModificationType.ADD, NO_CONTENT));
+        addContentModification(createContentModification(item, ModificationType.ADD, NO_CONTENT, condition));
         return returnThis();
     }
 
@@ -130,8 +134,12 @@ public abstract class ModificationBuilderTarget<T> {
      * @return the builder
      */
     public T modifyFile(final String name, final List<String> path, final byte[] existingHash, final byte[] newHash, final boolean isDirectory) {
+        return modifyFile(name, path, existingHash, newHash, isDirectory, null);
+    }
+
+    public T modifyFile(final String name, final List<String> path, final byte[] existingHash, final byte[] newHash, final boolean isDirectory, ModificationCondition condition) {
         final ContentItem item = createMiscItem(name, path, newHash, isDirectory);
-        addContentModification(createContentModification(item, ModificationType.MODIFY, existingHash));
+        addContentModification(createContentModification(item, ModificationType.MODIFY, existingHash, condition));
         return returnThis();
     }
 
@@ -145,8 +153,12 @@ public abstract class ModificationBuilderTarget<T> {
      * @return the builder
      */
     public T removeFile(final String name, final List<String> path, final byte[] existingHash, final boolean isDirectory) {
+        return removeFile(name, path, existingHash, isDirectory, null);
+    }
+
+    public T removeFile(final String name, final List<String> path, final byte[] existingHash, final boolean isDirectory, ModificationCondition condition) {
         final ContentItem item = createMiscItem(name, path, NO_CONTENT, isDirectory);
-        addContentModification(createContentModification(item, ModificationType.REMOVE, existingHash));
+        addContentModification(createContentModification(item, ModificationType.REMOVE, existingHash, condition));
         return returnThis();
     }
 
@@ -199,7 +211,11 @@ public abstract class ModificationBuilderTarget<T> {
     }
 
     protected ContentModification createContentModification(final ContentItem item, final ModificationType type, final byte[] existingHash) {
-        return new ContentModification(item, existingHash, type);
+        return createContentModification(item, type, existingHash, null);
+    }
+
+    protected ContentModification createContentModification(final ContentItem item, final ModificationType type, final byte[] existingHash, ModificationCondition condition) {
+        return new ContentModification(item, existingHash, type, condition);
     }
 
     protected MiscContentItem createMiscItem(final String name, final List<String> path, final byte[] newHash, final boolean isDirectory) {

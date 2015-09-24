@@ -60,8 +60,5 @@ public class ManagementControllerResourceDefinition extends SimpleResourceDefini
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
         resourceRegistration.registerSubModel(ActiveOperationResourceDefinition.INSTANCE);
-
-        // HACK -- workaround WFCORE-17
-        resourceRegistration.setRuntimeOnly(true);
     }
 }

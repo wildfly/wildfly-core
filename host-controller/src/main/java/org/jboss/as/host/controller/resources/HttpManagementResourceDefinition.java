@@ -31,7 +31,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostModelUtil;
@@ -82,13 +81,13 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setAddHandler(add)
             .setRemoveHandler(remove)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
-            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE));
+            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES));
     }
 
     public static HttpManagementResourceDefinition create(final LocalHostControllerInfoImpl hostControllerInfo,
             final HostControllerEnvironment environment) {
         HttpManagementAddHandler add = new HttpManagementAddHandler(hostControllerInfo, environment);
-        HttpManagementRemoveHandler remove = new HttpManagementRemoveHandler(hostControllerInfo, add);
+        HttpManagementRemoveHandler remove = HttpManagementRemoveHandler.INSTANCE;
 
         return new HttpManagementResourceDefinition(add, remove);
     }
@@ -96,11 +95,6 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
     @Override
     protected AttributeDefinition[] getAttributeDefinitions() {
         return ATTRIBUTE_DEFINITIONS;
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(HTTP_MANAGEMENT_RUNTIME_CAPABILITY);
     }
 
 }

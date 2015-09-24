@@ -125,7 +125,7 @@ public class ReadResourceWithRuntimeResourceTestCase extends AbstractControllerT
                 new SimpleResourceDefinition(PathElement.pathElement("resource", "A"), new NonResolvingResourceDescriptionResolver()));
         // /subsystem=mysubsystem/resource=B is a runtime-only resource
         ManagementResourceRegistration runtimeResource = subsystemRegistration.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("resource", "B"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("resource", "B"), new NonResolvingResourceDescriptionResolver()).setRuntime()));
         AttributeDefinition runtimeAttr = TestUtils.createAttribute("attr", ModelType.LONG);
         runtimeResource.registerReadOnlyAttribute(runtimeAttr, new OperationStepHandler() {
             @Override
@@ -133,7 +133,6 @@ public class ReadResourceWithRuntimeResourceTestCase extends AbstractControllerT
                 context.getResult().set(-1);
             }
         });
-        runtimeResource.setRuntimeOnly(true);
 
         subsystemRegistration.registerProxyController(MockProxyController.ADDRESS.getLastElement(), new MockProxyController());
 

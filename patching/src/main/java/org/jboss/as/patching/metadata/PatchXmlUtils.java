@@ -38,9 +38,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.metadata.impl.PatchElementImpl;
 import org.jboss.as.patching.metadata.impl.PatchElementProviderImpl;
@@ -110,6 +113,7 @@ class PatchXmlUtils implements XMLStreamConstants {
         NAME("name"),
         NEW_HASH("new-hash"),
         PATH("path"),
+        CONDITION("condition"),
         SLOT("slot"),
         TO_VERSION("to-version"),
         URL("url"),
@@ -673,6 +677,7 @@ class PatchXmlUtils implements XMLStreamConstants {
         boolean directory = false;
         boolean affectsRuntime = false;
         byte[] targetHash = NO_CONTENT;
+        ModificationCondition condition = null;
 
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
@@ -702,20 +707,29 @@ class PatchXmlUtils implements XMLStreamConstants {
                 case IN_RUNTIME_USE:
                     affectsRuntime = Boolean.parseBoolean(value);
                     break;
+                case CONDITION:
+                    try {
+                        condition = ModificationCondition.Factory.fromString(value);
+                    } catch (PatchingException e) {
+                        throw ControllerLogger.ROOT_LOGGER.invalidAttributeValue(value, new QName(attribute.name), reader.getLocation());
+                    }
+                    break;
                 default:
                     throw unexpectedAttribute(reader, i);
             }
         }
         requireNoContent(reader);
 
-        // process path
+        final MiscContentItem item = createMiscItem(path, hash, directory, affectsRuntime);
+        return new ContentModification(item, targetHash, type, condition);
+    }
+
+    private static MiscContentItem createMiscItem(String path, byte[] hash, boolean directory, boolean affectsRuntime) {
         final String[] s = path.split(PATH_DELIMITER);
         final int length = s.length;
         final String name = s[length - 1];
         final String[] itemPath = Arrays.copyOf(s, length - 1);
-
-        final MiscContentItem item = new MiscContentItem(name, itemPath, hash, directory, affectsRuntime);
-        return new ContentModification(item, targetHash, type);
+        return new MiscContentItem(name, itemPath, hash, directory, affectsRuntime);
     }
 
     protected static void writeAppliesToVersions(XMLExtendedStreamWriter writer, List<String> appliesTo) throws XMLStreamException {
@@ -782,6 +796,11 @@ class PatchXmlUtils implements XMLStreamConstants {
         writer.writeAttribute(Attribute.PATH.name, path.toString());
         if (item.isDirectory()) {
             writer.writeAttribute(Attribute.DIRECTORY.name, "true");
+        }
+
+        final ModificationCondition condition = modification.getCondition();
+        if(condition != null) {
+            writer.writeAttribute(Attribute.CONDITION.name, condition.toString());
         }
 
         if(type == ModificationType.REMOVE) {

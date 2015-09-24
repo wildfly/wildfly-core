@@ -26,6 +26,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYNAMIC;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_OCCURS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MIN_OCCURS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATIONS;
@@ -79,7 +81,24 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
         final ResourceBundle bundle = descriptionResolver.getResourceBundle(locale);
         result.get(DESCRIPTION).set(descriptionResolver.getResourceDescription(locale, bundle));
 
-        Set<Capability> capabilities = registration.getCapabilities();
+        // Output min and max occurs if they are non-default values
+        int minOccurs = registration.getMinOccurs();
+        if (minOccurs > 0) {
+            result.get(MIN_OCCURS).set(minOccurs);
+        }
+        int maxOccurs = registration.getMaxOccurs();
+        PathAddress pa = registration.getPathAddress();
+        if (pa == null || pa.size() == 0) {
+            // Root node has no documented 'default'
+            result.get(MAX_OCCURS).set(maxOccurs);
+        } else {
+            int defaultMax = pa.getLastElement().isWildcard() ? Integer.MAX_VALUE : 1;
+            if (maxOccurs != defaultMax) {
+                result.get(MAX_OCCURS).set(maxOccurs);
+            }
+        }
+
+        Set<? extends Capability> capabilities = registration.getCapabilities();
         if (capabilities!=null&&!capabilities.isEmpty()){
             for (Capability capability: capabilities) {
                 ModelNode cap = result.get(ModelDescriptionConstants.CAPABILITIES).add();

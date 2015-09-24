@@ -9,17 +9,14 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 class GarbageCollectorRootResourceDefinition extends SimpleResourceDefinition {
     static final GarbageCollectorRootResourceDefinition INSTANCE = new GarbageCollectorRootResourceDefinition();
     private GarbageCollectorRootResourceDefinition() {
-        super(PlatformMBeanConstants.GARBAGE_COLLECTOR_PATH,
-                PlatformMBeanUtil.getResolver("garbage-collectors"));
+        super(new Parameters(PlatformMBeanConstants.GARBAGE_COLLECTOR_PATH,
+                PlatformMBeanUtil.getResolver("garbage-collectors")).setRuntime());
     }
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
         resourceRegistration.registerSubModel(GarbageCollectorResourceDefinition.INSTANCE);
-
-        // HACK -- workaround WFCORE-17
-        resourceRegistration.setRuntimeOnly(true);
     }
 }
 

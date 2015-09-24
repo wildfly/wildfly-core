@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.PathAddressTransformer;
 import org.jboss.as.controller.transform.ResourceTransformer;
@@ -168,7 +169,7 @@ public class GlobalTransformerRegistry {
     }
 
     protected void process(final OperationTransformerRegistry registry, final PathAddress address, final ModelVersion version, Map<PathAddress, ModelVersion> versions) {
-        final OperationTransformerRegistry current = registryUpdater.get(this, version);
+        final OperationTransformerRegistry current = getRegistryUpdater(version);
         if(current != null) {
             final OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer = current.getResourceTransformer();
             final OperationTransformerRegistry.OperationTransformerEntry defaultTransformer = current.getDefaultTransformer();
@@ -195,6 +196,21 @@ public class GlobalTransformerRegistry {
                 }
             }
         }
+    }
+
+    private OperationTransformerRegistry getRegistryUpdater(final ModelVersion version) {
+        int micro = version.getMicro();
+        for (int i = micro; i >= 0; i--) {
+            ModelVersion currentVersion = ModelVersion.create(version.getMajor(), version.getMinor(), i);
+            OperationTransformerRegistry current = registryUpdater.get(this, currentVersion);
+            if (current != null) {
+                if(micro != i && this.getClass().desiredAssertionStatus()) {
+                    ControllerLogger.MGMT_OP_LOGGER.couldNotFindTransformerRegistryFallingBack(version, currentVersion);
+                }
+                return current;
+            }
+        }
+        return null;
     }
 
     protected void createChildRegistry(final Iterator<PathElement> iterator, ModelVersion version, PathAddressTransformer pathAddressTransformer, OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer, OperationTransformerRegistry.OperationTransformerEntry entry, boolean placeholder) {

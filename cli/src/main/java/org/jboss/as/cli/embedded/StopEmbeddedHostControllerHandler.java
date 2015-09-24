@@ -46,7 +46,7 @@ class StopEmbeddedHostControllerHandler extends CommandHandlerWithHelp {
 
     @Override
     public boolean isAvailable(CommandContext ctx) {
-        return hostControllerReference.get() != null;
+        return (hostControllerReference.get() != null && hostControllerReference.get().isHostController());
     }
 
     @Override

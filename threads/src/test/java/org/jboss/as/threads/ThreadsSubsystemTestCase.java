@@ -34,7 +34,6 @@ import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
@@ -46,18 +45,14 @@ public class ThreadsSubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("threads-subsystem-1_1.xml");
+        return readResource("threads-subsystem-2_0.xml");
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/jboss-as-threads_1_1.xsd";
+        return "schema/wildfly-threads_2_0.xsd";
     }
 
-    @Test
-    public void testExpressions() throws Exception {
-        standardSubsystemTest("expressions.xml");
-    }
     @Override
     protected void validateDescribeOperation(KernelServices hc, AdditionalInitialization serverInit, ModelNode expectedModel) throws Exception {
         final ModelNode operation = createDescribeOperation();

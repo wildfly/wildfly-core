@@ -740,4 +740,12 @@ public interface DomainControllerLogger extends BasicLogger {
 
     @Message(id = 77, value = "Duplicate included socket binding group '%s'")
     XMLStreamException duplicateSocketBindingGroupInclude(String s);
+
+    @Message(id = 78, value = "The profile clone operation is not available on the host '%s'. To be able to use it in a " +
+            "domain containing older slaves which do not support the profile clone operation, you need to either: " +
+            "a) Make sure that all older slaves with a model version smaller than 4.0.0 " +
+            "ignore the cloned profile and the profile specified in the 'to-profile' parameter. " +
+            "b) Reload the domain controller into admin-only mode, perform the clone, then reload the domain controller " +
+            "into normal mode again, and check whether the slaves need reloading.")
+    String cloneOperationNotSupportedOnHost(String hostName);
 }

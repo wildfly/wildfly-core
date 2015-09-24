@@ -111,14 +111,14 @@ public class ListOperations {
         }
 
         void updateModel(final OperationContext context, ModelNode model, ModelNode listAttribute) throws OperationFailedException {
-            String value = VALUE.resolveModelAttribute(context, model).asString();
+            ModelNode value = model.get(VALUE.getName());
             ModelNode indexNode = INDEX.resolveModelAttribute(context, model);
 
             LinkedList<ModelNode> res = new LinkedList<>(listAttribute.isDefined() ? listAttribute.asList() : Collections.<ModelNode>emptyList());
             if (indexNode.isDefined()) {
-                res.add(indexNode.asInt(), new ModelNode(value));
+                res.add(indexNode.asInt(), value);
             } else {
-                res.add(new ModelNode(value));
+                res.add(value);
             }
             listAttribute.set(res);
         }
@@ -138,7 +138,7 @@ public class ListOperations {
         }
 
         void updateModel(final OperationContext context, ModelNode model, ModelNode listAttribute) throws OperationFailedException {
-            ModelNode value = VALUE.resolveModelAttribute(context, model);
+            ModelNode value = model.get(VALUE.getName());
             ModelNode index = INDEX.resolveModelAttribute(context, model);
             List<ModelNode> res = new ArrayList<>(listAttribute.asList());
             if (index.isDefined()) {

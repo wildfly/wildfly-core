@@ -538,6 +538,9 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
     static void prepareTasks(final IdentityPatchContext.PatchEntry entry, final IdentityPatchContext context, final List<PreparedTask> tasks, final List<ContentItem> conflicts) throws PatchingException {
         for (final PatchingTasks.ContentTaskDefinition definition : entry.getDefinitions().values()) {
             final PatchingTask task = createTask(definition, context, entry);
+            if(!task.isRelevant(entry)) {
+                continue;
+            }
             try {
                 // backup and validate content
                 if (!task.prepare(entry) || definition.hasConflicts()) {

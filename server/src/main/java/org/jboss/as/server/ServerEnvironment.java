@@ -49,6 +49,7 @@ import org.jboss.as.version.ProductConfig;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
+import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -1040,7 +1041,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      */
     public static int getBootstrapMaxThreads() {
         // Base the bootstrap thread on proc count if not specified
-        int cpuCount = Runtime.getRuntime().availableProcessors();
+        int cpuCount = ProcessorInfo.availableProcessors();
         int defaultThreads = cpuCount * 2;
         String maxThreads = WildFlySecurityManager.getPropertyPrivileged(BOOTSTRAP_MAX_THREADS, null);
         if (maxThreads != null && maxThreads.length() > 0) {

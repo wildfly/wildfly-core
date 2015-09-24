@@ -67,7 +67,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -604,7 +604,6 @@ final class SubsystemTestDelegate {
         private final ModelTestBootOperationsBuilder bootOperationBuilder;
         private final AdditionalInitialization additionalInit;
         private Map<ModelVersion, LegacyKernelServiceInitializerImpl> legacyControllerInitializers = new HashMap<ModelVersion, LegacyKernelServiceInitializerImpl>();
-        private boolean enableTransformerAttachmentGrabber;
 
         public KernelServicesBuilderImpl(AdditionalInitialization additionalInit) {
             this.additionalInit = additionalInit == null ? new AdditionalInitialization() : additionalInit;
@@ -631,12 +630,6 @@ final class SubsystemTestDelegate {
         @Override
         public KernelServicesBuilder setBootOperations(ModelNode... bootOperations) {
             bootOperationBuilder.setBootOperations(Arrays.asList(bootOperations));
-            return this;
-        }
-
-        @Override
-        public KernelServicesBuilder enableTransformerAttachmentGrabber() {
-            enableTransformerAttachmentGrabber = true;
             return this;
         }
 
@@ -670,7 +663,7 @@ final class SubsystemTestDelegate {
             bootOperationBuilder.validateNotAlreadyBuilt();
             List<ModelNode> bootOperations = bootOperationBuilder.build();
             AbstractKernelServicesImpl kernelServices = AbstractKernelServicesImpl.create(testClass, mainSubsystemName, additionalInit, ModelTestOperationValidatorFilter.createValidateAll(), cloneExtensionRegistry(additionalInit), bootOperations,
-                    testParser, mainExtension, null, legacyControllerInitializers.size() > 0, true, enableTransformerAttachmentGrabber);
+                    testParser, mainExtension, null, legacyControllerInitializers.size() > 0, true);
             SubsystemTestDelegate.this.kernelServices.add(kernelServices);
 
             validateDescriptionProviders(additionalInit, kernelServices);
@@ -719,6 +712,11 @@ final class SubsystemTestDelegate {
             ModelTestBootOperationsBuilder builder = new ModelTestBootOperationsBuilder(testClass, this);
             builder.setXmlResource(xmlResource);
             return builder.build();
+        }
+
+        @Override
+        public KernelServicesBuilder enableTransformerAttachmentGrabber() {
+            return this;
         }
 
     }
@@ -1081,12 +1079,12 @@ final class SubsystemTestDelegate {
         }
 
         @Override
-        public void registerCapability(Capability capability) {
+        public void registerCapability(RuntimeCapability capability) {
 
         }
 
         @Override
-        public Set<Capability> getCapabilities() {
+        public Set<RuntimeCapability> getCapabilities() {
             return Collections.emptySet();
         }
 

@@ -33,7 +33,6 @@
         <copy-artifact artifact="org.wildfly.core:wildfly-launcher" to-location="bin/wildfly-launcher.jar"/>
     </copy-artifacts>
     <mkdirs>
-        <dir name="domain/data/content"/>
         <dir name="standalone/lib/ext"/>
         <dir name="domain/tmp/auth"/>
         <dir name="standalone/tmp/auth"/>

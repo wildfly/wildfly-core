@@ -43,7 +43,7 @@ import org.jboss.dmr.ModelType;
 abstract class AbstractCollectionHandler implements OperationStepHandler {
 
     static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinition("name", ModelType.STRING, false);
-    static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinition("value", ModelType.STRING, true);
+    static final SimpleAttributeDefinition VALUE = GlobalOperationAttributes.VALUE;
 
     private final AttributeDefinition[] attributes;
     private final boolean requiredReadWriteAccess;
@@ -61,7 +61,11 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
     protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
         NAME.validateAndSet(operation, model);
         for (AttributeDefinition attr : attributes) {
-            attr.validateAndSet(operation, model);
+            if (attr == VALUE){//don't validate VALUE attribute WFCORE-826
+                model.get(VALUE.getName()).set(operation.get(VALUE.getName()));
+            }else {
+                attr.validateAndSet(operation, model);
+            }
         }
     }
 
@@ -84,12 +88,13 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
         }
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
 
-        Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
+        Resource resource = requiredReadWriteAccess ? context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS) : context.readResource(PathAddress.EMPTY_ADDRESS);
+        final ModelNode resourceModel = resource.getModel().clone();
         final ModelNode model;
         if (useEnhancedSyntax){
-            model = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression,resource.getModel());
+            model = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression,resourceModel);
         }else {
-            model = resource.getModel().get(attributeName);
+            model = resourceModel.get(attributeName);
         }
         updateModel(context, operationModel, attributeAccess.getAttributeDefinition(),  model);
         if (requiredReadWriteAccess) {
@@ -97,7 +102,7 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
             ModelNode writeOperation = Util.createOperation(WriteAttributeHandler.DEFINITION, address);
             writeOperation.get(NAME.getName()).set(useEnhancedSyntax?attributeExpression:attributeName);
             writeOperation.get(ModelDescriptionConstants.VALUE).set(model);
-            context.addStep(writeOperation, WriteAttributeHandler.INSTANCE, OperationContext.Stage.MODEL);
+            context.addStep(writeOperation, WriteAttributeHandler.INSTANCE, OperationContext.Stage.MODEL, true);
         }
     }
 

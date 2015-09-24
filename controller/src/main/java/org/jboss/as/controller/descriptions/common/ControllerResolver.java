@@ -36,10 +36,10 @@ public final class ControllerResolver {
     public static ResourceDescriptionResolver getResolver(final String... keyPrefix) {
         return getResolver(false, keyPrefix);
     }
-
     @SuppressWarnings("deprecation")
     public static ResourceDescriptionResolver getDeprecatedResolver(final String deprecatedParent, final String... keyPrefix) {
         String prefix = getPrefix(keyPrefix);
+        //noinspection deprecation
         return new DeprecatedResourceDescriptionResolver(deprecatedParent, prefix, RESOURCE_NAME, ControllerResolver.class.getClassLoader(), true, false);
     }
 

@@ -92,7 +92,6 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .build();
 
     public static final SimpleAttributeDefinition ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
-        .setAllowExpression(true)
         .setDefaultValue(new ModelNode(false))
         .build();
 
@@ -157,6 +156,11 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
     @Override
     public List<AccessConstraintDefinition> getAccessConstraints() {
         return accessConstraints;
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(HTTP_MANAGEMENT_RUNTIME_CAPABILITY);
     }
 
     protected abstract AttributeDefinition[] getAttributeDefinitions();

@@ -22,16 +22,13 @@
 
 package org.jboss.as.server.operations;
 
-import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.domain.management.access.RbacSanityCheckOperation;
-import org.jboss.as.remoting.RemotingServices;
-import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceName;
 
 /**
  * The remove handler for the Native Remoting Interface when running a standalone server.
@@ -39,13 +36,12 @@ import org.jboss.msc.service.ServiceName;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class NativeRemotingManagementRemoveHandler extends AbstractRemoveStepHandler {
+public class NativeRemotingManagementRemoveHandler extends ReloadRequiredRemoveStepHandler {
 
     public static final NativeRemotingManagementRemoveHandler INSTANCE = new NativeRemotingManagementRemoveHandler();
 
     private NativeRemotingManagementRemoveHandler() {
     }
-
 
     @Override
     protected void performRemove(OperationContext context, ModelNode operation, ModelNode model)
@@ -54,23 +50,8 @@ public class NativeRemotingManagementRemoveHandler extends AbstractRemoveStepHan
         super.performRemove(context, operation, model);
     }
 
-
     @Override
     protected boolean requiresRuntime(OperationContext context) {
         return context.getProcessType() != ProcessType.EMBEDDED_SERVER || context.getRunningMode() != RunningMode.ADMIN_ONLY;
-    }
-
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-
-        final ServiceName endpointName = RemotingServices.SUBSYSTEM_ENDPOINT;
-
-        // Remove management Channel
-        ManagementRemotingServices.removeManagementChannelServices(context, endpointName, ManagementRemotingServices.MANAGEMENT_CHANNEL);
-    }
-
-    @Override
-    protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        NativeRemotingManagementAddHandler.INSTANCE.performRuntime(context, operation, model);
     }
 }

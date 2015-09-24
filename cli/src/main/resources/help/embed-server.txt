@@ -1,7 +1,7 @@
 SYNOPSIS
 
    embed-server [--admin-only=true|false]
-                [-c=config_file || --server=config=config_file]
+                [-c=config_file || --server-config=config_file]
                 [--empty-config --remove-existing-config]
                 [--jboss-home=rootdir]
                 [--stdout=discard|echo]

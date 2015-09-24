@@ -19,7 +19,7 @@
 * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
 */
-package org.jboss.as.subsystem.test.transformers;
+package org.jboss.as.subsystem.test.transformers.subsystem.simple;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -34,14 +34,10 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.transform.OperationTransformer;
-import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
-import org.jboss.as.subsystem.test.transformers.subsystem.VersionedExtension1;
-import org.jboss.as.subsystem.test.transformers.subsystem.VersionedExtension2;
-import org.jboss.as.subsystem.test.transformers.subsystem.VersionedExtensionCommon;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.StreamExporter;
@@ -62,7 +58,7 @@ public class TransformerSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @BeforeClass
-    public static void createLegacyJar() throws MalformedURLException {
+    public static void createLegacyJars() throws MalformedURLException {
         JavaArchive legacySubsystemArchive = ShrinkWrap.create(JavaArchive.class, "legacy-archive.jar");
         legacySubsystemArchive.addPackage(VersionedExtension2.class.getPackage());
         StreamExporter exporter = legacySubsystemArchive.as(ZipExporter.class);
@@ -101,7 +97,6 @@ public class TransformerSubsystemTestCase extends AbstractSubsystemBaseTest {
     private void testTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
         ModelVersion oldVersion = ModelVersion.create(1, 0, 0);
         KernelServicesBuilder builder = createKernelServicesBuilder(null)
-                .enableTransformerAttachmentGrabber()
                 .setSubsystemXml(getSubsystemXml());
         builder.createLegacyKernelServicesBuilder(null, controllerVersion, oldVersion)
                 .setExtensionClassName(VersionedExtension1.class.getName())
@@ -133,17 +128,13 @@ public class TransformerSubsystemTestCase extends AbstractSubsystemBaseTest {
 
         PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM, "test-subsystem");
         ModelNode writeAttribute = Util.getWriteAttributeOperation(subsystemAddress, "test-attribute", "do reject");
-        TransformerOperationAttachment attachment = mainServices.executeAndGrabTransformerAttachment(writeAttribute);
-        Assert.assertNotNull(attachment);
-        OperationTransformer.TransformedOperation op = mainServices.transformOperation(oldVersion, writeAttribute, attachment);
+        OperationTransformer.TransformedOperation op = mainServices.executeInMainAndGetTheTransformedOperation(writeAttribute, oldVersion);
         Assert.assertFalse(op.rejectOperation(success()));
 
         //The model now has the 'magic' old value which gets put into the transformer attachment, which the reject transformer
         //will reject
         writeAttribute = Util.getWriteAttributeOperation(subsystemAddress, "test-attribute", "something else");
-        attachment = mainServices.executeAndGrabTransformerAttachment(writeAttribute);
-        Assert.assertNotNull(attachment);
-        op = mainServices.transformOperation(oldVersion, writeAttribute, attachment);
+        op = mainServices.executeInMainAndGetTheTransformedOperation(writeAttribute, oldVersion);
         Assert.assertTrue(op.rejectOperation(success()));
     }
 

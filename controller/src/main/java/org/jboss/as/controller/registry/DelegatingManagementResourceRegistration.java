@@ -35,7 +35,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 
@@ -47,7 +47,6 @@ import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
-@SuppressWarnings("deprecation")
 public class DelegatingManagementResourceRegistration implements ManagementResourceRegistration {
 
     /**
@@ -93,6 +92,16 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     @Override
     public PathAddress getPathAddress() {
         return getDelegate().getPathAddress();
+    }
+
+    @Override
+    public int getMaxOccurs() {
+        return getDelegate().getMaxOccurs();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return getDelegate().getMinOccurs();
     }
 
     @Override
@@ -201,6 +210,7 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void setRuntimeOnly(boolean runtimeOnly) {
         getDelegate().setRuntimeOnly(runtimeOnly);
     }
@@ -306,12 +316,12 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
-    public void registerCapability(Capability capability) {
+    public void registerCapability(RuntimeCapability capability) {
         getDelegate().registerCapability(capability);
     }
 
     @Override
-    public Set<Capability> getCapabilities() {
+    public Set<RuntimeCapability> getCapabilities() {
         return getDelegate().getCapabilities();
     }
 

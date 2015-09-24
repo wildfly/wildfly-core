@@ -124,11 +124,12 @@ abstract class IncludingResourceCapabilityScope implements CapabilityScope {
         for (String includer : included.get(key)) {
             if (!includedContext.getName().equals(includer)) { // guard against cycles
                 Set<CapabilityScope> includees = attached.get(includer);
-                includees.add(includedContext);
-                // Continue up the chain
-                storeIncludes(includedContext, includer, attached, included);
+                if (includees != null) {
+                    includees.add(includedContext);
+                    // Continue up the chain
+                    storeIncludes(includedContext, includer, attached, included);
+                } // else 'includer' must have been bogus
             }
-
         }
     }
 }

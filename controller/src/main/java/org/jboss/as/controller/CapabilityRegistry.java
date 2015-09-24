@@ -25,18 +25,21 @@ package org.jboss.as.controller;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityRegistration;
 import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.PossibleCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
@@ -408,7 +411,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     public Set<CapabilityRegistration> getCapabilities() {
         readLock.lock();
         try {
-            return Collections.unmodifiableSet(new HashSet<>(capabilities.values()));
+            return Collections.unmodifiableSet(new TreeSet<>(capabilities.values()));
         } finally {
             readLock.unlock();
         }
@@ -418,7 +421,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     public Set<CapabilityRegistration> getPossibleCapabilities() {
         readLock.lock();
         try {
-            return Collections.unmodifiableSet(new HashSet<>(possibleCapabilities.values()));
+            return Collections.unmodifiableSet(new TreeSet<>(possibleCapabilities.values()));
         } finally {
             readLock.unlock();
         }
@@ -438,6 +441,22 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         }
     }
 
+    public Set<PathAddress> getPossibleProviderPoints(CapabilityId capabilityId){
+        Set<PathAddress> result = new LinkedHashSet<>();
+        readLock.lock();
+        try {
+            capabilityId = capabilityId.getScope() == CapabilityScope.GLOBAL?capabilityId: new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL);
+            CapabilityRegistration<RuntimeCapability> reg =  possibleCapabilities.get(capabilityId);
+            if (reg!=null){
+                result.addAll(reg.getRegistrationPoints().stream().map(RegistrationPoint::getAddress).collect(Collectors.toList()));
+            }
+
+        } finally {
+            readLock.unlock();
+        }
+        return result;
+    }
+
     //end ImmutableCapabilityRegistry methods
 
     /**
@@ -453,18 +472,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             }
             publishedFullRegistry.writeLock.lock();
             try {
-                CapabilityRegistry published = publishedFullRegistry;
-                published.capabilities.clear();
-                published.capabilities.putAll(capabilities);
-
-                published.possibleCapabilities.clear();
-                published.possibleCapabilities.putAll(possibleCapabilities);
-
-                published.requirements.clear();
-                published.requirements.putAll(requirements);
-
-                published.runtimeOnlyRequirements.clear();
-                published.runtimeOnlyRequirements.putAll(runtimeOnlyRequirements);
+                publishedFullRegistry.clear();
+                copy(this, publishedFullRegistry);
                 modified = false;
             } finally {
                 publishedFullRegistry.writeLock.unlock();

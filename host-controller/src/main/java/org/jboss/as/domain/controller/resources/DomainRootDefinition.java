@@ -39,8 +39,11 @@ import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -96,14 +99,12 @@ import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.management.client.content.ManagedDMRContentTypeResourceDefinition;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
-import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerEnvironment.LaunchType;
 import org.jboss.as.server.controller.descriptions.ServerDescriptionConstants;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition.Location;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayDefinition;
-import org.jboss.as.server.operations.LaunchTypeHandler;
 import org.jboss.as.server.operations.ServerVersionOperations.DefaultEmptyListAttributeHandler;
 import org.jboss.as.server.services.net.InterfaceAddHandler;
 import org.jboss.as.server.services.net.InterfaceRemoveHandler;
@@ -222,7 +223,18 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadWriteAttribute(NAME, null, new ModelOnlyWriteAttributeHandler(NAME));
         resourceRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, new ModelOnlyWriteAttributeHandler(ORGANIZATION_IDENTIFIER));
         resourceRegistration.registerReadOnlyAttribute(PROCESS_TYPE, isMaster ? ProcessTypeHandler.MASTER : ProcessTypeHandler.SLAVE);
-        resourceRegistration.registerReadOnlyAttribute(LAUNCH_TYPE, new LaunchTypeHandler(ServerEnvironment.LaunchType.DOMAIN));
+        resourceRegistration.registerReadOnlyAttribute(LAUNCH_TYPE, new OperationStepHandler() {
+            @Override
+            public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+                final String launchType;
+                if (environment.getProcessType() == ProcessType.EMBEDDED_HOST_CONTROLLER) {
+                    launchType = "EMBEDDED";
+                } else {
+                    launchType = LaunchType.DOMAIN.toString();
+                }
+                context.getResult().set(launchType);
+            }
+        });
         resourceRegistration.registerReadOnlyAttribute(LOCAL_HOST_NAME, new LocalHostNameOperationHandler(hostControllerInfo));
 
         resourceRegistration.registerReadOnlyAttribute(MANAGEMENT_MAJOR_VERSION, null);
@@ -303,7 +315,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         final ManagementResourceRegistration coreMgmt = resourceRegistration.registerSubModel(CoreManagementResourceDefinition.forDomain(authorizer));
         coreMgmt.registerSubModel(new HostConnectionResourceDefinition(hostRegistrations));
 
-        resourceRegistration.registerSubModel(new ProfileResourceDefinition(extensionRegistry));
+        resourceRegistration.registerSubModel(new ProfileResourceDefinition(hostControllerInfo, ignoredDomainResourceRegistry));
         resourceRegistration.registerSubModel(PathResourceDefinition.createNamed(pathManager));
         ResourceDefinition domainDeploymentDefinition = isMaster
                 ? DomainDeploymentResourceDefinition.createForDomainMaster(contentRepo)

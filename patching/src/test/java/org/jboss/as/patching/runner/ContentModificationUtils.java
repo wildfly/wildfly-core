@@ -43,6 +43,7 @@ import java.io.IOException;
 import org.jboss.as.patching.metadata.BundleItem;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.MiscContentItem;
+import org.jboss.as.patching.metadata.ModificationCondition;
 import org.jboss.as.patching.metadata.ModuleItem;
 
 /**
@@ -118,14 +119,25 @@ public class ContentModificationUtils {
     }
 
     public static ContentModification addMisc(File patchDir, String patchElementID, String content, String... fileSegments) throws IOException {
+        return addMisc(patchDir, patchElementID, content, fileSegments, null);
+    }
+
+    public static ContentModification addMisc(File patchDir, String patchElementID, String content, String[] contentSegments, String[] requiredSegments) throws IOException {
         File miscDir = newFile(patchDir, patchElementID, MISC);
-        File addedFile = touch(miscDir, fileSegments);
+        File addedFile = touch(miscDir, contentSegments);
         dump(addedFile, content);
         byte[] newHash = hashFile(addedFile);
-        String[] subdir = new String[fileSegments.length -1];
-        System.arraycopy(fileSegments, 0, subdir, 0, fileSegments.length - 1);
-        ContentModification fileAdded = new ContentModification(new MiscContentItem(addedFile.getName(), subdir, newHash), NO_CONTENT, ADD);
-        return fileAdded;
+        String[] subdir = new String[contentSegments.length -1];
+        System.arraycopy(contentSegments, 0, subdir, 0, contentSegments.length - 1);
+        final MiscContentItem contentItem = new MiscContentItem(addedFile.getName(), subdir, newHash);
+
+        ModificationCondition condition = null;
+        if(requiredSegments != null && requiredSegments.length > 0) {
+            subdir = new String[requiredSegments.length -1];
+            System.arraycopy(requiredSegments, 0, subdir, 0, requiredSegments.length - 1);
+            condition = ModificationCondition.Factory.exists(new MiscContentItem(requiredSegments[requiredSegments.length - 1], subdir, null));
+        }
+        return new ContentModification(contentItem, NO_CONTENT, ADD, condition);
     }
 
     public static ContentModification removeMisc(File existingFile, String... fileSegments) throws IOException {
@@ -145,6 +157,10 @@ public class ContentModificationUtils {
     }
 
     public static ContentModification modifyMisc(File patchDir, String patchElementID, String modifiedContent, byte[] existingHash, String... fileSegments) throws IOException {
+        return modifyMisc(patchDir, patchElementID, modifiedContent, existingHash, fileSegments, null);
+    }
+
+    public static ContentModification modifyMisc(File patchDir, String patchElementID, String modifiedContent, byte[] existingHash, String[] fileSegments, String[] requiredSegments) throws IOException {
         File miscDir = newFile(patchDir, patchElementID, MISC);
         File modifiedFile = touch(miscDir, fileSegments);
         dump(modifiedFile, modifiedContent);
@@ -154,8 +170,15 @@ public class ContentModificationUtils {
             subdir = new String[fileSegments.length -1];
             System.arraycopy(fileSegments, 0, subdir, 0, fileSegments.length - 1);
         }
-        ContentModification fileUpdated = new ContentModification(new MiscContentItem(modifiedFile.getName(), subdir, modifiedHash), existingHash, MODIFY);
-        return fileUpdated;
-    }
+        final MiscContentItem item = new MiscContentItem(modifiedFile.getName(), subdir, modifiedHash);
 
+        ModificationCondition condition = null;
+        if(requiredSegments != null && requiredSegments.length > 0) {
+            subdir = new String[requiredSegments.length -1];
+            System.arraycopy(requiredSegments, 0, subdir, 0, requiredSegments.length - 1);
+            condition = ModificationCondition.Factory.exists(new MiscContentItem(requiredSegments[requiredSegments.length - 1], subdir, null));
+        }
+
+        return new ContentModification(item, existingHash, MODIFY, condition);
+    }
 }

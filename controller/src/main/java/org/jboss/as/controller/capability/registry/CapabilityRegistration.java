@@ -23,8 +23,8 @@
 package org.jboss.as.controller.capability.registry;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,7 +38,7 @@ import org.jboss.as.controller.capability.Capability;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public class CapabilityRegistration<C extends Capability> {
+public class CapabilityRegistration<C extends Capability> implements Comparable<CapabilityRegistration> {
 
     private final Map<PathAddress, RegistrationPoint> registrationPoints = new LinkedHashMap<>();
     private final C capability;
@@ -119,7 +119,7 @@ public class CapabilityRegistration<C extends Capability> {
      * @return all registration points. Will not be {@code null} but may be empty
      */
     public synchronized Set<RegistrationPoint> getRegistrationPoints() {
-        return Collections.unmodifiableSet(new HashSet<>(registrationPoints.values()));
+        return Collections.unmodifiableSet(new LinkedHashSet<>(registrationPoints.values()));
     }
 
     public synchronized boolean addRegistrationPoint(RegistrationPoint toAdd) {
@@ -142,5 +142,10 @@ public class CapabilityRegistration<C extends Capability> {
 
     public synchronized int getRegistrationPointCount() {
         return registrationPoints.size();
+    }
+
+    @Override
+    public int compareTo(CapabilityRegistration o) {
+        return id.compareTo(o.id);
     }
 }

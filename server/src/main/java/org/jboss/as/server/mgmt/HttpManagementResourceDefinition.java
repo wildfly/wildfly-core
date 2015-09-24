@@ -31,7 +31,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.HttpManagementAddHandler;
@@ -71,17 +70,12 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setAddHandler(HttpManagementAddHandler.INSTANCE)
             .setRemoveHandler(HttpManagementRemoveHandler.INSTANCE)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
-            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE));
+            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES));
     }
 
     @Override
     protected AttributeDefinition[] getAttributeDefinitions() {
         return ATTRIBUTE_DEFINITIONS;
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(HTTP_MANAGEMENT_RUNTIME_CAPABILITY);
     }
 
 }

@@ -38,6 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
@@ -447,7 +448,7 @@ public final class Main {
         return new HostControllerEnvironment(hostSystemProperties, isRestart, modulePath, pmAddress, pmPort,
                 pcSocketConfig.getBindAddress(), pcSocketConfig.getBindPort(), defaultJVM,
                 domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles,
-                cachedDc, productConfig, securityManagerEnabled, startTime);
+                cachedDc, productConfig, securityManagerEnabled, startTime, ProcessType.HOST_CONTROLLER);
     }
 
     private static String parseValue(final String arg, final String key) {

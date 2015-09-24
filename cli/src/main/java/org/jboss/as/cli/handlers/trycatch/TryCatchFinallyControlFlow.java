@@ -22,20 +22,16 @@
 
 package org.jboss.as.cli.handlers.trycatch;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandLineRedirection;
-import org.jboss.as.cli.Util;
-import org.jboss.as.cli.batch.Batch;
 import org.jboss.as.cli.batch.BatchManager;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.cli.parsing.command.CommandFormat;
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.dmr.ModelNode;
 
 /**
  *
@@ -167,30 +163,34 @@ class TryCatchFinallyControlFlow implements CommandLineRedirection {
 
             registration.unregister();
 
-            String error = null;
+            CommandLineException error = null;
 
             if (tryList == null || tryList.isEmpty()) {
                 throw new CommandLineException("The try block is empty");
             }
-            ModelNode response = executeBlock(ctx, tryList, "try");
-            if(!Util.isSuccess(response)) {
+
+            try {
+                executeBlock(ctx, tryList, "try");
+            } catch(CommandLineException eTry) {
                 if(catchList == null) {
-                    error = "try failed: " + Util.getFailureDescription(response);
+                    error = eTry;
                 } else {
-                    response = executeBlock(ctx, catchList, "catch");
-                    if(response != null && !Util.isSuccess(response)) {
-                        error = "catch failed: " + Util.getFailureDescription(response);
+                    try {
+                        executeBlock(ctx, catchList, "catch");
+                    } catch(CommandLineException eCatch) {
+                        error = eCatch;
                     }
                 }
             }
 
-            response = executeBlock(ctx, finallyList, "finally");
-            if(response != null && !Util.isSuccess(response)) {
-                error = "finally failed: " + Util.getFailureDescription(response);
+            try {
+                executeBlock(ctx, finallyList, "finally");
+            } catch(CommandLineException eFinally) {
+                error = eFinally;
             }
 
             if(error != null) {
-                throw new CommandLineException(error);
+                throw error;
             }
         } finally {
             if(registration.isActive()) {
@@ -200,29 +200,21 @@ class TryCatchFinallyControlFlow implements CommandLineRedirection {
         }
     }
 
-    private ModelNode executeBlock(CommandContext ctx, List<String> block, String blockName) throws CommandLineException {
+    private void executeBlock(CommandContext ctx, List<String> block, String blockName) throws CommandLineException {
         if(block != null && !block.isEmpty()) {
             final BatchManager batchManager = ctx.getBatchManager();
-            if(!batchManager.activateNewBatch()) {
-                throw new CommandLineException("Failed to activate a new batch");
-            }
-            final Batch batch = batchManager.getActiveBatch();
+            // this is to discard a batch started by the block in case the block fails
+            // as the cli remains in the batch mode in case run-batch resulted in an error
+            final boolean discardActivatedBatch = !batchManager.isBatchActive();
             try {
                 for (String l : block) {
                     ctx.handle(l);
                 }
             } finally {
-                batchManager.discardActiveBatch();
-            }
-            if (!batch.getCommands().isEmpty()) {
-                final ModelNode request = batch.toRequest();
-                try {
-                    return ctx.getModelControllerClient().execute(request);
-                } catch (IOException e) {
-                    throw new CommandLineException(blockName + " request failed", e);
+                if(discardActivatedBatch && batchManager.isBatchActive()) {
+                    batchManager.discardActiveBatch();
                 }
             }
         }
-        return null;
     }
 }

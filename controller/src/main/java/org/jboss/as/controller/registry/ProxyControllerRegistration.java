@@ -41,7 +41,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyStepHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -92,6 +92,16 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
+    public int getMaxOccurs() {
+        return 1;
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return 1;
+    }
+
+    @Override
     public boolean isRuntimeOnly() {
         checkPermission();
         return true;
@@ -120,7 +130,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public void registerCapability(Capability capability) {
+    public void registerCapability(RuntimeCapability capability) {
         throw alreadyRegistered();
     }
 
@@ -346,7 +356,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public Set<Capability> getCapabilities() {
+    public Set<RuntimeCapability> getCapabilities() {
         return Collections.emptySet();
     }
 

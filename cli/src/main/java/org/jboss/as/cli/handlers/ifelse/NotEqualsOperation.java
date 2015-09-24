@@ -29,18 +29,19 @@ import org.jboss.dmr.ModelNode;
  */
 public class NotEqualsOperation extends ComparisonOperation {
 
+    static final String SYMBOL = "!=";
+
     NotEqualsOperation() {
-        super(ExpressionParser.NOT_EQ);
+        super(SYMBOL);
     }
 
     @Override
     protected boolean compare(Object left, Object right) {
-        if(((ModelNode) left).getType() != ((ModelNode)right).getType()) {
-            return true;
-        }
-
         if(left == null) {
             return right != null;
+        }
+        if(((ModelNode) left).getType() != ((ModelNode)right).getType()) {
+            return true;
         }
         return !left.equals(right);
     }

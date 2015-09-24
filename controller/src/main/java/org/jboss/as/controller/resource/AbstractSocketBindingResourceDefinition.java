@@ -109,9 +109,11 @@ public abstract class AbstractSocketBindingResourceDefinition extends SimpleReso
             .build();
 
     public AbstractSocketBindingResourceDefinition(final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
-        super(PATH,
-                ControllerResolver.getResolver(ModelDescriptionConstants.SOCKET_BINDING),
-                addHandler, removeHandler, OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_ALL_SERVICES);
+        super(new Parameters(PATH, ControllerResolver.getResolver(ModelDescriptionConstants.SOCKET_BINDING))
+                .setAddHandler(addHandler)
+                .setRemoveHandler(removeHandler)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
     }
 
     @Override

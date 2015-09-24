@@ -38,7 +38,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -61,6 +61,16 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
         this.aliasEntry = aliasEntry;
         this.handler = new AliasStepHandler(aliasEntry);
         this.target = target;
+    }
+
+    @Override
+    public int getMaxOccurs() {
+        return target.getMaxOccurs();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return target.getMaxOccurs();
     }
 
     @Override
@@ -190,7 +200,7 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
-    public void registerCapability(Capability capability) {
+    public void registerCapability(RuntimeCapability capability) {
         throw alreadyRegistered();
     }
 
@@ -304,7 +314,7 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
-    public Set<Capability> getCapabilities() {
+    public Set<RuntimeCapability> getCapabilities() {
         return target.getCapabilities();
     }
 }

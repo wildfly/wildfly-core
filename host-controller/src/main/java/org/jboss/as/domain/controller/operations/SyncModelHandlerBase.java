@@ -111,4 +111,8 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
             }
         }, OperationContext.Stage.MODEL, true);
     }
+
+    protected SyncModelParameters getParameters() {
+        return parameters;
+    }
 }

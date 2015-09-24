@@ -60,9 +60,9 @@ public class SyncServerGroupOperationHandler extends SyncModelHandlerBase {
      * For the local model we include both the original as well as the remote model. The diff will automatically remove
      * not used configuration.
      *
-     * @param context             the operation context
-     * @param remote              the remote model
-     * @param remoteExtensions    the extension registry
+     * @param context          the operation context
+     * @param remote           the remote model
+     * @param remoteExtensions the extension registry
      * @return
      */
     @Override
@@ -84,7 +84,6 @@ public class SyncServerGroupOperationHandler extends SyncModelHandlerBase {
                 return parameters.getIgnoredResourceRegistry().isResourceExcluded(address);
             }
         };
-        return ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, true, delegate);
+        return ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, delegate);
     }
-
 }

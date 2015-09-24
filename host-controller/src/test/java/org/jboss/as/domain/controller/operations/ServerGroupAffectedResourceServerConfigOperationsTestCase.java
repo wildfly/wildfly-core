@@ -514,6 +514,12 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
             return true;
         }
+
+        @Override
+        public boolean isBackupDc() {
+            return false;
+        }
+
     }
 
     private static class ServerInventoryMock implements ServerInventory {

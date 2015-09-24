@@ -66,7 +66,7 @@ public class ExtensionSubsystemResourceDefinition extends SimpleResourceDefiniti
             .setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
 
     ExtensionSubsystemResourceDefinition() {
-        super(PathElement.pathElement(SUBSYSTEM), ControllerResolver.getResolver(EXTENSION, SUBSYSTEM));
+        super(new Parameters(PathElement.pathElement(SUBSYSTEM), ControllerResolver.getResolver(EXTENSION, SUBSYSTEM)).setRuntime());
     }
 
     @Override
@@ -75,8 +75,5 @@ public class ExtensionSubsystemResourceDefinition extends SimpleResourceDefiniti
         resourceRegistration.registerReadOnlyAttribute(MINOR_VERSION, null);
         resourceRegistration.registerReadOnlyAttribute(MICRO_VERSION, null);
         resourceRegistration.registerReadOnlyAttribute(XML_NAMESPACES, null);
-
-        // HACK -- workaround WFCORE-17
-        resourceRegistration.setRuntimeOnly(true);
     }
 }
