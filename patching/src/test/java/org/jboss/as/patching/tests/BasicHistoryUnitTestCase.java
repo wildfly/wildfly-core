@@ -69,7 +69,7 @@ public class BasicHistoryUnitTestCase extends AbstractPatchingTest {
                 .getParent()
                 .addFileWithRandomContent(standaloneHash, FILE_ONE)
                 .updateFileWithRandomContent(initialHash, existingHash, FILE_EXISTING);
-        ;
+
         // Apply CP1
         apply(cp1);
 
@@ -85,7 +85,7 @@ public class BasicHistoryUnitTestCase extends AbstractPatchingTest {
                 .getParent()
                 .updateFileWithRandomContent(standaloneHash, null, FILE_ONE)
                 .updateFileWithRandomContent(Arrays.copyOf(existingHash, existingHash.length), existingHash, FILE_EXISTING);
-        ;
+
         // Apply oneOff1
         apply(oneOff1);
 
@@ -101,7 +101,7 @@ public class BasicHistoryUnitTestCase extends AbstractPatchingTest {
                 .getParent()
                 .addFileWithRandomContent(standaloneHash, FILE_TWO)
                 .updateFileWithRandomContent(Arrays.copyOf(existingHash, existingHash.length), existingHash, FILE_EXISTING);
-        ;
+
         // Apply CP2
         apply(cp2);
 
@@ -461,7 +461,6 @@ public class BasicHistoryUnitTestCase extends AbstractPatchingTest {
                 .addModuleWithRandomContent("org.jboss.test", null)
                 .getParent()
                 .addFileWithRandomContent(resultingHash, FILE_EXISTING);
-        ;
 
         apply(oop1, ContentVerificationPolicy.OVERRIDE_ALL);
 

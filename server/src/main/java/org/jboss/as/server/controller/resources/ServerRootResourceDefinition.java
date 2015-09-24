@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BootErrorCollector;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
@@ -67,7 +68,6 @@ import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.resource.InterfaceDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
@@ -93,10 +93,10 @@ import org.jboss.as.server.mgmt.HttpManagementResourceDefinition;
 import org.jboss.as.server.mgmt.NativeManagementResourceDefinition;
 import org.jboss.as.server.mgmt.NativeRemotingManagementResourceDefinition;
 import org.jboss.as.server.operations.CleanObsoleteContentHandler;
+import org.jboss.as.server.operations.InstallationReportHandler;
 import org.jboss.as.server.operations.InstanceUuidReadHandler;
 import org.jboss.as.server.operations.LaunchTypeHandler;
 import org.jboss.as.server.operations.ProcessTypeHandler;
-import org.jboss.as.server.operations.InstallationReportHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessReloadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessShutdownHandler;
@@ -108,6 +108,7 @@ import org.jboss.as.server.operations.ServerSuspendHandler;
 import org.jboss.as.server.operations.ServerVersionOperations.DefaultEmptyListAttributeHandler;
 import org.jboss.as.server.operations.SetServerGroupHostHandler;
 import org.jboss.as.server.operations.SuspendStateReadHandler;
+import org.jboss.as.server.services.net.InterfaceResourceDefinition;
 import org.jboss.as.server.services.net.NetworkInterfaceRuntimeHandler;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceAddHandler;
@@ -215,6 +216,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     private final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater;
     private final DelegatingConfigurableAuthorizer authorizer;
     private final ManagedAuditLogger auditLogger;
+    private final CapabilityRegistry capabilityRegistry;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
     private final BootErrorCollector bootErrorCollector;
 
@@ -232,7 +234,8 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final DelegatingConfigurableAuthorizer authorizer,
             final ManagedAuditLogger auditLogger,
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider,
-            final BootErrorCollector bootErrorCollector) {
+            final BootErrorCollector bootErrorCollector,
+            final CapabilityRegistry capabilityRegistry) {
         super(null, ServerDescriptions.getResourceDescriptionResolver(SERVER, false));
         this.contentRepository = contentRepository;
         this.extensibleConfigurationPersister = extensibleConfigurationPersister;
@@ -245,6 +248,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         this.pathManager = pathManager;
         this.operationIDUpdater = operationIDUpdater;
         this.auditLogger = auditLogger;
+        this.capabilityRegistry = capabilityRegistry;
 
         this.isDomain = serverEnvironment == null || serverEnvironment.getLaunchType() == LaunchType.DOMAIN;
         this.authorizer = authorizer;
@@ -436,6 +440,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         // Other core services
         resourceRegistration.registerSubModel(new ServiceContainerResourceDefinition());
 
+        //module loading
         resourceRegistration.registerSubModel(ModuleLoadingResourceDefinition.INSTANCE);
 
         // Platform MBeans
@@ -444,8 +449,12 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         // Paths
         resourceRegistration.registerSubModel(PathResourceDefinition.createSpecified(pathManager));
 
+        //capability registry
+        // TODO enable once we have consensus on the API with the HAL team
+        //resourceRegistration.registerSubModel(new CapabilityRegistryResourceDefinition(capabilityRegistry));
+
         // Interfaces
-        ManagementResourceRegistration interfaces = resourceRegistration.registerSubModel(new InterfaceDefinition(
+        ManagementResourceRegistration interfaces = resourceRegistration.registerSubModel(new InterfaceResourceDefinition(
                 SpecifiedInterfaceAddHandler.INSTANCE,
                 SpecifiedInterfaceRemoveHandler.INSTANCE,
                 true,

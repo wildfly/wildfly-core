@@ -43,13 +43,13 @@ import org.jboss.as.cli.operation.ParsedCommandLine;
  */
 public class IfHandler extends CommandHandlerWithHelp {
 
-    private final ArgumentWithValue condition;
+    private final ConditionArgument condition;
     private final ArgumentWithValue of;
 
     public IfHandler() {
         super("if", true);
 
-            condition = new ArgumentWithValue(this, 0, "--condition");
+            condition = new ConditionArgument(this);
             condition.addCantAppearAfter(helpArg);
 
             of = new ArgumentWithValue(this, new DefaultCompleter(new CandidatesProvider(){
@@ -114,6 +114,10 @@ public class IfHandler extends CommandHandlerWithHelp {
             line.addRequiredPreceding(of);
     }
 
+    public ConditionArgument getConditionArgument() {
+        return condition;
+    }
+
     @Override
     public boolean isAvailable(CommandContext ctx) {
         return IfElseControlFlow.get(ctx) == null && !ctx.getBatchManager().isBatchActive();
@@ -136,7 +140,7 @@ public class IfHandler extends CommandHandlerWithHelp {
         }
 
         final ParsedCommandLine args = ctx.getParsedCommandLine();
-        final String conditionStr = this.condition.getValue(args, true);
+        final String conditionStr = this.condition.getOriginalValue(args, true);
         int i = argsStr.indexOf(conditionStr);
         if(i < 0) {
             throw new CommandFormatException("Failed to locate '" + conditionStr + "' in '" + argsStr + "'");
@@ -147,7 +151,7 @@ public class IfHandler extends CommandHandlerWithHelp {
         }
 
         final String requestStr = argsStr.substring(i + 2);
-        ctx.registerRedirection(new IfElseControlFlow(ctx, conditionStr, requestStr));
+        ctx.registerRedirection(new IfElseControlFlow(ctx, condition.resolveOperation(args), requestStr));
     }
 
     /**

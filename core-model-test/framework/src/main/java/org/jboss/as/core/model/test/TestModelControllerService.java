@@ -40,9 +40,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -56,6 +57,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.audit.AuditLogger;
+import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
@@ -120,6 +122,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     private final TestDelegatingResourceDefinition rootResourceDefinition;
     private final ControlledProcessState processState;
     private final ExtensionRegistry extensionRegistry;
+    private final CapabilityRegistry capabilityRegistry;
     private final AbstractVaultReader vaultReader;
     private volatile Initializer initializer;
 
@@ -135,6 +138,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
         this.rootResourceDefinition = rootResourceDefinition;
         this.processState = processState;
         this.extensionRegistry = extensionRegistry;
+        this.capabilityRegistry = new CapabilityRegistry(processType.isServer()); //maybe get this as paramter?
         this.vaultReader = vaultReader;
 
         if (type == TestModelType.STANDALONE) {
@@ -167,6 +171,14 @@ class TestModelControllerService extends ModelTestModelControllerService {
     }
 
     @Override
+    protected void initCoreModel(ManagementModel managementModel, Resource modelControllerResource) {
+        super.initCoreModel(managementModel, modelControllerResource);
+        if (modelInitializer != null) {
+            modelInitializer.populateModel(managementModel);
+        }
+    }
+
+    @Override
     protected void initCoreModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
         //See server HttpManagementAddHandler
         System.setProperty("jboss.as.test.disable.runtime", "1");
@@ -178,9 +190,6 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
         } else if (type == TestModelType.DOMAIN){
             initializer.initCoreModel(rootResource, rootRegistration, modelControllerResource);
-        }
-        if (modelInitializer != null) {
-            modelInitializer.populateModel(rootResource);
         }
     }
 
@@ -405,6 +414,11 @@ class TestModelControllerService extends ModelTestModelControllerService {
             }
 
             @Override
+            public ImmutableCapabilityRegistry getCapabilityRegistry() {
+                return capabilityRegistry;
+            }
+
+            @Override
             public RunningMode getCurrentRunningMode() {
                 return null;
             }
@@ -464,7 +478,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     authorizer,
                     AuditLogger.NO_OP_LOGGER,
                     getMutableRootResourceRegistrationProvider(),
-                    getBootErrorCollector()));
+                    getBootErrorCollector(), capabilityRegistry));
         }
 
         @Override
@@ -728,6 +742,11 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
         @Override
         public ExtensionRegistry getExtensionRegistry() {
+            return null;
+        }
+
+        @Override
+        public ImmutableCapabilityRegistry getCapabilityRegistry() {
             return null;
         }
 

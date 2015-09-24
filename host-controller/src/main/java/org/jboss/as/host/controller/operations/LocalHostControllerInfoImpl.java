@@ -132,6 +132,16 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
         return remoteIgnoreUnaffectedConfiguration;
     }
 
+    /**
+     * This indicates the process was started with '--backup', or has ignore-unused-configuration=false in host.xml and intends
+     * to maintain a backup of the entire domain configuration, including deployments.
+     * @return
+     */
+    @Override
+    public boolean isBackupDc() {
+        return hostEnvironment == null ? false : hostEnvironment.isBackupDomainFiles();
+    }
+
     public AdminOnlyDomainConfigPolicy getAdminOnlyDomainConfigPolicy() {
         return adminOnlyDomainConfigPolicy;
     }

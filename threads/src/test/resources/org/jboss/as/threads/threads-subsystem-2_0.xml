@@ -1,0 +1,89 @@
+<!--
+  ~ JBoss, Home of Professional Open Source
+  ~ Copyright 2015, Red Hat, Inc., and individual contributors as indicated
+  ~ by the @authors tag.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<subsystem xmlns="urn:jboss:domain:threads:2.0">
+    <thread-factory name="test-factory"/>
+    <thread-factory name="factory1" group-name="factory1-threads" thread-name-pattern="%G %i" priority="5"/>
+    <thread-factory name="factory2"/>
+    <unbounded-queue-thread-pool name="unbounded-1" max-threads="10">
+        <keepalive-time time="10" unit="seconds"/>
+    </unbounded-queue-thread-pool>
+
+    <unbounded-queue-thread-pool name="unbounded-2" max-threads="10"
+                                 thread-factory="factory1">
+        <keepalive-time time="10" unit="seconds"/>
+    </unbounded-queue-thread-pool>
+
+    <bounded-queue-thread-pool name="bounded-1" allow-core-timeout="true"
+                               core-threads="5"
+                               queue-length="100" max-threads="10"
+                               handoff-executor="unbounded-1">
+        <keepalive-time time="10" unit="seconds"/>
+    </bounded-queue-thread-pool>
+
+    <bounded-queue-thread-pool name="bounded-2" core-threads="5" queue-length="100" max-threads="10"
+                               thread-factory="factory1">
+        <keepalive-time time="10" unit="seconds"/>
+    </bounded-queue-thread-pool>
+    <blocking-bounded-queue-thread-pool name="blocking-bounded-1" allow-core-timeout="true"
+                                        core-threads="5"
+                                        queue-length="100" max-threads="10">
+        <keepalive-time time="10" unit="seconds"/>
+    </blocking-bounded-queue-thread-pool>
+    <blocking-bounded-queue-thread-pool name="blocking-bounded-2"
+                                        core-threads="5"
+                                        queue-length="100" max-threads="10"
+                                        thread-factory="factory1">
+        <keepalive-time time="10" unit="seconds"/>
+    </blocking-bounded-queue-thread-pool>
+    <queueless-thread-pool name="test-pool"
+                           max-threads="${prop.max-thread-count:100}"
+                           thread-factory="test-factory" handoff-executor="other">
+        <keepalive-time time="10" unit="seconds"/>
+    </queueless-thread-pool>
+    <queueless-thread-pool name="queueless-1" max-threads="10"
+                           handoff-executor="unbounded-1">
+        <keepalive-time time="10" unit="seconds"/>
+    </queueless-thread-pool>
+    <queueless-thread-pool name="queueless-2" max-threads="10"
+                           thread-factory="factory1">
+        <keepalive-time time="10" unit="seconds"/>
+    </queueless-thread-pool>
+    <queueless-thread-pool name="other" max-threads="1"/>
+    <blocking-queueless-thread-pool name="blocking-queueless-1" max-threads="10">
+        <keepalive-time time="10" unit="seconds"/>
+    </blocking-queueless-thread-pool>
+
+    <blocking-queueless-thread-pool name="blocking-queueless-2" max-threads="10"
+                                    thread-factory="factory1">
+        <keepalive-time time="10" unit="seconds"/>
+    </blocking-queueless-thread-pool>
+
+    <scheduled-thread-pool name="test-pool" max-threads="${prop.max-thread-count:10}" thread-factory="test-factory">
+        <keepalive-time time="10" unit="seconds"/>
+    </scheduled-thread-pool>
+
+    <scheduled-thread-pool name="scheduled-1" max-threads="10">
+        <keepalive-time time="10" unit="seconds"/>
+    </scheduled-thread-pool>
+
+    <scheduled-thread-pool name="scheduled-2" max-threads="10"
+                           thread-factory="factory1">
+        <keepalive-time time="10" unit="seconds"/>
+    </scheduled-thread-pool>
+</subsystem>
+    

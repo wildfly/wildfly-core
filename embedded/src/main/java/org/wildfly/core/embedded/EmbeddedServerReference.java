@@ -75,6 +75,10 @@ public final class EmbeddedServerReference implements StandaloneServer, HostCont
         return (HostController) server;
     }
 
+    public boolean isHostController() {
+        return server instanceof HostController;
+    }
+
     private Object invokeOnServer(final Method method, Object... args) {
         try {
             return method.invoke(server, args);

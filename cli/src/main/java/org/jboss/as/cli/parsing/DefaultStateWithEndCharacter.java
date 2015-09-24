@@ -39,7 +39,7 @@ public class DefaultStateWithEndCharacter extends DefaultParsingState {
         this(id, leaveStateChar, endRequired, false);
     }
 
-    DefaultStateWithEndCharacter(String id, char leaveStateChar, boolean endRequired, boolean enterLeaveContent) {
+    public DefaultStateWithEndCharacter(String id, char leaveStateChar, boolean endRequired, boolean enterLeaveContent) {
         this(id, leaveStateChar, endRequired, enterLeaveContent, new DefaultCharacterHandlerMap());
     }
 

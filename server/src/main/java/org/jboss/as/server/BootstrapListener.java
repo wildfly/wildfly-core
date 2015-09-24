@@ -21,6 +21,13 @@
  */
 package org.jboss.as.server;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
@@ -37,19 +44,23 @@ import org.jboss.msc.service.StabilityStatistics;
  */
 public final class BootstrapListener {
 
+    public static final String MARKER_FILE = "startup-marker";
+
     private final StabilityMonitor monitor = new StabilityMonitor();
     private final ServiceContainer serviceContainer;
     private final ServiceTarget serviceTarget;
     private final long startTime;
     private final String prettyVersion;
     private final FutureServiceContainer futureContainer;
+    private final File tempDir;
 
-    public BootstrapListener(final ServiceContainer serviceContainer, final long startTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion) {
+    public BootstrapListener(final ServiceContainer serviceContainer, final long startTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
         this.serviceContainer = serviceContainer;
         this.startTime = startTime;
         this.serviceTarget = serviceTarget;
         this.prettyVersion = prettyVersion;
         this.futureContainer = futureContainer;
+        this.tempDir = tempDir;
         serviceTarget.addMonitor(monitor);
     }
 
@@ -72,7 +83,11 @@ public final class BootstrapListener {
         }
     }
 
-    protected void done(final long bootstrapTime, final StabilityStatistics statistics) {
+    public void bootFailure(String message) {
+        futureContainer.failed(new Exception(message));
+    }
+
+    private void done(final long bootstrapTime, final StabilityStatistics statistics) {
         futureContainer.done(serviceContainer);
         if (serviceContainer.isShutdown()) {
             // Do not print boot statistics because server
@@ -92,8 +107,37 @@ public final class BootstrapListener {
         final int started = statistics.getStartedCount();
         if (failed == 0 && problem == 0) {
             ServerLogger.AS_ROOT_LOGGER.startedClean(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, onDemand + passive + lazy);
+            createStartupMarker("success", startTime);
         } else {
             ServerLogger.AS_ROOT_LOGGER.startedWitErrors(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, failed + problem, onDemand + passive + lazy);
+            createStartupMarker("error", startTime);
+        }
+    }
+
+    private void createStartupMarker(String result, long startTime) {
+        File file = new File(tempDir, MARKER_FILE);
+        try {
+            Files.deleteIfExists(file.toPath());
+            if (file.createNewFile()) {
+                try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8, StandardOpenOption.WRITE)) {
+                    writer.append(result + ":" + String.valueOf(startTime));
+                    writer.flush();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        } catch (IOException e) {
+            // ignore
+        }
+
+    }
+
+    public static void deleteStartupMarker(File tempDir) {
+        File file = new File(tempDir, BootstrapListener.MARKER_FILE);
+        try {
+            Files.deleteIfExists(file.toPath());
+        } catch (IOException e) {
+            // ignore
         }
     }
 

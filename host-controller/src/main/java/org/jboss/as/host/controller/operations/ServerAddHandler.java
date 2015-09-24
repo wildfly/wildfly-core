@@ -28,7 +28,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import java.io.File;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -38,7 +37,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.domain.controller.operations.DomainModelReferenceValidator;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.resources.ServerConfigResource;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
@@ -62,6 +60,7 @@ public class ServerAddHandler extends AbstractAddStepHandler {
      * Create the ServerAddHandler
      */
     private ServerAddHandler(LocalHostControllerInfo hostControllerInfo, ServerInventory serverInventory, ControlledProcessState processState, File domainDataDir) {
+        super(ServerConfigResourceDefinition.SERVER_CONFIG_CAPABILITY, ServerConfigResourceDefinition.WRITABLE_ATTRIBUTES);
         this.hostControllerInfo = hostControllerInfo;
         this.serverInventory = serverInventory;
         this.processState = processState;
@@ -83,12 +82,9 @@ public class ServerAddHandler extends AbstractAddStepHandler {
     @Override
     protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
 
-        final ModelNode model = resource.getModel();
-        for (AttributeDefinition attr : ServerConfigResourceDefinition.WRITABLE_ATTRIBUTES) {
-            attr.validateAndSet(operation, model);
-        }
+        super.populateModel(context, operation, resource);
 
-        final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
+        final PathAddress address = context.getCurrentAddress();
         final PathAddress running = address.subAddress(0, 1).append(PathElement.pathElement(RUNNING_SERVER, address.getLastElement().getValue()));
 
         //Add the running server
@@ -102,13 +98,6 @@ public class ServerAddHandler extends AbstractAddStepHandler {
                 context.addResource(PathAddress.EMPTY_ADDRESS, PlaceholderResource.INSTANCE);
             }
         }, OperationContext.Stage.MODEL, true);
-
-        DomainModelReferenceValidator.addValidationStep(context, operation);
-    }
-
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        //This will never get called. It is just needed to override the abstract method and is handled by the other populateModel() method
-        throw new IllegalArgumentException();
     }
 
     protected boolean requiresRuntime(OperationContext context) {

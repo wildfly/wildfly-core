@@ -55,7 +55,7 @@ public class ArgumentWithValue extends ArgumentWithoutValue {
     private final ArgumentValueConverter valueConverter;
 
     /** initial state for value parsing */
-    private final ParsingState initialState;
+    protected final ParsingState initialState;
 
     public ArgumentWithValue(CommandHandlerWithArguments handler, String fullName) {
         this(handler, null, ArgumentValueConverter.DEFAULT, fullName, null);

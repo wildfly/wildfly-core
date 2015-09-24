@@ -107,14 +107,6 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     }
 
     @Override
-    protected void recognizeArguments(CommandContext ctx) throws CommandFormatException {
-        final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
-        if(parsedCmd.getOtherProperties().size() > 1) {
-            throw new CommandFormatException("The command accepts only one argument but received: " + parsedCmd.getOtherProperties());
-        }
-    }
-
-    @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
 
         final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
@@ -128,8 +120,8 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
         final List<String> args = parsedCmd.getOtherProperties();
         if (!args.isEmpty()) {
-            if (args.size() != 1) {
-                throw new CommandFormatException("The command expects only one argument but got " + args);
+            if (args.size() != 0) {
+                throw new CommandFormatException("The command accepts 0 unnamed argument(s) but received: " + args);
             }
         }
 
@@ -178,7 +170,13 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
-            EmbeddedServerReference hostController = EmbeddedServerFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+            EmbeddedServerReference hostController;
+            if (this.jbossHome == null) {
+                // Modular environment
+                hostController = EmbeddedServerFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+            } else {
+                hostController = EmbeddedServerFactory.createHostController(jbossHome.getAbsolutePath(), null, null, cmds);
+            }
             hostController.start();
             hostControllerReference.set(new EmbeddedServerLaunch(hostController, restorer));
 
@@ -261,7 +259,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         File standaloneDir =  new File(jbossHome, "domain");
         File configDir =  new File(standaloneDir, "configuration");
         File logDir =  new File(standaloneDir, "log");
-        File bootLog = new File(logDir, "boot.log");
+        File bootLog = new File(logDir, "server.log");
         File loggingProperties = new File(configDir, "logging.properties");
         if (loggingProperties.exists()) {
 

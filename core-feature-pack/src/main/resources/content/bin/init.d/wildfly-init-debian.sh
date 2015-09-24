@@ -100,6 +100,7 @@ if [ "$JBOSS_MODE" = "standalone" ]; then
 	if [ -z "$JBOSS_CONFIG" ]; then
 		JBOSS_CONFIG=standalone.xml
 	fi
+	JBOSS_MARKERFILE="$JBOSS_HOME/standalone/tmp/startup-marker"
 else
 	JBOSS_SCRIPT="$JBOSS_HOME/bin/domain.sh"
 	if [ -z "$JBOSS_DOMAIN_CONFIG" ]; then
@@ -108,6 +109,7 @@ else
 	if [ -z "$JBOSS_HOST_CONFIG" ]; then
 		JBOSS_HOST_CONFIG=host.xml
 	fi
+	JBOSS_MARKERFILE="$JBOSS_HOME/domain/tmp/startup-marker"
 fi
 
 # Check startup file
@@ -162,6 +164,7 @@ case "$1" in
 		mkdir -p $(dirname "$JBOSS_CONSOLE_LOG")
 		chown $JBOSS_USER $(dirname "$JBOSS_PIDFILE") || true
 		cat /dev/null > "$JBOSS_CONSOLE_LOG"
+		currenttime=$(date +%s%N | cut -b1-13)
 
 		if [ "$JBOSS_MODE" = "standalone" ]; then
 			start-stop-daemon --start --user "$JBOSS_USER" \
@@ -178,15 +181,19 @@ case "$1" in
 		launched=0
 		until [ $count -gt $STARTUP_WAIT ]
 		do
-			grep 'WFLYSRV0025:' "$JBOSS_CONSOLE_LOG" > /dev/null
-			if [ $? -eq 0 ] ; then
-				launched=1
-				break
-			fi
 			sleep 1
 			count=$((count + 1));
+			if [ -f "$JBOSS_MARKERFILE" ]; then
+				markerfiletimestamp=$(grep -o '[0-9]*' "$JBOSS_MARKERFILE") > /dev/null
+				if [ "$markerfiletimestamp" -gt "$currenttime" ] ; then
+					grep -i 'success:' "$JBOSS_MARKERFILE" > /dev/null
+					if [ $? -eq 0 ] ; then
+						launched=1
+						break
+					fi
+				fi
+			fi
 		done
-
 		if check_status; then
 			log_end_msg 0
 		else

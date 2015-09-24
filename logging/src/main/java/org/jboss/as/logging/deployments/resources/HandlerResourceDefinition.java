@@ -87,7 +87,7 @@ class HandlerResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public HandlerResourceDefinition() {
-        super(PATH, LoggingExtension.getResourceDescriptionResolver("deployment", NAME));
+        super(new Parameters(PATH, LoggingExtension.getResourceDescriptionResolver("deployment", NAME)).setRuntime());
     }
 
     @Override

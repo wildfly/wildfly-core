@@ -38,6 +38,7 @@ import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.EnumValidator;
@@ -45,10 +46,11 @@ import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.resource.InterfaceDefinition;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.host.controller.model.jvm.JvmResourceDefinition;
@@ -65,6 +67,7 @@ import org.jboss.as.host.controller.operations.ServerStopHandler;
 import org.jboss.as.host.controller.operations.ServerSuspendHandler;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition.Location;
+import org.jboss.as.server.services.net.InterfaceResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceAddHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceRemoveHandler;
 import org.jboss.dmr.ModelNode;
@@ -77,6 +80,10 @@ import org.jboss.dmr.ModelType;
  */
 public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
+    static final String SERVER_CONFIG_CAPABILITY_NAME = "org.wildfly.domain.server-config";
+    public static final RuntimeCapability SERVER_CONFIG_CAPABILITY = RuntimeCapability.Builder.of(SERVER_CONFIG_CAPABILITY_NAME, true)
+            .build();
+
     public static final AttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.NAME, ModelType.STRING).setResourceOnly().build();
 
     public static final SimpleAttributeDefinition AUTO_START = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.AUTO_START, ModelType.BOOLEAN, true)
@@ -88,12 +95,14 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
             .setDefaultValue(new ModelNode(false)).build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_GROUP, ModelType.STRING, true)
+            .setCapabilityReference(AbstractSocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY_NAME, SERVER_CONFIG_CAPABILITY_NAME, true)
             .build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_DEFAULT_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE, ModelType.STRING, true)
             .setAllowExpression(false)
             .setXmlName(Attribute.DEFAULT_INTERFACE.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
+            .setCapabilityReference("org.wildfly.network.interface", SERVER_CONFIG_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_PORT_OFFSET = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET, ModelType.INT, true)
@@ -104,6 +113,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final SimpleAttributeDefinition GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.GROUP, ModelType.STRING)
+            .setCapabilityReference(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY_NAME, SERVER_CONFIG_CAPABILITY_NAME, true)
             .build();
 
     public static final SimpleAttributeDefinition STATUS = SimpleAttributeDefinitionBuilder.create(ServerStatusHandler.ATTRIBUTE_NAME, ModelType.STRING)
@@ -186,7 +196,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
         //server paths
         resourceRegistration.registerSubModel(PathResourceDefinition.createSpecifiedNoServices(pathManager));
 
-        resourceRegistration.registerSubModel(new InterfaceDefinition(
+        resourceRegistration.registerSubModel(new InterfaceResourceDefinition(
                 SpecifiedInterfaceAddHandler.INSTANCE,
                 SpecifiedInterfaceRemoveHandler.INSTANCE,
                 true,
@@ -197,6 +207,11 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(SystemPropertyResourceDefinition.createForDomainOrHost(Location.SERVER_CONFIG));
         // Server jvm
         resourceRegistration.registerSubModel(JvmResourceDefinition.SERVER);
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(SERVER_CONFIG_CAPABILITY);
     }
 
     public static void registerServerLifecycleOperations(final ManagementResourceRegistration resourceRegistration, final ServerInventory serverInventory) {

@@ -23,7 +23,6 @@
 package org.jboss.as.controller.registry;
 
 
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -39,11 +38,10 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.registry.OperationEntry.EntryType;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -63,6 +61,16 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
         this.aliasEntry = aliasEntry;
         this.handler = new AliasStepHandler(aliasEntry);
         this.target = target;
+    }
+
+    @Override
+    public int getMaxOccurs() {
+        return target.getMaxOccurs();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return target.getMaxOccurs();
     }
 
     @Override
@@ -123,16 +131,6 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
 
     @Override
     public void unregisterOverrideModel(String name) {
-        throw alreadyRegistered();
-    }
-
-    @Override
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited, EntryType entryType) {
-        throw alreadyRegistered();
-    }
-
-    @Override
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited, EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
         throw alreadyRegistered();
     }
 
@@ -202,7 +200,7 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
-    public void registerCapability(Capability capability) {
+    public void registerCapability(RuntimeCapability capability) {
         throw alreadyRegistered();
     }
 
@@ -316,7 +314,7 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
-    public Set<Capability> getCapabilities() {
+    public Set<RuntimeCapability> getCapabilities() {
         return target.getCapabilities();
     }
 }

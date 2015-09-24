@@ -31,6 +31,8 @@ import org.jboss.as.cli.CommandLineException;
 * @author Alexey Loubyansky
 */
 abstract class BaseOperation implements Operation, Comparable<Operation> {
+
+    private BaseOperation parent;
     private final String name;
     private final int priority;
     private final List<Operand> operands;
@@ -42,6 +44,14 @@ abstract class BaseOperation implements Operation, Comparable<Operation> {
         this.name = name;
         this.priority = priority;
         operands = new ArrayList<Operand>();
+    }
+
+    void setParent(BaseOperation parent) {
+        this.parent = parent;
+    }
+
+    BaseOperation getParent() {
+        return parent;
     }
 
     @Override
@@ -59,11 +69,27 @@ abstract class BaseOperation implements Operation, Comparable<Operation> {
         return operands;
     }
 
-    protected void addOperand(Operand operand) throws CommandLineException {
+    public boolean allowsMoreArguments() {
+        return operands.size() < 2;
+    }
+
+    void addOperand(Operand operand) throws CommandLineException {
         if(operand == null) {
             throw new IllegalArgumentException("operand can't be null.");
         }
         operands.add(operand);
+    }
+
+    Operand getLastOperand() {
+        return operands.size() < 2 ? null : operands.get(operands.size() - 1);
+    }
+
+    void replaceLastOperand(Operand operand) throws CommandLineException {
+        if(operands.size() < 2) {
+            addOperand(operand);
+        } else {
+            operands.set(operands.size() - 1, operand);
+        }
     }
 
     @Override

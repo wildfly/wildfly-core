@@ -22,38 +22,16 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.TimeUnit;
-
-import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
-import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.persistence.NullConfigurationPersister;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -62,56 +40,7 @@ import org.junit.Test;
  *
  * @author Brian Stansberry
  */
-public class SocketCapabilityResolutionUnitTestCase {
-
-    private static final String CAPABILITY = "capability";
-    private static final String REQUIREMENT = "requirement";
-    private static final String GLOBAL = "global";
-
-    private static final PathAddress GLOBAL_A = PathAddress.pathAddress(PathElement.pathElement(GLOBAL, "a"));
-    private static final PathAddress SUBSYSTEM_A_1 = PathAddress.pathAddress(PathElement.pathElement(PROFILE, "a"), PathElement.pathElement(SUBSYSTEM, "1"));
-    private static final PathAddress SUBSYSTEM_A_2 = PathAddress.pathAddress(PathElement.pathElement(PROFILE, "a"), PathElement.pathElement(SUBSYSTEM, "2"));
-    private static final PathAddress SUBSYSTEM_B_1 = PathAddress.pathAddress(PathElement.pathElement(PROFILE, "b"), PathElement.pathElement(SUBSYSTEM, "1"));
-    private static final PathAddress SUBSYSTEM_B_2 = PathAddress.pathAddress(PathElement.pathElement(PROFILE, "b"), PathElement.pathElement(SUBSYSTEM, "2"));
-    private static final PathAddress SOCKET_A_1 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "a"), PathElement.pathElement(SOCKET_BINDING, "1"));
-    private static final PathAddress SOCKET_A_2 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "a"), PathElement.pathElement(SOCKET_BINDING, "2"));
-    private static final PathAddress SOCKET_B_1 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "b"), PathElement.pathElement(SOCKET_BINDING, "1"));
-    private static final PathAddress SOCKET_B_2 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "b"), PathElement.pathElement(SOCKET_BINDING, "2"));
-    private static final PathAddress SOCKET_C_3 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "c"), PathElement.pathElement(SOCKET_BINDING, "3"));
-    private static final PathAddress SOCKET_D_4 = PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, "d"), PathElement.pathElement(SOCKET_BINDING, "4"));
-
-    private ServiceContainer container;
-    private ModelController controller;
-    @Before
-    public void setupController() throws InterruptedException {
-        System.out.println("=========  New Test \n");
-
-        container = ServiceContainer.Factory.create("test");
-        ServiceTarget target = container.subTarget();
-        ModelControllerService svc = new ModelControllerService();
-        ServiceBuilder<ModelController> builder = target.addService(ServiceName.of("ModelController"), svc);
-        builder.install();
-        svc.awaitStartup(30, TimeUnit.SECONDS);
-        controller = svc.getValue();
-
-        assertEquals(ControlledProcessState.State.RUNNING, svc.getCurrentProcessState());
-    }
-
-    @After
-    public void shutdownServiceContainer() {
-        if (container != null) {
-            container.shutdown();
-            try {
-                container.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            finally {
-                container = null;
-            }
-        }
-        System.out.println("======================");
-    }
+public class SocketCapabilityResolutionUnitTestCase extends AbstractCapabilityResolutionTestCase {
 
     @Test
     public void testSimpleGlobalRef() {
@@ -332,155 +261,28 @@ public class SocketCapabilityResolutionUnitTestCase {
         assertEquals(response.toString(), FAILED, response.get(OUTCOME).asString());
     }
 
-    private static class ModelControllerService extends TestModelControllerService {
-
-        ModelControllerService() {
-            super(ProcessType.HOST_CONTROLLER, new NullConfigurationPersister(), new ControlledProcessState(true),
-                    createResourceDefinition(null));
-        }
-
-        @Override
-        protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
-
-            ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
-            rootRegistration.registerOperationHandler(getOD(COMPOSITE), CompositeOperationHandler.INSTANCE, false);
-
-            // Add a global handler that records capabilities and requirements
-            rootRegistration.registerOperationHandler(getOD(CAPABILITY), new CapabilityOSH(), true);
-
-            // Create resources defs representing something outside of profiles/socket-binding-group and then
-            // a tree for profile and s-b-g. Note these aren't the real resource defs, they just follow the
-            // real address pattern a bit, as those patterns are what drive the WFCORE-750 capability resolution logic
-            rootRegistration.registerSubModel(createResourceDefinition(GLOBAL));
-            ManagementResourceRegistration profile = rootRegistration.registerSubModel(createResourceDefinition(PROFILE));
-            OperationDefinition od = new SimpleOperationDefinitionBuilder("include", new NonResolvingResourceDescriptionResolver()).build();
-            OperationStepHandler includeHandler = new ParentIncludeHandler();
-            profile.registerOperationHandler(od, includeHandler);
-            profile.registerSubModel(createResourceDefinition(SUBSYSTEM));
-            ManagementResourceRegistration sbg = rootRegistration.registerSubModel(createResourceDefinition(SOCKET_BINDING_GROUP));
-            sbg.registerOperationHandler(od, includeHandler);
-            sbg.registerSubModel(createResourceDefinition(SOCKET_BINDING));
-
-            // Add the expected parent resources
-            Resource rootResource = managementModel.getRootResource();
-            rootResource.registerChild(SUBSYSTEM_A_1.getElement(0), Resource.Factory.create());
-            rootResource.registerChild(SUBSYSTEM_B_1.getElement(0), Resource.Factory.create());
-            rootResource.registerChild(SOCKET_A_1.getElement(0), Resource.Factory.create());
-            rootResource.registerChild(SOCKET_B_1.getElement(0), Resource.Factory.create());
-            rootResource.registerChild(SOCKET_C_3.getElement(0), Resource.Factory.create());
-            rootResource.registerChild(SOCKET_D_4.getElement(0), Resource.Factory.create());
-        }
+    @Test
+    public void testWFCORE900() {
+        ModelNode op = getCompositeOperation(getCapabilityOperation(SOCKET_A_1, "cap_a"), getCapabilityOperation(GLOBAL_A, null, "cap_a"));
+        ModelNode response = controller.execute(op, null, null, null);
+        // NOTE: IT IS FINE TO CHANGE THESE ASSERTIONS IF WFCORE-900 SUPPORT IS RESCINDED!
+        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+        assertTrue(response.toString(), response.get(RESULT, "step-2", RESULT).asBoolean());
     }
 
-    private static ResourceDefinition createResourceDefinition(String key) {
-        PathElement pe = key == null ? null : PathElement.pathElement(key);
-        return ResourceBuilder.Factory.create(pe, new NonResolvingResourceDescriptionResolver()).build();
-    }
+    @Test
+    public void testWFCORE955() {
+        // First, establish a profile to s-b dep. This ensures we get into the consistent scope logic
+        // that's where the WFCORE-955 issue appeared
+        ModelNode op = getCompositeOperation(getCapabilityOperation(SOCKET_A_1, "cap_a"), getCapabilityOperation(SUBSYSTEM_A_1, "dep_a", "cap_a"));
+        ModelNode response = controller.execute(op, null, null, null);
+        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+        assertTrue(response.toString(), response.get(RESULT, "step-2", RESULT).asBoolean());
 
-    private static class CapabilityOSH implements OperationStepHandler {
-
-        @Override
-        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-
-            String capName = operation.require(CAPABILITY).asString();
-            RuntimeCapability.Builder rcb = RuntimeCapability.Builder.of(capName);
-            if (operation.hasDefined(REQUIREMENT)) {
-                final String reqName = operation.get(REQUIREMENT).asString();
-                rcb.addRequirements(reqName);
-                context.addStep(new OperationStepHandler() {
-                    @Override
-                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        context.getResult().set(context.hasOptionalCapability(reqName, capName, null));
-                    }
-                }, OperationContext.Stage.RUNTIME);
-            }  else {
-                context.getResult().set(true);
-            }
-            context.registerCapability(rcb.build(), null);
-        }
-    }
-
-    private static class ParentIncludeHandler implements OperationStepHandler {
-
-        @Override
-        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
-            resource.getModel().get(INCLUDES).set(operation.get(INCLUDES));
-        }
-    }
-
-    private static ModelNode getCapabilityOperation(PathAddress pathAddress, String capability) {
-        return getCapabilityOperation(pathAddress, capability, null);
-    }
-
-    private static ModelNode getCapabilityOperation(PathAddress pathAddress, String capability, String requirement) {
-
-        ModelNode op = Util.createEmptyOperation(CAPABILITY, pathAddress);
-        op.get(CAPABILITY).set(capability);
-        if (requirement != null) {
-            op.get(REQUIREMENT).set(requirement);
-        }
-        return op;
-    }
-
-    private static ModelNode getParentIncludeOperation(PathAddress pathAddress, String... includes) {
-
-        ModelNode op = Util.createEmptyOperation("include", pathAddress);
-        ModelNode includesNode = op.get(INCLUDES);
-        for (String include : includes) {
-            includesNode.add(include);
-        }
-        return op;
-    }
-
-    private static ModelNode getCompositeOperation(ModelNode... steps) {
-
-        ModelNode op = new ModelNode();
-        op.get(OP).set(COMPOSITE);
-        op.get(OP_ADDR).setEmptyList();
-        for (ModelNode step : steps) {
-            op.get("steps").add(step);
-        }
-        return op;
-    }
-
-    private static void validateMissingFailureDesc(ModelNode response, String step, String cap, String context) {
+        // Then change the include of a different profile to something bogus
+        op = getParentIncludeOperation(SUBSYSTEM_B_1.getParent(), "bogus");
+        response = controller.execute(op, null, null, null);
         assertEquals(response.toString(), FAILED, response.get(OUTCOME).asString());
-        assertTrue(response.toString(), response.hasDefined(FAILURE_DESCRIPTION));
-        String failDesc = response.get(FAILURE_DESCRIPTION).asString();
-        int loc = -1;
-        if (step != null) {
-            loc = failDesc.indexOf(step);
-            assertTrue(response.toString(), loc > 0);
-        }
-        int lastLoc = loc;
-        loc = failDesc.indexOf("WFLYCTL0369");
-        assertTrue(response.toString(), loc > lastLoc);
-        lastLoc = loc;
-        loc = failDesc.indexOf(cap);
-        assertTrue(response.toString(), loc > lastLoc);
-        lastLoc = loc;
-        loc = failDesc.indexOf(context);
-        assertTrue(response.toString(), loc > lastLoc);
-
     }
 
-    private static void validateInconsistentFailureDesc(ModelNode response, String step, String req, String cap, String context) {
-
-        assertEquals(response.toString(), FAILED, response.get(OUTCOME).asString());
-        assertTrue(response.toString(), response.hasDefined(FAILURE_DESCRIPTION));
-        String failDesc = response.get(RESULT, step, FAILURE_DESCRIPTION).asString();
-        int lastLoc = -1;
-        int loc = failDesc.indexOf("WFLYCTL0399");
-        assertTrue(response.toString(), loc > lastLoc);
-        lastLoc = loc;
-        loc = failDesc.indexOf(req);
-        assertTrue(response.toString(), loc > lastLoc);
-        lastLoc = loc;
-        loc = failDesc.indexOf(cap);
-        assertTrue(response.toString(), loc > lastLoc);
-        lastLoc = loc;
-        loc = failDesc.indexOf(context);
-        assertTrue(response.toString(), loc > lastLoc);
-    }
 }

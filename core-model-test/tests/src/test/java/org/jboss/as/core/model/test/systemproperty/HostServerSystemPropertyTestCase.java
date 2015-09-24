@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
@@ -33,6 +34,7 @@ import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.KernelServicesBuilder;
 import org.jboss.as.core.model.test.ModelInitializer;
 import org.jboss.as.core.model.test.TestModelType;
+import org.jboss.as.core.model.test.util.ServerConfigInitializers;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
@@ -61,6 +63,11 @@ public class HostServerSystemPropertyTestCase extends AbstractSystemPropertyTest
         return createKernelServicesBuilder(TestModelType.HOST);
     }
 
+    @Override
+    protected ModelInitializer getModelInitializer() {
+        return ServerConfigInitializers.XML_MODEL_INITIALIZER;
+    }
+
     protected KernelServices createEmptyRoot() throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder(false).setModelInitializer(BOOT_OP_MODEL_INITIALIZER, null).build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
@@ -78,6 +85,12 @@ public class HostServerSystemPropertyTestCase extends AbstractSystemPropertyTest
     }
 
     private ModelInitializer BOOT_OP_MODEL_INITIALIZER = new ModelInitializer() {
+        @Override
+        public void populateModel(ManagementModel managementModel) {
+            populateModel(managementModel.getRootResource());
+            ServerConfigInitializers.populateCapabilityRegistry(managementModel.getCapabilityRegistry());
+        }
+
         @Override
         public void populateModel(Resource rootResource) {
             Resource host = Resource.Factory.create();

@@ -46,7 +46,7 @@ class StopEmbeddedServerHandler extends CommandHandlerWithHelp {
 
     @Override
     public boolean isAvailable(CommandContext ctx) {
-        return serverReference.get() != null;
+        return (serverReference.get() != null && serverReference.get().isStandalone());
     }
 
     @Override

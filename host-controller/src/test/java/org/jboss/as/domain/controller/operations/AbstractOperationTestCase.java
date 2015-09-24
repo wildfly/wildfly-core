@@ -46,7 +46,6 @@ import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -75,7 +74,6 @@ import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
@@ -164,6 +162,11 @@ public abstract class AbstractOperationTestCase {
 
         @Override
         public boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration() {
+            return false;
+        }
+
+        @Override
+        public boolean isBackupDc() {
             return false;
         }
     };
@@ -680,13 +683,13 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
-        public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
-            // no-op;
+        public void registerCapability(RuntimeCapability capability) {
+            // no-op
         }
 
         @Override
-        public boolean requestOptionalCapability(String required, String dependent, String attribute) {
-            return false;
+        public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
+            // no-op;
         }
 
         @Override
@@ -870,32 +873,7 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, EnumSet<OperationEntry.Flag> flags) {
-
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited) {
-
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType) {
-
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, EnumSet<OperationEntry.Flag> flags) {
-
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
-
-        }
-
-        @Override
-        public void registerCapability(Capability capability) {
+        public void registerCapability(RuntimeCapability capability) {
 
         }
 
@@ -989,7 +967,7 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
-        public Set<Capability> getCapabilities() {
+        public Set<RuntimeCapability> getCapabilities() {
             return Collections.emptySet();
         }
 

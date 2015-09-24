@@ -20,7 +20,6 @@ package org.jboss.as.server.services.net;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.interfaces.ParsedInterfaceCriteria;
-import org.jboss.as.controller.operations.common.InterfaceAddHandler;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;

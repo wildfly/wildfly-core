@@ -51,6 +51,8 @@ public class AliasStepHandler implements OperationStepHandler {
         String op = operation.require(OP).asString();
         PathAddress addr = context.getCurrentAddress();
 
+        WildcardReadResourceDescriptionAddressHack.attachAliasAddress(context, operation);
+
         PathAddress mapped = aliasEntry.convertToTargetAddress(addr);
 
         OperationStepHandler targetHandler = context.getRootResourceRegistration().getOperationHandler(mapped, op);

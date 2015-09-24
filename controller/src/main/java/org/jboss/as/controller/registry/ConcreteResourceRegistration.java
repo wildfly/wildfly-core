@@ -46,12 +46,12 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.as.controller.registry.AttributeAccess.Storage;
-import org.jboss.as.controller.registry.OperationEntry.EntryType;
 
 @SuppressWarnings("deprecation")
 final class ConcreteResourceRegistration extends AbstractResourceRegistration {
@@ -77,6 +77,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     private final AtomicBoolean runtimeOnly = new AtomicBoolean();
     private final boolean ordered;
     private final AccessConstraintUtilizationRegistry constraintUtilizationRegistry;
+    private final CapabilityRegistry capabilityRegistry;
 
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, NodeSubregistry> childrenUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "children"));
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, OperationEntry> operationsUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "operations"));
@@ -84,22 +85,33 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, AttributeAccess> attributesUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "attributes"));
     private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, Empty> orderedChildUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "orderedChildTypes"));
 
-    private final Set<Capability>  capabilities = new CopyOnWriteArraySet<>();
+    private final Set<RuntimeCapability>  capabilities = new CopyOnWriteArraySet<>();
 
     ConcreteResourceRegistration(final String valueString, final NodeSubregistry parent, final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
-                                 final boolean runtimeOnly, final boolean ordered) {
+                                 final boolean ordered, CapabilityRegistry capabilityRegistry) {
         super(valueString, parent);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
+        this.capabilityRegistry = capabilityRegistry;
         childrenUpdater.clear(this);
         operationsUpdater.clear(this);
         attributesUpdater.clear(this);
         notificationsUpdater.clear(this);
         orderedChildUpdater.clear(this);
         this.resourceDefinition = definition;
-        this.runtimeOnly.set(runtimeOnly);
+        this.runtimeOnly.set(definition.isRuntime());
         this.accessConstraintDefinitions = buildAccessConstraints();
         this.ordered = ordered;
+    }
+
+    @Override
+    public int getMaxOccurs() {
+        return resourceDefinition.getMaxOccurs();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return resourceDefinition.getMinOccurs();
     }
 
     @Override
@@ -166,7 +178,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (address == null) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodelWithNullPath();
         }
-        if (isRuntimeOnly()) {
+        if (isRuntimeOnly() && !resourceDefinition.isRuntime()) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodel();
         }
         final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
@@ -177,7 +189,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         final NodeSubregistry child = getOrCreateSubregistry(key);
         final boolean ordered = resourceDefinition.isOrderedChild();
         final ManagementResourceRegistration resourceRegistration =
-                child.register(address.getValue(), resourceDefinition, false, ordered);
+                child.register(address.getValue(), resourceDefinition, ordered);
         if (ordered) {
             AbstractResourceRegistration parentRegistration = child.getParent();
             parentRegistration.setOrderedChild(key);
@@ -279,22 +291,6 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited, EntryType entryType) {
-        checkPermission();
-        if (operationsUpdater.putIfAbsent(this, operationName, new OperationEntry(handler, descriptionProvider, inherited, entryType)) != null) {
-            throw alreadyRegistered("operation handler", operationName);
-        }
-    }
-
-    @Override
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited, EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
-        checkPermission();
-        if (operationsUpdater.putIfAbsent(this, operationName, new OperationEntry(handler, descriptionProvider, inherited, entryType, flags, null)) != null) {
-            throw alreadyRegistered("operation handler", operationName);
-        }
-    }
-
-    @Override
     public void unregisterOperationHandler(final String operationName) {
         checkPermission();
         if (operationsUpdater.remove(this, operationName) == null) {
@@ -304,6 +300,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerReadWriteAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler, final OperationStepHandler writeHandler) {
+        assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
         final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
         final String attributeName = definition.getName();
@@ -317,6 +314,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerReadOnlyAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler) {
+        assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
         final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
         final String attributeName = definition.getName();
@@ -357,12 +355,29 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
+        assert assertMetricValues(definition); //The real message will be in an assertion thrown by assertMetricValues
         checkPermission();
         AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition, definition.getFlags());
         if (attributesUpdater.putIfAbsent(this, definition.getName(), aa) != null) {
             throw alreadyRegistered("attribute", definition.getName());
         }
         registerAttributeAccessConstraints(definition);
+    }
+
+    private boolean assertMetricValues(AttributeDefinition definition) {
+        if (definition.isAllowNull() && definition.getUndefinedMetricValue() != null) {
+            assert false : "Nillable metric has an undefined metric value for '" + definition.getName() + "'";
+        }
+        // BES 2015/08/28 The WFCORE-831 spec does not require this assertion. The requirement is that read-attribute
+        // not return undefined, but AttributeDefinition.getUndefinedMetricValue() is not the only way to achieve this.
+        // The read-attribute handler can simply always work.
+//        if (!definition.isAllowNull() && definition.getUndefinedMetricValue() == null) {
+//            assert false : "Non-nillable metric does not have an undefined metric value for '" + definition.getName() + "'";
+//        }
+        if (definition.getDefaultValue() != null) {
+            assert false : "Metrics cannot have a default value for '" + definition.getName() + "'";
+        }
+        return true;
     }
 
     private void registerAttributeAccessConstraints(AttributeDefinition ad) {
@@ -455,8 +470,11 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public void registerCapability(Capability capability){
+    public void registerCapability(RuntimeCapability capability){
         capabilities.add(capability);
+        if (capabilityRegistry != null) {
+            capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
+        }
     }
 
     NodeSubregistry getOrCreateSubregistry(final String key) {
@@ -467,7 +485,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
                 return subregistry;
             } else {
                 checkPermission();
-                final NodeSubregistry newRegistry = new NodeSubregistry(key, this, constraintUtilizationRegistry);
+                final NodeSubregistry newRegistry = new NodeSubregistry(key, this, constraintUtilizationRegistry, capabilityRegistry);
                 final NodeSubregistry appearing = childrenUpdater.putAtomic(this, key, newRegistry, snapshot);
                 if (appearing == null) {
                     return newRegistry;
@@ -651,7 +669,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public Set<Capability> getCapabilities() {
+    public Set<RuntimeCapability> getCapabilities() {
         return Collections.unmodifiableSet(capabilities);
     }
 

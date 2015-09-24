@@ -86,26 +86,22 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     private final HostRunningModeControl runningModeControl;
     private final ControlledProcessState processState;
     private final String authCode;
-    private ProcessType processType = ProcessType.HOST_CONTROLLER;
     private volatile FutureServiceContainer futureContainer;
     private volatile long startTime;
 
     public HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
-                          final String authCode, final ControlledProcessState processState, boolean embedded, FutureServiceContainer futureContainer) {
+                          final String authCode, final ControlledProcessState processState, FutureServiceContainer futureContainer) {
         this.environment = environment;
         this.runningModeControl = runningModeControl;
         this.authCode = authCode;
         this.processState = processState;
         this.startTime = environment.getStartTime();
         this.futureContainer = futureContainer;
-        if (embedded) {
-            this.processType = ProcessType.EMBEDDED_HOST_CONTROLLER;
-        }
     }
 
     public HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
-                                 final String authCode, final ControlledProcessState processState, boolean embedded) {
-        this(environment, runningModeControl, authCode, processState, embedded, new FutureServiceContainer());
+                                 final String authCode, final ControlledProcessState processState) {
+        this(environment, runningModeControl, authCode, processState, new FutureServiceContainer());
     }
 
     @Override
@@ -147,13 +143,14 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
             this.startTime = -1;
         }
 
-        final BootstrapListener bootstrapListener = new BootstrapListener(serviceContainer, startTime, serviceTarget, futureContainer, prettyVersion + " (Host Controller)");
+        final BootstrapListener bootstrapListener = new BootstrapListener(serviceContainer, startTime, serviceTarget, futureContainer, prettyVersion + " (Host Controller)", environment.getDomainTempDir());
         bootstrapListener.getStabilityMonitor().addController(myController);
 
         // The first default services are registered before the bootstrap operations are executed.
 
         // Install the process controller client
         // if this is running embedded, then processcontroller is a noop, this can be extended later.
+        final ProcessType processType = environment.getProcessType();
         if (processType == ProcessType.EMBEDDED_HOST_CONTROLLER) {
             final ProcessControllerConnectionServiceNoop processControllerClient = new ProcessControllerConnectionServiceNoop(environment, authCode);
             serviceTarget.addService(ProcessControllerConnectionServiceNoop.SERVICE_NAME, processControllerClient).install();
@@ -183,7 +180,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         serviceTarget.addService(Services.JBOSS_PRODUCT_CONFIG_SERVICE, new ValueService<ProductConfig>(productConfigValue))
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
-        DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState, bootstrapListener, hostPathManagerService, processType == ProcessType.EMBEDDED_HOST_CONTROLLER);
+        DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState, bootstrapListener, hostPathManagerService);
         ContentCleanerService.addServiceOnHostController(serviceTarget, DomainModelControllerService.SERVICE_NAME, HC_EXECUTOR_SERVICE_NAME, HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
     }
 
@@ -192,6 +189,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         String prettyVersion = environment.getProductConfig().getPrettyVersionString();
         processState.setStopping();
         ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, Integer.valueOf((int) (context.getElapsedTime() / 1000000L)));
+        BootstrapListener.deleteStartupMarker(environment.getDomainTempDir());
     }
 
     @Override

@@ -22,7 +22,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_NATIVE_PORT;
-import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.NATIVE_CONTROLLER;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertThat;
 import static org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfaceTestCase.reloadServer;

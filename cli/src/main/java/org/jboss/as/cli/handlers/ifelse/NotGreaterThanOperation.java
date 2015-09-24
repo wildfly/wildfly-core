@@ -27,8 +27,10 @@ package org.jboss.as.cli.handlers.ifelse;
  */
 public class NotGreaterThanOperation extends SameTypeOperation {
 
+    static final String SYMBOL = "<=";
+
     NotGreaterThanOperation() {
-        super(ExpressionParser.NGT);
+        super(SYMBOL);
     }
 
     @Override

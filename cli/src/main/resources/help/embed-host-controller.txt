@@ -1,0 +1,59 @@
+SYNOPSIS
+
+   embed-host-controller [-c=config_file || --domain-config=domain_config_file]
+                         [--host-config=host_config_file]
+                         [--jboss-home=rootdir] [--stdout=discard|echo]
+
+DESCRIPTION
+
+   Launches an embedded host controller in the CLI process.
+
+ARGUMENTS
+
+ -c                - Name of the domain configuration file to use
+                     (default is "domain.xml")
+                     (Same as --domain-config)
+
+ --jboss-home      - Filesystem path pointing to the root directory
+                     of the installation from which the embedded host controller
+                     should run. Only available if the CLI itself
+                     is not running in a modular classloading environment.
+                     In a non-modular classloading environment, if this
+                     option is not specified, the value of the
+                     environment variable JBOSS_HOME will be used.
+                     Must be specified if the environment variable
+                     JBOSS_HOME is not set. In a modular classloading
+                     environment it is assumed the CLI is running from
+                     the host controller installation itself and the JBOSS_HOME
+                     environment variable must be set.
+
+ --domain-config   - Name of the domain configuration file to use
+                     (default is "domain.xml")
+                     (Same as -c)
+
+ --host-config     - Name of the host configuration file to use
+                     (default is "host.xml")
+
+ --std-out         - How to handle output to System.out from the
+                     embedded host controller. Legal values are
+                     "discard" and "echo". The "discard" value indicates
+                     that writes to System.out from the server
+                     should be discarded. The "echo" value means
+                     writes should be handled and appear as part
+                     of the CLI's own output to System.out. The
+                     default value is "discard". If "echo" is
+                     chosen and the CLI is running an interactive
+                     session, the user should recognize that
+                     asynchronous output from the server may
+                     interfere with the normal appearance of
+                     the CLI prompt.
+
+ --timeout         - Maximum time, in seconds, to wait for the
+                     host controller to reach a running (i.e.
+                     fully started) state once the embedded server
+                     is created. If unspecified, the command will
+                     block for as long as necessary, with no upper
+                     limit. If the value is less than 1, the command
+                     will return as soon as the embedded server has
+                     reached the point in its boot where it is
+                     manageable by the CLI.

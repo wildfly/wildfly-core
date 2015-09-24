@@ -502,12 +502,12 @@ public class AuthorizedAddressTest {
         }
 
         @Override
-        public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        public void registerCapability(RuntimeCapability capability) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public boolean requestOptionalCapability(String required, String dependent, String attribute) {
+        public void registerAdditionalCapabilityRequirement(String required, String dependent, String attribute) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 

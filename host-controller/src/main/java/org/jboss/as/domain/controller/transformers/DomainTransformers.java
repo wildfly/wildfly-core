@@ -27,12 +27,11 @@ import java.util.Map;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.transform.ResourceTransformationContext;
-import org.jboss.as.controller.transform.ResourceTransformer;
-import org.jboss.as.controller.transform.TransformationTarget;
+import org.jboss.as.controller.transform.OperationRejectionPolicy;
+import org.jboss.as.controller.transform.OperationResultTransformer;
+import org.jboss.as.controller.transform.OperationTransformer;
+import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.TransformersSubRegistration;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
@@ -41,9 +40,11 @@ import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.version.Version;
+import org.jboss.dmr.ModelNode;
 
 /**
  * Global transformation rules for the domain, host and server-config model.
@@ -55,8 +56,6 @@ public class DomainTransformers {
     /** Dummy version for ignored subsystems. */
     static final ModelVersion IGNORED_SUBSYSTEMS = ModelVersion.create(-1);
 
-    private static final PathElement JSF_EXTENSION = PathElement.pathElement(ModelDescriptionConstants.EXTENSION, "org.jboss.as.jsf");
-
     // EAP 6.2.0
     static final ModelVersion VERSION_1_5 = ModelVersion.create(1, 5, 0);
     // EAP 6.3.0
@@ -67,6 +66,14 @@ public class DomainTransformers {
     static final ModelVersion VERSION_2_0 = ModelVersion.create(2, 0, 0);
     //WF 8.1.0.Final
     static final ModelVersion VERSION_2_1 = ModelVersion.create(2, 1, 0);
+    //WF 9.0.0 and 9.0.1
+    static final ModelVersion VERSION_3_0 = ModelVersion.create(3, 0, 0);
+
+    //All versions before WildFly 10/EAP 7, which do not understand /profile=xxx:clone
+    private static final ModelVersion[] PRE_PROFILE_CLONE_VERSIONS = new ModelVersion[]{VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_7, VERSION_1_6, VERSION_1_5};
+
+    //Current
+    static final ModelVersion CURRENT = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
 
     /**
      * Initialize the domain registry.
@@ -79,16 +86,14 @@ public class DomainTransformers {
 
 
     private static void initializeChainedDomainRegistry(TransformerRegistry registry) {
-        ModelVersion currentVersion = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
-
         //The chains for transforming will be as follows
-        //For JBoss EAP: 3.0.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
+        //For JBoss EAP: 4.0.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
 
         registerRootTransformers(registry);
-        registerChainedManagementTransformers(registry, currentVersion);
-        registerChainedServerGroupTransformers(registry, currentVersion);
-        registerProfileTransformers(registry, currentVersion);
-        registerSocketBindingGroupTransformers(registry, currentVersion);
+        registerChainedManagementTransformers(registry, CURRENT);
+        registerChainedServerGroupTransformers(registry, CURRENT);
+        registerProfileTransformers(registry, CURRENT);
+        registerSocketBindingGroupTransformers(registry, CURRENT);
     }
 
     private static void registerRootTransformers(TransformerRegistry registry) {
@@ -115,14 +120,18 @@ public class DomainTransformers {
     private static void registerProfileTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         //Do NOT use chained transformers for the profile. The placeholder registry takes precedence over the actual
         //transformer registry, which means we would not get subsystem transformation
-        ModelVersion[] versions = new ModelVersion[]{VERSION_1_7, VERSION_1_6, VERSION_1_5};
-        for (ModelVersion version : versions) {
+
+        //Registering for all previous WF versions (as well as the required EAP ones) isn't strictly necessary,
+        //but it is very handy for testing the 'clone' behaviour
+        for (ModelVersion version : PRE_PROFILE_CLONE_VERSIONS) {
             ResourceTransformationDescriptionBuilder builder =
                     ResourceTransformationDescriptionBuilder.Factory.createInstance(ProfileResourceDefinition.PATH);
             builder.getAttributeBuilder()
                     .addRejectCheck(RejectAttributeChecker.DEFINED, ProfileResourceDefinition.INCLUDES)
                     .setDiscard(DiscardAttributeChecker.UNDEFINED, ProfileResourceDefinition.INCLUDES)
                     .end();
+            builder.addOperationTransformationOverride(ModelDescriptionConstants.CLONE)
+                    .setCustomOperationTransformer(ProfileCloneOperationTransformer.INSTANCE);
             TransformersSubRegistration domain = registry.getDomainRegistration(version);
             TransformationDescription.Tools.register(builder.build(), domain);
         }
@@ -140,28 +149,27 @@ public class DomainTransformers {
         }
     }
 
-    /**
-     * Special resource transformer automatically ignoring all subsystems registered by an extension.
-     */
-    private static class IgnoreExtensionResourceTransformer implements ResourceTransformer {
-
-        private final String[] subsystems;
-
-        private IgnoreExtensionResourceTransformer(String... subsystems) {
-            this.subsystems = subsystems;
-        }
-
+    private static class ProfileCloneOperationTransformer implements OperationTransformer {
+        static ProfileCloneOperationTransformer INSTANCE = new ProfileCloneOperationTransformer();
         @Override
-        public void transformResource(final ResourceTransformationContext context, final PathAddress address, final Resource resource) throws OperationFailedException {
-            // we just ignore this resource  - so don't add it: context.addTransformedResource(...)
-
-            final TransformationTarget target = context.getTarget();
-
-            if(subsystems != null) {
-                for(final String name : subsystems) {
-                    target.addSubsystemVersion(name, IGNORED_SUBSYSTEMS);
-                }
+        public TransformedOperation transformOperation(final TransformationContext context, final PathAddress address, final ModelNode operation) throws OperationFailedException {
+            if (context.getTarget().isIgnoreUnaffectedConfig()) {
+                //Since the cloned profile is a new one it will definitely be ignored on the host with this setting,
+                //so we can just discard it
+                return OperationTransformer.DISCARD.transformOperation(context, address, operation);
             }
+
+            return new TransformedOperation(operation, new OperationRejectionPolicy() {
+                @Override
+                public boolean rejectOperation(ModelNode preparedResult) {
+                    return true;
+                }
+
+                @Override
+                public String getFailureDescription() {
+                    return DomainControllerLogger.ROOT_LOGGER.cloneOperationNotSupportedOnHost(context.getTarget().getHostName());
+                }
+            }, OperationResultTransformer.ORIGINAL_RESULT);
         }
     }
 }

@@ -184,6 +184,19 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private static final Logger log = Logger.getLogger(CommandContext.class);
 
+    /**
+     * State Tracking
+     *
+     * Interact             - Interactive UI
+     *
+     * Silent               - Only send input. No output.
+     * Error On Interact    - If non-interactive mode requests user interaction, throw an error.
+     */
+    private boolean INTERACT          = false;
+
+    private boolean SILENT            = false;
+    private boolean ERROR_ON_INTERACT = false;
+
     /** the cli configuration */
     private final CliConfig config;
     private final ControllerAddressResolver addressResolver;
@@ -252,9 +265,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     /** whether to resolve system properties passed in as values of operation parameters*/
     private boolean resolveParameterValues;
 
-    /** whether to write messages to the terminal output */
-    private boolean silent;
-
     private Map<String, String> variables;
 
     private CliShutdownHook.Handler shutdownHook;
@@ -275,10 +285,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private static JaasConfigurationWrapper jaasConfigurationWrapper; // we want this wrapper to be only created once
 
-
-    // If the CLI is not in interact mode, act like there is no console.
-    private boolean interact = false;
-
     /**
      * Version mode - only used when --version is called from the command line.
      *
@@ -298,7 +304,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         config = CliConfigImpl.load(this);
         addressResolver = ControllerAddressResolver.newInstance(config, null);
         resolveParameterValues = config.isResolveParameterValues();
-        silent = config.isSilent();
+        SILENT = config.isSilent();
+        ERROR_ON_INTERACT = config.isErrorOnInteract();
         username = null;
         password = null;
         disableLocalAuth = false;
@@ -325,8 +332,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         this.disableLocalAuth = configuration.isDisableLocalAuth();
         this.clientBindAddress = configuration.getClientBindAddress();
 
+        SILENT = config.isSilent();
+        ERROR_ON_INTERACT = config.isErrorOnInteract();
+
         resolveParameterValues = config.isResolveParameterValues();
-        silent = config.isSilent();
         cliPrintStream = configuration.getConsoleOutput() == null ? new CLIPrintStream() : new CLIPrintStream(configuration.getConsoleOutput());
         initStdIO();
         try {
@@ -364,6 +373,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     protected void initBasicConsole(InputStream consoleInput) throws CliInitializationException {
+        // this method shouldn't be called twice during the session
+        assert console == null : "the console has already been initialized";
         Settings settings = createSettings(consoleInput);
         this.console = Console.Factory.getConsole(this, settings);
         console.setCallback(initCallback());
@@ -387,8 +398,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         terminateSession();
                     else {
                         handleSafe(output.getBuffer().trim());
-                        if (!terminate && interact)
+                        if (INTERACT && !terminate) {
                             console.setPrompt(getPrompt());
+                        }
                     }
                     return 0;
 
@@ -831,7 +843,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             return;
         }
 
-        if(!silent) {
+        if(!SILENT) {
             if (console != null) {
                 console.print(message);
                 console.printNewLine();
@@ -855,6 +867,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     private String readLine(String prompt, boolean password) throws CommandLineException {
+        // Only fail an interact if we're not in interactive.
+        if(!INTERACT && ERROR_ON_INTERACT){
+            throw new CommandLineException("Invalid Usage. Prompt attempted in non-interactive mode. Please check commands or change CLI mode.");
+        }
 
         if (console == null) {
             initBasicConsole(null);
@@ -886,7 +902,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             return;
         }
 
-        if(!silent) {
+        if(!SILENT) {
             if (console != null) {
                 console.printColumns(col);
             } else { // non interactive mode
@@ -1061,7 +1077,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
      *
      * @return true if the certificate validation should be retried.
      */
-    private boolean handleSSLFailure(Certificate[] lastChain) throws CommandLineException {
+    private void handleSSLFailure(Certificate[] lastChain) throws CommandLineException {
         printLine("Unable to connect due to unrecognised server certificate");
         for (Certificate current : lastChain) {
             if (current instanceof X509Certificate) {
@@ -1087,18 +1103,18 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             }
 
             if (response == null)
-                return false;
+                break;
             else if (response.length() == 1) {
                 switch (response.toLowerCase(Locale.ENGLISH).charAt(0)) {
                     case 'n':
-                        return false;
+                        break;
                     case 't':
                         trustManager.storeChainTemporarily(lastChain);
-                        return true;
+                        break;
                     case 'p':
                         if (trustManager.isModifyTrustStore()) {
                             trustManager.storeChainPermenantly(lastChain);
-                            return true;
+                            break;
                         }
                 }
             }
@@ -1114,22 +1130,42 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             builder.setOperationName(Util.READ_ATTRIBUTE);
             builder.addProperty(Util.NAME, Util.NAME);
 
-            final ModelNode response = client.execute(builder.buildRequest());
-            if(!Util.isSuccess(response)) {
-                // here we check whether the error is related to the access control permissions
-                // WFLYCTL0332: Permission denied
-                // WFLYCTL0313: Unauthorized to execute operation
-                final String failure = Util.getFailureDescription(response);
-                if(failure.contains("WFLYCTL0332")) {
-                    StreamUtils.safeClose(client);
-                    throw new CommandLineException("Connection refused based on the insufficient user permissions." +
-                        " Please, make sure the security-realm attribute is specified for the relevant management interface" +
-                        " (standalone.xml/host.xml) and review the access-control configuration (standalone.xml/domain.xml).");
+            final long start = System.currentTimeMillis();
+            final long timeoutMillis = config.getConnectionTimeout() + 1000;
+            boolean tryConnection = true;
+            int i = 1;
+            while (tryConnection) {
+                final ModelNode response = client.execute(builder.buildRequest());
+                if (!Util.isSuccess(response)) {
+                    // here we check whether the error is related to the access control permissions
+                    // WFLYCTL0332: Permission denied
+                    // WFLYCTL0313: Unauthorized to execute operation
+                    final String failure = Util.getFailureDescription(response);
+                    if (failure.contains("WFLYCTL0332")) {
+                        StreamUtils.safeClose(client);
+                        throw new CommandLineException(
+                                "Connection refused based on the insufficient user permissions."
+                                        + " Please, make sure the security-realm attribute is specified for the relevant management interface"
+                                        + " (standalone.xml/host.xml) and review the access-control configuration (standalone.xml/domain.xml).");
+                    } else if (failure.contains("WFLYCTL0379")) { // system boot is in process
+                        if (System.currentTimeMillis() - start > timeoutMillis) {
+                            throw new CommandLineException("Timeout waiting for the system to boot.");
+                        }
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            disconnectController();
+                            throw new CommandLineException("Interrupted while pausing before trying connection.", e);
+                        }
+                    } else {
+                        // Otherwise, on one hand, we don't actually care what the response is,
+                        // we just want to be sure the ModelControllerClient does not throw an Exception.
+                        // On the other hand, reading name attribute is a very basic one which should always work
+                        printLine("Warning! The connection check resulted in failure: " + Util.getFailureDescription(response));
+                        tryConnection = false;
+                    }
                 } else {
-                    // Otherwise, on one hand, we don't actually care what the response is,
-                    // we just want to be sure the ModelControllerClient does not throw an Exception.
-                    // On the other hand, reading name attribute is a very basic one which should always work
-                    printLine("Warning! The connection check resulted in failure: " + Util.getFailureDescription(response));
+                    tryConnection = false;
                 }
             }
         } catch (Exception e) {
@@ -1259,7 +1295,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public CommandHistory getHistory() {
-        if( !interact ){
+        if( !INTERACT ){
             return null;
         }
 
@@ -1391,7 +1427,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void interact() {
-        interact = true;
+        INTERACT = true;
         if(cmdCompleter == null) {
             throw new IllegalStateException("The console hasn't been initialized at construction time.");
         }
@@ -1403,13 +1439,15 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
         console.setPrompt(getPrompt());
 
-        while(!isTerminated()){
+        while(!isTerminated() && console.running()){
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+
+        INTERACT = false;
     }
 
     @Override
@@ -1452,17 +1490,17 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public boolean isSilent() {
-        return this.silent;
+        return SILENT;
     }
 
     @Override
     public void setSilent(boolean silent) {
-        this.silent = silent;
+        SILENT = silent;
     }
 
     @Override
     public int getTerminalWidth() {
-        if( !interact ){
+        if( !INTERACT ){
             return 0;
         }
 
@@ -1479,7 +1517,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public int getTerminalHeight() {
-        if( !interact ){
+        if( !INTERACT ){
             return 0;
         }
 
@@ -1611,7 +1649,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             console.getHistory().setUseHistory(true);
                             console.setCompletion(true);
                         } catch (CommandLineException e) {
-                            throw new IOException("Failed to read username.", e);
+                            // the messages of the cause are lost if nested here
+                            throw new IOException("Failed to read username: " + e.getLocalizedMessage());
                         }
                         if (username == null || username.length() == 0) {
                             throw new SaslException("No username supplied.");
@@ -1632,7 +1671,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             console.getHistory().setUseHistory(true);
                             console.setCompletion(true);
                         } catch (CommandLineException e) {
-                            throw new IOException("Failed to read password.", e);
+                            // the messages of the cause are lost if nested here
+                            throw new IOException("Failed to read password: " + e.getLocalizedMessage());
                         }
                         if (temp != null) {
                             password = temp.toCharArray();

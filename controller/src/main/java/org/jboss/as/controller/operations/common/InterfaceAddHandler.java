@@ -36,8 +36,9 @@ import org.jboss.dmr.ModelNode;
  */
 public class InterfaceAddHandler extends AbstractAddStepHandler {
 
-
+    @Deprecated
     public static final InterfaceAddHandler NAMED_INSTANCE = new InterfaceAddHandler(false);
+    @Deprecated
     public static final InterfaceAddHandler SPECIFIED_INSTANCE = new InterfaceAddHandler(true);
 
     private final boolean specified;

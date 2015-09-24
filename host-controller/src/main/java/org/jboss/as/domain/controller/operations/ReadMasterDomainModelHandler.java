@@ -66,7 +66,7 @@ public class ReadMasterDomainModelHandler implements OperationStepHandler {
             ignoredTransformationRegistry = Transformers.DEFAULT;
         } else {
             final ReadMasterDomainModelUtil.RequiredConfigurationHolder rc = ReadMasterDomainModelUtil.populateHostResolutionContext(hostInfo, resource, extensionRegistry);
-            ignoredTransformationRegistry = ReadMasterDomainModelUtil.createHostIgnoredRegistry(hostInfo, rc, false);
+            ignoredTransformationRegistry = ReadMasterDomainModelUtil.createHostIgnoredRegistry(hostInfo, rc);
         }
 
         final OperationStepHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers);

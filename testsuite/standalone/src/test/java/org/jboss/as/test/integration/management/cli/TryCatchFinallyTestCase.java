@@ -24,14 +24,10 @@ package org.jboss.as.test.integration.management.cli;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import java.io.ByteArrayOutputStream;
-
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.test.integration.management.cli.ifelse.CLISystemPropertyTestBase;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -41,23 +37,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Alexey Loubyansky
  */
 @RunWith(WildflyTestRunner.class)
-public class TryCatchFinallyTestCase {
-
-    private static final String RESPONSE_VALUE_PREFIX = "\"value\" => \"";
-
-    private static final String PROP_NAME = "jboss-cli-test";
-
-    private static ByteArrayOutputStream cliOut;
-
-    @BeforeClass
-    public static void setup() throws Exception {
-        cliOut = new ByteArrayOutputStream();
-    }
-
-    @AfterClass
-    public static void tearDown() throws Exception {
-        cliOut = null;
-    }
+public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
 
     @Test
     public void testSuccessfulTry() throws Exception {
@@ -167,7 +147,7 @@ public class TryCatchFinallyTestCase {
     }
 
     @Test
-    public void testErrorInTryErroInCatchFinally() throws Exception {
+    public void testErrorInTryErrorInCatchFinally() throws Exception {
         cliOut.reset();
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
         try {
@@ -214,36 +194,87 @@ public class TryCatchFinallyTestCase {
         }
     }
 
-    protected String getAddPropertyReq(String value) {
-        return "/system-property=" + PROP_NAME + ":add(value=" + value + ")";
-    }
-
-    protected String getWritePropertyReq(String value) {
-        return "/system-property=" + PROP_NAME + ":write-attribute(name=\"value\",value=" + value + ")";
-    }
-
-    protected String getReadPropertyReq() {
-        return "/system-property=" + PROP_NAME + ":read-resource";
-    }
-
-    protected String getReadNonexistingPropReq() {
-        return "/system-property=itcantexist:read-resource";
-    }
-
-    protected String getRemovePropertyReq() {
-        return "/system-property=" + PROP_NAME + ":remove";
-    }
-
-    protected String getValue() {
-        final String response = cliOut.toString();
-        final int start = response.indexOf(RESPONSE_VALUE_PREFIX);
-        if(start < 0) {
-            Assert.fail("Value not found in the response: " + response);
+    @Test
+    public void testNonBatchedBlocks() throws Exception {
+        cliOut.reset();
+        final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        try {
+            ctx.connectController();
+            ctx.handle(getAddPropertyReq("try", "1"));
+            ctx.handle(getAddPropertyReq("catch", "1"));
+            ctx.handle(getAddPropertyReq("finally", "1"));
+            ctx.handle("try");
+            ctx.handle(getWritePropertyReq("try", "2"));
+            ctx.handle(getReadNonexistingPropReq());
+            ctx.handle("catch");
+            ctx.handle(getWritePropertyReq("catch", "2"));
+            ctx.handle(getReadNonexistingPropReq());
+            ctx.handle("finally");
+            ctx.handle(getWritePropertyReq("finally", "2"));
+            ctx.handle(getReadNonexistingPropReq());
+            ctx.handle("end-try");
+            fail("catch is expceted to throw an exception");
+        } catch(CommandLineException e) {
+            cliOut.reset();
+            ctx.handle(getReadPropertyReq("try"));
+            assertEquals("2", getValue());
+            cliOut.reset();
+            ctx.handle(getReadPropertyReq("catch"));
+            assertEquals("2", getValue());
+            cliOut.reset();
+            ctx.handle(getReadPropertyReq("finally"));
+            assertEquals("2", getValue());
+        } finally {
+            ctx.handleSafe(getRemovePropertyReq("try"));
+            ctx.handleSafe(getRemovePropertyReq("catch"));
+            ctx.handleSafe(getRemovePropertyReq("finally"));
+            ctx.terminateSession();
+            cliOut.reset();
         }
-        final int end = response.indexOf('"', start + RESPONSE_VALUE_PREFIX.length() + 1);
-        if(end < 0) {
-            Assert.fail("Couldn't locate the closing quote: " + response);
+    }
+
+    @Test
+    public void testBatchedBlocks() throws Exception {
+        cliOut.reset();
+        final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        try {
+            ctx.connectController();
+            ctx.handle(getAddPropertyReq("try", "1"));
+            ctx.handle(getAddPropertyReq("catch", "1"));
+            ctx.handle(getAddPropertyReq("finally", "1"));
+            ctx.handle("try");
+            ctx.handle("batch");
+            ctx.handle(getWritePropertyReq("try", "2"));
+            ctx.handle(getReadNonexistingPropReq());
+            ctx.handle("run-batch");
+            ctx.handle("catch");
+            ctx.handle("batch");
+            ctx.handle(getWritePropertyReq("catch", "2"));
+            ctx.handle(getReadNonexistingPropReq());
+            ctx.handle("run-batch");
+            ctx.handle("finally");
+            ctx.handle("batch");
+            ctx.handle(getWritePropertyReq("finally", "2"));
+            ctx.handle(getReadNonexistingPropReq());
+            ctx.handle("run-batch");
+            ctx.handle("end-try");
+            fail("expceted an exception");
+        } catch(CommandLineException e) {
+            cliOut.reset();
+            ctx.handle(getReadPropertyReq("try"));
+            assertEquals("1", getValue());
+            cliOut.reset();
+            ctx.handle(getReadPropertyReq("catch"));
+            assertEquals("1", getValue());
+            cliOut.reset();
+            ctx.handle(getReadPropertyReq("finally"));
+            assertEquals("1", getValue());
+        } finally {
+            ctx.handleSafe(getRemovePropertyReq("try"));
+            ctx.handleSafe(getRemovePropertyReq("catch"));
+            ctx.handleSafe(getRemovePropertyReq("finally"));
+            ctx.terminateSession();
+            cliOut.reset();
         }
-        return response.substring(start + RESPONSE_VALUE_PREFIX.length(), end);
     }
 }

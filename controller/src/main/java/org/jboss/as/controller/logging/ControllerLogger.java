@@ -1708,7 +1708,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 147, value = "No child type %s")
     OperationFailedRuntimeException noChildType(String name);
 
-    /**
+    /*
      * A message indicating no handler for the step operation, represented by the {@code stepOpName} parameter, at
      * {@code address}.
      *
@@ -3209,7 +3209,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 362, value = "Capabilities required by resource '%s' are not available:")
     String requiredCapabilityMissing(String demandingAddress);
 
-    @Message(id = 363, value = "Capability '%s' is already registered in context '%s.")
+    @Message(id = 363, value = "Capability '%s' is already registered in context '%s'.")
     IllegalStateException capabilityAlreadyRegisteredInContext(String capability, String context);
 
     @Message(id = 364, value = "Capability '%s' is unknown.")
@@ -3241,6 +3241,12 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = NONE, value = "    %s in context '%s'")
     String formattedCapabilityId(String capability, String context);
+
+    @Message(id = NONE, value = "; Possible registration points for this capability: %s")
+    String possibleCapabilityProviderPoints(String providerPoints);
+
+    @Message(id = NONE, value = "; There are no known registration points which can provide this capability.")
+    String noKnownProviderPoints();
 
     @Message(id = 370, value="Incomplete expression: %s")
     OperationFailedException incompleteExpression(String expression);
@@ -3347,6 +3353,23 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 401, value = "Couldn't build the report")
     RuntimeException failedToBuildReport(@Cause Throwable t);
 
-    @Message(id = 402, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    @Message(id = 402, value = "Subsystems %s provided by legacy extension '%s' are not supported on servers running this version. " +
+            "Both the subsystem and the extension must be removed or migrated before the server will function.")
+    @LogMessage(level = ERROR)
+    void removeUnsupportedLegacyExtension(List<String> subsystemNames, String extensionName);
+
+    @Message(id = 403, value = "Unexpected exception during execution of the following operation(s): %s")
+    @LogMessage(level = ERROR)
+    void unexpectedOperationExecutionException(@Cause RuntimeException e, List<ModelNode> controllerOperations);
+
+    @Message(id = 404, value = "Unexpected exception during execution: %s")
+    String unexpectedOperationExecutionFailureDescription(RuntimeException e);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 405, value = "Couldn't find a transformer to %s, falling back to %s")
+    void couldNotFindTransformerRegistryFallingBack(ModelVersion currentVersion, ModelVersion fallbackVersion);
+
+    @Message(id = 406, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
     OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
 }

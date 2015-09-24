@@ -72,14 +72,15 @@ class ReadTransformedResourceOperation implements OperationStepHandler {
     private ModelNode transformReadResourceResult(final OperationContext context, ModelNode original, String subsystem) throws OperationFailedException {
         ModelNode rootData = original.get(ModelDescriptionConstants.RESULT);
 
-        Map<PathAddress, ModelVersion> subsystemVersions = new HashMap<PathAddress, ModelVersion>();
+        Map<PathAddress, ModelVersion> subsystemVersions = new HashMap<>();
         subsystemVersions.put(PathAddress.EMPTY_ADDRESS.append(ModelDescriptionConstants.SUBSYSTEM, subsystem), subsystemModelVersion);
 
-        final TransformationTarget target = TransformationTargetImpl.create(null, transformerRegistry, coreModelVersion, subsystemVersions, TransformationTarget.TransformationTargetType.SERVER);
+        final TransformationTarget target = TransformationTargetImpl.create(null, transformerRegistry, coreModelVersion,
+                subsystemVersions, TransformationTarget.TransformationTargetType.SERVER, false);
         final Transformers transformers = Transformers.Factory.create(target);
 
         final ImmutableManagementResourceRegistration rr = context.getRootResourceRegistration();
-        Resource root = TransformerRegistry.modelToResource(rr, rootData, true);
+        Resource root = TransformationUtils.modelToResource(rr, rootData, true);
         Resource transformed = transformers.transformRootResource(context, root);
 
         return Resource.Tools.readModel(transformed);

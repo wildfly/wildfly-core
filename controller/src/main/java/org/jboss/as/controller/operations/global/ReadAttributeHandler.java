@@ -151,13 +151,13 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         validator.validate(operation);
         String attributeName = GlobalOperationAttributes.NAME.resolveModelAttribute(context, operation).asString();
         final boolean defaults = GlobalOperationAttributes.INCLUDE_DEFAULTS.resolveModelAttribute(context,operation).asBoolean();
-        final boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName);
+        final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
+        final boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName, registry);
         String attributeExpression = attributeName;
         if (useEnhancedSyntax){
             attributeName = extractAttributeName(attributeName);
         }
 
-        final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
         final AttributeAccess attributeAccess = registry.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
 
         if (attributeAccess == null) {
@@ -174,6 +174,13 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                 handler.execute(context, operation);
             } finally {
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
+            }
+            if (attributeAccess.getAccessType() == AttributeAccess.AccessType.METRIC
+                    && !context.getResult().isDefined()) {
+                ModelNode undefinedMetricValue = attributeAccess.getAttributeDefinition().getUndefinedMetricValue();
+                if (undefinedMetricValue != null) {
+                    context.getResult().set(undefinedMetricValue);
+                }
             }
             if (useEnhancedSyntax) {
                 ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression.substring(attributeName.length()), context.getResult());

@@ -35,6 +35,7 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -152,8 +153,11 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
     }
 
     /**
-     * wrapper to the DomainController and the underlying {@code ModelController} to execute
+     * Wrapper to the DomainController and the underlying {@code ModelController} to execute
      * a {@code OperationStepHandler} implementation directly, bypassing normal domain coordination layer.
+     * TODO This interface probably should be adapted to provide use-case-specific methods instead of generic
+     * "execute whatever I hand you" ones. The "installSlaveExtensions" method needed to be non-generic unless
+     * I was willing to hand a ref to the root MRR to RemoteDomainConnnectionService.
      */
     public interface OperationExecutor {
 
@@ -167,6 +171,14 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
          * @return the result
          */
         ModelNode execute(Operation operation, OperationMessageHandler handler, ModelController.OperationTransactionControl control, OperationStepHandler step);
+
+        /**
+         * Execute the operation to install extensions provided by a remote domain controller.
+         *
+         *
+         * @param extensions@return the result
+         */
+        ModelNode installSlaveExtensions(List<ModelNode> extensions);
 
         /**
          * Execute an operation using the current management model.
@@ -292,7 +304,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             }
             // Initialize the transformers
             final TransformationTarget target = TransformationTargetImpl.create(hostInfo.getHostName(), transformerRegistry, ModelVersion.create(major, minor, micro),
-                    Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTarget.TransformationTargetType.HOST);
+                    Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTarget.TransformationTargetType.HOST, hostInfo.isIgnoreUnaffectedConfig());
             final Transformers transformers = Transformers.Factory.create(target);
             try {
                 SlaveChannelAttachments.attachSlaveInfo(handler.getChannel(), registrationContext.hostName, transformers);

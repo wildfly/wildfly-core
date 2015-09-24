@@ -24,8 +24,6 @@
 
 package org.wildfly.extension.io;
 
-import java.io.IOException;
-
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
@@ -34,8 +32,11 @@ import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.common.cpu.ProcessorInfo;
 import org.xnio.Options;
 import org.xnio.XnioWorker;
+
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
@@ -49,6 +50,12 @@ public class IOSubsystem10TestCase extends AbstractSubsystemBaseTest {
     @Override
     protected void compareXml(String configId, String original, String marshalled) throws Exception {
         super.compareXml(configId, marshalled, readResource("shipped-default.xml"));
+    }
+
+
+    @Override
+    protected String getSubsystemXsdPath() throws Exception {
+        return "schema/wildfly-io_1_0.xsd";
     }
 
     @Override
@@ -68,8 +75,8 @@ public class IOSubsystem10TestCase extends AbstractSubsystemBaseTest {
         workerServiceController.setMode(ServiceController.Mode.ACTIVE);
         workerServiceController.awaitValue();
         XnioWorker worker = workerServiceController.getService().getValue();
-        Assert.assertEquals(Runtime.getRuntime().availableProcessors() * 2, worker.getIoThreadCount());
-        Assert.assertEquals(Runtime.getRuntime().availableProcessors() * 16, worker.getOption(Options.WORKER_TASK_MAX_THREADS).intValue());
+        Assert.assertEquals(ProcessorInfo.availableProcessors() * 2, worker.getIoThreadCount());
+        Assert.assertEquals(ProcessorInfo.availableProcessors() * 16, worker.getOption(Options.WORKER_TASK_MAX_THREADS).intValue());
     }
 
     @Override

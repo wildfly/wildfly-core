@@ -147,7 +147,8 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
         registration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
 
-        ManagementResourceRegistration profileReg = registration.registerSubModel(new ProfileResourceDefinition(extensionRegistry));
+        ignoredDomainResourceRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
+        ManagementResourceRegistration profileReg = registration.registerSubModel(new ProfileResourceDefinition(hostControllerInfo, ignoredDomainResourceRegistry));
 
         profileReg.registerSubModel(new SubsystemResourceDefinition());
 
@@ -155,7 +156,6 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
         registerCommonChildren(managementModel.getRootResource(), localIndexedAdd);
 
-        ignoredDomainResourceRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
     }
 
     void executeTriggerSyncOperation(Resource rootResource) throws Exception {

@@ -98,11 +98,13 @@ class OperationAttachmentsProxy implements Operation {
 
     @SuppressWarnings("CloneDoesntCallSuperClone")
     @Override
+    @Deprecated
     public final Operation clone() {
         return new OperationAttachmentsProxy(operation, proxiedStreams);
     }
 
     @Override
+    @Deprecated
     public Operation clone(ModelNode operation) {
         return new OperationAttachmentsProxy(operation, proxiedStreams);
     }

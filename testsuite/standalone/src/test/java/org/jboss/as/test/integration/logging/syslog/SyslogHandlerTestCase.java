@@ -126,16 +126,16 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
     /**
      * Tests if the next message in the syslog is the expected one with the given log-level.
      *
-     * @param expectedLevel
+     * @param expectedLevel the expected level of the next log message
      *
      * @throws Exception
      */
     private void testLog(final BlockingQueue<SyslogServerEventIF> queue, final Level expectedLevel) throws Exception {
         SyslogServerEventIF log = queue.poll(15L * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
         assertNotNull(log);
-        assertEquals("Message with unexpected Syslog event level received.", getSyslogLevel(expectedLevel), log.getLevel());
-        final String expectedMsg = LoggingServiceActivator.formatMessage(MSG, expectedLevel);
         String msg = log.getMessage();
+        assertEquals("Message with unexpected Syslog event level received: " + msg, getSyslogLevel(expectedLevel), log.getLevel());
+        final String expectedMsg = LoggingServiceActivator.formatMessage(MSG, expectedLevel);
         assertEquals("Message with unexpected Syslog event text received.", expectedMsg, msg);
     }
 

@@ -23,10 +23,16 @@ package org.jboss.as.controller.operations.global;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -37,6 +43,7 @@ import static org.jboss.as.controller.operations.global.GlobalOperationAttribute
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -44,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -60,6 +68,7 @@ import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.registry.WildcardReadResourceDescriptionAddressHack;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -380,147 +389,11 @@ public class GlobalOperationHandlers {
 
             // Check whether the operation needs to be dispatched to a remote proxy
             if (registration.isRemote()) {
-                // make sure the target address does not contain the unresolved elements of the address
-                final ModelNode remoteOp = operation.clone();
-                final PathAddress fullAddress = base.append(remaining);
-                remoteOp.get(OP_ADDR).set(fullAddress.toModelNode());
-                // Temp remote result
-                final ModelNode resultItem = new ModelNode();
-
-                final OperationStepHandler delegate = registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, operation.require(OP).asString());
-                context.addStep(resultItem, remoteOp, new OperationStepHandler() {
-                    @Override
-                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        try {
-                            // Execute the proxy step handler in a separate step
-                            // so we have the final response available to our ResultHandler
-                            ControllerLogger.MGMT_OP_LOGGER.tracef("sending ModelAddressResolver request %s to remote process using %s",
-                                    operation, delegate);
-
-                            final AtomicBoolean filtered = new AtomicBoolean(false);
-
-                            context.addStep(new OperationStepHandler() {
-                                @Override
-                                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                                    try {
-                                        delegate.execute(context, operation);
-                                    } catch (UnauthorizedException e) {
-                                        // equivalent to the resource not existing
-                                        // Just report the failure to the filter and complete normally
-                                        filteredData.addReadRestrictedResource(base);
-                                        filtered.set(true);
-                                        ControllerLogger.MGMT_OP_LOGGER.tracef("Caught UnauthorizedException in remote execution from %s", delegate);
-                                    } catch (ResourceNotAddressableException e) {
-                                        // Just report the failure to the filter and complete normally
-                                        filteredData.addAccessRestrictedResource(base);
-                                        filtered.set(true);
-                                        ControllerLogger.MGMT_OP_LOGGER.tracef("Caught ResourceNotAddressableException in remote execution from %s", delegate);
-                                    } catch (Resource.NoSuchResourceException e) {
-                                        // It's possible this is a remote failure, in which case we
-                                        // don't get ResourceNotAddressableException. So see if
-                                        // it was due to any authorization denial
-                                        ModelNode toAuthorize = Util.createEmptyOperation(READ_RESOURCE_OPERATION, base);
-                                        AuthorizationResult.Decision decision = context.authorize(toAuthorize, EnumSet.of(Action.ActionEffect.ADDRESS)).getDecision();
-                                        ControllerLogger.MGMT_OP_LOGGER.tracef("Caught NoSuchResourceException in remote execution from %s. Authorization decision is %s", delegate, decision);
-                                        if (decision == AuthorizationResult.Decision.DENY) {
-                                            // Just report the failure to the filter and complete normally
-                                            filteredData.addAccessRestrictedResource(base);
-                                            filtered.set(true);
-                                        } else if (!ignoreMissing) {
-                                            throw e;
-                                        }
-                                    }
-                                }
-                            }, OperationContext.Stage.MODEL, true);
-
-                            context.completeStep(new OperationContext.ResultHandler() {
-
-                                @Override
-                                public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                                    ControllerLogger.MGMT_OP_LOGGER.tracef("ModelAddressResolver response from remote process is %s",
-                                            resultItem);
-
-                                    if (filtered.get()) {
-                                        ControllerLogger.MGMT_OP_LOGGER.trace("Response was filtered");
-                                        return;
-                                    }
-
-                                    // Determine the address prefix to prepend to RBAC responses from servers
-                                    PathAddress rbacPrefix = base.size() > 1 && base.getElement(1).getKey().equals(RUNNING_SERVER)
-                                            ? base : PathAddress.EMPTY_ADDRESS;
-
-                                    // If there are multiple targets remaining, the result should be a list
-                                    if (remaining.isMultiTarget()) {
-                                        if (resultItem.has(RESULT) && resultItem.get(RESULT).getType() == ModelType.LIST) {
-                                            for (final ModelNode rr : resultItem.get(RESULT).asList()) {
-                                                // Create a new result entry
-                                                final ModelNode nr = result.add();
-                                                final PathAddress address = PathAddress.pathAddress(rr.get(OP_ADDR));
-                                                // Check whether the result of the remote target contains part of the base address
-                                                // this might happen for hosts
-                                                int max = Math.min(base.size(), address.size());
-                                                int match = 0;
-                                                for (int i = 0; i < max; i++) {
-                                                    final PathElement eb = base.getElement(i);
-                                                    final PathElement ea = address.getElement(i);
-                                                    if (eb.getKey().equals(ea.getKey())) {
-                                                        match = i + 1;
-                                                    }
-                                                }
-                                                final PathAddress resolvedAddress = base.append(address.subAddress(match));
-                                                ControllerLogger.MGMT_OP_LOGGER.tracef("recording multi-target ModelAddressResolver response " +
-                                                        "to %s at %s", fullAddress, resolvedAddress);
-                                                nr.get(OP_ADDR).set(resolvedAddress.toModelNode());
-                                                nr.get(OUTCOME).set(rr.get(OUTCOME));
-                                                nr.get(RESULT).set(rr.get(RESULT));
-
-                                                if (rr.hasDefined(RESPONSE_HEADERS)) {
-                                                    ModelNode headers = rr.get(RESPONSE_HEADERS);
-                                                    ModelNode acc = headers.remove(ACCESS_CONTROL);
-                                                    if (headers.asInt() > 0) {
-                                                        nr.get(RESPONSE_HEADERS).set(headers);
-                                                    }
-                                                    if (acc.isDefined()) {
-                                                        filteredData.populate(acc, rbacPrefix);
-                                                        ControllerLogger.MGMT_OP_LOGGER.tracef("Populated local filtered data " +
-                                                                "with remote access control headers %s from result item %s", acc, rr);
-                                                    }
-                                                }
-                                            }
-                                            if (resultItem.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL)) {
-                                                ModelNode acc = resultItem.get(RESPONSE_HEADERS, ACCESS_CONTROL);
-                                                filteredData.populate(acc, PathAddress.EMPTY_ADDRESS);
-                                            }
-                                        }
-                                    } else {
-                                        ControllerLogger.MGMT_OP_LOGGER.tracef("recording non-multi-target ModelAddressResolver response " +
-                                                "to %s", fullAddress);
-                                        final ModelNode nr = result.add();
-                                        nr.get(OP_ADDR).set(fullAddress.toModelNode());
-                                        nr.get(OUTCOME).set(resultItem.get(OUTCOME));
-                                        nr.get(RESULT).set(resultItem.get(RESULT));
-
-                                        if (resultItem.hasDefined(RESPONSE_HEADERS)) {
-                                            ModelNode headers = resultItem.get(RESPONSE_HEADERS);
-                                            ModelNode acc = headers.remove(ACCESS_CONTROL);
-                                            if (headers.asInt() > 0) {
-                                                nr.get(RESPONSE_HEADERS).set(headers);
-                                            }
-                                            if (acc.isDefined()) {
-                                                filteredData.populate(acc, PathAddress.EMPTY_ADDRESS);
-                                                ControllerLogger.MGMT_OP_LOGGER.tracef("Populated local filtered data " +
-                                                        "with remote access control headers %s from result item %s", acc, resultItem);
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                        } catch (Resource.NoSuchResourceException e) {
-                            // just discard the result to avoid leaking the inaccessible address
-                        }
-                    }
-                }, OperationContext.Stage.MODEL, true);
-
+                if (isWFCORE621Needed(registration, remaining)) {
+                    executeWFCORE621(base, remaining, context, registration, ignoreMissing);
+                } else {
+                    executeRemote(base, remaining, context, registration, ignoreMissing);
+                }
                 // No further processing needed
                 return;
             }
@@ -620,6 +493,283 @@ public class GlobalOperationHandlers {
                 context.addStep(resultItem, newOp, wrapper, OperationContext.Stage.MODEL, true);
             }
         }
+
+        private boolean isWFCORE621Needed(ImmutableManagementResourceRegistration registration, PathAddress remaining) {
+            if (remaining.size() > 0) {
+                PathElement pe = remaining.getElement(0);
+                if (pe.isMultiTarget() && RUNNING_SERVER.equals(pe.getKey())) {
+                    // We only need this for WildFly 8 and earlier (including EAP 6),
+                    // so that's proxied controllers running kernel version 1.x or 2.x
+                    ModelVersion modelVersion = registration.getProxyController(PathAddress.EMPTY_ADDRESS).getKernelModelVersion();
+                    return modelVersion.getMajor() < 3;
+                }
+            }
+            return false;
+        }
+
+        private void executeWFCORE621(PathAddress base, PathAddress remaining, OperationContext context, ImmutableManagementResourceRegistration registration, boolean ignoreMissing) {
+
+            ControllerLogger.MGMT_OP_LOGGER.tracef("Executing WFCORE-621 op for base %s and remaining %s", base, remaining);
+
+            // We have distinct handling for WildFly 8
+            // TODO a mixed domain of WildFly > 9 managing WildFly 8 is unlikely to work, so this can likely be dropped
+            final boolean wildfly8 = registration.getProxyController(PathAddress.EMPTY_ADDRESS).getKernelModelVersion().getMajor() == 2;
+
+            // We have a request for /host=foo/server=*[/...] targeted at a host that
+            // doesn't have the WFCORE-282 fix available and thus can't handle that request.
+            // So, we are going to execute a step to have it provide us the names of all
+            // its servers, and then a step that will loop through the server names and
+            // add the usual execution for each
+
+            final ModelNode serverNameResponse = new ModelNode();
+            final AtomicBoolean filtered = new AtomicBoolean(false);
+
+            // We're adding steps to the top of the queue, so add the one that will use the server names first
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+
+                    ControllerLogger.MGMT_OP_LOGGER.tracef("Executing WFCORE-621 2nd step for base %s and remaining %s; filtered? %s serverNames=%s", base, remaining, filtered, serverNameResponse);
+
+                    // If the read of server names was filtered or for some other reason we didn't get them, we are done.
+                    if (filtered.get() || !serverNameResponse.hasDefined(RESULT)) {
+                        return;
+                    }
+
+                    Set<String> targetServers = extractServerNames(serverNameResponse.get(RESULT), operation, remaining, wildfly8);
+
+                    PathAddress afterServer = remaining.size() > 1 ? remaining.subAddress(1) : PathAddress.EMPTY_ADDRESS;
+                    for (String targetServer : targetServers) {
+                        PathAddress newBase = base.append(PathElement.pathElement(RUNNING_SERVER, targetServer));
+                        safeExecute(newBase, afterServer, context, registration, ignoreMissing);
+                    }
+                }
+            }, OperationContext.Stage.MODEL, true);
+
+            // Now add the step to read the server names.
+            // For WildFly 8 slaves we use read-children-resources because read-children-names includes
+            // server names that have a server-config but aren't started. So in the handler above
+            // we use the resource node to distinguish those cases
+            final String opName = wildfly8 ? READ_CHILDREN_RESOURCES_OPERATION : READ_CHILDREN_NAMES_OPERATION;
+            ModelNode op = Util.createEmptyOperation(opName, base);
+            op.get(CHILD_TYPE).set(RUNNING_SERVER);
+            OperationStepHandler proxyHandler = registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, opName);
+            // Use a custom handler to deal with the remote host not being readable (e.g. RBAC)
+            OperationStepHandler filterableHandler = new FilterableRemoteOperationStepHandler(proxyHandler, base, filtered, filteredData, ignoreMissing);
+            context.addStep(serverNameResponse, op, filterableHandler, OperationContext.Stage.MODEL, true);
+        }
+
+        private static Set<String> extractServerNames(ModelNode serverResultNode,
+                                               ModelNode operation,
+                                               PathAddress remaining,
+                                               boolean wildfly8) {
+
+            PathElement serverPE = remaining.getElement(0);
+            Set<String> interestingServers = null;
+            if (!serverPE.isWildcard()) {
+                interestingServers = new HashSet<String>();
+                Collections.addAll(interestingServers, serverPE.getSegments());
+            }
+
+            Set<String> result = new LinkedHashSet<>();
+            if (wildfly8) { // TODO a mixed domain of WildFly > 9 managing WildFly 8 is unlikely to work, so all this can likely be dropped
+                // The op we ran was read-children-resources, so we got back an object
+                for (String serverName : serverResultNode.keys()) {
+                    if (interestingServers == null || interestingServers.contains(serverName)) {
+                        ModelNode serverVal = serverResultNode.get(serverName);
+                        // If we get an undefined or empty node this indicates there's just a placeholder resource
+                        // for a non-started server-config
+                        boolean validServer = serverVal.isDefined() && serverVal.asInt() > 0;
+                        if (!validServer && remaining.size() == 1) {
+                            // Request was for the server node itself.
+                            // Begin horrendous hacks for WildFly 8 support, where a runtime-only resource
+                            // with a couple of attributes is available for non-started servers.
+                            String opName = operation.get(OP).asString();
+                            if (READ_ATTRIBUTE_OPERATION.equals(opName)) {
+                                String attrName = operation.get(NAME).asString();
+                                validServer = "launch-type".equals(attrName) || "server-state".equals(attrName);
+                            } else if (READ_RESOURCE_OPERATION.equals(opName)) {
+                                validServer = operation.hasDefined(INCLUDE_RUNTIME) && operation.get(INCLUDE_RUNTIME).asBoolean();
+                            }
+                        }
+                        if (validServer) {
+                            result.add(serverName);
+                        }
+                    }
+                }
+            } else {
+                // EAP 6 case
+                // The op we ran was read-children-names so we got back a list of string
+                for (ModelNode serverNameNode : serverResultNode.asList()) {
+                    String serverName = serverNameNode.asString();
+                    if (interestingServers == null || interestingServers.contains(serverName)) {
+                        result.add(serverName);
+                    }
+                }
+            }
+            return result;
+        }
+
+        private void executeRemote(final PathAddress base, final PathAddress remaining, OperationContext context, ImmutableManagementResourceRegistration registration, final boolean ignoreMissing) {
+            // make sure the target address does not contain the unresolved elements of the address
+            final ModelNode remoteOp = operation.clone();
+            final PathAddress fullAddress = base.append(remaining);
+            remoteOp.get(OP_ADDR).set(fullAddress.toModelNode());
+            // Temp remote result
+            final ModelNode resultItem = new ModelNode();
+
+            final OperationStepHandler proxyHandler = registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, operation.require(OP).asString());
+            context.addStep(resultItem, remoteOp, new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    try {
+                        // Execute the proxy step handler in a separate step
+                        // so we have the final response available to our ResultHandler
+                        ControllerLogger.MGMT_OP_LOGGER.tracef("sending ModelAddressResolver request %s to remote process using %s",
+                                operation, proxyHandler);
+
+                        final AtomicBoolean filtered = new AtomicBoolean(false);
+
+                        context.addStep(new FilterableRemoteOperationStepHandler(proxyHandler, base, filtered, filteredData, ignoreMissing), OperationContext.Stage.MODEL, true);
+
+                        context.completeStep(new OperationContext.ResultHandler() {
+
+                            @Override
+                            public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                                ControllerLogger.MGMT_OP_LOGGER.tracef("ModelAddressResolver response from remote process is %s",
+                                        resultItem);
+
+                                if (filtered.get()) {
+                                    ControllerLogger.MGMT_OP_LOGGER.trace("Response was filtered");
+                                    return;
+                                }
+
+                                // Determine the address prefix to prepend to RBAC responses from servers
+                                PathAddress rbacPrefix = base.size() > 1 && base.getElement(1).getKey().equals(RUNNING_SERVER)
+                                        ? base : PathAddress.EMPTY_ADDRESS;
+
+                                // If there are multiple targets remaining, the result should be a list
+                                if (remaining.isMultiTarget()) {
+                                    if (resultItem.has(RESULT) && resultItem.get(RESULT).getType() == ModelType.LIST) {
+                                        for (final ModelNode rr : resultItem.get(RESULT).asList()) {
+                                            // Create a new result entry
+                                            final ModelNode nr = result.add();
+                                            final PathAddress address = PathAddress.pathAddress(rr.get(OP_ADDR));
+                                            // Check whether the result of the remote target contains part of the base address
+                                            // this might happen for hosts
+                                            int max = Math.min(base.size(), address.size());
+                                            int match = 0;
+                                            for (int i = 0; i < max; i++) {
+                                                final PathElement eb = base.getElement(i);
+                                                final PathElement ea = address.getElement(i);
+                                                if (eb.getKey().equals(ea.getKey())) {
+                                                    match = i + 1;
+                                                }
+                                            }
+                                            final PathAddress resolvedAddress = base.append(address.subAddress(match));
+                                            ControllerLogger.MGMT_OP_LOGGER.tracef("recording multi-target ModelAddressResolver response " +
+                                                    "to %s at %s", fullAddress, resolvedAddress);
+                                            nr.get(OP_ADDR).set(resolvedAddress.toModelNode());
+                                            nr.get(OUTCOME).set(rr.get(OUTCOME));
+                                            nr.get(RESULT).set(rr.get(RESULT));
+
+                                            if (rr.hasDefined(RESPONSE_HEADERS)) {
+                                                ModelNode headers = rr.get(RESPONSE_HEADERS);
+                                                ModelNode acc = headers.remove(ACCESS_CONTROL);
+                                                if (headers.asInt() > 0) {
+                                                    nr.get(RESPONSE_HEADERS).set(headers);
+                                                }
+                                                if (acc.isDefined()) {
+                                                    filteredData.populate(acc, rbacPrefix);
+                                                    ControllerLogger.MGMT_OP_LOGGER.tracef("Populated local filtered data " +
+                                                            "with remote access control headers %s from result item %s", acc, rr);
+                                                }
+                                            }
+                                        }
+                                        if (resultItem.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL)) {
+                                            ModelNode acc = resultItem.get(RESPONSE_HEADERS, ACCESS_CONTROL);
+                                            filteredData.populate(acc, PathAddress.EMPTY_ADDRESS);
+                                        }
+                                    }
+                                } else {
+                                    ControllerLogger.MGMT_OP_LOGGER.tracef("recording non-multi-target ModelAddressResolver response " +
+                                            "to %s", fullAddress);
+                                    final ModelNode nr = result.add();
+                                    nr.get(OP_ADDR).set(fullAddress.toModelNode());
+                                    nr.get(OUTCOME).set(resultItem.get(OUTCOME));
+                                    nr.get(RESULT).set(resultItem.get(RESULT));
+
+                                    if (resultItem.hasDefined(RESPONSE_HEADERS)) {
+                                        ModelNode headers = resultItem.get(RESPONSE_HEADERS);
+                                        ModelNode acc = headers.remove(ACCESS_CONTROL);
+                                        if (headers.asInt() > 0) {
+                                            nr.get(RESPONSE_HEADERS).set(headers);
+                                        }
+                                        if (acc.isDefined()) {
+                                            filteredData.populate(acc, PathAddress.EMPTY_ADDRESS);
+                                            ControllerLogger.MGMT_OP_LOGGER.tracef("Populated local filtered data " +
+                                                    "with remote access control headers %s from result item %s", acc, resultItem);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    } catch (Resource.NoSuchResourceException e) {
+                        // just discard the result to avoid leaking the inaccessible address
+                    }
+                }
+            }, OperationContext.Stage.MODEL, true);
+        }
+    }
+
+    private static class FilterableRemoteOperationStepHandler implements OperationStepHandler {
+        private final OperationStepHandler proxyHandler;
+        private final PathAddress base;
+        private final AtomicBoolean filtered;
+        private final FilteredData filteredData;
+        private final boolean ignoreMissing;
+
+        public FilterableRemoteOperationStepHandler(OperationStepHandler proxyHandler, PathAddress base,
+                                                    AtomicBoolean filtered, FilteredData filteredData, boolean ignoreMissing) {
+            this.proxyHandler = proxyHandler;
+            this.base = base;
+            this.filtered = filtered;
+            this.filteredData = filteredData;
+            this.ignoreMissing = ignoreMissing;
+        }
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            try {
+                proxyHandler.execute(context, operation);
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Preliminary result for %s is %s", operation, context.hasResult() ? context.getResult() : null);
+            } catch (UnauthorizedException e) {
+                // equivalent to the resource not existing
+                // Just report the failure to the filter and complete normally
+                filteredData.addReadRestrictedResource(base);
+                filtered.set(true);
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Caught UnauthorizedException in remote execution from %s", proxyHandler);
+            } catch (ResourceNotAddressableException e) {
+                // Just report the failure to the filter and complete normally
+                filteredData.addAccessRestrictedResource(base);
+                filtered.set(true);
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Caught ResourceNotAddressableException in remote execution from %s", proxyHandler);
+            } catch (Resource.NoSuchResourceException e) {
+                // It's possible this is a remote failure, in which case we
+                // don't get ResourceNotAddressableException. So see if
+                // it was due to any authorization denial
+                ModelNode toAuthorize = Util.createEmptyOperation(READ_RESOURCE_OPERATION, base);
+                AuthorizationResult.Decision decision = context.authorize(toAuthorize, EnumSet.of(Action.ActionEffect.ADDRESS)).getDecision();
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Caught NoSuchResourceException in remote execution from %s. Authorization decision is %s", proxyHandler, decision);
+                if (decision == AuthorizationResult.Decision.DENY) {
+                    // Just report the failure to the filter and complete normally
+                    filteredData.addAccessRestrictedResource(base);
+                    filtered.set(true);
+                } else if (!ignoreMissing) {
+                    throw e;
+                }
+            }
+        }
     }
 
     static class RegistrationAddressResolver implements OperationStepHandler {
@@ -637,7 +787,8 @@ public class GlobalOperationHandlers {
         @Override
         public void execute(final OperationContext context, final ModelNode ignored) throws OperationFailedException {
             final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-            execute(address, PathAddress.EMPTY_ADDRESS, context);
+            final PathAddress aliasAddr = WildcardReadResourceDescriptionAddressHack.detachAliasAddress(context, operation);
+            execute(aliasAddr == null ? address : aliasAddr, PathAddress.EMPTY_ADDRESS, context);
         }
 
         void execute(final PathAddress address, PathAddress base, final OperationContext context) {

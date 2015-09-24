@@ -25,8 +25,6 @@ package org.jboss.as.domain.management.security.realms;
 import static org.jboss.as.domain.management.security.realms.LdapTestSuite.HOST_NAME;
 import static org.jboss.as.domain.management.security.realms.LdapTestSuite.MASTER_LDAP_PORT;
 import static org.jboss.as.domain.management.security.realms.LdapTestSuite.SLAVE_LDAP_PORT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 

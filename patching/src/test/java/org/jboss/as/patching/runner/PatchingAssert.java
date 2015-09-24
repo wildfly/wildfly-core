@@ -24,7 +24,7 @@ package org.jboss.as.patching.runner;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.jboss.as.patching.HashUtils.bytesToHexString;
 import static org.jboss.as.patching.HashUtils.hashFile;
 import static org.jboss.as.patching.metadata.Patch.PatchType.CUMULATIVE;
@@ -38,7 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.jboss.as.patching.ContentConflictsException;
 import org.jboss.as.patching.DirectoryStructure;

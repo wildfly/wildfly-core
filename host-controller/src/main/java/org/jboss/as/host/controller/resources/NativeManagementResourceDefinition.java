@@ -31,10 +31,12 @@ import org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.NativeManagementAddHandler;
+import org.jboss.as.server.operations.NativeManagementRemoveHandler;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -48,6 +50,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
             .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
+            .setCapabilityReference("org.wildfly.network.interface", NATIVE_MANAGEMENT_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition NATIVE_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT, false)
@@ -59,14 +62,22 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, INTERFACE, NATIVE_PORT);
 
     public NativeManagementResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo) {
+
         super(new Parameters(RESOURCE_PATH, HostModelUtil.getResourceDescriptionResolver("core","management","native-interface"))
             .setAddHandler(new NativeManagementAddHandler(hostControllerInfo))
-            .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE));
+            .setRemoveHandler(NativeManagementRemoveHandler.INSTANCE)
+            .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES));
     }
 
     @Override
     protected AttributeDefinition[] getAttributeDefinitions() {
         return ATTRIBUTE_DEFINITIONS;
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(NATIVE_MANAGEMENT_CAPABILITY);
     }
 
 }

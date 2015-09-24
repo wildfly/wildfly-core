@@ -46,11 +46,13 @@ public class TransformationTargetImpl implements TransformationTarget {
     private final OperationTransformerRegistry registry;
     private final TransformationTargetType type;
     private final PlaceholderResolver placeholderResolver;
+    private final boolean ignoreUnaffectedConfig;
 
     private TransformationTargetImpl(final String hostName, final TransformerRegistry transformerRegistry, final ModelVersion version,
                                      final Map<PathAddress, ModelVersion> subsystemVersions, final OperationTransformerRegistry transformers,
                                      final TransformationTargetType type,
-                                     final PlaceholderResolver placeholderResolver) {
+                                     final PlaceholderResolver placeholderResolver,
+                                     final boolean ignoreUnaffectedConfig) {
         this.version = version;
         this.hostName = hostName;
         this.transformerRegistry = transformerRegistry;
@@ -61,6 +63,7 @@ public class TransformationTargetImpl implements TransformationTarget {
         this.registry = transformers;
         this.type = type;
         this.placeholderResolver = placeholderResolver;
+        this.ignoreUnaffectedConfig = ignoreUnaffectedConfig;
     }
 
     private TransformationTargetImpl(final TransformationTargetImpl target, final PlaceholderResolver placeholderResolver) {
@@ -71,17 +74,19 @@ public class TransformationTargetImpl implements TransformationTarget {
         this.registry = target.registry;
         this.type = target.type;
         this.placeholderResolver = placeholderResolver;
+        this.ignoreUnaffectedConfig = false;
     }
 
     public static TransformationTarget createLocal() {
         TransformerRegistry registry = new TransformerRegistry();
         OperationTransformerRegistry r2 = registry.resolveHost(ModelVersion.create(0), new HashMap<PathAddress, ModelVersion>());
-        return new TransformationTargetImpl(null, registry, ModelVersion.create(0), new HashMap<PathAddress, ModelVersion>(), r2, TransformationTargetType.SERVER, null);
+        return new TransformationTargetImpl(null, registry, ModelVersion.create(0), new HashMap<PathAddress, ModelVersion>(), r2, TransformationTargetType.SERVER, null, false);
 
     }
 
     public static TransformationTargetImpl create(final String hostName, final TransformerRegistry transformerRegistry, final ModelVersion version,
-                                                  final Map<PathAddress, ModelVersion> subsystems, final TransformationTargetType type) {
+                                                  final Map<PathAddress, ModelVersion> subsystems, final TransformationTargetType type,
+                                                  final boolean ignoreUnaffectedConfig) {
         final OperationTransformerRegistry registry;
         switch (type) {
             case SERVER:
@@ -90,7 +95,7 @@ public class TransformationTargetImpl implements TransformationTarget {
             default:
                 registry = transformerRegistry.resolveHost(version, subsystems);
         }
-        return new TransformationTargetImpl(hostName, transformerRegistry, version, subsystems, registry, type, null);
+        return new TransformationTargetImpl(hostName, transformerRegistry, version, subsystems, registry, type, null, ignoreUnaffectedConfig);
     }
 
     TransformationTargetImpl copyWithplaceholderResolver(final PlaceholderResolver placeholderResolver) {
@@ -168,6 +173,11 @@ public class TransformationTargetImpl implements TransformationTarget {
     @Override
     public boolean isIgnoredResourceListAvailableAtRegistration() {
         return version.getMajor() >= 1 && version.getMinor() >= 4;
+    }
+
+    @Override
+    public boolean isIgnoreUnaffectedConfig() {
+        return false;
     }
 
     private boolean ignoreResourceTransformation(ResourceTransformationContext context, PathAddress address) {

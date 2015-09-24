@@ -31,6 +31,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.KernelServicesBuilder;
+import org.jboss.as.core.model.test.ModelInitializer;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -321,6 +322,7 @@ public abstract class AbstractSystemPropertyTest extends AbstractCoreModelTest {
     public void testXml() throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder(true)
                 .setXmlResource(getXmlResource())
+                .setModelInitializer(getModelInitializer(), null)
                 .build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
 
@@ -365,4 +367,8 @@ public abstract class AbstractSystemPropertyTest extends AbstractCoreModelTest {
     protected abstract ModelNode readSystemPropertiesParentModel(KernelServices kernelServices);
 
     protected abstract String getXmlResource();
+
+    protected ModelInitializer getModelInitializer() {
+        return ModelInitializer.NO_OP;
+    }
 }

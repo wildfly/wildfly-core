@@ -36,6 +36,7 @@ import org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.NativeManagementAddHandler;
@@ -71,12 +72,17 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
             .setAddHandler(NativeManagementAddHandler.INSTANCE)
             .setRemoveHandler(NativeManagementRemoveHandler.INSTANCE)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
-            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE));
+            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES));
     }
 
     @Override
     protected AttributeDefinition[] getAttributeDefinitions() {
         return ATTRIBUTE_DEFINITIONS;
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(NATIVE_MANAGEMENT_CAPABILITY);
     }
 
 }

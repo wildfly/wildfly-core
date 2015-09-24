@@ -141,7 +141,7 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
             // children's order happens to be meaningful. Generally FIFO is a good thing.
             for (Map.Entry<PathAddress, OperationStepHandler> entry : map.entrySet()) {
                 PathAddress child = entry.getKey();
-                ControllerLogger.MGMT_OP_LOGGER.infof("Adding remove step for child at %s", child);
+                ControllerLogger.MGMT_OP_LOGGER.debugf("Adding remove step for child at %s", child);
                 context.addStep(Util.createRemoveOperation(child), entry.getValue(), OperationContext.Stage.MODEL, true);
             }
         }
@@ -165,7 +165,9 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
      *                 is invoked before that method is. Will not be {@code null}
      */
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        for (RuntimeCapability capability : capabilities) {
+        Set<RuntimeCapability> capabilitySet = capabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : capabilities;
+
+        for (RuntimeCapability capability : capabilitySet) {
             if (capability.isDynamicallyNamed()) {
                 context.deregisterCapability(capability.getDynamicName(context.getCurrentAddressValue()));
             } else {

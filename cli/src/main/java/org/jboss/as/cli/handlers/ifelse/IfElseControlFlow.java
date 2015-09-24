@@ -29,8 +29,6 @@ import java.util.List;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandLineRedirection;
-import org.jboss.as.cli.Util;
-import org.jboss.as.cli.batch.Batch;
 import org.jboss.as.cli.batch.BatchManager;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.cli.parsing.command.CommandFormat;
@@ -58,14 +56,14 @@ class IfElseControlFlow implements CommandLineRedirection {
     private List<String> elseBlock;
     private boolean inElse;
 
-    IfElseControlFlow(CommandContext ctx, String ifCondition, String ifRequest) throws CommandLineException {
+    IfElseControlFlow(CommandContext ctx, Operation ifCondition, String ifRequest) throws CommandLineException {
         if(ifCondition == null) {
             throw new IllegalArgumentException("Condition is null");
         }
         if(ifRequest == null) {
             throw new IllegalArgumentException("Condition request is null");
         }
-        this.ifCondition = new ExpressionParser().parseExpression(ifCondition);
+        this.ifCondition = ifCondition;
         this.ifRequest = ctx.buildRequest(ifRequest);
         ctx.set(CTX_KEY, this);
     }
@@ -99,12 +97,8 @@ class IfElseControlFlow implements CommandLineRedirection {
     }
 
     void run(CommandContext ctx) throws CommandLineException {
-        try {
-            final BatchManager batchManager = ctx.getBatchManager();
-            if(batchManager.isBatchActive()) {
-                throw new CommandLineException("if-else can't be executed as part of a batch.");
-            }
 
+        try {
             final ModelControllerClient client = ctx.getModelControllerClient();
             if(client == null) {
                 throw new CommandLineException("The connection to the controller has not been established.");
@@ -116,7 +110,6 @@ class IfElseControlFlow implements CommandLineRedirection {
             } catch (IOException e) {
                 throw new CommandLineException("condition request failed", e);
             }
-
             final Object value = ifCondition.resolveValue(ctx, targetValue);
             if(value == null) {
                 throw new CommandLineException("if expression resolved to a null");
@@ -146,28 +139,19 @@ class IfElseControlFlow implements CommandLineRedirection {
     }
 
     private void executeBlock(CommandContext ctx, List<String> block, String blockName) throws CommandLineException {
+
         if(block != null && !block.isEmpty()) {
             final BatchManager batchManager = ctx.getBatchManager();
-            if(!batchManager.activateNewBatch()) {
-                throw new CommandLineException("Failed to activate a new batch");
-            }
-            final Batch batch = batchManager.getActiveBatch();
+            // this is to discard a batch started by the block in case the block fails
+            // as the cli remains in the batch mode in case run-batch resulted in an error
+            final boolean discardActivatedBatch = !batchManager.isBatchActive();
             try {
                 for (String l : block) {
                     ctx.handle(l);
                 }
             } finally {
-                batchManager.discardActiveBatch();
-            }
-            if (!batch.getCommands().isEmpty()) {
-                final ModelNode request = batch.toRequest();
-                try {
-                    final ModelNode response = ctx.getModelControllerClient().execute(request);
-                    if (!Util.isSuccess(response)) {
-                        throw new CommandLineException(blockName + " request failed: " + Util.getFailureDescription(response));
-                    }
-                } catch (IOException e) {
-                    throw new CommandLineException(blockName + " request failed", e);
+                if(discardActivatedBatch && batchManager.isBatchActive()) {
+                    batchManager.discardActiveBatch();
                 }
             }
         }

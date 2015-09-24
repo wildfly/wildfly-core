@@ -24,6 +24,7 @@ package org.jboss.as.domain.controller.resources;
 
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.server.services.net.SocketBindingAddHandler;
 import org.jboss.as.server.services.net.SocketBindingRemoveHandler;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
@@ -48,6 +49,11 @@ public class SocketBindingResourceDefinition extends AbstractSocketBindingResour
 
     private SocketBindingResourceDefinition() {
         super(SocketBindingAddHandler.INSTANCE, SocketBindingRemoveHandler.INSTANCE);
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(org.jboss.as.server.services.net.SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY);
     }
 
     @Override

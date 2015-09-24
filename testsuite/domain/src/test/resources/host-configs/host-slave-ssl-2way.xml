@@ -88,7 +88,7 @@
 
     <domain-controller>
         <!-- Remote domain controller configuration with a host and port -->
-        <remote host="${jboss.test.host.master.address}" port="9999" security-realm="SlaveManagementRealm">
+        <remote host="${jboss.test.host.master.address}" port="9999" security-realm="SlaveManagementRealm" ignore-unused-configuration="false">
             <ignored-resources type="extension">
                 <instance name="org.jboss.as.jsr77"/>
             </ignored-resources>
@@ -97,6 +97,10 @@
             </ignored-resources>
             <ignored-resources type="socket-binding-group">
                 <instance name="ignored"/>
+            </ignored-resources>
+            <ignored-resources type="server-group">
+                <instance name="ignored-profile"/>
+                <instance name="ignored-sockets"/>
             </ignored-resources>
             <ignored-resources type="foo" wildcard="true">
                 <instance name="ignored"/>

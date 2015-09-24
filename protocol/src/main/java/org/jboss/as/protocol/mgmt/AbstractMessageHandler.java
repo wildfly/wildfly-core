@@ -40,6 +40,7 @@ import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.MessageOutputStream;
 import org.jboss.threads.AsyncFuture;
+import org.wildfly.common.cpu.ProcessorInfo;
 import org.xnio.Cancellable;
 
 /**
@@ -51,7 +52,7 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
 
     private final ExecutorService executorService;
     private final AtomicInteger requestID = new AtomicInteger();
-    private final Map<Integer, ActiveRequest<?, ?>> requests = new ConcurrentHashMap<Integer, ActiveRequest<?, ?>>(16, 0.75f, Runtime.getRuntime().availableProcessors());
+    private final Map<Integer, ActiveRequest<?, ?>> requests = new ConcurrentHashMap<Integer, ActiveRequest<?, ?>>(16, 0.75f, ProcessorInfo.availableProcessors());
 
     protected AbstractMessageHandler(final ExecutorService executorService) {
         if(executorService == null) {

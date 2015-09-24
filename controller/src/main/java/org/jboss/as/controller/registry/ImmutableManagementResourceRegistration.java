@@ -33,7 +33,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.security.ControllerPermission;
 
@@ -56,6 +56,29 @@ public interface ImmutableManagementResourceRegistration {
      * @return the address. Will not be {@code null}
      */
     PathAddress getPathAddress();
+
+    /**
+     * Gets the maximum number of times a resource of the type described by this registration
+     * can occur under its parent resource (or, for a root resource, the minimum number of times it can
+     * occur at all.)
+     *
+     * @return the minimum number of occurrences
+     */
+    default int getMaxOccurs() {
+        PathAddress pa = getPathAddress();
+        return pa.size() == 0 || !pa.getLastElement().isWildcard() ? 1 : Integer.MAX_VALUE;
+    }
+
+    /**
+     * Gets the minimum number of times a resource of the type described by this registration
+     * can occur under its parent resource (or, for a root resource, the number of times it can
+     * occur at all.)
+     *
+     * @return the minimum number of occurrences
+     */
+    default int getMinOccurs() {
+        return getPathAddress().size() == 0 ? 1 : 0;
+    }
 
     /**
      * Gets whether this model node only exists in the runtime and has no representation in the
@@ -241,7 +264,7 @@ public interface ImmutableManagementResourceRegistration {
 
     /**
      * Return @code true} if a child resource registration was registered using
-     * {@link #registerSubModel(ResourceDefinition)}, and {@code false} otherwise
+     * {@link ManagementResourceRegistration#registerSubModel(ResourceDefinition)}, and {@code false} otherwise
      *
      * @return whether this is an ordered child or not
      */
@@ -259,5 +282,5 @@ public interface ImmutableManagementResourceRegistration {
      *
      * @return Set of capabilities if any registered otherwise empty set
      */
-    Set<Capability> getCapabilities();
+    Set<RuntimeCapability> getCapabilities();
 }

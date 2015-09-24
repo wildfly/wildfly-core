@@ -97,11 +97,11 @@ public class ShutdownHandler extends BaseOperationCommand {
     protected void doHandle(CommandContext ctx) throws CommandLineException {
         final ModelControllerClient client = ctx.getModelControllerClient();
         if(client == null) {
-            throw new CommandLineException("Connection is now available.");
+            throw new CommandLineException("Connection is not available.");
         }
 
-        if (embeddedServerRef != null && embeddedServerRef.get() != null){
-                embeddedServerRef.get().stop();
+        if (embeddedServerRef != null && embeddedServerRef.get() != null) {
+            embeddedServerRef.get().stop();
             return;
         }
 

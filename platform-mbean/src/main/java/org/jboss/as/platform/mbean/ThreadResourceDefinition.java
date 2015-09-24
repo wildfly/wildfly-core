@@ -153,8 +153,8 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
     static final ThreadResourceDefinition INSTANCE = new ThreadResourceDefinition();
 
     private ThreadResourceDefinition() {
-        super(THREADING_PATH,
-                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.THREADING));
+        super(new Parameters(THREADING_PATH,
+                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.THREADING)).setRuntime());
     }
 
     @Override
@@ -173,9 +173,6 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, ThreadMXBeanAttributeHandler.INSTANCE);
         }
-
-        // HACK -- workaround WFCORE-17
-        registration.setRuntimeOnly(true);
     }
 
     static EnumSet<OperationEntry.Flag> READ_ONLY_RUNTIME_ONLY_FLAG = EnumSet.of(OperationEntry.Flag.RUNTIME_ONLY, OperationEntry.Flag.READ_ONLY);

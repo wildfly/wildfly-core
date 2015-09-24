@@ -38,6 +38,7 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.junit.Assert;
 
 /**
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>
@@ -45,26 +46,44 @@ import org.jboss.dmr.ModelType;
 public class TransformerAttachmentGrabber implements OperationStepHandler {
     private static final AttributeDefinition VALUE =
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VALUE, ModelType.OBJECT).build();
+
     static final OperationDefinition DESC =
-            new SimpleOperationDefinitionBuilder("execute=and-grab-attachment", new NonResolvingResourceDescriptionResolver())
+            new SimpleOperationDefinitionBuilder("execute-grab-attachment-and-transform", new NonResolvingResourceDescriptionResolver())
                     .setParameters(VALUE)
                     .build();
 
-    static TransformerOperationAttachment attachment;
+    @Deprecated
+    private static TransformerOperationAttachment attachment;
+
+    TransformerAttachmentGrabber() {
+    }
+
+    static void clear() {
+        attachment = null;
+    }
+
+    public static TransformerOperationAttachment getAttachment() {
+        return attachment;
+    }
 
     @Override
-    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        attachment = null;
+    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+        if (attachment != null) {
+            Assert.fail("Attachment is already set");
+        }
         ModelNode realOp = operation.require(VALUE.getName());
         String opName = realOp.require(OP).asString();
         PathAddress opAddr = PathAddress.pathAddress(realOp.require(OP_ADDR));
         OperationStepHandler handler = context.getRootResourceRegistration().getOperationHandler(opAddr, opName);
         context.addStep(realOp, handler, OperationContext.Stage.MODEL);
+
+        final ModelNode originalOp = realOp.clone();
+
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 attachment = context.getAttachment(TransformerOperationAttachment.KEY);
             }
-        }, OperationContext.Stage.RUNTIME);//Use RUNTIME here to make sure that this comes at the end (the collection ops add another step)
+        }, OperationContext.Stage.RUNTIME); //Use RUNTIME here to make sure that this comes at the end (the collection ops add another step)
     }
 }

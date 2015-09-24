@@ -32,7 +32,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -119,12 +118,12 @@ public class DomainServerUtils {
             }
         }
 
-        List<Property> allContainers = domainModel.get(containerType).asPropertyList();
+        ModelNode containerModel = domainModel.get(containerType);
+        Set<String> allContainers = containerModel.keys();
         while (checked.size() < allContainers.size()) {
-            for (Property prop : allContainers) {
-                String name = prop.getName();
+            for (String name : allContainers) {
                 if (!checked.contains(name)) {
-                    ModelNode container = prop.getValue();
+                    ModelNode container = containerModel.get(name);
                     if (!container.hasDefined(INCLUDES)) {
                         checked.add(name);
                     } else {

@@ -145,7 +145,7 @@ public class ReadMasterDomainModelHandlerTestCase {
     }
 
     protected TransformationTarget create(final TransformerRegistry registry, ModelVersion version) {
-        return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTargetType.DOMAIN);
+        return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTargetType.DOMAIN, false);
     }
 
     private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver());

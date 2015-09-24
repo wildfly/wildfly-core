@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Red Hat, Inc., and individual contributors 
+ * Copyright (C) 2013 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file
  * in the distribution for a full listing of individual contributors.
  *
@@ -21,9 +21,8 @@
 package org.jboss.as.model.test.api;
 
 /**
- *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2013 Red Hat, inc.
  */
 public interface Welcome {
-    public String hello(String name);
+    String hello(String name);
 }

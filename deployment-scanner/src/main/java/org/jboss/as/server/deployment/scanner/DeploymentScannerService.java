@@ -22,18 +22,28 @@
 
 package org.jboss.as.server.deployment.scanner;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_DEPLOYED_NOTIFICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_UNDEPLOYED_NOTIFICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OWNER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_BOOTING;
+import static org.jboss.as.controller.registry.NotificationHandlerRegistration.ANY_ADDRESS;
+
 import java.io.File;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.ControlledProcessStateService;
-
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.notification.Notification;
+import org.jboss.as.controller.notification.NotificationFilter;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
@@ -62,6 +72,23 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
     private final String relativeTo;
     private final String path;
     private final boolean rollbackOnRuntimeFailure;
+    private static final NotificationFilter DEPLOYMENT_FILTER = (Notification notification) -> {
+        if (DEPLOYMENT_UNDEPLOYED_NOTIFICATION.equals(notification.getType()) || DEPLOYMENT_DEPLOYED_NOTIFICATION.equals(notification.getType())) {
+            ModelNode notificationData = notification.getData();
+            if (notificationData.hasDefined(SERVER_BOOTING) && notificationData.get(SERVER_BOOTING).asBoolean()) {
+                return false;
+            }
+            if (notificationData.hasDefined(OWNER)) {
+                List<Property> properties = notificationData.get(OWNER).asPropertyList();
+                if (properties.size() >= 2) {
+                    return !"deployment-scanner".equals(properties.get(0).getValue().asString())
+                            && !"scanner".equals(properties.get(1).getName());
+                }
+            }
+            return true;
+        }
+        return false;
+    };
 
     /**
      * The created scanner.
@@ -173,7 +200,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                 // The boot-time scanner should use our DeploymentOperations.Factory
                 this.scanner.setDeploymentOperationsFactory(factory);
             }
-
+            controllerValue.getValue().getNotificationRegistry().registerNotificationHandler(ANY_ADDRESS, scanner, DEPLOYMENT_FILTER);
             if (enabled) {
                 scanner.startScanner();
             }
@@ -188,6 +215,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
     @Override
     public synchronized void stop(StopContext context) {
         final DeploymentScanner scanner = this.scanner;
+        controllerValue.getValue().getNotificationRegistry().unregisterNotificationHandler(ANY_ADDRESS, this.scanner, DEPLOYMENT_FILTER);
         this.scanner = null;
         scanner.stopScanner();
         scheduledExecutorValue.getValue().shutdown();

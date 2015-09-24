@@ -59,8 +59,11 @@ public abstract class OutboundSocketBindingResourceDefinition extends SimpleReso
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
     public static final SimpleAttributeDefinition SOURCE_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOURCE_INTERFACE, ModelType.STRING, true)
-            .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
+            .setAllowExpression(true)
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setCapabilityReference("org.wildfly.network.interface", OUTBOUND_SOCKET_BINDING_CAPABILITY)
+            .build();
 
     public static final SimpleAttributeDefinition FIXED_SOURCE_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FIXED_SOURCE_PORT, ModelType.BOOLEAN, true)
             .setAllowExpression(true).setDefaultValue(new ModelNode().set(false)).build();
@@ -78,5 +81,10 @@ public abstract class OutboundSocketBindingResourceDefinition extends SimpleReso
         for (SimpleAttributeDefinition ad:ATTRIBUTES){
             resourceRegistration.registerReadWriteAttribute(ad, null, new OutboundSocketBindingWriteHandler(ad, false));
         }
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(OUTBOUND_SOCKET_BINDING_CAPABILITY);
     }
 }

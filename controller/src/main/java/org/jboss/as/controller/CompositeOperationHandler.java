@@ -23,22 +23,15 @@
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
-import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.operations.MultistepUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -65,10 +58,11 @@ public class CompositeOperationHandler implements OperationStepHandler {
     private static final AttributeDefinition STEPS = new PrimitiveListAttributeDefinition.Builder(ModelDescriptionConstants.STEPS, ModelType.OBJECT)
             .build();
 
-    public static final OperationDefinition DEFINITION = new WFLY1316HackOperationDefinitionBuilder(NAME, ControllerResolver.getResolver("root"))
+    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(NAME, ControllerResolver.getResolver("root"))
         .addParameter(STEPS)
         .setReplyType(ModelType.OBJECT)
         .setPrivateEntry()
+        .setForceDefaultDescriptionProvider()//display description even if opeartion is private
         .build();
 
     protected CompositeOperationHandler() {
@@ -77,45 +71,29 @@ public class CompositeOperationHandler implements OperationStepHandler {
     public final void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         STEPS.validateOperation(operation);
 
-        ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
-        final List<ModelNode> list = operation.get(ModelDescriptionConstants.STEPS).asList();
         final ModelNode responseMap = context.getResult().setEmptyObject();
-        Map<String, OperationStepHandler> stepHandlerMap = new HashMap<String, OperationStepHandler>();
+
+        // Add a step to the OC for each element in the "steps" param.
+        final List<ModelNode> list = operation.get(ModelDescriptionConstants.STEPS).asList();
+        Map<String, ModelNode> operationMap = new LinkedHashMap<>();
+        final Map<String, ModelNode> addedResponses = new LinkedHashMap<>();
         final int size = list.size();
-        // Validate all needed handlers are available.
         for (int i = 0; i < size; i++) {
             String stepName = "step-" + (i+1);
+
+            operationMap.put(stepName, list.get(i));
+
             // This makes the result steps appear in the correct order
-            responseMap.get(stepName);
-            final ModelNode subOperation = list.get(i);
-            PathAddress stepAddress = PathAddress.pathAddress(subOperation.get(OP_ADDR));
-            String stepOpName = subOperation.require(OP).asString();
-            OperationEntry operationEntry = registry.getOperationEntry(stepAddress, stepOpName);
-            if (operationEntry == null) {
-                ImmutableManagementResourceRegistration child = registry.getSubModel(stepAddress);
-                if (child == null) {
-                   context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noSuchResourceType(stepAddress));
-                } else {
-                    context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(stepOpName, stepAddress));
-                }
-                context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
-                return;
-            }
-            final OperationStepHandler stepHandler = getOperationStepHandler(stepOpName, stepAddress, subOperation, operationEntry);
-            stepHandlerMap.put(stepName, stepHandler);
+            ModelNode stepResp = responseMap.get(stepName);
+            addedResponses.put(stepName, stepResp);
         }
 
-        for (int i = size - 1; i >= 0; i --) {
-            final ModelNode subOperation = list.get(i);
-            String stepName = "step-" + (i+1);
-            final OperationStepHandler osh = stepHandlerMap.get(stepName);
-            context.addStep(responseMap.get(stepName).setEmptyObject(), subOperation, osh, OperationContext.Stage.MODEL, true);
-            ControllerLogger.MGMT_OP_LOGGER.tracef("Registered composite op step for %s using %s", subOperation, osh);
-        }
+        MultistepUtil.recordOperationSteps(context, operationMap, addedResponses, getOperationHandlerResolver());
 
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override
             public void handleRollback(OperationContext context, ModelNode operation) {
+
                 // don't override useful failure information in the domain
                 // or any existing failure message
                 if (context.getAttachment(DOMAIN_EXECUTION_KEY) != null || context.hasFailureDescription()) {
@@ -138,39 +116,7 @@ public class CompositeOperationHandler implements OperationStepHandler {
         });
     }
 
-    protected OperationStepHandler getOperationStepHandler(final String operationName, final PathAddress address, final ModelNode operation, final OperationEntry operationEntry) {
-        return operationEntry.getOperationHandler();
-    }
-
-    private static class WFLY1316HackOperationDefinitionBuilder extends SimpleOperationDefinitionBuilder {
-
-        public WFLY1316HackOperationDefinitionBuilder(String name, ResourceDescriptionResolver resolver) {
-            super(name, resolver);
-        }
-
-        @Override
-        protected SimpleOperationDefinition internalBuild(final ResourceDescriptionResolver resolver, final ResourceDescriptionResolver attributeResolver) {
-            // Make this a bit more robust in case WFLY-1315 is fixed but this hack gets left around
-            if (entryType != OperationEntry.EntryType.PRIVATE) {
-                return super.internalBuild(resolver, attributeResolver);
-            }
-
-            return new SimpleOperationDefinition(name, resolver, attributeResolver, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters) {
-                /**
-                 * Override the superclass behavior to go ahead and provide a description even though we are EntryType.PRIVATE
-                 *
-                 * {@inheritDoc}
-                 */
-                @Override
-                public DescriptionProvider getDescriptionProvider() {
-                    return new DescriptionProvider() {
-                        @Override
-                        public ModelNode getModelDescription(Locale locale) {
-                            return new DefaultOperationDescriptionProvider(getName(), resolver, attributeResolver, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints).getModelDescription(locale);
-                        }
-                    };
-                }
-            };
-        }
+    protected MultistepUtil.OperationHandlerResolver getOperationHandlerResolver() {
+        return MultistepUtil.OperationHandlerResolver.DEFAULT;
     }
 }

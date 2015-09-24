@@ -95,9 +95,7 @@ public class HTTPSManagementInterfaceTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-
         keyMaterialSetup();
-
         DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(
                 HTTPSManagementInterfaceTestCase.class.getSimpleName(), "domain-configs/domain-minimal.xml", "host-configs/host-master-no-http.xml", null);
         WildFlyManagedConfiguration masterConfig = configuration.getMasterConfiguration();
@@ -114,19 +112,15 @@ public class HTTPSManagementInterfaceTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-
         httpManagementRealmSetup.tearDown(domainMasterLifecycleUtil.getDomainClient());
-
         testSupport.stop();
         testSupport = null;
         domainMasterLifecycleUtil = null;
-
         FileUtils.deleteDirectory(WORK_DIR);
     }
 
     @Before
     public void addHttpInterface() throws Exception {
-
         ModelNode operation = createOpNode("host=master/core-service=management/management-interface=http-interface",
                 ModelDescriptionConstants.ADD);
         operation.get("interface").set("management");
@@ -139,10 +133,10 @@ public class HTTPSManagementInterfaceTestCase {
 
     @After
     public void removeHttpInterface() throws Exception {
-
         ModelNode operation = createOpNode("host=master/core-service=management/management-interface=http-interface",
                 ModelDescriptionConstants.REMOVE);
         CoreUtils.applyUpdate(operation, domainMasterLifecycleUtil.getDomainClient());
+        reload();
     }
 
     /**

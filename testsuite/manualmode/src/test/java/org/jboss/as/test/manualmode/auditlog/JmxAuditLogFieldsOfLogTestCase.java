@@ -38,7 +38,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;

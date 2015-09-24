@@ -31,7 +31,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.operations.DomainModelReferenceValidator;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
 import org.jboss.dmr.ModelNode;
 
@@ -57,9 +56,6 @@ public class ServerRestartRequiredServerConfigWriteAttributeHandler extends Mode
             //Set an attachment to avoid propagation to the servers, we don't want them to go into restart-required if nothing changed
             ServerOperationResolver.addToDontPropagateToServersAttachment(context, operation);
         }
-
-        // Validate the model references
-        DomainModelReferenceValidator.addValidationStep(context, operation);
     }
 
 }

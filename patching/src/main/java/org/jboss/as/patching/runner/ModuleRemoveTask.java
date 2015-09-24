@@ -71,12 +71,12 @@ class ModuleRemoveTask extends AbstractModuleTask {
     protected ContentModification getOriginalModification(byte[] targetHash, byte[] itemHash) {
         final ModuleItem original = getContentItem();
         final ModuleItem item = new ModuleItem(original.getName(), original.getSlot(), targetHash);
-        return new ContentModification(item, description.getModification().getTargetHash(), ModificationType.MODIFY);
+        return new ContentModification(item, description.getModification().getTargetHash(), ModificationType.MODIFY, description.getModification().getCondition());
     }
 
     @Override
     ContentModification createRollbackEntry(ContentModification original, byte[] targetHash, byte[] itemHash) {
         final ModuleItem item = createContentItem(contentItem, itemHash);
-        return new ContentModification(item, targetHash, ModificationType.MODIFY);
+        return new ContentModification(item, targetHash, ModificationType.MODIFY, original.getCondition());
     }
 }

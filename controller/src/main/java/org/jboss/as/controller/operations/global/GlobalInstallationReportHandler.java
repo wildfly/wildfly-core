@@ -82,7 +82,6 @@ public class GlobalInstallationReportHandler extends GlobalOperationHandlers.Abs
     public static final String PRODUCT_HOME = "product-home";
     public static final String PRODUCT_INSTALLATION_DATE = "installation-date";
     public static final String PRODUCT_LAST_UPDATE = "last-update-date";
-    public static final String REPORT_VERSION = "report-version";
     public static final String STANDALONE_DOMAIN_IDENTIFIER = "standalone-or-domain-identifier";
     public static final String SUMMARY = "summary";
 
@@ -110,7 +109,6 @@ public class GlobalInstallationReportHandler extends GlobalOperationHandlers.Abs
     ).setAllowNull(false).setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT).build();
 
     public static final SimpleAttributeDefinition SUMMARY_DEFINITION = new ObjectTypeAttributeDefinition.Builder(SUMMARY,
-            SimpleAttributeDefinitionBuilder.create(REPORT_VERSION, ModelType.STRING, false).build(),
             SimpleAttributeDefinitionBuilder.create(NODE_NAME, ModelType.STRING, true).build(),
             SimpleAttributeDefinitionBuilder.create(HOSTNAME, ModelType.STRING, true).build(),
             SimpleAttributeDefinitionBuilder.create(INSTANCE_ID, ModelType.STRING, true).build(),

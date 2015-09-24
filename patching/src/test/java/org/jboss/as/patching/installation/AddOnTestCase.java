@@ -22,9 +22,9 @@
 
 package org.jboss.as.patching.installation;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.jboss.as.patching.Constants.ADD_ONS;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.newFile;
@@ -39,7 +39,6 @@ import static org.jboss.as.patching.runner.PatchingAssert.assertPatchHasBeenRoll
 import static org.jboss.as.patching.runner.TestUtils.createPatchXMLFile;
 import static org.jboss.as.patching.runner.TestUtils.createZippedPatchFile;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
-import static org.jboss.as.patching.runner.TestUtils.tree;
 
 import java.io.File;
 import java.util.Collection;

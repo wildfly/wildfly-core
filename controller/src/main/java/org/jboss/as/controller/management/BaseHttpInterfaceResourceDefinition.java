@@ -85,7 +85,6 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .build();
 
     public static final SimpleAttributeDefinition ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
-        .setAllowExpression(true)
         .setDefaultValue(new ModelNode(false))
         .build();
 

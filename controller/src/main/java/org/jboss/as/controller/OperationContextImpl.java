@@ -38,15 +38,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NIL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
@@ -80,16 +77,13 @@ import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.capability.registry.CapabilityContext;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityResolutionContext;
-import org.jboss.as.controller.capability.registry.HostCapabilityContext;
-import org.jboss.as.controller.capability.registry.ProfileChildCapabilityContext;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RuntimeRequirementRegistration;
-import org.jboss.as.controller.capability.registry.SocketBindingGroupChildContext;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -210,11 +204,14 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final AccessMechanism accessMechanism;
     private final ActiveOperationResource activeOperationResource;
     private final BooleanHolder done = new BooleanHolder();
+    private final boolean capabilitiesAlreadyBroken;
+    private final boolean partialModel;
 
     private volatile ExecutionStatus executionStatus = ExecutionStatus.EXECUTING;
 
 
-    OperationContextImpl(final Integer operationId, final String operationName, final ModelNode operationAddress,
+    OperationContextImpl(final Integer operationId,
+                         final String operationName, final ModelNode operationAddress,
                          final ModelControllerImpl modelController, final ProcessType processType,
                          final RunningMode runningMode, final EnumSet<ContextFlag> contextFlags,
                          final OperationMessageHandler messageHandler, final OperationAttachments attachments,
@@ -225,7 +222,8 @@ final class OperationContextImpl extends AbstractOperationContext {
                          final AccessMechanism accessMechanism,
                          final NotificationSupport notificationSupport,
                          final boolean skipModelValidation,
-                         final OperationStepHandler extraValidationStepHandler) {
+                         final OperationStepHandler extraValidationStepHandler,
+                         final boolean partialModel) {
         super(processType, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport,
                 modelController, skipModelValidation, extraValidationStepHandler);
         this.operationId = operationId;
@@ -243,6 +241,14 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.blockingTimeoutConfig = blockingTimeoutConfig != null && blockingTimeoutConfig.isDefined() ? blockingTimeoutConfig : null;
         this.activeOperationResource = new ActiveOperationResource();
         this.accessMechanism = accessMechanism;
+        this.partialModel = partialModel;
+        if(runningMode == RunningMode.ADMIN_ONLY) {
+            boolean hostXmlOnly = booting && !processType.isServer() && partialModel;
+            CapabilityRegistry.CapabilityValidation validation = managementModel.validateCapabilityRegistry(true, hostXmlOnly);
+            this.capabilitiesAlreadyBroken = !validation.isValid();
+        } else {
+            this.capabilitiesAlreadyBroken = false;
+        }
     }
 
     public InputStream getAttachmentStream(final int index) {
@@ -267,8 +273,12 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private boolean validateCapabilities() {
         // Validate that all required capabilities are available and fail any steps that broke this
-        ModelControllerImpl.CapabilityValidation validation = managementModel.validateCapabilityRegistry();
+        boolean hostXmlOnly = isBooting() && !getProcessType().isServer() && partialModel;
+        CapabilityRegistry.CapabilityValidation validation = managementModel.validateCapabilityRegistry(false, hostXmlOnly);
         boolean ok = validation.isValid();
+        final boolean adminOnly = this.getRunningMode() == RunningMode.ADMIN_ONLY;
+        //if we are in admin only mode and everything is already broken then we don't care about failures
+        final boolean ignoreFailures = adminOnly && (capabilitiesAlreadyBroken || isBooting());
         if (!ok) {
 
             boolean failureRecorded = false;
@@ -289,7 +299,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     if (ignoreContext) {
                         msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapability(required.getName()));
                     } else {
-                        msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapabilityInContext(required.getName(), required.getContext().getName()));
+                        msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapabilityInContext(required.getName(), required.getScope().getName()));
                     }
                     for (RuntimeRequirementRegistration reg : entry.getValue()) {
                         RegistrationPoint rp = reg.getOldestRegistrationPoint();
@@ -300,9 +310,11 @@ final class OperationContextImpl extends AbstractOperationContext {
                         }
                     }
                     String msgString = msg.toString();
-                    guilty.response.get(FAILURE_DESCRIPTION).set(msgString);
+                    if(!ignoreFailures) {
+                        guilty.response.get(FAILURE_DESCRIPTION).set(msgString);
+                    }
                     failureRecorded = true;
-                    if (isBooting()) { // this is unlikely for this block since boot wouldn't remove, but let's be thorough.
+                    if (isBooting() || ignoreFailures) { // this is unlikely for this block since boot wouldn't remove, but let's be thorough.
                         ControllerLogger.ROOT_LOGGER.error(guilty.address.toCLIStyleString() + " -- " + msgString);
                     }
                 } else {
@@ -326,7 +338,9 @@ final class OperationContextImpl extends AbstractOperationContext {
                             String formattedCapability = ignoreContext
                                     ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(reqReq.getRequiredName())
                                     : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(reqReq.getRequiredName(), reqReq.getDependentContext().getName());
-                            unexplainedProblem = unexplainedProblem.append('\n').append(formattedCapability);
+
+                            Set<PathAddress> possiblePoints = managementModel.getCapabilityRegistry().getPossibleProviderPoints(reqReq.getDependentId());
+                            appendPossibleProviderPoints(unexplainedProblem, formattedCapability, possiblePoints);
                         }
                     }
                 }
@@ -339,22 +353,25 @@ final class OperationContextImpl extends AbstractOperationContext {
                 StringBuilder msg = response.hasDefined(FAILURE_DESCRIPTION)
                         ? null
                         : new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing());
-                StringBuilder bootMsg = isBooting()
+                StringBuilder bootMsg = isBooting() || ignoreFailures
                         ? new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing(step.address.toCLIStyleString()))
                         : null;
                 for (CapabilityId id : entry.getValue()) {
                     String formattedCapability = ignoreContext
                             ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(id.getName())
-                            : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getContext().getName());
+                            : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getScope().getName());
+                    Set<PathAddress> possiblePoints = managementModel.getCapabilityRegistry().getPossibleProviderPoints(id);
                     if (msg != null) {
-                        msg = msg.append('\n').append(formattedCapability);
+                        msg = appendPossibleProviderPoints(msg, formattedCapability, possiblePoints);
                     }
                     if (bootMsg != null) {
-                        bootMsg = bootMsg.append(System.lineSeparator()).append(formattedCapability);
+                        bootMsg = appendPossibleProviderPoints(bootMsg, formattedCapability, possiblePoints);
                     }
                 }
                 if (msg != null) {
-                    response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                    if(!ignoreFailures) {
+                        response.get(FAILURE_DESCRIPTION).set(msg.toString());
+                    }
                     failureRecorded = true;
                 }
                 if (bootMsg != null) {
@@ -373,8 +390,10 @@ final class OperationContextImpl extends AbstractOperationContext {
                             String depConName = reg.getDependentContext().getName();
                             // only overwrite reponse failure-description if there isn't one
                             if (!response.hasDefined(FAILURE_DESCRIPTION)) {
-                                response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
-                                        reg.getDependentName(), depConName, depConName));
+                                if(!(adminOnly && isBooting())) {
+                                    response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
+                                            reg.getDependentName(), depConName, depConName));
+                                }
                                 failureRecorded = true;
                             }
                             if (isBooting()) {
@@ -398,19 +417,39 @@ final class OperationContextImpl extends AbstractOperationContext {
 
             // If we didn't record a failure on any response, put one on the initial response
             if (!failureRecorded && unexplainedProblem != null && !initialResponse.hasDefined(FAILURE_DESCRIPTION)) {
-                initialResponse.get(FAILURE_DESCRIPTION).set(unexplainedProblem.toString());
+
+                if(!ignoreFailures) {
+                    initialResponse.get(FAILURE_DESCRIPTION).set(unexplainedProblem.toString());
+                }
+                if(isBooting() || ignoreFailures) {
+                    ControllerLogger.ROOT_LOGGER.error(unexplainedProblem);
+                }
             }
         }
-        return ok;
+        return ok || ignoreFailures;
 
+    }
+    private static StringBuilder appendPossibleProviderPoints(StringBuilder sb, String formattedCapability, Set<PathAddress> possible){
+        //"you wanted X and it doesn't exist; here's where you can add X"
+        sb = sb.append(System.lineSeparator()).append(formattedCapability);
+        if (possible.isEmpty()){
+            return sb.append(ControllerLogger.ROOT_LOGGER.noKnownProviderPoints());
+        }
+        StringBuffer points = new StringBuffer();
+        for (PathAddress c: possible){
+            points = points.append(System.lineSeparator()).append("\t\t").append(c.toCLIStyleString());
+        }
+        return sb.append(ControllerLogger.ROOT_LOGGER.possibleCapabilityProviderPoints(points.toString()));
     }
 
     private Step findCapabilityRemovalStep(CapabilityId missingRequirement, boolean ignoreContext, CapabilityResolutionContext resolutionContext) {
         Step result = removedCapabilities.get(missingRequirement);
         if (result == null && !ignoreContext) {
+            String missingName = missingRequirement.getName();
             for (Map.Entry<CapabilityId, Step> entry : removedCapabilities.entrySet()) {
                 CapabilityId removedId = entry.getKey();
-                if (removedId.getContext().canSatisfyRequirement(missingRequirement, removedId.getName(), resolutionContext)) {
+                if (missingName.equals(removedId.getName())
+                        && removedId.getScope().canSatisfyRequirement(missingRequirement.getName(), missingRequirement.getScope(), resolutionContext)) {
                     result = entry.getValue();
                     break;
                 }
@@ -478,6 +517,10 @@ final class OperationContextImpl extends AbstractOperationContext {
     @Override
     void operationRollingBack() {
         modelController.discardModel(managementModel);
+    }
+
+    void publishCapabilityRegistry() {
+        modelController.publishCapabilityRegistry(managementModel);
     }
 
     @Override
@@ -1062,6 +1105,19 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
+    void handleUncaughtException(RuntimeException e) {
+        try {
+            if (lockStep != null) {
+                releaseModelControllerLock();
+            }
+        } finally {
+            if (containerMonitorStep != null) {
+                resetContainerStateChanges();
+            }
+        }
+    }
+
+    @Override
     void releaseStepLocks(AbstractOperationContext.Step step) {
         boolean interrupted = false;
         try {
@@ -1094,15 +1150,12 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
 
             if (this.lockStep == step) {
-                modelController.releaseLock(operationId);
-                exclusiveStartTime = -1;
-                lockStep = null;
+                releaseModelControllerLock();
             }
         } finally {
             try {
                 if (this.containerMonitorStep == step) {
-                    modelController.logContainerStateChangesAndReset();
-                    containerMonitorStep = null;
+                    resetContainerStateChanges();
                 }
             } finally {
                 if (interrupted) {
@@ -1110,6 +1163,17 @@ final class OperationContextImpl extends AbstractOperationContext {
                 }
             }
         }
+    }
+
+    private void releaseModelControllerLock() {
+        modelController.releaseLock(operationId);
+        exclusiveStartTime = -1;
+        lockStep = null;
+    }
+
+    private void resetContainerStateChanges() {
+        modelController.logContainerStateChangesAndReset();
+        containerMonitorStep = null;
     }
 
     @Override
@@ -1340,8 +1404,14 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
+    @Deprecated
     public void registerCapability(RuntimeCapability capability, String attribute) {
         registerCapability(capability, activeStep, attribute);
+    }
+
+    @Override
+    public void registerCapability(RuntimeCapability capability) {
+        registerCapability(capability, activeStep, null);
     }
 
     void registerCapability(RuntimeCapability capability, Step step, String attribute) {
@@ -1386,11 +1456,6 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
-    public boolean requestOptionalCapability(String required, String dependent, String attribute) {
-        return requestOptionalCapability(required, dependent, false, activeStep, attribute);
-    }
-
-    @Override
     public boolean hasOptionalCapability(String required, String dependent, String attribute) {
         return requestOptionalCapability(required, dependent, true, activeStep, attribute);
     }
@@ -1400,9 +1465,15 @@ final class OperationContextImpl extends AbstractOperationContext {
         assertCapabilitiesAvailable(currentStage);
         ensureLocalCapabilityRegistry();
         RuntimeCapabilityRegistry registry = managementModel.getCapabilityRegistry();
+        if (dependent == null) {
+            // WFCORE-900 we're currently forgiving of this, but only for runtime-only requirements
+            assert runtimeOnly;
+            CapabilityScope context = createCapabilityContext(step);
+            return registry.hasCapability(required, context);
+        }
         RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, runtimeOnly, step, attribute);
-        CapabilityContext context = registration.getDependentContext();
-        if (registry.hasCapability(required, dependent, context)) {
+        CapabilityScope context = registration.getDependentContext();
+        if (registry.hasCapability(required, context)) {
             registry.registerAdditionalCapabilityRequirement(registration);
             recordRequirement(registration, step);
             return true;
@@ -1450,7 +1521,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         assert isControllingThread();
         assertStageModel(currentStage);
         ensureLocalCapabilityRegistry();
-        CapabilityContext context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step);
         RuntimeCapabilityRegistration capReg = managementModel.getCapabilityRegistry().removeCapability(capabilityName, context, step.address);
         if (capReg != null) {
             RuntimeCapability capability = capReg.getCapability();
@@ -1461,7 +1532,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
-    private void removeRequirement(String required, CapabilityContext context, Step step) {
+    private void removeRequirement(String required, CapabilityScope context, Step step) {
         CapabilityId id = new CapabilityId(required, context);
         Set<Step> dependents = addedRequirements.get(id);
         if (dependents != null) {
@@ -1485,7 +1556,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType, Step step) {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
-        CapabilityContext context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step);
         return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, context, apiType);
     }
 
@@ -1502,7 +1573,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, Step step) {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
-        CapabilityContext context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step);
         try {
             return managementModel.getCapabilityRegistry().getCapabilityServiceName(capabilityName, context, serviceType);
         } catch (IllegalStateException ignored) {
@@ -1762,7 +1833,6 @@ final class OperationContextImpl extends AbstractOperationContext {
     private synchronized void ensureLocalCapabilityRegistry() {
         if (!affectsCapabilityRegistry) {
             takeWriteLock();
-            managementModel = managementModel.cloneCapabilityRegistry();
             affectsCapabilityRegistry = true;
         }
     }
@@ -1794,46 +1864,19 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private RuntimeRequirementRegistration createRequirementRegistration(String required, String dependent,
                                                                          boolean runtimeOnly, Step step, String attribute) {
-        CapabilityContext context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step);
         RegistrationPoint rp = new RegistrationPoint(step.address, attribute);
         return new RuntimeRequirementRegistration(required, dependent, context, rp, runtimeOnly);
     }
 
     private RuntimeCapabilityRegistration createCapabilityRegistration(RuntimeCapability capability, Step step, String attribute) {
-        CapabilityContext context = createCapabilityContext(step);
+        CapabilityScope context = createCapabilityContext(step);
         RegistrationPoint rp = new RegistrationPoint(step.address, attribute);
         return new RuntimeCapabilityRegistration(capability, context, rp);
     }
 
-    private CapabilityContext createCapabilityContext(Step step) {
-        CapabilityContext context = CapabilityContext.GLOBAL;
-        PathElement pe = getProcessType().isServer() || step.address.size() == 0 ? null : step.address.getElement(0);
-        if (pe != null) {
-            String type = pe.getKey();
-            switch (type) {
-                case PROFILE: {
-                    context = step.address.size() == 1 ? context : new ProfileChildCapabilityContext(pe.getValue());
-                    break;
-                }
-                case SOCKET_BINDING_GROUP: {
-                    context = step.address.size() == 1 ? context : new SocketBindingGroupChildContext(pe.getValue());
-                    break;
-                }
-                case HOST: {
-                    if (step.address.size() >= 2) {
-                        PathElement hostElement = step.address.getElement(1);
-                        final String hostType = hostElement.getKey();
-                        switch (hostType) {
-                            case SUBSYSTEM:
-                            case SOCKET_BINDING_GROUP:
-                                context = HostCapabilityContext.INSTANCE;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-        return context;
+    private CapabilityScope createCapabilityContext(Step step) {
+        return CapabilityScope.Factory.create(getProcessType(), step.address);
     }
 
     class ContextServiceTarget implements ServiceTarget {
@@ -2551,7 +2594,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         @Override
         public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) throws NoSuchCapabilityException {
             try {
-                return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, CapabilityContext.GLOBAL, apiType);
+                return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, CapabilityScope.GLOBAL, apiType);
             } catch (IllegalStateException e) {
                 throw new NoSuchCapabilityException(capabilityName);
             }

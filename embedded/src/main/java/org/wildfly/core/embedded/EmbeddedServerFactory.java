@@ -162,10 +162,10 @@ public class EmbeddedServerFactory {
         final Class<?> embeddedServerFactoryClass;
         final Class<?> standaloneServerClass;
         try {
-            embeddedServerFactoryClass = embeddedModuleCL.loadClass(EmbeddedStandAloneServerFactory.class.getName());
+            embeddedServerFactoryClass = embeddedModuleCL.loadClass(EmbeddedStandaloneServerFactory.class.getName());
             standaloneServerClass = embeddedModuleCL.loadClass(StandaloneServer.class.getName());
         } catch (final ClassNotFoundException cnfe) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotLoadEmbeddedServerFactory(cnfe, EmbeddedStandAloneServerFactory.class.getName());
+            throw EmbeddedLogger.ROOT_LOGGER.cannotLoadEmbeddedServerFactory(cnfe, EmbeddedStandaloneServerFactory.class.getName());
         }
 
         // Get a handle to the method which will create the server
@@ -193,6 +193,21 @@ public class EmbeddedServerFactory {
 
     public static EmbeddedServerReference createStandalone(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdargs) {
         return (EmbeddedServerReference) create(moduleLoader, jbossHomeDir, cmdargs);
+    }
+
+    public static EmbeddedServerReference createHostController(String jbossHomePath, String modulePath, String[] systemPackages, String[] cmdargs) {
+        if (jbossHomePath == null || jbossHomePath.isEmpty()) {
+            throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
+        }
+        File jbossHomeDir = new File(jbossHomePath);
+        if (!jbossHomeDir.isDirectory()) {
+            throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
+        }
+
+        if (modulePath == null)
+            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + "modules";
+
+        return createHostController(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
     }
 
     /**
