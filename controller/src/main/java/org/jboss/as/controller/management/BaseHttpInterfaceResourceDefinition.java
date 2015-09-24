@@ -144,6 +144,11 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         return accessConstraints;
     }
 
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(HTTP_MANAGEMENT_CAPABILITY);
+    }
+
     protected abstract AttributeDefinition[] getAttributeDefinitions();
 
     protected class HttpUpgradeAttributeHandler implements OperationStepHandler {
