@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller.resources;
 
+import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -58,11 +59,7 @@ public class StoppedServerResource extends SimpleResourceDefinition {
     }
 
     @Override
-    public void registerOperations(final ManagementResourceRegistration resourceRegistration) {
-        super.registerOperations(resourceRegistration);
-
-        // TODO also allow start,stop,restart,reload operations here
-        // registerServerLifecycleOperations(resourceRegistration, serverInventory);
+    public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
 
         resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.LAUNCH_TYPE, new LaunchTypeHandler(ServerEnvironment.LaunchType.DOMAIN));
         resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SERVER_STATE, new OperationStepHandler() {
@@ -71,7 +68,15 @@ public class StoppedServerResource extends SimpleResourceDefinition {
                 context.getResult().set("STOPPED");
             }
         });
+    }
 
+    @Override
+    public void registerOperations(final ManagementResourceRegistration resourceRegistration) {
+        // TODO also allow start,stop,restart,reload operations here
+        // registerServerLifecycleOperations(resourceRegistration, serverInventory);
+
+        // WFCORE-998 register composite here so addressing this resource as a step in a composite works
+        resourceRegistration.registerOperationHandler(CompositeOperationHandler.INTERNAL_DEFINITION, CompositeOperationHandler.INSTANCE);
     }
 
 }

@@ -80,7 +80,7 @@ public final class MultistepUtil {
             }
             i++;
         }
-        recordOperationSteps(context, operationMap, responseMap, OperationHandlerResolver.DEFAULT);
+        recordOperationSteps(context, operationMap, responseMap, OperationHandlerResolver.DEFAULT, false);
 
         if (!responsesProvided) {
             for (ModelNode response : responseMap.values()) {
@@ -108,7 +108,7 @@ public final class MultistepUtil {
      */
     public static <T> void recordOperationSteps(final OperationContext context, final Map<T, ModelNode> operations,
                                                                        final Map<T, ModelNode> responses) throws OperationFailedException {
-        recordOperationSteps(context, operations, responses, OperationHandlerResolver.DEFAULT);
+        recordOperationSteps(context, operations, responses, OperationHandlerResolver.DEFAULT, false);
     }
 
     /**
@@ -116,24 +116,30 @@ public final class MultistepUtil {
      * for resolving the {@link OperationStepHandler} to use for the added steps. It is not expected to
      * be needed by users outside the WildFly Core kernel.
      *
+     * @param <T> the type of the keys in the maps
      * @param context the {@code OperationContext}. Cannot be {@code null}
      * @param operations the operations, each value of which must be a proper OBJECT type model node with a structure describing an operation.
      * @param responses  a map of the response nodes, the keys for which match the keys in the {@code operations} param.
      *                   Cannot be {@code null} but may be empty in which case this method will
      *                   create the response nodes and store them in this map.
      * @param handlerResolver an object that can provide the {@code OperationStepHandler} to use for the operation
-     * @param <T> the type of the keys in the maps
+     * @param adjustAddresses {@code true} if the address of each operation should be adjusted to become a child of the context's
+     *                                {@link OperationContext#getCurrentAddress() current address}
+     *
      * @throws OperationFailedException  if there is a problem registering a step for any of the operations
      */
     public static <T> void recordOperationSteps(final OperationContext context,
                                                 final Map<T, ModelNode> operations,
                                                 final Map<T, ModelNode> responses,
-                                                final OperationHandlerResolver handlerResolver) throws OperationFailedException {
+                                                final OperationHandlerResolver handlerResolver,
+                                                final boolean adjustAddresses) throws OperationFailedException {
 
         assert responses != null;
         assert responses.isEmpty() || operations.size() == responses.size();
 
         boolean responsesProvided = !responses.isEmpty();
+
+        PathAddress currentAddress = adjustAddresses ? context.getCurrentAddress() : null;
 
         List<OpData> opdatas = new ArrayList<>();
         for (Map.Entry<T, ModelNode> entry : operations.entrySet()) {
@@ -141,7 +147,15 @@ public final class MultistepUtil {
             assert  response != null : "No response provided for " + entry.getValue();
 
             ModelNode op = entry.getValue();
-            OperationStepHandler osh = getOsh(context, op, handlerResolver);
+
+            PathAddress stepAddress = PathAddress.pathAddress(op.get(OP_ADDR));
+
+            if (adjustAddresses) {
+                stepAddress = currentAddress.append(stepAddress);
+                op.get(OP_ADDR).set(stepAddress.toModelNode());
+            }
+
+            OperationStepHandler osh = getOsh(context, op, stepAddress, handlerResolver);
             // Reverse the order for addition to the context
             opdatas.add(0, new OpData(op, osh, response));
 
@@ -155,10 +169,9 @@ public final class MultistepUtil {
         }
     }
 
-    private static OperationStepHandler getOsh(OperationContext context, ModelNode subOperation,
+    private static OperationStepHandler getOsh(OperationContext context, ModelNode subOperation, PathAddress stepAddress,
                                                OperationHandlerResolver handlerResolver) throws OperationFailedException {
         ImmutableManagementResourceRegistration registry = context.getRootResourceRegistration();
-        PathAddress stepAddress = PathAddress.pathAddress(subOperation.get(OP_ADDR));
         String stepOpName = subOperation.require(OP).asString();
         OperationEntry operationEntry = registry.getOperationEntry(stepAddress, stepOpName);
         if (operationEntry == null) {
