@@ -39,6 +39,9 @@ import java.util.StringTokenizer;
 public final class Utils {
 
     private static final String PATH_SEPARATOR = "/";
+    static final String WAR_EXTENSION = ".war";
+    static final String WAB_EXTENSION = ".wab";
+    static final String RAR_EXTENSION = ".rar";
 
     private Utils() {
         // forbidden instantiation
@@ -67,6 +70,16 @@ public final class Utils {
      */
     public static Collection<String> getChildArchives(final ResourceLoader loader, final boolean recursive, final String... suffixes) {
         return getChildArchives(loader, null, recursive, suffixes);
+    }
+
+    /**
+     * Whether given archive should be exploded or not.
+     * @param archive name to detect explosion policy.
+     * @return true if archive should be exploded, false otherwise.
+     */
+    static boolean explodeArchive(final String archive) {
+        final String archiveName = getArchiveName(archive).toLowerCase(Locale.ENGLISH);
+        return archiveName.endsWith(WAR_EXTENSION) || archiveName.endsWith(WAB_EXTENSION) || archiveName.endsWith(RAR_EXTENSION);
     }
 
     /**

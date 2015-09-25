@@ -22,15 +22,26 @@
 
 package org.jboss.as.server.loaders;
 
+import org.jboss.modules.Resource;
+
 import java.io.Closeable;
-import java.io.IOException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class IOUtils {
+
+    private static final String CURRENT_PATH = ".";
+    private static final String REVERSE_PATH = "..";
 
     private IOUtils() {
         // forbidden instantiation
@@ -62,4 +73,84 @@ final class IOUtils {
         }
     }
 
+    static void safeClose(final AutoCloseable c) {
+        if (c == null) return;
+        try {
+            c.close();
+        } catch (final Throwable t) {
+            // ignored
+        }
+    }
+
+    static boolean delete(final File file) {
+        if (file == null) return true;
+        if (!file.exists()) return true;
+        if (file.isDirectory()) {
+            for (final File child : file.listFiles()) {
+                if (child.isDirectory()) {
+                    delete(child);
+                } else {
+                    child.delete();
+                }
+            }
+        }
+        return file.delete();
+    }
+
+    static void unzip(final File zipFile, final File targetDir) throws IOException {
+        unzip(new FileInputStream(zipFile), targetDir);
+    }
+
+    static void unzip(final InputStream is, final File targetDir) throws IOException {
+        ZipInputStream zis = null;
+        try {
+            zis = new ZipInputStream(is);
+            ZipEntry entry;
+            File newFile;
+            while ((entry = zis.getNextEntry()) != null) {
+                String fileName = entry.getName();
+                if (fileName.equals(CURRENT_PATH) || fileName.equals(REVERSE_PATH)) continue;
+                // create directory structure
+                newFile = new File(targetDir + File.separator + fileName);
+                new File(newFile.getParent()).mkdirs();
+                // extract zip
+                if (!entry.isDirectory()) {
+                    // extract zip entry to the disk
+                    FileOutputStream fos = null;
+                    try {
+                        fos = new FileOutputStream(newFile);
+                        copy(zis, fos);
+                    } finally {
+                        safeClose(fos);
+                    }
+                }
+            }
+        } finally {
+            safeClose(zis);
+        }
+    }
+
+    static void unzip(final Iterator<Resource> zipResources, final File targetDir, final int prefixLength) throws IOException {
+        Resource resource;
+        File newFile;
+        while (zipResources.hasNext()) {
+            // obtain resource
+            resource = zipResources.next();
+            String fileName = resource.getName().substring(prefixLength);
+            // create directory structure
+            newFile = new File(targetDir + File.separator + fileName);
+            new File(newFile.getParent()).mkdirs();
+            // extract zip entry to the disk
+            FileOutputStream fos = null;
+            InputStream is = null;
+            try {
+                fos = new FileOutputStream(newFile);
+                is = resource.openStream();
+                copy(is, fos);
+            } finally {
+                safeClose(fos);
+                safeClose(is);
+            }
+        }
+    }
 }
