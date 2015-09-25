@@ -396,4 +396,15 @@ public interface DeploymentScannerLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 35, value = "Scan found %s which is not well-formed at lineNumber: %s, columnNumber: %s. Either the file was incompletely copied at the time of the scanning or it is just wrong.")
     void invalidXmlFileFound(String name, int lineNumber, int columnNumber);
+
+
+    /**
+     * A message indicating DefaultDeploymentOperations.getDeploymentsStatus did not get a usable result
+     *
+     * @param msg the failure description.
+     *
+     * @return the message.
+     */
+    @Message(id = 36, value = "Deployment model operation failed. %s")
+    RuntimeException deployModelOperationFailed(String msg);
 }
