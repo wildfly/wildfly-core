@@ -22,7 +22,7 @@
 
 package org.jboss.as.server.loaders;
 
-import static org.jboss.as.server.loaders.Utils.getArchiveName;
+import static org.jboss.as.server.loaders.Utils.getResourceName;
 import static org.jboss.as.server.loaders.Utils.explodeArchive;
 
 import java.io.File;
@@ -118,7 +118,7 @@ public final class ResourceLoaders {
                 return new SingleFileResourceLoader(name, root, parent, AccessController.getContext());
             } else {
                 if (explodeArchive(name)) {
-                    final File tempDir = new File(TMP_ROOT, getArchiveName(name) + ".tmp" + System.currentTimeMillis());
+                    final File tempDir = new File(TMP_ROOT, getResourceName(name) + ".tmp" + System.currentTimeMillis());
                     IOUtils.unzip(root, tempDir);
                     final FileResourceLoader newFileLoader = new FileResourceLoader(parent, name, tempDir, AccessController.getContext());
                     return new DelegatingResourceLoader(newFileLoader) {
@@ -194,7 +194,7 @@ public final class ResourceLoaders {
             } else if (loader instanceof JarFileResourceLoader) {
                 final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
                 if (explodeArchive(name)) {
-                    final File tempDir = new File(TMP_ROOT, getArchiveName(name) + ".tmp" + System.currentTimeMillis());
+                    final File tempDir = new File(TMP_ROOT, getResourceName(name) + ".tmp" + System.currentTimeMillis());
                     IOUtils.unzip(parent.iterateResources(subresourcePath, true), tempDir, subresourcePath.length() + 1);
                     final FileResourceLoader newFileLoader = new FileResourceLoader(parent, name, tempDir, AccessController.getContext());
                     return new DelegatingResourceLoader(newFileLoader) {
@@ -227,7 +227,7 @@ public final class ResourceLoaders {
                 return newLoader;
             } else if (loader instanceof JarFileResourceLoader) {
                 if (explodeArchive(name)) {
-                    final File tempDir = new File(TMP_ROOT, getArchiveName(subResPath) + ".tmp" + System.currentTimeMillis());
+                    final File tempDir = new File(TMP_ROOT, getResourceName(subResPath) + ".tmp" + System.currentTimeMillis());
                     IOUtils.unzip(resource.openStream(), tempDir);
                     final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
                     final FileResourceLoader newFileLoader = new FileResourceLoader(loader, name, tempDir, AccessController.getContext());
@@ -243,7 +243,7 @@ public final class ResourceLoaders {
                         }
                     };
                 } else {
-                    final File tempFile = new File(TMP_ROOT, getArchiveName(subResPath) + ".tmp" + System.currentTimeMillis());
+                    final File tempFile = new File(TMP_ROOT, getResourceName(subResPath) + ".tmp" + System.currentTimeMillis());
                     IOUtils.copyAndClose(resource.openStream(), new FileOutputStream(tempFile));
                     final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
                     final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(loader, name, new JarFile(tempFile));

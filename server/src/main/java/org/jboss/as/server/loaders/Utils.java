@@ -48,15 +48,15 @@ public final class Utils {
     }
 
     /**
-     * Creates archive name.
-     * @param archivePath to get name from
-     * @return archive name
+     * Obtains resource name from its path. It's the last String after '/' path separator char.
+     * @param resourcePath to get name from
+     * @return resource name
      */
-    public static String getArchiveName(final String archivePath) {
-        if (archivePath == null || "".equals(archivePath)) {
+    public static String getResourceName(final String resourcePath) {
+        if (resourcePath == null || "".equals(resourcePath)) {
             throw new IllegalArgumentException();
         }
-        final String canonArchivePath = PathUtils.relativize(PathUtils.canonicalize(archivePath));
+        final String canonArchivePath = PathUtils.relativize(PathUtils.canonicalize(resourcePath));
         final int pathSeparatorIndex = canonArchivePath.lastIndexOf(PATH_SEPARATOR);
         return pathSeparatorIndex != -1 ? canonArchivePath.substring(pathSeparatorIndex + 1) : canonArchivePath;
     }
@@ -78,7 +78,7 @@ public final class Utils {
      * @return true if archive should be exploded, false otherwise.
      */
     static boolean explodeArchive(final String archive) {
-        final String archiveName = getArchiveName(archive).toLowerCase(Locale.ENGLISH);
+        final String archiveName = getResourceName(archive).toLowerCase(Locale.ENGLISH);
         return archiveName.endsWith(WAR_EXTENSION) || archiveName.endsWith(WAB_EXTENSION) || archiveName.endsWith(RAR_EXTENSION);
     }
 
