@@ -34,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_GROUP_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_DESCRIPTION_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
@@ -64,6 +65,7 @@ import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -106,15 +108,17 @@ public class WildcardOperationsTestCase {
         // host=*
         address.add(HOST, WILDCARD);
         executeReadResource(address, domainMasterLifecycleUtil.getDomainClient());
+        executeReadResourceDescription(address, domainMasterLifecycleUtil.getDomainClient());
 
         // host=*,server=*
         address.add(RUNNING_SERVER, WILDCARD);
         executeReadResource(address, domainMasterLifecycleUtil.getDomainClient());
+        executeReadResourceDescription(address, domainMasterLifecycleUtil.getDomainClient());
 
         // host=*,server=*,subsystem=*
         address.add(SUBSYSTEM, WILDCARD);
         executeReadResource(address, domainMasterLifecycleUtil.getDomainClient());
-
+        executeReadResourceDescription(address, domainMasterLifecycleUtil.getDomainClient());
     }
 
     @Test
@@ -152,14 +156,17 @@ public class WildcardOperationsTestCase {
         // host=*
         address.add(HOST, WILDCARD);
         steps.add().set(createReadResourceOperation(address));
+        steps.add().set(createReadResourceDescriptionOperation(address));
 
         // host=*,server=*
         address.add(RUNNING_SERVER, WILDCARD);
         steps.add().set(createReadResourceOperation(address));
+        steps.add().set(createReadResourceDescriptionOperation(address));
 
         // host=*,server=*,subsystem=*
         address.add(SUBSYSTEM, WILDCARD);
         steps.add().set(createReadResourceOperation(address));
+        steps.add().set(createReadResourceDescriptionOperation(address));
 
         address.setEmptyList();
 
@@ -189,14 +196,17 @@ public class WildcardOperationsTestCase {
         // host=*
         address.add(HOST, WILDCARD);
         nestedSteps.add().set(createReadResourceOperation(address));
+        nestedSteps.add().set(createReadResourceDescriptionOperation(address));
 
         // host=*,server=*
         address.add(RUNNING_SERVER, WILDCARD);
         nestedSteps.add().set(createReadResourceOperation(address));
+        nestedSteps.add().set(createReadResourceDescriptionOperation(address));
 
         // host=*,server=*,subsystem=*
         address.add(SUBSYSTEM, WILDCARD);
         nestedSteps.add().set(createReadResourceOperation(address));
+        nestedSteps.add().set(createReadResourceDescriptionOperation(address));
 
         address.setEmptyList();
 
@@ -244,26 +254,32 @@ public class WildcardOperationsTestCase {
                     assertEquals(property.getName() + " result " + itemResult, "slave", itemResult.get(NAME).asString());
                     break;
                 case 2:
-                    pa = PathAddress.pathAddress(PathElement.pathElement(HOST));
                 case 3:
+                    pa = PathAddress.pathAddress(PathElement.pathElement(HOST));
+                case 4:
+                case 5:
                     if (pa == null) {
                         pa = PathAddress.pathAddress(PathElement.pathElement(HOST), PathElement.pathElement(RUNNING_SERVER));
                     }
-                case 4:
+                case 6:
+                case 7:
                     if (pa == null) {
                         pa = PathAddress.pathAddress(PathElement.pathElement(HOST),
                                 PathElement.pathElement(RUNNING_SERVER), PathElement.pathElement(SUBSYSTEM));
                     }
-                    validateWildcardResponseList(pa, itemResult);
+                    //The issue with /host=*/server=*:read-resource-definition is that there will be an entry for each server,
+                    //along with an entry for /host=xxx/server=*
+                    boolean isReadResourceDescription = validationIndex % 2 != 0;
+                    validateWildcardResponseList(pa, itemResult, isReadResourceDescription);
                     break;
-                case 5:
+                case 8:
                     assertEquals(property.getName() + " result " + itemResult, ModelType.OBJECT, itemResult.getType());
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(SUBSYSTEM));
                     assertEquals(property.getName() + " result " + itemResult, "main-one", itemResult.get(NAME).asString());
                     assertEquals(property.getName() + " result " + itemResult, "master", itemResult.get(HOST).asString());
                     break;
-                case 6:
+                case 9:
                     if (allowNested) {
                         // recurse
                         validateWildCardCompositeResponse(item, readOnly, false);
@@ -298,6 +314,8 @@ public class WildcardOperationsTestCase {
         // Server level child resource
         pa = PathAddress.pathAddress(PathElement.pathElement(HOST), PathElement.pathElement(RUNNING_SERVER), PathElement.pathElement(SYSTEM_PROPERTY));
         readOperationDescriptionTest(pa);
+
+
     }
 
     private void readOperationDescriptionTest(PathAddress pa) throws IOException, MgmtOperationException {
@@ -320,7 +338,7 @@ public class WildcardOperationsTestCase {
         assertEquals(ModelType.LIST, result.getType());
 
         final PathAddress toMatch = PathAddress.pathAddress(operation.get(OP_ADDR));
-        validateWildcardResponseList(toMatch, result);
+        validateWildcardResponseList(toMatch, result, false);
 
         return result;
     }
@@ -332,26 +350,57 @@ public class WildcardOperationsTestCase {
         return operation;
     }
 
-    private static void validateWildcardResponseList(PathAddress toMatch, ModelNode responseList) {
+    static ModelNode executeReadResourceDescription(final ModelNode address, final ModelControllerClient client) throws IOException, MgmtOperationException {
+        final ModelNode operation = createReadResourceDescriptionOperation(address);
+        final ModelNode result = DomainTestUtils.executeForResult(operation, client);
+
+        assertEquals(ModelType.LIST, result.getType());
+
+        final PathAddress toMatch = PathAddress.pathAddress(operation.get(OP_ADDR));
+        validateWildcardResponseList(toMatch, result, true);
+
+        return result;
+    }
+
+    static ModelNode createReadResourceDescriptionOperation(final ModelNode address) {
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_RESOURCE_DESCRIPTION_OPERATION);
+        operation.get(OP_ADDR).set(address);
+        return operation;
+    }
+
+
+    private static void validateWildcardResponseList(PathAddress toMatch, ModelNode responseList, boolean isReadResourceDescription) {
+        //The issue with /host=*/server=*:read-resource-definition is that there will be an entry for each server,
+        //along with an entry for /host=xxx/server=*
+        final boolean allowLastServerWildcard = isReadResourceDescription && toMatch.getLastElement().getKey().equals(RUNNING_SERVER);
+        boolean seenLastServerWildcard = !allowLastServerWildcard;
+
         assertEquals(responseList.toString(), ModelType.LIST, responseList.getType());
         for (final ModelNode responseItem : responseList.asList()) {
-            assertMatchingAddress(toMatch, responseItem);
+            seenLastServerWildcard |= assertMatchingAddress(toMatch, responseItem, allowLastServerWildcard);
             assertTrue(responseItem.toString(), responseItem.hasDefined(OUTCOME));
             assertEquals(responseItem.toString(), SUCCESS, responseItem.get(OUTCOME).asString());
             assertTrue(responseItem.toString(), responseItem.hasDefined(RESULT));
         }
-
+        Assert.assertTrue(seenLastServerWildcard);
     }
 
-    static void assertMatchingAddress(PathAddress toMatch, ModelNode node) {
+    static boolean assertMatchingAddress(PathAddress toMatch, ModelNode node, boolean allowLastServerWildcard) {
         assertTrue(node.hasDefined(OP_ADDR));
         PathAddress testee = PathAddress.pathAddress(node.get(OP_ADDR));
+
+        boolean seenWildcardServer = false;
         assertEquals(testee + " length matches " + toMatch, toMatch.size(), testee.size());
         for (int i = 0; i < toMatch.size(); i++) {
             PathElement matchElement = toMatch.getElement(i);
             PathElement testeeElement = testee.getElement(i);
             assertEquals(testee.toString(), matchElement.getKey(), testeeElement.getKey());
-            assertFalse(testeeElement + " is multi-target", testeeElement.isMultiTarget());
+            if (!allowLastServerWildcard || !testeeElement.getKey().equals(RUNNING_SERVER)) {
+                assertFalse(testeeElement + " is multi-target", testeeElement.isMultiTarget());
+            } else if (testeeElement.isWildcard() && testeeElement.getKey().equals(RUNNING_SERVER) && i == toMatch.size() -1) {
+                seenWildcardServer = true;
+            }
             if (!matchElement.isWildcard()) {
                 if (matchElement.isMultiTarget()) {
                     boolean matched = false;
@@ -367,6 +416,7 @@ public class WildcardOperationsTestCase {
                 }
             }
         }
+        return seenWildcardServer;
     }
 
 }
