@@ -390,7 +390,7 @@ public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.Abst
         //Get hold of the real registry if it was an alias
         return root.getSubModel(aliasEntry.convertToTargetAddress(opAddr, AliasEntry.AliasContext.create(opAddr, context)));
     }
-    
+
     /**
      *
      * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
