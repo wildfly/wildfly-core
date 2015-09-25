@@ -3190,9 +3190,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 356, value = "Failed to emit notification %s")
     void failedToEmitNotification(Notification notification, @Cause Throwable cause);
 
-    @LogMessage(level = WARN)
     @Message(id = 357, value = "Notification of type %s is not described for the resource at the address %s")
-    void notificationIsNotDescribed(String type, PathAddress source);
+    String notificationIsNotDescribed(String type, PathAddress source);
 
     @Message(id = 358, value = "The resource was added at the address %s.")
     String resourceWasAdded(PathAddress address);
