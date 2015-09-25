@@ -119,6 +119,7 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
         if (mbeanServerConn instanceof RemotingMBeanServerConnection) {
             final CommandContext cmdCtx = CommandContextFactory.getInstance().newCommandContext();
             isConnected = connectUsingRemoting(cmdCtx, (RemotingMBeanServerConnection)mbeanServerConn);
+            init(cmdCtx);
         } else {
             //show dialog
             dialog.start();
