@@ -155,7 +155,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         return parent;
     }
 
-    File getFile() {
+    public File getRoot() {
         return fileOfJar;
     }
 

@@ -126,4 +126,9 @@ final class SingleFileResourceLoader implements ResourceLoader {
         // does nothing
     }
 
+    @Override
+    public File getRoot() {
+        return null;
+    }
+
 }

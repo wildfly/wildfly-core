@@ -12,6 +12,8 @@ import java.util.Iterator;
  */
 public interface ResourceLoader extends IterableResourceLoader {
 
+    File getRoot();
+
     ResourceLoader getParent();
 
     Iterator<String> iteratePaths(String startPath, boolean recursive);

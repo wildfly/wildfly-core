@@ -208,7 +208,7 @@ public final class ResourceLoaders {
                         }
                     };
                 } else {
-                    final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(jarLoader, name, new JarFile(jarLoader.getFile()), subResPath);
+                    final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(jarLoader, name, new JarFile(jarLoader.getRoot()), subResPath);
                     jarLoader.addChild(subResPath, newJarLoader);
                     return newJarLoader;
                 }

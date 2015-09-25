@@ -103,4 +103,9 @@ class DelegatingResourceLoader implements ResourceLoader {
         getDelegate().addOverlay(path, content);
     }
 
+    @Override
+    public File getRoot() {
+        return getDelegate().getRoot();
+    }
+
 }

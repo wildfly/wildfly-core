@@ -98,6 +98,10 @@ final class FilteredResourceLoader implements ResourceLoader {
         loader.addOverlay(path, content);
     }
 
+    public File getRoot() {
+        return loader.getRoot();
+    }
+
     private static Iterator<Resource> filteredResource(final PathFilter filter, final Iterator<Resource> original) {
         return new Iterator<Resource>() {
             private Resource next;

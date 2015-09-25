@@ -152,7 +152,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
     }
 
-    File getRoot() {
+    public File getRoot() {
         return root;
     }
 
