@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -173,8 +172,14 @@ public class GlobalOperationHandlers {
 
         private final FilterPredicate predicate;
 
+        private final boolean registryOnly;
+
         protected AbstractMultiTargetHandler() {
             this(null, false);
+        }
+
+        protected AbstractMultiTargetHandler(boolean registryOnly) {
+            this(null, false, DEFAULT_PREDICATE, registryOnly);
         }
 
         protected AbstractMultiTargetHandler(FilteredData filteredData) {
@@ -182,15 +187,18 @@ public class GlobalOperationHandlers {
         }
 
         protected AbstractMultiTargetHandler(FilteredData filteredData, boolean ignoreMissingResource) {
-            this.filteredData = filteredData;
-            this.ignoreMissingResource = ignoreMissingResource;
-            this.predicate = DEFAULT_PREDICATE;
+            this(filteredData, ignoreMissingResource, DEFAULT_PREDICATE);
         }
 
         protected AbstractMultiTargetHandler(FilteredData filteredData, boolean ignoreMissingResource, FilterPredicate predicate) {
+            this(filteredData, ignoreMissingResource, predicate, false);
+        }
+
+        private AbstractMultiTargetHandler(FilteredData filteredData, boolean ignoreMissingResource, FilterPredicate predicate, boolean registryOnly) {
             this.filteredData = filteredData;
             this.ignoreMissingResource = ignoreMissingResource;
             this.predicate = predicate;
+            this.registryOnly = registryOnly;
         }
 
         protected FilteredData getFilteredData() {
@@ -207,15 +215,18 @@ public class GlobalOperationHandlers {
                 final FilteredData localFilteredData = filteredData == null ? new FilteredData(PathAddress.EMPTY_ADDRESS) : filteredData;
                 // The final result should be a list of executed operations
                 final ModelNode result = context.getResult().setEmptyList();
+
                 // Trick the context to give us the model-root
+                final OperationStepHandler delegateStepHandler = new OperationStepHandler() {
+                    @Override
+                    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+                        doExecute(context, operation, localFilteredData, true);
+                    }
+                };
                 context.addStep(new ModelNode(), FAKE_OPERATION.clone(),
-                        new ModelAddressResolver(operation, result, localFilteredData,
-                                new OperationStepHandler() {
-                                    @Override
-                                    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                                        doExecute(context, operation, localFilteredData, true);
-                                    }
-                                }, predicate),
+                        registryOnly ?
+                            new RegistrationAddressResolver(operation, result, delegateStepHandler) :
+                            new ModelAddressResolver(operation, result, localFilteredData, delegateStepHandler, predicate),
                         OperationContext.Stage.MODEL, true
                 );
                 context.completeStep(new OperationContext.ResultHandler() {
@@ -789,37 +800,80 @@ public class GlobalOperationHandlers {
         public void execute(final OperationContext context, final ModelNode ignored) throws OperationFailedException {
             final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
             final PathAddress aliasAddr = WildcardReadResourceDescriptionAddressHack.detachAliasAddress(context, operation);
-            execute(aliasAddr == null ? address : aliasAddr, PathAddress.EMPTY_ADDRESS, context);
+            execute(PathAddress.EMPTY_ADDRESS, aliasAddr == null ? address : aliasAddr, context, context.getRootResourceRegistration());
         }
 
-        void execute(final PathAddress address, PathAddress base, final OperationContext context) {
-            final PathAddress current = address.subAddress(base.size());
-            final Iterator<PathElement> iterator = current.iterator();
-            if (iterator.hasNext()) {
-                final PathElement element = iterator.next();
+        void execute(final PathAddress base, final PathAddress remaining, final OperationContext context,
+                             final ImmutableManagementResourceRegistration registration) {
+            //TODO remote
+
+            if (remaining.size() > 0) {
+                final PathElement element = remaining.getElement(0);
+                final PathAddress newRemaining = remaining.subAddress(1);
                 if (element.isMultiTarget()) {
+                    final String childType = element.getKey().equals("*") ? null : element.getKey();
+                    if (registration.isRemote()) {// || registration.isRuntimeOnly()) {
+                        // At least for proxies it should use the proxy operation handler
+                        throw new IllegalStateException();
+                    }
+
                     final Set<PathElement> children = context.getResourceRegistration().getChildAddresses(base);
                     if (children == null || children.isEmpty()) {
                         return;
                     }
-                    final String childType = element.getKey().equals("*") ? null : element.getKey();
+
                     for (final PathElement path : children) {
                         if (childType != null && !childType.equals(path.getKey())) {
                             continue;
                         }
-                        execute(address, base.append(path), context);
+                        final PathAddress next = base.append(path);
+                        final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
+                        execute(next, newRemaining, context, nr);
                     }
                 } else {
-                    execute(address, base.append(element), context);
+                    final PathAddress next = base.append(element);
+                    final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
+                    execute(next, newRemaining, context, nr);
                 }
             } else {
-                //final String operationName = operation.require(OP).asString();
+                //So far this is the same as ModelAddressResolver
                 final ModelNode newOp = operation.clone();
                 newOp.get(OP_ADDR).set(base.toModelNode());
 
-                final ModelNode result = this.result.add();
-                result.get(OP_ADDR).set(base.toModelNode());
-                context.addStep(result, newOp, handler, OperationContext.Stage.MODEL, true);
+                final ModelNode resultItem = this.result.add();
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Added ModelAddressResolver result item for %s", base);
+                final ModelNode resultAddress = resultItem.get(OP_ADDR);
+
+                final OperationStepHandler wrapper = new OperationStepHandler() {
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        try {
+                            handler.execute(context, operation);
+                            context.completeStep(new OperationContext.ResultHandler() {
+                                @Override
+                                public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                                    ControllerLogger.MGMT_OP_LOGGER.tracef("ModelAddressResolver result for %s is %s", base, resultItem);
+                                    if (resultItem.hasDefined(RESULT)) {
+                                        resultAddress.set(base.toModelNode());
+                                        if (resultItem.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL)) {
+                                            ModelNode headers = resultItem.get(RESPONSE_HEADERS);
+                                            ModelNode acc = headers.remove(ACCESS_CONTROL);
+                                            if (headers.asInt() == 0) {
+                                                resultItem.remove(RESPONSE_HEADERS);
+                                            }
+                                            //filteredData.populate(acc, PathAddress.EMPTY_ADDRESS);
+                                        }
+                                    } else {
+                                        resultItem.clear();
+                                    }
+                                }
+                            });
+                        } catch (Resource.NoSuchResourceException e) {
+                            // just discard the result to avoid leaking the inaccessible address
+                        }
+                    }
+                };
+                context.addStep(resultItem, newOp, wrapper, OperationContext.Stage.MODEL, true);
             }
         }
     }
