@@ -32,10 +32,11 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
-import org.jboss.vfs.VirtualFile;
+import org.jboss.modules.Resource;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DriverDependenciesProcessor implements DeploymentUnitProcessor {
     private static final String SERVICE_FILE_NAME = "META-INF/services/java.sql.Driver";
@@ -49,8 +50,8 @@ public class DriverDependenciesProcessor implements DeploymentUnitProcessor {
         if (deploymentUnit.hasAttachment(Attachments.RESOURCE_ROOTS)) {
             final List<ResourceRoot> resourceRoots = deploymentUnit.getAttachmentList(Attachments.RESOURCE_ROOTS);
             for (ResourceRoot root : resourceRoots) {
-                VirtualFile child = root.getRoot().getChild(SERVICE_FILE_NAME);
-                if (child.exists()) {
+                Resource driverResource = root.getLoader().getResource(SERVICE_FILE_NAME);
+                if (driverResource != null) {
                     moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, JTA, false, false, false, false));
                     break;
                 }
@@ -62,4 +63,5 @@ public class DriverDependenciesProcessor implements DeploymentUnitProcessor {
     public void undeploy(final DeploymentUnit context) {
         // no-op
     }
+
 }
