@@ -699,7 +699,7 @@ public interface ServerLogger extends BasicLogger {
     IllegalArgumentException missingModulePrefix(ModuleIdentifier identifier, String prefix);
 
     @Message(id = 100, value = "Failed to read '%s'")
-    DeploymentUnitProcessingException failedToReadVirtualFile(VirtualFile file, @Cause IOException cause);
+    DeploymentUnitProcessingException failedToReadVirtualFile(String file, @Cause IOException cause);
 
     @Message(id = 101, value = "Deployment root is required")
     IllegalArgumentException deploymentRootRequired();
@@ -709,9 +709,6 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 103, value = "No Module Identifier attached to deployment '%s'")
     DeploymentUnitProcessingException noModuleIdentifier(String deploymentUnitName);
-
-    @Message(id = 104, value = "Failed to create VFSResourceLoader for root [%s]")
-    DeploymentUnitProcessingException failedToCreateVFSResourceLoader(String resourceRoot, @Cause IOException cause);
 
     @Message(id = 105, value = "Failed to get file from remote repository")
     RuntimeException failedToGetFileFromRemoteRepository(@Cause Throwable cause);

@@ -23,11 +23,13 @@
 package org.jboss.as.server.deployment.annotation;
 
 import java.io.InputStream;
+import java.util.Iterator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.server.Utils;
+import org.jboss.as.server.loaders.ResourceLoader;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -36,10 +38,7 @@ import org.jboss.as.server.moduleservice.ModuleIndexBuilder;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.Indexer;
-import org.jboss.vfs.VirtualFile;
-import org.jboss.vfs.VirtualFileFilter;
-import org.jboss.vfs.VisitorAttributes;
-import org.jboss.vfs.SuffixMatchFilter;
+import org.jboss.modules.Resource;
 
 /**
  * Utility class for indexing a resource root
@@ -54,15 +53,15 @@ public class ResourceRootIndexer {
             return;
         }
 
-        VirtualFile indexFile = resourceRoot.getRoot().getChild(ModuleIndexBuilder.INDEX_LOCATION);
-        if (indexFile.exists()) {
+        Resource indexFile = resourceRoot.getLoader().getResource(ModuleIndexBuilder.INDEX_LOCATION);
+        if (indexFile != null) {
             try {
                 IndexReader reader = new IndexReader(indexFile.openStream());
                 resourceRoot.putAttachment(Attachments.ANNOTATION_INDEX, reader.read());
                 ServerLogger.DEPLOYMENT_LOGGER.tracef("Found and read index at: %s", indexFile);
                 return;
             } catch (Exception e) {
-                ServerLogger.DEPLOYMENT_LOGGER.cannotLoadAnnotationIndex(indexFile.getPathName());
+                ServerLogger.DEPLOYMENT_LOGGER.cannotLoadAnnotationIndex(indexFile.getName());
             }
         }
 
@@ -75,37 +74,38 @@ public class ResourceRootIndexer {
         final List<String> indexIgnorePathList = resourceRoot.getAttachment(Attachments.INDEX_IGNORE_PATHS);
         final Set<String> indexIgnorePaths;
         if (indexIgnorePathList != null && !indexIgnorePathList.isEmpty()) {
-            indexIgnorePaths = new HashSet<String>(indexIgnorePathList);
+            indexIgnorePaths = new HashSet<>(indexIgnorePathList);
         } else {
             indexIgnorePaths = null;
         }
 
-        final VirtualFile virtualFile = resourceRoot.getRoot();
+        final ResourceLoader loader = resourceRoot.getLoader();
         final Indexer indexer = new Indexer();
         try {
-            final VisitorAttributes visitorAttributes = new VisitorAttributes();
-            visitorAttributes.setLeavesOnly(true);
-            visitorAttributes.setRecurseFilter(new VirtualFileFilter() {
-                public boolean accepts(VirtualFile file) {
-                    return indexIgnorePaths == null || !indexIgnorePaths.contains(file.getPathNameRelativeTo(virtualFile));
-                }
-            });
-
-            final List<VirtualFile> classChildren = virtualFile.getChildren(new SuffixMatchFilter(".class", visitorAttributes));
-            for (VirtualFile classFile : classChildren) {
-                InputStream inputStream = null;
+            final Iterator<Resource> resources = loader.iterateResources("", true);
+            Resource resource;
+            InputStream is = null;
+            String resourcePath;
+            String resourceName;
+            int pathSeparatorIndex;
+            while (resources.hasNext()) {
+                resource = resources.next();
+                resourceName = resource.getName();
+                if (!resourceName.endsWith(".class")) continue;
+                pathSeparatorIndex = resourceName.lastIndexOf("/");
+                resourcePath = pathSeparatorIndex != -1 ? resourceName.substring(0, pathSeparatorIndex) : null; // TODO
+                if (indexIgnorePaths != null && indexIgnorePaths.contains(resourcePath)) continue;
                 try {
-                    inputStream = classFile.openStream();
-                    indexer.index(inputStream);
+                    indexer.index(is = resource.openStream());
                 } catch (Exception e) {
-                    ServerLogger.DEPLOYMENT_LOGGER.cannotIndexClass(classFile.getPathNameRelativeTo(virtualFile), virtualFile.getPathName(), e);
+                    ServerLogger.DEPLOYMENT_LOGGER.cannotIndexClass(resource.getName(), loader.getRootName(), e);
                 } finally {
-                    Utils.safeClose(inputStream);
+                    Utils.safeClose(is);
                 }
             }
             final Index index = indexer.complete();
             resourceRoot.putAttachment(Attachments.ANNOTATION_INDEX, index);
-            ServerLogger.DEPLOYMENT_LOGGER.tracef("Generated index for archive %s", virtualFile);
+            ServerLogger.DEPLOYMENT_LOGGER.tracef("Generated index for archive %s", loader.getRootName());
         } catch (Throwable t) {
             throw ServerLogger.ROOT_LOGGER.deploymentIndexingFailed(t);
         }
