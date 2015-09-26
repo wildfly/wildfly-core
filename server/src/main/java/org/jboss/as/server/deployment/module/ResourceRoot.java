@@ -45,7 +45,7 @@ public final class ResourceRoot extends SimpleAttachable {
     private boolean usePhysicalCodeSource;
 
     public ResourceRoot(final ResourceLoader loader, final VirtualFile root, final MountHandle mountHandle) {
-        this(loader, root.getName(), root, mountHandle);
+        this(loader, root != null ? root.getName() : null, root, mountHandle);
     }
 
     public ResourceRoot(final ResourceLoader loader, final String rootName, final VirtualFile root, final MountHandle mountHandle) {
