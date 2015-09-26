@@ -255,6 +255,13 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     public static final String JBOSS_SERVER_DEFAULT_CONFIG = "jboss.server.default.config";
 
     /**
+     * The system property used to set the unique identifier for this server exposed via the
+     * {@code uuid} attribute of the server's root management resource. If the property is not
+     * set any previously persisted UUID will be used; otherwise a random UUID will be generated.
+     */
+    public static final String JBOSS_SERVER_MANAGEMENT_UUID = "jboss.server.management.uuid";
+
+    /**
      * The system property used to indicate whether the server was configured to persist changes to the configuration
      * files.
      *
@@ -270,7 +277,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private static final Set<String> ILLEGAL_PROPERTIES = new HashSet<String>(Arrays.asList(DOMAIN_BASE_DIR,
             DOMAIN_CONFIG_DIR, JAVA_EXT_DIRS, HOME_DIR, "modules.path", SERVER_BASE_DIR, SERVER_CONFIG_DIR,
             SERVER_DATA_DIR, SERVER_DEPLOY_DIR, SERVER_LOG_DIR, BOOTSTRAP_MAX_THREADS, CONTROLLER_TEMP_DIR,
-            JBOSS_SERVER_DEFAULT_CONFIG, JBOSS_PERSIST_SERVER_CONFIG));
+            JBOSS_SERVER_DEFAULT_CONFIG, JBOSS_PERSIST_SERVER_CONFIG, JBOSS_SERVER_MANAGEMENT_UUID));
     /** Properties that can only be set via {@link #systemPropertyUpdated(String, String)} during server boot. */
     private static final Set<String> BOOT_PROPERTIES = new HashSet<String>(Arrays.asList(BUNDLES_DIR, SERVER_TEMP_DIR,
             NODE_NAME, SERVER_NAME, HOST_NAME, QUALIFIED_HOST_NAME));
@@ -554,9 +561,10 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         }
         allowModelControllerExecutor = allowExecutor;
         final Path filePath = this.serverDataDir.toPath().resolve(KERNEL_DIR).resolve(UUID_FILE);
-        UUID uuid = null;
+        UUID uuid;
         try {
-            uuid = obtainProcessUUID(filePath);
+            String sysPropUUID = props.getProperty(JBOSS_SERVER_MANAGEMENT_UUID);
+            uuid = obtainProcessUUID(filePath, sysPropUUID);
         } catch(IOException ex) {
             throw ServerLogger.ROOT_LOGGER.couldNotObtainServerUuidFile(ex, filePath);
         }

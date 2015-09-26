@@ -167,15 +167,29 @@ public abstract class ProcessEnvironment {
      */
     public abstract String getHostControllerName();
 
-    protected UUID obtainProcessUUID(final Path filePath) throws IOException {
+    /**
+     * Obtain the unique management id for this process and persist it for reuse if the process is restarted.
+     * The uuid will be obtained in the following manner:
+     * <ol>
+     *     <li>If the {@code assignedValue} is not {@code null}, it will be used.</li>
+     *     <li>Else if a uuid has been persisted to {@code filePath}, the persisted value will be used</li>
+     *     <li>Else a random uuid will be generated</li>
+     * </ol>
+     * @param filePath filesystem location where the uuid is to be persisted and may have already been persisted. Cannot be {@code null}
+     * @param assignedValue value to use for the uuid. May be {@code null}
+     * @return the uuid. Will not return {@code null}
+     * @throws IOException if there is a problem reading from or writing to {@code filePath}
+     */
+    protected final UUID obtainProcessUUID(final Path filePath, String assignedValue) throws IOException {
         UUID uuid = null;
-        if (Files.exists(filePath)) {
+        // If we were not provided a uuid via the param, look for one previously persisted
+        if (assignedValue == null && Files.exists(filePath)) {
             try (Stream<String> lines = Files.lines(filePath)) {
                 uuid = UUID.fromString(lines.findFirst().get());
             }
         }
         if (uuid == null) {
-            uuid = UUID.randomUUID();
+            uuid = assignedValue == null ? UUID.randomUUID() : UUID.fromString(assignedValue);
             Files.createDirectories(filePath.getParent());
             Files.write(filePath, Collections.singletonList(uuid.toString()), StandardOpenOption.CREATE);
         }
