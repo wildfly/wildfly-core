@@ -295,8 +295,6 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         private Iterator<String> overlayPaths;
 
         Itr(final String startName, final String base, final String[] names, final Iterator<String> overlayPaths, final boolean recursive) {
-            assert PathUtils.isRelative(base);
-            assert names != null && names.length > 0;
             this.startName = startName;
             this.base = base;
             this.names = names;
@@ -305,7 +303,6 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
 
         public boolean hasNext() {
-            final String[] names = this.names;
             if (next != null) {
                 return true;
             }
@@ -322,7 +319,8 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
                 }
             }
             final String base = this.base;
-            while (i < names.length) {
+            final String[] names = this.names;
+            while (names != null && i < names.length) {
                 final String current = names[i];
                 final String full = base.isEmpty() ? current : base + "/" + current;
                 if (FileResourceLoader.this.overlays.containsKey(full)) {
