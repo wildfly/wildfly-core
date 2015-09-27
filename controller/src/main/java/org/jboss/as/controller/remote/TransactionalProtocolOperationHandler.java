@@ -165,7 +165,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             executeRequestContext.initialize(context);
             final Integer batchId = executeRequestContext.getOperationId();
             final OperationMessageHandlerProxy messageHandlerProxy = new OperationMessageHandlerProxy(channelAssociation, batchId);
-            final ProxyOperationControlProxy control = new ProxyOperationControlProxy(executeRequestContext);
+            final ProxyOperationTransactionControl control = new ProxyOperationTransactionControl(executeRequestContext);
             final OperationAttachmentsProxy attachmentsProxy = OperationAttachmentsProxy.create(operation, channelAssociation, batchId, attachmentsLength);
             final OperationResponse result;
             try {
@@ -290,11 +290,15 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
 
     }
 
-    static class ProxyOperationControlProxy implements ModelController.OperationTransactionControl {
+    /**
+     * OperationTransactionControl that handle operationPrepared by signalling the ExecutionRequestContext
+     * associated with the active operation.
+     */
+    private static class ProxyOperationTransactionControl implements ModelController.OperationTransactionControl {
 
         private final ExecuteRequestContext requestContext;
 
-        ProxyOperationControlProxy(ExecuteRequestContext requestContext) {
+        ProxyOperationTransactionControl(ExecuteRequestContext requestContext) {
             this.requestContext = requestContext;
         }
 
@@ -313,7 +317,11 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         }
     }
 
-    static class ExecuteRequestContext implements ActiveOperation.CompletedCallback<Void> {
+    /**
+     * Attachment to a ManagementRequestContext that handlers dealing with the various requests
+     * associated with a single overall operation can use to coordinate execution.
+     */
+    private static class ExecuteRequestContext implements ActiveOperation.CompletedCallback<Void> {
 
         private boolean prepared;
         private boolean rollbackOnPrepare;
@@ -323,6 +331,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         private final CountDownLatch txCompletedLatch = new CountDownLatch(1);
         private boolean txCompleted;
         private PrivilegedAction<Void> action;
+        private OperationResponse postPrepareRaceResponse;
 
         final ResponseAttachmentInputStreamSupport streamSupport;
 
@@ -380,15 +389,20 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             //
         }
 
+        /**
+         * Initializes this object with a reference to the {@code ManagementRequestContext} it can
+         * use for executing asynchronous tasks and sending messages to the remote client.
+         * @param context the ManagementRequestContext
+         */
         synchronized void initialize(final ManagementRequestContext<ExecuteRequestContext> context) {
             assert ! prepared;
             assert activeTx == null;
-            // 1) initialize (set the response information)
             this.responseChannel = context;
             ControllerLogger.MGMT_OP_LOGGER.tracef("Initialized for %d", getOperationId());
 
         }
 
+        /** Signal from ProxyOperationTransactionControl that the operation is prepared */
         synchronized void prepare(final ModelController.OperationTransaction tx, final ModelNode result) {
             assert !prepared;
             if(rollbackOnPrepare) {
@@ -402,41 +416,41 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                     txCompletedLatch.countDown();
                 }
 
-                // no response to remote side here; the response will come when the now rolled-back op returns
+                // no response to remote side here; the response will go out when this thread executing
+                // the now rolled-back op returns in ExecuteRequestHandler.doExecute
 
             } else {
                 assert activeTx == null;
                 assert responseChannel != null;
                 ControllerLogger.MGMT_OP_LOGGER.tracef("sending prepared response for %d  --- interrupted: %s", getOperationId(), (Object) Thread.currentThread().isInterrupted());
                 try {
-                    // 2) send the operation-prepared notification (just clear response info)
                     sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_PREPARED, result);
+                    responseChannel = null; // we've now sent a response to the original request, so we can't use this one further
                     activeTx = tx;
                     prepared = true; // Here we only mark the op prepared once the message the other side expects has gone out
                 } catch (IOException e) {
                     getResultHandler().failed(e);
-                } finally {
-                    responseChannel = null;
                 }
             }
         }
 
+        /** Invoked when we receive a ModelControllerProtocol.COMPLETE_TX_REQUEST request, either a tx commit/rollback or a cancel */
         synchronized void completeTx(final ManagementRequestContext<ExecuteRequestContext> context, final boolean commit) {
             if (!prepared) {
-                assert !commit; // can only be rollback before it's prepared
+                assert !commit; // can only be cancel before it's prepared
 
                 ControllerLogger.MGMT_OP_LOGGER.tracef("completeTx (cancel unprepared) for %d", getOperationId());
                 rollbackOnPrepare = true;
                 cancel(context);
 
-                // TODO response !?
+                // response is sent when the cancalled op results in the thead returning in ExecuteRequestHandler.doExecute
 
             } else if (txCompleted) {
                 // A 2nd call means a cancellation from the remote side after the tx was committed/rolled back
                 // This would usually mean the completion of the request is hanging for some reason
                 ControllerLogger.MGMT_OP_LOGGER.tracef("completeTx (post-commit cancel) for %d", getOperationId());
                 cancel(context);
-            } else {
+            } else if (postPrepareRaceResponse == null) {
                 assert activeTx != null;
                 assert responseChannel == null;
                 responseChannel = context;
@@ -448,19 +462,31 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                 }
                 txCompleted = true;
                 txCompletedLatch.countDown();
+            } else {
+                assert responseChannel == null;
+                responseChannel = context;
+                ControllerLogger.MGMT_OP_LOGGER.tracef("completeTx (%s) for %d received after a post-prepare response " +
+                        "had already been cached; sending the cached response", commit, getOperationId());
+                completed(postPrepareRaceResponse);
             }
         }
 
+        /**
+         * Handles sending a failure response to the remote client. If operation has already been prepared
+         * this method simply delegates to {@link #completed(OperationResponse)}.
+         * @param response the failure response ModelNode to send
+         */
         synchronized void failed(final ModelNode response) {
             if(prepared) {
                 // in case commit or rollback throws an exception, to conform with the API we still send an operation-completed message
                 completed(OperationResponse.Factory.createSimple(response));
             } else {
+                // Failure before prepare. So send a response to the original request
                 assert responseChannel != null;
                 ControllerLogger.MGMT_OP_LOGGER.tracef("sending pre-prepare failed response for %d  --- interrupted: %s", getOperationId(), (Object) Thread.currentThread().isInterrupted());
                 try {
-                    // 2) send the operation-failed message (done)
                     sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_FAILED, response);
+                    responseChannel = null; // we've now sent a response to the original request, so we can't use this one further
                 } catch (IOException e) {
                     ControllerLogger.MGMT_OP_LOGGER.debugf(e, "failed to process message");
                 } finally {
@@ -469,24 +495,41 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             }
         }
 
+        /**
+         * Sends the final response to the remote client after the prepare phase has been executed.
+         * This should be called whether the outcome was successful or not.
+         */
         synchronized void completed(final OperationResponse response) {
 
             assert prepared;
-            assert responseChannel != null;
-            ControllerLogger.MGMT_OP_LOGGER.tracef("sending completed response %s for %d  --- interrupted: %s", response.getResponseNode(), getOperationId(), (Object) Thread.currentThread().isInterrupted());
+            if (responseChannel != null) {
+                // Normal case, where a COMPLETE_TX_REQUEST came in after the prepare() call and
+                // established a new responseChannel so the client can correlate the response
+                ControllerLogger.MGMT_OP_LOGGER.tracef("sending completed response %s for %d  --- interrupted: %s", response.getResponseNode(), getOperationId(), (Object) Thread.currentThread().isInterrupted());
 
-            streamSupport.registerStreams(operation.getOperationId(), response.getInputStreams());
+                streamSupport.registerStreams(operation.getOperationId(), response.getInputStreams());
 
-            try {
-                // 4) operation-completed (done)
-                sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_COMPLETED, response.getResponseNode());
-            } catch (IOException e) {
-                ControllerLogger.MGMT_OP_LOGGER.debugf(e, "failed to process message");
-            } finally {
-                getResultHandler().done(null);
+                try {
+                    sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_COMPLETED, response.getResponseNode());
+                    responseChannel = null; // we've now sent a response to the COMPLETE_TX_REQUEST, so we can't use this one further
+                } catch (IOException e) {
+                    ControllerLogger.MGMT_OP_LOGGER.debugf(e, "failed to process message");
+                } finally {
+                    getResultHandler().done(null);
+                }
+            } else {
+                // We were cancelled or somehow failed after sending our prepare() message but before we got a COMPLETE_TX_REQUEST.
+                // The client will not be able to deal with any response until it sends a COMPLETE_TX_REQUEST
+                // (which is why we null out responseChannel in prepare()). So, just cache this response
+                // so we can send it in completeTx when the COMPLETE_TX_REQUEST comes in.
+                assert postPrepareRaceResponse == null; // else we got called twice locally!
+                ControllerLogger.MGMT_OP_LOGGER.tracef("received a post-prepare response for %d but no " +
+                        "COMPLETE_TX_REQUEST has been received; caching the response", getOperationId());
+                postPrepareRaceResponse = response;
             }
         }
 
+        /** Asynchronously invokes cancel on the result handler for the operation */
         private void cancel(final ManagementRequestContext<ExecuteRequestContext> context) {
             context.executeAsync(new ManagementRequestContext.AsyncTask<ExecuteRequestContext>() {
                 @Override
