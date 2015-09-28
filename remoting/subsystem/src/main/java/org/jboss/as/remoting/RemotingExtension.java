@@ -79,7 +79,7 @@ public class RemotingExtension implements Extension {
 
     static final SensitiveTargetAccessConstraintDefinition REMOTING_SECURITY_DEF = new SensitiveTargetAccessConstraintDefinition(REMOTING_SECURITY);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 3;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 4;
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
@@ -192,6 +192,7 @@ public class RemotingExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_1_2.getUriString(), RemotingSubsystem12Parser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_2_0.getUriString(), RemotingSubsystem20Parser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_3_0.getUriString(), RemotingSubsystem30Parser.INSTANCE);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_4_0.getUriString(), RemotingSubsystem40Parser.INSTANCE);
 
         context.setProfileParsingCompletionHandler(new IOCompletionHandler());
     }

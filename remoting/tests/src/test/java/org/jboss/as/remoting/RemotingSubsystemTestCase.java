@@ -106,7 +106,7 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-remoting_3_0.xsd";
+        return "schema/wildfly-remoting_4_0.xsd";
     }
 
     @Override
