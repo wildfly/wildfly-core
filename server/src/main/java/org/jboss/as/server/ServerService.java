@@ -335,7 +335,7 @@ public final class ServerService extends AbstractControllerService {
 
             // Ext integration deployers
 
-            DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_SEAM, new Seam2Processor(serviceTarget));
+            DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_SEAM, new Seam2Processor());
 
             //jboss.xml parsers
             DeploymentStructureDescriptorParser.registerJBossXMLParsers();
