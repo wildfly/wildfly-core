@@ -679,7 +679,7 @@ public class GlobalOperationHandlers {
                                                 if (headers.asInt() > 0) {
                                                     nr.get(RESPONSE_HEADERS).set(headers);
                                                 }
-                                                if (acc.isDefined()) {
+                                                if (acc != null && acc.isDefined()) {
                                                     filteredData.populate(acc, rbacPrefix);
                                                     ControllerLogger.MGMT_OP_LOGGER.tracef("Populated local filtered data " +
                                                             "with remote access control headers %s from result item %s", acc, rr);
@@ -705,7 +705,7 @@ public class GlobalOperationHandlers {
                                         if (headers.asInt() > 0) {
                                             nr.get(RESPONSE_HEADERS).set(headers);
                                         }
-                                        if (acc.isDefined()) {
+                                        if (acc != null && acc.isDefined()) {
                                             filteredData.populate(acc, PathAddress.EMPTY_ADDRESS);
                                             ControllerLogger.MGMT_OP_LOGGER.tracef("Populated local filtered data " +
                                                     "with remote access control headers %s from result item %s", acc, resultItem);
