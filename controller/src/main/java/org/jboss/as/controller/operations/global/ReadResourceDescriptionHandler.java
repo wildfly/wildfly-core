@@ -753,7 +753,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                                                                                         resource,
                                                                                         currentElement.getKey());
                 Set<String> childNames = childAddresses.get(currentElement.getKey());
-                if (childNames != null) {
+                if (childNames != null && childNames.size() > 0) {
                     for (String name : childNames) {
                         PathAddress address = currentAddress.append(PathElement.pathElement(currentElement.getKey(), name));
                         if (addParentResource(context, addresses, address)) {
@@ -764,6 +764,11 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                             }
                         }
                     }
+                } else {
+                    //There are no children, but for access control exception purposes,
+                    // add what we have so far along with the remainder of the child
+                    PathAddress addr = currentAddress.append(opAddress.subAddress(currentAddress.size()));
+                    addresses.add(addr);
                 }
             } else {
                 PathAddress address = currentAddress.append(currentElement);
