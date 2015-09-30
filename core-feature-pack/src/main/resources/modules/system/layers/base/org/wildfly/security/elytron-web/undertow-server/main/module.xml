@@ -31,5 +31,6 @@
     <dependencies>
         <module name="org.wildfly.security.elytron"/>
         <module name="io.undertow.core"/>
+        <module name="org.wildfly.common" />
     </dependencies>
 </module>

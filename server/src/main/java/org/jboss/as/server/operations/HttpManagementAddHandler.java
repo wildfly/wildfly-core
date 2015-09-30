@@ -63,7 +63,6 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.server.SecurityDomainHttpConfiguration;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -150,11 +149,9 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         String httpServerAuthentication = commonPolicy.getHttpServerAuthentication();
         String securityRealm = commonPolicy.getSecurityRealm();
         if (httpServerAuthentication != null) {
-            // TODO This is just temporary until the http-server-authentication is actually used for Undertow.
-            InjectedValue<SecurityDomainHttpConfiguration> httpServerAuthInjector = new InjectedValue<>();
             undertowBuilder.addDependency(context.getCapabilityServiceName(
                     buildDynamicCapabilityName(HTTP_SERVER_AUTHENTICATION_CAPABILITY, httpServerAuthentication),
-                    SecurityDomainHttpConfiguration.class), SecurityDomainHttpConfiguration.class, httpServerAuthInjector);
+                    SecurityDomainHttpConfiguration.class), SecurityDomainHttpConfiguration.class, undertowService.getHttpServerAuthenticationInjector());
         } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(undertowBuilder, undertowService.getSecurityRealmInjector(), securityRealm, false);
         } else {

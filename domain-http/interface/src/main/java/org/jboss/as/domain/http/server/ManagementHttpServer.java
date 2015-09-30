@@ -56,6 +56,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
@@ -66,6 +67,7 @@ import org.jboss.as.domain.http.server.logging.HttpServerLogger;
 import org.jboss.as.domain.http.server.security.AnonymousMechanism;
 import org.jboss.as.domain.http.server.security.AuthenticationMechanismWrapper;
 import org.jboss.as.domain.http.server.security.DmrFailureReadinessHandler;
+import org.jboss.as.domain.http.server.security.ElytronSubjectDoAsHandler;
 import org.jboss.as.domain.http.server.security.LogoutHandler;
 import org.jboss.as.domain.http.server.security.RealmIdentityManager;
 import org.jboss.as.domain.http.server.security.RedirectReadinessHandler;
@@ -76,7 +78,10 @@ import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
-import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
+import org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler;
+import org.wildfly.security.auth.server.SecurityDomainHttpConfiguration;
+import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.xnio.BufferAllocator;
 import org.xnio.ByteBufferSlicePool;
 import org.xnio.ChannelListener;
@@ -163,7 +168,7 @@ public class ManagementHttpServer {
     }
 
     private static SSLContext getSSLContext(Builder builder) {
-        if (builder.securityDomain != null) {
+        if (builder.httpServerAuthentication != null) {
             throw new IllegalStateException("Obtaining a SSLContext from a SecurityDomain not currently supported.");
         } else if (builder.securityRealm != null) {
             return builder.securityRealm.getSSLContext();
@@ -173,7 +178,7 @@ public class ManagementHttpServer {
     }
 
     private static SslClientAuthMode getSslClientAuthMode(Builder builder) {
-        if (builder.securityDomain != null) {
+        if (builder.httpServerAuthentication != null) {
             return null;
         } else if (builder.securityRealm != null) {
             Set<AuthMechanism> supportedMechanisms = builder.securityRealm.getSupportedAuthenticationMechanisms();
@@ -280,22 +285,24 @@ public class ManagementHttpServer {
             addRedirectRedinessHandler(pathHandler, consoleHandler, builder);
         }
 
-        domainApiHandler = new SubjectDoAsHandler(domainApiHandler);
-        domainApiHandler = new BlockingHandler(domainApiHandler);
-
         domainApiHandler = secureDomainAccess(domainApiHandler, builder);
         addDmrRedinessHandler(pathHandler, domainApiHandler, builder);
         addLogoutHandler(pathHandler, builder);
     }
 
-    private static HttpHandler secureDomainAccess(final HttpHandler domainHandler, final Builder builder) {
-        if (builder.securityDomain != null) {
-            return secureDomainAccess(domainHandler, builder.securityDomain);
+    private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final Builder builder) {
+        if (builder.httpServerAuthentication != null) {
+            domainHandler = new ElytronSubjectDoAsHandler(domainHandler, builder.httpServerAuthentication.getSecurityDomain());
+            domainHandler = new ElytronRunAsHandler(domainHandler);
+            domainHandler = new BlockingHandler(domainHandler);
+            return secureDomainAccess(domainHandler, builder.httpServerAuthentication);
         } else if (builder.securityRealm != null) {
+            domainHandler = new SubjectDoAsHandler(domainHandler);
+            domainHandler = new BlockingHandler(domainHandler);
             return secureDomainAccess(domainHandler, builder.securityRealm);
         }
 
-        return domainHandler;
+        return new BlockingHandler(domainHandler);
     }
 
     private static HttpHandler secureDomainAccess(final HttpHandler domainHandler, final SecurityRealm securityRealm) {
@@ -346,7 +353,17 @@ public class ManagementHttpServer {
         return new AuthenticationMechanismWrapper(toWrap, mechanism);
     }
 
-    private static HttpHandler secureDomainAccess(final HttpHandler domainHandler, final SecurityDomain securityDomain) {
+    private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final SecurityDomainHttpConfiguration httpServerAuthentication) {
+        domainHandler = new AuthenticationCallHandler(domainHandler);
+        domainHandler = new AuthenticationConstraintHandler(domainHandler);
+        Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier = () -> {
+            List<String> mechanismNames = httpServerAuthentication.getMechanismNames();
+
+            return httpServerAuthentication.getSecurityDomain().createNewAuthenticationContext()
+                    .createHttpServerMechanisms(httpServerAuthentication.getMechanismFactory(), mechanismNames.toArray(new String[mechanismNames.size()]));
+        };
+        domainHandler = new ElytronContextAssociationHandler(domainHandler, mechanismSupplier);
+
         return domainHandler;
     }
 
@@ -362,7 +379,7 @@ public class ManagementHttpServer {
         private InetSocketAddress secureBindAddress;
         private ModelController modelController;
         private SecurityRealm securityRealm;
-        private SecurityDomain securityDomain;
+        private SecurityDomainHttpConfiguration httpServerAuthentication;
         private ControlledProcessStateService controlledProcessStateService;
         private ConsoleMode consoleMode;
         private String consoleSlot;
@@ -401,9 +418,9 @@ public class ManagementHttpServer {
             return this;
         }
 
-        public Builder setSecurityDomain(SecurityDomain securityDomain) {
+        public Builder setHttpServerAuthentication(SecurityDomainHttpConfiguration httpServerAuthentication) {
             assertNotBuilt();
-            this.securityDomain = securityDomain;
+            this.httpServerAuthentication = httpServerAuthentication;
 
             return this;
         }
@@ -422,7 +439,7 @@ public class ManagementHttpServer {
             return this;
         }
 
-        public Builder setConsoleSloe(String consoleSlot) {
+        public Builder setConsoleSlot(String consoleSlot) {
             assertNotBuilt();
             this.consoleSlot = consoleSlot;
 
