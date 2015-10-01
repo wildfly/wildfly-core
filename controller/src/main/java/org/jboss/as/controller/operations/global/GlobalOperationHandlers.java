@@ -323,7 +323,7 @@ public class GlobalOperationHandlers {
             final PathAddress aliasAddr = WildcardReadResourceDescriptionAddressHack.detachAliasAddress(context, operation);
             final PathAddress address = aliasAddr == null ? addr : aliasAddr;
 
-            execute(PathAddress.EMPTY_ADDRESS, address, context, context.getRootResourceRegistration(), false);
+            execute(PathAddress.EMPTY_ADDRESS, address, context, context.getRootResourceRegistration(), true);
             context.completeStep(new OperationContext.ResultHandler() {
                 @Override
                 public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
