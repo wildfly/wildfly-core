@@ -1,9 +1,11 @@
- _       ___ __    __________         ____ 
-| |     / (_) /___/ / ____/ /_  __   ( __ )
-| | /| / / / / __  / /_  / / / / /  / __  |
-| |/ |/ / / / /_/ / __/ / / /_/ /  / /_/ / 
-|__/|__/_/_/\__,_/_/   /_/\__, /   \____/  
-                         /____/            
+ _    _  _  _      _ ______  _           __   _____
+| |  | |(_)| |    | ||  ___|| |         /  | |  _  |
+| |  | | _ | |  __| || |_   | | _   _   `| | | |/' |
+| |/\| || || | / _` ||  _|  | || | | |   | | |  /| |
+\  /\  /| || || (_| || |    | || |_| |  _| |_\ |_/ /
+ \/  \/ |_||_| \__,_|\_|    |_| \__, |  \___/ \___/
+                                 __/ |
+                                |___/
 
 Welcome to WildFly (formerly known as JBoss Application Server)
 http://www.wildfly.org/
@@ -22,23 +24,22 @@ Key Features
 * Modular Design
 * Unified Configuration and Management
 * Distributed Domain Management
-* OSGi
 
 Release Notes
 -------------
 You can obtain the release notes here:
-TODO
+http://wildfly.org/news/
 
 Getting Started
 ---------------
-WildFly requires JDK 1.7 or later. For information regarding installation
+WildFly requires JDK 8 or later. For information regarding installation
 of the JDK, see http://www.oracle.com/technetwork/java/index.html
 
 WildFly has two modes of operation: Standalone and Domain. For more
 information regarding these modes, please refer to the documentation 
 available on the JBoss.org site:
 
-https://docs.jboss.org/author/display/AS72/Documentation
+https://docs.jboss.org/author/display/WFLY10/Documentation
 
 
 Starting a Standalone Server
@@ -47,7 +48,7 @@ A WildFly standalone server runs a single instance.
 
 <JBOSS_HOME>/bin/standalone.sh      (Unix / Linux)
 
-<JBOSS_HOME>\bin\standalone.bat     (Windows)
+<JBOSS_HOME>\bin\standalone.ps1     (Windows)
 
 
 Starting a Managed Domain
@@ -59,7 +60,7 @@ servers (two of which start automatically), all running on the localhost.
 
 <JBOSS_HOME>/bin/domain.sh      (Unix / Linux)
 
-<JBOSS_HOME>\bin\domain.bat     (Windows)
+<JBOSS_HOME>\bin\domain.ps1     (Windows)
  
 
 Accessing the Web Console
