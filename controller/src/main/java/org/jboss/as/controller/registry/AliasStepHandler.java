@@ -30,6 +30,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.registry.AliasEntry.AliasContext;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -44,8 +45,6 @@ public class AliasStepHandler implements OperationStepHandler {
         this.aliasEntry = aliasEntry;
     }
 
-
-
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         String op = operation.require(OP).asString();
@@ -53,7 +52,8 @@ public class AliasStepHandler implements OperationStepHandler {
 
         WildcardReadResourceDescriptionAddressHack.attachAliasAddress(context, operation);
 
-        PathAddress mapped = aliasEntry.convertToTargetAddress(addr);
+        AliasContext aliasContext = AliasContext.create(operation, context);
+        PathAddress mapped = aliasEntry.convertToTargetAddress(addr, aliasContext);
 
         OperationStepHandler targetHandler = context.getRootResourceRegistration().getOperationHandler(mapped, op);
         if (targetHandler == null) {
