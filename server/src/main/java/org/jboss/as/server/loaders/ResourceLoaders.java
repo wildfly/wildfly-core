@@ -114,7 +114,7 @@ public final class ResourceLoaders {
         if (root.isDirectory()) {
             return new FileResourceLoader(parent, name, root, AccessController.getContext());
         } else {
-            if (root.getName().toLowerCase(Locale.ENGLISH).endsWith(XML_SUFFIX)) {
+            if (name.toLowerCase(Locale.ENGLISH).endsWith(XML_SUFFIX)) {
                 return new SingleFileResourceLoader(name, root, parent, AccessController.getContext());
             } else {
                 if (explodeArchive(name)) {
