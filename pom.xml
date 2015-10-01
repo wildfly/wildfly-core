@@ -83,7 +83,7 @@
         <version.commons-lang>2.6</version.commons-lang>
         <version.io.undertow>1.3.0.CR2</version.io.undertow>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
-        <version.junit>4.11</version.junit>
+        <version.junit>4.12</version.junit>
         <version.log4j>1.2.16</version.log4j>
         <version.org.apache.ds>2.0.0-M15</version.org.apache.ds>
         <version.org.apache.httpcomponents.httpclient>4.5</version.org.apache.httpcomponents.httpclient>
