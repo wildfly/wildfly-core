@@ -75,7 +75,7 @@ public abstract class AliasEntry {
      */
     @Deprecated
     public PathAddress convertToTargetAddress(PathAddress aliasAddress) {
-        throw new IllegalStateException("No implementation of convertToTargetAddress");
+        throw new UnsupportedOperationException("convertToTargetAddress");
     }
 
     /**

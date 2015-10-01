@@ -112,7 +112,7 @@ public class AliasContextTestCase extends AbstractControllerTestBase {
 
         result = executeForResult(getReadResourceDescriptionOperation(PathAddress.pathAddress(ALIASED, ALIAS), true, false));
         //This ends up being in an array since no resource, ends up being main=>*
-        //Assert.assertTrue(result.hasDefined(ATTRIBUTES, "rw"));
+        Assert.assertTrue(result.hasDefined(ATTRIBUTES, "rw"));
 
         result = executeForResult(getReadResourceDescriptionOperation(PathAddress.EMPTY_ADDRESS, true, true));
         children = result.get(CHILDREN);
@@ -125,7 +125,7 @@ public class AliasContextTestCase extends AbstractControllerTestBase {
 
         result = executeForResult(getReadResourceDescriptionOperation(PathAddress.pathAddress(ALIASED, ALIAS), true, true));
         //This ends up being in an array since no resource, ends up being main=>*
-        //Assert.assertTrue(result.hasDefined(ATTRIBUTES, "rw"));
+        Assert.assertTrue(result.hasDefined(ATTRIBUTES, "rw"));
     }
 
     private ModelNode getReadResourceOperation(PathAddress addr, boolean recursive, boolean aliases) {
@@ -189,7 +189,7 @@ public class AliasContextTestCase extends AbstractControllerTestBase {
             if (op.get(OP).asString().equals(ADD)) {
                 return PathAddress.pathAddress(MAIN, op.get(TYPE.getName()).asString());
             }
-            Resource root = aliasContext.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);;
+            Resource root = aliasContext.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
             Set<String> names = root.getChildrenNames(MAIN);
             if (names.size() > 1) {
                 throw new AssertionError("There should be at most one child");
