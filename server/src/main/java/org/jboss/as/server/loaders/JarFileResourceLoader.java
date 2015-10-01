@@ -350,7 +350,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
                                 try {
                                     final File overlay = overlays.get(overlayPath);
                                     final URL overlayURL = overlay != null ? overlay.toURI().toURL() : null;
-                                    next = new JarEntryResource(jarFile, null, null, null, overlay, overlayURL);
+                                    next = new JarEntryResource(jarFile, null, overlayPath, null, overlay, overlayURL);
                                 } catch (Exception ignored) {
                                 }
                             }
