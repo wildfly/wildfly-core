@@ -336,10 +336,12 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         final Enumeration<JarEntry> entries = jarFile.entries();
         return new Iterator<Resource>() {
             private Resource next;
-
+            private Iterator<String> overlayPaths;
             public boolean hasNext() {
                 synchronized (overlays) {
-                    final Iterator<String> overlayPaths = overlays.keySet().iterator();
+                    if (overlayPaths == null) {
+                        overlayPaths = overlays.keySet().iterator();
+                    }
                     while (next == null) {
                         if (!entries.hasMoreElements() && !overlayPaths.hasNext()) {
                             return false;
