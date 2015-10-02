@@ -65,6 +65,7 @@ import org.jboss.as.controller.access.ResourceNotAddressableException;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AliasEntry;
+import org.jboss.as.controller.registry.AliasEntry.AliasContext;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -894,7 +895,8 @@ public class GlobalOperationHandlers {
                     }
                 }
             } else {
-                PathAddress target = aliasEntry.convertToTargetAddress(addr.append(element));
+                PathAddress childAddr = addr.append(element);
+                PathAddress target = aliasEntry.convertToTargetAddress(childAddr, AliasContext.create(childAddr, context));
                 PathAddress targetParent = target.subAddress(0, target.size() - 1);
                 Resource parentResource = context.readResourceFromRoot(targetParent, false);
                 if (parentResource != null) {

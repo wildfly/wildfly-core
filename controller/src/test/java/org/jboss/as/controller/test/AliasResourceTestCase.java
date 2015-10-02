@@ -816,7 +816,7 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
         }
 
         @Override
-        public PathAddress convertToTargetAddress(PathAddress addr) {
+        public PathAddress convertToTargetAddress(PathAddress addr, AliasContext aliasContext) {
             if (addr.size() < getAliasAddress().size()) {
                 throw new IllegalArgumentException("TODO i18n -  Expected an address under " + getAliasAddress() + ", was " + addr);
             }

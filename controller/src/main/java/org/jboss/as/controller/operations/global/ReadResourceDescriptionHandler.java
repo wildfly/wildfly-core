@@ -393,7 +393,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
             return registry;
         }
         //Get hold of the real registry if it was an alias
-        return root.getSubModel(aliasEntry.convertToTargetAddress(opAddr));
+        return root.getSubModel(aliasEntry.convertToTargetAddress(opAddr, AliasEntry.AliasContext.create(opAddr, context)));
     }
 
 

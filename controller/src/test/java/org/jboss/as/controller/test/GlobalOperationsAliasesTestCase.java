@@ -154,7 +154,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 PathElement.pathElement("subsystem-test"),
                 new AliasEntry(profileSub1Reg) {
                     @Override
-                    public PathAddress convertToTargetAddress(PathAddress address) {
+                    public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                         List<PathElement> list = new ArrayList<PathElement>();
                         for (PathElement element : address) {
                             if ("subsystem-test".equals(element.getKey())) {
@@ -174,7 +174,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 PathElement.pathElement("alias"),
                 new AliasEntry(profileSub1Reg) {
                     @Override
-                    public PathAddress convertToTargetAddress(PathAddress address) {
+                    public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                         List<PathElement> list = new ArrayList<PathElement>();
                         for (PathElement element : address) {
                             if ("alias".equals(element.getKey())) {
@@ -215,7 +215,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 PathElement.pathElement("service", "squatter2"),
                 new AliasEntry(squatter3Reg) {
                     @Override
-                    public PathAddress convertToTargetAddress(PathAddress address) {
+                    public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                         List<PathElement> list = new ArrayList<PathElement>();
                         for (PathElement element : address) {
                             if ("service".equals(element.getKey()) && "squatter2".equals(element.getValue())) {
@@ -231,7 +231,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 PathElement.pathElement("alias", "squatter1"),
                 new AliasEntry(squatter1Reg) {
                     @Override
-                    public PathAddress convertToTargetAddress(PathAddress address) {
+                    public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                         List<PathElement> list = new ArrayList<PathElement>();
                         for (PathElement element : address) {
                             if ("alias".equals(element.getKey()) && "squatter1".equals(element.getValue())) {
@@ -306,7 +306,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 new SimpleResourceDefinition(PathElement.pathElement("squatter", "one"), new NonResolvingResourceDescriptionResolver()));
         profileESub7TypeReg.registerAlias(PathElement.pathElement("squatter-alias", "ONE"), new AliasEntry(profileESub7TypeSquatterOneReg) {
             @Override
-            public PathAddress convertToTargetAddress(PathAddress address) {
+            public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                 List<PathElement> list = new ArrayList<PathElement>();
                 final PathElement alias = getAliasAddress().getLastElement();
                 for (PathElement element : address) {
@@ -324,7 +324,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 new SimpleResourceDefinition(PathElement.pathElement("wildcard"), new NonResolvingResourceDescriptionResolver()));
         profileESub7TypeReg.registerAlias(PathElement.pathElement("wildcard-alias"), new AliasEntry(profileESub7TypeWildcardReg) {
             @Override
-            public PathAddress convertToTargetAddress(PathAddress address) {
+            public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                 List<PathElement> list = new ArrayList<PathElement>();
                 final PathElement alias = getAliasAddress().getLastElement();
                 for (PathElement element : address) {
