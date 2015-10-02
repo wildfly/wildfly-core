@@ -512,7 +512,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         // cancellation of the management op by using a separate thread to send
         final CountDownLatch latch = new CountDownLatch(1);
         final IOExceptionHolder exceptionHolder = new IOExceptionHolder();
-        context.executeAsync(new AsyncTask<TransactionalProtocolOperationHandler.ExecuteRequestContext>() {
+        boolean accepted = context.executeAsync(new AsyncTask<TransactionalProtocolOperationHandler.ExecuteRequestContext>() {
 
             @Override
             public void execute(final ManagementRequestContext<ExecuteRequestContext> context) throws Exception {
@@ -536,13 +536,15 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                 }
             }
         }, false);
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        if (exceptionHolder.exception != null) {
-            throw exceptionHolder.exception;
+        if (accepted) {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            if (exceptionHolder.exception != null) {
+                throw exceptionHolder.exception;
+            }
         }
     }
 

@@ -282,7 +282,7 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
             final CountDownLatch latch = new CountDownLatch(1);
             final IOExceptionHolder exceptionHolder = new IOExceptionHolder();
 
-            responseContext.executeAsync(new ManagementRequestContext.AsyncTask<Void>() {
+            boolean accepted = responseContext.executeAsync(new ManagementRequestContext.AsyncTask<Void>() {
 
                 @Override
                 public void execute(final ManagementRequestContext<Void> context) throws Exception {
@@ -304,15 +304,17 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
                 }
             }, false);
 
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            if (exceptionHolder.exception != null) {
-                resultHandler.failed(exceptionHolder.exception);
-            } else {
-                resultHandler.done(result);
+            if (accepted) {
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                if (exceptionHolder.exception != null) {
+                    resultHandler.failed(exceptionHolder.exception);
+                } else {
+                    resultHandler.done(result);
+                }
             }
         }
 
