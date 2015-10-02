@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -802,7 +803,10 @@ public class GlobalOperationHandlers {
                 // It's possible this is a remote failure, in which case we
                 // don't get ResourceNotAddressableException. So see if
                 // it was due to any authorization denial
-                ModelNode toAuthorize = Util.createEmptyOperation(READ_RESOURCE_OPERATION, base);
+
+                ModelNode toAuthorize = operation.clone();
+                operation.get(OP).set(READ_RESOURCE_DESCRIPTION_OPERATION);
+                operation.get(OP_ADDR).set(base.toModelNode());
                 AuthorizationResult.Decision decision = context.authorize(toAuthorize, EnumSet.of(Action.ActionEffect.ADDRESS)).getDecision();
                 ControllerLogger.MGMT_OP_LOGGER.tracef("Caught NoSuchResourceException in remote execution from %s. Authorization decision is %s", proxyHandler, decision);
                 if (decision == AuthorizationResult.Decision.DENY) {
