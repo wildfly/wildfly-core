@@ -285,7 +285,7 @@ fi
 # Display our environment
 echo "========================================================================="
 echo ""
-echo "  WildFly Bootstrap Environment"
+echo "  JBoss Bootstrap Environment"
 echo ""
 echo "  JBOSS_HOME: $JBOSS_HOME"
 echo ""

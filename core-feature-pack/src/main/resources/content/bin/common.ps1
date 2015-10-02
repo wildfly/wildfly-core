@@ -45,7 +45,7 @@ Function String-To-Array($value) {
   	return $res
   }
   $tmpArr = $value.split()
-  
+
   foreach ($str in $tmpArr) {
     if ($str) {
 	  $res += $str
@@ -54,7 +54,7 @@ Function String-To-Array($value) {
   return $res
 }
 
-Function Display-Environment { 
+Function Display-Environment {
 $JAVA_OPTS = Get-Java-Opts
 # Display our environment
 Write-Host "================================================================================="
@@ -102,7 +102,7 @@ Param(
    [string]$logFileProperties = "$JBOSS_CONFIG_DIR/logging.properties",
    [string]$logFile = "$JBOSS_LOG_DIR/server.log",
    [string[]]$serverOpts
-   
+
 
 ) #end param
   $JAVA_OPTS = Get-Java-Opts #takes care of looking at defind settings and/or using env:JAVA_OPTS
@@ -110,10 +110,17 @@ Param(
   $PROG_ARGS = @()
   if ($JAVA_OPTS -ne $null){
   	$PROG_ARGS += $JAVA_OPTS
-  }  
-  $PROG_ARGS += "-Dorg.jboss.boot.log.file=$logFile"
-  $PROG_ARGS += "-Dlogging.configuration=file:$logFileProperties"
+  }
+  if ($logFile){
+  	$PROG_ARGS += "-Dorg.jboss.boot.log.file=$logFile"
+  }
+  if ($logFileProperties){
+  	$PROG_ARGS += "-Dlogging.configuration=file:$logFileProperties"
+  }
   $PROG_ARGS += "-Djboss.home.dir=$JBOSS_HOME"
+  $PROG_ARGS += "-Djboss.server.base.dir=$global:JBOSS_BASE_DIR"
+  $PROG_ARGS += "-Djboss.server.config.dir=$global:JBOSS_CONFIG_DIR"
+
   $PROG_ARGS += "-jar"
   $PROG_ARGS += "$JBOSS_HOME\jboss-modules.jar"
   if ($MODULE_OPTS -ne $null){
@@ -131,7 +138,7 @@ Param(
 Function Process-Script-Parameters {
 Param(
    [Parameter(Mandatory=$false)]
-   [string[]]$Params   
+   [string[]]$Params
 
 ) #end param
     $res = @()
@@ -162,7 +169,7 @@ Function Start-WildFly-Process {
  Param(
    [Parameter(Mandatory=$true)]
    [string[]] $programArguments,
-   [boolean] $runInBackground = $false   
+   [boolean] $runInBackground = $false
 
 ) #end param
 
@@ -179,19 +186,23 @@ Function Start-WildFly-Process {
 		}
 	}
 
-	if($runInBackground) {	
+	if($runInBackground) {
 		$process = Start-Process -FilePath $JAVA -ArgumentList $programArguments -NoNewWindow -RedirectStandardOutput $global:CONSOLE_LOG -WorkingDirectory $JBOSS_HOME -PassThru
 		$processId = $process.Id;
-		echo "Started process in background, process id: $processId" 
+		echo "Started process in background, process id: $processId"
 		if ($JBOSS_PIDFILE -ne $null){
-			$processId >> $JBOSS_PIDFILE  	
+			$processId >> $JBOSS_PIDFILE
 		}
 	} else {
 		try{
 			pushd $JBOSS_HOME
 			& $JAVA $programArguments
+			if ($LastExitCode -eq 10){ # :shutdown(restart=true) was called
+				Start-WildFly-Process -programArguments $programArguments
+			}
+
 		}finally{
-			popd			
+			popd
 		}
 	}
 	Env-Clean-Up
@@ -205,13 +216,13 @@ PARAM(
 
 	# determine the default base dir, if not set
 	$global:JBOSS_BASE_DIR = $baseDir;
-	
+
 	# determine the default log dir, if not set
 	$global:JBOSS_LOG_DIR = Get-Env JBOSS_LOG_DIR $JBOSS_BASE_DIR\log
-	
+
 	# determine the default configuration dir, if not set
 	$global:JBOSS_CONFIG_DIR = Get-Env JBOSS_CONFIG_DIR $JBOSS_BASE_DIR\configuration
-	
+
 	$global:CONSOLE_LOG = $JBOSS_LOG_DIR + '\console.log'
 }
 
@@ -222,7 +233,7 @@ Function Set-Global-Variables-Standalone {
 
 Function Set-Global-Variables-Domain {
 	$dir = Get-Env JBOSS_BASE_DIR $JBOSS_HOME\domain
-	Set-Global-Variables -baseDir $dir	
+	Set-Global-Variables -baseDir $dir
 }
 
 Function Env-Clean-Up {
@@ -230,9 +241,9 @@ Function Env-Clean-Up {
 }
 
 Function Rotate-GC-Logs {
-	mv -ErrorAction SilentlyContinue $JBOSS_LOG_DIR/gc.log.0 $JBOSS_LOG_DIR/backupgc.log.0 
-	mv -ErrorAction SilentlyContinue $JBOSS_LOG_DIR/gc.log.1 $JBOSS_LOG_DIR/backupgc.log.1 
-	mv -ErrorAction SilentlyContinue $JBOSS_LOG_DIR/gc.log.2 $JBOSS_LOG_DIR/backupgc.log.2 
+	mv -ErrorAction SilentlyContinue $JBOSS_LOG_DIR/gc.log.0 $JBOSS_LOG_DIR/backupgc.log.0
+	mv -ErrorAction SilentlyContinue $JBOSS_LOG_DIR/gc.log.1 $JBOSS_LOG_DIR/backupgc.log.1
+	mv -ErrorAction SilentlyContinue $JBOSS_LOG_DIR/gc.log.2 $JBOSS_LOG_DIR/backupgc.log.2
 	mv -ErrorAction SilentlyContinue $JBOSS_LOG_DIR/gc.log.3 $JBOSS_LOG_DIR/backupgc.log.3
 	mv -ErrorAction SilentlyContinue $JBOSS_LOG_DIR/gc.log.4 $JBOSS_LOG_DIR/backupgc.log.4
 	mv -ErrorAction SilentlyContinue $JBOSS_LOG_DIR/gc.log.*.current $JBOSS_LOG_DIR/backupgc.log.current
@@ -241,7 +252,7 @@ Function Rotate-GC-Logs {
 Function Check-For-GC-Log {
 	if ($global:GC_LOG){
 		$args = (,'-verbose:gc',"-Xloggc:$JBOSS_LOG_DIR/gc.log","-XX:+PrintGCDetails","-XX:+PrintGCDateStamps","-XX:+UseGCLogFileRotation","-XX:NumberOfGCLogFiles=5","-XX:GCLogFileSize=3M","-XX:-TraceClassUnloading",'-version')
-		$OutputVariable = (&$JAVA $args )  | Out-String		
+		$OutputVariable = (&$JAVA $args )  | Out-String
 	}
 }
 
@@ -261,7 +272,8 @@ if((Test-Path env:JBOSS_HOME) -and (Test-Path (Get-Item env:JBOSS_HOME))) {# che
 # Setup the JVM
 if (!(Test-Path env:JAVA)) {
   if( Test-Path env:JAVA_HOME) {
-    $JAVA = (Get-ChildItem env:JAVA_HOME).Value + "\bin\java"
+	$JAVA_HOME = (Get-ChildItem env:JAVA_HOME).Value
+	$JAVA = $JAVA_HOME + "\bin\java.exe"
   } else {
     $JAVA = 'java'
   }
@@ -276,4 +288,3 @@ Set-Global-Variables-Standalone
 $JBOSS_PIDFILE = Get-Env JBOSS_PIDFILE $SCRIPTS_HOME\process.pid
 
 [Environment]::SetEnvironmentVariable("JBOSS_HOME", $JBOSS_HOME, "Process")
-#$Env:JBOSS_HOME=$JBOSS_HOME

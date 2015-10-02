@@ -43,12 +43,13 @@ $JAVA_OPTS += '-Xms64M'
 $JAVA_OPTS += '-Xmx512M'
 
 # Reduce the RMI GCs to once per hour for Sun JVMs.
-$JAVA_OPTS += '-Dsun.rmi.dgc.client.gcInterval=3600000'
-$JAVA_OPTS += '-Dsun.rmi.dgc.server.gcInterval=3600000'
+#$JAVA_OPTS += '-Dsun.rmi.dgc.client.gcInterval=3600000'
+#$JAVA_OPTS += '-Dsun.rmi.dgc.server.gcInterval=3600000'
+# prefer ipv4 stack
 $JAVA_OPTS += '-Djava.net.preferIPv4Stack=true'
 
 # Warn when resolving remote XML DTDs or schemas.
-$JAVA_OPTS += '-Dorg.jboss.resolver.warning=true'
+# $JAVA_OPTS += '-Dorg.jboss.resolver.warning=true'
 
 # Make Byteman classes visible in all module loaders
 # This is necessary to inject Byteman rules into AS7 deployments
