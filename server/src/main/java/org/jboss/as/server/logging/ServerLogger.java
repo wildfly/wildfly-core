@@ -920,7 +920,7 @@ public interface ServerLogger extends BasicLogger {
     DeploymentUnitProcessingException deploymentStructureFileNotFound(File file);
 
     @Message(id = 168, value = "Error loading jboss-deployment-structure.xml from %s")
-    DeploymentUnitProcessingException errorLoadingDeploymentStructureFile(String path, @Cause XMLStreamException cause);
+    DeploymentUnitProcessingException errorLoadingDeploymentStructureFile(String path, @Cause Exception cause);
 
     @Message(id = 169, value = "Sub deployment '%s' is listed twice in jboss-deployment-structure.xml")
     XMLStreamException duplicateSubdeploymentListing(String name);
