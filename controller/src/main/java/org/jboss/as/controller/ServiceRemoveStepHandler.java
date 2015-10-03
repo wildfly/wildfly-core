@@ -22,6 +22,10 @@
 
 package org.jboss.as.controller;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -39,7 +43,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
     private static final RuntimeCapability[] NO_CAPABILITIES = new RuntimeCapability[0];
     private final ServiceName baseServiceName;
     private final AbstractAddStepHandler addOperation;
-    private final RuntimeCapability[] unavailableCapabilities;
+    private final Set<RuntimeCapability> unavailableCapabilities;
 
     /**
      * Creates a {@code ServiceRemoveStepHandler}.
@@ -52,7 +56,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
         super(unavailableCapabilities);
         this.baseServiceName = baseServiceName;
         this.addOperation = addOperation;
-        this.unavailableCapabilities = unavailableCapabilities;
+        this.unavailableCapabilities = new LinkedHashSet<>(Arrays.asList(unavailableCapabilities));
     }
 
     /**
@@ -103,7 +107,9 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
                 context.removeService(serviceName(name, address));
             }
 
-            for (RuntimeCapability<?> capability : unavailableCapabilities) {
+            Set<RuntimeCapability> capabilitySet = unavailableCapabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : unavailableCapabilities;
+
+            for (RuntimeCapability<?> capability : capabilitySet) {
                 if (capability.getCapabilityServiceValueType() != null) {
                     ServiceName sname;
                     if (capability.isDynamicallyNamed()) {
