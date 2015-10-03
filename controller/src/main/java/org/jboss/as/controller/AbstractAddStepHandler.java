@@ -271,9 +271,9 @@ public class AbstractAddStepHandler implements OperationStepHandler {
 
         for (RuntimeCapability capability : capabilitySet) {
             if (capability.isDynamicallyNamed()) {
-                context.registerCapability(capability.fromBaseCapability(context.getCurrentAddressValue()), null);
+                context.registerCapability(capability.fromBaseCapability(context.getCurrentAddressValue()));
             } else {
-                context.registerCapability(capability, null);
+                context.registerCapability(capability);
             }
         }
 
