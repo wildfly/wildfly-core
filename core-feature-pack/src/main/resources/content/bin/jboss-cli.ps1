@@ -114,7 +114,6 @@ echo ""
 
 $PROG_ARGS = @()
 $PROG_ARGS += $JAVA_OPTS
-$PROG_ARGS += "-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR/boot.log"
 $PROG_ARGS += "-Dlogging.configuration=file:$JBOSS_CONFIG_DIR/logging.properties"
 $PROG_ARGS += "-Djboss.home.dir=$JBOSS_HOME"
 $PROG_ARGS += "-jar"
