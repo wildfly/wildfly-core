@@ -22,6 +22,17 @@
 
 package org.jboss.as.controller.operations.global;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATOR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.MapAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -42,12 +53,6 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
 
 /**
  *
@@ -97,9 +102,10 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
     @Override
     void doExecute(final OperationContext parentContext, ModelNode operation, FilteredData filteredData, boolean ignoreMissingResources) throws OperationFailedException {
 
-        WHERE_ATT.validateOperation(operation);
-        OPERATOR_ATT.validateOperation(operation);
-        SELECT_ATT.validateOperation(operation);
+        final ModelNode where = WHERE_ATT.validateOperation(operation);
+        // Use resolveModelAttribute for OPERATOR_ATT to pull out the default value
+        final Operator operator = Operator.valueOf(OPERATOR_ATT.resolveModelAttribute(parentContext, operation).asString());
+        final ModelNode select = SELECT_ATT.validateOperation(operation);
 
 
         ImmutableManagementResourceRegistration mrr = parentContext.getResourceRegistration();
@@ -114,7 +120,7 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
         readResourceOp.get(INCLUDE_RUNTIME).set(true);
 
         // filter/reduce phase
-        parentContext.addStep(operation, FilterReduceHandler.INSTANCE, OperationContext.Stage.MODEL);
+        parentContext.addStep(operation, new FilterReduceHandler(where, operator, select), OperationContext.Stage.MODEL);
 
         // map phase
         parentContext.addStep(readResourceOp, readResourceHandler, OperationContext.Stage.MODEL);
@@ -123,8 +129,18 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
 
     static class FilterReduceHandler implements OperationStepHandler {
 
-        static final FilterReduceHandler INSTANCE = new FilterReduceHandler();
         private static final String UNDEFINED = "undefined";
+
+        private final ModelNode filter;
+        private final Operator operator;
+        private final ModelNode select;
+
+        FilterReduceHandler(final ModelNode filter, final Operator operator, final ModelNode select) {
+            this.filter = filter;
+            this.operator = operator;
+            this.select = select;
+        }
+
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -133,31 +149,12 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
                     new OperationContext.ResultHandler() {
                         @Override
                         public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                            if(operation.hasDefined(WHERE)) {
-
+                            if (context.hasResult() || filter.isDefined()) {
+                                ModelNode result = context.getResult();
                                 try {
-                                    Operator operator = operation.hasDefined(OPERATOR) ? Operator.valueOf(operation.get(OPERATOR).asString()) : Operator.AND;
-                                    boolean matches = matchesFilter(context.getResult(), operation.get(WHERE), operator);
-                                    // if the filter doesn't match we remove it from the response
-                                    if(!matches)
-                                        context.getResult().set(new ModelNode());
-                                } catch (Throwable t) {
-                                    context.getFailureDescription().set(t.getMessage());
-                                    context.setRollbackOnly();
-                                }
-
-                            }
-
-                            if( operation.hasDefined(SELECT)
-                                    && context.hasResult()
-                                    && context.getResult().isDefined() // exclude empty model nodes
-                                    ){
-                                try {
-                                    ModelNode reduced = reduce(context.getResult(), operation.get(SELECT));
-                                    context.getResult().set(reduced);
+                                    filterAndReduce(filter, operator, select, result);
                                 } catch (OperationFailedException e) {
                                     context.getFailureDescription().set(e.getMessage());
-                                    context.setRollbackOnly();
                                 }
                             }
 
@@ -167,7 +164,28 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
 
         }
 
-        private static boolean matchesFilter(final ModelNode resource, final ModelNode filter, final Operator operator) {
+        private static void filterAndReduce(final ModelNode filter, final Operator operator, final ModelNode select, final ModelNode result) throws OperationFailedException {
+
+            assert result != null;
+
+            if(filter.isDefined()) {
+                boolean matches = matchesFilter(result, filter, operator);
+                // if the filter doesn't match we remove it from the response
+                if(!matches) {
+                    result.set(new ModelNode());
+                }
+            }
+
+            if( select.isDefined()
+                    && result.isDefined() // exclude empty model nodes
+                    ){
+                ModelNode reduced = reduce(result, select);
+                result.set(reduced);
+            }
+
+        }
+
+        private static boolean matchesFilter(final ModelNode resource, final ModelNode filter, final Operator operator) throws OperationFailedException {
             boolean isMatching = false;
             List<Property> filterProperties = filter.asPropertyList();
             List<Boolean> matches = new ArrayList<>(filterProperties.size());
@@ -205,7 +223,7 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
                                 isEqual = filterValue.equals(resource.get(filterName));
                         }
                     } catch (IllegalArgumentException e) {
-                        throw ControllerLogger.MGMT_OP_LOGGER.validationFailedCouldNotConvertParamToType(filterName, targetValueType, "");
+                        throw ControllerLogger.MGMT_OP_LOGGER.selectFailedCouldNotConvertAttributeToType(filterName, targetValueType);
                     }
 
                 }
@@ -230,6 +248,7 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
                 }
             }
             else {
+                // This is just to catch programming errors where a new case isn't added above
                 throw new IllegalArgumentException(
                         ControllerLogger.MGMT_OP_LOGGER.invalidValue(
                                 operator.toString(),
@@ -243,7 +262,7 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
             return isMatching;
         }
 
-        private ModelNode reduce(final ModelNode payload, final ModelNode attributes) throws OperationFailedException {
+        private static ModelNode reduce(final ModelNode payload, final ModelNode attributes) throws OperationFailedException {
 
             ModelNode outcome = new ModelNode();
 
