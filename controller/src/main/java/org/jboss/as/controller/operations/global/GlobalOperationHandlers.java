@@ -778,7 +778,10 @@ public class GlobalOperationHandlers {
 
         @Override
         protected boolean authorize(OperationContext context, PathAddress base, ModelNode operation) {
-            context.readResource(base, false);
+//            if (base.size() > 0) {
+                //We should always be able to read the root resource
+                context.readResource(base, false);
+//            }
             //An exception will happen if not allowed
             return true;
         }

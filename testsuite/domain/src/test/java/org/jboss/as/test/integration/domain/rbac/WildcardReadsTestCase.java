@@ -73,7 +73,7 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
         testSupport = FullRbacProviderTestSuite.createSupport(WildcardReadsTestCase.class.getSimpleName());
         masterClientConfig = testSupport.getDomainMasterConfiguration();
         DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
-        UserRolesMappingServerSetupTask.StandardUsersSetup.INSTANCE.setup(domainClient);
+        RBACProviderHostScopedRolesTestCase.HostRolesMappingSetup.StandardUsersSetup.INSTANCE.setup(domainClient);
         AbstractServerGroupScopedRolesTestCase.setupRoles(domainClient);
         RBACProviderServerGroupScopedRolesTestCase.ServerGroupRolesMappingSetup.INSTANCE.setup(domainClient);
         AbstractHostScopedRolesTestCase.setupRoles(domainClient);
@@ -149,11 +149,20 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
     }
 
     @Test
-    public void testHostScopedRole() throws IOException {
-        ModelControllerClient client = getClientForUser(AbstractHostScopedRolesTestCase.MAINTAINER_USER, false, masterClientConfig);
+    public void testMasterHostScopedRole() throws IOException {
+        testHostScopedRole(AbstractHostScopedRolesTestCase.MAINTAINER_USER, "master", "master-a");
+    }
+
+    @Test
+    public void testSlaveHostScopedRole() throws IOException {
+        testHostScopedRole(AbstractHostScopedRolesTestCase.SLAVE_MAINTAINER_USER, "slave", "slave-b");
+    }
+
+    private void testHostScopedRole(final String user, final String host, final String server) throws IOException {
+        ModelControllerClient client = getClientForUser(user, false, masterClientConfig);
 
         ModelNode op = createOpNode("host=*/server=*/subsystem=1/rbac-constrained=*", READ_RESOURCE_OPERATION);
-        configureRoles(op, new String[]{AbstractHostScopedRolesTestCase.MAINTAINER_USER});
+        configureRoles(op, new String[]{user});
         ModelNode response = RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
 
         ModelNode result = response.get(RESULT);
@@ -163,10 +172,10 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
         assertTrue(response.toString(), response.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL));
         checkFilteredChildrenType(response, PathAddress.EMPTY_ADDRESS, HOST);
 
-        validateConstrainedResponse(response, "master", "master-a");
+        validateConstrainedResponse(response, host, server);
 
         op = createOpNode("host=*/server=*/subsystem=1/rbac-sensitive=*", READ_RESOURCE_OPERATION);
-        configureRoles(op, new String[]{AbstractHostScopedRolesTestCase.MAINTAINER_USER});
+        configureRoles(op, new String[]{user});
         response = RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
 
         // Result should be an empty list as we can't read any of these.
@@ -176,13 +185,13 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
 
         assertTrue(response.toString(), response.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL));
         checkFilteredChildrenType(response, PathAddress.EMPTY_ADDRESS, HOST);
-        checkFilteredChildrenType(response, PathAddress.pathAddress(PathElement.pathElement(HOST, "master"),
-                        PathElement.pathElement(RUNNING_SERVER, "master-a"), PathElement.pathElement(SUBSYSTEM, "1")),
+        checkFilteredChildrenType(response, PathAddress.pathAddress(PathElement.pathElement(HOST, host),
+                        PathElement.pathElement(RUNNING_SERVER, server), PathElement.pathElement(SUBSYSTEM, "1")),
                 "rbac-sensitive");
 
         op = createOpNode("host=*/server=*/subsystem=1", READ_RESOURCE_OPERATION);
         op.get(RECURSIVE).set(true);
-        configureRoles(op, new String[]{MAINTAINER_USER});
+        configureRoles(op, new String[]{user});
         response = RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
 
         result = response.get(RESULT);
@@ -191,15 +200,15 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
 
         assertTrue(response.toString(), response.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL));
         checkFilteredChildrenType(response, PathAddress.EMPTY_ADDRESS, HOST);
-        checkFilteredChildrenType(response, PathAddress.pathAddress(PathElement.pathElement(HOST, "master"),
-                        PathElement.pathElement(RUNNING_SERVER, "master-a"), PathElement.pathElement(SUBSYSTEM, "1")),
+        checkFilteredChildrenType(response, PathAddress.pathAddress(PathElement.pathElement(HOST, host),
+                        PathElement.pathElement(RUNNING_SERVER, server), PathElement.pathElement(SUBSYSTEM, "1")),
                 "rbac-sensitive");
 
-        validateSensitiveResponse(response, "master", "master-a");
+        validateSensitiveResponse(response, host, server);
 
         // Now just read the root, to prove that's handled even when some hosts aren't allowed
         op = createOpNode("host=*", READ_RESOURCE_OPERATION);
-        configureRoles(op, new String[]{MAINTAINER_USER});
+        configureRoles(op, new String[]{user});
         response = RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
 
         result = response.get(RESULT);
@@ -209,10 +218,10 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
         assertTrue(response.toString(), response.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL));
         checkFilteredChildrenType(response, PathAddress.EMPTY_ADDRESS, HOST);
 
-        ModelNode resultItem = getResultItem(response, PathAddress.pathAddress(HOST, "master"));
+        ModelNode resultItem = getResultItem(response, PathAddress.pathAddress(HOST, host));
         assertTrue(resultItem.toString(), resultItem.hasDefined(RESULT));
         assertTrue(resultItem.toString(), resultItem.get(RESULT).keys().contains(MANAGEMENT_MAJOR_VERSION));
-        assertEquals(resultItem.toString(), "master", resultItem.get(RESULT, NAME).asString());
+        assertEquals(resultItem.toString(),host, resultItem.get(RESULT, NAME).asString());
     }
 
     @Test
