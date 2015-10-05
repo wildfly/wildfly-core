@@ -69,13 +69,19 @@ public class AliasContextTestCase extends AbstractControllerTestBase {
 
     @Test
     public void testReadResource() throws Exception {
+        ModelNode result = executeForResult(getReadResourceOperation(PathAddress.EMPTY_ADDRESS, true, true));
+        ModelNode expected = new ModelNode();
+        expected.get(MAIN);
+        expected.get(ALIASED);
+        Assert.assertEquals(expected, result);
+
         ModelNode add = Util.createAddOperation(PathAddress.pathAddress(ALIASED, ALIAS));
         add.get(READ_WRITE.getName()).set("RW");
         add.get(TYPE.getName()).set("one");
         executeCheckNoFailure(add);
 
-        ModelNode result = executeForResult(getReadResourceOperation(PathAddress.EMPTY_ADDRESS, true, false));
-        ModelNode expected = new ModelNode();
+        result = executeForResult(getReadResourceOperation(PathAddress.EMPTY_ADDRESS, true, false));
+        expected = new ModelNode();
         expected.get(MAIN).get("one").get("rw").set("RW");
         Assert.assertEquals(expected, result);
 
@@ -97,7 +103,10 @@ public class AliasContextTestCase extends AbstractControllerTestBase {
 
         executeCheckNoFailure(Util.createRemoveOperation(PathAddress.pathAddress(ALIASED, ALIAS)));
         result = executeForResult(getReadResourceOperation(PathAddress.EMPTY_ADDRESS, true, true));
-        System.out.println(result);
+        expected = new ModelNode();
+        expected.get(MAIN);
+        expected.get(ALIASED);
+        Assert.assertEquals(expected, result);
     }
 
     @Test
