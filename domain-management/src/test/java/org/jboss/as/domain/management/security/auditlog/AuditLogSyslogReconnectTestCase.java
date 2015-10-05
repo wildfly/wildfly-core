@@ -49,7 +49,7 @@ public class AuditLogSyslogReconnectTestCase extends AbstractAuditLogHandlerTest
 
     @Test
     public void testAutoReconnect() throws Exception {
-        final int timeoutSeconds = 2;
+        final int timeoutSeconds = 5;
         ModelNode op = createAddSyslogHandlerTcpOperation("syslog", "test-formatter", InetAddress.getByName("localhost"), SYSLOG_PORT, null, MessageTransfer.OCTET_COUNTING);
         op.get(STEPS).asList().get(0).get(SyslogAuditLogHandlerResourceDefinition.MAX_FAILURE_COUNT.getName()).set(3);
         op.get(STEPS).asList().get(1).get(SyslogAuditLogProtocolResourceDefinition.Tcp.RECONNECT_TIMEOUT.getName()).set(timeoutSeconds);
