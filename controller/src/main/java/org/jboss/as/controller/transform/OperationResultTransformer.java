@@ -25,7 +25,8 @@ package org.jboss.as.controller.transform;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Transformer for the operation result.
+ * Transformer for the operation response. Despite the name of this interface, the transformation
+ * is applied to the entire response node, not just any {@code result} field in that node.
  *
 * @author Emanuel Muckenhuber
 */
@@ -34,16 +35,16 @@ public interface OperationResultTransformer {
     /**
      * Transform the operation result.
      *
-     * @param result the operation result
-     * @return the transformed result
+     * @param response the operation response, including any {@code outcome}
+     * @return the transformed response
      */
-    ModelNode transformResult(ModelNode result);
+    ModelNode transformResult(ModelNode response);
 
     OperationResultTransformer ORIGINAL_RESULT = new OperationResultTransformer() {
 
         @Override
-        public ModelNode transformResult(ModelNode result) {
-            return result;
+        public ModelNode transformResult(ModelNode response) {
+            return response;
         }
 
     };
