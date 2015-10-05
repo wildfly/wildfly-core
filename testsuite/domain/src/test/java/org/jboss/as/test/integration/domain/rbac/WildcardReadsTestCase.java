@@ -30,12 +30,15 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FIL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNREADABLE_CHILDREN;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.MAINTAINER_USER;
@@ -46,6 +49,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -58,6 +63,7 @@ import org.jboss.as.test.integration.management.rbac.UserRolesMappingServerSetup
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -149,16 +155,16 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
     }
 
     @Test
-    public void testMasterHostScopedRole() throws IOException {
-        testHostScopedRole(AbstractHostScopedRolesTestCase.MAINTAINER_USER, "master", "master-a");
+    public void testMasterHostScopedRoleReadResource() throws IOException {
+        testHostScopedRoleReadResource(AbstractHostScopedRolesTestCase.MAINTAINER_USER, "master", "master-a");
     }
 
     @Test
-    public void testSlaveHostScopedRole() throws IOException {
-        testHostScopedRole(AbstractHostScopedRolesTestCase.SLAVE_MAINTAINER_USER, "slave", "slave-b");
+    public void testSlaveHostScopedRoleReadResource() throws IOException {
+        testHostScopedRoleReadResource(AbstractHostScopedRolesTestCase.SLAVE_MAINTAINER_USER, "slave", "slave-b");
     }
 
-    private void testHostScopedRole(final String user, final String host, final String server) throws IOException {
+    private void testHostScopedRoleReadResource(final String user, final String host, final String server) throws IOException {
         ModelControllerClient client = getClientForUser(user, false, masterClientConfig);
 
         ModelNode op = createOpNode("host=*/server=*/subsystem=1/rbac-constrained=*", READ_RESOURCE_OPERATION);
@@ -222,6 +228,71 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
         assertTrue(resultItem.toString(), resultItem.hasDefined(RESULT));
         assertTrue(resultItem.toString(), resultItem.get(RESULT).keys().contains(MANAGEMENT_MAJOR_VERSION));
         assertEquals(resultItem.toString(),host, resultItem.get(RESULT, NAME).asString());
+    }
+
+    @Test
+    public void testMasterHostScopedRoleReadResourceDescription() throws IOException {
+        testHostScopedRoleReadResourceDescription(AbstractHostScopedRolesTestCase.MAINTAINER_USER, "master", "master-a");
+    }
+
+    @Test
+    public void testSlaveHostScopedRoleReadResourceDescription() throws IOException {
+        testHostScopedRoleReadResourceDescription(AbstractHostScopedRolesTestCase.SLAVE_MAINTAINER_USER, "slave", "slave-b");
+    }
+
+    private void testHostScopedRoleReadResourceDescription(final String user, final String host, final String server) throws IOException {
+        ModelControllerClient client = getClientForUser(user, false, masterClientConfig);
+
+        ModelNode op = createOpNode("host=*", READ_RESOURCE_DESCRIPTION_OPERATION);
+        configureRoles(op, new String[]{user});
+        ModelNode response = RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
+
+        ModelNode result = response.get(RESULT);
+        assertEquals(result.toString(), ModelType.LIST, result.getType());
+        assertEquals(result.toString(), 1, result.asInt());
+        ModelNode entry = result.asList().get(0);
+        Assert.assertEquals(PathAddress.pathAddress(HOST, host), PathAddress.pathAddress(entry.get(ADDRESS)));
+
+
+        op = createOpNode("host=*/server-config=*", READ_RESOURCE_DESCRIPTION_OPERATION);
+        configureRoles(op, new String[]{user});
+        response = RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
+
+        result = response.get(RESULT);
+        assertEquals(result.toString(), ModelType.LIST, result.getType());
+        assertEquals(result.toString(), 1, result.asInt());
+        entry = result.asList().get(0);
+        PathAddress expected = PathAddress.pathAddress(HOST, host).append(SERVER_CONFIG, "*");
+        Assert.assertEquals(expected, PathAddress.pathAddress(entry.get(ADDRESS)));
+
+
+        op = createOpNode("host=*/server=*", READ_RESOURCE_DESCRIPTION_OPERATION);
+        configureRoles(op, new String[]{user});
+        response = RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
+
+        result = response.get(RESULT);
+        assertEquals(result.toString(), ModelType.LIST, result.getType());
+        //Servers will have an extra entry for the wildcard address, in addition the exact server address
+        assertEquals(result.toString(), 2, result.asInt());
+        Set<PathAddress> expectedServerAddresses = new HashSet<>();
+        expectedServerAddresses.add(PathAddress.pathAddress(HOST, host).append(SERVER, server));
+        expectedServerAddresses.add(PathAddress.pathAddress(HOST, host).append(SERVER, "*"));
+        entry = result.asList().get(0);
+        Assert.assertTrue(expectedServerAddresses.remove(PathAddress.pathAddress(entry.get(ADDRESS))));
+        entry = result.asList().get(1);
+        Assert.assertTrue(expectedServerAddresses.remove(PathAddress.pathAddress(entry.get(ADDRESS))));
+
+
+        op = createOpNode("host=*/server=*/subsystem=1", READ_RESOURCE_DESCRIPTION_OPERATION);
+        configureRoles(op, new String[]{user});
+        response = RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
+
+        result = response.get(RESULT);
+        assertEquals(result.toString(), ModelType.LIST, result.getType());
+        assertEquals(result.toString(), 1, result.asInt());
+        entry = result.asList().get(0);
+        Assert.assertEquals(PathAddress.pathAddress(HOST, host).append(SERVER, server).append(SUBSYSTEM, "1"),
+                PathAddress.pathAddress(entry.get(ADDRESS)));
     }
 
     @Test
