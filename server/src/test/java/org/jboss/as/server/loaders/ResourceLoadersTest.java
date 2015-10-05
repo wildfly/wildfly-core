@@ -120,7 +120,7 @@ public class ResourceLoadersTest {
     private void dumpResourceLoader(ResourceLoader loader) throws Exception {
         synchronized (System.out) {
             System.out.println("------------------------------");
-            System.out.println(loader.getRootName() + " paths: ");
+            System.out.println(loader.getRootName() + " -> " + loader.getRootURL() + " paths: ");
             Collection<String> paths = loader.getPaths();
             for (String path : paths) {
                 System.out.println(" * " + path);

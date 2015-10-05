@@ -156,6 +156,14 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         return root;
     }
 
+    public URL getRootURL() {
+        try {
+            return getRoot().toURI().toURL();
+        } catch (final MalformedURLException ignored) {
+            return null; // should never happen
+        }
+    }
+
     @Override
     public ResourceLoader getParent() {
         return parent;

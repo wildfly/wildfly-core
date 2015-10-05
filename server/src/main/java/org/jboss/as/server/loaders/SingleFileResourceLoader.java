@@ -29,6 +29,7 @@ import org.jboss.modules.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.AccessControlContext;
 import java.util.Collection;
 import java.util.Collections;
@@ -128,6 +129,11 @@ final class SingleFileResourceLoader implements ResourceLoader {
 
     @Override
     public File getRoot() {
+        return null;
+    }
+
+    @Override
+    public URL getRootURL() {
         return null;
     }
 

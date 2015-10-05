@@ -28,6 +28,7 @@ import org.jboss.modules.Resource;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -106,6 +107,11 @@ class DelegatingResourceLoader implements ResourceLoader {
     @Override
     public File getRoot() {
         return getDelegate().getRoot();
+    }
+
+    @Override
+    public URL getRootURL() {
+        return getDelegate().getRootURL();
     }
 
 }

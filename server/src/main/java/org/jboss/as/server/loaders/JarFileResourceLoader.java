@@ -159,6 +159,18 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         return fileOfJar;
     }
 
+    public URL getRootURL() {
+        try {
+            if (relativePath == null || "".equals(relativePath)) {
+                return getRoot().toURI().toURL();
+            } else {
+                return new URL("jar:" + getRoot().toURI().toURL().toString() + "!/" + relativePath);
+            }
+        } catch (final MalformedURLException ignored) {
+            return null;
+        }
+    }
+
     private static URI getJarURI(final URI original, final String nestedPath) throws URISyntaxException {
         final StringBuilder b = new StringBuilder();
         b.append("file:");

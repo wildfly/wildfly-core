@@ -3,6 +3,7 @@ package org.jboss.as.server.loaders;
 import org.jboss.modules.IterableResourceLoader;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Iterator;
 
 /**
@@ -13,6 +14,8 @@ import java.util.Iterator;
 public interface ResourceLoader extends IterableResourceLoader {
 
     File getRoot();
+
+    URL getRootURL();
 
     ResourceLoader getParent();
 

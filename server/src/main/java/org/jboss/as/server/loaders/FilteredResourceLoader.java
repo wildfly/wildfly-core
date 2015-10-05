@@ -24,6 +24,7 @@ package org.jboss.as.server.loaders;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -100,6 +101,10 @@ final class FilteredResourceLoader implements ResourceLoader {
 
     public File getRoot() {
         return loader.getRoot();
+    }
+
+    public URL getRootURL() {
+        return loader.getRootURL();
     }
 
     private static Iterator<Resource> filteredResource(final PathFilter filter, final Iterator<Resource> original) {
