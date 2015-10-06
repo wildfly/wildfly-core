@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -304,8 +305,7 @@ public class ProxyStepHandler implements OperationStepHandler {
         if (proxyController.getKernelModelVersion().getMajor() < 3 && address.size() > 1) {
             String opName = operation.get(OP).asString();
             if (READ_RESOURCE_OPERATION.equals(opName) || READ_ATTRIBUTE_OPERATION.equals(opName)
-                    /* Uncomment if WFCORE-948 is fixed
-                    || (READ_RESOURCE_DESCRIPTION_OPERATION.equals(opName) && address.size() > 2)*/) {
+                    || (READ_RESOURCE_DESCRIPTION_OPERATION.equals(opName) && address.size() >= 2)) {
                 PathElement pe = address.getElement(1);
                 return pe.isMultiTarget() && RUNNING_SERVER.equals(pe.getKey());
             }
