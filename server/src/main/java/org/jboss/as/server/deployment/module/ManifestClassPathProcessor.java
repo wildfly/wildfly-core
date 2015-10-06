@@ -293,7 +293,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             ResourceLoader loader = itemLoader;
             if(overlay != null) {
                 overlay.remountAsZip();
-                loader = ResourceLoaders.newResourceLoader(itemLoader.getRootName(), overlay.getFile(), itemLoader.getParent());
+                loader = ResourceLoaders.newResourceLoader(itemLoader.getRootName(), overlay.getFile(), relativePath, itemLoader.getParent());
             } else if(file.isFile()) {
                 closable = VFS.mountZip(file, file);
             }

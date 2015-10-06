@@ -17,6 +17,8 @@ public interface ResourceLoader extends IterableResourceLoader {
 
     URL getRootURL();
 
+    String getPath();
+
     ResourceLoader getParent();
 
     Iterator<String> iteratePaths(String startPath, boolean recursive);

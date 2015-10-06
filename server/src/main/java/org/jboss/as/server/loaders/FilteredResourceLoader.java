@@ -103,6 +103,10 @@ final class FilteredResourceLoader implements ResourceLoader {
         return loader.getRoot();
     }
 
+    public String getPath() {
+        return loader.getPath();
+    }
+
     public URL getRootURL() {
         return loader.getRootURL();
     }

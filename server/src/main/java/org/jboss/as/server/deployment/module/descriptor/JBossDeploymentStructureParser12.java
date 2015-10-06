@@ -761,7 +761,7 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
                             Closeable closable = null;
                             final ResourceLoader loader = overlay == null
                                     ? ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), path)
-                                    : ResourceLoaders.newResourceLoader(name, overlay.getFile(), deploymentRoot.getLoader());
+                                    : ResourceLoaders.newResourceLoader(name, overlay.getFile(), path, deploymentRoot.getLoader());
                             if (overlay != null) {
                                 overlay.remountAsZip();
                             } else if (child.isFile()) {

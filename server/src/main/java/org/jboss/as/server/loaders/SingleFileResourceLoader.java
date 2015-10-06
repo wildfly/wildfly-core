@@ -41,12 +41,14 @@ import java.util.Iterator;
 final class SingleFileResourceLoader implements ResourceLoader {
 
     private final String name;
+    private final String path;
     private final ResourceLoader parent;
     private final Resource resource;
 
-    SingleFileResourceLoader(final String name, final File root, final ResourceLoader parent, final AccessControlContext context) {
+    SingleFileResourceLoader(final String name, final File root, final String path, final ResourceLoader parent, final AccessControlContext context) {
         this.name = name;
         this.parent = parent;
+        this.path = path == null ? "" : path;
         try {
             resource = new FileEntryResource(name, root, root.toURI().toURL(), context);
         } catch (final MalformedURLException ignored) {
@@ -130,6 +132,11 @@ final class SingleFileResourceLoader implements ResourceLoader {
     @Override
     public File getRoot() {
         return null;
+    }
+
+    @Override
+    public String getPath() {
+        return path;
     }
 
     @Override

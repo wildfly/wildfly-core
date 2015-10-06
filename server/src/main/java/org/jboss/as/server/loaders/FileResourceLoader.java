@@ -66,6 +66,7 @@ import java.util.jar.Manifest;
 final class FileResourceLoader extends AbstractResourceLoader implements ResourceLoader {
 
     private final File root;
+    private final String path;
     private final ResourceLoader parent;
     private final String rootName;
     private final Manifest manifest;
@@ -76,7 +77,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     // protected by {@code overlays}
     private final Map<String, File> overlays = new HashMap<>();
 
-    FileResourceLoader(final ResourceLoader parent, final String rootName, final File root, final AccessControlContext context) {
+    FileResourceLoader(final ResourceLoader parent, final String rootName, final File root, final String path, final AccessControlContext context) {
         if (root == null) {
             throw new IllegalArgumentException("root is null");
         }
@@ -86,8 +87,12 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         if (context == null) {
             throw new IllegalArgumentException("context is null");
         }
+        if (parent != null && (path == null || path.equals(""))) {
+            throw new IllegalArgumentException("path cannot be null");
+        }
         this.parent = parent;
         this.root = root;
+        this.path = path == null ? "" : path;
         this.rootName = rootName;
         final File manifestFile = new File(root, "META-INF" + File.separatorChar + "MANIFEST.MF");
         manifest = readManifestFile(manifestFile);
@@ -154,6 +159,10 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
 
     public File getRoot() {
         return root;
+    }
+
+    public String getPath() {
+        return path;
     }
 
     public URL getRootURL() {

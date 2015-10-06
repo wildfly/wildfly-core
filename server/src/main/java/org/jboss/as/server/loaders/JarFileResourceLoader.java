@@ -77,26 +77,31 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     private final JarFile jarFile;
     private final String rootName;
     private final URL rootUrl;
+    private final String path;
     private final String relativePath;
     private final File fileOfJar;
 
     // protected by {@code this}
     private final Map<CodeSigners, CodeSource> codeSources = new HashMap<>();
 
-    JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile) {
-        this(parent, rootName, jarFile, null);
+    JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile, final String path) {
+        this(parent, rootName, jarFile, path, null);
     }
 
-    JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile, final String relativePath) {
+    JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile, final String path, final String relativePath) {
         if (jarFile == null) {
-            throw new IllegalArgumentException("jarFile is null");
+            throw new IllegalArgumentException("jarFile cannot be null");
         }
         if (rootName == null) {
-            throw new IllegalArgumentException("rootName is null");
+            throw new IllegalArgumentException("rootName cannot be null");
+        }
+        if (parent != null && (path == null || path.equals(""))) {
+            throw new IllegalArgumentException("path cannot be null");
         }
         fileOfJar = new File(jarFile.getName());
         this.parent = parent;
         this.jarFile = jarFile;
+        this.path = path == null ? "" : path;
         this.rootName = rootName;
         String realPath = relativePath == null ? null : PathUtils.canonicalize(relativePath);
         if (realPath != null && realPath.endsWith("/")) realPath = realPath.substring(0, realPath.length() - 1);
@@ -157,6 +162,10 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
 
     public File getRoot() {
         return fileOfJar;
+    }
+
+    public String getPath() {
+        return path;
     }
 
     public URL getRootURL() {

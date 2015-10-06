@@ -110,6 +110,11 @@ class DelegatingResourceLoader implements ResourceLoader {
     }
 
     @Override
+    public String getPath() {
+        return getDelegate().getPath();
+    }
+
+    @Override
     public URL getRootURL() {
         return getDelegate().getRootURL();
     }

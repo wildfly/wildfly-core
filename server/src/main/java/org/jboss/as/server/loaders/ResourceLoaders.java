@@ -70,7 +70,7 @@ public final class ResourceLoaders {
      * @throws IOException if some I/O error occurs
      */
     public static ResourceLoader newResourceLoader(final File root) throws IOException {
-        return newResourceLoader(root != null ? root.getName() : null, root, null);
+        return newResourceLoader(root != null ? root.getName() : null, root, null, null);
     }
 
     /**
@@ -81,7 +81,7 @@ public final class ResourceLoaders {
      * @throws IOException if some I/O error occurs
      */
     public static ResourceLoader newResourceLoader(final String name, final File root) throws IOException {
-        return newResourceLoader(name, root, null);
+        return newResourceLoader(name, root, null, null);
     }
 
     /**
@@ -91,8 +91,8 @@ public final class ResourceLoaders {
      * @return new deployment resource loader
      * @throws IOException if some I/O error occurs
      */
-    public static ResourceLoader newResourceLoader(final File root, final ResourceLoader parent) throws IOException {
-        return newResourceLoader(root != null ? root.getName() : null, root, parent);
+    public static ResourceLoader newResourceLoader(final File root, final String path, final ResourceLoader parent) throws IOException {
+        return newResourceLoader(root != null ? root.getName() : null, root, path, parent);
     }
 
     /**
@@ -103,24 +103,27 @@ public final class ResourceLoaders {
      * @return new deployment resource loader
      * @throws IOException if some I/O error occurs
      */
-    public static ResourceLoader newResourceLoader(final String name, final File root, final ResourceLoader parent) throws IOException {
+    public static ResourceLoader newResourceLoader(final String name, final File root, final String path, final ResourceLoader parent) throws IOException {
         if (root == null) {
             throw new IllegalArgumentException("Archive file cannot be null");
         }
         if (name == null || "".equals(name)) {
             throw new IllegalArgumentException("Archive name cannot be neither null nor empty string");
         }
+        if (parent != null && (path == null || path.equals(""))) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
 
         if (root.isDirectory()) {
-            return new FileResourceLoader(parent, name, root, AccessController.getContext());
+            return new FileResourceLoader(parent, name, root, path, AccessController.getContext());
         } else {
             if (name.toLowerCase(Locale.ENGLISH).endsWith(XML_SUFFIX)) {
-                return new SingleFileResourceLoader(name, root, parent, AccessController.getContext());
+                return new SingleFileResourceLoader(name, root, path, parent, AccessController.getContext());
             } else {
                 if (explodeArchive(name)) {
                     final File tempDir = new File(TMP_ROOT, getResourceName(name) + ".tmp" + System.currentTimeMillis());
                     IOUtils.unzip(root, tempDir);
-                    final FileResourceLoader newFileLoader = new FileResourceLoader(parent, name, tempDir, AccessController.getContext());
+                    final FileResourceLoader newFileLoader = new FileResourceLoader(parent, name, tempDir, path, AccessController.getContext());
                     return new DelegatingResourceLoader(newFileLoader) {
                         @Override
                         public void close() {
@@ -132,7 +135,7 @@ public final class ResourceLoaders {
                         }
                     };
                 } else {
-                    return new JarFileResourceLoader(parent, name, new JarFile(root));
+                    return new JarFileResourceLoader(parent, name, new JarFile(root), path);
                 }
             }
         }
@@ -160,7 +163,6 @@ public final class ResourceLoaders {
      * @param subresourcePath subresource path that will behave like the root of the archive
      * @return a subresource filtered view of an iterable resource loader.
      */
-    // TODO: eliminate explode
     public static ResourceLoader newResourceLoader(final String name, final ResourceLoader parent, final String subresourcePath) throws IOException {
         if (name == null || parent == null || subresourcePath == null) {
             throw new NullPointerException("Method parameter cannot be null");
@@ -188,7 +190,7 @@ public final class ResourceLoaders {
         if (paths.contains(subResPath)) {
             if (loader instanceof FileResourceLoader) {
                 final FileResourceLoader fileLoader = (FileResourceLoader) loader;
-                final FileResourceLoader newFileLoader = new FileResourceLoader(fileLoader, name, new File(fileLoader.getRoot(), subResPath), AccessController.getContext());
+                final FileResourceLoader newFileLoader = new FileResourceLoader(fileLoader, name, new File(fileLoader.getRoot(), subResPath), subResPath, AccessController.getContext());
                 fileLoader.addChild(subResPath, newFileLoader);
                 return newFileLoader;
             } else if (loader instanceof JarFileResourceLoader) {
@@ -196,7 +198,7 @@ public final class ResourceLoaders {
                 if (explodeArchive(name)) {
                     final File tempDir = new File(TMP_ROOT, getResourceName(name) + ".tmp" + System.currentTimeMillis());
                     IOUtils.unzip(parent.iterateResources(subresourcePath, true), tempDir, subresourcePath.length() + 1);
-                    final FileResourceLoader newFileLoader = new FileResourceLoader(parent, name, tempDir, AccessController.getContext());
+                    final FileResourceLoader newFileLoader = new FileResourceLoader(parent, name, tempDir, subResPath, AccessController.getContext());
                     return new DelegatingResourceLoader(newFileLoader) {
                         @Override
                         public void close() {
@@ -208,7 +210,7 @@ public final class ResourceLoaders {
                         }
                     };
                 } else {
-                    final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(jarLoader, name, new JarFile(jarLoader.getRoot()), subResPath);
+                    final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(jarLoader, name, new JarFile(jarLoader.getRoot()), subResPath, subResPath);
                     jarLoader.addChild(subResPath, newJarLoader);
                     return newJarLoader;
                 }
@@ -222,7 +224,7 @@ public final class ResourceLoaders {
             }
             if (loader instanceof FileResourceLoader) {
                 final FileResourceLoader fileLoader = (FileResourceLoader) loader;
-                final JarFileResourceLoader newLoader = new JarFileResourceLoader(loader, name, new JarFile(resource.getURL().getFile()));
+                final JarFileResourceLoader newLoader = new JarFileResourceLoader(loader, name, new JarFile(resource.getURL().getFile()), subResPath);
                 fileLoader.addChild(subResPath, newLoader);
                 return newLoader;
             } else if (loader instanceof JarFileResourceLoader) {
@@ -230,7 +232,7 @@ public final class ResourceLoaders {
                     final File tempDir = new File(TMP_ROOT, getResourceName(subResPath) + ".tmp" + System.currentTimeMillis());
                     IOUtils.unzip(resource.openStream(), tempDir);
                     final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
-                    final FileResourceLoader newFileLoader = new FileResourceLoader(loader, name, tempDir, AccessController.getContext());
+                    final FileResourceLoader newFileLoader = new FileResourceLoader(loader, name, tempDir, subResPath, AccessController.getContext());
                     jarLoader.addChild(subResPath, newFileLoader);
                     return new DelegatingResourceLoader(newFileLoader) {
                         @Override
@@ -246,7 +248,7 @@ public final class ResourceLoaders {
                     final File tempFile = new File(TMP_ROOT, getResourceName(subResPath) + ".tmp" + System.currentTimeMillis());
                     IOUtils.copyAndClose(resource.openStream(), new FileOutputStream(tempFile));
                     final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
-                    final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(loader, name, new JarFile(tempFile));
+                    final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(loader, name, new JarFile(tempFile), subResPath);
                     jarLoader.addChild(subResPath, newJarLoader);
                     return new DelegatingResourceLoader(newJarLoader) {
                         @Override
