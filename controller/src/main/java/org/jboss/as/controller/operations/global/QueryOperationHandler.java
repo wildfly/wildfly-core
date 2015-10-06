@@ -69,6 +69,7 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
     public static final PropertiesAttributeDefinition WHERE_ATT = new PropertiesAttributeDefinition.Builder(ModelDescriptionConstants.WHERE, true)
             .setCorrector(MapAttributeDefinition.LIST_TO_MAP_CORRECTOR)
             .setValidator(new StringLengthValidator(1, true, true))
+            .setAllowExpression(true)
             .build();
 
     private static final AttributeDefinition OPERATOR_ATT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.OPERATOR, ModelType.STRING)
