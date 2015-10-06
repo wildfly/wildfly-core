@@ -53,12 +53,16 @@ public final class Utils {
      * @return resource name
      */
     public static String getResourceName(final String resourcePath) {
-        if (resourcePath == null || "".equals(resourcePath)) {
+        if (resourcePath == null) {
             throw new IllegalArgumentException();
         }
-        final String canonArchivePath = PathUtils.relativize(PathUtils.canonicalize(resourcePath));
-        final int pathSeparatorIndex = canonArchivePath.lastIndexOf(PATH_SEPARATOR);
-        return pathSeparatorIndex != -1 ? canonArchivePath.substring(pathSeparatorIndex + 1) : canonArchivePath;
+        String canonPath = PathUtils.relativize(PathUtils.canonicalize(resourcePath));
+        canonPath = canonPath.endsWith("/") ? canonPath.substring(0, canonPath.length() - 1) : canonPath;
+        if (canonPath.equals("")) {
+            throw new IllegalArgumentException();
+        }
+        final int separatorIndex = canonPath.lastIndexOf(PATH_SEPARATOR);
+        return separatorIndex != -1 ? canonPath.substring(separatorIndex + 1) : canonPath;
     }
 
     /**
