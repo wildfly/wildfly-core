@@ -155,7 +155,7 @@ class OperationSlaveStepHandler {
     private void addBasicStep(OperationContext context, ModelNode operation, ModelNode localReponse) throws OperationFailedException {
         final String operationName = operation.require(OP).asString();
 
-        final OperationEntry entry = context.getResourceRegistration().getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName);
+        final OperationEntry entry = context.getRootResourceRegistration().getOperationEntry(PathAddress.pathAddress(operation.get(OP_ADDR)), operationName);
         if(entry != null) {
             if (context.isBooting() || localHostControllerInfo.isMasterDomainController()) {
                 context.addStep(localReponse, operation, entry.getOperationHandler(), OperationContext.Stage.MODEL);
