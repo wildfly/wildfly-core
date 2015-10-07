@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
-import java.util.stream.Collectors;
 
 import org.jboss.as.cli.CommandArgument;
 import org.jboss.as.cli.CommandContext;
@@ -174,7 +173,8 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
             throw new CommandFormatException("Failed to perform " + Util.READ_OPERATION_DESCRIPTION + " to validate the request: result is not available.");
         }
         final ModelNode result = outcome.get(Util.RESULT);
-        if(!result.hasDefined(Util.REQUEST_PROPERTIES)) {
+        final Set<String> definedProps = result.get(Util.REQUEST_PROPERTIES).keys();
+        if(definedProps.isEmpty()) {
             if(!(keys.size() == 3 && keys.contains(Util.OPERATION_HEADERS))) {
                 throw new CommandFormatException("Operation '" + operationName + "' does not expect any property.");
             }
@@ -184,18 +184,13 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
                     throw new CommandFormatException("Operation '" + operationName + "' does not expect any property.");
                 }
             }
-            final ModelNode definedProps = result.get(Util.REQUEST_PROPERTIES);
             int skipped = 0;
-            Set<String> missingParameters = listMissingRequiredParameters(definedProps, keys);
-            if(!missingParameters.isEmpty()) {
-                 throw new CommandFormatException("The following parameters '" + String.join(", ", missingParameters) + "' are required");
-            }
             for(String prop : keys) {
                 if(skipped < 2 && (prop.equals(Util.ADDRESS) || prop.equals(Util.OPERATION))) {
                     ++skipped;
                     continue;
                 }
-                if(!definedProps.has(prop)) {
+                if(!definedProps.contains(prop)) {
                     if(!Util.OPERATION_HEADERS.equals(prop)) {
                         throw new CommandFormatException("'" + prop + "' is not found among the supported properties: " + definedProps);
                     }
@@ -203,11 +198,6 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
             }
         }
         return outcome;
-    }
-    private Set<String> listMissingRequiredParameters(ModelNode definedProps, Set<String> keys) {
-        return definedProps.asPropertyList().stream()
-                .filter((Property prop) -> prop.getValue().hasDefined(Util.REQUIRED) && prop.getValue().get(Util.REQUIRED).asBoolean() && !keys.contains(prop.getName()))
-                .map((Property prop) -> prop.getName()).collect(Collectors.toSet());
     }
 
     // For any request params that are of type BYTES, replace the file path with the bytes from the file
