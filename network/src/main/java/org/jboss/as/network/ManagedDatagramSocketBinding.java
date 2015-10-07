@@ -41,6 +41,9 @@ public class ManagedDatagramSocketBinding extends DatagramSocket implements Mana
         super(address);
         this.name = name;
         this.registry = socketBindings;
+        if (this.isBound()) {
+            this.registry.registerBinding(this);
+        }
     }
 
     @Override
@@ -48,15 +51,21 @@ public class ManagedDatagramSocketBinding extends DatagramSocket implements Mana
         return name;
     }
 
+    @Override
     public InetSocketAddress getBindAddress() {
         return (InetSocketAddress) getLocalSocketAddress();
     }
 
+    @Override
     public synchronized void bind(SocketAddress addr) throws SocketException {
         super.bind(addr);
-        registry.registerBinding(this);
+        // This method might have been called from the super constructor
+        if (this.registry != null) {
+            this.registry.registerBinding(this);
+        }
     }
 
+    @Override
     public void close() {
         try {
             super.close();
@@ -64,6 +73,5 @@ public class ManagedDatagramSocketBinding extends DatagramSocket implements Mana
             registry.unregisterBinding(this);
         }
     }
-
 }
 
