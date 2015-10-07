@@ -173,17 +173,12 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
             throw new CommandFormatException("Failed to perform " + Util.READ_OPERATION_DESCRIPTION + " to validate the request: result is not available.");
         }
         final ModelNode result = outcome.get(Util.RESULT);
-        final Set<String> definedProps = result.get(Util.REQUEST_PROPERTIES).keys();
+        final Set<String> definedProps = result.hasDefined(Util.REQUEST_PROPERTIES) ? result.get(Util.REQUEST_PROPERTIES).keys() : Collections.emptySet();
         if(definedProps.isEmpty()) {
             if(!(keys.size() == 3 && keys.contains(Util.OPERATION_HEADERS))) {
                 throw new CommandFormatException("Operation '" + operationName + "' does not expect any property.");
             }
         } else {
-            if(!result.hasDefined(Util.REQUEST_PROPERTIES)) {
-                if(!(keys.size() == 3 && keys.contains(Util.OPERATION_HEADERS))) {
-                    throw new CommandFormatException("Operation '" + operationName + "' does not expect any property.");
-                }
-            }
             int skipped = 0;
             for(String prop : keys) {
                 if(skipped < 2 && (prop.equals(Util.ADDRESS) || prop.equals(Util.OPERATION))) {
