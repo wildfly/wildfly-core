@@ -117,14 +117,18 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
         final Subject subject = SecurityActions.getSubject();
         final ExecuteRequestContext context = new ExecuteRequestContext(new OperationWrapper<T>(listener, operation), subject, tempDir);
         final ActiveOperation<OperationResponse, ExecuteRequestContext> op = channelAssociation.initializeOperation(context, context);
+        final AtomicBoolean cancelSent = new AtomicBoolean();
         final AsyncFuture<OperationResponse> result = new AbstractDelegatingAsyncFuture<OperationResponse>(op.getResult()) {
             @Override
-            public void asyncCancel(boolean interruptionDesired) {
-                try {
-                    // Execute
-                    channelAssociation.executeRequest(op, new CompleteTxRequest(ModelControllerProtocol.PARAM_ROLLBACK, channelAssociation));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+            public synchronized void asyncCancel(boolean interruptionDesired) {
+                if (!cancelSent.get()) {
+                    try {
+                        // Execute
+                        channelAssociation.executeRequest(op, new CompleteTxRequest(ModelControllerProtocol.PARAM_ROLLBACK, channelAssociation));
+                        cancelSent.set(true);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         };
