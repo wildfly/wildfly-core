@@ -62,6 +62,7 @@ public class CliLauncher {
             int connectionTimeout = -1;
 
             final CommandContextConfiguration.Builder ctxBuilder = new CommandContextConfiguration.Builder();
+            ctxBuilder.setErrorOnInteract(errorOnInteract);
 
             for(String arg : args) {
                 if(arg.startsWith("--controller=") || arg.startsWith("controller=")) {
