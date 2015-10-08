@@ -348,7 +348,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         initJaasConfig();
         if (configuration.isInitConsole() || configuration.getConsoleInput() != null) {
             cmdCompleter = new CommandCompleter(cmdRegistry);
-            initBasicConsole(configuration.getConsoleInput());
+            // we don't ask to start the console here because it will start reading the input immediately
+            // this will break in case the launching line had input redirection and switch to connect to the controller,
+            // e.g. jboss-cli.ch -c < some_file
+            // the input will be read before the connection is established
+            initBasicConsole(configuration.getConsoleInput(), false);
             console.addCompleter(cmdCompleter);
             this.operationCandidatesProvider = new DefaultOperationCandidatesProvider();
         } else {
@@ -373,12 +377,18 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     protected void initBasicConsole(InputStream consoleInput) throws CliInitializationException {
+        initBasicConsole(consoleInput, true);
+    }
+
+    protected void initBasicConsole(InputStream consoleInput, boolean start) throws CliInitializationException {
         // this method shouldn't be called twice during the session
         assert console == null : "the console has already been initialized";
         Settings settings = createSettings(consoleInput);
         this.console = Console.Factory.getConsole(this, settings);
         console.setCallback(initCallback());
-        console.start();
+        if(start) {
+            console.start();
+        }
     }
 
     private ConsoleCallback initCallback() {
@@ -869,11 +879,13 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private String readLine(String prompt, boolean password) throws CommandLineException {
         // Only fail an interact if we're not in interactive.
         if(!INTERACT && ERROR_ON_INTERACT){
-            throw new CommandLineException("Invalid Usage. Prompt attempted in non-interactive mode. Please check commands or change CLI mode.");
+            interactionDisabled();
         }
 
         if (console == null) {
             initBasicConsole(null);
+        } else if(!console.running()) {
+            console.start();
         }
 
         if (password) {
@@ -882,6 +894,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             return console.readLine(prompt);
         }
 
+    }
+
+    protected void interactionDisabled() throws CommandLineException {
+        throw new CommandLineException("Invalid Usage. Prompt attempted in non-interactive mode. Please check commands or change CLI mode.");
     }
 
 
@@ -1295,13 +1311,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public CommandHistory getHistory() {
-        if( !INTERACT ){
-            return null;
-        }
-
         if(console == null) {
             try {
-                initBasicConsole(null);
+                initBasicConsole(null, INTERACT);
             } catch (CliInitializationException e) {
                 throw new IllegalStateException("Failed to initialize console.", e);
             }
@@ -1438,6 +1450,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         }
 
         console.setPrompt(getPrompt());
+        if(!console.running()) {
+            console.start();
+        }
 
         while(!isTerminated() && console.running()){
             try {
@@ -1643,6 +1658,12 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     if (username == null) {
                         showRealm();
                         try {
+                            if(console == null) {
+                                if(ERROR_ON_INTERACT) {
+                                    interactionDisabled();
+                                }
+                                initBasicConsole(null);
+                            }
                             console.setCompletion(false);
                             console.getHistory().setUseHistory(false);
                             username = readLine("Username: ", false);
@@ -1665,6 +1686,12 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         showRealm();
                         String temp;
                         try {
+                            if(console == null) {
+                                if(ERROR_ON_INTERACT) {
+                                    interactionDisabled();
+                                }
+                                initBasicConsole(null);
+                            }
                             console.setCompletion(false);
                             console.getHistory().setUseHistory(false);
                             temp = readLine("Password: ", true);

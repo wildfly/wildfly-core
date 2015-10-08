@@ -38,7 +38,7 @@ public class CommandContextConfiguration {
     private final boolean disableLocalAuth;
     private final int connectionTimeout;
     private boolean silent;
-    private boolean errorOnInteract;
+    private Boolean errorOnInteract;
 
     private CommandContextConfiguration(String controller, String username, char[] password, String clientBindAddress, boolean disableLocalAuth, boolean initConsole, int connectionTimeout, InputStream consoleInput, OutputStream consoleOutput) {
         this.controller = controller;
@@ -92,7 +92,7 @@ public class CommandContextConfiguration {
         return silent;
     }
 
-    public boolean isErrorOnInteract() {
+    public Boolean isErrorOnInteract() {
         return errorOnInteract;
     }
 
@@ -108,7 +108,7 @@ public class CommandContextConfiguration {
         private int connectionTimeout = -1;
         private boolean disableLocalAuthUnset = true;
         private boolean silent;
-        private boolean errorOnInteract;
+        private Boolean errorOnInteract;
 
         public Builder() {
         }
@@ -145,6 +145,10 @@ public class CommandContextConfiguration {
 
         public Builder setConsoleInput(InputStream consoleInput) {
             this.consoleInput = consoleInput;
+            if(consoleInput != null) {
+                // if the input is provided, interaction is assumed
+                this.errorOnInteract = false;
+            }
             return this;
         }
 
