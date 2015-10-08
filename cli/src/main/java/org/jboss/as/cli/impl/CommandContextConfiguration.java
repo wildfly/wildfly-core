@@ -145,7 +145,7 @@ public class CommandContextConfiguration {
 
         public Builder setConsoleInput(InputStream consoleInput) {
             this.consoleInput = consoleInput;
-            if(consoleInput != null) {
+            if(errorOnInteract == null && consoleInput != null) {
                 // if the input is provided, interaction is assumed
                 this.errorOnInteract = false;
             }
