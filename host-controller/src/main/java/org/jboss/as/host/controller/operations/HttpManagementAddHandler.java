@@ -136,9 +136,14 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         ROOT_LOGGER.creatingHttpManagementService(interfaceName, port, securePort);
 
         boolean consoleEnabled = HttpManagementResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
-        ConsoleMode consoleMode;
-        if (consoleEnabled){
-            consoleMode = context.getRunningMode() == RunningMode.ADMIN_ONLY ? ConsoleMode.ADMIN_ONLY : ConsoleMode.CONSOLE;
+        ConsoleMode consoleMode = ConsoleMode.CONSOLE;
+
+        if (consoleEnabled) {
+            if (runningMode == RunningMode.ADMIN_ONLY) {
+                consoleMode = ConsoleMode.ADMIN_ONLY;
+            } else if (!hostControllerInfo.isMasterDomainController()) {
+                consoleMode = ConsoleMode.SLAVE_HC;
+            }
         } else {
             consoleMode = ConsoleMode.NO_CONSOLE;
         }
