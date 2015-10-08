@@ -21,6 +21,8 @@
  */
 package org.jboss.as.domain.http.server;
 
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
 import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
 
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
@@ -92,6 +94,7 @@ import org.xnio.StreamConnection;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 import org.xnio.channels.AcceptingChannel;
+import org.xnio.conduits.StreamSinkConduit;
 import org.xnio.ssl.SslConnection;
 import org.xnio.ssl.XnioSsl;
 
@@ -216,7 +219,7 @@ public class ManagementHttpServer {
         CanonicalPathHandler canonicalPathHandler = new CanonicalPathHandler();
         ManagementHttpRequestHandler managementHttpRequestHandler = new ManagementHttpRequestHandler(managementHttpRequestProcessor, canonicalPathHandler);
         CorsHttpHandler corsHandler = new CorsHttpHandler(managementHttpRequestHandler, allowedOrigins);
-        listener.setRootHandler(corsHandler);
+        listener.setRootHandler(new UpgradeFixHandler(corsHandler));
 
         PathHandler pathHandler = new PathHandler();
         HttpHandler current = pathHandler;
@@ -314,4 +317,31 @@ public class ManagementHttpServer {
         return new AuthenticationMechanismWrapper(toWrap, mechanism);
     }
 
+    /**
+     * Handler to work around a bug with old XNIO versions that did not handle
+     * content-length for HTTP upgrade. This should be removed when it is no longer
+     * nessesary to support WF 8.x clients.
+     */
+    private static class UpgradeFixHandler implements HttpHandler {
+
+        final HttpHandler next;
+
+        private UpgradeFixHandler(HttpHandler next) {
+            this.next = next;
+        }
+
+        @Override
+        public void handleRequest(HttpServerExchange exchange) throws Exception {
+            if(exchange.getRequestHeaders().contains(Headers.UPGRADE)) {
+                exchange.addResponseWrapper((factory, ex) -> {
+                    StreamSinkConduit ret = factory.create();
+                    if(exchange.getResponseHeaders().contains(Headers.UPGRADE)) {
+                        exchange.getResponseHeaders().add(Headers.CONTENT_LENGTH, "0");
+                    }
+                    return ret;
+                });
+            }
+            next.handleRequest(exchange);
+        }
+    }
 }
