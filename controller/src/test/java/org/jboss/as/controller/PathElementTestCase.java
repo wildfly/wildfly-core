@@ -77,4 +77,19 @@ public class PathElementTestCase {
             }
     }
 
+    @Test
+    public void invalidValue() {
+        String[] invalidValues = {
+            null,
+            ""
+        };
+        for (String value : invalidValues) {
+            try {
+                PathElement.pathElement("key", value);
+                fail("value " + value + " should be invalid");
+            } catch (IllegalArgumentException e) {
+                // should reach here
+            }
+        }
+    }
 }

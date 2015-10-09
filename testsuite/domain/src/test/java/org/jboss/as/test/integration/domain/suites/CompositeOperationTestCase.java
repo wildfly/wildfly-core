@@ -22,14 +22,18 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIRECTORY_GROUPING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXCEPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
@@ -42,13 +46,16 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.operations.global.ReadResourceDescriptionHandler;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
@@ -71,7 +78,9 @@ public class CompositeOperationTestCase {
     private static final PathElement HOST_MASTER = PathElement.pathElement(HOST, "master");
     private static final PathElement HOST_SLAVE = PathElement.pathElement(HOST, "slave");
     private static final PathElement SERVER_ONE = PathElement.pathElement(RUNNING_SERVER, "main-one");
+    private static final PathElement SERVER_TWO = PathElement.pathElement(RUNNING_SERVER, "main-two");
     private static final PathElement SERVER_THREE = PathElement.pathElement(RUNNING_SERVER, "main-three");
+    private static final PathElement SERVER_FOUR = PathElement.pathElement(RUNNING_SERVER, "main-four");
     private static final PathElement SYS_PROP_ELEMENT = PathElement.pathElement(SYSTEM_PROPERTY, "composite-op");
     private static final PathElement HOST_SYS_PROP_ELEMENT = PathElement.pathElement(SYSTEM_PROPERTY, "composite-op-host");
 
@@ -428,6 +437,91 @@ public class CompositeOperationTestCase {
                 }
             }
         }
+    }
+
+    /** Test for https://issues.jboss.org/browse/WFCORE-998 */
+    @Test
+    public void testReadResourceDescriptionWithStoppedServer() throws IOException {
+
+        final ModelNode composite = new ModelNode();
+        composite.get(OP).set(COMPOSITE);
+        final ModelNode steps = composite.get(STEPS);
+
+        // First an operation that just has a single step calling r-r-d on the stopped server resource
+        ModelNode step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_SLAVE, SERVER_FOUR));
+        step.get(ACCESS_CONTROL).set(ReadResourceDescriptionHandler.AccessControl.COMBINED_DESCRIPTIONS.toString());
+
+        steps.add(step);
+
+        ModelNode response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
+
+        validateRRDResponse(response, 1);
+
+        // Now include a step reading a stopped server on master
+        step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_MASTER, SERVER_TWO));
+        step.get(ACCESS_CONTROL).set(ReadResourceDescriptionHandler.AccessControl.COMBINED_DESCRIPTIONS.toString());
+
+        steps.add(step);
+
+        response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
+
+        validateRRDResponse(response, 2);
+
+
+        // Now add steps for some running servers too
+        step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_MASTER, SERVER_ONE));
+        step.get(ACCESS_CONTROL).set(ReadResourceDescriptionHandler.AccessControl.COMBINED_DESCRIPTIONS.toString());
+        steps.add(step);
+        step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_SLAVE, SERVER_THREE));
+        step.get(ACCESS_CONTROL).set(ReadResourceDescriptionHandler.AccessControl.COMBINED_DESCRIPTIONS.toString());
+        steps.add(step);
+
+        response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
+
+        validateRRDResponse(response, 4);
+    }
+
+    private static void validateRRDResponse(ModelNode response, int stepCount) {
+
+        String responseString = response.toString();
+        assertEquals(responseString, SUCCESS, response.get(OUTCOME).asString());
+        assertTrue(responseString, response.hasDefined(RESULT));
+        ModelNode result = response.get(RESULT);
+        assertEquals(responseString, ModelType.OBJECT, result.getType());
+        List<Property> list = result.asPropertyList();
+        assertEquals(responseString, stepCount, list.size());
+        for (Property prop : list) {
+            ModelNode stepResp = prop.getValue();
+            assertEquals(responseString, SUCCESS, stepResp.get(OUTCOME).asString());
+            assertTrue(responseString, stepResp.hasDefined(RESULT, ATTRIBUTES));
+            ModelNode stepResult = stepResp.get(RESULT);
+            Set<String> keys = stepResult.get(ATTRIBUTES).keys();
+            assertTrue(responseString, keys.contains("launch-type"));
+            assertTrue(responseString, keys.contains("server-state"));
+            assertTrue(responseString, stepResult.hasDefined(ACCESS_CONTROL, "default", ATTRIBUTES));
+            Set<String> accessKeys = stepResult.get(ACCESS_CONTROL, "default", ATTRIBUTES).keys();
+            assertTrue(responseString, accessKeys.contains("launch-type"));
+            assertTrue(responseString, accessKeys.contains("server-state"));
+
+            assertTrue(responseString, stepResult.hasDefined(ACCESS_CONTROL, EXCEPTIONS));
+            assertEquals(responseString, 0, stepResult.get(ACCESS_CONTROL, EXCEPTIONS).asInt());
+
+            switch (prop.getName()) {
+                case "step-1":
+                case "step-2":
+                    assertEquals(responseString, 2, keys.size());
+                    assertEquals(responseString, 2, accessKeys.size());
+                    break;
+                case "step-3":
+                case "step-4":
+                    assertTrue(responseString, keys.size() > 2);
+                    assertEquals(responseString, keys.size(), accessKeys.size());
+                    break;
+                default:
+                    fail(responseString);
+            }
+        }
+
     }
 
     private static ModelNode createReadResourceOperation(final ModelNode address) {

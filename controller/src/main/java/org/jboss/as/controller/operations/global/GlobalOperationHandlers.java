@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -33,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -44,7 +46,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -65,6 +66,7 @@ import org.jboss.as.controller.access.ResourceNotAddressableException;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AliasEntry;
+import org.jboss.as.controller.registry.AliasEntry.AliasContext;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -158,22 +160,20 @@ public class GlobalOperationHandlers {
             FAKE_OPERATION = resolve;
         }
 
-        private static final FilterPredicate DEFAULT_PREDICATE = new FilterPredicate() {
-            @Override
-            public boolean appliesTo(ModelNode item) {
-                return !item.isDefined()
-                        || !item.hasDefined(OP_ADDR);
-            }
-        };
-
         private final FilteredData filteredData;
 
         private final boolean ignoreMissingResource;
 
         private final FilterPredicate predicate;
 
+        private final boolean registryOnly;
+
         protected AbstractMultiTargetHandler() {
             this(null, false);
+        }
+
+        protected AbstractMultiTargetHandler(boolean registryOnly) {
+            this(null, false, null, registryOnly);
         }
 
         protected AbstractMultiTargetHandler(FilteredData filteredData) {
@@ -181,15 +181,18 @@ public class GlobalOperationHandlers {
         }
 
         protected AbstractMultiTargetHandler(FilteredData filteredData, boolean ignoreMissingResource) {
-            this.filteredData = filteredData;
-            this.ignoreMissingResource = ignoreMissingResource;
-            this.predicate = DEFAULT_PREDICATE;
+            this(filteredData, ignoreMissingResource, null);
         }
 
         protected AbstractMultiTargetHandler(FilteredData filteredData, boolean ignoreMissingResource, FilterPredicate predicate) {
+            this(filteredData, ignoreMissingResource, predicate, false);
+        }
+
+        private AbstractMultiTargetHandler(FilteredData filteredData, boolean ignoreMissingResource, FilterPredicate predicate, boolean registryOnly) {
             this.filteredData = filteredData;
             this.ignoreMissingResource = ignoreMissingResource;
             this.predicate = predicate;
+            this.registryOnly = registryOnly;
         }
 
         protected FilteredData getFilteredData() {
@@ -206,15 +209,18 @@ public class GlobalOperationHandlers {
                 final FilteredData localFilteredData = filteredData == null ? new FilteredData(PathAddress.EMPTY_ADDRESS) : filteredData;
                 // The final result should be a list of executed operations
                 final ModelNode result = context.getResult().setEmptyList();
+
                 // Trick the context to give us the model-root
+                final OperationStepHandler delegateStepHandler = new OperationStepHandler() {
+                    @Override
+                    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+                        doExecute(context, operation, localFilteredData, true);
+                    }
+                };
                 context.addStep(new ModelNode(), FAKE_OPERATION.clone(),
-                        new ModelAddressResolver(operation, result, localFilteredData,
-                                new OperationStepHandler() {
-                                    @Override
-                                    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                                        doExecute(context, operation, localFilteredData, true);
-                                    }
-                                }, predicate),
+                        registryOnly ?
+                            new RegistrationAddressResolver(operation, result, delegateStepHandler) :
+                            new ModelAddressResolver(operation, result, localFilteredData, delegateStepHandler, predicate),
                         OperationContext.Stage.MODEL, true
                 );
                 context.completeStep(new OperationContext.ResultHandler() {
@@ -278,7 +284,16 @@ public class GlobalOperationHandlers {
         boolean appliesTo(ModelNode result);
     }
 
-    public static final class ModelAddressResolver implements OperationStepHandler {
+    private abstract static class AbstractAddressResolver implements OperationStepHandler {
+
+        private static final FilterPredicate DEFAULT_PREDICATE = new FilterPredicate() {
+            @Override
+            public boolean appliesTo(ModelNode item) {
+                return !item.isDefined()
+                        || !item.hasDefined(OP_ADDR);
+            }
+        };
+
 
         private final ModelNode operation;
         private final ModelNode result;
@@ -286,14 +301,14 @@ public class GlobalOperationHandlers {
         private final FilterPredicate predicate;
         private final OperationStepHandler handler; // handler bypassing further wildcard resolution
 
-        public ModelAddressResolver(final ModelNode operation, final ModelNode result,
-                                    final FilteredData filteredData,
+        public AbstractAddressResolver(final ModelNode operation, final ModelNode result,
                                     final OperationStepHandler delegate,
+                                    final FilteredData filteredData,
                                     final FilterPredicate predicate) {
             this.operation = operation;
             this.result = result;
             this.handler = delegate;
-            this.predicate = predicate;
+            this.predicate = predicate == null ? DEFAULT_PREDICATE : predicate;
             this.filteredData = filteredData;
         }
 
@@ -302,8 +317,12 @@ public class GlobalOperationHandlers {
          */
         @Override
         public void execute(final OperationContext context, final ModelNode ignored) throws OperationFailedException {
-            final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-            execute(PathAddress.EMPTY_ADDRESS, address, context, context.getRootResourceRegistration(), false);
+            final PathAddress addr = PathAddress.pathAddress(operation.require(OP_ADDR));
+            //This will only return the alias if this is for a read-resource-definition
+            final PathAddress aliasAddr = WildcardReadResourceDescriptionAddressHack.detachAliasAddress(context, operation);
+            final PathAddress address = aliasAddr == null ? addr : aliasAddr;
+
+            execute(PathAddress.EMPTY_ADDRESS, address, context, context.getRootResourceRegistration(), true);
             context.completeStep(new OperationContext.ResultHandler() {
                 @Override
                 public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
@@ -340,7 +359,7 @@ public class GlobalOperationHandlers {
          *                                  tree is optional if it is associated with a wildcard or multi-segment
          *                                  element in {@code address}
          */
-        private void safeExecute(final PathAddress base, final PathAddress remaining, final OperationContext context,
+        protected void safeExecute(final PathAddress base, final PathAddress remaining, final OperationContext context,
                 final ImmutableManagementResourceRegistration registration, boolean ignoreMissing) {
             try {
                 ControllerLogger.MGMT_OP_LOGGER.tracef("safeExecute for %s, remaining is %s", base, remaining);
@@ -384,7 +403,7 @@ public class GlobalOperationHandlers {
          *                                  tree is optional if it is associated with a wildcard or multi-segment
          *                                  element in {@code address}
          */
-        private void execute(final PathAddress base, final PathAddress remaining, final OperationContext context,
+        protected void execute(final PathAddress base, final PathAddress remaining, final OperationContext context,
                              final ImmutableManagementResourceRegistration registration, final boolean ignoreMissing) {
 
             // Check whether the operation needs to be dispatched to a remote proxy
@@ -398,60 +417,17 @@ public class GlobalOperationHandlers {
                 return;
             }
 
-            // Require a resource, if it's not a remote target
-            final Resource resource = context.readResource(base, false);
+            if (!authorize(context, base, operation)) {
+                return;
+            }
+
             if (remaining.size() > 0) {
-                final PathElement element = remaining.getElement(0);
+                final PathElement currentElement = remaining.getElement(0);
                 final PathAddress newRemaining = remaining.subAddress(1);
-                if (element.isMultiTarget()) {
-                    final String childType = element.getKey().equals("*") ? null : element.getKey();
-                    if (registration.isRemote()) {// || registration.isRuntimeOnly()) {
-                        // At least for proxies it should use the proxy operation handler
-                        throw new IllegalStateException();
-                    }
-                    // Get the available children
-                    final Map<String, Set<String>> resolved = getChildAddresses(context, base, registration, resource, childType);
-                    for (Map.Entry<String, Set<String>> entry : resolved.entrySet()) {
-                        final String key = entry.getKey();
-                        final Set<String> children = entry.getValue();
-                        if (children.isEmpty()) {
-                            continue;
-                        }
-                        if (element.isWildcard()) {
-                            for (final String child : children) {
-                                final PathElement e = PathElement.pathElement(key, child);
-                                final PathAddress next = base.append(e);
-                                // Either require the child or a remote target
-                                final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
-                                if (resource.hasChild(e) || (nr != null && nr.isRemote())) {
-                                    safeExecute(next, newRemaining, context, nr, true);
-                                }
-                            }
-                        } else {
-                            String[] segments = element.getSegments();
-                            // If there's more than 1 segment, treat that like a wildcard, and don't
-                            // fail on bits that disappear
-                            boolean ignore = ignoreMissing || segments.length > 1;
-                            for (final String segment : element.getSegments()) {
-                                if (children.contains(segment)) {
-                                    final PathElement e = PathElement.pathElement(key, segment);
-                                    final PathAddress next = base.append(e);
-                                    // Either require the child or a remote target
-                                    final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
-                                    if (resource.hasChild(e) || (nr != null && nr.isRemote())) {
-                                        safeExecute(next, newRemaining, context, nr, ignore);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                if (currentElement.isMultiTarget()) {
+                    executeMultiTargetChildren(base, currentElement, newRemaining, context, registration, ignoreMissing);
                 } else {
-                    final PathAddress next = base.append(element);
-                    // Either require the child or a remote target
-                    final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
-                    if (resource.hasChild(element) || (nr != null && nr.isRemote())) {
-                        safeExecute(next, newRemaining, context, nr, ignoreMissing);
-                    }
+                    executeSingleTargetChild(base, currentElement, newRemaining, context, ignoreMissing);
                 }
             } else {
                 final ModelNode newOp = operation.clone();
@@ -493,6 +469,22 @@ public class GlobalOperationHandlers {
                 context.addStep(resultItem, newOp, wrapper, OperationContext.Stage.MODEL, true);
             }
         }
+
+        protected abstract void executeSingleTargetChild(PathAddress base, PathElement currentElement, PathAddress newRemaining, OperationContext context, boolean ignoreMissing);
+
+        protected abstract void executeMultiTargetChildren(PathAddress base, PathElement currentElement, PathAddress newRemaining, OperationContext context, ImmutableManagementResourceRegistration registration, boolean ignoreMissing);
+
+        /**
+         * If not authorized, this will throw an exception for {@link ModelAddressResolver} for use with the
+         * {@link ModelAddressResolver#safeExecute(PathAddress, PathAddress, OperationContext, ImmutableManagementResourceRegistration, boolean)}
+         * method. For {@link RegistrationAddressResolver} it will return {@code false}. Otherwise it returns {@code true}
+         *
+         * @param context the operation context
+         * @param base the path address
+         * @param operation the operation
+         * @return whether or not we were authorized
+         */
+        protected abstract boolean authorize(OperationContext context, PathAddress base, ModelNode operation);
 
         private boolean isWFCORE621Needed(ImmutableManagementResourceRegistration registration, PathAddress remaining) {
             if (remaining.size() > 0) {
@@ -679,7 +671,7 @@ public class GlobalOperationHandlers {
                                                 if (headers.asInt() > 0) {
                                                     nr.get(RESPONSE_HEADERS).set(headers);
                                                 }
-                                                if (acc.isDefined()) {
+                                                if (acc != null && acc.isDefined()) {
                                                     filteredData.populate(acc, rbacPrefix);
                                                     ControllerLogger.MGMT_OP_LOGGER.tracef("Populated local filtered data " +
                                                             "with remote access control headers %s from result item %s", acc, rr);
@@ -705,7 +697,7 @@ public class GlobalOperationHandlers {
                                         if (headers.asInt() > 0) {
                                             nr.get(RESPONSE_HEADERS).set(headers);
                                         }
-                                        if (acc.isDefined()) {
+                                        if (acc != null && acc.isDefined()) {
                                             filteredData.populate(acc, PathAddress.EMPTY_ADDRESS);
                                             ControllerLogger.MGMT_OP_LOGGER.tracef("Populated local filtered data " +
                                                     "with remote access control headers %s from result item %s", acc, resultItem);
@@ -719,6 +711,79 @@ public class GlobalOperationHandlers {
                     }
                 }
             }, OperationContext.Stage.MODEL, true);
+        }
+
+
+    }
+
+    private static final class ModelAddressResolver extends AbstractAddressResolver {
+        public ModelAddressResolver(ModelNode operation, ModelNode result, FilteredData filteredData, OperationStepHandler delegate, FilterPredicate predicate) {
+            super(operation, result, delegate, filteredData, predicate);
+        }
+
+        protected void executeMultiTargetChildren(PathAddress base, PathElement currentElement, PathAddress newRemaining, OperationContext context, ImmutableManagementResourceRegistration registration, boolean ignoreMissing) {
+            final Resource resource = context.readResource(base, false);
+            final String childType = currentElement.getKey().equals("*") ? null : currentElement.getKey();
+            if (registration.isRemote()) {// || registration.isRuntimeOnly()) {
+                // At least for proxies it should use the proxy operation handler
+                throw new IllegalStateException();
+            }
+            // Get the available children
+            final Map<String, Set<String>> resolved = getChildAddresses(context, base, registration, resource, childType);
+            for (Map.Entry<String, Set<String>> entry : resolved.entrySet()) {
+                final String key = entry.getKey();
+                final Set<String> children = entry.getValue();
+                if (children.isEmpty()) {
+                    continue;
+                }
+                if (currentElement.isWildcard()) {
+                    for (final String child : children) {
+                        final PathElement e = PathElement.pathElement(key, child);
+                        final PathAddress next = base.append(e);
+                        // Either require the child or a remote target
+                        final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
+                        if (resource.hasChild(e) || (nr != null && nr.isRemote())) {
+                            safeExecute(next, newRemaining, context, nr, true);
+                        }
+                    }
+                } else {
+                    String[] segments = currentElement.getSegments();
+                    // If there's more than 1 segment, treat that like a wildcard, and don't
+                    // fail on bits that disappear
+                    boolean ignore = ignoreMissing || segments.length > 1;
+                    for (final String segment : currentElement.getSegments()) {
+                        if (children.contains(segment)) {
+                            final PathElement e = PathElement.pathElement(key, segment);
+                            final PathAddress next = base.append(e);
+                            // Either require the child or a remote target
+                            final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
+                            if (resource.hasChild(e) || (nr != null && nr.isRemote())) {
+                                safeExecute(next, newRemaining, context, nr, ignore);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        protected void executeSingleTargetChild(PathAddress base, PathElement currentElement, PathAddress newRemaining, OperationContext context, boolean ignoreMissing) {
+            final PathAddress next = base.append(currentElement);
+            // Either require the child or a remote target
+            final Resource resource = context.readResource(base, false);
+            final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
+            if (resource.hasChild(currentElement) || (nr != null && nr.isRemote())) {
+                safeExecute(next, newRemaining, context, nr, ignoreMissing);
+            }
+        }
+
+        @Override
+        protected boolean authorize(OperationContext context, PathAddress base, ModelNode operation) {
+//            if (base.size() > 0) {
+                //We should always be able to read the root resource
+                context.readResource(base, false);
+//            }
+            //An exception will happen if not allowed
+            return true;
         }
     }
 
@@ -758,13 +823,18 @@ public class GlobalOperationHandlers {
                 // It's possible this is a remote failure, in which case we
                 // don't get ResourceNotAddressableException. So see if
                 // it was due to any authorization denial
-                ModelNode toAuthorize = Util.createEmptyOperation(READ_RESOURCE_OPERATION, base);
+
+                ModelNode toAuthorize = operation.clone();
+                toAuthorize.get(OP).set(READ_RESOURCE_DESCRIPTION_OPERATION);
+                toAuthorize.get(OP_ADDR).set(base.toModelNode());
                 AuthorizationResult.Decision decision = context.authorize(toAuthorize, EnumSet.of(Action.ActionEffect.ADDRESS)).getDecision();
                 ControllerLogger.MGMT_OP_LOGGER.tracef("Caught NoSuchResourceException in remote execution from %s. Authorization decision is %s", proxyHandler, decision);
                 if (decision == AuthorizationResult.Decision.DENY) {
                     // Just report the failure to the filter and complete normally
-                    filteredData.addAccessRestrictedResource(base);
                     filtered.set(true);
+                    if (filteredData != null) {
+                        filteredData.addAccessRestrictedResource(base);
+                    }
                 } else if (!ignoreMissing) {
                     throw e;
                 }
@@ -772,54 +842,65 @@ public class GlobalOperationHandlers {
         }
     }
 
-    static class RegistrationAddressResolver implements OperationStepHandler {
 
-        private final ModelNode operation;
-        private final ModelNode result;
-        private final OperationStepHandler handler; // handler bypassing further wildcard resolution
+    private static class RegistrationAddressResolver extends AbstractAddressResolver {
 
         RegistrationAddressResolver(final ModelNode operation, final ModelNode result, final OperationStepHandler delegate) {
-            this.operation = operation;
-            this.result = result;
-            this.handler = delegate;
+            super(operation, result, delegate, null, null);
         }
 
         @Override
-        public void execute(final OperationContext context, final ModelNode ignored) throws OperationFailedException {
-            final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-            final PathAddress aliasAddr = WildcardReadResourceDescriptionAddressHack.detachAliasAddress(context, operation);
-            execute(aliasAddr == null ? address : aliasAddr, PathAddress.EMPTY_ADDRESS, context);
+        protected void executeMultiTargetChildren(PathAddress base, PathElement currentElement, PathAddress newRemaining, OperationContext context, ImmutableManagementResourceRegistration registration, boolean ignoreMissing) {
+            final String childType = currentElement.getKey().equals("*") ? null : currentElement.getKey();
+            if (registration.isRemote()) {// || registration.isRuntimeOnly()) {
+                // At least for proxies it should use the proxy operation handler
+                throw new IllegalStateException();
+            }
+
+            final Set<PathElement> children = context.getResourceRegistration().getChildAddresses(base);
+            if (children == null || children.isEmpty()) {
+                return;
+            }
+
+            for (final PathElement path : children) {
+                if (childType != null && !childType.equals(path.getKey())) {
+                    continue;
+                }
+                if (path.getKey().equals(RUNNING_SERVER) && path.isWildcard() && newRemaining.size() > 0) {
+                    //Trying to get e.g. /host=xxx/server=*/interface=public will fail, so make sure if there are remaining elements for
+                    //a /host=master/server=* that we don't attempt to get those
+                    continue;
+                }
+                final PathAddress next = base.append(path);
+                final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
+                execute(next, newRemaining, context, nr, ignoreMissing);
+            }
         }
 
-        void execute(final PathAddress address, PathAddress base, final OperationContext context) {
-            final PathAddress current = address.subAddress(base.size());
-            final Iterator<PathElement> iterator = current.iterator();
-            if (iterator.hasNext()) {
-                final PathElement element = iterator.next();
-                if (element.isMultiTarget()) {
-                    final Set<PathElement> children = context.getResourceRegistration().getChildAddresses(base);
-                    if (children == null || children.isEmpty()) {
-                        return;
-                    }
-                    final String childType = element.getKey().equals("*") ? null : element.getKey();
-                    for (final PathElement path : children) {
-                        if (childType != null && !childType.equals(path.getKey())) {
-                            continue;
-                        }
-                        execute(address, base.append(path), context);
-                    }
-                } else {
-                    execute(address, base.append(element), context);
-                }
-            } else {
-                //final String operationName = operation.require(OP).asString();
-                final ModelNode newOp = operation.clone();
-                newOp.get(OP_ADDR).set(base.toModelNode());
+        @Override
+        protected void executeSingleTargetChild(PathAddress base, PathElement currentElement, PathAddress newRemaining, OperationContext context, boolean ignoreMissing) {
+            final PathAddress next = base.append(currentElement);
+            final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
+            execute(next, newRemaining, context, nr, ignoreMissing);
+        }
 
-                final ModelNode result = this.result.add();
-                result.get(OP_ADDR).set(base.toModelNode());
-                context.addStep(result, newOp, handler, OperationContext.Stage.MODEL, true);
+        @Override
+        protected boolean authorize(OperationContext context, PathAddress base, ModelNode operation) {
+            if (base.size() > 0) {
+                PathElement element = base.getLastElement();
+                if (!element.isWildcard() && (element.getKey().equals(HOST)/* || element.getKey().equals(RUNNING_SERVER)*/)) {
+                    //Only do this for host resources. The rest of r-r-d does filtering itself. However, without
+                    //this:
+                    // - a slave host scoped role doing a /host=*:r-r-d will not get rid of the host=master resource
+                    // - a master host scoped role doing a /host=*/server=*/subsystem=thing:r-r-d will not get rid of the host=slave resource
+                    ModelNode toAuthorize = operation.clone();
+                    toAuthorize.get(OP).set(READ_RESOURCE_DESCRIPTION_OPERATION);
+                    toAuthorize.get(OP_ADDR).set(base.toModelNode());
+                    AuthorizationResult.Decision decision = context.authorize(toAuthorize, EnumSet.of(Action.ActionEffect.ADDRESS)).getDecision();
+                    return decision == AuthorizationResult.Decision.PERMIT;
+                }
             }
+            return true;
         }
     }
 
@@ -894,7 +975,8 @@ public class GlobalOperationHandlers {
                     }
                 }
             } else {
-                PathAddress target = aliasEntry.convertToTargetAddress(addr.append(element));
+                PathAddress childAddr = addr.append(element);
+                PathAddress target = aliasEntry.convertToTargetAddress(childAddr, AliasContext.create(childAddr, context));
                 PathAddress targetParent = target.subAddress(0, target.size() - 1);
                 Resource parentResource = context.readResourceFromRoot(targetParent, false);
                 if (parentResource != null) {

@@ -180,7 +180,7 @@ class CliConfigImpl implements CliConfig {
         // This is to prevent a default Configuration option from overriding an Option defined in the config file.
         cliConfig.connectionTimeout = configuration.getConnectionTimeout() != -1    ? configuration.getConnectionTimeout()  : cliConfig.getConnectionTimeout();
         cliConfig.silent            = configuration.isSilent()                      ? configuration.isSilent()              : cliConfig.silent;
-        cliConfig.errorOnInteract   = configuration.isErrorOnInteract()             ? configuration.isErrorOnInteract()     : cliConfig.errorOnInteract;
+        cliConfig.errorOnInteract   = configuration.isErrorOnInteract() != null     ? configuration.isErrorOnInteract()     : cliConfig.errorOnInteract;
 
         return cliConfig;
     }
@@ -233,7 +233,7 @@ class CliConfigImpl implements CliConfig {
     private SSLConfig sslConfig;
 
     private boolean silent;
-    private boolean errorOnInteract;
+    private boolean errorOnInteract = true;
 
     private boolean accessControl = true;
 

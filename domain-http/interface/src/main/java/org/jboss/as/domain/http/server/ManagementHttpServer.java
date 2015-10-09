@@ -40,6 +40,7 @@ import io.undertow.security.impl.DigestQop;
 import io.undertow.security.impl.GSSAPIAuthenticationMechanism;
 import io.undertow.security.impl.SimpleNonceManager;
 import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.BlockingHandler;
 import io.undertow.server.handlers.CanonicalPathHandler;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
@@ -48,6 +49,7 @@ import io.undertow.server.handlers.cache.CacheHandler;
 import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
 import io.undertow.server.protocol.http.HttpOpenListener;
+import io.undertow.util.Headers;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -94,6 +96,7 @@ import org.xnio.StreamConnection;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 import org.xnio.channels.AcceptingChannel;
+import org.xnio.conduits.StreamSinkConduit;
 import org.xnio.ssl.SslConnection;
 import org.xnio.ssl.XnioSsl;
 
@@ -242,9 +245,10 @@ public class ManagementHttpServer {
 
     private static void setupOpenListener(HttpOpenListener listener, int secureRedirectPort, Builder builder) {
         CanonicalPathHandler canonicalPathHandler = new CanonicalPathHandler();
+
         ManagementHttpRequestHandler managementHttpRequestHandler = new ManagementHttpRequestHandler(builder.managementHttpRequestProcessor, canonicalPathHandler);
         CorsHttpHandler corsHandler = new CorsHttpHandler(managementHttpRequestHandler, builder.allowedOrigins);
-        listener.setRootHandler(corsHandler);
+        listener.setRootHandler(new UpgradeFixHandler(corsHandler));
 
         PathHandler pathHandler = new PathHandler();
         HttpHandler current = pathHandler;
@@ -482,6 +486,34 @@ public class ManagementHttpServer {
             }
         }
 
+    }
+
+    /**
+     * Handler to work around a bug with old XNIO versions that did not handle
+     * content-length for HTTP upgrade. This should be removed when it is no longer
+     * nessesary to support WF 8.x clients.
+     */
+    private static class UpgradeFixHandler implements HttpHandler {
+
+        final HttpHandler next;
+
+        private UpgradeFixHandler(HttpHandler next) {
+            this.next = next;
+        }
+
+        @Override
+        public void handleRequest(HttpServerExchange exchange) throws Exception {
+            if(exchange.getRequestHeaders().contains(Headers.UPGRADE)) {
+                exchange.addResponseWrapper((factory, ex) -> {
+                    StreamSinkConduit ret = factory.create();
+                    if(exchange.getResponseHeaders().contains(Headers.UPGRADE)) {
+                        exchange.getResponseHeaders().add(Headers.CONTENT_LENGTH, "0");
+                    }
+                    return ret;
+                });
+            }
+            next.handleRequest(exchange);
+        }
     }
 
 }

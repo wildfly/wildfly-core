@@ -62,8 +62,15 @@ public class CompositeOperationHandler implements OperationStepHandler {
         .addParameter(STEPS)
         .setReplyType(ModelType.OBJECT)
         .setPrivateEntry()
-        .setForceDefaultDescriptionProvider()//display description even if opeartion is private
+        .setForceDefaultDescriptionProvider()//display description even if operation is private
         .build();
+
+    public static final OperationDefinition INTERNAL_DEFINITION = new SimpleOperationDefinitionBuilder(NAME, ControllerResolver.getResolver("root"))
+            .addParameter(STEPS)
+            .setReplyType(ModelType.OBJECT)
+            .setPrivateEntry()  // even if we eventually remove this from the non-internal definition, keep it here
+            //.setForceDefaultDescriptionProvider()// this one we don't display description even if operation is private
+            .build();
 
     protected CompositeOperationHandler() {
     }
@@ -88,7 +95,8 @@ public class CompositeOperationHandler implements OperationStepHandler {
             addedResponses.put(stepName, stepResp);
         }
 
-        MultistepUtil.recordOperationSteps(context, operationMap, addedResponses, getOperationHandlerResolver());
+        boolean adjustStepAddresses = context.getCurrentAddress().size() > 0;
+        MultistepUtil.recordOperationSteps(context, operationMap, addedResponses, getOperationHandlerResolver(), adjustStepAddresses);
 
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override

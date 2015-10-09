@@ -379,7 +379,6 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         cli.sendLine("/subsystem=logging/console-handler=CONSOLE:add(level=INFO,named-formatter=COLOR-PATTERN)");
         cli.sendLine("/subsystem=logging/periodic-rotating-file-handler=FILE:add(autoflush=true,named-formatter=PATTERN,file={relative-to=jboss.server.log.dir,path=server.log},suffix=.yyyy-MM-dd,append=true)");
         cli.sendLine("/subsystem=logging/logger=com.arjuna:add(level=WARN)");
-        cli.sendLine("/subsystem=logging/logger=org.apache.tomcat.util.modeler:add(level=WARN)");
         cli.sendLine("/subsystem=logging/logger=org.jboss.as.config:add(level=DEBUG)");
         cli.sendLine("/subsystem=logging/logger=sun.rmi:add(level=WARN)");
         cli.sendLine("/subsystem=logging/logger=jacorb:add(level=WARN)");

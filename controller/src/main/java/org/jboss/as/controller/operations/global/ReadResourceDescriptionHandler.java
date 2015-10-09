@@ -73,7 +73,6 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.AliasEntry;
@@ -94,7 +93,7 @@ import org.jboss.dmr.Property;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author Brian Stansberry (c) 2012 Red Hat Inc.
  */
-public class ReadResourceDescriptionHandler implements OperationStepHandler {
+public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.AbstractMultiTargetHandler {
 
     private static final SimpleAttributeDefinition INHERITED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INHERITED, ModelType.BOOLEAN)
             .setAllowNull(true)
@@ -138,6 +137,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
     }
 
     private ReadResourceDescriptionHandler() {
+        super(true);
     }
 
     ReadResourceDescriptionAccessControlContext getAccessControlContext() {
@@ -145,18 +145,13 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
     }
 
     @Override
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData, boolean ignoreMissingResource) throws OperationFailedException {
         final PathAddress address = context.getCurrentAddress();
-        if (getAccessControlContext() == null && address.isMultiTarget()) {
-            executeMultiTarget(context, operation);
-        } else {
-            ReadResourceDescriptionAccessControlContext accessControlContext = getAccessControlContext() == null ? new ReadResourceDescriptionAccessControlContext(address, null) : getAccessControlContext();
-            doExecute(context, operation, accessControlContext);
-        }
+        ReadResourceDescriptionAccessControlContext accessControlContext = getAccessControlContext() == null ? new ReadResourceDescriptionAccessControlContext(address, null) : getAccessControlContext();
+        doExecute(context, operation, accessControlContext);
     }
 
-
-    private void doExecute(OperationContext context, ModelNode operation, ReadResourceDescriptionAccessControlContext accessControlContext) throws OperationFailedException {
+    void doExecute(OperationContext context, ModelNode operation, ReadResourceDescriptionAccessControlContext accessControlContext) throws OperationFailedException {
         if (accessControlContext.parentAddresses == null) {
             doExecuteInternal(context, operation, accessControlContext);
         } else {
@@ -393,51 +388,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
             return registry;
         }
         //Get hold of the real registry if it was an alias
-        return root.getSubModel(aliasEntry.convertToTargetAddress(opAddr));
-    }
-
-
-    private void executeMultiTarget(final OperationContext context, final ModelNode operation) {
-        // Format wildcard queries as list
-        final ModelNode result = context.getResult().setEmptyList();
-        context.addStep(new ModelNode(), GlobalOperationHandlers.AbstractMultiTargetHandler.FAKE_OPERATION.clone(),
-            new GlobalOperationHandlers.RegistrationAddressResolver(operation, result,
-                new OperationStepHandler() {
-                    @Override
-                    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                        final PathAddress address = context.getCurrentAddress();
-                        ReadResourceDescriptionAccessControlContext accessControlContext = getAccessControlContext() == null ? new ReadResourceDescriptionAccessControlContext(address, null) : getAccessControlContext();
-                        // step handler bypassing further wildcard resolution
-                        doExecute(context, operation, accessControlContext);
-                    }
-                }), OperationContext.Stage.MODEL, true);
-        context.completeStep(new OperationContext.RollbackHandler() {
-            @Override
-            public void handleRollback(OperationContext context, ModelNode operation) {
-                if (!context.hasFailureDescription() && result.isDefined()) {
-                    String op = operation.require(OP).asString();
-                    Map<PathAddress, ModelNode> failures = new HashMap<PathAddress, ModelNode>();
-                    for (ModelNode resultItem : result.asList()) {
-                        if (resultItem.hasDefined(FAILURE_DESCRIPTION)) {
-                            final PathAddress failedAddress = PathAddress.pathAddress(resultItem.get(ADDRESS));
-                            ModelNode failedDesc = resultItem.get(FAILURE_DESCRIPTION);
-                            failures.put(failedAddress, failedDesc);
-                        }
-                    }
-
-                    if (failures.size() == 1) {
-                        Map.Entry<PathAddress, ModelNode> entry = failures.entrySet().iterator().next();
-                        if (entry.getValue().getType() == ModelType.STRING) {
-                            context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtSingleAddress(op, entry.getKey(), entry.getValue().asString()));
-                        } else {
-                            context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtSingleAddressWithComplexFailure(op, entry.getKey()));
-                        }
-                    } else if (failures.size() > 1) {
-                        context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtMultipleAddresses(op, failures.keySet()));
-                    }
-                }
-            }
-        });
+        return root.getSubModel(aliasEntry.convertToTargetAddress(opAddr, AliasEntry.AliasContext.create(opAddr, context)));
     }
 
     /**
@@ -753,7 +704,7 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                                                                                         resource,
                                                                                         currentElement.getKey());
                 Set<String> childNames = childAddresses.get(currentElement.getKey());
-                if (childNames != null) {
+                if (childNames != null && childNames.size() > 0) {
                     for (String name : childNames) {
                         PathAddress address = currentAddress.append(PathElement.pathElement(currentElement.getKey(), name));
                         if (addParentResource(context, addresses, address)) {
@@ -764,6 +715,11 @@ public class ReadResourceDescriptionHandler implements OperationStepHandler {
                             }
                         }
                     }
+                } else {
+                    //There are no children, but for access control exception purposes,
+                    // add what we have so far along with the remainder of the child
+                    PathAddress addr = currentAddress.append(opAddress.subAddress(currentAddress.size()));
+                    addresses.add(addr);
                 }
             } else {
                 PathAddress address = currentAddress.append(currentElement);

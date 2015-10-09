@@ -31,7 +31,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>2.0.0.CR5-SNAPSHOT</version>
+    <version>2.0.0.CR7-SNAPSHOT</version>
 
     <name>WildFly: Core Parent Aggregator</name>
     <description>WildFly: Core Parent Aggregator</description>
@@ -81,9 +81,9 @@
 
         <version.commons-io>2.4</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>1.3.0.CR2</version.io.undertow>
+        <version.io.undertow>1.3.0.CR3</version.io.undertow>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
-        <version.junit>4.11</version.junit>
+        <version.junit>4.12</version.junit>
         <version.log4j>1.2.16</version.log4j>
         <version.org.apache.ds>2.0.0-M15</version.org.apache.ds>
         <version.org.apache.httpcomponents.httpclient>4.5</version.org.apache.httpcomponents.httpclient>
@@ -94,12 +94,12 @@
         <version.org.codehaus.plexus.plexus-utils>3.0.21</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core-asl>4.4.1</version.org.codehaus.woodstox.woodstox-core-asl>
-        <version.org.fusesource.jansi>1.9</version.org.fusesource.jansi>
+        <version.org.fusesource.jansi>1.11</version.org.fusesource.jansi>
         <version.org.jboss.aesh>0.65.1</version.org.jboss.aesh>
         <version.org.jboss.byteman>2.2.1</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.1.2.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.4.1.Final</version.org.jboss.invocation>
-        <version.org.jboss.jandex>2.0.0.CR1</version.org.jboss.jandex>
+        <version.org.jboss.jandex>2.0.0.Final</version.org.jboss.jandex>
         <version.org.jboss.jboss-dmr>1.3.0.Final</version.org.jboss.jboss-dmr>
         <version.org.jboss.jboss-vfs>3.2.9.Final</version.org.jboss.jboss-vfs>
         <version.org.jboss.logging.jboss-logging>3.3.0.Final</version.org.jboss.logging.jboss-logging>

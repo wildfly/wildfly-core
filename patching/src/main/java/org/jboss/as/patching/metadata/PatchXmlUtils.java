@@ -56,7 +56,6 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 class PatchXmlUtils implements XMLStreamConstants {
 
-
     private static final String PATH_DELIMITER = "/";
 
     enum Element {
@@ -445,12 +444,11 @@ class PatchXmlUtils implements XMLStreamConstants {
         boolean isAddOn = false;
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            if(Attribute.NAME == attribute) {
-                name = value;
+            if (Attribute.NAME == attribute) {
+                name = reader.getAttributeValue(i);
             } else if (Attribute.ADD_ON == attribute) {
-                isAddOn = Boolean.valueOf(value);
+                isAddOn = Boolean.valueOf(reader.getAttributeValue(i));
             } else {
                 throw unexpectedAttribute(reader, i);
             }
@@ -499,14 +497,13 @@ class PatchXmlUtils implements XMLStreamConstants {
         String resultingVersion = null;
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            if(Attribute.VERSION == attribute) {
-                version = value;
-            } else if(Attribute.TO_VERSION == attribute) {
-                resultingVersion = value;
-            } else if(Attribute.NAME == attribute) {
-                name = value;
+            if (Attribute.VERSION == attribute) {
+                version = reader.getAttributeValue(i);
+            } else if (Attribute.TO_VERSION == attribute) {
+                resultingVersion = reader.getAttributeValue(i);
+            } else if (Attribute.NAME == attribute) {
+                name = reader.getAttributeValue(i);
             } else {
                 throw unexpectedAttribute(reader, i);
             }
@@ -637,27 +634,26 @@ class PatchXmlUtils implements XMLStreamConstants {
 
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
             switch (attribute) {
                 case NAME:
-                    moduleName = value;
+                    moduleName = reader.getAttributeValue(i);
                     break;
                 case SLOT:
-                    slot = value;
+                    slot = reader.getAttributeValue(i);
                     break;
                 case HASH:
-                    if(modificationType == ModificationType.REMOVE) {
-                        targetHash = hexStringToByteArray(value);
+                    if (modificationType == ModificationType.REMOVE) {
+                        targetHash = hexStringToByteArray(reader.getAttributeValue(i));
                     } else {
-                        hash = hexStringToByteArray(value);
+                        hash = hexStringToByteArray(reader.getAttributeValue(i));
                     }
                     break;
                 case NEW_HASH:
-                    if(modificationType == ModificationType.REMOVE) {
-                        hash = hexStringToByteArray(value);
+                    if (modificationType == ModificationType.REMOVE) {
+                        hash = hexStringToByteArray(reader.getAttributeValue(i));
                     } else {
-                        targetHash = hexStringToByteArray(value);
+                        targetHash = hexStringToByteArray(reader.getAttributeValue(i));
                     }
                     break;
                 default:
@@ -681,37 +677,37 @@ class PatchXmlUtils implements XMLStreamConstants {
 
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
             switch (attribute) {
                 case DIRECTORY:
-                    directory = Boolean.parseBoolean(value);
+                    directory = Boolean.parseBoolean(reader.getAttributeValue(i));
                     break;
                 case PATH:
-                    path = value;
+                    path = reader.getAttributeValue(i);
                     break;
                 case HASH:
-                    if(type == ModificationType.REMOVE) {
-                        targetHash = hexStringToByteArray(value);
+                    if (type == ModificationType.REMOVE) {
+                        targetHash = hexStringToByteArray(reader.getAttributeValue(i));
                     } else {
-                        hash = hexStringToByteArray(value);
+                        hash = hexStringToByteArray(reader.getAttributeValue(i));
                     }
                     break;
                 case NEW_HASH:
-                    if(type == ModificationType.REMOVE) {
-                        hash = hexStringToByteArray(value);
+                    if (type == ModificationType.REMOVE) {
+                        hash = hexStringToByteArray(reader.getAttributeValue(i));
                     } else {
-                        targetHash = hexStringToByteArray(value);
+                        targetHash = hexStringToByteArray(reader.getAttributeValue(i));
                     }
                     break;
                 case IN_RUNTIME_USE:
-                    affectsRuntime = Boolean.parseBoolean(value);
+                    affectsRuntime = Boolean.parseBoolean(reader.getAttributeValue(i));
                     break;
                 case CONDITION:
                     try {
-                        condition = ModificationCondition.Factory.fromString(value);
+                        condition = ModificationCondition.Factory.fromString(reader.getAttributeValue(i));
                     } catch (PatchingException e) {
-                        throw ControllerLogger.ROOT_LOGGER.invalidAttributeValue(value, new QName(attribute.name), reader.getLocation());
+                        throw ControllerLogger.ROOT_LOGGER.invalidAttributeValue(reader.getAttributeValue(i), new QName(
+                                attribute.name), reader.getLocation());
                     }
                     break;
                 default:

@@ -92,6 +92,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
     protected void installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
         populateHostControllerInfo(hostControllerInfo, context, model);
 
+        RunningMode runningMode = context.getRunningMode();
         ServiceTarget serviceTarget = context.getServiceTarget();
         boolean onDemand = context.isBooting();
         String interfaceName = hostControllerInfo.getHttpManagementInterface();
@@ -100,7 +101,19 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         int securePort = hostControllerInfo.getHttpManagementSecurePort();
 
         ROOT_LOGGER.creatingHttpManagementService(interfaceName, port, securePort);
-        ConsoleMode consoleMode = consoleMode(commonPolicy.isConsoleEnabled(), context.getRunningMode() == RunningMode.ADMIN_ONLY);
+
+        boolean consoleEnabled = HttpManagementResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
+        ConsoleMode consoleMode = ConsoleMode.CONSOLE;
+
+        if (consoleEnabled) {
+            if (runningMode == RunningMode.ADMIN_ONLY) {
+                consoleMode = ConsoleMode.ADMIN_ONLY;
+            } else if (!hostControllerInfo.isMasterDomainController()) {
+                consoleMode = ConsoleMode.SLAVE_HC;
+            }
+        } else {
+            consoleMode = ConsoleMode.NO_CONSOLE;
+        }
 
         // Track active requests
         final ServiceName requestProcessorName = UndertowHttpManagementService.SERVICE_NAME.append("requests");

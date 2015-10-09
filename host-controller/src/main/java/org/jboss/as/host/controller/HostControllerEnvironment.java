@@ -209,6 +209,13 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      */
     public static final String JBOSS_HOST_DEFAULT_CONFIG = "jboss.host.default.config";
 
+    /**
+     * The system property used to set the unique identifier for this host exposed via the
+     * {@code uuid} attribute of the root resource of the host's portion of the management resource tree.
+     * If the property is not set any previously persisted UUID will be used; otherwise a random UUID will be generated.
+     */
+    public static final String JBOSS_HOST_MANAGEMENT_UUID = "jboss.host.management.uuid";
+
     private final Map<String, String> hostSystemProperties;
     private final InetAddress processControllerAddress;
     private final Integer processControllerPort;
@@ -241,7 +248,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private volatile String hostControllerName;
     private final HostRunningModeControl runningModeControl;
     private final boolean securityManagerEnabled;
-    private final UUID domainUUID;
+    private final UUID hostControllerUUID;
     private final long startTime;
     private final ProcessType processType;
 
@@ -473,13 +480,14 @@ public class HostControllerEnvironment extends ProcessEnvironment {
             this.defaultJVM = null;
         }
         final Path filePath = this.domainDataDir.toPath().resolve(KERNEL_DIR).resolve(UUID_FILE);
-        UUID uuid = null;
+        UUID uuid;
         try {
-            uuid = obtainProcessUUID(filePath);
+            String sysPropUUID = hostSystemProperties.get(JBOSS_HOST_MANAGEMENT_UUID);
+            uuid = obtainProcessUUID(filePath, sysPropUUID);
         } catch(IOException ex) {
             throw HostControllerLogger.ROOT_LOGGER.couldNotObtainDomainUuid(ex, filePath);
         }
-        this.domainUUID = uuid;
+        this.hostControllerUUID = uuid;
         this.backupDomainFiles = backupDomainFiles;
         this.useCachedDc = useCachedDc;
         this.productConfig = productConfig;
@@ -846,6 +854,6 @@ public class HostControllerEnvironment extends ProcessEnvironment {
 
     @Override
     public UUID getInstanceUuid() {
-        return this.domainUUID;
+        return this.hostControllerUUID;
     }
 }

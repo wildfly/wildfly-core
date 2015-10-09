@@ -324,8 +324,12 @@ public class ExtensionRegistry {
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (extension) {
                 Set<String> subsystemNames = extension.subsystems.keySet();
+
+                final boolean dcExtension = processType == ProcessType.HOST_CONTROLLER ?
+                    rootRegistration.getPathAddress().size() == 0 : false;
+
                 for (String subsystem : subsystemNames) {
-                    if (rootResource.getChild(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, subsystem)) != null) {
+                    if (hasSubsystemsRegistered(rootResource, subsystem, dcExtension)) {
                         // Restore the data
                         extensions.put(moduleName, extension);
                         throw ControllerLogger.ROOT_LOGGER.removingExtensionWithRegisteredSubsystem(moduleName, subsystem);
@@ -349,6 +353,18 @@ public class ExtensionRegistry {
         }
     }
 
+    private boolean hasSubsystemsRegistered(Resource rootResource, String subsystem, boolean dcExtension) {
+        if (!dcExtension) {
+            return rootResource.getChild(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, subsystem)) != null;
+        }
+
+        for (Resource profile : rootResource.getChildren(PROFILE)) {
+            if (profile.getChild(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, subsystem)) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
     /**
      * Clears the registry to prepare for re-registration (e.g. as part of a reload).
      */
