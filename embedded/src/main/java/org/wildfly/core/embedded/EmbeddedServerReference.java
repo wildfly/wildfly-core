@@ -33,13 +33,14 @@ import org.wildfly.core.embedded.logging.EmbeddedLogger;
 public final class EmbeddedServerReference implements StandaloneServer, HostController {
 
     private final Object server;
+    private final Class<?> serverClass;
     private final Method methodStart;
     private final Method methodStop;
     private final Method methodGetModelControllerClient;
 
     EmbeddedServerReference(Class<?> serverClass, Object serverImpl) {
         this.server = serverImpl;
-
+        this.serverClass = serverClass;
         // Get a handle on the {@link StandaloneServer} methods
         try {
             methodStart = serverClass.getMethod("start");
@@ -76,7 +77,7 @@ public final class EmbeddedServerReference implements StandaloneServer, HostCont
     }
 
     public boolean isHostController() {
-        return server instanceof HostController;
+        return HostController.class.getName().equals(serverClass.getName());
     }
 
     private Object invokeOnServer(final Method method, Object... args) {
