@@ -18,7 +18,6 @@
  */
 package org.jboss.as.server.deployment;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEPLOY;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
@@ -47,14 +46,12 @@ public class DeploymentUndeployHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         ModelNode model = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel();
-        final String deploymentUnitName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
+        final String runtimeName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
         model.get(ENABLED.getName()).set(false);
 
-        final ModelNode opAddr = operation.get(OP_ADDR);
-        PathAddress address = PathAddress.pathAddress(opAddr);
-        final String managementName = address.getLastElement().getValue();
+        final String managementName = context.getCurrentAddressValue();
 
-        DeploymentHandlerUtil.undeploy(context, operation, managementName, deploymentUnitName, vaultReader);
+        DeploymentHandlerUtil.undeploy(context, operation, managementName, runtimeName, vaultReader);
         DeploymentUtils.disableAttribute(model);
     }
 }
