@@ -347,6 +347,15 @@ public interface OperationContext extends ExpressionResolver {
      */
     void revertRestartRequired();
 
+
+    /**
+     * Returns you process state of controller that can be used to see things like is if reload required is set.
+     * @return process state of the controller
+     */
+    default ControlledProcessState.State getProcessState(){
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Notify the context that an update to the runtime that would normally have been made could not be made due to
      * the current state of the process. As an example, a step handler that can only update the runtime when

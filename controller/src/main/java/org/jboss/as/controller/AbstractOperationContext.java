@@ -68,7 +68,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-
 import javax.security.auth.Subject;
 
 import org.jboss.as.controller.ConfigurationChangesCollector.ConfigurationChange;
@@ -1073,6 +1072,12 @@ abstract class AbstractOperationContext implements OperationContext {
             }
         }
     }
+
+    @Override
+    public ControlledProcessState.State getProcessState() {
+        return processState.getState();
+    }
+
 
     @Override
     public final void runtimeUpdateSkipped() {

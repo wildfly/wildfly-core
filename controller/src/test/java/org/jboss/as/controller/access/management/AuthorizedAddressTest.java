@@ -31,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.InputStream;
 import java.util.Set;
 
+import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -438,6 +439,11 @@ public class AuthorizedAddressTest {
         @Override
         public String getCurrentAddressValue() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public ControlledProcessState.State getProcessState() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
