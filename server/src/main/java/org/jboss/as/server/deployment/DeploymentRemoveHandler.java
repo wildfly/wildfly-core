@@ -18,7 +18,6 @@
  */
 package org.jboss.as.server.deployment;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ALL;
@@ -74,43 +73,41 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
         if (context.isNormalServer()) {
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    final String deploymentUnitName;
+                    final String runtimeName;
                     final boolean enabled = ENABLED.resolveModelAttribute(context, model).asBoolean();
                     if (enabled) {
-                        deploymentUnitName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
-                        final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
+                        runtimeName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
+                        final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(runtimeName);
                         context.removeService(deploymentUnitServiceName);
                         context.removeService(deploymentUnitServiceName.append("contents"));
                     } else {
-                        deploymentUnitName = null;
+                        runtimeName = null;
                     }
                     final ModelNode contentNode = CONTENT_ALL.resolveModelAttribute(context, model);
                     context.completeStep(new OperationContext.ResultHandler() {
                         @Override
                         public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                            final ModelNode opAddr = operation.get(OP_ADDR);
-                            PathAddress address = PathAddress.pathAddress(opAddr);
-                            final String managementName = address.getLastElement().getValue();
+                            final String managementName = context.getCurrentAddressValue();
                             if (resultAction == OperationContext.ResultAction.ROLLBACK) {
                                 if (enabled) {
-                                    recoverServices(context, model, deployment, deploymentUnitName, contentNode,
+                                    recoverServices(context, deployment, managementName, runtimeName, contentNode,
                                             registration, mutableRegistration, vaultReader);
                                 }
 
                                 if (enabled && context.hasFailureDescription()) {
-                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBack(deploymentUnitName, context.getFailureDescription().asString());
+                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBack(runtimeName, context.getFailureDescription().asString());
                                 } else if (enabled) {
-                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBackWithNoMessage(deploymentUnitName);
+                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBackWithNoMessage(runtimeName);
                                 }
                             } else {
                                 if (enabled) {
-                                    ServerLogger.ROOT_LOGGER.deploymentUndeployed(managementName, deploymentUnitName);
+                                    ServerLogger.ROOT_LOGGER.deploymentUndeployed(managementName, runtimeName);
                                 }
                                 Set<String> newHash;
                                 try {
                                     newHash = DeploymentUtils.getDeploymentHexHash(context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel());
                                 } catch (Resource.NoSuchResourceException ex) {
-                                    newHash = Collections.EMPTY_SET;
+                                    newHash = Collections.emptySet();
                                 }
                                 for (byte[] hash : removedHashes) {
                                     try {
@@ -132,11 +129,10 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
         }
     }
 
-    private void recoverServices(OperationContext context, ModelNode model, Resource deployment, String runtimeName,
+    private void recoverServices(OperationContext context, Resource deployment, String managementName, String runtimeName,
                                    ModelNode contentNode, ImmutableManagementResourceRegistration registration,
                                    ManagementResourceRegistration mutableRegistration, final AbstractVaultReader vaultReader) {
-        final String name = model.require(NAME).asString();
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(contentNode);
-        DeploymentHandlerUtil.doDeploy(context, runtimeName, name, deployment, registration, mutableRegistration, vaultReader, contents);
+        DeploymentHandlerUtil.doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
     }
 }
