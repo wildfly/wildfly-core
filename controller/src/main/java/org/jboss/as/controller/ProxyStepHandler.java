@@ -29,6 +29,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.QUERY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
@@ -304,7 +305,9 @@ public class ProxyStepHandler implements OperationStepHandler {
         // so that's proxied controllers running kernel version 1.x or 2.x
         if (proxyController.getKernelModelVersion().getMajor() < 3 && address.size() > 1) {
             String opName = operation.get(OP).asString();
-            if (READ_RESOURCE_OPERATION.equals(opName) || READ_ATTRIBUTE_OPERATION.equals(opName)
+            if (READ_RESOURCE_OPERATION.equals(opName)
+                    || READ_ATTRIBUTE_OPERATION.equals(opName)
+                    || QUERY.equals(opName)
                     || (READ_RESOURCE_DESCRIPTION_OPERATION.equals(opName) && address.size() >= 2)) {
                 PathElement pe = address.getElement(1);
                 return pe.isMultiTarget() && RUNNING_SERVER.equals(pe.getKey());
