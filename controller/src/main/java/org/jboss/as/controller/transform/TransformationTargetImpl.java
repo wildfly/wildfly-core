@@ -30,6 +30,7 @@ import java.util.Map;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.global.QueryOperationHandler;
 import org.jboss.as.controller.registry.OperationTransformerRegistry;
 import org.jboss.as.controller.registry.OperationTransformerRegistry.PlaceholderResolver;
 
@@ -144,6 +145,9 @@ public class TransformationTargetImpl implements TransformationTarget {
             if(ModelDescriptionConstants.COMPOSITE.equals(operationName)) {
                 return new CompositeOperationTransformer();
             }
+        }
+        if (version.getMajor() < 3 && ModelDescriptionConstants.QUERY.equals(operationName)) { // TODO use transformer inheritance and register this normally
+            return QueryOperationHandler.TRANSFORMER;
         }
         final OperationTransformerRegistry.OperationTransformerEntry entry = registry.resolveOperationTransformer(address, operationName, placeholderResolver);
         return entry.getTransformer();

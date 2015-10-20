@@ -3368,7 +3368,16 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 405, value = "Couldn't find a transformer to %s, falling back to %s")
     void couldNotFindTransformerRegistryFallingBack(ModelVersion currentVersion, ModelVersion fallbackVersion);
 
-    @Message(id = 406, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    /**
+     * Creates an exception indicating that an attribute could not be converted to the type required by a query select
+     *
+     * @param attribute the name of the attribute
+     * @param type the required type
+     */
+    @Message(id = 406, value = "Could not convert the attribute '%s' to a %s")
+    OperationFailedException selectFailedCouldNotConvertAttributeToType(String attribute, ModelType type);
+
+    @Message(id = 407, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
     OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
 
 }

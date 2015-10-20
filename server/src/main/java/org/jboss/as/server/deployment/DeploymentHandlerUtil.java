@@ -294,7 +294,7 @@ public class DeploymentHandlerUtil {
         }
     }
 
-    public static void undeploy(final OperationContext context, final ModelNode operation, final String managementName, final String deploymentUnitName, final AbstractVaultReader vaultReader) {
+    public static void undeploy(final OperationContext context, final ModelNode operation, final String managementName, final String runtimeName, final AbstractVaultReader vaultReader) {
         if (context.isNormalServer()) {
             final Resource deployment = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
@@ -309,15 +309,14 @@ public class DeploymentHandlerUtil {
                 } catch (OperationFailedException ex) {//No resolvable owner we won't set one
                 }
             }
-            notificationData.get(DEPLOYMENT).set(deploymentUnitName);
-            context.emit(new Notification(DEPLOYMENT_UNDEPLOYED_NOTIFICATION, context.getCurrentAddress(), ServerLogger.ROOT_LOGGER.deploymentUndeployedNotification(managementName, deploymentUnitName), notificationData));
+            notificationData.get(DEPLOYMENT).set(runtimeName);
+            context.emit(new Notification(DEPLOYMENT_UNDEPLOYED_NOTIFICATION, context.getCurrentAddress(), ServerLogger.ROOT_LOGGER.deploymentUndeployedNotification(managementName, runtimeName), notificationData));
 
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) {
-                    final ServiceRegistry registry = context.getServiceRegistry(true);
 
-                    final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
+                    final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(runtimeName);
 
                     context.removeService(deploymentUnitServiceName);
                     context.removeService(deploymentUnitServiceName.append("contents"));
@@ -328,18 +327,16 @@ public class DeploymentHandlerUtil {
                             if(resultAction == OperationContext.ResultAction.ROLLBACK) {
 
                                 final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-                                final String name = model.require(NAME).asString();
-                                final String runtimeName = model.require(RUNTIME_NAME).asString();
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(model.require(CONTENT));
-                                doDeploy(context, runtimeName, name, deployment, registration, mutableRegistration, vaultReader, contents);
+                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
 
                                 if (context.hasFailureDescription()) {
-                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBack(deploymentUnitName, getFormattedFailureDescription(context));
+                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBack(runtimeName, getFormattedFailureDescription(context));
                                 } else {
-                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBackWithNoMessage(deploymentUnitName);
+                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBackWithNoMessage(runtimeName);
                                 }
                             } else {
-                                ServerLogger.ROOT_LOGGER.deploymentUndeployed(managementName, deploymentUnitName);
+                                ServerLogger.ROOT_LOGGER.deploymentUndeployed(managementName, runtimeName);
                             }
                         }
                     });

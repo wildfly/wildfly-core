@@ -167,7 +167,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                     case DEPLOYMENT_DEPLOYED_NOTIFICATION: {
                         String runtimeName = notification.getData().get(DEPLOYMENT).asString();
                         if (!deployed.containsKey(runtimeName)) {
-                            updateDeploymentStatusAfterNotification(deploymentDir.toPath(), runtimeName);
+                            updateStatusAfterDeploymentNotification(deploymentDir.toPath(), runtimeName);
                         }
                         break;
                     }
@@ -175,6 +175,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                         String runtimeName = notification.getData().get(DEPLOYMENT).asString();
                         if (deployed.containsKey(runtimeName)) {
                             clearMarkers(deployed.get(runtimeName).parentFolder.toPath(), runtimeName);
+                            updateStatusAfterUndeploymentNotification(deploymentDir.toPath(), runtimeName);
                             deployed.remove(runtimeName);
                         }
                         break;
@@ -187,20 +188,32 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             }
         }
     }
-
-    private void updateDeploymentStatusAfterNotification(Path dir, String runtimeName) {
+    private void updateStatusAfterUndeploymentNotification(Path dir, String runtimeName) {
         Path undeployedMarker = dir.resolve(runtimeName + UNDEPLOYED);
+        final Path deploymentFile = dir.resolve(runtimeName);
+        if (!Files.exists(undeployedMarker) && Files.exists(deploymentFile)) {
+             try {
+                Files.createFile(undeployedMarker);
+            } catch (IOException ioex) {
+                ROOT_LOGGER.errorWritingDeploymentMarker(ioex, undeployedMarker.toString());
+            }
+        }
+    }
+    private void updateStatusAfterDeploymentNotification(Path dir, String runtimeName) {
+        Path undeployedMarker = dir.resolve(runtimeName + UNDEPLOYED);
+        Path deployedMarker = dir.resolve(runtimeName + DEPLOYED);
         if (Files.exists(undeployedMarker)) {
             try {
                 Files.delete(undeployedMarker);
             } catch (IOException ioex) {
                 ROOT_LOGGER.cannotRemoveDeploymentMarker(undeployedMarker.toFile());
             }
-            Path deployedMarker = dir.resolve(runtimeName + DEPLOYED);
+        }
+        final Path deploymentFile = dir.resolve(runtimeName);
+        if (! Files.exists(deployedMarker) && Files.exists(deploymentFile)) {
             try {
                 deployedMarker = Files.createFile(deployedMarker);
-                final Path deploymentFile = dir.resolve(runtimeName);
-                boolean isArchive = Files.exists(deploymentFile) && Files.isRegularFile(deploymentFile);
+                boolean isArchive = Files.isRegularFile(deploymentFile);
                 if (Files.exists(deploymentFile)) {
                     Files.setLastModifiedTime(deployedMarker, Files.getLastModifiedTime(deploymentFile));
                 }
