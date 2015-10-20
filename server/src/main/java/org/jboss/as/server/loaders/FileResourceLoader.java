@@ -272,7 +272,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     public Resource getResource(final String name) {
         if (name == null) return null;
         final String canonPath = PathUtils.canonicalize(PathUtils.relativize(name));
-        if (canonPath.endsWith("/")) return null;
+        if (canonPath.endsWith("/") || canonPath.equals("")) return null;
         final File overlay = overlays.get(canonPath);
         final File file = overlay != null ? overlay : new File(root, canonPath);
         final SecurityManager sm = System.getSecurityManager();
