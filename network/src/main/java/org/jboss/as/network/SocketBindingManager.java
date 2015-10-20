@@ -82,21 +82,23 @@ public interface SocketBindingManager {
     DatagramSocket createDatagramSocket(final SocketAddress address) throws SocketException;
 
     /**
-     * Create a multicast socket.
+     * Create a named multicast socket.
      *
-     * @param name the name for the managed binding
-     * @param address the socket address
+     * @param name the name for the managed binding. Cannot be {@code null}
+     * @param address the socket address. Cannot be {@code null}
      * @return the multicast socket
      * @throws IOException
+     * @throws IllegalArgumentException if {@code name} or {@code address} is {@code null}
      */
     MulticastSocket createMulticastSocket(final String name, final SocketAddress address) throws IOException;
 
     /**
-     * Create a multicast socket.
+     * Create an unnamed multicast socket.
      *
-     * @param address the socket address
+     * @param address the socket address. Cannot be {@code null}
      * @return the multicast socket
      * @throws IOException
+     * @throws IllegalArgumentException if {@code address} is {@code null}
      */
     MulticastSocket createMulticastSocket(final SocketAddress address) throws IOException;
 
