@@ -21,6 +21,10 @@
  */
 package org.jboss.as.repository;
 
+import static java.lang.Long.getLong;
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -32,6 +36,7 @@ import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -64,7 +69,7 @@ public interface ContentRepository {
      * Time after which a marked obsolete content will be removed.
      * Currently 5 minutes.
      */
-    long OBSOLETE_CONTENT_TIMEOUT = 300000L;
+    long OBSOLETE_CONTENT_TIMEOUT = getSecurityManager() == null ? getLong(Factory.UNSUPPORTED_PROPERTY, 300000L) : doPrivileged((PrivilegedAction<Long>) () -> getLong(Factory.UNSUPPORTED_PROPERTY, 300000L));
 
     String DELETED_CONTENT = "deleted-contents";
     String MARKED_CONTENT = "marked-contents";
@@ -137,7 +142,12 @@ public interface ContentRepository {
     Map<String, Set<String>> cleanObsoleteContent();
 
     static class Factory {
-
+        /**
+         * For testing purpose only.
+         * @deprecated DON'T USE IT.
+         */
+        @Deprecated
+        private static final String UNSUPPORTED_PROPERTY = "org.wildfly.unsupported.content.repository.obsolescence";
         public static void addService(final ServiceTarget serviceTarget, final File repoRoot) {
             ContentRepositoryImpl contentRepository = new ContentRepositoryImpl(repoRoot, OBSOLETE_CONTENT_TIMEOUT);
             serviceTarget.addService(SERVICE_NAME, contentRepository).install();
@@ -255,7 +265,6 @@ public interface ContentRepository {
 
             @Override
             public boolean hasContent(byte[] hash) {
-                Path content = getDeploymentContentFile(hash);
                 return Files.exists(getDeploymentContentFile(hash));
             }
 
