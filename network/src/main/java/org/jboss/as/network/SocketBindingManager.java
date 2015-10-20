@@ -61,21 +61,23 @@ public interface SocketBindingManager {
     ManagedSocketFactory getSocketFactory();
 
     /**
-     * Create a datagram socket.
+     * Create a named datagram socket.
      *
-     * @param name the name for managed binding
-     * @param address the socket address
+     * @param name the name for the managed binding. Cannot be {@code null}
+     * @param address the socket address. Cannot be {@code null}
      * @return the datagram socket
      * @throws SocketException
+     * @throws IllegalArgumentException if {@code name} or {@code address} is {@code null}
      */
     DatagramSocket createDatagramSocket(final String name, final SocketAddress address) throws SocketException;
 
     /**
-     * Create a datagram socket.
+     * Create an unnamed datagram socket.
      *
-     * @param address the socket address
+     * @param address the socket address. Cannot be {@code null}
      * @return the datagram socket
      * @throws SocketException
+     * @throws IllegalArgumentException if {@code address} is {@code null}
      */
     DatagramSocket createDatagramSocket(final SocketAddress address) throws SocketException;
 
