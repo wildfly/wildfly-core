@@ -21,12 +21,14 @@
  */
 package org.wildfly.core.embedded;
 
-import org.jboss.as.server.ServerEnvironment;
-
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 
+import org.jboss.as.server.ServerEnvironment;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,22 +39,33 @@ import org.junit.Test;
  * @version $Revision: 1.1 $
  */
 public class EmbeddedServerFactorySetupUnitTestCase {
-    File standardJBossHome = createStandardAsHome();
-    File alternativeServer = createServer(createRootDir(), "standalone2", 2);
-    File alternativeDataDir = createDataOrConfigDir(createRootDir(), "otherData", 3);
-    File alternativeConfigDir = createDataOrConfigDir(createRootDir(), "otherConfig", 4);
+    final Path standardJBossHome;
+    final Path alternativeServer;
+    final Path alternativeDataDir;
+    final Path alternativeConfigDir;
 
-    File embeddedRoot;
+    Path embeddedRoot;
+
+    public EmbeddedServerFactorySetupUnitTestCase() {
+        try {
+            standardJBossHome = createStandardAsHome();
+            alternativeServer = createServer(createRootDir(), "standalone2", 2);
+            alternativeDataDir = createDataOrConfigDir(createRootDir(), "otherData", 3);
+            alternativeConfigDir = createDataOrConfigDir(createRootDir(), "otherConfig", 4);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     @Before
-    public void createEmbeddedRoot() {
-        embeddedRoot = new File("target/embedded-root").getAbsoluteFile();
-        if (embeddedRoot.exists()) {
-            deleteDirectory(embeddedRoot);
+    public void createEmbeddedRoot() throws IOException {
+        embeddedRoot = Paths.get("target/embedded-root").toAbsolutePath();
+        if(Files.exists(embeddedRoot)){
+            deleteDirectory(embeddedRoot.toFile());
         }
-
-        embeddedRoot.mkdirs();
-        Assert.assertTrue(embeddedRoot.exists());
+        Files.createDirectories(embeddedRoot);
+        Assert.assertTrue(Files.exists(embeddedRoot));
     }
 
     @Test
@@ -65,11 +78,11 @@ public class EmbeddedServerFactorySetupUnitTestCase {
     @Test
     public void testEmbeddedRootNoOverrides() throws Exception {
         Properties props = new Properties();
-        props.setProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT, embeddedRoot.getAbsolutePath());
+        props.setProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT, embeddedRoot.toAbsolutePath().toString());
         EmbeddedStandaloneServerFactory.setupCleanDirectories(standardJBossHome, props);
 
         Assert.assertEquals(4, props.size());
-        Assert.assertEquals(embeddedRoot.getAbsolutePath(), props.getProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT));
+        Assert.assertEquals(embeddedRoot.toAbsolutePath().toString(), props.getProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT));
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_BASE_DIR, -1);
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_DATA_DIR, 1);
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_CONFIG_DIR, 1);
@@ -78,11 +91,11 @@ public class EmbeddedServerFactorySetupUnitTestCase {
     @Test
     public void testEmbeddedRootServerOverride() throws Exception {
         Properties props = new Properties();
-        props.setProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT, embeddedRoot.getAbsolutePath());
-        props.setProperty(ServerEnvironment.SERVER_BASE_DIR, alternativeServer.getAbsolutePath());
+        props.setProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT, embeddedRoot.toAbsolutePath().toString());
+        props.setProperty(ServerEnvironment.SERVER_BASE_DIR, alternativeServer.toAbsolutePath().toString());
         EmbeddedStandaloneServerFactory.setupCleanDirectories(standardJBossHome, props);
         Assert.assertEquals(4, props.size());
-        Assert.assertEquals(embeddedRoot.getAbsolutePath(), props.getProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT));
+        Assert.assertEquals(embeddedRoot.toAbsolutePath().toString(), props.getProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT));
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_BASE_DIR, -1);
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_DATA_DIR, 2);
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_CONFIG_DIR, 2);
@@ -91,12 +104,12 @@ public class EmbeddedServerFactorySetupUnitTestCase {
     @Test
     public void testDataAndConfigOverride() throws Exception {
         Properties props = new Properties();
-        props.setProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT, embeddedRoot.getAbsolutePath());
-        props.setProperty(ServerEnvironment.SERVER_DATA_DIR, alternativeDataDir.getAbsolutePath());
-        props.setProperty(ServerEnvironment.SERVER_CONFIG_DIR, alternativeConfigDir.getAbsolutePath());
+        props.setProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT, embeddedRoot.toAbsolutePath().toString());
+        props.setProperty(ServerEnvironment.SERVER_DATA_DIR, alternativeDataDir.toAbsolutePath().toString());
+        props.setProperty(ServerEnvironment.SERVER_CONFIG_DIR, alternativeConfigDir.toAbsolutePath().toString());
         EmbeddedStandaloneServerFactory.setupCleanDirectories(standardJBossHome, props);
         Assert.assertEquals(4, props.size());
-        Assert.assertEquals(embeddedRoot.getAbsolutePath(), props.getProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT));
+        Assert.assertEquals(embeddedRoot.toAbsolutePath().toString(), props.getProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT));
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_BASE_DIR, -1);
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_DATA_DIR, 3);
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_CONFIG_DIR, 4);
@@ -105,13 +118,13 @@ public class EmbeddedServerFactorySetupUnitTestCase {
     @Test
     public void testServerOverrideAndDataAndConfigOverride() throws Exception {
         Properties props = new Properties();
-        props.setProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT, embeddedRoot.getAbsolutePath());
-        props.setProperty(ServerEnvironment.SERVER_BASE_DIR, alternativeServer.getAbsolutePath());
-        props.setProperty(ServerEnvironment.SERVER_DATA_DIR, alternativeDataDir.getAbsolutePath());
-        props.setProperty(ServerEnvironment.SERVER_CONFIG_DIR, alternativeConfigDir.getAbsolutePath());
+        props.setProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT, embeddedRoot.toAbsolutePath().toString());
+        props.setProperty(ServerEnvironment.SERVER_BASE_DIR, alternativeServer.toAbsolutePath().toString());
+        props.setProperty(ServerEnvironment.SERVER_DATA_DIR, alternativeDataDir.toAbsolutePath().toString());
+        props.setProperty(ServerEnvironment.SERVER_CONFIG_DIR, alternativeConfigDir.toAbsolutePath().toString());
         EmbeddedStandaloneServerFactory.setupCleanDirectories(standardJBossHome, props);
         Assert.assertEquals(4, props.size());
-        Assert.assertEquals(embeddedRoot.getAbsolutePath(), props.getProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT));
+        Assert.assertEquals(embeddedRoot.toAbsolutePath().toString(), props.getProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT));
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_BASE_DIR, -1);
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_DATA_DIR, 3);
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_CONFIG_DIR, 4);
@@ -120,12 +133,12 @@ public class EmbeddedServerFactorySetupUnitTestCase {
     @Test
     public void testServerOverrideAndConfigOverride() throws Exception {
         Properties props = new Properties();
-        props.setProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT, embeddedRoot.getAbsolutePath());
-        props.setProperty(ServerEnvironment.SERVER_BASE_DIR, alternativeServer.getAbsolutePath());
-        props.setProperty(ServerEnvironment.SERVER_CONFIG_DIR, alternativeConfigDir.getAbsolutePath());
+        props.setProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT, embeddedRoot.toAbsolutePath().toString());
+        props.setProperty(ServerEnvironment.SERVER_BASE_DIR, alternativeServer.toAbsolutePath().toString());
+        props.setProperty(ServerEnvironment.SERVER_CONFIG_DIR, alternativeConfigDir.toAbsolutePath().toString());
         EmbeddedStandaloneServerFactory.setupCleanDirectories(standardJBossHome, props);
         Assert.assertEquals(4, props.size());
-        Assert.assertEquals(embeddedRoot.getAbsolutePath(), props.getProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT));
+        Assert.assertEquals(embeddedRoot.toAbsolutePath().toString(), props.getProperty(EmbeddedStandaloneServerFactory.JBOSS_EMBEDDED_ROOT));
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_BASE_DIR, -1);
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_DATA_DIR, 2);
         assertPropertyAndEmbeddedRootFile(props, ServerEnvironment.SERVER_CONFIG_DIR, 4);
@@ -143,7 +156,7 @@ public class EmbeddedServerFactorySetupUnitTestCase {
 
         File parent = dir.getParentFile();
         while (parent != null) {
-            if (parent.equals(embeddedRoot)) {
+            if (parent.equals(embeddedRoot.toFile())) {
                 return;
             }
             parent = parent.getParentFile();
@@ -152,51 +165,53 @@ public class EmbeddedServerFactorySetupUnitTestCase {
     }
 
 
-    private File createRootDir() {
-        File root = new File("target/server-home");
-        if (!root.exists()) {
-            root.mkdir();
+    private Path createRootDir() throws IOException {
+        Path root = Paths.get("target/server-home");
+        if (Files.notExists(root)){
+            Files.createDirectory(root);
         }
-        return root.getAbsoluteFile();
+        return root;
     }
 
-    private File createStandardAsHome() {
-        File home = new File(createRootDir(), "jboss-home");
-        if (!home.exists()) {
-            home.mkdir();
+    private Path createStandardAsHome() throws IOException {
+        Path home = createRootDir().resolve("jboss-home");
+        if (Files.notExists(home)) {
+            Files.createDirectory(home);
         }
 
         createServer(home, "standalone", 1);
 
-        return home.getAbsoluteFile();
+        return home;
     }
 
-    private File createServer(File home, String serverName, int id) {
-        File server = new File(home, serverName);
-        server = new File(home, serverName);
-        if (!server.exists()) {
-            server.mkdir();
+    private Path createServer(Path home, String serverName, int id) throws IOException {
+        Path server = home.resolve(serverName);
+
+        if (Files.notExists(server)) {
+            Files.createDirectory(server);
         }
+
         createDataOrConfigDir(server, "data", id);
         createDataOrConfigDir(server, "configuration", id);
-        return server.getAbsoluteFile();
+        return server;
     }
 
-    private File createDataOrConfigDir(File server, String name, int id) {
-        File dir = new File(server, name);
-        if (!dir.exists()) {
-            dir.mkdir();
-        }
-        File file = new File(dir, String.valueOf(id));
-        try {
-            file.createNewFile();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    private Path createDataOrConfigDir(Path server, String name, int id) {
+        Path dir = server.resolve(name);
+
+        Path file = dir.resolve(String.valueOf(id));// new File(dir, String.valueOf(id));
+        if (Files.notExists(file)) {
+            try {
+                Files.createDirectories(dir);
+                Files.createFile(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
-        Assert.assertTrue(file.exists());
+        Assert.assertTrue(Files.exists(file));
 
-        return dir.getAbsoluteFile();
+        return dir;
     }
 
     private void deleteDirectory(File dir) {
