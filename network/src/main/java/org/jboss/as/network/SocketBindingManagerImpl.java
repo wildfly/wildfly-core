@@ -40,6 +40,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jboss.as.network.logging.NetworkMessages;
+
 
 /**
  * @author Emanuel Muckenhuber
@@ -67,24 +69,42 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
     /** {@inheritDoc} */
     @Override
     public DatagramSocket createDatagramSocket(String name, SocketAddress address) throws SocketException {
-        return new ManagedDatagramSocketBinding(null, this.namedRegistry, address);
+        if (name == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("name");
+        }
+        if (address == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("address");
+        }
+        return new ManagedDatagramSocketBinding(name, this.namedRegistry, address);
     }
 
     /** {@inheritDoc} */
     @Override
     public DatagramSocket createDatagramSocket(SocketAddress address) throws SocketException {
+        if (address == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("address");
+        }
         return new ManagedDatagramSocketBinding(null, this.unnamedRegistry, address);
     }
 
     /** {@inheritDoc} */
     @Override
     public MulticastSocket createMulticastSocket(String name, SocketAddress address) throws IOException {
-        return ManagedMulticastSocketBinding.create(null, this.unnamedRegistry, address);
+        if (name == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("name");
+        }
+        if (address == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("address");
+        }
+        return ManagedMulticastSocketBinding.create(name, this.namedRegistry, address);
     }
 
     /** {@inheritDoc} */
     @Override
     public MulticastSocket createMulticastSocket(SocketAddress address) throws IOException {
+        if (address == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("address");
+        }
         return ManagedMulticastSocketBinding.create(null, this.unnamedRegistry, address);
     }
 
