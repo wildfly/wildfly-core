@@ -67,7 +67,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
     /** {@inheritDoc} */
     @Override
     public DatagramSocket createDatagramSocket(String name, SocketAddress address) throws SocketException {
-        return new ManagedDatagramSocketBinding(null, this.namedRegistry, address);
+        return new ManagedDatagramSocketBinding(name, this.namedRegistry, address);
     }
 
     /** {@inheritDoc} */
@@ -79,7 +79,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
     /** {@inheritDoc} */
     @Override
     public MulticastSocket createMulticastSocket(String name, SocketAddress address) throws IOException {
-        return ManagedMulticastSocketBinding.create(null, this.unnamedRegistry, address);
+        return ManagedMulticastSocketBinding.create(name, this.namedRegistry, address);
     }
 
     /** {@inheritDoc} */
