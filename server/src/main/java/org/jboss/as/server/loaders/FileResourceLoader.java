@@ -279,7 +279,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         if (sm != null) {
             return doPrivileged(new PrivilegedAction<Resource>() {
                 public Resource run() {
-                    if (!file.exists()) {
+                    if (!file.exists() || file.isDirectory()) {
                         return null;
                     } else {
                         try {
@@ -290,7 +290,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
                     }
                 }
             }, context);
-        } else if (! file.exists()) {
+        } else if (! file.exists() || file.isDirectory()) {
             return null;
         } else {
             try {
