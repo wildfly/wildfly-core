@@ -37,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
@@ -146,6 +147,9 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         addPath(client, Outcome.UNAUTHORIZED);
 
         testWFLY1916(client, Outcome.UNAUTHORIZED);
+
+        // Monitor can't shutdown
+        testWCORE1067(client);
     }
 
     @Test
@@ -203,6 +207,9 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         addPath(client, Outcome.UNAUTHORIZED);
 
         testWFLY1916(client, Outcome.SUCCESS);
+
+        // Deployer can't shutdown
+        testWCORE1067(client);
     }
 
     @Test
@@ -244,6 +251,9 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         addPath(client, Outcome.UNAUTHORIZED);
 
         testWFLY1916(client, Outcome.UNAUTHORIZED);
+
+        // Auditor can't shutdown
+        testWCORE1067(client);
     }
 
     @Test
@@ -384,6 +394,11 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
     private void testWFLY1916(ManagementInterface client, Outcome expected) throws IOException {
         ModelNode op = WFLY_1916_OP.clone();
         RbacUtil.executeOperation(client, op, expected);
+    }
+
+    private void testWCORE1067(ManagementInterface client) throws IOException {
+        ModelNode op = Util.createEmptyOperation(SHUTDOWN, PathAddress.EMPTY_ADDRESS);
+        RbacUtil.executeOperation(client, op, Outcome.UNAUTHORIZED);
     }
 
 }

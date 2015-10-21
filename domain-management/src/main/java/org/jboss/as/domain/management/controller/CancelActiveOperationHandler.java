@@ -25,6 +25,7 @@ package org.jboss.as.domain.management.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.util.EnumSet;
@@ -37,6 +38,8 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.AuthorizationResult;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
@@ -64,8 +67,11 @@ public class CancelActiveOperationHandler implements OperationStepHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
         DomainManagementLogger.ROOT_LOGGER.debugf("Cancel of %s requested", PathAddress.pathAddress(operation.get(OP_ADDR)).getLastElement().getValue());
-        context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
-
+        AuthorizationResult authorizationResult = context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+        if (authorizationResult.getDecision() == AuthorizationResult.Decision.DENY) {
+            throw ControllerLogger.ACCESS_LOGGER.unauthorized(operation.get(OP).asString(),
+                    PathAddress.pathAddress(operation.get(OP_ADDR)), authorizationResult.getExplanation());
+        }
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
