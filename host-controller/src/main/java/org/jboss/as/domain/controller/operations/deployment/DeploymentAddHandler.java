@@ -56,8 +56,8 @@ public class DeploymentAddHandler implements OperationStepHandler {
     private final HostFileRepository fileRepository;
 
     /** Constructor for a slave Host Controller */
-    public DeploymentAddHandler(final HostFileRepository fileRepository) {
-        this.contentRepository = null;
+    public DeploymentAddHandler(final HostFileRepository fileRepository, final ContentRepository contentRepository) {
+        this.contentRepository = contentRepository;
         this.fileRepository = fileRepository;
     }
 
@@ -104,7 +104,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
             // If we are the master, validate that we actually have this content. If we're not the master
             // we do not need the content until it's added to a server group we care about, so we defer
             // pulling it until then
-            if (contentRepository != null && !contentRepository.hasContent(hash)) {
+            if (fileRepository == null && contentRepository != null && !contentRepository.hasContent(hash)) {
                 if (context.isBooting()) {
                     if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
                         // The deployment content is missing, which would be a fatal boot error if we were going to actually
@@ -121,7 +121,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
                 fileRepository.getDeploymentFiles(ModelContentReference.fromModelAddress(address, hash));
             }
         } else if (DeploymentHandlerUtils.hasValidContentAdditionParameterDefined(contentItemNode)) {
-            if (contentRepository == null) {
+            if (fileRepository != null || contentRepository == null) {
                 // This is a slave DC. We can't handle this operation; it should have been fixed up on the master DC
                 throw createFailureException(DomainControllerLogger.ROOT_LOGGER.slaveCannotAcceptUploads());
             }
