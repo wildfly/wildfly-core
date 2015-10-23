@@ -977,6 +977,7 @@ public class GlobalOperationHandlers {
             } else {
                 PathAddress childAddr = addr.append(element);
                 PathAddress target = aliasEntry.convertToTargetAddress(childAddr, AliasContext.create(childAddr, context));
+                assert !childAddr.equals(target) : "Alias was not translated";
                 PathAddress targetParent = target.subAddress(0, target.size() - 1);
                 Resource parentResource = context.readResourceFromRoot(targetParent, false);
                 if (parentResource != null) {

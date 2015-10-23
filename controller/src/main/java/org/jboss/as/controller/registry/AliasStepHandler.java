@@ -59,6 +59,7 @@ public class AliasStepHandler implements OperationStepHandler {
 
         final AliasContext aliasContext = AliasContext.create(operation, context);
         final PathAddress mapped = aliasEntry.convertToTargetAddress(addr, aliasContext);
+        assert !addr.equals(mapped) : "Alias was not translated";
 
         final OperationStepHandler targetHandler = context.getRootResourceRegistration().getOperationHandler(mapped, op);
         if (targetHandler == null) {
