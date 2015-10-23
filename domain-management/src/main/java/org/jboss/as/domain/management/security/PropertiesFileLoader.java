@@ -205,7 +205,7 @@ public class PropertiesFileLoader {
                 } else {
                     Matcher matcher = PROPERTY_PATTERN.matcher(trimmed);
                     if (matcher.matches()) {
-                        final String key = matcher.group(1);
+                        final String key = cleanKey(matcher.group(1));
                         if (toSave.containsKey(key) || toSave.containsKey(key + DISABLE_SUFFIX_KEY)) {
                             writeProperty(bw, key, matcher.group(2));
                             toSave.remove(key);
@@ -223,6 +223,41 @@ public class PropertiesFileLoader {
         } finally {
             safeClose(bw);
         }
+    }
+
+    protected String cleanKey(final String key) {
+        char[] keyChars = key.toCharArray();
+        char[] cleaned = new char[keyChars.length];
+        int keyPos = 0;
+        int cleanedPos = 0;
+
+        while (keyPos < keyChars.length) {
+            if (keyChars[keyPos++] == '\\') {
+                char current = keyChars[keyPos];
+                switch (current) {
+                    case 't':
+                        cleaned[cleanedPos++] = '\t';
+                        break;
+                    case 'r':
+                        cleaned[cleanedPos++] = '\r';
+                        break;
+                    case 'n':
+                        cleaned[cleanedPos++] = '\n';
+                        break;
+                    case 'f':
+                        cleaned[cleanedPos++] = '\f';
+                        break;
+                    default:
+                        cleaned[cleanedPos++] = current;
+                }
+
+                keyPos++;
+            } else {
+                cleaned[cleanedPos++] = keyChars[keyPos - 1];
+            }
+        }
+
+        return new String(cleaned, 0, cleanedPos);
     }
 
     protected List<String> readFile(File file) throws IOException {
