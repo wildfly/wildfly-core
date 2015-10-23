@@ -113,14 +113,17 @@ public class ConfigurationFile {
     private final AtomicBoolean doneBootup = new AtomicBoolean();
     private final File configurationDir;
     private final String rawFileName;
-    private final String bootFileName;
+    private volatile String bootFileName;
     // File from which boot operations should be parsed; null if currently undetermined
     private volatile File bootFile;
     /* Whether the next determination of the bootFile should use the .last file in history
-       instead of the {@link #mainFile}. Only relevant with {@link InteractionPolicy#READ_ONLY} */
+       instead of the {@link #mainFile}. Only relevant with {@link InteractionPolicy#READ_ONLY}.
+        If true and used with a non-null newReloadBootFileName, the newReloadBootFileName will take precedence */
     private volatile boolean reloadUsingLast;
     // Whether {@link #bootFile has been reset from its first value
     private volatile boolean bootFileReset;
+    // A new boot file specified during a reload process. This will take precedence over a true reloadUsingLast value.
+    private volatile String newReloadBootFileName;
     private final File mainFile;
     private final File historyRoot;
     private final File currentHistory;
@@ -178,18 +181,26 @@ public class ConfigurationFile {
         }
     }
 
+    public boolean checkCanFindNewBootFile(final String bootFileName) {
+        File file = determineBootFile(configurationDir, bootFileName);
+        return file != null && file.exists();
+    }
     /**
      * Reset so the next call to {@link #getBootFile()} will re-determine the appropriate file to use for
-     * parsing boot operations.
+     * parsing boot operations. If {@code reloadUsingLast} is {@code true}, while {@code newBootFileName} is not {@code null},
+     * {@code newBootFileName} will take precedence. If a {@code newBootFileName} is used, callers must call
+     * {@link #checkCanFindNewBootFile(String)} first.
      *
      * @param reloadUsingLast {@code true} if the next call to {@link #getBootFile()} should use the last file from
      *                                    the history. Only relevant if this object is not persisting changes
      *                                    back to the original source file
+     * @param newBootFileName the name of the new bootfile
      */
-    public synchronized void resetBootFile(boolean reloadUsingLast) {
+    public synchronized void resetBootFile(boolean reloadUsingLast, String newBootFileName) {
         this.bootFile = null;
         this.bootFileReset = true;
         this.reloadUsingLast = reloadUsingLast;
+        this.newReloadBootFileName = newBootFileName;
     }
 
     /**
@@ -200,19 +211,28 @@ public class ConfigurationFile {
         if (bootFile == null) {
             synchronized (this) {
                 if (bootFile == null) {
-                    // If it's a reload and we're persisting our config, we boot from mainFile,
+                    // If it's a reload with no new boot file name and we're persisting our config, we boot from mainFile,
                     // as that's where we persist
-                    if (bootFileReset && !interactionPolicy.isReadOnly()) {
+                    if (bootFileReset && !interactionPolicy.isReadOnly() && newReloadBootFileName == null) {
                         // we boot from mainFile
                         bootFile = mainFile;
                     } else {
-                        // It's either first boot or we're not persisting our config.
+                        // It's either first boot, or a reload where we're not persisting our config or with a new boot file.
                         // So we need to figure out which file we're meant to boot from
 
                         String bootFileName = this.bootFileName;
-                        if (interactionPolicy.isReadOnly() && reloadUsingLast) {
+                        if (newReloadBootFileName != null) {
+                            //A non-null new boot file on reload takes precedence over the reloadUsingLast functionality
+                            //A new boot file was specified. Use that and reset the new name to null
+                            bootFileName = newReloadBootFileName;
+                            newReloadBootFileName = null;
+                            //Reset the done bootup and the sequence, so that the old file we are reloading from
+                            // overwrites the main file on successful boot, and history is reset as when booting new
+                            doneBootup.set(false);
+                            sequence.set(0);
+                        } else if (interactionPolicy.isReadOnly() && reloadUsingLast) {
                             //If we were reloaded, and it is not a persistent configuration we want to use the last from the history
-                            bootFileName = "last";
+                            bootFileName = LAST;
                         }
                         boolean usingRawFile = bootFileName.equals(rawFileName);
                         if (usingRawFile) {

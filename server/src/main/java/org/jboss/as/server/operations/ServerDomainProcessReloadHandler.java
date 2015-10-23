@@ -32,6 +32,7 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.DomainServerCommunicationServices;
+import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -50,8 +51,9 @@ public class ServerDomainProcessReloadHandler extends ServerProcessReloadHandler
 
     private final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater;
     public ServerDomainProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl, ControlledProcessState processState,
-                                            final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater) {
-        super(rootService, runningModeControl, processState);
+                                            final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater,
+                                            final ServerEnvironment serverEnvironment) {
+        super(rootService, runningModeControl, processState, serverEnvironment);
         this.operationIDUpdater = operationIDUpdater;
     }
 

@@ -312,7 +312,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         if (isDomain) {
 
             // TODO enable the descriptions so that they show up in the resource description
-            final ServerDomainProcessReloadHandler reloadHandler = new ServerDomainProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, operationIDUpdater);
+            final ServerDomainProcessReloadHandler reloadHandler = new ServerDomainProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, operationIDUpdater, serverEnvironment);
             resourceRegistration.registerOperationHandler(ServerDomainProcessReloadHandler.DOMAIN_DEFINITION, reloadHandler, false);
             resourceRegistration.registerOperationHandler(SetServerGroupHostHandler.DEFINITION, SetServerGroupHostHandler.INSTANCE);
 
@@ -332,7 +332,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 //            resourceRegistration.registerOperationHandler(getOperationDefinition("destroy"), NOOP);
 //            resourceRegistration.registerOperationHandler(getOperationDefinition("kill"), NOOP);
         } else {
-            final ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState);
+            final ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, serverEnvironment);
             resourceRegistration.registerOperationHandler(ServerProcessReloadHandler.DEFINITION, reloadHandler, false);
 
             resourceRegistration.registerOperationHandler(ServerSuspendHandler.DEFINITION, ServerSuspendHandler.INSTANCE);
