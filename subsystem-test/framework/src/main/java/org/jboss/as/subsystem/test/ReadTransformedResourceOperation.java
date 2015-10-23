@@ -81,7 +81,8 @@ class ReadTransformedResourceOperation implements OperationStepHandler {
 
         final ImmutableManagementResourceRegistration rr = context.getRootResourceRegistration();
         Resource root = TransformationUtils.modelToResource(rr, rootData, true);
-        Resource transformed = transformers.transformRootResource(context, root);
+        Transformers.TransformationInputs transformationInputs = Transformers.TransformationInputs.getOrCreate(context);
+        Resource transformed = transformers.transformRootResource(transformationInputs, root);
 
         return Resource.Tools.readModel(transformed);
     }

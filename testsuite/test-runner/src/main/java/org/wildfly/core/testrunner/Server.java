@@ -169,7 +169,7 @@ public class Server {
                 try {
                     // AS7-6620: Create the shutdown operation and run it asynchronously and wait for process to terminate
                     client.getControllerClient().executeAsync(Operations.createOperation("shutdown"), null);
-                } catch (AssertionError e) {
+                } catch (AssertionError | RuntimeException e) {
                     //ignore as this can only fail if shutdown is already in progress
                 }
 

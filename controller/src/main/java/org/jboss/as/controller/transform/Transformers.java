@@ -49,9 +49,9 @@ public interface Transformers {
     TransformationTarget getTarget();
 
     /**
-     * Transform an operation.
+     * <strong>Only for use by test frameworks.</strong> Transforms an operation.
      *
-     * @param context the transformation context
+     * @param context contextual information about the transformation
      * @param operation the operation to transform
      * @return the transformed operation
      * @throws OperationFailedException
@@ -61,17 +61,17 @@ public interface Transformers {
     /**
      * Transform an operation.
      *
-     * @param operationContext the operation context
-     * @param operation the operation to transform
-     * @return the transformed operation
+     * @param transformationInputs standard inputs into a transformation process. Cannot be {@code null}
+     * @param operation the operation to transform. Cannot be {@code null}
+     * @return the transformed operation. Will not be {@code null}
      * @throws OperationFailedException
      */
-    OperationTransformer.TransformedOperation transformOperation(OperationContext operationContext, ModelNode operation) throws OperationFailedException;
+    OperationTransformer.TransformedOperation transformOperation(TransformationInputs transformationInputs, ModelNode operation) throws OperationFailedException;
 
     /**
-     * Transform given resource at given context
+     * <strong>Only for use by test frameworks.</strong>. Transforms the given resource.
      *
-     * @param context  from where resource originates
+     * @param context  contextual information about the transformation
      * @param resource to transform
      * @return transformed resource, or same if no transformation was needed
      * @throws OperationFailedException
@@ -79,24 +79,141 @@ public interface Transformers {
     Resource transformResource(ResourceTransformationContext context, Resource resource) throws OperationFailedException;
 
     /**
-     * Transform a given root resource.
+     * Transform a given root resource, including children. The given {@code resource} must represent the root of
+     * HC's full resource tree but need not include all children, if the caller is not interested in transforming
+     * the excluded children.
      *
-     * @param operationContext the operation context
-     * @param resource the root resource
-     * @return the transformed resource
+     * @param transformationInputs standard inputs into a transformation process. Cannot be {@code null}
+     * @param resource the root resource. Cannot be {@code null}
+     * @return the transformed resource. Will not be {@code null}
      * @throws OperationFailedException
      */
-    Resource transformRootResource(OperationContext operationContext, Resource resource) throws OperationFailedException;
+    Resource transformRootResource(TransformationInputs transformationInputs, Resource resource) throws OperationFailedException;
 
-    Resource transformRootResource(OperationContext operationContext, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException;
+    /**
+     * Transform a given resource, including children, removing resources that the given {@code ignoredTransformationRegistry}
+     * indicates are being ignored by the target process. The given {@code resource} must represent the root of
+     * HC's full resource tree but need not include all children, if the caller is not interested in transforming
+     * the excluded children.
+     *
+     * @param transformationInputs standard inputs to a transformation. Cannot be {@code null}
+     * @param resource the resource to be transformed (including children)
+     * @param ignoredTransformationRegistry provider of information on what addresses are being ignored by the target process
+     * @return the transformed resource
+     *
+     * @throws OperationFailedException
+     */
+    Resource transformRootResource(TransformationInputs transformationInputs, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException;
+
+    /**
+     * Standard inputs into a transformation process. These are derived from an {@link OperationContext}
+     * at the time they are created but this class does not use the operation context thereafter, making
+     * it safe for use by other threads not associated with the operation context.
+     */
+    class TransformationInputs {
+
+        private static final OperationContext.AttachmentKey<TransformationInputs> KEY = OperationContext.AttachmentKey.create(TransformationInputs.class);
+
+        private final Resource originalModel;
+        private final ImmutableManagementResourceRegistration registration;
+        private final ProcessType processType;
+        private final RunningMode runningMode;
+        private final TransformerOperationAttachment transformerOperationAttachment;
+
+        /**
+         * Obtains a set of {@code TransformationInputs} from the given operation context. If the
+         * context's {@link OperationContext#getCurrentStage() current stage} is
+         * {@link org.jboss.as.controller.OperationContext.Stage#DOMAIN} any inputs cached with
+         * the context as an attachment will be used, and if none are cached, then the created inputs
+         * will be cached.
+         *
+         * @param context the operation context. Cannot be {@code null}
+         * @return the inputs. Will not be {@code null}
+         */
+        public static TransformationInputs getOrCreate(OperationContext context) {
+            TransformationInputs result;
+            if (context.getCurrentStage() == OperationContext.Stage.DOMAIN) {
+                // Stage.DOMAIN means the model is not going to change, so we can safely cache.
+                // We want to cache because reading the entire model is expensive, so we don't
+                // want to do it for every process we need to interact with in a domain roll out.
+                result = context.getAttachment(KEY);
+                if (result == null) {
+                    result = new TransformationInputs(context);
+                    context.attach(KEY, result);
+                }
+            } else {
+                result = new TransformationInputs(context);
+            }
+            return result;
+        }
+
+        /**
+         * Creates a new {@code TransformationInputs} from the given operation context.
+         * @param context  the operation context. Cannot be {@code null}
+         */
+        public TransformationInputs(OperationContext context) {
+            this.originalModel = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true);
+            this.registration = context.getRootResourceRegistration();
+            this.processType = context.getProcessType();
+            this.runningMode = context.getRunningMode();
+            this.transformerOperationAttachment = context.getAttachment(TransformerOperationAttachment.KEY);
+        }
+
+        /**
+         * Gets a copy of the full resource tree as it existed at the time this object was created.
+         *
+         * @return the resource tree. Will not be {@code null}
+         */
+        public Resource getRootResource() {
+            return originalModel;
+        }
+
+        /**
+         * Gets full the {@link ImmutableManagementResourceRegistration resource registration} tree.
+         * @return the resource registration tree. Will not be {@code null}
+         */
+        public ImmutableManagementResourceRegistration getRootRegistration() {
+            return registration;
+        }
+
+        /**
+         * Gets the type of this process.
+         * @return the process type. Will not be {@code null}
+         */
+        public ProcessType getProcessType() {
+            return processType;
+        }
+
+        /**
+         * Gets the process' running mode at the time this object was created.
+         * @return the running mode. Will not be {@code null}
+         */
+        public RunningMode getRunningMode() {
+            return runningMode;
+        }
+
+        /**
+         * Gets any {@link TransformerOperationAttachment} that was attached to the {@link OperationContext}
+         * at the time this object was created.
+         * @return the attachment, or {@code null} if there was none.
+         */
+        public TransformerOperationAttachment getTransformerOperationAttachment() {
+            return transformerOperationAttachment;
+        }
+    }
 
     /**
      * Convenience factory for unit tests, and default internal implementations
      */
-    public static class Factory {
+    class Factory {
         private Factory() {
         }
 
+        /**
+         * Returns a transformers object appropriate for the given target process.
+         * @param target the transformation target
+         * @return the transformers instance. Will not be {@code null}
+         */
         public static Transformers create(final TransformationTarget target) {
             return new TransformersImpl(target);
         }
@@ -115,7 +232,7 @@ public interface Transformers {
          *                   triggering the transformation, but for tests this needs to be hard-coded. Tests will need to
          *                   ensure themselves that the relevant attachments get set.
          *
-         * @return the created context
+         * @return the created context Will not be {@code null}
          */
         public static ResourceTransformationContext create(TransformationTarget target, Resource model,
                                                            ImmutableManagementResourceRegistration registration, ExpressionResolver resolver,
@@ -137,7 +254,7 @@ public interface Transformers {
          *                   triggering the transformation, but for tests this needs to be hard-coded. Tests will need to
          *                   ensure themselves that the relevant attachments get set.
          *
-         * @return the created context
+         * @return the created context Will not be {@code null}
          */
         public static ResourceTransformationContext create(TransformationTarget target, Resource model,
                                                            ImmutableManagementResourceRegistration registration, ExpressionResolver resolver,
@@ -150,7 +267,7 @@ public interface Transformers {
          * Create a local transformer, which will use the default transformation rules, however still respect the
          * ignored resource transformation.
          *
-         * @return
+         * @return the transformers instance. Will not be {@code null}
          */
         public static Transformers createLocal() {
             return new TransformersImpl(TransformationTargetImpl.createLocal());
@@ -158,6 +275,7 @@ public interface Transformers {
 
     }
 
+    /** Provides information on whether a target process is ignoring particular resource addresses. */
     interface ResourceIgnoredTransformationRegistry {
 
         /**
@@ -171,7 +289,19 @@ public interface Transformers {
 
     }
 
+    /**
+     * A default {@link org.jboss.as.controller.transform.Transformers.ResourceIgnoredTransformationRegistry}
+     * that says that no addresses are being ignored.
+     */
     ResourceIgnoredTransformationRegistry DEFAULT = new ResourceIgnoredTransformationRegistry() {
+
+        /**
+         * Always returns {@code false}
+         *
+         * {@inheritDoc}
+         *
+         * @return {@code false}, always
+         */
         @Override
         public boolean isResourceTransformationIgnored(PathAddress address) {
             return false;
