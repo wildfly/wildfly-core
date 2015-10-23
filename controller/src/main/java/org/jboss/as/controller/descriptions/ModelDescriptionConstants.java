@@ -142,8 +142,9 @@ public class ModelDescriptionConstants {
     public static final String DISCOVERY_OPTION = "discovery-option";
     public static final String DISCOVERY_OPTIONS = "discovery-options";
     public static final String DOMAIN = "domain";
-    public static final String DOMAIN_FAILURE_DESCRIPTION = "domain-failure-description";
+    public static final String DOMAIN_CONFIG = "domain-config";
     public static final String DOMAIN_CONTROLLER = "domain-controller";
+    public static final String DOMAIN_FAILURE_DESCRIPTION = "domain-failure-description";
     public static final String DOMAIN_ORGANIZATION = "domain-organization";
     public static final String DOMAIN_MODEL = "domain-model";
     public static final String DOMAIN_RESULTS = "domain-results";
@@ -202,6 +203,7 @@ public class ModelDescriptionConstants {
     public static final String HEAD_COMMENT_ALLOWED = "head-comment-allowed";
     public static final String HOST = "host";
     public static final String HOSTS = "hosts";
+    public static final String HOST_CONFIG = "host-config";
     public static final String HOST_CONNECTION = "host-connection";
     public static final String HOST_CONTROLLER = "host-controller";
     public static final String HOST_ENVIRONMENT = "host-environment";
