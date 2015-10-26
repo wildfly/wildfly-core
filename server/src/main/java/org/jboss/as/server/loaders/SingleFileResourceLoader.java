@@ -62,6 +62,11 @@ final class SingleFileResourceLoader implements ResourceLoader {
     }
 
     @Override
+    public ResourceLoader getChild(final String path) {
+        return null;
+    }
+
+    @Override
     public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
         return Collections.emptyIterator();
     }

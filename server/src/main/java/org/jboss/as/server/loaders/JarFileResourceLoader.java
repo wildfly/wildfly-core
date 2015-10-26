@@ -131,6 +131,12 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         }
     }
 
+    public ResourceLoader getChild(final String path) {
+        synchronized (children) {
+            return children.get(path);
+        }
+    }
+
     @Override
     public void addOverlay(final String resourcePath, final File content) {
         synchronized (children) {

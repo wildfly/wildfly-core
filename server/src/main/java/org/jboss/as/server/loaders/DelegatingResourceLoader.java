@@ -100,7 +100,12 @@ class DelegatingResourceLoader implements ResourceLoader {
     }
 
     @Override
-    public void addOverlay(String path, File content) {
+    public ResourceLoader getChild(final String path) {
+        return getDelegate().getChild(path);
+    }
+
+    @Override
+    public void addOverlay(final String path, final File content) {
         getDelegate().addOverlay(path, content);
     }
 

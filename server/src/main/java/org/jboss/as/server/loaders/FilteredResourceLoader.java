@@ -91,6 +91,10 @@ final class FilteredResourceLoader implements ResourceLoader {
         return loader.getParent();
     }
 
+    public ResourceLoader getChild(final String path) {
+        return loader.getChild(path);
+    }
+
     ResourceLoader getLoader() {
         return loader;
     }

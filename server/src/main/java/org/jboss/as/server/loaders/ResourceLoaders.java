@@ -113,7 +113,18 @@ public final class ResourceLoaders {
         if (parent != null && (path == null || path.equals(""))) {
             throw new IllegalArgumentException("Path cannot be null");
         }
-
+        ResourceLoader loader = parent;
+        while (true) {
+            if (loader instanceof FilteredResourceLoader) {
+                loader = ((FilteredResourceLoader)loader).getLoader();
+                continue;
+            }
+            if (loader instanceof DelegatingResourceLoader) {
+                loader = ((DelegatingResourceLoader)loader).getDelegate();
+                continue;
+            }
+            break;
+        }
         if (root.isDirectory()) {
             return new FileResourceLoader(parent, name, root, path, AccessController.getContext());
         } else {
@@ -228,10 +239,10 @@ public final class ResourceLoaders {
                 fileLoader.addChild(subResPath, newLoader);
                 return newLoader;
             } else if (loader instanceof JarFileResourceLoader) {
+                final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
                 if (explodeArchive(name)) {
                     final File tempDir = new File(TMP_ROOT, getResourceName(subResPath) + ".tmp" + System.currentTimeMillis());
                     IOUtils.unzip(resource.openStream(), tempDir);
-                    final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
                     final FileResourceLoader newFileLoader = new FileResourceLoader(loader, name, tempDir, subResPath, AccessController.getContext());
                     jarLoader.addChild(subResPath, newFileLoader);
                     return new DelegatingResourceLoader(newFileLoader) {
@@ -247,7 +258,6 @@ public final class ResourceLoaders {
                 } else {
                     final File tempFile = new File(TMP_ROOT, getResourceName(subResPath) + ".tmp" + System.currentTimeMillis());
                     IOUtils.copyAndClose(resource.openStream(), new FileOutputStream(tempFile));
-                    final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
                     final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(loader, name, new JarFile(tempFile), subResPath);
                     jarLoader.addChild(subResPath, newJarLoader);
                     return new DelegatingResourceLoader(newJarLoader) {

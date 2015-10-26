@@ -21,6 +21,8 @@ public interface ResourceLoader extends IterableResourceLoader {
 
     ResourceLoader getParent();
 
+    ResourceLoader getChild(String path);
+
     Iterator<String> iteratePaths(String startPath, boolean recursive);
 
     void addOverlay(String path, File content);
