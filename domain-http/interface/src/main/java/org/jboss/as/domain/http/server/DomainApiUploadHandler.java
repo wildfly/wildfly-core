@@ -103,7 +103,7 @@ class DomainApiUploadHandler implements HttpHandler {
 
     static void writeResponse(HttpServerExchange exchange, ModelNode response, String contentType) {
         exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, contentType  + "; charset=" + Common.UTF_8);
-        exchange.setResponseCode(200);
+        exchange.setStatusCode(200);
 
         //TODO Content-Length?
         exchange.startBlocking();

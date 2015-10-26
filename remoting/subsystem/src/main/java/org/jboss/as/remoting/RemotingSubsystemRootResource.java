@@ -72,12 +72,11 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
             RuntimeCapability.Builder.of("org.wildfly.remoting.endpoint", Endpoint.class).build();
 
     public RemotingSubsystemRootResource() {
-        super(PATH,
-                RemotingExtension.getResourceDescriptionResolver(RemotingExtension.SUBSYSTEM_NAME),
-                RemotingSubsystemAdd.INSTANCE,
-                new ReloadRequiredRemoveStepHandler(),
-                OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_ALL_SERVICES);
+        super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(RemotingExtension.SUBSYSTEM_NAME))
+                .setAddHandler(RemotingSubsystemAdd.INSTANCE)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveHandler(new ReloadRequiredRemoveStepHandler())
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
     }
 
     @Override

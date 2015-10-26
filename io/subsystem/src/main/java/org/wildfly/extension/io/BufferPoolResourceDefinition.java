@@ -110,6 +110,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
         );
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Collection<AttributeDefinition> getAttributes() {
         return (Collection) ATTRIBUTES;

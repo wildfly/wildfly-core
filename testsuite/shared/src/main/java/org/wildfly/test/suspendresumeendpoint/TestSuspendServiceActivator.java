@@ -11,6 +11,7 @@ import org.jboss.msc.service.ServiceRegistryException;
  */
 public class TestSuspendServiceActivator implements ServiceActivator {
 
+    @SuppressWarnings("deprecation")
     @Override
     public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
 

@@ -31,6 +31,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
@@ -44,7 +45,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class RolloutPlanBuilder  {
 
-    ArrayList series = new ArrayList();
+    List<Object> series = new ArrayList<>();
 
     public static class RolloutPolicy {
         private final boolean rollingToServers;
@@ -86,6 +87,7 @@ public class RolloutPlanBuilder  {
         return planString;
 
     }
+    @SuppressWarnings("unchecked")
     public ModelNode build() {
         ModelNode plan = new ModelNode();
 

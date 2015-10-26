@@ -61,7 +61,7 @@ abstract class RealmReadinessHandler implements HttpHandler {
                 rejectRequest(exchange);
             } catch (IOException e) {
                 ROOT_LOGGER.error(e);
-                exchange.setResponseCode(500);
+                exchange.setStatusCode(500);
                 exchange.endExchange();
             }
         }
@@ -77,8 +77,7 @@ abstract class RealmReadinessHandler implements HttpHandler {
             try {
                 //todo: renegotiation?
                 return session.getPeerCertificates()[0] instanceof X509Certificate;
-            } catch (SSLPeerUnverifiedException e) {
-            } catch (RenegotiationRequiredException e) {
+            } catch (SSLPeerUnverifiedException | RenegotiationRequiredException e) {
             }
         }
 

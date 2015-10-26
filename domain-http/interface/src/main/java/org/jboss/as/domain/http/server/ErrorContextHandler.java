@@ -67,21 +67,18 @@ class ErrorContextHandler {
 
     public static HttpHandler createErrorContext(final String slot) throws ModuleLoadException {
         final ClassPathResourceManager cpresource = new ClassPathResourceManager(getClassLoader(Module.getCallerModuleLoader(), ERROR_MODULE, slot), "");
-        final io.undertow.server.handlers.resource.ResourceHandler handler = new io.undertow.server.handlers.resource.ResourceHandler()
+        final io.undertow.server.handlers.resource.ResourceHandler handler = new io.undertow.server.handlers.resource.ResourceHandler(cpresource)
                 .setAllowed(not(path("META-INF")))
-                .setResourceManager(cpresource)
                 .setDirectoryListingEnabled(false)
                 .setCachable(Predicates.<HttpServerExchange>falsePredicate());
 
         //we also need to setup the default resource redirect
-        PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(ERROR_CONTEXT + DEFAULT_RESOURCE), handler);
-        return predicateHandler;
+        return new PredicateHandler(path("/"), new RedirectHandler(ERROR_CONTEXT + DEFAULT_RESOURCE), handler);
     }
 
     private static ClassLoader getClassLoader(final ModuleLoader moduleLoader, final String module, final String slot) throws ModuleLoadException {
         ModuleIdentifier id = ModuleIdentifier.create(module, slot);
-        ClassLoader cl = moduleLoader.loadModule(id).getClassLoader();
 
-        return cl;
+        return moduleLoader.loadModule(id).getClassLoader();
     }
 }

@@ -55,6 +55,7 @@ public class OptionAttributeDefinition extends SimpleAttributeDefinition {
         return option;
     }
 
+    @SuppressWarnings("unchecked")
     public OptionMap.Builder resolveOption(final ExpressionResolver context, final ModelNode model, OptionMap.Builder builder) throws OperationFailedException {
         ModelNode value = resolveModelAttribute(context, model);
         if (value.isDefined()) {

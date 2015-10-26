@@ -22,6 +22,8 @@
 
 package org.jboss.as.test.integration.management.interfaces;
 
+import java.io.IOException;
+
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -29,5 +31,5 @@ import org.jboss.dmr.ModelNode;
  */
 public interface ManagementInterface {
     ModelNode execute(ModelNode operation);
-    void close();
+    void close() throws IOException;
 }

@@ -30,24 +30,25 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -61,7 +62,7 @@ public class HttpManagementInterface implements ManagementInterface {
     public static final String MANAGEMENT_REALM = "ManagementRealm";
 
     private final URI uri;
-    private final HttpClient httpClient;
+    private final CloseableHttpClient httpClient;
 
     public HttpManagementInterface(String uriScheme, String host, int port, String username, String password) {
         try {
@@ -106,25 +107,27 @@ public class HttpManagementInterface implements ManagementInterface {
     }
 
     @Override
-    public void close() {
-        httpClient.getConnectionManager().shutdown();
+    public void close() throws IOException {
+        httpClient.close();
     }
 
-    private static HttpClient createHttpClient(String host, int port, String username, String password) {
+    private static CloseableHttpClient createHttpClient(String host, int port, String username, String password) {
+        SSLContext sslContext = org.apache.http.ssl.SSLContexts.createDefault();
+                    SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+
         Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
                         .register("http", PlainConnectionSocketFactory.getSocketFactory())
-                        .register("https", new SSLConnectionSocketFactory(SSLContexts.createDefault(), new AllowAllHostnameVerifier()))
+                        .register("https", sslConnectionSocketFactory)
                         .build();
         BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(new AuthScope(host, port, MANAGEMENT_REALM, AuthSchemes.DIGEST),
                         new UsernamePasswordCredentials(username, password));
 
-        HttpClient httpClient = HttpClientBuilder.create()
-                .setConnectionManager(new PoolingHttpClientConnectionManager(registry))
-                .setRetryHandler(new StandardHttpRequestRetryHandler(5,true))
-                .setDefaultCredentialsProvider(credentialsProvider)
-                .build();
-        return httpClient;
+        return HttpClientBuilder.create()
+                        .setConnectionManager(new PoolingHttpClientConnectionManager(registry))
+                        .setRetryHandler(new StandardHttpRequestRetryHandler(5, true))
+                        .setDefaultCredentialsProvider(credentialsProvider)
+                        .build();
     }
 
     public static ManagementInterface create(String host, int port, String username, String password) {

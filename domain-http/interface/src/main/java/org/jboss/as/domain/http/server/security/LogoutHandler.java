@@ -100,7 +100,7 @@ public class LogoutHandler implements HttpHandler {
         if (host == null) {
             host = requestHeaders.getFirst(HOST);
             if (host == null) {
-                exchange.setResponseCode(StatusCodes.INTERNAL_SERVER_ERROR);
+                exchange.setStatusCode(StatusCodes.INTERNAL_SERVER_ERROR);
                 return;
             }
         }
@@ -132,7 +132,7 @@ public class LogoutHandler implements HttpHandler {
 
         if (win) {
             responseHeaders.add(LOCATION, protocol + "://" + host + "/");
-            exchange.setResponseCode(StatusCodes.TEMPORARY_REDIRECT);
+            exchange.setStatusCode(StatusCodes.TEMPORARY_REDIRECT);
         } else {
             // Do the redirects to finish the logout
             String authorization = requestHeaders.getFirst(AUTHORIZATION);
@@ -153,21 +153,21 @@ public class LogoutHandler implements HttpHandler {
                 if (!exit) {
                     responseHeaders.add(LOCATION, protocol + "://enter-login-here:blah@" + host + "/logout?" + EXIT + "&"
                             + MECHANISM + "=" + (digest ? DIGEST : BASIC));
-                    exchange.setResponseCode(StatusCodes.TEMPORARY_REDIRECT);
+                    exchange.setStatusCode(StatusCodes.TEMPORARY_REDIRECT);
                     return;
                 }
 
                 mechanism(opera, digest).sendChallenge(exchange, null);
                 String reply = "<html><script type='text/javascript'>window.location=\"" + protocol + "://" + host
                         + "/\";</script></html>";
-                exchange.setResponseCode(StatusCodes.UNAUTHORIZED);
+                exchange.setStatusCode(StatusCodes.UNAUTHORIZED);
                 exchange.getResponseSender().send(reply, IoCallback.END_EXCHANGE);
                 return;
             }
 
             // Success, now back to the login screen
             responseHeaders.add(LOCATION, protocol + "://" + host + "/");
-            exchange.setResponseCode(StatusCodes.TEMPORARY_REDIRECT);
+            exchange.setStatusCode(StatusCodes.TEMPORARY_REDIRECT);
         }
     }
 

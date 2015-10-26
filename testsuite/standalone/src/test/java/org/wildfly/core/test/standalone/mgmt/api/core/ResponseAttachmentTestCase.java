@@ -44,18 +44,21 @@ import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.http.Authentication;
 import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
 import org.jboss.as.test.integration.management.extension.ExtensionUtils;
@@ -90,7 +93,7 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
     private static final String APPLICATION_JSON = "application/json";
 
     private String logMessageContent;
-    private HttpClient httpClient;
+    private CloseableHttpClient httpClient;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
@@ -144,7 +147,7 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
             try {
                 // shut down the connection manager to ensure
                 // immediate deallocation of all system resources
-                httpClient.getConnectionManager().shutdown();
+                httpClient.close();
             } catch (Exception e) {
                 log.error(e);
             } finally {
@@ -385,9 +388,7 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
     private void readLogFile(ModelNode opNode) throws IOException {
 
         Operation op = OperationBuilder.create(opNode).build();
-        OperationResponse response = null;
-        try {
-            response = getModelControllerClient().executeOperation(op, OperationMessageHandler.DISCARD);
+        try (OperationResponse response = getModelControllerClient().executeOperation(op, OperationMessageHandler.DISCARD)) {
 
             ModelNode respNode = response.getResponseNode();
             Assert.assertEquals(respNode.toString(), "success", respNode.get("outcome").asString());
@@ -398,9 +399,6 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
             OperationResponse.StreamEntry se = streams.get(0);
             Assert.assertEquals(uuid, se.getUUID());
             readLogStream(se.getStream());
-
-        } finally {
-            StreamUtils.safeClose(response);
         }
 
     }
@@ -415,17 +413,17 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
         }
 
         Assert.assertTrue("Did not see " + expected, readMessage);
-
     }
 
     private HttpClient getHttpClient(URL url) {
-
         shutdownHttpClient();
+        CredentialsProvider credsProvider = new BasicCredentialsProvider();
+        credsProvider.setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm", AuthSchemes.DIGEST),
+                new UsernamePasswordCredentials(Authentication.USERNAME, Authentication.PASSWORD));
 
-        DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
-        UsernamePasswordCredentials creds = new UsernamePasswordCredentials(Authentication.USERNAME, Authentication.PASSWORD);
-        defaultHttpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm"), creds);
-        httpClient = defaultHttpClient;
+        httpClient = HttpClientBuilder.create()
+                .setDefaultCredentialsProvider(credsProvider)
+                .build();
 
         return httpClient;
     }

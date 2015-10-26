@@ -141,7 +141,7 @@ public enum ConsoleMode {
 
         static ResourceHandlerDefinition createConsoleHandler(String skin) throws ModuleLoadException {
             final ClassPathResourceManager resource = new ClassPathResourceManager(findConsoleClassLoader(Module.getCallerModuleLoader(), skin), "");
-            final io.undertow.server.handlers.resource.ResourceHandler handler = new io.undertow.server.handlers.resource.ResourceHandler()
+            final io.undertow.server.handlers.resource.ResourceHandler handler = new io.undertow.server.handlers.resource.ResourceHandler(resource)
                     .setCacheTime(60 * 60 * 24 * 31)
                     .setAllowed(not(path("META-INF")))
                     .setResourceManager(resource)
@@ -190,7 +190,7 @@ public enum ConsoleMode {
 
         static ResourceHandlerDefinition createConsoleHandler(String slot, String resource) throws ModuleLoadException {
             final ClassPathResourceManager cpresource = new ClassPathResourceManager(getClassLoader(Module.getCallerModuleLoader(), ERROR_MODULE, slot), "");
-            final io.undertow.server.handlers.resource.ResourceHandler handler = new io.undertow.server.handlers.resource.ResourceHandler()
+            final io.undertow.server.handlers.resource.ResourceHandler handler = new io.undertow.server.handlers.resource.ResourceHandler(cpresource)
                     .setAllowed(not(path("META-INF")))
                     .setResourceManager(cpresource)
                     .setDirectoryListingEnabled(false)
@@ -225,7 +225,7 @@ public enum ConsoleMode {
 
         final String modulePath = WildFlySecurityManager.getPropertyPrivileged("module.path", null);
         File[] moduleRoots = getFiles(modulePath, 0, 0);
-        SortedSet<ConsoleVersion> consoleVersions = new TreeSet<ConsoleVersion>();
+        SortedSet<ConsoleVersion> consoleVersions = new TreeSet<>();
         for (File root : moduleRoots) {
             findConsoleModules(root, path, consoleVersions);
             File layers = new File(root, "system" + File.separator + "layers");
@@ -272,8 +272,7 @@ public enum ConsoleMode {
 
     protected static ClassLoader getClassLoader(final ModuleLoader moduleLoader, final String module, final String slot) throws ModuleLoadException {
         ModuleIdentifier id = ModuleIdentifier.create(module, slot);
-        ClassLoader cl = moduleLoader.loadModule(id).getClassLoader();
 
-        return cl;
+        return moduleLoader.loadModule(id).getClassLoader();
     }
 }

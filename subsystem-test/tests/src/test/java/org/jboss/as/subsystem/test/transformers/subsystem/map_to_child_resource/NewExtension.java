@@ -123,7 +123,7 @@ public class NewExtension implements Extension {
                 .setCustomOperationTransformer(PROPERTIES_ADD_OPERATION_TRANSFORMER);
         builder.setCustomResourceTransformer(PROPERTIES_RESOURCE_TRANSFORMER);
 
-        Set<String> writeAttributeOperations = new HashSet(MapOperations.MAP_OPERATION_NAMES);
+        Set<String> writeAttributeOperations = new HashSet<>(MapOperations.MAP_OPERATION_NAMES);
         writeAttributeOperations.add(WRITE_ATTRIBUTE_OPERATION);
         writeAttributeOperations.add(UNDEFINE_ATTRIBUTE_OPERATION);
         for (String opName : writeAttributeOperations) {
