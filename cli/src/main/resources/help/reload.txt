@@ -2,7 +2,9 @@ SYNOPSIS
 
    Standalone mode:
 
-      reload [--admin-only=true|false] [--use-current-server-config=true|false]
+      reload [--admin-only=true|false]
+             [--use-current-server-config=true|false]
+             [--server-config=new_server_config_file_name]
 
    Domain mode:
 
@@ -10,6 +12,8 @@ SYNOPSIS
              [--restart-servers=true|false]
              [--user-current-domain-config=true|false]
              [--user-current-host-config=true|false]
+             [--domain-config=new_domain_config_file_name]
+             [--host-config=new_host_config_file_name]
       
 DESCRIPTION
 
@@ -77,3 +81,18 @@ ARGUMENTS
                  original configuration version; if null or true the current
                  runtime version of the model is used.
                  If not present, true value is assumed.
+
+ --domain-config  - optional, allowed only in the domain mode. Used to specify
+                 a new file name for the domain config. The same rules as for
+                 the --domain-config flag used on the command line when starting
+                 the host apply.
+
+ --host-config   - optional, allowed only in the domain mode. Used to specify
+                 a new file name for the host config. The same rules as for
+                 the --host-config flag used on the command line when starting
+                 the host apply.
+
+ --server-config   - optional, allowed only in the standalone mode. Used to
+                 specify a new file name for the host config. The same rules as
+                 for the --host-config flag used on the command line when
+                 starting the server apply.
