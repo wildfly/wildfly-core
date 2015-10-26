@@ -47,6 +47,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.form.FormData;
 import io.undertow.server.handlers.form.FormDataParser;
 import io.undertow.server.handlers.form.FormParserFactory;
+import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
@@ -70,6 +71,8 @@ class DomainApiGenericOperationHandler implements HttpHandler {
 
     private static final String OPERATION = "operation";
 
+    private static final String CLIENT_NAME = "X-Management-Client-Name";
+
     private final ModelController modelController;
     private final FormParserFactory formParserFactory;
 
@@ -83,6 +86,17 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         final FormDataParser parser = formParserFactory.createParser(exchange);
         if (parser == null) {
             Common.UNSUPPORTED_MEDIA_TYPE.handleRequest(exchange);
+        }
+
+        // Prevent CSRF which can occur from standard a multipart/form-data submission from a standard HTML form.
+        // If the browser sends an Origin header (Chrome / Webkit) then the earlier origin check will have passed
+        // to reach this point. If the browser doesn't (FireFox), then  only requests which came from Javascript,
+        // which enforces same-origin policy when no Origin header is present, should be allowed. The presence of
+        // a custom header indicates usage of XHR since simple forms can not set them.
+        HeaderMap headers = exchange.getRequestHeaders();
+        if (!headers.contains(Headers.ORIGIN) && !headers.contains(CLIENT_NAME)) {
+            ROOT_LOGGER.debug("HTTP Origin or X-Management-Client-Name header is required for all multipart form data posts.");
+            Common.UNAUTHORIZED.handleRequest(exchange);
             return;
         }
 
@@ -100,17 +114,20 @@ class DomainApiGenericOperationHandler implements HttpHandler {
                     operation = ModelNode.fromBase64(stream);
                 }
                 operationParameterBuilder.encode(true);
-            } else {
+            } else if (Common.APPLICATION_JSON.equals(stripSuffix(type))) {
                 try (InputStream stream = convertToStream(op)) {
                     operation = ModelNode.fromJSONStream(stream);
                 }
+            } else {
+                ROOT_LOGGER.debug("Content-type must be application/dmr-encoded or application/json");
+                Common.UNAUTHORIZED.handleRequest(exchange);
+                return;
             }
         } catch (Exception e) {
             ROOT_LOGGER.errorf("Unable to construct ModelNode '%s'", e.getMessage());
             Common.sendError(exchange, false, e.getLocalizedMessage());
             return;
         }
-
 
         // Process the input streams
         final OperationBuilder builder = OperationBuilder.create(operation, true);
@@ -172,6 +189,20 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         } else {
             return new ByteArrayInputStream(op.getValue().getBytes());
         }
+    }
+
+    private static String stripSuffix(String contentType) {
+        if (contentType == null) {
+            return null;
+        }
+
+        int index = contentType.indexOf(';');
+
+        if (index > 0) {
+            contentType = contentType.substring(0, index);
+        }
+
+        return contentType;
     }
 
     static final String RELOAD = "reload";
