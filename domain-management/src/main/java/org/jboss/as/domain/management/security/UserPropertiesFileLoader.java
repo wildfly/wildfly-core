@@ -103,7 +103,7 @@ public class UserPropertiesFileLoader extends PropertiesFileLoader {
                 final String trimmed = currentLine.trim();
                 final Matcher matcher = PROPERTY_PATTERN.matcher(currentLine.trim());
                 if (matcher.matches()) {
-                    final String username = matcher.group(1);
+                    final String username = cleanKey(matcher.group(1));
                     if (trimmed.startsWith(COMMENT_PREFIX)) {
                         disabledUserNames.add(username);
                     } else {
