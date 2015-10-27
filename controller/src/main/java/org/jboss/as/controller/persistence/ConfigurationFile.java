@@ -211,6 +211,12 @@ public class ConfigurationFile {
         if (bootFile == null) {
             synchronized (this) {
                 if (bootFile == null) {
+                    if (bootFileReset) {
+                        //Reset the done bootup and the sequence, so that the old file we are reloading from
+                        // overwrites the main file on successful boot, and history is reset as when booting new
+                        doneBootup.set(false);
+                        sequence.set(0);
+                    }
                     // If it's a reload with no new boot file name and we're persisting our config, we boot from mainFile,
                     // as that's where we persist
                     if (bootFileReset && !interactionPolicy.isReadOnly() && newReloadBootFileName == null) {
@@ -226,10 +232,6 @@ public class ConfigurationFile {
                             //A new boot file was specified. Use that and reset the new name to null
                             bootFileName = newReloadBootFileName;
                             newReloadBootFileName = null;
-                            //Reset the done bootup and the sequence, so that the old file we are reloading from
-                            // overwrites the main file on successful boot, and history is reset as when booting new
-                            doneBootup.set(false);
-                            sequence.set(0);
                         } else if (interactionPolicy.isReadOnly() && reloadUsingLast) {
                             //If we were reloaded, and it is not a persistent configuration we want to use the last from the history
                             bootFileName = LAST;
@@ -249,9 +251,9 @@ public class ConfigurationFile {
 
                         if (!bootFile.exists()) {
                             if (!usingRawFile) { // TODO there's no reason usingRawFile should be an exception,
-                                                 // but the test infrastructure stuff is built around an assumption
-                                                 // that ConfigurationFile doesn't fail if test files are not
-                                                 // in the normal spot
+                                // but the test infrastructure stuff is built around an assumption
+                                // that ConfigurationFile doesn't fail if test files are not
+                                // in the normal spot
                                 if (bootFileReset || interactionPolicy.isRequireExisting()) {
                                     throw ControllerLogger.ROOT_LOGGER.fileNotFound(bootFile.getAbsolutePath());
                                 }
