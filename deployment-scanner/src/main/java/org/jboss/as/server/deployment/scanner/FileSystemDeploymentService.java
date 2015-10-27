@@ -189,6 +189,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         }
     }
     private void updateStatusAfterUndeploymentNotification(Path dir, String runtimeName) {
+        ROOT_LOGGER.debugf("Updating status after undeployment notification for %s", runtimeName);
         Path undeployedMarker = dir.resolve(runtimeName + UNDEPLOYED);
         final Path deploymentFile = dir.resolve(runtimeName);
         if (!Files.exists(undeployedMarker) && Files.exists(deploymentFile)) {
@@ -200,6 +201,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         }
     }
     private void updateStatusAfterDeploymentNotification(Path dir, String runtimeName) {
+        ROOT_LOGGER.debugf("Updating status after deployment notification for %s", runtimeName);
         Path undeployedMarker = dir.resolve(runtimeName + UNDEPLOYED);
         Path deployedMarker = dir.resolve(runtimeName + DEPLOYED);
         if (Files.exists(undeployedMarker)) {
