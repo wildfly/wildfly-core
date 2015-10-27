@@ -96,6 +96,18 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-embedded</artifactId>
+            <exclusions>
+                <!-- so its dependencies are not included in shaded jar -->
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- added here as it is dep of embedded and needs to be included in shaded jar-->
+        <dependency>
+            <groupId>org.jboss.msc</groupId>
+            <artifactId>jboss-msc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>
@@ -146,11 +158,18 @@
            <groupId>org.jboss</groupId>
            <artifactId>jboss-vfs</artifactId>
         </dependency>
+        <!-- here so it is included in shaded jar-->
+        <dependency>
+            <groupId>org.jboss.stdio</groupId>
+            <artifactId>jboss-stdio</artifactId>
+        </dependency>
 
         <dependency>
-           <groupId>org.picketbox</groupId>
-           <artifactId>picketbox</artifactId>
+            <groupId>org.picketbox</groupId>
+            <artifactId>picketbox</artifactId>
             <optional>true</optional>
+            <!-- so it is not included in shaded jar  -->
+            <scope>provided</scope>
         </dependency>
 
         <!-- Test Dependencies -->

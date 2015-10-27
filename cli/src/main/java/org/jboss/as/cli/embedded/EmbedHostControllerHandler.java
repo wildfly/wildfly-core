@@ -47,8 +47,6 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
@@ -69,6 +67,8 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
     private static final String ECHO = "echo";
     private static final String DISCARD_STDOUT = "discard";
+    private static final String DOMAIN_CONFIG = "--domain-config";
+    private static final String HOST_CONFIG = "--host-config";
 
     private final AtomicReference<EmbeddedServerLaunch> hostControllerReference;
     private ArgumentWithValue jbossHome;
@@ -85,8 +85,8 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             result.jbossHome = new FileSystemPathArgument(result, pathCompleter, "--jboss-home");
         }
         result.stdOutHandling = new ArgumentWithValue(result, new SimpleTabCompleter(new String[]{ECHO, DISCARD_STDOUT}), "--std-out");
-        result.domainConfig = new ArgumentWithValue(result, "--domain-config");
-        result.hostConfig = new ArgumentWithValue(result, "--host-config");
+        result.domainConfig = new ArgumentWithValue(result, DOMAIN_CONFIG);
+        result.hostConfig = new ArgumentWithValue(result, HOST_CONFIG);
         result.dashC = new ArgumentWithValue(result, "-c");
         result.dashC.addCantAppearAfter(result.domainConfig);
         result.domainConfig.addCantAppearAfter(result.dashC);
@@ -159,12 +159,12 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
             List<String> cmdsList = new ArrayList<>();
             if (domainXml != null && domainXml.trim().length() > 0) {
-                cmdsList.add(CommandLineConstants.DOMAIN_CONFIG);
+                cmdsList.add(DOMAIN_CONFIG);
                 cmdsList.add(domainXml.trim());
             }
 
             if (hostXml != null && hostXml.trim().length() > 0) {
-                cmdsList.add(CommandLineConstants.HOST_CONFIG);
+                cmdsList.add(HOST_CONFIG);
                 cmdsList.add(hostXml.trim());
             }
 
@@ -194,9 +194,9 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
                 final ModelNode getStateOp = new ModelNode();
                 getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-                ModelNode address = getStateOp.get(ModelDescriptionConstants.ADDRESS);
+                ModelNode address = getStateOp.get(ClientConstants.ADDRESS);
                 address.add(ClientConstants.HOST, localName);
-                getStateOp.get(ClientConstants.NAME).set(ModelDescriptionConstants.HOST_STATE);
+                getStateOp.get(ClientConstants.NAME).set(ClientConstants.HOST_STATE);
                 do {
                     try {
                         final ModelNode nameResponse = mcc.execute(getNameOp);
