@@ -753,11 +753,16 @@ public class PersistanceResourceTestCase {
         bootingFile = configurationFile.getBootFile();
         Assert.assertEquals(standardFile.getCanonicalPath(), bootingFile.getCanonicalPath());
         configurationFile.successfulBoot();
+        checkFiles(null, "std", "std", "std", "std");
+
+        store(persister, "One");
         checkFiles(null, "std", "std", "std", "One", "std");
 
         configurationFile.resetBootFile(true, null);
         bootingFile = configurationFile.getBootFile();
         Assert.assertEquals(addSuffix(standardFile, "last"), bootingFile.getCanonicalPath());
+        configurationFile.successfulBoot();
+        checkFiles(null, "std", "std", "One", "One");
     }
 
     @Test
