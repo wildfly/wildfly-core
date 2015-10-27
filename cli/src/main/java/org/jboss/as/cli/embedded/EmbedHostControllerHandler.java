@@ -47,7 +47,6 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
@@ -194,9 +193,9 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
                 final ModelNode getStateOp = new ModelNode();
                 getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-                ModelNode address = getStateOp.get(ModelDescriptionConstants.ADDRESS);
+                ModelNode address = getStateOp.get(ClientConstants.ADDRESS);
                 address.add(ClientConstants.HOST, localName);
-                getStateOp.get(ClientConstants.NAME).set(ModelDescriptionConstants.HOST_STATE);
+                getStateOp.get(ClientConstants.NAME).set(ClientConstants.HOST_STATE);
                 do {
                     try {
                         final ModelNode nameResponse = mcc.execute(getNameOp);
