@@ -104,12 +104,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- added here as it is dep of wildfly-embedded any only needs 2 constants at compile time -->
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-process-controller</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <!-- added here as it is dep of embedded and needs to be included in shaded jar-->
         <dependency>
             <groupId>org.jboss.msc</groupId>
