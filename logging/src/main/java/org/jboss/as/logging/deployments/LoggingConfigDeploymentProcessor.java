@@ -22,16 +22,13 @@
 
 package org.jboss.as.logging.deployments;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import org.apache.log4j.xml.DOMConfigurator;
 import org.jboss.as.logging.logging.LoggingLogger;
@@ -42,15 +39,18 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ResourceRoot;
+import org.jboss.as.server.loaders.ResourceLoader;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.Module;
-import org.jboss.vfs.VirtualFile;
-import org.jboss.vfs.VirtualFileFilter;
+import org.jboss.modules.Resource;
 import org.wildfly.security.manager.WildFlySecurityManager;
+
+import static org.jboss.as.server.loaders.Utils.getResourceName;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentProcessor implements DeploymentUnitProcessor {
 
@@ -67,6 +67,9 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
     private static final String DEFAULT_PROPERTIES = "logging.properties";
     private static final String JBOSS_PROPERTIES = "jboss-logging.properties";
     private static final Object CONTEXT_LOCK = new Object();
+    private static final String[] CONFIG_FILES = {
+            LOG4J_PROPERTIES, LOG4J_XML, JBOSS_LOG4J_XML, JBOSS_PROPERTIES, DEFAULT_PROPERTIES
+    };
 
     private final String attributeName;
     private final boolean process;
@@ -97,13 +100,13 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
             LoggingLogger.ROOT_LOGGER.trace("Scanning for logging configuration files.");
             final List<DeploymentUnit> subDeployments = getSubDeployments(deploymentUnit);
             // Check for a config file
-            final VirtualFile configFile = findConfigFile(root);
+            final Resource configFile = findConfigFile(root);
             if (configFile != null) {
                 // Get the module
                 final Module module = deploymentUnit.getAttachment(Attachments.MODULE);
                 // Create the log context and load into the selector for the module and keep a strong reference
                 final LogContext logContext;
-                if (isLog4jConfiguration(configFile.getName())) {
+                if (isLog4jConfiguration(getResourceName(configFile.getName()))) {
                     logContext = LogContext.create(true);
                 } else {
                     logContext = LogContext.create();
@@ -164,14 +167,11 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
      *
      * @throws DeploymentUnitProcessingException if an error occurs.
      */
-    private VirtualFile findConfigFile(ResourceRoot resourceRoot) throws DeploymentUnitProcessingException {
-        final VirtualFile root = resourceRoot.getRoot();
+    private Resource findConfigFile(ResourceRoot resourceRoot) throws DeploymentUnitProcessingException {
         // First check META-INF
-        VirtualFile file = root.getChild("META-INF");
-        VirtualFile result = findConfigFile(file);
+        Resource result = findConfigFile(resourceRoot.getLoader(), "META-INF");
         if (result == null) {
-            file = root.getChild("WEB-INF/classes");
-            result = findConfigFile(file);
+            result = findConfigFile(resourceRoot.getLoader(), "WEB-INF/classes");
         }
         return result;
     }
@@ -181,31 +181,38 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
      * <p/>
      * Preference is for {@literal logging.properties} or {@literal jboss-logging.properties}.
      *
-     * @param file the file to check
+     * @param loader the loader to inspect
+     * @param path the path to inspect
      *
      * @return the configuration file if found, otherwise {@code null}
      *
      * @throws DeploymentUnitProcessingException if an error occurs.
      */
-    private VirtualFile findConfigFile(final VirtualFile file) throws DeploymentUnitProcessingException {
-        VirtualFile result = null;
-        try {
-            final List<VirtualFile> configFiles = file.getChildren(ConfigFilter.INSTANCE);
-            for (final VirtualFile configFile : configFiles) {
-                final String fileName = configFile.getName();
-                if (DEFAULT_PROPERTIES.equals(fileName) || JBOSS_PROPERTIES.equals(fileName)) {
-                    if (result != null) {
-                        LoggingLogger.ROOT_LOGGER.debugf("The previously found configuration file '%s' is being ignored in favour of '%s'", result, configFile);
-                    }
-                    return configFile;
-                } else if (LOG4J_PROPERTIES.equals(fileName) || LOG4J_XML.equals(fileName) || JBOSS_LOG4J_XML.equals(fileName)) {
-                    result = configFile;
+    private Resource findConfigFile(final ResourceLoader loader, final String path) throws DeploymentUnitProcessingException {
+        final Iterator<Resource> configFiles = loader.iterateResources(path, false);
+        Resource result = null;
+        Resource configFile;
+        while (configFiles.hasNext()) {
+            configFile = configFiles.next();
+            final String fileName = getResourceName(configFile.getName());
+            if (!isConfigFile(fileName)) continue;
+            if (DEFAULT_PROPERTIES.equals(fileName) || JBOSS_PROPERTIES.equals(fileName)) {
+                if (result != null) {
+                    LoggingLogger.ROOT_LOGGER.debugf("The previously found configuration file '%s' is being ignored in favour of '%s'", result, configFile);
                 }
+                return configFile;
+            } else if (LOG4J_PROPERTIES.equals(fileName) || LOG4J_XML.equals(fileName) || JBOSS_LOG4J_XML.equals(fileName)) {
+                result = configFile;
             }
-        } catch (IOException e) {
-            throw LoggingLogger.ROOT_LOGGER.errorProcessingLoggingConfiguration(e);
         }
         return result;
+    }
+
+    private static boolean isConfigFile(final String candidate) {
+        for (final String configFile : CONFIG_FILES) {
+            if (candidate.equals(configFile)) return true;
+        }
+        return false;
     }
 
     /**
@@ -219,13 +226,13 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
      *
      * @throws DeploymentUnitProcessingException if the configuration fails
      */
-    private LoggingConfigurationService configure(final ResourceRoot root, final VirtualFile configFile, final ClassLoader classLoader, final LogContext logContext) throws DeploymentUnitProcessingException {
+    private LoggingConfigurationService configure(final ResourceRoot root, final Resource configFile, final ClassLoader classLoader, final LogContext logContext) throws DeploymentUnitProcessingException {
         InputStream configStream = null;
         try {
             LoggingLogger.ROOT_LOGGER.debugf("Found logging configuration file: %s", configFile);
 
-            // Get the filname and open the stream
-            final String fileName = configFile.getName();
+            // Get the filename and open the stream
+            final String fileName = getResourceName(configFile.getName());
             configStream = configFile.openStream();
 
             // Check the type of the configuration file
@@ -294,24 +301,13 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
         return false;
     }
 
-    private static String resolveRelativePath(final ResourceRoot root, final VirtualFile configFile) {
-        // Get the parent of the root resource so the deployment name will be included in the path
-        final VirtualFile deployment = root.getRoot().getParent();
-        if (deployment != null) {
-            return configFile.getPathNameRelativeTo(deployment);
-        }
-        // This shouldn't be reached, but a fallback is always safe
-        return configFile.getPathNameRelativeTo(root.getRoot());
-    }
-
-    private static class ConfigFilter implements VirtualFileFilter {
-
-        static final ConfigFilter INSTANCE = new ConfigFilter();
-        private final Set<String> configFiles = new HashSet<String>(Arrays.asList(LOG4J_PROPERTIES, LOG4J_XML, JBOSS_LOG4J_XML, JBOSS_PROPERTIES, DEFAULT_PROPERTIES));
-
-        @Override
-        public boolean accepts(final VirtualFile file) {
-            return configFiles.contains(file.getName());
+    private static String resolveRelativePath(final ResourceRoot root, final Resource configFile) {
+        final ResourceLoader loader = root.getLoader();
+        if (loader.getPath() == null || loader.getPath().equals("")) {
+            return loader.getRootName() + "/" + configFile.getName();
+        } else {
+            return getResourceName(root.getLoader().getPath()) + "/" + configFile.getName();
         }
     }
+
 }
