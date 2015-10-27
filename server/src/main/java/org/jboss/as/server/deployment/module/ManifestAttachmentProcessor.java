@@ -73,7 +73,7 @@ public class ManifestAttachmentProcessor implements DeploymentUnitProcessor {
             try {
                 manifest = Utils.getManifest(resourceRoot);
             } catch (IOException e) {
-                throw ServerLogger.ROOT_LOGGER.failedToGetManifest(resourceRoot.getRoot(), e);
+                throw ServerLogger.ROOT_LOGGER.failedToGetManifest(resourceRoot.getLoader().getRootName(), e);
             }
         }
         return manifest;

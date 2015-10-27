@@ -69,7 +69,6 @@ import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.StartException;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -902,16 +901,10 @@ public interface ServerLogger extends BasicLogger {
     DeploymentUnitProcessingException deploymentMountFailed(@Cause IOException cause);
 
     @Message(id = 161, value = "Failed to get manifest for deployment %s")
-    DeploymentUnitProcessingException failedToGetManifest(VirtualFile file, @Cause IOException cause);
-
-    // @Message(id = 162, value = "Invalid dependency: %s")
-    // RuntimeException invalidDependency(String dependency);
+    DeploymentUnitProcessingException failedToGetManifest(String deploymentName, @Cause IOException cause);
 
     @Message(id = 163, value = "Cannot merge resource root for a different file. This: %s mergee: %s")
-    IllegalArgumentException cannotMergeResourceRoot(VirtualFile file, VirtualFile mergee);
-
-    @Message(id = 165, value = "Resource is too large to be a valid class file")
-    IOException resourceTooLarge();
+    IllegalArgumentException cannotMergeResourceRoot(String file, String mergee);
 
     @Message(id = 166, value = "Sub deployment %s in jboss-deployment-structure.xml was not found. Available sub deployments: %s")
     DeploymentUnitProcessingException subdeploymentNotFound(String path, StringBuilder subdeployments);
@@ -924,9 +917,6 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 170, value = "Additional module name '%s' is not valid. Names must start with 'deployment.'")
     XMLStreamException invalidModuleName(String name);
-
-    @Message(id = 171, value = "External resource roots not supported, resource roots may not start with a '/' : %s")
-    XMLStreamException externalResourceRootsNotSupported(String path);
 
     @Message(id = 172, value = "Unexpected end of document")
     XMLStreamException unexpectedEndOfDocument(@Param Location location);
@@ -1096,10 +1086,6 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 223, value="Illegal permission actions '%s'")
     IllegalArgumentException illegalPermissionActions(String actions);
-
-    @LogMessage(level = ERROR)
-    @Message(id = 224, value="Could not mount overlay %s as parent %s is not a directory")
-    void couldNotMountOverlay(String path, VirtualFile parent);
 
     @Message(id = 225, value="Unable to create temporary directory")
     RuntimeException unableToCreateSelfContainedDir();

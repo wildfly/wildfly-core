@@ -23,7 +23,6 @@ package org.jboss.as.server.deployment.module;
 
 import org.jboss.modules.Resource;
 import org.jboss.as.server.loaders.ResourceLoader;
-import org.jboss.vfs.VirtualFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,11 +44,7 @@ final class Utils {
 
     static Manifest getManifest(final ResourceRoot resourceRoot) throws IOException {
         final ResourceLoader loader = resourceRoot.getLoader();
-        if (loader != null) {
-            return readManifest(loader.getResource(JarFile.MANIFEST_NAME));
-        } else {
-            return readManifest(resourceRoot.getRoot().getChild(JarFile.MANIFEST_NAME));
-        }
+        return readManifest(loader.getResource(JarFile.MANIFEST_NAME));
     }
 
     static String getPathForClassPathEntry(final String canonPath, final ResourceLoader loader) {
@@ -157,16 +152,6 @@ final class Utils {
             }
         }
         return retVal.toString();
-    }
-
-    private static Manifest readManifest(final VirtualFile manifest) throws IOException {
-        if (manifest == null || !manifest.exists()) return null;
-        final InputStream stream = new PaddedManifestStream(manifest.openStream());
-        try {
-            return new Manifest(stream);
-        } finally {
-            if (stream != null) try { stream.close(); } catch (final Throwable ignored) {}
-        }
     }
 
     private static Manifest readManifest(final Resource manifestResource) throws IOException {
