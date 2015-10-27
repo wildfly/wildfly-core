@@ -102,7 +102,7 @@ public final class ResourceRoot extends SimpleAttachable {
      * @param additionalResourceRoot The root to merge
      */
     public void merge(final ResourceRoot additionalResourceRoot) {
-        if(!additionalResourceRoot.getRoot().equals(root)) {
+        if (!additionalResourceRoot.getLoader().getPath().equals(loader.getPath())) {
             throw ServerLogger.ROOT_LOGGER.cannotMergeResourceRoot(root, additionalResourceRoot.getRoot());
         }
         usePhysicalCodeSource = additionalResourceRoot.usePhysicalCodeSource;

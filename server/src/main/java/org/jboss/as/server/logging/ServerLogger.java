@@ -916,9 +916,6 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 166, value = "Sub deployment %s in jboss-deployment-structure.xml was not found. Available sub deployments: %s")
     DeploymentUnitProcessingException subdeploymentNotFound(String path, StringBuilder subdeployments);
 
-    @Message(id = 167, value = "No jboss-deployment-structure.xml file found at %s")
-    DeploymentUnitProcessingException deploymentStructureFileNotFound(File file);
-
     @Message(id = 168, value = "Error loading jboss-deployment-structure.xml from %s")
     DeploymentUnitProcessingException errorLoadingDeploymentStructureFile(String path, @Cause Exception cause);
 

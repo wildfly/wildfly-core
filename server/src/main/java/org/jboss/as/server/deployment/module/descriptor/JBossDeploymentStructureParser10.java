@@ -22,7 +22,6 @@
 
 package org.jboss.as.server.deployment.module.descriptor;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -47,15 +46,15 @@ import org.jboss.as.server.deployment.MountedDeploymentOverlay;
 import org.jboss.as.server.deployment.jbossallxml.JBossAllXMLParser;
 import org.jboss.as.server.deployment.module.FilterSpecification;
 import org.jboss.as.server.deployment.module.ModuleDependency;
-import org.jboss.as.server.deployment.module.MountHandle;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VirtualFile;
+
+import static org.jboss.modules.PathUtils.canonicalize;
+import static org.jboss.modules.PathUtils.relativize;
 
 /**
  * @author Stuart Douglas
@@ -506,38 +505,34 @@ public class JBossDeploymentStructureParser10 implements XMLElementReader<ParseR
         }
         if (name == null)
             name = path;
-        List<FilterSpecification> resourceFilters = new ArrayList<FilterSpecification>();
+        List<FilterSpecification> resourceFilters = new ArrayList<>();
         final Set<Element> encountered = EnumSet.noneOf(Element.class);
         while (reader.hasNext()) {
             switch (reader.nextTag()) {
                 case XMLStreamConstants.END_ELEMENT: {
-                    if (path.startsWith("/")) {
-                        throw ServerLogger.ROOT_LOGGER.externalResourceRootsNotSupported(path);
-                    } else {
-                        try {
-                            final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
-                            final VirtualFile deploymentRootFile = deploymentRoot.getRoot();
-                            final VirtualFile child = deploymentRootFile.getChild(path);
+                    String canonPath = relativize(canonicalize(path));
+                    final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
+                    final ResourceLoader rootLoader = deploymentRoot.getLoader();
+                    try {
+                        ResourceLoader loader = canonPath.equals("") ? rootLoader : deploymentRoot.getLoader().getChild(canonPath);
+                        if (loader == null) {
+                            if (!resourceOrPathExists(deploymentRoot.getLoader(), canonPath)) {
+                                ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(path);
+                                return;
+                            }
                             Map<String, MountedDeploymentOverlay> overlays = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_OVERLAY_LOCATIONS);
-                            MountedDeploymentOverlay overlay = overlays.get(path);
-                            Closeable closable = null;
-                            final ResourceLoader loader = overlay == null
-                                    ? ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), path)
-                                    : ResourceLoaders.newResourceLoader(name, overlay.getFile(), path, deploymentRoot.getLoader());
-                            if (overlay != null) {
-                                overlay.remountAsZip();
-                            } else if (child.isFile()) {
-                                closable = VFS.mountZip(child, child);
-                            }
-                            final MountHandle mountHandle = new MountHandle(closable);
-                            ResourceRoot resourceRoot = new ResourceRoot(loader, name, child, mountHandle);
-                            for (FilterSpecification filter : resourceFilters) {
-                                resourceRoot.getExportFilters().add(filter);
-                            }
-                            specBuilder.addResourceRoot(resourceRoot);
-                        } catch (IOException e) {
-                            throw new XMLStreamException(e);
+                            MountedDeploymentOverlay overlay = overlays.get(canonPath);
+                            loader = overlay == null
+                                    ? ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), canonPath)
+                                    : ResourceLoaders.newResourceLoader(name, overlay.getFile(), canonPath, deploymentRoot.getLoader());
                         }
+                        final ResourceRoot resourceRoot = new ResourceRoot(loader, null, null, null);
+                        for (final FilterSpecification filter : resourceFilters) {
+                            resourceRoot.getExportFilters().add(filter);
+                        }
+                        specBuilder.addResourceRoot(resourceRoot);
+                    } catch (IOException e) {
+                        throw new XMLStreamException(e);
                     }
                     return;
                 }
@@ -559,6 +554,10 @@ public class JBossDeploymentStructureParser10 implements XMLElementReader<ParseR
                 }
             }
         }
+    }
+
+    private static boolean resourceOrPathExists(final ResourceLoader loader, final String resourceOrPath) {
+        return loader.getResource(resourceOrPath) != null || loader.getPaths().contains(resourceOrPath);
     }
 
     private static void parseFilterList(final XMLStreamReader reader, final List<FilterSpecification> filters)
