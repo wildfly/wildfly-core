@@ -28,6 +28,7 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
@@ -42,6 +43,7 @@ import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.RestartMode;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceName;
@@ -74,8 +76,25 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
             .build();
     }
 
-    public HostProcessReloadHandler(final ServiceName rootService, final HostRunningModeControl runningModeControl, final ControlledProcessState processState) {
+    private final ProcessType processType;
+
+    public HostProcessReloadHandler(final ServiceName rootService, final HostRunningModeControl runningModeControl, final ControlledProcessState processState, final ProcessType processType) {
         super(rootService, runningModeControl, processState);
+        this.processType = processType;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+
+        //WFCORE-938 embedded HC reload requires --admin-only=true to be provided explicitly until we support it.
+        if (processType == ProcessType.EMBEDDED_HOST_CONTROLLER) {
+            final boolean adminOnly = ADMIN_ONLY.resolveModelAttribute(context, operation).asBoolean(false);
+            if (!adminOnly) {
+                throw HostControllerLogger.ROOT_LOGGER.embeddedHostControllerRestartMustProvideAdminOnlyTrue();
+            }
+        }
+        super.execute(context, operation);
     }
 
     @Override
