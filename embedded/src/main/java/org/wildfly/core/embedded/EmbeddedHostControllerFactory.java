@@ -478,6 +478,9 @@ public class EmbeddedHostControllerFactory {
                 String initialDomainConfig = null;
                 String initialHostConfig = null;
                 Map<String, String> hostSystemProperties = getHostSystemProperties();
+
+                // WFCORE-938
+                // see also {@link org.jboss.as.cli.handlers.ReloadHandler} for ADMIN_ONLY being forced
                 RunningMode initialRunningMode = RunningMode.ADMIN_ONLY;
                 boolean backupDomainFiles = false;
                 boolean useCachedDc = false;
