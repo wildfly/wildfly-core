@@ -48,11 +48,13 @@ public class ManagedMulticastSocketBinding extends MulticastSocket implements Ma
     }
 
     private final String name;
+    private final SocketAddress address;
     private final ManagedBindingRegistry socketBindings;
 
     private ManagedMulticastSocketBinding(final String name, final ManagedBindingRegistry socketBindings, SocketAddress address) throws IOException {
         super(address);
         this.name = name;
+        this.address = address;
         this.socketBindings = socketBindings;
         if (this.isBound()) {
             this.socketBindings.registerBinding(this);
@@ -66,7 +68,12 @@ public class ManagedMulticastSocketBinding extends MulticastSocket implements Ma
 
     @Override
     public InetSocketAddress getBindAddress() {
-        return (InetSocketAddress) getLocalSocketAddress();
+        if (name == null) {
+            // unnamed multicast socket
+            return (InetSocketAddress) address;
+        } else {
+            return (InetSocketAddress) getLocalSocketAddress();
+        }
     }
 
     @Override
