@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
 
@@ -82,7 +83,7 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
 import org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler;
-import org.wildfly.security.auth.server.SecurityDomainHttpConfiguration;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.xnio.BufferAllocator;
 import org.xnio.ByteBufferSlicePool;
@@ -171,7 +172,7 @@ public class ManagementHttpServer {
     }
 
     private static SSLContext getSSLContext(Builder builder) {
-        if (builder.httpServerAuthentication != null) {
+        if (builder.httpAuthenticationFactory != null) {
             throw new IllegalStateException("Obtaining a SSLContext from a SecurityDomain not currently supported.");
         } else if (builder.securityRealm != null) {
             return builder.securityRealm.getSSLContext();
@@ -181,7 +182,7 @@ public class ManagementHttpServer {
     }
 
     private static SslClientAuthMode getSslClientAuthMode(Builder builder) {
-        if (builder.httpServerAuthentication != null) {
+        if (builder.httpAuthenticationFactory != null) {
             return null;
         } else if (builder.securityRealm != null) {
             Set<AuthMechanism> supportedMechanisms = builder.securityRealm.getSupportedAuthenticationMechanisms();
@@ -295,11 +296,11 @@ public class ManagementHttpServer {
     }
 
     private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final Builder builder) {
-        if (builder.httpServerAuthentication != null) {
-            domainHandler = new ElytronSubjectDoAsHandler(domainHandler, builder.httpServerAuthentication.getSecurityDomain());
+        if (builder.httpAuthenticationFactory != null) {
+            domainHandler = new ElytronSubjectDoAsHandler(domainHandler, builder.httpAuthenticationFactory.getSecurityDomain());
             domainHandler = new ElytronRunAsHandler(domainHandler);
             domainHandler = new BlockingHandler(domainHandler);
-            return secureDomainAccess(domainHandler, builder.httpServerAuthentication);
+            return secureDomainAccess(domainHandler, builder.httpAuthenticationFactory);
         } else if (builder.securityRealm != null) {
             domainHandler = new SubjectDoAsHandler(domainHandler);
             domainHandler = new BlockingHandler(domainHandler);
@@ -357,15 +358,13 @@ public class ManagementHttpServer {
         return new AuthenticationMechanismWrapper(toWrap, mechanism);
     }
 
-    private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final SecurityDomainHttpConfiguration httpServerAuthentication) {
+    private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final HttpAuthenticationFactory httpAuthenticationFactory) {
         domainHandler = new AuthenticationCallHandler(domainHandler);
         domainHandler = new AuthenticationConstraintHandler(domainHandler);
-        Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier = () -> {
-            List<String> mechanismNames = httpServerAuthentication.getMechanismNames();
-
-            return httpServerAuthentication.getSecurityDomain().createNewAuthenticationContext()
-                    .createHttpServerMechanisms(httpServerAuthentication.getMechanismFactory(), mechanismNames.toArray(new String[mechanismNames.size()]));
-        };
+        Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier = () ->
+            httpAuthenticationFactory.getMechanismNames().stream()
+            .map(httpAuthenticationFactory::createMechanism)
+            .collect(Collectors.toList());
         domainHandler = new ElytronContextAssociationHandler(domainHandler, mechanismSupplier);
 
         return domainHandler;
@@ -383,7 +382,7 @@ public class ManagementHttpServer {
         private InetSocketAddress secureBindAddress;
         private ModelController modelController;
         private SecurityRealm securityRealm;
-        private SecurityDomainHttpConfiguration httpServerAuthentication;
+        private HttpAuthenticationFactory httpAuthenticationFactory;
         private ControlledProcessStateService controlledProcessStateService;
         private ConsoleMode consoleMode;
         private String consoleSlot;
@@ -422,9 +421,9 @@ public class ManagementHttpServer {
             return this;
         }
 
-        public Builder setHttpServerAuthentication(SecurityDomainHttpConfiguration httpServerAuthentication) {
+        public Builder setHttpServerAuthentication(HttpAuthenticationFactory httpAuthenticationFactory) {
             assertNotBuilt();
-            this.httpServerAuthentication = httpServerAuthentication;
+            this.httpAuthenticationFactory = httpAuthenticationFactory;
 
             return this;
         }

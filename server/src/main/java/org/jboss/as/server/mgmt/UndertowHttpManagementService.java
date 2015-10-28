@@ -52,7 +52,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.security.auth.server.SecurityDomainHttpConfiguration;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 
 /**
  *
@@ -79,7 +79,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<SocketBindingManager> injectedSocketBindingManager = new InjectedValue<SocketBindingManager>();
     private final InjectedValue<Integer> portValue = new InjectedValue<Integer>();
     private final InjectedValue<Integer> securePortValue = new InjectedValue<Integer>();
-    private final InjectedValue<SecurityDomainHttpConfiguration> httpServerAuthenticationValue = new InjectedValue<>();
+    private final InjectedValue<HttpAuthenticationFactory> httpServerAuthenticationValue = new InjectedValue<>();
     private final InjectedValue<SecurityRealm> securityRealmValue = new InjectedValue<SecurityRealm>();
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
     private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
@@ -173,7 +173,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         socketBindingManager = injectedSocketBindingManager.getOptionalValue();
 
         final SecurityRealm securityRealm = securityRealmValue.getOptionalValue();
-        final SecurityDomainHttpConfiguration httpServerAuthentication = httpServerAuthenticationValue.getOptionalValue();
+        final HttpAuthenticationFactory httpServerAuthentication = httpServerAuthenticationValue.getOptionalValue();
 
         InetSocketAddress bindAddress = null;
         InetSocketAddress secureBindAddress = null;
@@ -391,7 +391,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      *
      * @return The {@link Injector} for the HTTP server authentication policy.
      */
-    public Injector<SecurityDomainHttpConfiguration> getHttpServerAuthenticationInjector() {
+    public Injector<HttpAuthenticationFactory> getHttpServerAuthenticationInjector() {
         return httpServerAuthenticationValue;
     }
 

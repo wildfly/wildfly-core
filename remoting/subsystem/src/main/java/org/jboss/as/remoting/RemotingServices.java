@@ -37,7 +37,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
-import org.wildfly.security.auth.server.SecurityDomainSaslConfiguration;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
 
 /**
@@ -135,10 +135,10 @@ public class RemotingServices {
         ServiceBuilder<?> builder = serviceTarget.addService(securityProviderName, rsps);
         if (saslServerAuthentication != null) {
             // TODO This is just temporary until the sasl-server-authentication is actually used for Remoting.
-            InjectedValue<SecurityDomainSaslConfiguration> saslServerAuthInjector = new InjectedValue<>();
+            InjectedValue<SaslAuthenticationFactory> saslAuthenticationFactory = new InjectedValue<>();
             builder.addDependency(context.getCapabilityServiceName(
                     buildDynamicCapabilityName(SASL_SERVER_AUTHENTICATION_CAPABILITY, saslServerAuthentication),
-                    SecurityDomainSaslConfiguration.class), SecurityDomainSaslConfiguration.class, saslServerAuthInjector);
+                    SaslAuthenticationFactory.class), SaslAuthenticationFactory.class, saslAuthenticationFactory);
         }
         if (realmName != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, rsps.getSecurityRealmInjectedValue(), realmName, false);

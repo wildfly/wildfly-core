@@ -60,7 +60,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.wildfly.security.auth.server.SecurityDomainHttpConfiguration;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 
 /**
  * A handler that activates the HTTP management API.
@@ -140,7 +140,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         if (httpServerAuthentication != null) {
             builder.addDependency(context.getCapabilityServiceName(
                     buildDynamicCapabilityName(HTTP_SERVER_AUTHENTICATION_CAPABILITY, httpServerAuthentication),
-                    SecurityDomainHttpConfiguration.class), SecurityDomainHttpConfiguration.class, service.getHttpServerAuthenticationInjector());
+                    HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, service.getHttpServerAuthenticationInjector());
         } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);
         } else {
