@@ -455,18 +455,51 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     @Override
     public void registerAlias(PathElement address, AliasEntry alias) {
-        RootInvocation rootInvocation = parent == null ? null : getRootInvocation();
-        AbstractResourceRegistration root = rootInvocation == null ? this : rootInvocation.root;
-        PathAddress myaddr = rootInvocation == null ? PathAddress.EMPTY_ADDRESS : rootInvocation.pathAddress;
 
-        PathAddress targetAddress = alias.getTarget().getPathAddress();
-        alias.setAddresses(targetAddress, myaddr.append(address));
-        AbstractResourceRegistration target = (AbstractResourceRegistration)root.getSubModel(alias.getTargetAddress());
+        alias.setAliasAddress(pathAddress.append(address));
+
+        // Search for the alias from the nearest common ancestor. We don't search from the root as the nearest
+        // common ancestor may not be registered yet, since this method can be called while building up the
+        // ancestor and its descendants, before the ancestor is registered.
+        PathAddress targetAddress = alias.getTargetAddress();
+        AbstractResourceRegistration ancestor = getCommonAncestor(targetAddress);
+        int ancestorSize = ancestor.getPathAddress().size();
+        AbstractResourceRegistration target;
+        if (targetAddress.size() == ancestorSize) {
+            target = ancestor;
+        } else {
+            target = (AbstractResourceRegistration) ancestor.getResourceRegistration(targetAddress.subAddress(ancestorSize).iterator());
+        }
         if (target == null) {
             throw ControllerLogger.ROOT_LOGGER.aliasTargetResourceRegistrationNotFound(alias.getTargetAddress());
         }
 
         registerAlias(address, alias, target);
+    }
+
+    private AbstractResourceRegistration getCommonAncestor(PathAddress relative) {
+        int max = Math.min(relative.size(), pathAddress.size());
+        int divergeIdx = max;
+        for (int i = 0; i < max; i++)  {
+            if (!pathAddress.getElement(i).equals(relative.getElement(i))) {
+                divergeIdx = i;
+                break;
+            }
+        }
+
+        if (divergeIdx == 0) {
+            // Only common ancestor is the root
+            RootInvocation ri = getRootInvocation();
+            return ri == null ? this : ri.root; // if ri is null, we are the root
+        }
+
+        AbstractResourceRegistration ancestor = this;
+        int generations = pathAddress.size() - divergeIdx;
+        for (int i = 0; i < generations; i++) {
+            NodeSubregistry subReg = ancestor.getParent();
+            ancestor = subReg.getParent();
+        }
+        return ancestor;
     }
 
     protected abstract void registerAlias(PathElement address, AliasEntry alias, AbstractResourceRegistration target);

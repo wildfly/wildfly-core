@@ -34,7 +34,6 @@ public abstract class AliasEntry {
 
     private final ManagementResourceRegistration target;
     private volatile PathAddress aliasAddress;
-    private volatile PathAddress targetAddress;
 
     protected AliasEntry(final ManagementResourceRegistration target) {
         this.target = target;
@@ -44,8 +43,7 @@ public abstract class AliasEntry {
         return target;
     }
 
-    void setAddresses(PathAddress targetAddress, PathAddress aliasAddress) {
-        this.targetAddress = targetAddress;
+    void setAliasAddress(PathAddress aliasAddress) {
         this.aliasAddress = aliasAddress;
     }
 
@@ -64,7 +62,7 @@ public abstract class AliasEntry {
      * @return the target address
      */
     protected PathAddress getTargetAddress() {
-        return targetAddress;
+        return target.getPathAddress();
     }
 
     /**

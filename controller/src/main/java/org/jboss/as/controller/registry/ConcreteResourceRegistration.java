@@ -197,26 +197,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
         final String key = address.getKey();
         final NodeSubregistry child = getOrCreateSubregistry(key);
-        final boolean ordered = resourceDefinition.isOrderedChild();
-        final ManagementResourceRegistration resourceRegistration =
-                child.register(address.getValue(), resourceDefinition, ordered);
-        if (ordered) {
-            AbstractResourceRegistration parentRegistration = child.getParent();
-            parentRegistration.setOrderedChild(key);
-        }
-        resourceDefinition.registerAttributes(resourceRegistration);
-        resourceDefinition.registerOperations(resourceRegistration);
-        resourceDefinition.registerNotifications(resourceRegistration);
-        resourceDefinition.registerChildren(resourceRegistration);
-        resourceDefinition.registerCapabilities(resourceRegistration);
-        if (constraintUtilizationRegistry != null) {
-            PathAddress childAddress = getPathAddress().append(address);
-            List<AccessConstraintDefinition> constraintDefinitions = resourceDefinition.getAccessConstraints();
-            for (AccessConstraintDefinition acd : constraintDefinitions) {
-                constraintUtilizationRegistry.registerAccessConstraintResourceUtilization(acd.getKey(), childAddress);
-            }
-        }
-        return resourceRegistration;
+        return child.registerChild(address.getValue(), resourceDefinition);
     }
 
     @Override
@@ -241,13 +222,13 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     @Override
     OperationEntry getOperationEntry(final ListIterator<PathElement> iterator, final String operationName, OperationEntry inherited) {
         if (iterator.hasNext()) {
-            OperationEntry ourInherited = getInheritableOperationEntry(operationName);
-            OperationEntry inheritance = ourInherited == null ? inherited : ourInherited;
             final PathElement next = iterator.next();
             final NodeSubregistry subregistry = children.get(next.getKey());
             if (subregistry == null) {
                 return null;
             }
+            OperationEntry ourInherited = getInheritableOperationEntry(operationName);
+            OperationEntry inheritance = ourInherited == null ? inherited : ourInherited;
             return subregistry.getOperationEntry(iterator, next.getValue(), operationName, inheritance);
         } else {
             checkPermission();
