@@ -35,11 +35,13 @@ import java.net.SocketException;
 public class ManagedDatagramSocketBinding extends DatagramSocket implements ManagedBinding {
 
     private final String name;
+    private final SocketAddress address;
     private final ManagedBindingRegistry registry;
 
     ManagedDatagramSocketBinding(final String name, final ManagedBindingRegistry socketBindings, SocketAddress address) throws SocketException {
         super(address);
         this.name = name;
+        this.address = address;
         this.registry = socketBindings;
         if (this.isBound()) {
             this.registry.registerBinding(this);
@@ -53,7 +55,12 @@ public class ManagedDatagramSocketBinding extends DatagramSocket implements Mana
 
     @Override
     public InetSocketAddress getBindAddress() {
-        return (InetSocketAddress) getLocalSocketAddress();
+        if (name == null) {
+            // unnamed datagram socket
+            return (InetSocketAddress) address;
+        } else {
+            return (InetSocketAddress) getLocalSocketAddress();
+        }
     }
 
     @Override
