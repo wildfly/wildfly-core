@@ -72,6 +72,33 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <!-- Unpack the jboss-modules.jar schemas for validating generated module.xml files in tests -->
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.jboss.modules</groupId>
+                                    <artifactId>jboss-modules</artifactId>
+                                    <version>${version.org.jboss.modules.jboss-modules}</version>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <!-- Unpack to the test directory as this will be the only place these are needed -->
+                                    <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+                                    <includes>**/*.xsd</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
