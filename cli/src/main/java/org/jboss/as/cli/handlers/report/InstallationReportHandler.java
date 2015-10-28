@@ -20,10 +20,10 @@
  */
 package org.jboss.as.cli.handlers.report;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
+import static org.jboss.as.controller.client.helpers.ClientConstants.ATTACHED_STREAMS;
+import static org.jboss.as.controller.client.helpers.ClientConstants.FILE;
+import static org.jboss.as.controller.client.helpers.ClientConstants.RESPONSE_HEADERS;
+import static org.jboss.as.controller.client.helpers.ClientConstants.UUID;
 
 import java.io.File;
 import java.io.IOException;

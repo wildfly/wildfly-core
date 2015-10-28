@@ -21,6 +21,8 @@ package org.jboss.as.controller.persistence;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -555,12 +557,7 @@ public class ConfigurationFile {
 
 
     private void moveFile(final File file, final File backup) throws IOException {
-
-        if (backup.exists()) {
-            backup.delete();
-        }
-
-        FilePersistenceUtils.rename(file, backup);
+        Files.move(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 
     String snapshot() throws ConfigurationPersistenceException {

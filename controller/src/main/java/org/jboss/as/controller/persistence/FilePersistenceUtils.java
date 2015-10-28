@@ -82,9 +82,7 @@ class FilePersistenceUtils {
     static void moveTempFileToMain(File tempFileName, File fileName) throws ConfigurationPersistenceException {
         //Rename the temp file written to the target file
         try {
-            FilePersistenceUtils.rename(tempFileName, fileName);
-            //Only delete the temp file if all went well, to give people the chance to manually recover it if something really weird happened
-            deleteFile(tempFileName);
+            Files.move(tempFileName.toPath(), fileName.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             throw ControllerLogger.ROOT_LOGGER.failedToRenameTempFile(e, tempFileName, fileName);
         }
