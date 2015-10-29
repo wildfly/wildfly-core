@@ -39,6 +39,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
@@ -413,6 +414,19 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     abstract void getInheritedOperationEntries(final Map<String, OperationEntry> providers);
 
     abstract void getInheritedNotificationEntries(final Map<String, NotificationEntry> providers);
+
+    @Override
+    public final Set<RuntimeCapability> getCapabilities() {
+
+        if (parent != null) {
+            RootInvocation ri = getRootInvocation();
+            return ri.root.getCapabilities(ri.pathAddress.iterator());
+        }
+        // else we are the root
+        return getCapabilities(pathAddress.iterator());
+    }
+
+    abstract Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator);
 
     private RootInvocation getRootInvocation() {
         RootInvocation result = null;

@@ -436,6 +436,21 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
     }
 
+    @Override
+    Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator) {
+        if (iterator.hasNext()) {
+            final PathElement next = iterator.next();
+            final NodeSubregistry subregistry = children.get(next.getKey());
+            if (subregistry == null) {
+                return Collections.emptySet();
+            }
+            return subregistry.getCapabilities(iterator, next.getValue());
+        } else {
+            checkPermission();
+            return Collections.unmodifiableSet(capabilities);
+        }
+    }
+
 
     @Override
     public void registerProxyController(final PathElement address, final ProxyController controller) throws IllegalArgumentException {
@@ -666,11 +681,6 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             throw alreadyRegistered("Ordered child", type);
         }
 
-    }
-
-    @Override
-    public Set<RuntimeCapability> getCapabilities() {
-        return Collections.unmodifiableSet(capabilities);
     }
 
     private static class Empty {

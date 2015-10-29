@@ -314,7 +314,7 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
-    public Set<RuntimeCapability> getCapabilities() {
-        return target.getCapabilities();
+    Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator) {
+        return target.getCapabilities(iterator);
     }
 }

@@ -256,6 +256,11 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
+    Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator) {
+        return Collections.emptySet();
+    }
+
+    @Override
     DescriptionProvider getModelDescription(final ListIterator<PathElement> iterator) {
         checkPermission();
         return this;
@@ -353,11 +358,6 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     @Override
     public void setOrderedChild(String key) {
         throw alreadyRegistered();
-    }
-
-    @Override
-    public Set<RuntimeCapability> getCapabilities() {
-        return Collections.emptySet();
     }
 
     @Override
