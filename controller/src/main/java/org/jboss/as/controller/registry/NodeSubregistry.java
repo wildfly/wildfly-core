@@ -29,12 +29,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -379,6 +379,28 @@ final class NodeSubregistry {
             } else if (wildCardChildren != null) {
                 // Merge
                 result = new HashSet<RuntimeCapability>(result);
+                result.addAll(wildCardChildren);
+            }
+        }
+        return result;
+    }
+
+    Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator, String child) {
+
+        final RegistrySearchControl searchControl = new RegistrySearchControl(iterator, child);
+
+        Set<String> result = null;
+        if (searchControl.getSpecifiedRegistry() != null) {
+            result = searchControl.getSpecifiedRegistry().getOrderedChildTypes(searchControl.getIterator());
+        }
+
+        if (searchControl.getWildCardRegistry() != null) {
+            final Set<String> wildCardChildren = searchControl.getWildCardRegistry().getOrderedChildTypes(searchControl.getIterator());
+            if (result == null) {
+                result = wildCardChildren;
+            } else if (wildCardChildren != null) {
+                // Merge
+                result = new HashSet<String>(result);
                 result.addAll(wildCardChildren);
             }
         }

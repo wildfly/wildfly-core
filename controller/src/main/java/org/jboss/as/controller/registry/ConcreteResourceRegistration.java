@@ -138,13 +138,23 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public Set<String> getOrderedChildTypes() {
-        Map<String, Empty> snapshot = orderedChildUpdater.get(this);
-        if (snapshot == null || snapshot.size() == 0) {
-            return Collections.emptySet();
-        }
+    Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator) {
+        if (iterator.hasNext()) {
+            final PathElement next = iterator.next();
+            final NodeSubregistry subregistry = children.get(next.getKey());
+            if (subregistry == null) {
+                return Collections.emptySet();
+            }
+            return subregistry.getOrderedChildTypes(iterator, next.getValue());
+        } else {
+            checkPermission();
+            Map<String, Empty> snapshot = orderedChildUpdater.get(this);
+            if (snapshot == null || snapshot.size() == 0) {
+                return Collections.emptySet();
+            }
 
-        return new HashSet<>(snapshot.keySet());
+            return new HashSet<>(snapshot.keySet());
+        }
     }
 
     @Override

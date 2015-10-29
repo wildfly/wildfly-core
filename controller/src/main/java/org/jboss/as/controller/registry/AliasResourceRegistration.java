@@ -304,8 +304,8 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
-    public Set<String> getOrderedChildTypes() {
-        return target.getOrderedChildTypes();
+    Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator) {
+        return target.getOrderedChildTypes(iterator);
     }
 
     @Override

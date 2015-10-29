@@ -495,6 +495,19 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         return pathAddress;
     }
 
+    @Override
+    public Set<String> getOrderedChildTypes() {
+
+        if (parent != null) {
+            RootInvocation ri = getRootInvocation();
+            return ri.root.getOrderedChildTypes(ri.pathAddress.iterator());
+        }
+        // else we are the root
+        return getOrderedChildTypes(pathAddress.iterator());
+    }
+
+    abstract Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator);
+
     protected abstract void setOrderedChild(String key);
 
     private static class RootInvocation {

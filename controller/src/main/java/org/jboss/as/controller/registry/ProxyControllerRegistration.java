@@ -372,7 +372,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public Set<String> getOrderedChildTypes() {
+    Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator) {
         checkPermission();
         return Collections.emptySet();
     }
