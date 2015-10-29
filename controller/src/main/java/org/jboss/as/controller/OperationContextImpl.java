@@ -272,6 +272,11 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     private boolean validateCapabilities() {
+
+        if (! (affectsResourceTree || affectsCapabilityRegistry || affectsResourceRegistration || affectsRuntime)) {
+            return true;
+        }
+
         // Validate that all required capabilities are available and fail any steps that broke this
         boolean hostXmlOnly = isBooting() && !getProcessType().isServer() && partialModel;
         CapabilityRegistry.CapabilityValidation validation = managementModel.validateCapabilityRegistry(false, hostXmlOnly);
