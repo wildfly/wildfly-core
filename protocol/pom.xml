@@ -39,9 +39,9 @@
         <test.level>INFO</test.level>
 
         <!-- maven-compiler-plugin -->
-        <!-- Keep the management client libs on JDK 6 -->
-        <maven.compiler.target>1.6</maven.compiler.target>
-        <maven.compiler.source>1.6</maven.compiler.source>
+        <!-- Keep the management client libs on JDK 7 -->
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
 
     </properties>
 
