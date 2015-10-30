@@ -256,6 +256,11 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
+    Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator) {
+        return Collections.emptySet();
+    }
+
+    @Override
     DescriptionProvider getModelDescription(final ListIterator<PathElement> iterator) {
         checkPermission();
         return this;
@@ -356,11 +361,6 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public Set<RuntimeCapability> getCapabilities() {
-        return Collections.emptySet();
-    }
-
-    @Override
     protected void registerAlias(PathElement address, AliasEntry alias, AbstractResourceRegistration target) {
         throw ControllerLogger.ROOT_LOGGER.proxyHandlerAlreadyRegistered(getLocationString());
     }
@@ -372,7 +372,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public Set<String> getOrderedChildTypes() {
+    Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator) {
         checkPermission();
         return Collections.emptySet();
     }
