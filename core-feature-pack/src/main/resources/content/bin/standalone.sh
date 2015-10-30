@@ -82,7 +82,7 @@ if $cygwin ; then
 fi
 
 # Setup JBOSS_HOME
-RESOLVED_JBOSS_HOME=`cd "$DIRNAME/.."; pwd`
+RESOLVED_JBOSS_HOME=`cd "$DIRNAME/.." >/dev/null; pwd`
 if [ "x$JBOSS_HOME" = "x" ]; then
     # get the full path (without any relative bits)
     JBOSS_HOME=$RESOLVED_JBOSS_HOME
