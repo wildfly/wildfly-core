@@ -779,10 +779,15 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
      */
     private void scanDirectory(final File directory, final String relativePath, final ScanContext scanContext) {
         final File[] children = listDirectoryChildren(directory, filter);
+
+        final Set<String> seenDeployments = new HashSet<>(deployed.keySet()); //WFCORE-601 deployments should not have multiple markers, but if they do we make sure we don't attempt to deploy them twice
         for (File child : children) {
             final String fileName = child.getName();
             if (fileName.endsWith(DEPLOYED)) {
                 final String deploymentName = fileName.substring(0, fileName.length() - DEPLOYED.length());
+                if(seenDeployments.contains(deploymentName)) {
+                    continue;
+                }
                 DeploymentMarker deploymentMarker = deployed.get(deploymentName);
                 if (deploymentMarker == null) {
                     scanContext.toRemove.remove(deploymentName);
@@ -792,6 +797,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                     if (deploymentFile.exists()) {
                         scanContext.toRemove.remove(deploymentName);
                         if (deployed.get(deploymentName).lastModified != child.lastModified()) {
+                            seenDeployments.add(deploymentName);
                             scanContext.scannerTasks.add(new RedeployTask(deploymentName, child.lastModified(), directory,
                                     !child.isDirectory()));
                         } else {
@@ -827,7 +833,9 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 // AS7-2581 - attempt to redeploy failed deployments on restart.
                 final String markerStatus = fileName.endsWith(DO_DEPLOY) ? DO_DEPLOY : FAILED_DEPLOY;
                 final String deploymentName = fileName.substring(0, fileName.length() - markerStatus.length());
-
+                if(seenDeployments.contains(deploymentName)) {
+                    continue;
+                }
                 if (FAILED_DEPLOY.equals(markerStatus)) {
                     if (!scanContext.firstScanDeployments.add(deploymentName)) {
                         continue;
@@ -847,6 +855,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 // the
                 // deploymentDir
                 final boolean archive = deploymentFile.isFile();
+                seenDeployments.add(deploymentName);
                 addContentAddingTask(path, archive, deploymentName, deploymentFile, timestamp, scanContext);
             } else if (fileName.endsWith(FAILED_DEPLOY)) {
                 final String deploymentName = fileName.substring(0, fileName.length() - FAILED_DEPLOY.length());
@@ -873,6 +882,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                                     if(firstScan){
                                         scanContext.firstScanDeployments.add(fileName);
                                     }
+                                    seenDeployments.add(fileName);
                                     addContentAddingTask(path, archive, fileName, child, timestamp, scanContext);
                                 } else {
                                     //we need to make sure that the file was not deleted while
@@ -907,6 +917,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                                 if(firstScan){
                                     scanContext.firstScanDeployments.add(fileName);
                                 }
+                                seenDeployments.add(fileName);
                                 addContentAddingTask(path, true, fileName, child, timestamp, scanContext);
                             } else {
                                 //we need to make sure that the file was not deleted while
