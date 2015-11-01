@@ -337,6 +337,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
                         final File overlay = overlays.get(overlayPath);
                         final URL overlayURL = overlay.toURI().toURL();
                         next = new FileEntryResource(overlayPath, overlay, overlayURL, context);
+                        return true;
                     } catch (Exception ignored) {
                     }
                 }
