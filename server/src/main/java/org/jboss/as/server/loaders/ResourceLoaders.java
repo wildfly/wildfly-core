@@ -198,41 +198,8 @@ public final class ResourceLoaders {
             }
             break;
         }
-        if (paths.contains(subResPath)) {
-            if (loader instanceof FileResourceLoader) {
-                final FileResourceLoader fileLoader = (FileResourceLoader) loader;
-                final FileResourceLoader newFileLoader = new FileResourceLoader(fileLoader, name, new File(fileLoader.getRoot(), subResPath), subResPath, AccessController.getContext());
-                fileLoader.addChild(subResPath, newFileLoader);
-                return newFileLoader;
-            } else if (loader instanceof JarFileResourceLoader) {
-                final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
-                if (explodeArchive(name)) {
-                    final File tempDir = new File(TMP_ROOT, getResourceName(name) + ".tmp" + System.currentTimeMillis());
-                    IOUtils.unzip(parent.iterateResources(subresourcePath, true), tempDir, subresourcePath.length() + 1);
-                    final FileResourceLoader newFileLoader = new FileResourceLoader(parent, name, tempDir, subResPath, AccessController.getContext());
-                    return new DelegatingResourceLoader(newFileLoader) {
-                        @Override
-                        public void close() {
-                            try {
-                                super.close();
-                            } finally {
-                                IOUtils.delete(tempDir);
-                            }
-                        }
-                    };
-                } else {
-                    final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(jarLoader, name, new JarFile(jarLoader.getRoot()), subResPath, subResPath);
-                    jarLoader.addChild(subResPath, newJarLoader);
-                    return newJarLoader;
-                }
-            } else {
-                throw new UnsupportedOperationException();
-            }
-        } else {
-            final Resource resource = parent.getResource(subResPath);
-            if (resource == null) {
-                throw new IllegalArgumentException("Subresource '" + subResPath + "' does not exist");
-            }
+        final Resource resource = parent.getResource(subResPath);
+        if (resource != null) {
             if (loader instanceof FileResourceLoader) {
                 final FileResourceLoader fileLoader = (FileResourceLoader) loader;
                 final JarFileResourceLoader newLoader = new JarFileResourceLoader(loader, name, new JarFile(resource.getURL().getFile()), subResPath);
@@ -274,6 +241,38 @@ public final class ResourceLoaders {
             } else {
                 throw new UnsupportedOperationException();
             }
+        } else if (paths.contains(subResPath)) {
+            if (loader instanceof FileResourceLoader) {
+                final FileResourceLoader fileLoader = (FileResourceLoader) loader;
+                final FileResourceLoader newFileLoader = new FileResourceLoader(fileLoader, name, new File(fileLoader.getRoot(), subResPath), subResPath, AccessController.getContext());
+                fileLoader.addChild(subResPath, newFileLoader);
+                return newFileLoader;
+            } else if (loader instanceof JarFileResourceLoader) {
+                final JarFileResourceLoader jarLoader = (JarFileResourceLoader) loader;
+                if (explodeArchive(name)) {
+                    final File tempDir = new File(TMP_ROOT, getResourceName(name) + ".tmp" + System.currentTimeMillis());
+                    IOUtils.unzip(parent.iterateResources(subresourcePath, true), tempDir, subresourcePath.length() + 1);
+                    final FileResourceLoader newFileLoader = new FileResourceLoader(parent, name, tempDir, subResPath, AccessController.getContext());
+                    return new DelegatingResourceLoader(newFileLoader) {
+                        @Override
+                        public void close() {
+                            try {
+                                super.close();
+                            } finally {
+                                IOUtils.delete(tempDir);
+                            }
+                        }
+                    };
+                } else {
+                    final JarFileResourceLoader newJarLoader = new JarFileResourceLoader(jarLoader, name, new JarFile(jarLoader.getRoot()), subResPath, subResPath);
+                    jarLoader.addChild(subResPath, newJarLoader);
+                    return newJarLoader;
+                }
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        } else {
+            throw new IllegalArgumentException("Subresource '" + subResPath + "' does not exist");
         }
     }
 

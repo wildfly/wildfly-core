@@ -313,7 +313,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         if (name == null) return null;
         try {
             name = PathUtils.canonicalize(PathUtils.relativize(name));
-            if (name.endsWith("/")) return null;
+            if (name.endsWith("/") || getJarEntry(name + "/") != null) return null;
             final JarFile jarFile = this.jarFile;
             final JarEntry entry = getJarEntry(name);
             File overlay;
