@@ -47,7 +47,6 @@ import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -420,10 +419,8 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
 
     public Iterator<String> iteratePaths(String startPath, final boolean recursive) {
         if (startPath == null) throw new NullPointerException("Method parameter cannot be null");
-        if (relativePath != null) startPath = startPath.equals("") ? relativePath : relativePath + "/" + startPath;
         final String startName = PathUtils.canonicalize(PathUtils.relativize(startPath));
-        if (!"".equals(startName) && jarFile.getJarEntry(startName) == null) return Collections.emptyIterator();
-        final Collection<String> index = new HashSet<String>();
+        final Collection<String> index = new HashSet<>();
         extractJarPaths(jarFile, startName, index, recursive);
         return index.iterator();
     }
@@ -457,7 +454,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
             }
         }
         // Next just read the JAR
-        extractJarPaths(jarFile, relativePath, index, true);
+        extractJarPaths(jarFile, "", index, true);
 
         if (ResourceLoaders.WRITE_INDEXES && relativePath == null) {
             writeExternalIndex(indexFile, index);
@@ -478,9 +475,11 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         }
     }
 
-    static void extractJarPaths(final JarFile jarFile, String relativePath,
+    private void extractJarPaths(final JarFile jarFile, final String startPath,
             final Collection<String> index, final boolean recursive) {
-        relativePath = "".equals(relativePath) ? relativePath : relativePath + "/";
+        String canonPath = PathUtils.canonicalize(PathUtils.relativize(startPath));
+        if (canonPath.endsWith("/")) canonPath = canonPath.substring(0, canonPath.length() - 1);
+        if (relativePath != null) canonPath = relativePath + "/" + canonPath;
         final Enumeration<JarEntry> entries = jarFile.entries();
         while (entries.hasMoreElements()) {
             final JarEntry jarEntry = entries.nextElement();
@@ -488,20 +487,20 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
             final int idx = name.lastIndexOf('/');
             if (idx == -1) continue;
             final String path = name.substring(0, idx);
-            if (path.length() == 0 || path.endsWith("/")) {
-                // invalid name, just skip...
-                continue;
-            }
-            if (recursive ? PathUtils.isChild(relativePath, path) : PathUtils.isDirectChild(relativePath, path)) {
-                if (relativePath.equals("")) {
+            if (recursive ? PathUtils.isChild(canonPath, path) : PathUtils.isDirectChild(canonPath, path)) {
+                if (relativePath == null) {
                     index.add(path);
                 } else {
-                    index.add(path.substring(relativePath.length()));
+                    index.add(path.substring(relativePath.length() + 1));
                 }
             }
         }
         if (index.size() > 0) {
-            index.add("");
+            if (relativePath == null) {
+                index.add(canonPath);
+            } else {
+                index.add(canonPath.substring(relativePath.length() + 1));
+            }
         }
     }
 

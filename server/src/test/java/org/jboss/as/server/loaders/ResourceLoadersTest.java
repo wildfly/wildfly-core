@@ -232,8 +232,8 @@ public class ResourceLoadersTest {
             assertTrue(warPaths.contains(warPath));
             assertTrue(iteratorWarPaths.contains(warPath));
             if (explodedWar) {
-                assertTrue(iteratorEarWarPaths.contains(warPath));
                 String earResourceName = warPath.equals("") ? WAR_RESOURCE_NAME : WAR_RESOURCE_NAME + "/" + warPath;
+                assertTrue(iteratorEarWarPaths.contains(earResourceName));
                 assertTrue(earPaths.contains(earResourceName));
                 assertTrue(iteratorEarPaths.contains(earResourceName));
             }
@@ -279,12 +279,13 @@ public class ResourceLoadersTest {
             assertTrue(jarPaths.contains(jarPath));
             assertTrue(iteratorJarPaths.contains(jarPath));
             if (explodedJar) {
-                assertTrue(iteratorWarJarPaths.contains(jarPath));
                 String warResourceName = jarPath.equals("") ? JAR_RESOURCE_NAME : JAR_RESOURCE_NAME + "/" + jarPath;
                 assertTrue(warPaths.contains(warResourceName));
+                assertTrue(iteratorWarJarPaths.contains(warResourceName));
                 assertTrue(iteratorWarPaths.contains(warResourceName));
                 if (explodedWar) {
-                    assertTrue(iteratorEarJarPaths.contains(jarPath));
+                    warResourceName = WAR_RESOURCE_NAME + "/" + warResourceName;
+                    assertTrue(iteratorEarJarPaths.contains(warResourceName));
                     assertTrue(iteratorEarWarPaths.contains(warResourceName));
                     String earResourceName = WAR_RESOURCE_NAME + "/" + JAR_RESOURCE_NAME + (jarPath.equals("") ? "" : "/" + jarPath);
                     assertTrue(earPaths.contains(earResourceName));

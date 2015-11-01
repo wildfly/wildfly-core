@@ -394,12 +394,13 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     }
 
     public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
-        final String canonPath = PathUtils.canonicalize(PathUtils.relativize(startPath));
+        String canonPath = PathUtils.canonicalize(PathUtils.relativize(startPath));
+        if (canonPath.endsWith("/")) canonPath = canonPath.substring(0, canonPath.length() - 1);
         final File start = new File(root, canonPath);
-        final List<String> index = new ArrayList<String>();
+        final List<String> index = new ArrayList<>();
         if (!start.exists() || !start.isDirectory()) return Collections.emptyIterator();
-        index.add("");
-        buildIndex(index, start, "", recursive);
+        index.add(canonPath);
+        buildIndex(index, start, canonPath, recursive);
         return index.iterator();
     }
 
@@ -486,8 +487,13 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         File[] files = root.listFiles();
         if (files != null) for (File file : files) {
             if (file.isDirectory()) {
-                index.add(pathBase + file.getName());
-                if (recursive) buildIndex(index, file, pathBase + file.getName() + "/", recursive);
+                if (pathBase.equals("")) {
+                    index.add(file.getName());
+                    if (recursive) buildIndex(index, file, file.getName(), recursive);
+                } else {
+                    index.add(pathBase + "/" + file.getName());
+                    if (recursive) buildIndex(index, file, pathBase + "/" + file.getName(), recursive);
+                }
             }
         }
     }
