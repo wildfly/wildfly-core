@@ -21,8 +21,6 @@
  */
 package org.jboss.as.cli.handlers;
 
-import org.jboss.as.server.logging.ServerLogger;
-
 import java.io.Closeable;
 import java.io.IOException;
 
@@ -42,7 +40,7 @@ public final class Utils {
             try {
                 closeable.close();
             } catch (IOException e) {
-                ServerLogger.ROOT_LOGGER.trace("Failed to close resource", e);
+                // ignored
             }
         }
     }
