@@ -120,13 +120,14 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     void addChild(final String path, final ResourceLoader loader) {
         synchronized (children) {
             if (children.get(path) != null) {
-                throw new IllegalStateException("Child loader for '" + path + "' already registered"); // TODO: remove this check?
+                throw new IllegalStateException("Child loader for '" + path + "' already registered");
             }
             children.put(path, loader);
         }
         synchronized (overlays) {
             for (final String overlayPath : overlays.keySet()) {
-                if (overlayPath.startsWith(path)) {
+                if (overlayPath.startsWith(path) && !overlayPath.equals(path)) {
+                    // propagate overlays up in the loaders hierarchy
                     loader.addOverlay(overlayPath.substring(path.length() + 1), overlays.get(overlayPath));
                 }
             }
