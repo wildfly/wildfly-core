@@ -161,12 +161,15 @@ public abstract class AbstractControllerService implements Service<ModelControll
      * @param prepareStep             the prepare step to prepend to operation execution
      * @param expressionResolver      the expression resolver
      * @param auditLogger             the audit logger
+     * @param authorizer              handles authorization
+     * @param capabilityRegistry      the capability registry
      */
     protected AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
                                         final ConfigurationPersister configurationPersister,
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
-                                        final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer, CapabilityRegistry capabilityRegistry) {
+                                        final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
+                                        final CapabilityRegistry capabilityRegistry) {
         this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, capabilityRegistry);
     }

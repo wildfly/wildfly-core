@@ -68,9 +68,6 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
     public void testOperations() throws Exception {
         final KernelServices kernelServices = boot();
 
-        testAsyncHandler(kernelServices, null);
-        testAsyncHandler(kernelServices, PROFILE);
-
         testConsoleHandler(kernelServices, null);
         testConsoleHandler(kernelServices, PROFILE);
 
@@ -85,6 +82,11 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
         testSizeRotatingFileHandler(kernelServices, null);
         testSizeRotatingFileHandler(kernelServices, PROFILE);
+
+        // Run these last as they put the server in reload-required, and the later
+        // ones will not update runtime once that is done
+        testAsyncHandler(kernelServices, null);
+        testAsyncHandler(kernelServices, PROFILE);
     }
 
     @Test

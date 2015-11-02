@@ -564,8 +564,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         assert isControllingThread();
         assertNotComplete(currentStage);
         authorize(false, Collections.<ActionEffect>emptySet());
-        final PathAddress address = activeStep.address;
-        ImmutableManagementResourceRegistration delegate = managementModel.getRootResourceRegistration().getSubModel(address);
+        ManagementResourceRegistration delegate = activeStep.getManagementResourceRegistration(managementModel);
         return delegate == null ? null : new DelegatingImmutableManagementResourceRegistration(delegate);
     }
 
@@ -655,6 +654,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         return false;
     }
 
+    @Override
     public void removeService(final ServiceController<?> controller) throws UnsupportedOperationException {
 
         readOnly = false;
@@ -827,19 +827,23 @@ final class OperationContextImpl extends AbstractOperationContext {
         notifiedModificationBegun = true;
     }
 
+    @Override
     public Resource readResource(final PathAddress requestAddress) {
         return readResource(requestAddress, true);
     }
 
+    @Override
     public Resource readResource(final PathAddress requestAddress, final boolean recursive) {
         final PathAddress address = activeStep.address.append(requestAddress);
         return readResourceFromRoot(address, recursive);
     }
 
+    @Override
     public Resource readResourceFromRoot(final PathAddress address) {
         return readResourceFromRoot(address, true);
     }
 
+    @Override
     public Resource readResourceFromRoot(final PathAddress address, final boolean recursive) {
         assert isControllingThread();
         assertNotComplete(currentStage);
@@ -903,6 +907,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
+    @Override
     public Resource readResourceForUpdate(PathAddress requestAddress) {
 
         readOnly = false;
@@ -1618,6 +1623,33 @@ final class OperationContextImpl extends AbstractOperationContext {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
         return new CapabilityServiceSupportImpl(managementModel);
+    }
+
+    @Override
+    CapabilityRegistry.RuntimeStatus getStepCapabilityStatus(Step step){
+
+        RuntimeCapabilityRegistry.RuntimeStatus result = RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
+        Map<CapabilityId, RuntimeCapabilityRegistry.RuntimeStatus> statuses = managementModel.getCapabilityRegistry().getRuntimeStatus(step.address);
+        if (statuses.isEmpty()) {
+            // TODO. If there are no capabilities but the process is reload/restart required, then what?
+            // Should we interpret this as meaning the step depends on all capabilities and something must be
+            // reload/restart required, so prevent execution? Example: a deployment may not have a capability
+            // but depends on the overall functioning of the system. User make some changes to some resources
+            // (e.g. a datasource) that aren't reflected in the runtime, and then deploys a new version
+            // of the app that assumes those resources are in the correct runtime state. But they won't
+            // be until reload, so the deployment change should not take effect.
+            // OTOH, doing this would prevent something like
+            // /core-service=management/service=configuration-changes:write-attribute(name=max-history,value=5)
+            // taking immediate effect. Which is silly. Unless we add a capability for it, which seems a bit overboard.
+        } else {
+            for (RuntimeCapabilityRegistry.RuntimeStatus status : statuses.values()) {
+                if (status != RuntimeCapabilityRegistry.RuntimeStatus.NORMAL) {
+                    result = status;
+                    break;
+                }
+            }
+        }
+        return result;
     }
 
 

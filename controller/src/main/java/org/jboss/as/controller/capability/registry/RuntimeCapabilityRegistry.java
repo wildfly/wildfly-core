@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import java.util.Map;
+
 import org.jboss.as.controller.PathAddress;
 
 /**
@@ -31,6 +33,26 @@ import org.jboss.as.controller.PathAddress;
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
 public interface RuntimeCapabilityRegistry extends ImmutableCapabilityRegistry {
+
+    enum RuntimeStatus {
+        /**
+         * Runtime services are functioning normally as per their persistent configuration
+         * and the process' current {@linkplain org.jboss.as.controller.RunningMode running mode}.
+         * Note that this may mean no runtime services if that is normal for the process type and running
+         * mode. */
+        NORMAL,
+        /**
+         * The process needs to be reloaded to bring runtime services for a capability in sync with
+         * their persistent configuration.
+         */
+        RELOAD_REQUIRED,
+        /**
+         * The process needs to be restarted to bring runtime services for a capability in sync with
+         * their persistent configuration.
+         */
+        RESTART_REQUIRED;
+    }
+
     /**
      * Registers a capability with the system. Any
      * {@link org.jboss.as.controller.capability.AbstractCapability#getRequirements() requirements}
@@ -73,4 +95,29 @@ public interface RuntimeCapabilityRegistry extends ImmutableCapabilityRegistry {
      * registration points for the capability still exist
      */
     RuntimeCapabilityRegistration removeCapability(String capabilityName, CapabilityScope scope, PathAddress registrationPoint);
+
+    /**
+     * Gets the status of any capabilities associated with the given resource address.
+     *
+     * @param  address the address. Cannot be {@code null}
+     * @return a map of capability ids to their runtime status. Will not return {@code null} but may return
+     *         an empty map if no capabilities are associated with the address.
+     */
+    Map<CapabilityId, RuntimeStatus> getRuntimeStatus(PathAddress address);
+
+    /**
+     * Notification that any capabilities associated with the given address require reload in order to bring their
+     * runtime services into sync with their persistent configuration.
+     *
+     * @param address the address. Cannot be {@code null}
+     */
+    void capabilityReloadRequired(PathAddress address);
+
+    /**
+     * Notification that any capabilities associated with the given address require restart in order to bring their
+     * runtime services into sync with their persistent configuration.
+     *
+     * @param address the address. Cannot be {@code null}
+     */
+    void capabilityRestartRequired(PathAddress address);
 }
