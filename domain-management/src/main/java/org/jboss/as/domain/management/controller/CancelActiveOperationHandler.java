@@ -59,6 +59,7 @@ public class CancelActiveOperationHandler implements OperationStepHandler {
             DomainManagementResolver.getResolver(CORE, MANAGEMENT_OPERATIONS, ACTIVE_OPERATION))
             .setReplyType(ModelType.BOOLEAN)
             .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
+            .setRuntimeOnly()
             .build();
 
     static final OperationStepHandler INSTANCE = new CancelActiveOperationHandler();

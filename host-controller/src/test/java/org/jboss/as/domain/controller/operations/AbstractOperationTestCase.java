@@ -287,6 +287,16 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public void addModelStep(OperationDefinition stepDefinition, OperationStepHandler stepHandler, boolean addFirst) throws IllegalArgumentException {
+            addStep(stepHandler, Stage.MODEL);
+        }
+
+        @Override
+        public void addModelStep(ModelNode response, ModelNode operation, OperationDefinition stepDefinition, OperationStepHandler stepHandler, boolean addFirst) throws IllegalArgumentException {
+            addStep(operation, stepHandler, Stage.MODEL);
+        }
+
+        @Override
         public PathAddress getCurrentAddress() {
             return operationAddress;
         }

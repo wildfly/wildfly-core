@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_REQUIRES_RELOAD;
@@ -45,6 +46,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.IOException;
@@ -57,6 +60,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -75,6 +79,7 @@ import org.jboss.as.controller.ConfigurationChangesCollector.ConfigurationChange
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.audit.AuditLogger;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -83,8 +88,11 @@ import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
+import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.InetAddressPrincipal;
 import org.jboss.as.protocol.StreamUtils;
@@ -106,6 +114,8 @@ abstract class AbstractOperationContext implements OperationContext {
     private static final Set<String> NON_COPIED_HEADERS =
             Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(ALLOW_RESOURCE_SERVICE_RESTART,
                     ROLLBACK_ON_RUNTIME_FAILURE, ROLLOUT_PLAN)));
+    private static final Set<ControlledProcessState.State> RUNTIME_LIMITED_STATES =
+            EnumSet.of(ControlledProcessState.State.RELOAD_REQUIRED, ControlledProcessState.State.RESTART_REQUIRED);
 
     static final ThreadLocal<Thread> controllingThread = new ThreadLocal<Thread>();
 
@@ -250,7 +260,7 @@ abstract class AbstractOperationContext implements OperationContext {
     public void addStep(final ModelNode operation, final OperationStepHandler step, final Stage stage, final boolean addFirst)
             throws IllegalArgumentException {
         final ModelNode response = activeStep == null ? new ModelNode().setEmptyObject() : activeStep.response;
-        addStep(response, operation, null, step, stage, addFirst);
+        addStep(response, operation, null, null, step, stage, addFirst);
     }
 
     @Override
@@ -261,23 +271,32 @@ abstract class AbstractOperationContext implements OperationContext {
 
     @Override
     public void addStep(OperationStepHandler step, Stage stage, boolean addFirst) throws IllegalArgumentException {
-        final ModelNode response = activeStep == null ? new ModelNode().setEmptyObject() : activeStep.response;
-        addStep(response, activeStep.operation, activeStep.address, step, stage, addFirst);
+        addStep(activeStep.response, activeStep.operation, activeStep.address, null, step, stage, addFirst);
+    }
+
+    @Override
+    public void addModelStep(OperationDefinition stepDefinition, OperationStepHandler stepHandler, boolean addFirst) throws IllegalArgumentException {
+        addStep(activeStep.response, activeStep.operation, activeStep.address, stepDefinition, stepHandler, Stage.MODEL, addFirst);
+    }
+
+    @Override
+    public void addModelStep(ModelNode response, ModelNode operation, OperationDefinition stepDefinition, OperationStepHandler stepHandler, boolean addFirst) throws IllegalArgumentException {
+        addStep(response, operation, null, stepDefinition, stepHandler, Stage.MODEL, addFirst);
     }
 
     void addStep(final ModelNode response, final ModelNode operation, final PathAddress address, final OperationStepHandler step,
             final Stage stage) throws IllegalArgumentException {
-        addStep(response, operation, address, step, stage, false);
+        addStep(response, operation, address, null, step, stage, false);
     }
 
     @Override
     public void addStep(ModelNode response, ModelNode operation, OperationStepHandler step, Stage stage, boolean addFirst)
             throws IllegalArgumentException {
-        addStep(response, operation, null, step, stage, addFirst);
+        addStep(response, operation, null, null, step, stage, addFirst);
     }
 
-    void addStep(final ModelNode response, final ModelNode operation, final PathAddress address, final OperationStepHandler step,
-            final Stage stage, boolean addFirst) throws IllegalArgumentException {
+    void addStep(final ModelNode response, final ModelNode operation, final PathAddress address, OperationDefinition stepDefinition, final OperationStepHandler step,
+                 final Stage stage, boolean addFirst) throws IllegalArgumentException {
 
         assert isControllingThread();
         if (response == null) {
@@ -320,9 +339,9 @@ abstract class AbstractOperationContext implements OperationContext {
 
         final Deque<Step> deque = steps.get(stage);
         if (addFirst) {
-            deque.addFirst(new Step(step, response, operation, address));
+            deque.addFirst(new Step(stepDefinition, step, response, operation, address));
         } else {
-            deque.addLast(new Step(step, response, operation, address));
+            deque.addLast(new Step(stepDefinition, step, response, operation, address));
         }
 
         if (!executing && stage == Stage.MODEL) {
@@ -600,6 +619,20 @@ abstract class AbstractOperationContext implements OperationContext {
     abstract Resource getModel();
 
     /**
+     * Indicates whether the capabilities associated with the resource addressed by the current step
+     * require a reload or a restart before any Stage.RUNTIME execution can happen.
+     * Should only be invoked if the overall process state requires reload/restart
+     * and the step is not for a runtime-only operation or resource.
+     *
+     * @param step the step. Cannot be {@code null}
+     * @return {@link org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry.RuntimeStatus} for the resource
+     *          associated with {@code step}
+     */
+    CapabilityRegistry.RuntimeStatus getStepCapabilityStatus(Step step) {
+        return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
+    }
+
+    /**
      * Perform the work of processing the various OperationContext.Stage queues, and then the DONE stage.
      */
     private void processStages() {
@@ -656,7 +689,14 @@ abstract class AbstractOperationContext implements OperationContext {
                 // Whether to return after try/finally
                 boolean exit = false;
                 try {
-                    executeStep(step);
+                    CapabilityRegistry.RuntimeStatus stepStatus = getStepExecutionStatus(step);
+                    if (stepStatus == RuntimeCapabilityRegistry.RuntimeStatus.NORMAL) {
+                        executeStep(step);
+                    } else {
+                        String header = stepStatus == RuntimeCapabilityRegistry.RuntimeStatus.RESTART_REQUIRED
+                                ? OPERATION_REQUIRES_RESTART : OPERATION_REQUIRES_RELOAD;
+                        step.response.get(RESPONSE_HEADERS, header).set(true);
+                    }
                 } catch (RuntimeException | Error re) {
                     resultAction = ResultAction.ROLLBACK;
                     toThrow = re;
@@ -678,6 +718,27 @@ abstract class AbstractOperationContext implements OperationContext {
 
         // All steps ran and canContinueProcessing returned true for the last one, so...
         executeDoneStage(primaryResponse);
+    }
+
+    private CapabilityRegistry.RuntimeStatus getStepExecutionStatus(Step step) {
+        if (booting || currentStage != Stage.RUNTIME || !RUNTIME_LIMITED_STATES.contains(processState.getState())
+                || (step.operationDefinition != null && (step.operationDefinition.getFlags().contains(OperationEntry.Flag.READ_ONLY)
+                        || step.operationDefinition.getFlags().contains(OperationEntry.Flag.RUNTIME_ONLY)))) {
+            return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
+        }
+        ImmutableManagementResourceRegistration mrr = step.getManagementResourceRegistration(getManagementModel());
+        if (mrr.isRuntimeOnly()) {
+            return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
+        }
+        String opName = step.operationDefinition != null ? step.operationDefinition.getName() : null;
+        if ((WRITE_ATTRIBUTE_OPERATION.equals(opName) || UNDEFINE_ATTRIBUTE_OPERATION.equals(opName)) && step.operation.hasDefined(NAME)) {
+            String attrName = step.operation.get(NAME).asString();
+            AttributeAccess aa = mrr.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attrName);
+            if (aa != null && aa.getStorageType() == AttributeAccess.Storage.RUNTIME) {
+                return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
+            }
+        }
+        return getStepCapabilityStatus(step);
     }
 
     private boolean tryStageCompleted(Stage currentStage) {
@@ -1029,6 +1090,7 @@ abstract class AbstractOperationContext implements OperationContext {
         if (processState.isReloadSupported()) {
             activeStep.restartStamp = processState.setReloadRequired();
             activeStep.response.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RELOAD).set(true);
+            getManagementModel().getCapabilityRegistry().capabilityReloadRequired(activeStep.address);
         } else {
             restartRequired();
         }
@@ -1038,6 +1100,7 @@ abstract class AbstractOperationContext implements OperationContext {
     public final void restartRequired() {
         activeStep.restartStamp = processState.setRestartRequired();
         activeStep.response.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RESTART).set(true);
+        getManagementModel().getCapabilityRegistry().capabilityRestartRequired(activeStep.address);
     }
 
     @Override
@@ -1184,6 +1247,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
     class Step {
         private final Step parent;
+        private final OperationDefinition operationDefinition;
         private final OperationStepHandler handler;
         private final Stage forStage = AbstractOperationContext.this.currentStage;
         final ModelNode response;
@@ -1198,10 +1262,12 @@ abstract class AbstractOperationContext implements OperationContext {
         Step predecessor;
         boolean hasRemovals;
         boolean executed;
+        ManagementResourceRegistration resourceRegistration;
 
-        private Step(final OperationStepHandler handler, final ModelNode response, final ModelNode operation,
-                final PathAddress address) {
+        private Step(OperationDefinition operationDefinition, final OperationStepHandler handler, final ModelNode response, final ModelNode operation,
+                     final PathAddress address) {
             this.parent = activeStep;
+            this.operationDefinition = operationDefinition != null ? operationDefinition : (this.parent != null ? this.parent.operationDefinition : null);
             this.handler = handler;
             this.response = response;
             this.operation = operation;
@@ -1257,6 +1323,13 @@ abstract class AbstractOperationContext implements OperationContext {
                 } // else we already handled this when it was added
 
             } // else this is rollback stuff we ignore
+        }
+
+        ManagementResourceRegistration getManagementResourceRegistration(ManagementModel managementModel) {
+            if (resourceRegistration == null) {
+                resourceRegistration = managementModel.getRootResourceRegistration().getSubModel(address);
+            }
+            return resourceRegistration;
         }
 
         private List<Step> findPathToRootStep() {

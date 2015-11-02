@@ -228,8 +228,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
         checkPermission();
         String opName = definition.getName();
-        OperationEntry entry = new OperationEntry(handler, definition.getDescriptionProvider(), inherited, definition.getEntryType(),
-                definition.getFlags(), definition.getAccessConstraints());
+        OperationEntry entry = new OperationEntry(definition, handler, inherited);
         writeLock.lock();
         try {
             if (operations == null) {

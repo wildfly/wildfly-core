@@ -23,23 +23,19 @@ package org.jboss.as.controller;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.jboss.as.controller.access.Action.ActionEffect.ADDRESS;
 import static org.jboss.as.controller.access.Action.ActionEffect.READ_CONFIG;
 import static org.jboss.as.controller.access.Action.ActionEffect.READ_RUNTIME;
-import static org.jboss.as.controller.access.Action.ActionEffect.ADDRESS;
 import static org.jboss.as.controller.access.Action.ActionEffect.WRITE_CONFIG;
 import static org.jboss.as.controller.access.Action.ActionEffect.WRITE_RUNTIME;
-import static org.jboss.as.controller.registry.OperationEntry.Flag.RUNTIME_ONLY;
-import static org.jboss.as.controller.registry.OperationEntry.Flag.READ_ONLY;
 import static org.junit.Assert.assertThat;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
+
 import org.jboss.as.controller.access.Action;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.junit.Test;
 
@@ -60,29 +56,36 @@ public class BootErrorCollectorTest {
         BootErrorCollector instance = new BootErrorCollector();
         BootErrorCollector.ListBootErrorsHandler handler = (BootErrorCollector.ListBootErrorsHandler) instance.getReadBootErrorsHandler();
         assertThat(handler, is(notNullValue()));
-        OperationEntry entry = createOperationEntry(EnumSet.of(READ_ONLY));
+        OperationEntry entry = createOperationEntry(true, false);
         Set<Action.ActionEffect> effects = handler.getEffects(entry);
         assertThat(effects.size(), is(3));
         assertThat(effects, hasItems(ADDRESS, READ_CONFIG, READ_RUNTIME));
-        entry = createOperationEntry(EnumSet.of(READ_ONLY, RUNTIME_ONLY));
+        entry = createOperationEntry(true, true);
         effects = handler.getEffects(entry);
         assertThat(effects.size(), is(2));
         assertThat(effects, hasItems(ADDRESS, READ_RUNTIME));
-        entry = createOperationEntry(EnumSet.noneOf(OperationEntry.Flag.class));
+        entry = createOperationEntry(false, false);
         effects = handler.getEffects(entry);
         assertThat(effects.size(), is(5));
         assertThat(effects, hasItems(ADDRESS, READ_CONFIG, READ_RUNTIME, WRITE_CONFIG, WRITE_RUNTIME));
-        entry = createOperationEntry(EnumSet.of(RUNTIME_ONLY));
+        entry = createOperationEntry(false, true);
         effects = handler.getEffects(entry);
         assertThat(effects.size(), is(3));
         assertThat(effects, hasItems(ADDRESS, READ_RUNTIME, WRITE_RUNTIME));
     }
 
-    private OperationEntry createOperationEntry(EnumSet<OperationEntry.Flag> flags) throws NoSuchMethodException,
+    private OperationEntry createOperationEntry(boolean readOnly, boolean runtimeOnly) throws NoSuchMethodException,
             SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        Constructor<OperationEntry> constructor = OperationEntry.class.getDeclaredConstructor(OperationStepHandler.class, DescriptionProvider.class,
-                boolean.class, OperationEntry.EntryType.class, EnumSet.class, List.class);
+        Constructor<OperationEntry> constructor = OperationEntry.class.getDeclaredConstructor(OperationDefinition.class,
+                OperationStepHandler.class, boolean.class);
         constructor.setAccessible(true);
-        return constructor.newInstance(null, null, false, OperationEntry.EntryType.PUBLIC, flags, Collections.emptyList());
+        SimpleOperationDefinitionBuilder odb = new SimpleOperationDefinitionBuilder("test", NonResolvingResourceDescriptionResolver.INSTANCE);
+        if (readOnly) {
+            odb.setReadOnly();
+        }
+        if (runtimeOnly) {
+            odb.setRuntimeOnly();
+        }
+        return constructor.newInstance(odb.build(), null, false);
     }
 }

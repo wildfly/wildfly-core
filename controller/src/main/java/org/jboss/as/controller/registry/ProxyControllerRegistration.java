@@ -40,9 +40,11 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyStepHandler;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
@@ -52,6 +54,12 @@ import org.jboss.dmr.ModelNode;
  */
 @SuppressWarnings("deprecation")
 final class ProxyControllerRegistration extends AbstractResourceRegistration implements DescriptionProvider {
+
+    private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("proxy-step",
+            NonResolvingResourceDescriptionResolver.INSTANCE)
+            .setPrivateEntry()
+            .setRuntimeOnly()
+            .build();
 
     @SuppressWarnings("unused")
     private volatile Map<String, OperationEntry> operations;
@@ -67,7 +75,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
 
     ProxyControllerRegistration(final String valueString, final NodeSubregistry parent, final ProxyController proxyController) {
         super(valueString, parent);
-        this.operationEntry = new OperationEntry(new ProxyStepHandler(proxyController), this, false, OperationEntry.EntryType.PRIVATE);
+        this.operationEntry = new OperationEntry(DEFINITION, new ProxyStepHandler(proxyController), false);
         this.proxyController = proxyController;
         operationsUpdater.clear(this);
         attributesUpdater.clear(this);
@@ -151,8 +159,8 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
 
     @Override
     public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
-        if (operationsUpdater.putIfAbsent(this, definition.getName(), new OperationEntry(handler, definition.getDescriptionProvider(),
-                inherited, definition.getEntryType(), definition.getFlags(), definition.getAccessConstraints())) != null) {
+        if (operationsUpdater.putIfAbsent(this, definition.getName(),
+                new OperationEntry(definition, handler, inherited)) != null) {
             throw alreadyRegistered("operation handler", definition.getName());
         }
     }

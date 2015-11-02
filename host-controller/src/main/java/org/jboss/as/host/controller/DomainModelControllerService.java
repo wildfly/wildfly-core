@@ -238,7 +238,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                                             final HostRunningModeControl runningModeControl,
                                                             final ControlledProcessState processState,
                                                             final BootstrapListener bootstrapListener,
-                                                            final PathManagerService pathManager){
+                                                            final PathManagerService pathManager,
+                                                            final CapabilityRegistry capabilityRegistry) {
         final ConcurrentMap<String, ProxyController> hostProxies = new ConcurrentHashMap<String, ProxyController>();
         final Map<String, ProxyController> serverProxies = new ConcurrentHashMap<String, ProxyController>();
         final LocalHostControllerInfoImpl hostControllerInfo = new LocalHostControllerInfoImpl(processState, environment);
@@ -252,7 +253,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ProcessType processType = environment.getProcessType();
         final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final ExtensionRegistry extensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
-        final CapabilityRegistry capabilityRegistry = new CapabilityRegistry(processType.isServer());
         final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo,
                 hostProxies, serverProxies, ignoredRegistry, extensionRegistry);
         final ExpressionResolver expressionResolver = new RuntimeExpressionResolver(vaultReader);
