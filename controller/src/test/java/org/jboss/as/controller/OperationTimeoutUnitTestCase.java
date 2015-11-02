@@ -89,8 +89,6 @@ public class OperationTimeoutUnitTestCase {
         builder.install();
         controllerService.awaitStartup(30, TimeUnit.SECONDS);
         ModelController controller = controllerService.getValue();
-        ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
-        controller.execute(setup, null, null, null);
 
         client = controller.createClient(executor);
 
@@ -239,33 +237,9 @@ public class OperationTimeoutUnitTestCase {
         @Override
         protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
             ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
-            rootRegistration.registerOperationHandler(SetupHandler.DEFINITION, new SetupHandler());
             rootRegistration.registerOperationHandler(BlockingServiceHandler.DEFINITION, new BlockingServiceHandler());
 
             GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
-        }
-    }
-
-    public static class SetupHandler implements OperationStepHandler {
-        static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinition("setup", new NonResolvingResourceDescriptionResolver());
-
-        @Override
-        public void execute(OperationContext context, ModelNode operation) {
-            ModelNode model = new ModelNode();
-
-            //Atttributes
-            model.get("attr1").set(1);
-            model.get("attr2").set(2);
-
-            context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel().set(model);
-
-            final ModelNode child1 = new ModelNode();
-            child1.get("attribute1").set(1);
-            final ModelNode child2 = new ModelNode();
-            child2.get("attribute2").set(2);
-
-            context.createResource(PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement("child", "one"))).getModel().set(child1);
-            context.createResource(PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement("child", "two"))).getModel().set(child2);
         }
     }
 
