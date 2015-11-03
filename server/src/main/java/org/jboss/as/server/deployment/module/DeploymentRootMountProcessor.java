@@ -37,9 +37,6 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.ExplodedDeploymentMarker;
-import org.jboss.as.server.deployment.MountType;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * Deployment processor responsible for mounting and attaching the resource root for this deployment.
@@ -47,56 +44,18 @@ import org.jboss.vfs.VirtualFile;
  * @author John Bailey
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
+public final class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
 
-    static final String WAR_EXTENSION = ".war";
-    static final String WAB_EXTENSION = ".wab";
-
-    public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
+    public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         if(deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT) != null) {
             return;
         }
         final File deploymentContentsFile = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_CONTENTS);
-        final VirtualFile deploymentContents = VFS.getChild(deploymentContentsFile.toURI());
-
-        // internal deployments do not have any contents, so there is nothing to mount
-        if (deploymentContents == null) return;
-
-        final VirtualFile deploymentRoot;
-        final MountHandle mountHandle;
         final String deploymentName = deploymentUnit.getName().toLowerCase(Locale.ENGLISH);
-        if (deploymentContents.isDirectory()) {
-            // use the contents directly
-            deploymentRoot = deploymentContents;
+        if (deploymentContentsFile.isDirectory()) {
             // nothing was mounted
-            mountHandle = null;
             ExplodedDeploymentMarker.markAsExplodedDeployment(deploymentUnit);
-        } else {
-            // The mount point we will use for the repository file
-            deploymentRoot = VFS.getChild("content/" + deploymentName);
-
-            boolean failed = false;
-            Closeable handle = null;
-            try {
-                final MountType type;
-                if (explode(deploymentName)) {
-                    type = MountType.EXPANDED;
-                } else if (deploymentName.endsWith(".xml")) {
-                    type = MountType.REAL;
-                } else {
-                    type = MountType.ZIP;
-                }
-                handle = mountDeploymentContent(deploymentContents, deploymentRoot, type);
-                mountHandle = new MountHandle(handle);
-            } catch (IOException e) {
-                failed = true;
-                throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
-            } finally {
-                if(failed) {
-                    Utils.safeClose(handle);
-                }
-            }
         }
         ResourceLoader loader;
         try {
@@ -104,30 +63,13 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
         } catch (IOException e) {
             throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
         }
-        final ResourceRoot resourceRoot = new ResourceRoot(loader, deploymentRoot, mountHandle);
+        final ResourceRoot resourceRoot = new ResourceRoot(loader, null, null);
         ModuleRootMarker.mark(resourceRoot);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_ROOT, resourceRoot);
         deploymentUnit.putAttachment(Attachments.MODULE_SPECIFICATION, new ModuleSpecification());
     }
 
-    private Closeable mountDeploymentContent(final VirtualFile contents, VirtualFile mountPoint, MountType type) throws IOException {
-        switch (type) {
-            case ZIP:
-                return VFS.mountZip(contents, mountPoint);
-            case EXPANDED:
-                return VFS.mountZipExpanded(contents, mountPoint);
-            case REAL:
-                return VFS.mountReal(contents.getPhysicalFile(), mountPoint);
-            default:
-                throw ServerLogger.ROOT_LOGGER.unknownMountType(type);
-        }
-    }
-
-    private boolean explode(final String depName) {
-        return depName.endsWith(WAR_EXTENSION) || depName.endsWith(WAB_EXTENSION);
-    }
-
-    public void undeploy(DeploymentUnit context) {
+    public void undeploy(final DeploymentUnit context) {
         final ResourceRoot resourceRoot = context.removeAttachment(Attachments.DEPLOYMENT_ROOT);
         if (resourceRoot != null) {
             final Closeable mountHandle = resourceRoot.getMountHandle();

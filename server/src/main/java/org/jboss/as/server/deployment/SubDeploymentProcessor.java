@@ -40,6 +40,7 @@ import org.jboss.msc.service.ServiceTarget;
  * Deployment processor responsible to creating deployment unit services for sub-deployment.
  *
  * @author John Bailey
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class SubDeploymentProcessor implements DeploymentUnitProcessor {
 
@@ -49,7 +50,7 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
         final ResourceRoot deploymentResourceRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
 
         if(deploymentUnit.getParent() != null && ExplodedDeploymentMarker.isExplodedDeployment(deploymentUnit.getParent())) {
-            if (deploymentResourceRoot.getRoot().isDirectory()) {
+            if (deploymentResourceRoot.getLoader().getRoot().isDirectory()) {
                 ExplodedDeploymentMarker.markAsExplodedDeployment(deploymentUnit);
             }
         }

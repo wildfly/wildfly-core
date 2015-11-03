@@ -45,7 +45,6 @@ import org.jboss.as.server.loaders.ResourceLoaders;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
-import org.jboss.as.server.deployment.MountedDeploymentOverlay;
 import org.jboss.as.server.deployment.jbossallxml.JBossAllXMLParser;
 import org.jboss.as.server.deployment.module.FilterSpecification;
 import org.jboss.as.server.deployment.module.ModuleDependency;
@@ -769,11 +768,7 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
                                 ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(path);
                                 return;
                             }
-                            Map<String, MountedDeploymentOverlay> overlays = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_OVERLAY_LOCATIONS);
-                            MountedDeploymentOverlay overlay = overlays.get(canonPath);
-                            loader = overlay == null
-                                    ? ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), canonPath)
-                                    : ResourceLoaders.newResourceLoader(name, overlay.getFile(), canonPath, deploymentRoot.getLoader());
+                            loader = ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), canonPath);
                         }
                         final ResourceRoot resourceRoot = new ResourceRoot(loader, null, null, null);
                         for (final FilterSpecification filter : resourceFilters) {

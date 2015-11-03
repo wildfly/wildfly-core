@@ -138,7 +138,7 @@ public final class Utils {
             for (final String suffix : suffixes) {
                 if (candidateToken.endsWith(suffix)) {
                     for (final String match : matches) {
-                        if (match.startsWith(candidate)) {
+                        if (candidate.startsWith(match)) {
                             return false;
                         }
                     }

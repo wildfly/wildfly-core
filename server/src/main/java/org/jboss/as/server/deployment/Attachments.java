@@ -203,8 +203,6 @@ public final class Attachments {
 
     public static final AttachmentKey<Map<ModuleIdentifier, CompositeIndex>> ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE = AttachmentKey.create(Map.class);
 
-    public static final AttachmentKey<Map<String, MountedDeploymentOverlay>> DEPLOYMENT_OVERLAY_LOCATIONS = AttachmentKey.create(Map.class);
-
     /**
      * Support for getting and creating resource models on a deployment's resource.
      */
