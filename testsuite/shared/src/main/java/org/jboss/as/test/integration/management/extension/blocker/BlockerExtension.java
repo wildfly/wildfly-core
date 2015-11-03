@@ -33,6 +33,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
@@ -109,7 +110,7 @@ public class BlockerExtension implements Extension {
         private BlockerSubsystemResourceDefinition(boolean forHost) {
             super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver(),
                     new AbstractAddStepHandler(),
-                    ReloadRequiredRemoveStepHandler.INSTANCE);
+                    ModelOnlyRemoveStepHandler.INSTANCE);
             this.forHost = forHost;
         }
 
