@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deployment.module.descriptor;
 
+import static org.jboss.as.server.loaders.Utils.resourceOrPathExists;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -792,10 +794,6 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
                 }
             }
         }
-    }
-
-    private static boolean resourceOrPathExists(final ResourceLoader loader, final String resourceOrPath) {
-        return loader.getResource(resourceOrPath) != null || loader.getPaths().contains(resourceOrPath);
     }
 
     private static void parseFilterList(final XMLStreamReader reader, final List<FilterSpecification> filters)

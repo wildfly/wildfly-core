@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deployment.module;
 
+import static org.jboss.as.server.loaders.Utils.resourceOrPathExists;
+
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -228,10 +230,6 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         //add this to the list of roots to be processed, so transitive class path entries will be respected
         resourceRoots.add(new RootEntry(module, root));
         return identifier;
-    }
-
-    private static boolean resourceOrPathExists(final ResourceLoader loader, final String resourceOrPath) {
-        return loader.getResource(resourceOrPath) != null || loader.getPaths().contains(resourceOrPath);
     }
 
     private static ModuleIdentifier createModuleIdentifier(final DeploymentUnit topLevelDeployment, final String relativePath) {

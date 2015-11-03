@@ -48,6 +48,16 @@ public final class Utils {
     }
 
     /**
+     * Returns true if specified resource or path exists, false otherwise.
+     * @param loader to inspect
+     * @param resourceOrPath resource or path to check
+     * @return true if specified resource or path exists, false otherwise
+     */
+    public static boolean resourceOrPathExists(final ResourceLoader loader, final String resourceOrPath) {
+        return loader.getResource(resourceOrPath) != null || loader.getPaths().contains(resourceOrPath);
+    }
+
+    /**
      * Obtains resource name from its path. It's the last String after '/' path separator char.
      * @param resourcePath to get name from
      * @return resource name
