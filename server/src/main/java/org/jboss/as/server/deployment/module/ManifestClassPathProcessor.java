@@ -157,7 +157,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
                     if (externalModuleService.isValid(item)) {
                         final ModuleIdentifier moduleIdentifier = externalModuleService.addExternalModule(item);
                         target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, moduleIdentifier);
-                        ServerLogger.DEPLOYMENT_LOGGER.debugf("Resource %s added as external jar %s", item, resourceRoot.getRoot());
+                        ServerLogger.DEPLOYMENT_LOGGER.debugf("Resource %s added as external jar %s", item, resourceRoot.getLoader().getRootName());
                     } else {
                         ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getLoader().getRootName());
                     }
@@ -256,7 +256,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
     }
 
     private synchronized ResourceRoot createResourceRoot(final ResourceLoader loader) throws DeploymentUnitProcessingException {
-        final ResourceRoot resourceRoot = new ResourceRoot(loader, null, null);
+        final ResourceRoot resourceRoot = new ResourceRoot(loader);
         ModuleRootMarker.mark(resourceRoot);
         ResourceRootIndexer.indexResourceRoot(resourceRoot);
         return resourceRoot;

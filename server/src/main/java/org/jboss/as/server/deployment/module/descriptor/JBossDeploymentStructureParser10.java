@@ -523,7 +523,7 @@ public class JBossDeploymentStructureParser10 implements XMLElementReader<ParseR
                             }
                             loader = ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), canonPath);
                         }
-                        final ResourceRoot resourceRoot = new ResourceRoot(loader, null, null, null);
+                        final ResourceRoot resourceRoot = new ResourceRoot(loader);
                         for (final FilterSpecification filter : resourceFilters) {
                             resourceRoot.getExportFilters().add(filter);
                         }

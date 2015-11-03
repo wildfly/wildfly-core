@@ -49,7 +49,6 @@ import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.as.server.deployment.MountType;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.module.ExtensionListEntry;
 import org.jboss.as.server.deployment.module.ResourceRoot;
@@ -724,15 +723,6 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 109, value = "Could not find the file repository connection to the host controller.")
     IllegalStateException couldNotFindHcFileRepositoryConnection();
 
-    // @Message(id = 110, value = "Only 'hash' is allowed for deployment addition for a domain mode server: %s")
-    // IllegalStateException onlyHashAllowedForDeploymentAddInDomainServer(ModelNode contentItemNode);
-
-    // @Message(id = 111, value = "Only 'hash' is allowed for deployment full replacement for a domain mode server: %s")
-    // IllegalStateException onlyHashAllowedForDeploymentFullReplaceInDomainServer(ModelNode contentItemNode);
-
-    @Message(id = 112, value = "Unknown mount type %s")
-    IllegalArgumentException unknownMountType(MountType mountType);
-
     /**
      * Creates an exception indicating a failure to create a temp file provider.
      *
@@ -833,9 +823,6 @@ public interface ServerLogger extends BasicLogger {
      * nt properties */
     @Message(id = Message.NONE, value = "Configured system environment:")
     String configuredSystemEnvironmentLabel();
-
-    @Message(id = 138, value = "VFS is not available from the configured module loader")
-    IllegalStateException vfsNotAvailable();
 
     @Message(id = 139, value = "Server controller service was removed")
     ServiceNotFoundException serverControllerServiceRemoved();

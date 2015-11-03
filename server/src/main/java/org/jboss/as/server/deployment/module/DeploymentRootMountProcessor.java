@@ -22,7 +22,6 @@
 
 package org.jboss.as.server.deployment.module;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
@@ -63,7 +62,7 @@ public final class DeploymentRootMountProcessor implements DeploymentUnitProcess
         } catch (IOException e) {
             throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
         }
-        final ResourceRoot resourceRoot = new ResourceRoot(loader, null, null);
+        final ResourceRoot resourceRoot = new ResourceRoot(loader);
         ModuleRootMarker.mark(resourceRoot);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_ROOT, resourceRoot);
         deploymentUnit.putAttachment(Attachments.MODULE_SPECIFICATION, new ModuleSpecification());
@@ -72,7 +71,7 @@ public final class DeploymentRootMountProcessor implements DeploymentUnitProcess
     public void undeploy(final DeploymentUnit context) {
         final ResourceRoot resourceRoot = context.removeAttachment(Attachments.DEPLOYMENT_ROOT);
         if (resourceRoot != null) {
-            final Closeable mountHandle = resourceRoot.getMountHandle();
+            final AutoCloseable mountHandle = resourceRoot.getLoader();
             Utils.safeClose(mountHandle);
         }
     }

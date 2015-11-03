@@ -39,7 +39,6 @@ import org.jboss.as.process.ExitCodes;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.stdio.LoggingOutputStream;
 import org.jboss.stdio.NullInputStream;
@@ -54,6 +53,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author John Bailey
  * @author Brian Stansberry
  * @author Anil Saldhana
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class Main {
     // Capture System.out and System.err before they are redirected by STDIO
@@ -90,7 +90,6 @@ public final class Main {
                 StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
             }
 
-            Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
             ServerEnvironmentWrapper serverEnvironmentWrapper = determineEnvironment(args, WildFlySecurityManager.getSystemPropertiesPrivileged(),
                     WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.STANDALONE,
                     Module.getStartTime());

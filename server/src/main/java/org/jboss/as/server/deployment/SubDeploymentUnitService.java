@@ -38,6 +38,7 @@ import org.jboss.msc.service.ServiceRegistry;
  * Service responsible for installing the correct services to install a {@link DeploymentUnit}.
  *
  * @author John Bailey
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
     private final ResourceRoot deploymentRoot;
@@ -54,7 +55,7 @@ public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
     }
 
     protected DeploymentUnit createAndInitializeDeploymentUnit(ServiceRegistry registry) {
-        final String deploymentName = deploymentRoot.getRootName();
+        final String deploymentName = deploymentRoot.getLoader().getRootName();
         final DeploymentUnit deploymentUnit = new DeploymentUnitImpl(parent, deploymentName, registry);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_ROOT, deploymentRoot);
         deploymentUnit.putAttachment(Attachments.MODULE_SPECIFICATION, new ModuleSpecification());

@@ -221,7 +221,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         }
 
         for (final ResourceRoot resourceRoot : resourceRoots) {
-            logger.debugf("Adding resource %s to module %s", resourceRoot.getRoot(), moduleIdentifier);
+            logger.debugf("Adding resource %s to module %s", resourceRoot.getLoader().getRootName(), moduleIdentifier);
             addResourceRoot(specBuilder, resourceRoot);
         }
 

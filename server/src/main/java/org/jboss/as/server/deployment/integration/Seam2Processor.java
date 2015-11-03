@@ -81,7 +81,7 @@ public class Seam2Processor implements DeploymentUnitProcessor {
                     throw ServerLogger.ROOT_LOGGER.noSeamIntegrationJarPresent(extModule);
                 File file = new File(url.toURI());
                 ResourceLoader loader = ResourceLoaders.newResourceLoader(SEAM_INT_JAR, file);
-                seamIntResourceRoot = new ResourceRoot(loader, null, null);
+                seamIntResourceRoot = new ResourceRoot(loader);
             }
             return seamIntResourceRoot;
         } catch (Exception e) {

@@ -82,11 +82,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.jboss</groupId>
-            <artifactId>jboss-vfs</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.jboss.aesh</groupId>
             <artifactId>aesh</artifactId>
         </dependency>

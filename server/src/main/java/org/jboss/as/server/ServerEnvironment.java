@@ -46,9 +46,6 @@ import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
-import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoader;
 import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -58,6 +55,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  *
  * @author Brian Stansberry
  * @author Mike M. Clark
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ServerEnvironment extends ProcessEnvironment implements Serializable {
 
@@ -130,11 +128,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      * Defaults to <tt><em>HOME_DIR</em>/bundles</tt>/
      */
     public static final String BUNDLES_DIR = "jboss.bundles.dir";
-
-    /**
-     * VFS module identifier.
-     */
-    public static final String VFS_MODULE_IDENTIFIER = "org.jboss.vfs";
 
     /**
      * Constant that holds the name of the system property for specifying
@@ -599,15 +592,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             if(domainConfigurationDir != null) {
                 WildFlySecurityManager.setPropertyPrivileged(DOMAIN_CONFIG_DIR, domainConfigurationDir.getAbsolutePath());
             }
-        }
-
-        // Register the vfs module as URLStreamHandlerFactory
-        try {
-            ModuleLoader bootLoader = Module.getBootModuleLoader();
-            Module vfsModule = bootLoader.loadModule(ModuleIdentifier.create(VFS_MODULE_IDENTIFIER));
-            Module.registerURLStreamHandlerFactoryModule(vfsModule);
-        } catch (Exception ex) {
-            ServerLogger.ROOT_LOGGER.cannotAddURLStreamHandlerFactory(ex, VFS_MODULE_IDENTIFIER);
         }
     }
 

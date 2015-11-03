@@ -44,12 +44,12 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author Thomas.Diesler@jboss.com
+ * @author <a href="ropalka@redhat.com">Richard Opalka</a>
  */
 public class EmbeddedProcessFactory {
 
     private static final String MODULE_ID_EMBEDDED = "org.wildfly.embedded";
     private static final String MODULE_ID_LOGMANAGER = "org.jboss.logmanager";
-    private static final String MODULE_ID_VFS = "org.jboss.vfs";
     private static final String SYSPROP_KEY_CLASS_PATH = "java.class.path";
     private static final String SYSPROP_KEY_MODULE_PATH = "module.path";
     private static final String SYSPROP_KEY_LOGMANAGER = "java.util.logging.manager";
@@ -142,7 +142,6 @@ public class EmbeddedProcessFactory {
         // that are set in @org.jboss.as.ServerEnvironment
         resetEmbeddedServerProperties(jbossHomeDir.getAbsolutePath(), ProcessType.STANDALONE_SERVER);
 
-        setupVfsModule(moduleLoader);
         setupLoggingSystem(moduleLoader);
 
         // Load the Embedded Server Module
@@ -216,7 +215,6 @@ public class EmbeddedProcessFactory {
         // reset properties if we've restarted with a changed jbossHomeDir
         resetEmbeddedServerProperties(jbossHomeDir.getAbsolutePath(), ProcessType.HOST_CONTROLLER);
 
-        setupVfsModule(moduleLoader);
         setupLoggingSystem(moduleLoader);
 
         // Load the Embedded Server Module
@@ -291,17 +289,6 @@ public class EmbeddedProcessFactory {
             // Return to previous state for classpath prop
             WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_CLASS_PATH, classPath);
         }
-    }
-
-    private static void setupVfsModule(final ModuleLoader moduleLoader) {
-        final ModuleIdentifier vfsModuleID = ModuleIdentifier.create(MODULE_ID_VFS);
-        final Module vfsModule;
-        try {
-            vfsModule = moduleLoader.loadModule(vfsModuleID);
-        } catch (final ModuleLoadException mle) {
-            throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle, MODULE_ID_VFS, moduleLoader);
-        }
-        Module.registerURLStreamHandlerFactoryModule(vfsModule);
     }
 
     private static void setupLoggingSystem(ModuleLoader moduleLoader) {

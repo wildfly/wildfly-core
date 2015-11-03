@@ -30,7 +30,6 @@ import org.jboss.as.selfcontained.SelfContainedConfigurationPersister;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
@@ -57,6 +56,7 @@ import java.util.concurrent.ExecutorService;
  * @author Brian Stansberry
  * @author Anil Saldhana
  * @author Bob McWhirter
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class SelfContainedContainer {
 
@@ -93,7 +93,6 @@ public final class SelfContainedContainer {
             }
         }
 
-        Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
         ServerEnvironment serverEnvironment = determineEnvironment(WildFlySecurityManager.getSystemPropertiesPrivileged(), WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.SELF_CONTAINED, startTime);
         final Bootstrap bootstrap = Bootstrap.Factory.newInstance();
         final Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);

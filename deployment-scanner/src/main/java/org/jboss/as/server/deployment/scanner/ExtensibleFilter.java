@@ -30,7 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * An extensible filter for VFS files.  Three arrays are maintained for checking: a prefix, suffix, and match array.  If
+ * An extensible filter for files.  Three arrays are maintained for checking: a prefix, suffix, and match array.  If
  * the filename starts with any of the prefixes, ends with any of the suffixes, or exactly matches any of the matches,
  * then the accepts method will return false.
  * <p/>

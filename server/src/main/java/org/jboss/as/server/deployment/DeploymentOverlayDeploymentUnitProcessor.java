@@ -32,16 +32,7 @@ import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 
 /**
- * Deployment unit processor that adds content overrides to the VFS filesystem.
- *
- * This is a two phase process. First any overlays that can be easily resolved are mounted, however we may not be able
- * to mount all overlays because they may depend on VFS mounts that are set up by later structure processors (e.g. if
- * there is an overlay for ear/lib/mylib.jar/com/acme/MyClass.class it can't be mounted until the ear structure processor
- * has created the mount). These resource roots are identified and deferred to be processed at the end of the structure
- * phase.
- *
- * Note that we can't just process everything at the end, as we may need to replace the archives that are mounted by
- * these later processors
+ * Deployment unit processor that adds content overrides to the WildFly runtime.
  *
  * @author Stuart Douglas
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>

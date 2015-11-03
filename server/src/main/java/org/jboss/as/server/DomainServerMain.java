@@ -47,8 +47,6 @@ import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.marshalling.Unmarshaller;
-import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceActivatorContext;
 import org.jboss.msc.service.ServiceContainer;
@@ -64,6 +62,7 @@ import org.jboss.threads.AsyncFuture;
  * The main entry point for domain-managed server instances.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class DomainServerMain {
 
@@ -109,7 +108,6 @@ public final class DomainServerMain {
         final ByteInput byteInput;
         final AsyncFuture<ServiceContainer> containerFuture;
         try {
-            Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
             final MarshallingConfiguration configuration = new MarshallingConfiguration();
             configuration.setVersion(2);
             configuration.setClassResolver(new SimpleClassResolver(DomainServerMain.class.getClassLoader()));

@@ -28,7 +28,6 @@ import java.util.List;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.SimpleAttachable;
 import org.jboss.as.server.loaders.ResourceLoader;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * @author John E. Bailey
@@ -38,38 +37,16 @@ import org.jboss.vfs.VirtualFile;
 public final class ResourceRoot extends SimpleAttachable {
 
     private final ResourceLoader loader;
-    private final String rootName;
-    private final VirtualFile root;
-    private final MountHandle mountHandle;
     private final List<FilterSpecification> exportFilters = new ArrayList<FilterSpecification>();
     private boolean usePhysicalCodeSource;
 
-    public ResourceRoot(final ResourceLoader loader, final VirtualFile root, final MountHandle mountHandle) {
-        this(loader, root != null ? root.getName() : null, root, mountHandle);
-    }
-
-    public ResourceRoot(final ResourceLoader loader, final String rootName, final VirtualFile root, final MountHandle mountHandle) {
+    public ResourceRoot(final ResourceLoader loader) {
         if (loader == null) throw new NullPointerException();
-        this.rootName = rootName;
-        this.root = root;
-        this.mountHandle = mountHandle;
         this.loader = loader;
-    }
-
-    public String getRootName() {
-        return loader != null ? loader.getRootName() : rootName;
-    }
-
-    public VirtualFile getRoot() {
-        return root;
     }
 
     public ResourceLoader getLoader() {
         return loader;
-    }
-
-    public MountHandle getMountHandle() {
-        return mountHandle; // TODO: eliminate this method
     }
 
     public List<FilterSpecification> getExportFilters() {
@@ -80,10 +57,7 @@ public final class ResourceRoot extends SimpleAttachable {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("ResourceRoot [");
-        if (root != null)
-            builder.append("root=").append(root);
-        if (loader != null)
-            builder.append("loader=").append(loader);
+        builder.append("loader=").append(loader.getRootName());
         builder.append("]");
         return builder.toString();
     }
@@ -106,7 +80,7 @@ public final class ResourceRoot extends SimpleAttachable {
             throw ServerLogger.ROOT_LOGGER.cannotMergeResourceRoot(loader.getPath(), additionalResourceRoot.getLoader().getPath());
         }
         usePhysicalCodeSource = additionalResourceRoot.usePhysicalCodeSource;
-        if(additionalResourceRoot.getExportFilters().isEmpty()) {
+        if (additionalResourceRoot.getExportFilters().isEmpty()) {
             //new root has no filters, so we don't want our existing filters to break anything
             //see WFLY-1527
             this.exportFilters.clear();
