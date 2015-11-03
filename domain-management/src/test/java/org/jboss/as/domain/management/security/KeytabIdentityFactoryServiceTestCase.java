@@ -23,6 +23,7 @@
 
 package org.jboss.as.domain.management.security;
 
+
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
@@ -147,6 +148,24 @@ public class KeytabIdentityFactoryServiceTestCase {
 
         Assert.assertNotNull(subjectIdentity);
         Assert.assertEquals("Different keytab used then expected.", subjectIdentity, RIGHT_SUBJECT_IDENTITY);
+    }
+
+    /**
+     * Host name should be case insensitive according to The Kerberos Network Authentication Service (V5)
+     */
+    @Test
+    public void testHostNameCaseInSensitive() throws StartException {
+        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService();
+        service.getKeytabInjector().inject(createKeytabService("HTTP/localhost@SOMETHING.COM", "SOMEHOST", RIGHT_SUBJECT_IDENTITY));
+        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.getKeytabInjector().inject(createKeytabService("PROTO/ANYVALUE@SOMETHING.COM", "localhost", WRONG_SUBJECT_IDENTITY));
+        service.start(null);
+
+        SubjectIdentity subjectIdentity = service.getSubjectIdentity("HTTP", "LocalHost");
+        service.stop(null);
+
+        Assert.assertNotNull(subjectIdentity);
+        Assert.assertTrue("Different keytab used then expected.", subjectIdentity == RIGHT_SUBJECT_IDENTITY);
     }
 
     /**
