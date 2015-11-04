@@ -435,6 +435,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         final ManagementResourceRegistration jvms = hostRegistration.registerSubModel(JvmResourceDefinition.GLOBAL);
 
         //Paths
+        // TODO why resolvable?
         hostRegistration.registerSubModel(PathResourceDefinition.createResolvableSpecified(pathManager));
 
         //interface

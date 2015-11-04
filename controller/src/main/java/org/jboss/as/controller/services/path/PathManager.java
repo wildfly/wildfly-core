@@ -141,7 +141,11 @@ public interface PathManager {
         Event getEvent();
     }
 
-    static class ReloadServerCallback {
+    /**
+     * Factory for a {@link Callback} that always calls {@link PathEventContext#reloadRequired()} from its
+     * {@link Callback#pathModelEvent(PathEventContext, String)} method.
+     */
+    class ReloadServerCallback {
         public static Callback create() {
             return  new Callback() {
                 @Override

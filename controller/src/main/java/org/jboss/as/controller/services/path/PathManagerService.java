@@ -23,13 +23,11 @@ package org.jboss.as.controller.services.path;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,6 +47,8 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 
 /**
+ * {@code PathManager} implementation that exposes additional methods used by the management operation handlers used
+ * for paths, and also exposes the the {@code PathManager} as an MSC {@code Service}.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
@@ -68,6 +68,12 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
     protected PathManagerService() {
     }
 
+    /**
+     * Add child resources to the given resource, one for each {@link PathEntry} currently associated with this
+     * path manager. Used to initialize the model with resources for the standard paths that are not part of
+     * the persistent configuration.
+     * @param resource the resource to which children should be added.
+     */
     public final void addPathManagerResources(Resource resource) {
         synchronized (pathEntries) {
             for (PathEntry pathEntry : pathEntries.values()) {
@@ -76,6 +82,7 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
         }
     }
 
+    @Override
     public final String resolveRelativePathEntry(String path, String relativeTo) {
         if (relativeTo == null) {
             return AbsolutePathService.convertPath(path);
@@ -124,12 +131,22 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
         return this;
     }
 
+    /**
+     * Add a {@code PathEntry} and install a {@code Service<String>} for one of the standard read-only paths
+     * that are determined from this process' environment. Not to be used for paths stored in the persistent
+     * configuration.
+     * @param serviceTarget service target to use for the service installation
+     * @param pathName the logical name of the path within the model. Cannot be {@code null}
+     * @param path  the value of the path within the model. This is an absolute path. Cannot be {@code null}
+     * @return the controller for the installed {@code Service<String>}
+     */
     protected final ServiceController<?> addHardcodedAbsolutePath(final ServiceTarget serviceTarget, final String pathName, final String path) {
         ServiceController<?>  controller = addAbsolutePathService(serviceTarget, pathName, path);
         addPathEntry(pathName, path, null, true);
         return controller;
     }
 
+    @Override
     public final PathEntry getPathEntry(String pathName) {
         synchronized (pathEntries) {
             PathEntry pathEntry = pathEntries.get(pathName);
@@ -162,12 +179,11 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
         }
     }
 
-    final List<PathEntry> getPaths() {
-        synchronized (pathEntries) {
-            return new ArrayList<PathEntry>(pathEntries.values());
-        }
-    }
-
+    /**
+     * Removes any {@code Service<String>} for the given path.
+     * @param operationContext the operation context associated with the management operation making this request. Cannot be {@code null}
+     * @param pathName  the name of the relevant path. Cannot be {@code null}
+     */
     final void removePathService(final OperationContext operationContext, final String pathName) {
         final ServiceController<?> serviceController = operationContext.getServiceRegistry(true).getService(AbstractPathService.pathNameOf(pathName));
         if (serviceController != null) {
@@ -175,6 +191,15 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
         }
     }
 
+    /**
+     * Removes the entry for a path and sends an {@link org.jboss.as.controller.services.path.PathManager.Event#REMOVED}
+     * notification to any registered
+     * {@linkplain org.jboss.as.controller.services.path.PathManager.Callback#pathEvent(Event, PathEntry) callbacks}.
+     * @param pathName the logical name of the path within the model. Cannot be {@code null}
+     * @param check {@code true} if a check for the existence of other paths that depend on {@code pathName}
+     *              as their {@link PathEntry#getRelativeTo() relative-to} value should be performed
+     * @throws OperationFailedException if {@code check} is {@code true} and other paths depend on the path being removed
+     */
     final void removePathEntry(final String pathName, boolean check) throws OperationFailedException{
         synchronized (pathEntries) {
             PathEntry pathEntry = pathEntries.get(pathName);
@@ -200,10 +225,30 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
         }
     }
 
+    /**
+     * Install a {@code Service<String>} for the given path.
+     * @param serviceTarget the service target associated with the management operation making this request. Cannot be {@code null}
+     * @param pathName  the name of the relevant path. Cannot be {@code null}
+     * @param path  the value of the path within the model. This is either an absolute path or
+     *              the relative portion of the path. Cannot be {@code null}
+     *
+     * @return the service controller for the {@code Service<String>}
+     */
     final ServiceController<?> addAbsolutePathService(final ServiceTarget serviceTarget, final String pathName, final String path) {
         return AbsolutePathService.addService(pathName, path, serviceTarget, null);
     }
 
+    /**
+     * Install an {@code Service<String>} for the given path.
+     * @param serviceTarget the service target associated with the management operation making this request. Cannot be {@code null}
+     * @param pathName the name of the relevant path. Cannot be {@code null}
+     * @param path  the value of the path within the model. This is either an absolute path or
+     *              the relative portion of the path. Cannot be {@code null}
+     * @param possiblyAbsolute {@code true} if the path may be absolute and a check should be performed before installing
+     *                         a service variant that depends on the service associated with {@code relativeTo}
+     * @param relativeTo the name of the path this path is relative to. If {@code null} this is an absolute path
+     * @return the service controller for the {@code Service<String>}
+     */
     final ServiceController<?> addRelativePathService(final ServiceTarget serviceTarget, final String pathName, final String path,
                                                       final boolean possiblyAbsolute, final String relativeTo) {
         if (possiblyAbsolute && AbstractPathService.isAbsoluteUnixOrWindowsPath(path)) {
@@ -213,6 +258,19 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
         }
     }
 
+    /**
+     * Adds an entry for a path and sends an {@link org.jboss.as.controller.services.path.PathManager.Event#ADDED}
+     * notification to any registered {@linkplain org.jboss.as.controller.services.path.PathManager.Callback callbacks}.
+     *
+     * @param pathName the logical name of the path within the model. Cannot be {@code null}
+     * @param path  the value of the path within the model. This is either an absolute path or
+     *              the relative portion of the path. Cannot be {@code null}
+     * @param relativeTo the name of the path this path is relative to. If {@code null} this is an absolute path
+     * @param readOnly {@code true} if the path is immutable, and cannot be removed or modified via a management operation
+     * @return the entry that represents the path
+     *
+     * @throws RuntimeException if an entry with the given {@code pathName} is already registered
+     */
     final PathEntry addPathEntry(final String pathName, final String path, final String relativeTo, final boolean readOnly) {
         PathEntry pathEntry;
         synchronized (pathEntries) {
@@ -230,15 +288,29 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
         return pathEntry;
     }
 
+    /**
+     * Updates the {@link PathEntry#getRelativeTo() relative to} value for an entry and sends an
+     * {@link org.jboss.as.controller.services.path.PathManager.Event#UPDATED}
+     * notification to any registered
+     * {@linkplain org.jboss.as.controller.services.path.PathManager.Callback#pathEvent(Event, PathEntry) callbacks}.
+     * @param pathName the logical name of the path within the model. Cannot be {@code null}
+     * @param relativePath the new name of the path this path is relative to. If {@code null} this is an absolute path
+     * @param check {@code true} if a check for the existence of an entry for the new {@code relativePath} value
+     *                          should be performed
+     * @throws OperationFailedException if {@code check} is {@code true} and no path exists whose name matches {@code relativePath}
+     */
     final void changeRelativePath(String pathName, String relativePath, boolean check) throws OperationFailedException {
         PathEntry pathEntry = findPathEntry(pathName);
         synchronized (pathEntries) {
+            if (check && relativePath != null && pathEntries.get(relativePath) == null) {
+                // TODO per method signature and usage in PathWriteAttributeHandler this should throw OFE.
+                // But leave it for now as a better way to deal with this is to have capabilities for paths
+                // and use capability resolution to detect invalid references
+                throw ControllerLogger.ROOT_LOGGER.pathEntryNotFound(pathName);
+            }
             if (pathEntry.getRelativeTo() != null) {
                 Set<String> dependents = dependenctRelativePaths.get(pathEntry.getRelativeTo());
                 dependents.remove(pathEntry.getName());
-            }
-            if (check && relativePath != null && pathEntries.get(relativePath) == null) {
-                throw ControllerLogger.ROOT_LOGGER.pathEntryNotFound(pathName);
             }
             pathEntry.setRelativeTo(relativePath);
             pathEntry.setPathResolver(relativePath == null ? absoluteResolver : relativeResolver);
@@ -247,6 +319,15 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
         triggerCallbacksForEvent(pathEntry, Event.UPDATED);
     }
 
+    /**
+     * Updates the {@link PathEntry#getPath() path} value for an entry and sends an
+     * {@link org.jboss.as.controller.services.path.PathManager.Event#UPDATED}
+     * notification to any registered
+     * {@linkplain org.jboss.as.controller.services.path.PathManager.Callback#pathEvent(Event, PathEntry) callbacks}.
+     * @param pathName the logical name of the path within the model. Cannot be {@code null}
+     * @param path     the value of the path within the model. This is either an absolute path or
+     *                 the relative portion of the path. Cannot be {@code null}
+     */
     final void changePath(String pathName, String path) {
         PathEntry pathEntry = findPathEntry(pathName);
         pathEntry.setPath(path);
@@ -309,6 +390,17 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
         }
     }
 
+    /**
+     * Creates a {@link org.jboss.as.controller.services.path.PathManager.PathEventContext} and passes it to the
+     * {@link org.jboss.as.controller.services.path.PathManager.Callback#pathModelEvent(PathEventContext, String)} method
+     * of any callbacks to allow the to record if the event should trigger a restart or reload required state. The caller
+     * can then use the {@link PathEventContextImpl#isInstallServices()} method to check if further updates to
+     * the path manager should be made.
+     * @param operationContext the operation context associated with the management operation making this request
+     * @param name  the name of the relevant path. Cannot be {@code null}
+     * @param event the event. Cannot be {@code null}
+     * @return the path event context to use to check if further updates should be made
+     */
     PathEventContextImpl checkRestartRequired(OperationContext operationContext, String name, Event event) {
         Set<String> allEntries = null;
         synchronized (pathEntries) {
