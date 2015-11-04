@@ -24,7 +24,6 @@ package org.jboss.as.server.deployment.module;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Locale;
 
 import org.jboss.as.server.Utils;
 import org.jboss.as.server.loaders.ResourceLoader;
@@ -47,18 +46,18 @@ public final class DeploymentRootMountProcessor implements DeploymentUnitProcess
 
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
-        if(deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT) != null) {
+        if (deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT) != null) {
             return;
         }
-        final File deploymentContentsFile = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_CONTENTS);
-        final String deploymentName = deploymentUnit.getName().toLowerCase(Locale.ENGLISH);
-        if (deploymentContentsFile.isDirectory()) {
+        final File deployment = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_CONTENTS);
+        if (deployment.isDirectory()) {
             // nothing was mounted
             ExplodedDeploymentMarker.markAsExplodedDeployment(deploymentUnit);
         }
         ResourceLoader loader;
         try {
-            loader = ResourceLoaders.newResourceLoader(deploymentName, deploymentContentsFile);
+            final String deploymentName = deploymentUnit.getName();
+            loader = ResourceLoaders.newResourceLoader(deploymentName, deployment);
         } catch (IOException e) {
             throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
         }
