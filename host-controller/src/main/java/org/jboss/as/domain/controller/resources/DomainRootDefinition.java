@@ -322,7 +322,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         coreMgmt.registerSubModel(new HostConnectionResourceDefinition(hostRegistrations));
 
         resourceRegistration.registerSubModel(new ProfileResourceDefinition(hostControllerInfo, ignoredDomainResourceRegistry));
-        resourceRegistration.registerSubModel(PathResourceDefinition.createNamed(pathManager));
+        resourceRegistration.registerSubModel(PathResourceDefinition.createNamed());
         ResourceDefinition domainDeploymentDefinition = isMaster
                 ? DomainDeploymentResourceDefinition.createForDomainMaster(contentRepo)
                 : DomainDeploymentResourceDefinition.createForDomainSlave(environment.isBackupDomainFiles(), fileRepository, contentRepo);

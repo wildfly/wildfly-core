@@ -44,13 +44,10 @@ import org.jboss.dmr.ModelNode;
 class PathWriteAttributeHandler extends AbstractWriteAttributeHandler<PathWriteAttributeHandler.PathUpdate> {
 
     private final PathManagerService pathManager;
-    private final boolean services;
 
-
-    PathWriteAttributeHandler(final PathManagerService pathManager, final SimpleAttributeDefinition definition, final boolean services) {
+    PathWriteAttributeHandler(final PathManagerService pathManager, final SimpleAttributeDefinition definition) {
         super(definition);
         this.pathManager = pathManager;
-        this.services = services;
     }
 
     @Override
@@ -61,7 +58,7 @@ class PathWriteAttributeHandler extends AbstractWriteAttributeHandler<PathWriteA
         if (model.getModel().get(READ_ONLY.getName()).asBoolean(false)) {
             throw ControllerLogger.ROOT_LOGGER.cannotModifyReadOnlyPath(pathName);
         }
-        if (services) {
+        if (pathManager != null) {
             final PathEntry pathEntry = pathManager.getPathEntry(pathName);
             if (pathEntry.isReadOnly()) {
                 throw ControllerLogger.ROOT_LOGGER.pathEntryIsReadOnly(operation.require(OP_ADDR).asString());
@@ -71,7 +68,7 @@ class PathWriteAttributeHandler extends AbstractWriteAttributeHandler<PathWriteA
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return services;
+        return pathManager != null;
     }
 
     @Override
