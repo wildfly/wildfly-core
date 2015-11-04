@@ -43,7 +43,6 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -132,7 +131,7 @@ public class BlockerExtension implements Extension {
         }
     }
 
-    public static enum BlockPoint {
+    public enum BlockPoint {
         MODEL,
         RUNTIME,
         SERVICE_START,
@@ -146,6 +145,7 @@ public class BlockerExtension implements Extension {
 
         private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("block", new NonResolvingResourceDescriptionResolver())
                 .setParameters(CALLER, TARGET_HOST, TARGET_SERVER, BLOCK_POINT, BLOCK_TIME)
+                .setRuntimeOnly()
                 .build();
 
         @Override

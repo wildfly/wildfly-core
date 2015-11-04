@@ -78,11 +78,13 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -90,6 +92,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  *
  * @author Emanuel Muckenhuber
  */
+@ServerSetup(ServerReload.SetupTask.class)
 @RunWith(WildflyTestRunner.class)
 public class BasicOperationsUnitTestCase {
 

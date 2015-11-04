@@ -23,16 +23,19 @@
 package org.jboss.as.test.integration.logging.operations;
 
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.handlers.ConsoleHandler;
 import org.jboss.logmanager.handlers.QueueHandler;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@ServerSetup(ServerReload.SetupTask.class)
 @RunWith(WildflyTestRunner.class)
 public class CustomHandlerOperationsTestCase extends AbstractLoggingOperationsTestCase {
 
