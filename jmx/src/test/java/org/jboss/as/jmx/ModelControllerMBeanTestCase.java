@@ -354,7 +354,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
 
         MBeanOperationInfo[] operations = info.getOperations();
-        Assert.assertEquals(1, operations.length);
+        Assert.assertEquals(2, operations.length);
 
         OpenMBeanOperationInfo op = findOperation(operations, ModelControllerResourceDefinition.VoidOperationNoParams.OPERATION_JMX_NAME);
         Assert.assertEquals(ModelControllerResourceDefinition.VoidOperationNoParams.OPERATION_JMX_NAME, op.getName());
@@ -909,17 +909,11 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
         Assert.assertNull(connection.invoke(name, ModelControllerResourceDefinition.VoidOperationNoParams.OPERATION_JMX_NAME, new Object[0], new String[0]));
         Assert.assertTrue(ModelControllerResourceDefinition.VoidOperationNoParams.INSTANCE.invoked);
 
-        try {
-            connection.invoke(
-                    name,
-                    ModelControllerResourceDefinition.IntOperationWithParams.OPERATION_JMX_NAME,
-                    new Object[]{100L, new String[]{"A"}, Collections.singletonMap("test", 3), 5, 5},
-                    new String[]{Long.class.getName(), String[].class.getName(), Map.class.getName(), Integer.class.getName(), Integer.class.getName()});
-            Assert.fail("Should not have been able to invoke method");
-        } catch (Exception expected) {
-            //expected
-        }
-
+        connection.invoke(
+                name,
+                ModelControllerResourceDefinition.IntOperationWithParams.OPERATION_JMX_NAME,
+                new Object[]{100L, new String[]{"A"}, Collections.singletonMap("test", 3), 5, 5},
+                new String[]{Long.class.getName(), String[].class.getName(), Map.class.getName(), Integer.class.getName(), Integer.class.getName()});
     }
 
     @Test

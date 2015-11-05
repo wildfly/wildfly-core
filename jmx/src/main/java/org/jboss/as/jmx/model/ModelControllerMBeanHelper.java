@@ -64,6 +64,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.as.jmx.model.ChildAddOperationFinder.ChildAddOperationEntry;
@@ -407,7 +408,7 @@ public class ModelControllerMBeanHelper {
     }
 
     private Object invoke(final OperationEntry entry, final String operationName, PathAddress address, Object[] params)  throws InstanceNotFoundException, MBeanException, ReflectionException {
-        if (!mutabilityChecker.mutable(address) && !entry.getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
+        if (!mutabilityChecker.mutable(address) && !(entry.getFlags().contains(Flag.READ_ONLY) || entry.getFlags().contains(Flag.RUNTIME_ONLY))) {
             throw JmxLogger.ROOT_LOGGER.noOperationCalled(operationName);
         }
 

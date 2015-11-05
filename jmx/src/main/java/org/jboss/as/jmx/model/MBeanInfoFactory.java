@@ -219,7 +219,7 @@ public class MBeanInfoFactory {
                 }
             }
             final OperationEntry opEntry = entry.getValue();
-            if (mutabilityChecker.mutable(pathAddress) || opEntry.getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
+            if (mutabilityChecker.mutable(pathAddress) || opEntry.getFlags().contains(Flag.READ_ONLY) || opEntry.getFlags().contains(Flag.RUNTIME_ONLY)) {
                 ops.add(getOperation(NameConverter.convertToCamelCase(entry.getKey()), null, opEntry));
             }
         }
