@@ -203,7 +203,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
     private ServiceName createModuleService(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit,
                                             final List<ResourceRoot> resourceRoots, final ModuleSpecification moduleSpecification,
                                             final ModuleIdentifier moduleIdentifier) throws DeploymentUnitProcessingException {
-        logger.debug("Creating module: " + moduleIdentifier);
+        logger.debugf("Creating module: %s", moduleIdentifier);
         final ModuleSpec.Builder specBuilder = ModuleSpec.build(moduleIdentifier);
         for (final DependencySpec dep : moduleSpecification.getModuleSystemDependencies()) {
             specBuilder.addDependency(dep);
@@ -218,12 +218,12 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
         // add additional resource loaders first
         for (final ResourceLoaderSpec resourceLoaderSpec : moduleSpecification.getResourceLoaders()) {
-            logger.debug("Adding resource loader " + resourceLoaderSpec + " to module " + moduleIdentifier);
+            logger.debugf("Adding resource loader %s to module %s", resourceLoaderSpec, moduleIdentifier);
             specBuilder.addResourceRoot(resourceLoaderSpec);
         }
 
         for (final ResourceRoot resourceRoot : resourceRoots) {
-            logger.debug("Adding resource " + resourceRoot.getRoot() + " to module " + moduleIdentifier);
+            logger.debugf("Adding resource %s to module %s", resourceRoot.getRoot(), moduleIdentifier);
             addResourceRoot(specBuilder, resourceRoot, permFactories);
         }
 
@@ -325,7 +325,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
                 final DependencySpec depSpec = DependencySpec.createModuleDependencySpec(importFilter, exportFilter, dependency
                         .getModuleLoader(), dependency.getIdentifier(), dependency.isOptional());
                 specBuilder.addDependency(depSpec);
-                logger.debug("Adding dependency " + dependency + " to module " + specBuilder.getIdentifier());
+                logger.debugf("Adding dependency %s to module %s", dependency, specBuilder.getIdentifier());
             }
         }
     }
