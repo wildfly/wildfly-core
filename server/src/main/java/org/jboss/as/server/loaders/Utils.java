@@ -22,7 +22,9 @@
 
 package org.jboss.as.server.loaders;
 
-import org.jboss.modules.PathUtils;
+import static org.jboss.modules.PathUtils.canonicalize;
+import static org.jboss.modules.PathUtils.relativize;
+
 import org.jboss.modules.Resource;
 
 import java.util.ArrayList;
@@ -39,22 +41,31 @@ import java.util.StringTokenizer;
 public final class Utils {
 
     private static final String PATH_SEPARATOR = "/";
-    static final String WAR_EXTENSION = ".war";
-    static final String WAB_EXTENSION = ".wab";
-    static final String RAR_EXTENSION = ".rar";
+    private static final String WAR_EXTENSION = ".war";
+    private static final String WAB_EXTENSION = ".wab";
+    private static final String RAR_EXTENSION = ".rar";
 
     private Utils() {
         // forbidden instantiation
     }
 
+    public static String normalizePath(final String path) {
+        if (path == null || path.isEmpty()) {
+            throw new IllegalArgumentException("Path can be neither null nor empty string");
+        }
+        String normalizedPath = relativize(canonicalize(path));
+        return normalizedPath.endsWith("/") ? normalizedPath.substring(0, normalizedPath.length() - 1) : normalizedPath;
+    }
+
     /**
      * Returns true if specified resource or path exists, false otherwise.
      * @param loader to inspect
-     * @param resourceOrPath resource or path to check
+     * @param path resource or path to check
      * @return true if specified resource or path exists, false otherwise
      */
-    public static boolean resourceOrPathExists(final ResourceLoader loader, final String resourceOrPath) {
-        return loader.getResource(resourceOrPath) != null || loader.getPaths().contains(resourceOrPath);
+    public static boolean resourceOrPathExists(final ResourceLoader loader, final String path) {
+        final String normalizedPath = normalizePath(path);
+        return loader.getResource(normalizedPath) != null || loader.getPaths().contains(normalizedPath);
     }
 
     /**
@@ -63,16 +74,9 @@ public final class Utils {
      * @return resource name
      */
     public static String getResourceName(final String resourcePath) {
-        if (resourcePath == null) {
-            throw new IllegalArgumentException();
-        }
-        String canonPath = PathUtils.relativize(PathUtils.canonicalize(resourcePath));
-        canonPath = canonPath.endsWith("/") ? canonPath.substring(0, canonPath.length() - 1) : canonPath;
-        if (canonPath.equals("")) {
-            throw new IllegalArgumentException();
-        }
-        final int separatorIndex = canonPath.lastIndexOf(PATH_SEPARATOR);
-        return separatorIndex != -1 ? canonPath.substring(separatorIndex + 1) : canonPath;
+        final String normalizedPath = normalizePath(resourcePath);
+        final int separatorIndex = normalizedPath.lastIndexOf(PATH_SEPARATOR);
+        return separatorIndex != -1 ? normalizedPath.substring(separatorIndex + 1) : normalizedPath;
     }
 
     /**
@@ -110,7 +114,7 @@ public final class Utils {
         }
         final Collection<String> retVal = new ArrayList<>();
         // search for exploded archives
-        final String canonStartPath = startPath != null ? PathUtils.relativize(PathUtils.canonicalize(startPath)) : "";
+        final String canonStartPath = isEmptyPath(startPath) ? "" : normalizePath(startPath);
         final Iterator<String> paths = loader.iteratePaths(canonStartPath, recursive);
         String candidate;
         while (paths.hasNext()) {
@@ -128,6 +132,10 @@ public final class Utils {
             }
         }
         return retVal;
+    }
+
+    static boolean isEmptyPath(final String path) {
+        return path == null || path.isEmpty();
     }
 
     private static boolean matches(final Collection<String> matches, final String candidate, final String... suffixes) {

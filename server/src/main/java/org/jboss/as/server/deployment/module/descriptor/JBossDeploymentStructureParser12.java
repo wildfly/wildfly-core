@@ -22,6 +22,9 @@
 
 package org.jboss.as.server.deployment.module.descriptor;
 
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static org.jboss.as.server.loaders.Utils.normalizePath;
 import static org.jboss.as.server.loaders.Utils.resourceOrPathExists;
 
 import java.io.IOException;
@@ -57,11 +60,6 @@ import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
-import static org.jboss.modules.PathUtils.canonicalize;
-import static org.jboss.modules.PathUtils.relativize;
 
 /**
  * @author Stuart Douglas
@@ -748,17 +746,17 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
         while (reader.hasNext()) {
             switch (reader.nextTag()) {
                 case XMLStreamConstants.END_ELEMENT: {
-                    String canonPath = relativize(canonicalize(path));
+                    final String normalizedPath = "".equals(path) ? "" : normalizePath(path);
                     final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
                     final ResourceLoader rootLoader = deploymentRoot.getLoader();
                     try {
-                        ResourceLoader loader = canonPath.equals("") ? rootLoader : deploymentRoot.getLoader().getChild(canonPath);
+                        ResourceLoader loader = normalizedPath.equals("") ? rootLoader : deploymentRoot.getLoader().getChild(normalizedPath);
                         if (loader == null) {
-                            if (!resourceOrPathExists(deploymentRoot.getLoader(), canonPath)) {
+                            if (!resourceOrPathExists(deploymentRoot.getLoader(), normalizedPath)) {
                                 ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(path);
                                 return;
                             }
-                            loader = ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), canonPath);
+                            loader = ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), normalizedPath);
                         }
                         final ResourceRoot resourceRoot = new ResourceRoot(loader);
                         for (final FilterSpecification filter : resourceFilters) {

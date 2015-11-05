@@ -22,12 +22,13 @@
 
 package org.jboss.as.server.deploymentoverlay;
 
+import static org.jboss.as.server.loaders.Utils.normalizePath;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.modules.PathUtils;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -44,6 +45,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
  * Service that aggregates all available deployment overrides
  *
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DeploymentOverlayIndex {
 
@@ -95,7 +97,7 @@ public class DeploymentOverlayIndex {
     private static void handleContent(OperationContext context, Map<String, Map<String, byte[]>> wildcards, String overlay, String deployment) {
         Map<String, byte[]> contentMap = wildcards.get(deployment);
         if(contentMap == null) {
-            wildcards.put(deployment, contentMap = new HashMap<String, byte[]>());
+            wildcards.put(deployment, contentMap = new HashMap<>());
         }
         Set<String> content = context.readResourceFromRoot(PathAddress.pathAddress(pathElement(DEPLOYMENT_OVERLAY, overlay))).getChildrenNames(CONTENT);
         for(String contentItem : content) {
@@ -106,8 +108,7 @@ public class DeploymentOverlayIndex {
             } catch (OperationFailedException e) {
                 throw new RuntimeException(e);
             }
-            String key = PathUtils.relativize(PathUtils.canonicalize(contentItem));
-            key = key.endsWith("/") ? key.substring(0, key.length() - 1) : key;
+            final String key = normalizePath(contentItem);
             contentMap.put(key, sha.asBytes());
         }
     }

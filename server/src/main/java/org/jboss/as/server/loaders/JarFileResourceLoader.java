@@ -22,6 +22,9 @@
 
 package org.jboss.as.server.loaders;
 
+import static org.jboss.as.server.loaders.Utils.isEmptyPath;
+import static org.jboss.as.server.loaders.Utils.normalizePath;
+
 import org.jboss.modules.AbstractResourceLoader;
 import org.jboss.modules.ClassSpec;
 import org.jboss.modules.PackageSpec;
@@ -102,11 +105,9 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         this.jarFile = jarFile;
         this.path = path == null ? "" : path;
         this.rootName = rootName;
-        String realPath = relativePath == null ? null : PathUtils.canonicalize(relativePath);
-        if (realPath != null && realPath.endsWith("/")) realPath = realPath.substring(0, realPath.length() - 1);
-        this.relativePath = realPath;
+        this.relativePath = isEmptyPath(relativePath) ? null : normalizePath(relativePath);
         try {
-            rootUrl = getJarURI(fileOfJar.toURI(), realPath).toURL();
+            rootUrl = getJarURI(fileOfJar.toURI(), this.relativePath).toURL();
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Invalid root file specified", e);
         } catch (MalformedURLException e) {
@@ -115,17 +116,18 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     }
 
     void addChild(final String path, final ResourceLoader loader) {
+        final String normalizedPath = normalizePath(path);
         synchronized (children) {
-            if (children.get(path) != null) {
-                throw new IllegalStateException("Child loader for '" + path + "' already registered");
+            if (children.get(normalizedPath) != null) {
+                throw new IllegalStateException("Child loader for '" + normalizedPath + "' already registered");
             }
-            children.put(path, loader);
+            children.put(normalizedPath, loader);
         }
         synchronized (overlays) {
             for (final String overlayPath : overlays.keySet()) {
-                if (overlayPath.startsWith(path) && !overlayPath.equals(path)) {
+                if (overlayPath.startsWith(normalizedPath) && !overlayPath.equals(normalizedPath)) {
                     // propagate overlays up in the loaders hierarchy
-                    loader.addOverlay(overlayPath.substring(path.length() + 1), overlays.get(overlayPath));
+                    loader.addOverlay(overlayPath.substring(normalizedPath.length() + 1), overlays.get(overlayPath));
                 }
             }
         }
@@ -138,26 +140,21 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     }
 
     @Override
-    public void addOverlay(final String resourcePath, final File content) {
+    public void addOverlay(final String path, final File content) {
+        final String normalizedPath = normalizePath(path);
         synchronized (children) {
             if (children.size() > 0) {
-                for (final String path : children.keySet()) {
-                    if (resourcePath.startsWith(path)) {
-                        if (resourcePath.length() == path.length())
-                            throw new UnsupportedOperationException(); // TODO: remove this check?
-                        children.get(path).addOverlay(resourcePath.substring(path.length() + 1), content);
+                for (final String childPath : children.keySet()) {
+                    if (normalizedPath.startsWith(childPath)) {
+                        children.get(childPath).addOverlay(normalizedPath.substring(childPath.length() + 1), content);
                         return;
                     }
                 }
                 return;
             }
         }
-        if (resourcePath.endsWith("/")) {
-            // TODO: remove this check? Shouldn't be validated in DUP?
-            throw new IllegalArgumentException("Invalid overlay path: '" + resourcePath + "'");
-        }
         synchronized (overlays) {
-            overlays.put(resourcePath, content);
+            overlays.put(normalizedPath, content);
         }
     }
 
@@ -310,10 +307,10 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     }
 
     public Resource getResource(String name) {
-        if (name == null) return null;
+        if (isEmptyPath(name)) return null;
         try {
-            name = PathUtils.canonicalize(PathUtils.relativize(name));
-            if (name.endsWith("/") || getJarEntry(name + "/") != null) return null;
+            name = normalizePath(name);
+            if (getJarEntry(name + "/") != null) return null;
             final JarFile jarFile = this.jarFile;
             final JarEntry entry = getJarEntry(name);
             File overlay;
@@ -348,10 +345,10 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
             final URL entryURL = entry != null ? new URL(null, getJarURI(uri, entry.getName()).toString(), (URLStreamHandler) null) : null;
             return new JarEntryResource(jarFile, entry, name, entryURL, overlay, overlayURL);
         } catch (MalformedURLException e) {
-            // must be invalid...?  (todo: check this out)
+            // must be invalid...?
             return null;
         } catch (URISyntaxException e) {
-            // must be invalid...?  (todo: check this out)
+            // must be invalid...?
             return null;
         }
     }
@@ -359,7 +356,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     public Iterator<Resource> iterateResources(String startPath, final boolean recursive) {
         final JarFile jarFile = this.jarFile;
         if (relativePath != null) startPath = startPath.equals("") ? relativePath : relativePath + "/" + startPath;
-        final String startName = PathUtils.canonicalize(PathUtils.relativize(startPath));
+        final String startName = "".equals(startPath) ? "" : normalizePath(startPath);
         final Enumeration<JarEntry> entries = jarFile.entries();
         return new Iterator<Resource>() {
             private Resource next;
@@ -419,15 +416,14 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     }
 
     public Iterator<String> iteratePaths(String startPath, final boolean recursive) {
-        if (startPath == null) throw new NullPointerException("Method parameter cannot be null");
-        final String startName = PathUtils.canonicalize(PathUtils.relativize(startPath));
+        final String startName = "".equals(startPath) ? "" : normalizePath(startPath);
         final Collection<String> index = new HashSet<>();
         extractJarPaths(jarFile, startName, index, recursive);
         return index.iterator();
     }
 
     public Collection<String> getPaths() {
-        final Collection<String> index = new HashSet<String>();
+        final Collection<String> index = new HashSet<>();
         index.add("");
         String relativePath = this.relativePath != null ? this.relativePath : "";
         // First check for an external index
@@ -478,8 +474,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
 
     private void extractJarPaths(final JarFile jarFile, final String startPath,
             final Collection<String> index, final boolean recursive) {
-        String canonPath = PathUtils.canonicalize(PathUtils.relativize(startPath));
-        if (canonPath.endsWith("/")) canonPath = canonPath.substring(0, canonPath.length() - 1);
+        String canonPath = "".equals(startPath) ? "" : normalizePath(startPath);
         if (relativePath != null) canonPath = relativePath + "/" + canonPath;
         final Enumeration<JarEntry> entries = jarFile.entries();
         while (entries.hasMoreElements()) {

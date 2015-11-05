@@ -22,6 +22,9 @@
 
 package org.jboss.as.server.loaders;
 
+import static org.jboss.as.server.loaders.Utils.isEmptyPath;
+import static org.jboss.as.server.loaders.Utils.normalizePath;
+
 import org.jboss.modules.ClassSpec;
 import org.jboss.modules.AbstractResourceLoader;
 import org.jboss.modules.PackageSpec;
@@ -118,17 +121,18 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     }
 
     void addChild(final String path, final ResourceLoader loader) {
+        final String normalizedPath = normalizePath(path);
         synchronized (children) {
-            if (children.get(path) != null) {
-                throw new IllegalStateException("Child loader for '" + path + "' already registered");
+            if (children.get(normalizedPath) != null) {
+                throw new IllegalStateException("Child loader for '" + normalizedPath + "' already registered");
             }
-            children.put(path, loader);
+            children.put(normalizedPath, loader);
         }
         synchronized (overlays) {
             for (final String overlayPath : overlays.keySet()) {
-                if (overlayPath.startsWith(path) && !overlayPath.equals(path)) {
+                if (overlayPath.startsWith(normalizedPath) && !overlayPath.equals(normalizedPath)) {
                     // propagate overlays up in the loaders hierarchy
-                    loader.addOverlay(overlayPath.substring(path.length() + 1), overlays.get(overlayPath));
+                    loader.addOverlay(overlayPath.substring(normalizedPath.length() + 1), overlays.get(overlayPath));
                 }
             }
         }
@@ -141,26 +145,21 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     }
 
     @Override
-    public void addOverlay(final String resourcePath, final File content) {
+    public void addOverlay(final String path, final File content) {
+        final String normalizedPath = normalizePath(path);
         synchronized (children) {
             if (children.size() > 0) {
-                for (final String path : children.keySet()) {
-                    if (resourcePath.startsWith(path)) {
-                        if (resourcePath.length() == path.length())
-                            throw new UnsupportedOperationException(); // TODO: remove this check?
-                        children.get(path).addOverlay(resourcePath.substring(path.length() + 1), content);
+                for (final String childPath : children.keySet()) {
+                    if (normalizedPath.startsWith(childPath)) {
+                        children.get(childPath).addOverlay(normalizedPath.substring(childPath.length() + 1), content);
                         return;
                     }
                 }
                 return;
             }
         }
-        if (resourcePath.endsWith("/")) {
-            // TODO: remove this check? Shouldn't be validated in DUP?
-            throw new IllegalArgumentException("Invalid overlay path: '" + resourcePath + "'");
-        }
         synchronized (overlays) {
-            overlays.put(resourcePath, content);
+            overlays.put(normalizedPath, content);
         }
     }
 
@@ -277,11 +276,10 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     }
 
     public Resource getResource(final String name) {
-        if (name == null) return null;
-        final String canonPath = PathUtils.canonicalize(PathUtils.relativize(name));
-        if (canonPath.endsWith("/") || canonPath.equals("")) return null;
-        final File overlay = overlays.get(canonPath);
-        final File file = overlay != null ? overlay : new File(root, canonPath);
+        if (isEmptyPath(name)) return null;
+        final String normalizedPath = normalizePath(name);
+        final File overlay = overlays.get(normalizedPath);
+        final File file = overlay != null ? overlay : new File(root, normalizedPath);
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             return doPrivileged(new PrivilegedAction<Resource>() {
@@ -290,7 +288,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
                         return null;
                     } else {
                         try {
-                            return new FileEntryResource(canonPath, file, file.toURI().toURL(), context);
+                            return new FileEntryResource(normalizedPath, file, file.toURI().toURL(), context);
                         } catch (MalformedURLException e) {
                             return null;
                         }
@@ -301,7 +299,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
             return null;
         } else {
             try {
-                return new FileEntryResource(canonPath, file, file.toURI().toURL(), context);
+                return new FileEntryResource(normalizedPath, file, file.toURI().toURL(), context);
             } catch (MalformedURLException e) {
                 return null;
             }
@@ -395,19 +393,18 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     }
 
     public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
-        String canonPath = PathUtils.canonicalize(PathUtils.relativize(startPath));
-        if (canonPath.endsWith("/")) canonPath = canonPath.substring(0, canonPath.length() - 1);
-        final File start = new File(root, canonPath);
+        final String normalizedPath = "".equals(startPath) ? "" : normalizePath(startPath);
+        final File start = new File(root, normalizedPath);
         final List<String> index = new ArrayList<>();
         if (!start.exists() || !start.isDirectory()) return Collections.emptyIterator();
-        index.add(canonPath);
-        buildIndex(index, start, canonPath, recursive);
+        index.add(normalizedPath);
+        buildIndex(index, start, normalizedPath, recursive);
         return index.iterator();
     }
 
     public Iterator<Resource> iterateResources(final String startPath, final boolean recursive) {
-        final String canonPath = PathUtils.canonicalize(PathUtils.relativize(startPath));
-        final File start = new File(root, canonPath);
+        final String normalizedPath = "".equals(startPath) ? "" : normalizePath(startPath);
+        final File start = new File(root, normalizedPath);
         final String[] children = start.list();
         final Set<String> overlayPaths;
         synchronized (overlays) {
@@ -416,11 +413,11 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         if (overlayPaths.size() == 0 && (children == null || children.length == 0)) {
             return Collections.<Resource>emptySet().iterator();
         }
-        return new Itr(startPath, canonPath, children, overlayPaths.iterator(), recursive);
+        return new Itr(startPath, normalizedPath, children, overlayPaths.iterator(), recursive);
     }
 
     public Collection<String> getPaths() {
-        final List<String> index = new ArrayList<String>();
+        final List<String> index = new ArrayList<>();
         final File indexFile = new File(root.getPath() + ".index");
         if (ResourceLoaders.USE_INDEXES) {
             // First check for an index file
