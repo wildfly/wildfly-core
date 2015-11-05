@@ -58,12 +58,16 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     private final NodeSubregistry parent;
     private final PathAddress pathAddress;
     private RootInvocation rootInvocation;
+    // Whether search methods can assume this MRR is wired into the MRR true
+    private boolean initialized;
 
     AbstractResourceRegistration(final String valueString, final NodeSubregistry parent) {
         checkPermission();
         this.valueString = valueString;
         this.parent = parent;
         this.pathAddress = parent == null ? PathAddress.EMPTY_ADDRESS : parent.getPathAddress(valueString);
+        // To keep it simple, treat MRRs without parents as being initialized
+        this.initialized = parent == null;
     }
 
     static void checkPermission() {
@@ -71,6 +75,18 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         if (sm != null) {
             sm.checkPermission(ImmutableManagementResourceRegistration.ACCESS_PERMISSION);
         }
+    }
+
+    /**
+     * Notification by a NodeSubregistry that created this instance that it is done
+     * with any initialization work (e.g. registering attributes/operations/children)
+     * and will now make this object visible by adding it to its registry. The NodeSubregistry
+     * guarantees that no other calls will be made against this object unti it is registered.
+     * Once this object is initialized, search methods (e.g. getOperationEntry) will assume this
+     * object is wired into the MRR tree.
+     */
+    final void initialized() {
+        this.initialized = true;
     }
 
     NodeSubregistry getParent() {
@@ -158,11 +174,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final OperationEntry getOperationEntry(final PathAddress pathAddress, final String operationName) {
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getOperationEntry(ri.pathAddress.append(pathAddress), operationName);
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
 
         OperationEntry inheritable = getInheritableOperationEntry(operationName);
         return getOperationEntry(pathAddress.iterator(), operationName, inheritable);
@@ -195,11 +211,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final AttributeAccess getAttributeAccess(final PathAddress address, final String attributeName) {
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getAttributeAccess(ri.pathAddress.append(address), attributeName);
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
         return getAttributeAccess(address.iterator(), attributeName);
     }
 
@@ -215,11 +231,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final Map<String, OperationEntry> getOperationDescriptions(final PathAddress address, boolean inherited) {
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getOperationDescriptions(ri.pathAddress.append(address), inherited);
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
         Map<String, OperationEntry> providers = new TreeMap<String, OperationEntry>();
         getOperationDescriptions(address.iterator(), providers, inherited);
         return providers;
@@ -237,11 +253,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final Map<String, NotificationEntry> getNotificationDescriptions(final PathAddress address, boolean inherited) {
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getNotificationDescriptions(ri.pathAddress.append(address), inherited);
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
         Map<String, NotificationEntry> providers = new TreeMap<String, NotificationEntry>();
         getNotificationDescriptions(address.iterator(), providers, inherited);
         return providers;
@@ -267,11 +283,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final Set<String> getAttributeNames(final PathAddress address) {
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getAttributeNames(ri.pathAddress.append(address));
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
         return getAttributeNames(address.iterator());
     }
 
@@ -280,11 +296,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final Set<String> getChildNames(final PathAddress address) {
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getChildNames(ri.pathAddress.append(address));
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
         return getChildNames(address.iterator());
     }
 
@@ -293,11 +309,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final Set<PathElement> getChildAddresses(final PathAddress address){
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getChildAddresses(ri.pathAddress.append(address));
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
         return getChildAddresses(address.iterator());
     }
 
@@ -306,11 +322,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final ProxyController getProxyController(final PathAddress address) {
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getProxyController(ri.pathAddress.append(address));
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
         return getProxyController(address.iterator());
     }
 
@@ -319,11 +335,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final Set<ProxyController> getProxyControllers(PathAddress address){
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getProxyControllers(ri.pathAddress.append(address));
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
 
         Set<ProxyController> controllers = new HashSet<ProxyController>();
         getProxyControllers(address.iterator(), controllers);
@@ -366,11 +382,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     final ManagementResourceRegistration getSubRegistration(PathAddress address) {
 
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getSubRegistration(ri.pathAddress.append(address));
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
         return getResourceRegistration(address.iterator());
 
     }
@@ -411,11 +427,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final Set<RuntimeCapability> getCapabilities() {
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getCapabilities(ri.pathAddress.iterator());
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
         return getCapabilities(pathAddress.iterator());
     }
 
@@ -524,11 +540,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public Set<String> getOrderedChildTypes() {
 
-        if (parent != null) {
+        if (initialized && parent != null) {
             RootInvocation ri = getRootInvocation();
             return ri.root.getOrderedChildTypes(ri.pathAddress.iterator());
         }
-        // else we are the root
+        // else we are the root or we can't search from the root yet
         return getOrderedChildTypes(pathAddress.iterator());
     }
 

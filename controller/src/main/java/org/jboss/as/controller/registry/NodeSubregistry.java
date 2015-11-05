@@ -103,10 +103,13 @@ final class NodeSubregistry {
         provider.registerNotifications(newRegistry);
         provider.registerChildren(newRegistry);
 
+        newRegistry.initialized();
+
         final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (existingRegistry != null) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
         }
+
 
         // Now we can update the parent's ordered child list,
         // the capability registry and the constraintUtilitizationRegistry.
@@ -138,6 +141,8 @@ final class NodeSubregistry {
 
     ProxyControllerRegistration registerProxyController(final String elementValue, final ProxyController proxyController) {
         final ProxyControllerRegistration newRegistry = new ProxyControllerRegistration(elementValue, this, proxyController);
+        newRegistry.initialized(); // BES 2015/11/05 I could put this call in the ProxyControllerReg c'tor but prefer
+                                   // having all these calls done the same way in this class when the MRR is created
         final AbstractResourceRegistration appearingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (appearingRegistry != null) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
@@ -152,6 +157,8 @@ final class NodeSubregistry {
 
     public AliasResourceRegistration registerAlias(final String elementValue, AliasEntry aliasEntry, AbstractResourceRegistration target) {
         final AliasResourceRegistration newRegistry = new AliasResourceRegistration(elementValue, this, aliasEntry, target);
+        newRegistry.initialized();  // BES 2015/11/05 I could put this call in the ProxyControllerReg c'tor but prefer
+                                    // having all these calls done the same way in this class when the MRR is created
         final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (existingRegistry != null) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
