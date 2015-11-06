@@ -31,7 +31,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.audit.AccessAuditResourceDefinition;
 import org.jboss.as.domain.management.audit.AuditLogLoggerResourceDefinition;
-import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
@@ -50,7 +49,6 @@ import org.xnio.IoUtils;
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
 public class AdminOnlyAuditLogTestCase {
-    public static final String CONTAINER = "jbossas-admin-only";
 
     @Inject
     private ServerController container;
@@ -60,19 +58,17 @@ public class AdminOnlyAuditLogTestCase {
     @Before
     public void startContainer() throws Exception {
         // Start the server
-        container.start();
-        final ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
-        managementClient = new ManagementClient(client, TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort(), "http-remoting");
+        container.startInAdminMode();
+        managementClient = container.getClient();
     }
 
     @After
     public void stopContainer() throws Exception {
-        final ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
         try {
             // Stop the container
             container.stop();
         } finally {
-            IoUtils.safeClose(client);
+            IoUtils.safeClose(managementClient);
         }
     }
 
