@@ -65,7 +65,7 @@ public class ReloadHandler extends BaseOperationCommand {
     private PerNodeOperationAccess hostReloadPermission;
 
     public ReloadHandler(CommandContext ctx, final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef) {
-        super(ctx, "reload", true);
+        super(ctx, Util.RELOAD, true);
 
         this.embeddedServerRef = embeddedServerRef;
 
