@@ -70,7 +70,7 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
 
     private static final String MSG_CANNOT_ESTABLISH_CONNECTION = "Cannot establish a remote connection to the application server";
     private static final int DEFAULT_MAX_THREADS = 6;
-    private static final String LABEL = "WildFly CLI";
+    private static final String LABEL = "JBoss EAP CLI";
 
     // Global count of created pools
     private static final AtomicInteger executorCount = new AtomicInteger();

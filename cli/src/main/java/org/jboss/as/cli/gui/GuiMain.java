@@ -63,7 +63,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 public class GuiMain {
     private static Image jbossIcon;
     static {
-        URL iconURL = GuiMain.class.getResource("/icon/wildfly.png");
+        URL iconURL = GuiMain.class.getResource("/icon/eap.png");
         jbossIcon = Toolkit.getDefaultToolkit().getImage(iconURL);
         ToolTipManager.sharedInstance().setDismissDelay(15000);
     }
