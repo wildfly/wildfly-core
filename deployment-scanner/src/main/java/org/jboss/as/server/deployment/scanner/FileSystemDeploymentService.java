@@ -19,7 +19,6 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.server.deployment.scanner;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ARCHIVE;
@@ -50,10 +49,11 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -145,7 +145,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     private volatile DeploymentOperations.Factory deploymentOperationsFactory;
     private volatile DeploymentOperations deploymentOperations;
 
-    private FileFilter filter = new ExtensibleFilter();
+    private Filter<Path> filter = new ExtensibleFilter();
     private volatile boolean autoDeployZip;
     private volatile boolean autoDeployExploded;
     private volatile boolean autoDeployXml;
@@ -193,7 +193,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         Path undeployedMarker = dir.resolve(runtimeName + UNDEPLOYED);
         final Path deploymentFile = dir.resolve(runtimeName);
         if (!Files.exists(undeployedMarker) && Files.exists(deploymentFile)) {
-             try {
+            try {
                 Files.createFile(undeployedMarker);
             } catch (IOException ioex) {
                 ROOT_LOGGER.errorWritingDeploymentMarker(ioex, undeployedMarker.toString());
@@ -212,7 +212,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             }
         }
         final Path deploymentFile = dir.resolve(runtimeName);
-        if (! Files.exists(deployedMarker) && Files.exists(deploymentFile)) {
+        if (!Files.exists(deployedMarker) && Files.exists(deploymentFile)) {
             try {
                 deployedMarker = Files.createFile(deployedMarker);
                 boolean isArchive = Files.isRegularFile(deploymentFile);
@@ -290,7 +290,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 @Override
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (ControlledProcessState.State.RUNNING == evt.getNewValue()) {
-                         synchronized (this) {
+                        synchronized (this) {
                             if (scanEnabled) {
                                 undeployScanTask = scheduledExecutor.submit(new UndeployScanRunnable());
                             }
@@ -437,7 +437,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
 
     private void establishDeployedContentList(File dir, final DeploymentOperations deploymentOperations) {
         final Set<String> deploymentNames = deploymentOperations.getDeploymentsStatus().keySet();
-        final File[] children = listDirectoryChildren(dir);
+        final List<File> children = listDirectoryChildren(dir);
         for (File child : children) {
             final String fileName = child.getName();
             if (child.isDirectory()) {
@@ -786,7 +786,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
      * @param scanContext context of the scan
      */
     private void scanDirectory(final File directory, final String relativePath, final ScanContext scanContext) {
-        final File[] children = listDirectoryChildren(directory, filter);
+        final List<File> children = listDirectoryChildren(directory, filter);
         for (File child : children) {
             final String fileName = child.getName();
             if (fileName.endsWith(DEPLOYED)) {
@@ -1285,16 +1285,24 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         }
     }
 
-    private static File[] listDirectoryChildren(File directory) {
-        return listDirectoryChildren(directory, null);
+    private static List<File> listDirectoryChildren(File directory) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory.toPath())) {
+            final List<File> result = new ArrayList<>();
+            stream.forEach(entry -> result.add(entry.toFile()));
+            return result;
+        } catch (SecurityException | IOException ex) {
+            throw DeploymentScannerLogger.ROOT_LOGGER.cannotListDirectoryFiles(ex, directory);
+        }
     }
 
-    private static File[] listDirectoryChildren(File directory, FileFilter filter) {
-        File[] result = directory.listFiles(filter);
-        if (result == null) {
-            throw DeploymentScannerLogger.ROOT_LOGGER.cannotListDirectoryFiles(directory);
+    private static List<File> listDirectoryChildren(File directory, DirectoryStream.Filter<Path> filter) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory.toPath(), filter)) {
+            final List<File> result = new ArrayList<>();
+            stream.forEach(entry -> result.add(entry.toFile()));
+            return result;
+        } catch (SecurityException | IOException ex) {
+            throw DeploymentScannerLogger.ROOT_LOGGER.cannotListDirectoryFiles(ex, directory);
         }
-        return result;
     }
 
     private abstract class ScannerTask {
