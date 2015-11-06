@@ -228,7 +228,7 @@ public class ConnectDialog extends JInternalFrame {
         Font boldLabelFont = normalLabelFont.deriveFont(Font.BOLD);
         final Font smallLabelFont = normalLabelFont.deriveFont(normalLabelFont.getSize2D() - 1);
         //TODO: is this fine or should it be padded like original?
-        final URL iconURL = GuiMain.class.getResource("/icon/wildfly_logo.png");
+        final URL iconURL = GuiMain.class.getResource("/icon/eap_logo.png");
         final Image logo = Toolkit.getDefaultToolkit().getImage(iconURL);
         final Icon icon = new ImageIcon(logo);
         final JLabel mastheadLabel = new JLabel(icon);

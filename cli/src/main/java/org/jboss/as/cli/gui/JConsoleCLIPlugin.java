@@ -63,7 +63,7 @@ import com.sun.tools.jconsole.JConsolePlugin;
 public class JConsoleCLIPlugin extends JConsolePlugin {
 
     private static final int DEFAULT_MAX_THREADS = 6;
-    private static final String LABEL = "WildFly CLI";
+    private static final String LABEL = "JBoss EAP CLI";
 
     // Global count of created pools
     private static final AtomicInteger executorCount = new AtomicInteger();
