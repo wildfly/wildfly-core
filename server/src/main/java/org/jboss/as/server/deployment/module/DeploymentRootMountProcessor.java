@@ -24,6 +24,7 @@ package org.jboss.as.server.deployment.module;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import org.jboss.as.server.Utils;
 import org.jboss.as.server.loaders.ResourceLoader;
@@ -37,7 +38,7 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.ExplodedDeploymentMarker;
 
 /**
- * Deployment processor responsible for mounting and attaching the resource root for this deployment.
+ * Deployment processor responsible for creating the resource root for this deployment.
  *
  * @author John Bailey
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
@@ -67,11 +68,18 @@ public final class DeploymentRootMountProcessor implements DeploymentUnitProcess
         deploymentUnit.putAttachment(Attachments.MODULE_SPECIFICATION, new ModuleSpecification());
     }
 
-    public void undeploy(final DeploymentUnit context) {
-        final ResourceRoot resourceRoot = context.removeAttachment(Attachments.DEPLOYMENT_ROOT);
+    public void undeploy(final DeploymentUnit du) {
+        // clean up deployment root
+        final ResourceRoot resourceRoot = du.removeAttachment(Attachments.DEPLOYMENT_ROOT);
         if (resourceRoot != null) {
-            final AutoCloseable mountHandle = resourceRoot.getLoader();
-            Utils.safeClose(mountHandle);
+            Utils.safeClose(resourceRoot.getLoader());
+        }
+        // clean up all additional resource roots
+        final List<ResourceRoot> childRoots = du.getAttachmentList(Attachments.RESOURCE_ROOTS);
+        if (childRoots != null) {
+            for (final ResourceRoot childRoot : childRoots) {
+                Utils.safeClose(childRoot.getLoader());
+            }
         }
     }
 }
