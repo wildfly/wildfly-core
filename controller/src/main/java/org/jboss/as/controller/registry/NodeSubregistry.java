@@ -33,7 +33,6 @@ import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -85,9 +84,7 @@ final class NodeSubregistry {
         return new HashSet<String>(snapshot.keySet());
     }
 
-    ManagementResourceRegistration register(final String elementValue, final ResourceDefinition provider, boolean ordered) {
-        final AbstractResourceRegistration newRegistry =
-                new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, ordered, capabilityRegistry);
+    ManagementResourceRegistration register(final String elementValue, AbstractResourceRegistration newRegistry) {
         final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (existingRegistry != null) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));

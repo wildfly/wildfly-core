@@ -198,8 +198,8 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         final String key = address.getKey();
         final NodeSubregistry child = getOrCreateSubregistry(key);
         final boolean ordered = resourceDefinition.isOrderedChild();
-        final ManagementResourceRegistration resourceRegistration =
-                child.register(address.getValue(), resourceDefinition, ordered);
+        final AbstractResourceRegistration resourceRegistration =
+                new ConcreteResourceRegistration(address.getValue(), child, resourceDefinition, constraintUtilizationRegistry, ordered, capabilityRegistry);
         if (ordered) {
             AbstractResourceRegistration parentRegistration = child.getParent();
             parentRegistration.setOrderedChild(key);
@@ -216,7 +216,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
                 constraintUtilizationRegistry.registerAccessConstraintResourceUtilization(acd.getKey(), childAddress);
             }
         }
-        return resourceRegistration;
+        return child.register(address.getValue(), resourceRegistration);
     }
 
     @Override
