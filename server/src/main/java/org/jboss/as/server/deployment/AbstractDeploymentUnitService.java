@@ -106,6 +106,10 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     }
 
     public DeploymentStatus getStatus() {
+        StabilityMonitor monitor = this.monitor;
+        if (monitor == null) {
+            return DeploymentStatus.STOPPED;
+        }
         final Set<ServiceController<?>> problems = new HashSet<ServiceController<?>>();
         try {
             monitor.awaitStability(problems, problems);
