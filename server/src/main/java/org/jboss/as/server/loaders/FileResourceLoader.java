@@ -33,15 +33,10 @@ import org.jboss.modules.Resource;
 
 import static java.security.AccessController.doPrivileged;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -395,8 +390,8 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
         final String normalizedPath = "".equals(startPath) ? "" : normalizePath(startPath);
         final File start = new File(root, normalizedPath);
-        final List<String> index = new ArrayList<>();
         if (!start.exists() || !start.isDirectory()) return Collections.emptyIterator();
+        final List<String> index = new ArrayList<>();
         index.add(normalizedPath);
         buildIndex(index, start, normalizedPath, recursive);
         return index.iterator();
@@ -418,66 +413,8 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
 
     public Collection<String> getPaths() {
         final List<String> index = new ArrayList<>();
-        final File indexFile = new File(root.getPath() + ".index");
-        if (ResourceLoaders.USE_INDEXES) {
-            // First check for an index file
-            if (indexFile.exists()) {
-                try {
-                    final BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(indexFile)));
-                    try {
-                        String s;
-                        while ((s = r.readLine()) != null) {
-                            index.add(s.trim());
-                        }
-                        return index;
-                    } finally {
-                        // if exception is thrown, undo index creation
-                        r.close();
-                    }
-                } catch (IOException e) {
-                    index.clear();
-                }
-            }
-        }
-        // Manually build index, starting with the root path
         index.add("");
         buildIndex(index, root, "", true);
-        if (ResourceLoaders.WRITE_INDEXES) {
-            // Now try to write it
-            boolean ok = false;
-            try {
-                final FileOutputStream fos = new FileOutputStream(indexFile);
-                try {
-                    final OutputStreamWriter osw = new OutputStreamWriter(fos);
-                    try {
-                        final BufferedWriter writer = new BufferedWriter(osw);
-                        try {
-                            for (String name : index) {
-                                writer.write(name);
-                                writer.write('\n');
-                            }
-                            writer.close();
-                            osw.close();
-                            fos.close();
-                            ok = true;
-                        } finally {
-                            IOUtils.safeClose(writer);
-                        }
-                    } finally {
-                        IOUtils.safeClose(osw);
-                    }
-                } finally {
-                    IOUtils.safeClose(fos);
-                }
-            } catch (IOException e) {
-                // failed, ignore
-            } finally {
-                if (! ok) {
-                    // well, we tried...
-                    indexFile.delete();
-                }
-            }
-        }
         return index;
     }
 

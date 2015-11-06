@@ -42,20 +42,16 @@ import org.jboss.modules.Resource;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class ResourceLoaders {
-    static final boolean USE_INDEXES;
-    static final boolean WRITE_INDEXES;
     private static final String JBOSS_TMP_DIR_PROPERTY = "jboss.server.temp.dir";
     private static final String JVM_TMP_DIR_PROPERTY = "java.io.tmpdir";
     private static final String XML_SUFFIX = ".xml";
-
-    static final File TMP_ROOT;
+    private static final File TMP_ROOT;
 
     static {
-        USE_INDEXES = Boolean.parseBoolean(AccessController.doPrivileged(new PropertyReadAction("jboss.modules.use-indexes", "false")));
-        WRITE_INDEXES = USE_INDEXES && Boolean.parseBoolean(AccessController.doPrivileged(new PropertyReadAction("jboss.modules.write-indexes", "false")));
         String configTmpDir = AccessController.doPrivileged(new PropertyReadAction(JBOSS_TMP_DIR_PROPERTY));
-        if (configTmpDir == null)
+        if (configTmpDir == null) {
             configTmpDir = AccessController.doPrivileged(new PropertyReadAction(JVM_TMP_DIR_PROPERTY));
+        }
         TMP_ROOT = new File(configTmpDir);
     }
 
