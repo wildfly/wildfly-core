@@ -138,37 +138,235 @@ public interface SocketBindingManager {
      */
     UnnamedBindingRegistry getUnnamedRegistry();
 
-    public interface NamedManagedBindingRegistry extends ManagedBindingRegistry {
+    interface NamedManagedBindingRegistry extends ManagedBindingRegistry {
 
+        /**
+         * Gets the binding registered under the given name.
+         * @param name the name
+         * @return the binding, or {@code null} if there is no binding registered with that name
+         */
         ManagedBinding getManagedBinding(final String name);
+
+        /**
+         * Gets whether there is a binding registered under the given name.
+         * @param name the name
+         * @return {@code true} if there is a binding under that name
+         */
         boolean isRegistered(final String name);
 
+        /**
+         * Registers a binding under the given name based on the given socket.
+         * @param name the name. Cannot be {@code null}
+         * @param socket the socket. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding if {@code close()} is called
+         */
         Closeable registerSocket(String name, Socket socket);
+
+        /**
+         * Registers a binding under the given name based on the given socket.
+         * @param name the name. Cannot be {@code null}
+         * @param socket the socket. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding if {@code close()} is called
+         */
         Closeable registerSocket(String name, ServerSocket socket);
+
+        /**
+         * Registers a binding under the given name based on the given socket.
+         * @param name the name. Cannot be {@code null}
+         * @param socket the socket. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding if {@code close()} is called
+         */
         Closeable registerSocket(String name, DatagramSocket socket);
+
+        /**
+         * Registers a binding under the given name based on the given channel.
+         * @param name the name. Cannot be {@code null}
+         * @param channel the channel. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding if {@code close()} is called
+         */
         Closeable registerChannel(String name, SocketChannel channel);
+
+        /**
+         * Registers a binding under the given name based on the given channel.
+         * @param name the name. Cannot be {@code null}
+         * @param channel the channel. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding if {@code close()} is called
+         */
         Closeable registerChannel(String name, ServerSocketChannel channel);
+
+        /**
+         * Registers a binding under the given name based on the given channel.
+         * @param name the name. Cannot be {@code null}
+         * @param channel the channel. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding if {@code close()} is called
+         */
         Closeable registerChannel(String name, DatagramChannel channel);
 
+        /**
+         * Unregisters the binding with the given name.
+         *
+         * @param name the name
+         */
         void unregisterBinding(String name);
+
+        /**
+         * {@inheritDoc}
+         *
+         * @throws IllegalStateException if {@link ManagedBinding#getSocketBindingName()} returns {@code null}
+         */
+        @Override
+        void registerBinding(final ManagedBinding binding);
+
+        /**
+         * {@inheritDoc}
+         *
+         * @throws IllegalStateException if {@link ManagedBinding#getSocketBindingName()} returns {@code null}
+         */
+        @Override
+        void unregisterBinding(final ManagedBinding binding);
 
     }
 
-    public interface UnnamedBindingRegistry extends ManagedBindingRegistry {
+    interface UnnamedBindingRegistry extends ManagedBindingRegistry {
 
+        /**
+         * Registers an unnamed binding based on the given socket.
+         * @param socket the socket. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding and close the socket
+         *         if {@code close()} is called
+         * @throws IllegalStateException if {@link Socket#getLocalAddress()} returns {@code null}
+         */
         Closeable registerSocket(Socket socket);
+
+        /**
+         * Registers an unnamed binding based on the given socket.
+         * @param socket the socket. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding and close the socket
+         *         if {@code close()} is called
+         * @throws IllegalStateException if {@link Socket#getLocalAddress()} returns {@code null}
+         */
         Closeable registerSocket(ServerSocket socket);
+
+        /**
+         * Registers an unnamed binding based on the given socket.
+         * @param socket the socket. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding and close the socket
+         *         if {@code close()} is called
+         * @throws IllegalStateException if {@link Socket#getLocalAddress()} returns {@code null}
+         */
         Closeable registerSocket(DatagramSocket socket);
+
+        /**
+         * Registers an unnamed binding based on the given channel.
+         * @param channel the channel. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding and close the socket
+         *         if {@code close()} is called
+         * @throws IllegalStateException if calling {@link Socket#getLocalAddress()} on the
+         *          {@link SocketChannel#socket() channel's socket} returns {@code null}
+         */
         Closeable registerChannel(SocketChannel channel);
+
+        /**
+         * Registers an unnamed binding based on the given channel.
+         * @param channel the channel. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding and close the socket
+         *         if {@code close()} is called
+         * @throws IllegalStateException if calling {@link Socket#getLocalAddress()} on the
+         *          {@link ServerSocketChannel#socket() channel's socket} returns {@code null}
+         */
         Closeable registerChannel(ServerSocketChannel channel);
+
+        /**
+         * Registers an unnamed binding based on the given channel.
+         * @param channel the channel. Cannot be {@code null}
+         * @return a {@link Closeable} that will unregister the binding and close the socket
+         *         if {@code close()} is called
+         * @throws IllegalStateException if calling {@link Socket#getLocalAddress()} on the
+         *          {@link DatagramChannel#socket() channel's socket} returns {@code null}
+         */
         Closeable registerChannel(DatagramChannel channel);
 
+        /**
+         * Unregisters a binding previously {@link #registerSocket(Socket) registered for the socket}.
+         * <p>
+         * <strong>For unregistration to work, this method must be called before the socket is closed.</strong>
+         * The preferred way to handle this is to call {@code close} on the {@link Closeable} returned by the
+         * {@code registerSocket} and let it handle unregistering the binding and closing the socket.
+         *
+         * @param socket the socket. Cannot be {@code null}
+         */
         void unregisterSocket(Socket socket);
+
+        /**
+         * Unregisters a binding previously {@link #registerSocket(ServerSocket) registered for the socket}.
+         * <p>
+         * <strong>For unregistration to work, this method must be called before the socket is closed.</strong>
+         * The preferred way to handle this is to call {@code close} on the {@link Closeable} returned by the
+         * {@code registerSocket} and let it handle unregistering the binding and closing the socket.
+         *
+         * @param socket the socket. Cannot be {@code null}
+         */
         void unregisterSocket(ServerSocket socket);
+
+        /**
+         * Unregisters a binding previously {@link #registerSocket(DatagramSocket) registered for the socket}.
+         * <p>
+         * <strong>For unregistration to work, this method must be called before the socket is closed.</strong>
+         * The preferred way to handle this is to call {@code close} on the {@link Closeable} returned by the
+         * {@code registerSocket} and let it handle unregistering the binding and closing the socket.
+         *
+         * @param socket the socket. Cannot be {@code null}
+         */
         void unregisterSocket(DatagramSocket socket);
+
+        /**
+         * Unregisters a binding previously {@link #registerChannel(SocketChannel) registered for the channel}.
+         * <p>
+         * <strong>For unregistration to work, this method must be called before the channel's socket is closed.</strong>
+         * The preferred way to handle this is to call {@code close} on the {@link Closeable} returned by the
+         * {@code registerSocket} and let it handle unregistering the binding and closing the socket.
+         *
+         * @param channel the channel. Cannot be {@code null}
+         */
         void unregisterChannel(SocketChannel channel);
+
+        /**
+         * Unregisters a binding previously {@link #registerChannel(ServerSocketChannel) registered for the channel}.
+         * <p>
+         * <strong>For unregistration to work, this method must be called before the channel's socket is closed.</strong>
+         * The preferred way to handle this is to call {@code close} on the {@link Closeable} returned by the
+         * {@code registerSocket} and let it handle unregistering the binding and closing the socket.
+         *
+         * @param channel the channel. Cannot be {@code null}
+         */
         void unregisterChannel(ServerSocketChannel channel);
+
+        /**
+         * Unregisters a binding previously {@link #registerChannel(DatagramChannel) registered for the channel}.
+         * <p>
+         * <strong>For unregistration to work, this method must be called before the channel's socket is closed.</strong>
+         * The preferred way to handle this is to call {@code close} on the {@link Closeable} returned by the
+         * {@code registerSocket} and let it handle unregistering the binding and closing the socket.
+         *
+         * @param channel the channel. Cannot be {@code null}
+         */
         void unregisterChannel(DatagramChannel channel);
+
+        /**
+         * {@inheritDoc}
+         *
+         * @throws IllegalStateException if {@link ManagedBinding#getBindAddress()} returns {@code null}
+         */
+        @Override
+        void registerBinding(final ManagedBinding binding);
+
+        /**
+         * {@inheritDoc}
+         *
+         * @throws IllegalStateException if {@link ManagedBinding#getBindAddress()} returns {@code null}
+         */
+        @Override
+        void unregisterBinding(final ManagedBinding binding);
 
     }
 

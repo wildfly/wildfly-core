@@ -87,13 +87,15 @@ public class ManagedMulticastSocketBinding extends MulticastSocket implements Ma
 
     @Override
     public void close() {
+        // First unregister, then close. This allows UnnamedRegistryImpl
+        // to get the bind address before it's gone
         try {
-            super.close();
-        } finally {
             // This method might have been called from the super constructor
             if (this.socketBindings != null) {
                 socketBindings.unregisterBinding(this);
             }
+        } finally {
+            super.close();
         }
     }
 }

@@ -74,13 +74,15 @@ public class ManagedDatagramSocketBinding extends DatagramSocket implements Mana
 
     @Override
     public void close() {
+        // First unregister, then close. This allows UnnamedRegistryImpl
+        // to get the bind address before it's gone
         try {
-            super.close();
-        } finally {
             // This method might have been called from the super constructor
             if (this.registry != null) {
                 registry.unregisterBinding(this);
             }
+        } finally {
+            super.close();
         }
     }
 }
