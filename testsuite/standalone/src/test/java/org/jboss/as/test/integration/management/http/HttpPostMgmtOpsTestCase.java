@@ -223,7 +223,7 @@ public class HttpPostMgmtOpsTestCase {
     }
 
     @Test
-    @Ignore("needs to be moved somewhere else")
+    @Ignore("WFCORE-1123 -- needs to test add/remove of resources that are available in core")
     public void testAddRemoveOperation() throws Exception {
 
         // add new connector
