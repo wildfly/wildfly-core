@@ -21,23 +21,22 @@
 */
 package org.wildfly.core.test.standalone.mgmt.api;
 
-import java.io.IOException;
-
-import org.junit.Assert;
-import org.jboss.as.test.integration.management.util.MgmtOperationException;
-import org.jboss.as.test.integration.management.util.ModelUtil;
-import org.jboss.dmr.ModelNode;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
-import org.wildfly.core.testrunner.WildflyTestRunner;
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALIDATE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+
+import java.io.IOException;
+
+import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.integration.management.util.ModelUtil;
+import org.jboss.dmr.ModelNode;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
+import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
  * Tests that the validate-operation operation works as it should
@@ -61,7 +60,6 @@ public class ValidateOperationOperationTestCase extends ContainerResourceMgmtTes
     }
 
     @Test()
-    @Ignore("Needs to be revisited")
     public void testValidChildOperation() throws IOException, MgmtOperationException {
         ModelNode op = ModelUtil.createOpNode("subsystem=jmx/remoting-connector=jmx", ADD);
         executeOperation(createValidateOperation(op));
@@ -75,7 +73,6 @@ public class ValidateOperationOperationTestCase extends ContainerResourceMgmtTes
     }
 
     @Test
-    @Ignore("Needs to be revisited")
     public void testValidInheritedOperation() throws IOException, MgmtOperationException {
         ModelNode op = ModelUtil.createOpNode("subsystem=jmx/remoting-connector=jmx", READ_OPERATION_DESCRIPTION_OPERATION);
         op.get(NAME).set("Doesn't matter");
