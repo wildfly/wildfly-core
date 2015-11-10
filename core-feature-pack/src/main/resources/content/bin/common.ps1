@@ -6,17 +6,6 @@ if($PSVersionTable.PSVersion.Major -lt 2) {
 $SCRIPTS_HOME = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName
 $RESOLVED_JBOSS_HOME = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.Parent.FullName
 
-
-$global:SECMGR = $false
-$global:DEBUG_MODE=$false
-$global:DEBUG_PORT=8787
-$global:RUN_IN_BACKGROUND=$false
-$global:GC_LOG=$false
-#module opts that are passed to jboss modules
-$global:MODULE_OPTS = @()
-
-# A collection of functions that are used by the other scripts
-
 Function Set-Env {
   $key = $args[0]
   $value = $args[1]
@@ -30,6 +19,17 @@ Function Get-Env {
   }
   return $args[1]
 }
+
+
+$global:SECMGR = $false
+$global:DEBUG_MODE=Get-Env DEBUG $false
+$global:DEBUG_PORT=Get-Env DEBUG_PORT 8787
+$global:RUN_IN_BACKGROUND=$false
+$global:GC_LOG=$false
+#module opts that are passed to jboss modules
+$global:MODULE_OPTS = @()
+
+# A collection of functions that are used by the other scripts
 
 Function Get-String {
   $value = ''
