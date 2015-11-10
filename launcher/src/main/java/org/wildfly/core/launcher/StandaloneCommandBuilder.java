@@ -120,6 +120,10 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
                 case SECURITY_MANAGER_PROP:
                     setUseSecurityManager(true);
                     break;
+                case PREFER_IPV4_PROP:
+                    javaOpts.remove(PREFER_IPV4_PROP); //remove default value
+                    javaOpts.add(argument);
+                    break;
                 default:
                     javaOpts.add(argument);
                     break;
