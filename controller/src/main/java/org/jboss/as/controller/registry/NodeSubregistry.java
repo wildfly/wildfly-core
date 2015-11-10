@@ -24,6 +24,7 @@ package org.jboss.as.controller.registry;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +35,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -85,23 +87,66 @@ final class NodeSubregistry {
         return new HashSet<String>(snapshot.keySet());
     }
 
-    ManagementResourceRegistration register(final String elementValue, final ResourceDefinition provider, boolean ordered) {
+    ManagementResourceRegistration registerChild(final String elementValue, final ResourceDefinition provider) {
+        boolean ordered = provider.isOrderedChild();
+
         final AbstractResourceRegistration newRegistry =
                 new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, ordered, capabilityRegistry);
+
+        // Populate the MRR before registering it so other threads reading the registry
+        // see the full set of data.
+        // But we wait to record ordered child, capabilities and access constraint utilization
+        // because we don't want to put data in those external data structures until
+        // we know the registration won't be rejected
+        provider.registerAttributes(newRegistry);
+        provider.registerOperations(newRegistry);
+        provider.registerNotifications(newRegistry);
+        provider.registerChildren(newRegistry);
+
+        newRegistry.initialized();
+
         final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (existingRegistry != null) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
         }
+
+
+        // Now we can update the parent's ordered child list,
+        // the capability registry and the constraintUtilitizationRegistry.
+
+        // Concurrency analysis for races between readers of this data + MRR tree vs these writes:
+        // Ordered child list is only used during creation of child resources of this type, which
+        // can't happen before this method returns, so there is no racing issue.
+        // Capabilities, it's valid to say a resource type is registered without its capabilities
+        // being immediately visible.
+        // Similarly, it's no big deal if a reader of the constraintUtilizationRegistry doesn't see
+        // the info for a new resource type until a tiny delay after the type is registered. It's just informational.
+
+        provider.registerCapabilities(newRegistry);
+        if (constraintUtilizationRegistry != null) {
+            PathAddress childAddress = newRegistry.getPathAddress();
+            List<AccessConstraintDefinition> constraintDefinitions = provider.getAccessConstraints();
+            for (AccessConstraintDefinition acd : constraintDefinitions) {
+                constraintUtilizationRegistry.registerAccessConstraintResourceUtilization(acd.getKey(), childAddress);
+            }
+        }
+
+        if (ordered) {
+            AbstractResourceRegistration parentRegistration = getParent();
+            parentRegistration.setOrderedChild(keyName);
+        }
+
         return newRegistry;
     }
 
     ProxyControllerRegistration registerProxyController(final String elementValue, final ProxyController proxyController) {
         final ProxyControllerRegistration newRegistry = new ProxyControllerRegistration(elementValue, this, proxyController);
+        newRegistry.initialized(); // BES 2015/11/05 I could put this call in the ProxyControllerReg c'tor but prefer
+                                   // having all these calls done the same way in this class when the MRR is created
         final AbstractResourceRegistration appearingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (appearingRegistry != null) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
         }
-        //register(elementValue, newRegistry);
         return newRegistry;
     }
 
@@ -112,6 +157,8 @@ final class NodeSubregistry {
 
     public AliasResourceRegistration registerAlias(final String elementValue, AliasEntry aliasEntry, AbstractResourceRegistration target) {
         final AliasResourceRegistration newRegistry = new AliasResourceRegistration(elementValue, this, aliasEntry, target);
+        newRegistry.initialized();  // BES 2015/11/05 I could put this call in the ProxyControllerReg c'tor but prefer
+                                    // having all these calls done the same way in this class when the MRR is created
         final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
         if (existingRegistry != null) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
