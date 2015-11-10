@@ -77,7 +77,10 @@ public class ManagedDatagramSocketBinding extends DatagramSocket implements Mana
         try {
             super.close();
         } finally {
-            registry.unregisterBinding(this);
+            // This method might have been called from the super constructor
+            if (this.registry != null) {
+                registry.unregisterBinding(this);
+            }
         }
     }
 }
