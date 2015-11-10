@@ -5,8 +5,8 @@
 #         standalone.sh --debug 9797
 
 # By default debug mode is disable.
-DEBUG_MODE=false
-DEBUG_PORT="8787"
+DEBUG_MODE="${DEBUG:-false}"
+DEBUG_PORT="${DEBUG_PORT:-8787}"
 SERVER_OPTS=""
 while [ "$#" -gt 0 ]
 do
