@@ -66,11 +66,6 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         return readResource("/logging.xml");
     }
 
-    @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/jboss-as-logging_3_0.xsd";
-    }
-
     @Test
     public void testExpressions() throws Exception {
         standardSubsystemTest("/expressions.xml");

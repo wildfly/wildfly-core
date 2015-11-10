@@ -50,6 +50,7 @@ public class ThreadsSubsystem11TestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
+        //This is an old version so overide the automatic search for the latest
         return "schema/jboss-as-threads_1_1.xsd";
     }
 

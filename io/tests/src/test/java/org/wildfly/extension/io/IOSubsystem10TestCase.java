@@ -24,6 +24,8 @@
 
 package org.wildfly.extension.io;
 
+import java.io.IOException;
+
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
@@ -35,8 +37,6 @@ import org.junit.Test;
 import org.wildfly.common.cpu.ProcessorInfo;
 import org.xnio.Options;
 import org.xnio.XnioWorker;
-
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
@@ -55,6 +55,7 @@ public class IOSubsystem10TestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
+        //This is an old version so overide the automatic search for the latest
         return "schema/wildfly-io_1_0.xsd";
     }
 

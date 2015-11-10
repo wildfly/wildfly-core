@@ -28,6 +28,8 @@ import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -105,15 +107,15 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-remoting_3_0.xsd";
-    }
-
-    @Override
     protected String[] getSubsystemTemplatePaths() throws IOException {
         return new String[] {
                 "/subsystem-templates/remoting.xml"
         };
+    }
+
+    @Override
+    protected Path getSubsystemBaseDirectory() {
+        return Paths.get("..", "subsystem");
     }
 
     @Override

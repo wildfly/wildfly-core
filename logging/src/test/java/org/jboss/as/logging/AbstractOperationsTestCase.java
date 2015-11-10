@@ -22,7 +22,9 @@
 
 package org.jboss.as.logging;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
@@ -60,6 +62,11 @@ public abstract class AbstractOperationsTestCase extends AbstractLoggingSubsyste
             clearLogContext(contextSelector.get(PROFILE));
             contextSelector.remove(PROFILE);
         }
+    }
+
+    @Override
+    public void testSchema() throws Exception {
+        //Don't test the schema for these non-parsing tests. The schema is tested
     }
 
     protected void testWrite(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute, final String value) {

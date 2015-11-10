@@ -22,14 +22,20 @@
 
 package org.jboss.as.subsystem.test;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller.Extension;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.model.test.ModelTestUtils;
@@ -63,19 +69,72 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
     protected abstract String getSubsystemXml() throws IOException;
 
     /**
-     * Get the pathc of the subsystem XML Schema.
-     *
-     * If the returned value is not null, the subsystem's XML will be validated against these schemas in #testSchema
-     *
-     * By default, this method returns an null (thus disabling the #testSchema and #testSchemaOfSubsystemTemplates tests).
+     * Get the path of the subsystem XML Schema.
+     * <p/>
+     * It attempts to find the xsds in the {@code schema} directory and figures out the highest version for usage in {@link #testSchema()}.
+     * If the subsystem resides in another project directory from this test, override {@link #getSubsystemBaseDirectory()}
+     * to provide a path to the subsystem directory.
      *
      * Note that the XSD validation may fail if the XML contains attributes or text that uses expressions.
      * In that case, you will have to make sure that the corresponding expressions have resolved properties
-     * returned by #getResolvedProperties.
+     * returned by {@link #getResolvedProperties()}.
+     *
+     * @return a resource path relative to the classloader that can be used with readResource()
      */
     protected String getSubsystemXsdPath() throws Exception {
-        return null;
+        class Finder {
+            final File dir;
+            final Pattern pattern;
+            final boolean patternIncludesSubsystem;
+
+            private Finder(File dir, Pattern pattern, boolean patternIncludesSubsystem) {
+                this.dir = dir;
+                this.pattern = pattern;
+                this.patternIncludesSubsystem = patternIncludesSubsystem;
+            }
+
+            File findHighestVersion(){
+                ModelVersion max = null;
+                File maxFile = null;
+                for (File file : dir.listFiles((d, f) -> pattern.matcher(f).matches())) {
+                    final ModelVersion version = getVersionForStandardNamedXsdFile(file.getName());
+                    final int comparison = max == null ? 1 : ModelVersion.compare(max, version);
+                    if (!patternIncludesSubsystem && comparison == 0) {
+                        throw new IllegalStateException("Can not determine the max schema version. " +
+                                "If you are a module with several subsystems, override this method and hardcode the schema");
+                    }
+                    if (comparison > 0) {
+                        max = getVersionForStandardNamedXsdFile(file.getName());
+                        maxFile = file;
+                    }
+                }
+                return maxFile;
+            }
+
+            private ModelVersion getVersionForStandardNamedXsdFile(String name) {
+                int xsd = name.length() - 4;
+                int minorStart = name.lastIndexOf("_", xsd);
+                int majorStart = name.lastIndexOf("_", minorStart - 1);
+                return ModelVersion.create(
+                        Integer.valueOf(name.substring(majorStart + 1, minorStart)),
+                        Integer.valueOf(name.substring(minorStart + 1, xsd))
+                );
+            }
+        }
+        final Path dir = findDirectoryRelativeToSubsystemDirectory(Paths.get("target", "classes", "schema"));
+        File file = new Finder(dir.toFile(), Pattern.compile("(jboss-as-|wildfly-)" + getMainSubsystemName()  + "_\\d*_\\d*\\.xsd"), true).findHighestVersion();
+        if (file == null) {
+            //In some cases the xsd for a subsystem does not follow the standard naming pattern so relax the requirement
+            file = new Finder(dir.toFile(), Pattern.compile("(jboss-as-|wildfly-).*_\\d*_\\d*\\.xsd"), false).findHighestVersion();
+        }
+        if (file == null) {
+            throw new IllegalStateException("Could not determine max schema file. Override this method and hardcode it");
+        }
+        return getResourcePathRelativeToSubsystemDirectory(file.toPath());
     }
+
+
+
 
     /**
      * Get the paths of the subsystem XML templates (such as <code>/subsystem-templates/io.xml</code> file for the IO subsystem).
@@ -91,15 +150,46 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
         return new String[0];
     }
 
+    private String getResourcePathRelativeToSubsystemDirectory(Path path) {
+        Path classesDir = getSubsystemBaseDirectory().resolve(Paths.get("target", "classes")).toAbsolutePath().normalize();
+        Path relative = classesDir.relativize(path);
+
+        //Take windows into account
+        return relative.toString().replace('\\', '/');
+
+    }
+
     /**
      * Return the properties to use to resolve any expressions in the subsystem's XML prior to its XSD validation.
      *
      * If the XML contains an expression instead of a valid type (e.g. a boolean or a int), the XSD validation will
      * fail. To make sure the XML is valid (except for those expressions), this method can be used to resolve any such
      * expressions in the XML before the validation process.
+     *
+     * @return The resolved properties
      */
     protected Properties getResolvedProperties() {
         return new Properties();
+    }
+
+    private Path findDirectoryRelativeToSubsystemDirectory(Path relativePath) {
+        final Path subsystemDirectory = getSubsystemBaseDirectory().toAbsolutePath().normalize();
+        final Path dir = subsystemDirectory.resolve(relativePath).normalize().toAbsolutePath();
+        if (!Files.exists(dir)) {
+            throw new IllegalStateException("Directory " + dir + " could not be found");
+        }
+        if (!Files.isDirectory(dir)) {
+            throw new IllegalStateException(dir + " is not a directory");
+        }
+        return dir;
+    }
+
+    /**
+     *
+     * @return
+     */
+    protected Path getSubsystemBaseDirectory() {
+        return Paths.get(".");
     }
 
     /**
@@ -122,11 +212,19 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
         standardSubsystemTest(null);
     }
 
+    /**
+     * To disable this test, override it in the unit test case. This should only be done in special circumstances, such
+     * as the test being for an xml for an old version of the schema which will not validate against the current one
+     * which will be automatically loaded by the framework in the {@link #getSubsystemXsdPath()}. An alternative is to
+     * override that method to provide the old schema, however it is rather pointless validating already released schemas
+     * and xml configurations.
+     *
+     * @throws Exception
+     */
     @Test
     public void testSchema() throws Exception {
         String schemaPath = getSubsystemXsdPath();
-        Assume.assumeTrue("getSubsystemXsdPath() has been overridden to disable the validation of the subsystem templates",
-                schemaPath != null);
+        Assert.assertNotNull("Could not determine subsystem path", schemaPath);
         SchemaValidator.validateXML(getSubsystemXml(), schemaPath, getResolvedProperties());
     }
 

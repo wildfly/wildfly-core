@@ -48,6 +48,8 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -301,6 +303,11 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
     @Override
     protected String getSubsystemXml(String resource) throws IOException {
         return readResource(resource);
+    }
+
+    @Override
+    protected Path getSubsystemBaseDirectory() {
+        return Paths.get("..", "subsystem");
     }
 
     @Override

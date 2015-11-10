@@ -49,11 +49,6 @@ public class ThreadsSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-threads_2_0.xsd";
-    }
-
-    @Override
     protected void validateDescribeOperation(KernelServices hc, AdditionalInitialization serverInit, ModelNode expectedModel) throws Exception {
         final ModelNode operation = createDescribeOperation();
         final ModelNode result = hc.executeOperation(operation);

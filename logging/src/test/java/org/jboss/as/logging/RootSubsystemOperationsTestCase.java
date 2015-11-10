@@ -22,11 +22,16 @@
 
 package org.jboss.as.logging;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Properties;
 
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -62,6 +67,13 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("/simple-subsystem.xml");
+    }
+
+    @Override
+    protected Properties getResolvedProperties() {
+        Properties properties = new Properties();
+        properties.put("jboss.server.log.dir", Paths.get(".").toAbsolutePath().normalize().toString());
+        return properties;
     }
 
     @Test

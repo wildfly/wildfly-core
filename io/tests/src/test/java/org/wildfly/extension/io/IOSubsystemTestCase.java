@@ -25,6 +25,8 @@
 package org.wildfly.extension.io;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.RunningMode;
@@ -59,15 +61,15 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-io_1_1.xsd";
-    }
-
-    @Override
     protected String[] getSubsystemTemplatePaths() throws IOException {
         return new String[]{
                 "/subsystem-templates/io.xml"
         };
+    }
+
+    @Override
+    protected Path getSubsystemBaseDirectory() {
+        return Paths.get("..", "subsystem");
     }
 
     @Test
