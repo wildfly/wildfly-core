@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -73,7 +72,6 @@ import org.jboss.msc.service.ServiceTarget;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -308,41 +306,43 @@ public class PlatformMBeanResourceUnitTestCase {
         // TODO validate values
     }
 
-    @Ignore("[AS7-2185]")
-    @Test
-    public void testPlatformLoggingMXBean() throws IOException {
-        if (PlatformMBeanUtil.JVM_MAJOR_VERSION < 7) {
-            ModelNode op = getOperation(READ_RESOURCE_DESCRIPTION_OPERATION, "logging", null);
-            executeOp(op, true);
-            op = getOperation(READ_RESOURCE_OPERATION, "logging", null);
-            executeOp(op, true);
-
-            return;
-        }
-
-        DescribedResource describedResource = basicResourceTest("logging", null);
-        // TODO validate values
-
-        java.util.logging.Logger.getLogger("test.platform.logging");
-        java.util.logging.Logger.getLogger("test.platform.logging.mbean").setLevel(Level.FINE);
-
-        ModelNode op = getOperation("set-logger-level", "logging", null);
-        op.get("logger-name").set("test.platform.logging.mbean");
-        op.get("level-name").set(Level.SEVERE.getName());
-        Assert.assertFalse(executeOp(op, false).isDefined());
-
-        op = getOperation("get-logger-level", "logging", null);
-        op.get("logger-name").set("test.platform.logging.mbean");
-        ModelNode result = executeOp(op, false);
-        Assert.assertTrue(result.isDefined());
-        Assert.assertEquals(Level.SEVERE.getName(), result.asString());
-
-        op = getOperation("get-parent-logger-name", "logging", null);
-        op.get("logger-name").set("test.platform.logging.mbean");
-        result = executeOp(op, false);
-        Assert.assertTrue(result.isDefined());
-        Assert.assertEquals("test.platform.logging", result.asString());
-    }
+    // Per AS7-2185 we do not support interacting with the PlatformLoggingMXBean via
+    // the main management API
+//    @Ignore("[AS7-2185]")
+//    @Test
+//    public void testPlatformLoggingMXBean() throws IOException {
+//        if (PlatformMBeanUtil.JVM_MAJOR_VERSION < 7) {
+//            ModelNode op = getOperation(READ_RESOURCE_DESCRIPTION_OPERATION, "logging", null);
+//            executeOp(op, true);
+//            op = getOperation(READ_RESOURCE_OPERATION, "logging", null);
+//            executeOp(op, true);
+//
+//            return;
+//        }
+//
+//        DescribedResource describedResource = basicResourceTest("logging", null);
+//        // TODO validate values
+//
+//        java.util.logging.Logger.getLogger("test.platform.logging");
+//        java.util.logging.Logger.getLogger("test.platform.logging.mbean").setLevel(Level.FINE);
+//
+//        ModelNode op = getOperation("set-logger-level", "logging", null);
+//        op.get("logger-name").set("test.platform.logging.mbean");
+//        op.get("level-name").set(Level.SEVERE.getName());
+//        Assert.assertFalse(executeOp(op, false).isDefined());
+//
+//        op = getOperation("get-logger-level", "logging", null);
+//        op.get("logger-name").set("test.platform.logging.mbean");
+//        ModelNode result = executeOp(op, false);
+//        Assert.assertTrue(result.isDefined());
+//        Assert.assertEquals(Level.SEVERE.getName(), result.asString());
+//
+//        op = getOperation("get-parent-logger-name", "logging", null);
+//        op.get("logger-name").set("test.platform.logging.mbean");
+//        result = executeOp(op, false);
+//        Assert.assertTrue(result.isDefined());
+//        Assert.assertEquals("test.platform.logging", result.asString());
+//    }
 
     @Test
     public void testRuntimeMXBean() throws IOException {
