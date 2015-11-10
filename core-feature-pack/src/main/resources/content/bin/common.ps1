@@ -21,7 +21,7 @@ Function Get-Env {
 }
 
 
-$global:SECMGR = $false
+$global:SECMGR = Get-Env SECMGR $false
 $global:DEBUG_MODE=Get-Env DEBUG $false
 $global:DEBUG_PORT=Get-Env DEBUG_PORT 8787
 $global:RUN_IN_BACKGROUND=$false
