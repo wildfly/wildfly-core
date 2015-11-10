@@ -40,6 +40,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     static final String HOME_DIR = Environment.HOME_DIR;
     static final String SECURITY_MANAGER_ARG = "-secmgr";
     static final String SECURITY_MANAGER_PROP = "java.security.manager";
+    static final String PREFER_IPV4_PROP = "java.net.preferIPv4Stack";
     static final String[] DEFAULT_VM_ARGUMENTS;
 
     static {

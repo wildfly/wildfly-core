@@ -505,6 +505,10 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
                         setLogDirectory(argument.getValue());
                     }
                     break;
+                case PREFER_IPV4_PROP:
+                    hostControllerJavaOpts.remove(PREFER_IPV4_PROP); //remove default value
+                    hostControllerJavaOpts.add(argument);
+                    break;
                 default:
                     hostControllerJavaOpts.add(argument);
                     break;
@@ -594,6 +598,9 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
             final Argument argument = Arguments.parse(arg);
             if (argument.getKey().equals(SECURITY_MANAGER_PROP)) {
                 setUseSecurityManager(true);
+            } else if (argument.getKey().equals(PREFER_IPV4_PROP)) {
+                processControllerJavaOpts.remove(PREFER_IPV4_PROP); //remove default value
+                processControllerJavaOpts.add(argument);
             } else {
                 processControllerJavaOpts.add(argument);
             }

@@ -68,6 +68,7 @@ public class CommandBuilderTest {
                 .setDebug(true, 5005)
                 .setServerConfiguration("standalone-full.xml")
                 .addJavaOption("-Djava.security.manager")
+                .addJavaOption("-Djava.net.preferIPv4Stack=false")
                 .setBindAddressHint("management", "0.0.0.0");
 
         // Get all the commands
@@ -84,6 +85,12 @@ public class CommandBuilderTest {
         Assert.assertTrue("Missing server configuration file override", commands.contains("-c=standalone-full.xml"));
 
         Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
+
+        Assert.assertEquals("There should be only one", 1, commandBuilder.getJavaOptions().stream()
+                .filter(s -> s.contains("preferIPv4Stack"))
+                .count());
+
+        Assert.assertTrue("Ipv4 should be set to false", commandBuilder.getJavaOptions().contains("-Djava.net.preferIPv4Stack=false"));
 
         // Rename the binding address
         commandBuilder.setBindAddressHint(null);
