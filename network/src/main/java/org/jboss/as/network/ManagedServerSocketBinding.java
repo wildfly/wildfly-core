@@ -90,8 +90,6 @@ public class ManagedServerSocketBinding extends ServerSocket implements ManagedB
 
     @Override
     public void close() throws IOException {
-        // First unregister, then close. This allows UnnamedRegistryImpl
-        // to get the bind address before it's gone
         try {
             if(name != null) {
                 socketBindings.getNamedRegistry().unregisterBinding(this);
