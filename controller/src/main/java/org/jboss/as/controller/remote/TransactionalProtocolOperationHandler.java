@@ -33,6 +33,7 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
 import javax.security.auth.Subject;
@@ -49,6 +50,7 @@ import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
 import org.jboss.as.protocol.mgmt.ManagementProtocol;
+import org.jboss.as.protocol.mgmt.ManagementProtocolHeader;
 import org.jboss.as.protocol.mgmt.ManagementRequestContext;
 import org.jboss.as.protocol.mgmt.ManagementRequestContext.AsyncTask;
 import org.jboss.as.protocol.mgmt.ManagementRequestHandler;
@@ -141,7 +143,10 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             // Set the response information and execute the operation
             final ExecuteRequestContext executeRequestContext = context.getAttachment();
             executeRequestContext.initialize(context);
-            context.executeAsync(new AsyncTask<TransactionalProtocolOperationHandler.ExecuteRequestContext>() {
+
+            @SuppressWarnings("deprecation")
+            AsyncTask<TransactionalProtocolOperationHandler.ExecuteRequestContext> task =
+                    new ManagementRequestContext.MultipleResponseAsyncTask<TransactionalProtocolOperationHandler.ExecuteRequestContext>() {
 
                 @Override
                 public void execute(final ManagementRequestContext<ExecuteRequestContext> context) throws Exception {
@@ -155,7 +160,14 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                     });
 
                 }
-            });
+
+                @Override
+                public ManagementProtocolHeader getCurrentRequestHeader() {
+                    ManagementRequestContext current = executeRequestContext.responseChannel;
+                    return current == null ? null : current.getRequestHeader();
+                }
+            };
+            context.executeAsync(task);
         }
 
         protected void doExecute(final ModelNode operation, final int attachmentsLength, final ManagementRequestContext<ExecuteRequestContext> context) {
@@ -171,13 +183,14 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             try {
                 // Execute the operation
                 result = internalExecute(attachmentsProxy, context, messageHandlerProxy, control);
-            } catch (Exception e) {
+            } catch (Throwable t) {
 
                 final ModelNode failure = new ModelNode();
                 failure.get(OUTCOME).set(FAILED);
-                failure.get(FAILURE_DESCRIPTION).set(e.getClass().getName() + ":" + e.getMessage());
+                failure.get(FAILURE_DESCRIPTION).set(t.getClass().getName() + ":" + t.getMessage());
                 executeRequestContext.failed(failure);
-                attachmentsProxy.shutdown(e);
+                attachmentsProxy.shutdown();
+                ControllerLogger.MGMT_OP_LOGGER.unexpectedOperationExecutionException(t, Collections.singletonList(operation));
                 return;
             }
 
@@ -407,7 +420,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                     sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_FAILED, response);
                     responseChannel = null;
                 } catch (IOException ignored) {
-                    ControllerLogger.MGMT_OP_LOGGER.debugf(ignored, "failed to process message");
+                    ControllerLogger.MGMT_OP_LOGGER.failedSendingFailedResponse(ignored, response, getOperationId());
                 }
             }
         }
@@ -519,7 +532,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                     sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_FAILED, response);
                     responseChannel = null; // we've now sent a response to the original request, so we can't use this one further
                 } catch (IOException e) {
-                    ControllerLogger.MGMT_OP_LOGGER.debugf(e, "failed to process message");
+                    ControllerLogger.MGMT_OP_LOGGER.failedSendingFailedResponse(e, response, getOperationId());
                 } finally {
                     getResultHandler().done(null);
                 }
@@ -544,7 +557,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                     sendResponse(responseChannel, ModelControllerProtocol.PARAM_OPERATION_COMPLETED, response.getResponseNode());
                     responseChannel = null; // we've now sent a response to the COMPLETE_TX_REQUEST, so we can't use this one further
                 } catch (IOException e) {
-                    ControllerLogger.MGMT_OP_LOGGER.debugf(e, "failed to process message");
+                    ControllerLogger.MGMT_OP_LOGGER.failedSendingCompletedResponse(e, response.getResponseNode(), getOperationId());
                 } finally {
                     getResultHandler().done(null);
                 }

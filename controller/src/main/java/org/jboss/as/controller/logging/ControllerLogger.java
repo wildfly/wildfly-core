@@ -3357,9 +3357,9 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     void removeUnsupportedLegacyExtension(List<String> subsystemNames, String extensionName);
 
-    @Message(id = 403, value = "Unexpected exception during execution of the following operation(s): %s")
+    @Message(id = 403, value = "Unexpected failure during execution of the following operation(s): %s")
     @LogMessage(level = ERROR)
-    void unexpectedOperationExecutionException(@Cause RuntimeException e, List<ModelNode> controllerOperations);
+    void unexpectedOperationExecutionException(@Cause Throwable t, List<ModelNode> controllerOperations);
 
     @Message(id = 404, value = "Unexpected exception during execution: %s")
     String unexpectedOperationExecutionFailureDescription(RuntimeException e);
@@ -3376,4 +3376,12 @@ public interface ControllerLogger extends BasicLogger {
      */
     @Message(id = 406, value = "Could not convert the attribute '%s' to a %s")
     OperationFailedException selectFailedCouldNotConvertAttributeToType(String attribute, ModelType type);
+
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 407, value = "Failed sending completed response %s for %d")
+    void failedSendingCompletedResponse(@Cause Throwable cause, ModelNode response, int operationId);
+
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 408, value = "Failed sending failure response %s for %d")
+    void failedSendingFailedResponse(@Cause Throwable cause, ModelNode response, int operationId);
 }
