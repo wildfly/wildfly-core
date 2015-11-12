@@ -259,7 +259,7 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
      * @param header the request header
      * @param error the exception
      */
-    protected static void safeWriteErrorResponse(final Channel channel, final ManagementProtocolHeader header, final Exception error) {
+    protected static void safeWriteErrorResponse(final Channel channel, final ManagementProtocolHeader header, final Throwable error) {
         if(header.getType() == ManagementProtocol.TYPE_REQUEST) {
             try {
                 writeErrorResponse(channel, (ManagementRequestHeader) header, error);
@@ -277,7 +277,7 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
      * @param error the error
      * @throws IOException
      */
-    protected static void writeErrorResponse(final Channel channel, final ManagementRequestHeader header, final Exception error) throws IOException {
+    protected static void writeErrorResponse(final Channel channel, final ManagementRequestHeader header, final Throwable error) throws IOException {
         final ManagementResponseHeader response = ManagementResponseHeader.create(header, error);
         final MessageOutputStream output = channel.writeMessage();
         try {
@@ -361,11 +361,18 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
                 protected void doExecute() {
                     try {
                         task.execute(context);
-                    } catch (Exception e) {
-                        ProtocolLogger.ROOT_LOGGER.debugf(e, " failed to process async request for %s on channel %s", task, channel);
-                        if(support.getResultHandler().failed(e)) {
-                            safeWriteErrorResponse(channel, header, e);
+                    } catch (Throwable t) {
+                        if(support.getResultHandler().failed(t)) {
+                            ManagementProtocolHeader requestHeader;
+                            if (task instanceof MultipleResponseAsyncTask) {
+                                requestHeader = ((MultipleResponseAsyncTask) task).getCurrentRequestHeader();
+                                requestHeader = requestHeader == null ? header : requestHeader;
+                            } else {
+                                requestHeader = header;
+                            }
+                            safeWriteErrorResponse(channel, requestHeader, t);
                         }
+                        ProtocolLogger.ROOT_LOGGER.debugf(t, " failed to process async request for %s on channel %s", task, channel);
                     }
                 }
             };

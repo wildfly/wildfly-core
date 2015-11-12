@@ -337,7 +337,7 @@ public class ResponseAttachmentInputStreamSupportTestCase {
         }
 
         @Override
-        public boolean failed(Exception e) {
+        public boolean failed(Throwable t) {
             int was = this.result;
             this.result += 10;
             return was == 0;
