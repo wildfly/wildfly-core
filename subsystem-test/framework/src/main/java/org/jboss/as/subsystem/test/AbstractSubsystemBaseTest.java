@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -41,7 +42,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 
 /**
@@ -134,29 +134,27 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
     }
 
 
-
-
     /**
-     * Get the paths of the subsystem XML templates (such as <code>/subsystem-templates/io.xml</code> file for the IO subsystem).
+     * Get the paths of the subsystem XML templates (such as <code>/subsystem-templates/io.xml</code> file for the IO subsystem)
+     * for usage in {@link #testSchemaOfSubsystemTemplates()}.
      *
-     * If the returned value is not null, the template &lt;subsystem&gt; element will be validated against this schema
-     * returned by #getSubsystemXsdPaths in #testSchemaOfSubsystemTemplates.
+     * It attempts to find the subsystem template file in the {@code subsystem-templates} directory.
+     * If the subsystem resides in another project directory from this test, override {@link #getSubsystemBaseDirectory()}
+     * to provide a path to the subsystem directory.
      *
      * Note that the XSD validation may fail if the XML contains attributes or text that uses expressions.
      * In that case, you will have to make sure that the corresponding expressions have resolved properties
      * returned by #getResolvedProperties.
+     *
+     * @return the subsystem template paths
      */
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[0];
-    }
-
-    private String getResourcePathRelativeToSubsystemDirectory(Path path) {
-        Path classesDir = getSubsystemBaseDirectory().resolve(Paths.get("target", "classes")).toAbsolutePath().normalize();
-        Path relative = classesDir.relativize(path);
-
-        //Take windows into account
-        return relative.toString().replace('\\', '/');
-
+    protected String[] getSubsystemTemplatePaths() throws Exception {
+        final Path dir = findDirectoryRelativeToSubsystemDirectory(Paths.get("target", "classes", "subsystem-templates"));
+        Path path = dir.resolve(getMainSubsystemName() + ".xml");
+        if (!Files.exists(path)) {
+            throw new IllegalStateException(path + " not found");
+        }
+        return new String[]{"/" + getResourcePathRelativeToSubsystemDirectory(path)};
     }
 
     /**
@@ -172,21 +170,10 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
         return new Properties();
     }
 
-    private Path findDirectoryRelativeToSubsystemDirectory(Path relativePath) {
-        final Path subsystemDirectory = getSubsystemBaseDirectory().toAbsolutePath().normalize();
-        final Path dir = subsystemDirectory.resolve(relativePath).normalize().toAbsolutePath();
-        if (!Files.exists(dir)) {
-            throw new IllegalStateException("Directory " + dir + " could not be found");
-        }
-        if (!Files.isDirectory(dir)) {
-            throw new IllegalStateException(dir + " is not a directory");
-        }
-        return dir;
-    }
-
     /**
+     * Override in case the subsystem lives in a different module from the subsystem tests.
      *
-     * @return
+     * @return the base directory for the subsystem
      */
     protected Path getSubsystemBaseDirectory() {
         return Paths.get(".");
@@ -224,20 +211,23 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
     @Test
     public void testSchema() throws Exception {
         String schemaPath = getSubsystemXsdPath();
-        Assert.assertNotNull("Could not determine subsystem path", schemaPath);
+        Assert.assertNotNull("Could not determine subsystem xsd path", schemaPath);
         SchemaValidator.validateXML(getSubsystemXml(), schemaPath, getResolvedProperties());
     }
 
     @Test
     public void testSchemaOfSubsystemTemplates() throws Exception {
         String schemaPath = getSubsystemXsdPath();
-        Assume.assumeTrue("getSubsystemXsdPath() has been overridden to disable the validation of the subsystem templates",
-                schemaPath != null);
-        String[] templates = getSubsystemTemplatePaths();
-        Assume.assumeTrue("Override getSubsystemTemplatePaths() to activate the validation of the subsystem templates",
-                templates != null && templates.length > 0);
+        Assert.assertNotNull("Could not determine subsystem xsd path",
+                schemaPath);
+        List<String> templates = Arrays.asList(getSubsystemTemplatePaths());
+        Assert.assertTrue("No template paths are returned",
+                templates != null && templates.size() > 0);
 
-        for (String template : templates) {
+        SubsystemTemplateResolver resolver = SubsystemTemplateResolver.create(getMainSubsystemName());
+        List<String> resolvedTemplates = resolver.resolveTemplates(templates);
+        Assert.assertTrue("No resolved templates", resolvedTemplates != null && resolvedTemplates.size() > 0);
+        for (String template : resolvedTemplates) {
             String content = readResource(template);
             SchemaValidator.validateXML(content, "subsystem", schemaPath, getResolvedProperties());
         }
@@ -389,4 +379,26 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
     protected Set<PathAddress> getIgnoredChildResourcesForRemovalTest() {
         return Collections.emptySet();
     }
+
+    private String getResourcePathRelativeToSubsystemDirectory(Path path) {
+        Path classesDir = getSubsystemBaseDirectory().resolve(Paths.get("target", "classes")).toAbsolutePath().normalize();
+        Path relative = classesDir.relativize(path);
+
+        //Take windows into account
+        return relative.toString().replace('\\', '/');
+
+    }
+
+    private Path findDirectoryRelativeToSubsystemDirectory(Path relativePath) {
+        final Path subsystemDirectory = getSubsystemBaseDirectory().toAbsolutePath().normalize();
+        final Path dir = subsystemDirectory.resolve(relativePath).normalize().toAbsolutePath();
+        if (!Files.exists(dir)) {
+            throw new IllegalStateException("Directory " + dir + " could not be found");
+        }
+        if (!Files.isDirectory(dir)) {
+            throw new IllegalStateException(dir + " is not a directory");
+        }
+        return dir;
+    }
+
 }

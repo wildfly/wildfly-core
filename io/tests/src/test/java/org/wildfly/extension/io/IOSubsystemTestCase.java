@@ -61,13 +61,6 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[]{
-                "/subsystem-templates/io.xml"
-        };
-    }
-
-    @Override
     protected Path getSubsystemBaseDirectory() {
         return Paths.get("..", "subsystem");
     }

@@ -54,6 +54,11 @@ public class ThreadsSubsystem11TestCase extends AbstractSubsystemBaseTest {
         return "schema/jboss-as-threads_1_1.xsd";
     }
 
+    @Override
+    public void testSchemaOfSubsystemTemplates() throws Exception {
+        //Since this subsystem does not have a subsystem template, make this test a no-op
+    }
+
     @Test
     public void testExpressions() throws Exception {
         standardSubsystemTest("expressions.xml", false);

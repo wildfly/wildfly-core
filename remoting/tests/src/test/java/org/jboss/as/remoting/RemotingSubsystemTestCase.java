@@ -107,13 +107,6 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[] {
-                "/subsystem-templates/remoting.xml"
-        };
-    }
-
-    @Override
     protected Path getSubsystemBaseDirectory() {
         return Paths.get("..", "subsystem");
     }

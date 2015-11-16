@@ -60,6 +60,11 @@ public class IOSubsystem10TestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
+    public void testSchemaOfSubsystemTemplates() throws Exception {
+        //This is an old version, testing the template's schema will be done elsewhere
+    }
+
+    @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("io-1.0.xml");
     }

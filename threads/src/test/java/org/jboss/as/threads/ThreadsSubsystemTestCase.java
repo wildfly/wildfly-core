@@ -49,6 +49,11 @@ public class ThreadsSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
+    public void testSchemaOfSubsystemTemplates() throws Exception {
+        //Since this subsystem does not have a subsystem template, make this test a no-op
+    }
+
+    @Override
     protected void validateDescribeOperation(KernelServices hc, AdditionalInitialization serverInit, ModelNode expectedModel) throws Exception {
         final ModelNode operation = createDescribeOperation();
         final ModelNode result = hc.executeOperation(operation);

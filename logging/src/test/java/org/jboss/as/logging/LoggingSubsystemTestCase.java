@@ -71,6 +71,10 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         standardSubsystemTest("/expressions.xml");
     }
 
+    public LoggingSubsystemTestCase() {
+        super();
+    }
+
     @Test
     public void testConfiguration() throws Exception {
         final KernelServices kernelServices = boot();
