@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
 import org.jboss.msc.service.Service;
@@ -277,8 +278,7 @@ public interface ContentRepository {
             }
 
             private Path getDeploymentContentFile(byte[] deploymentHash, boolean validate) {
-                final Path hashDir = getDeploymentHashDir(deploymentHash, validate);
-                return hashDir.resolve(CONTENT);
+                return getDeploymentHashDir(deploymentHash, validate).resolve(CONTENT);
             }
 
             protected Path getDeploymentHashDir(final byte[] deploymentHash, final boolean validate) {
@@ -375,8 +375,10 @@ public interface ContentRepository {
                     DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(ex, parent.toString());
                 }
                 Path grandParent = parent.getParent();
-                try {
-                    Files.deleteIfExists(grandParent);
+                try (Stream<Path> files = Files.list(grandParent)){
+                    if (!files.findAny().isPresent()) {
+                        Files.deleteIfExists(grandParent);
+                    }
                 } catch (IOException ex) {
                     DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(ex, grandParent.toString());
                 }
