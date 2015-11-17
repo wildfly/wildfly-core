@@ -357,7 +357,7 @@ while true; do
       fi
    fi
    if [ "$JBOSS_STATUS" -eq 10 ]; then
-      echo "Restarting JBoss..."
+      echo "Restarting application server..."
    else
       exit $JBOSS_STATUS
    fi
