@@ -18,6 +18,14 @@
  */
 package org.jboss.as.test.integration.domain.management.util;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -56,12 +64,14 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.client.helpers.domain.ServerIdentity;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
 import org.jboss.sasl.util.UsernamePasswordHashUtil;
+import org.junit.Assert;
 import org.wildfly.core.launcher.DomainCommandBuilder;
 
 /**
@@ -448,6 +458,18 @@ public class DomainLifecycleUtil {
         if (!serversAvailable) {
             throw new TimeoutException(String.format("Managed servers were not started within [%d] seconds", configuration.getStartupTimeoutInSeconds()));
         }
+    }
+
+    public Set<String> getRunningServers() throws IOException {
+        ModelNode op = Util.createEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, PathAddress.pathAddress(HOST, configuration.getHostName()));
+        op.get(CHILD_TYPE).set(RUNNING_SERVER);
+        ModelNode response = getDomainClient().execute(op);
+        Assert.assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+        Set<String> result = new HashSet<>();
+        response.get(RESULT).asList().stream().forEach((node) -> {
+            result.add(node.asString());
+        });
+        return result;
     }
 
     public void awaitHostController(long start) throws InterruptedException, TimeoutException {

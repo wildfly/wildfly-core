@@ -39,9 +39,15 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_PROFILE;
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
@@ -49,6 +55,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -78,32 +85,50 @@ public class IgnoredResourcesProfileCloneTestCase {
     private static final String CLONED_PROFILE = "cloned-profile";
 
     private static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "slave");
-    /**
-     * Domain configuration
-     */
-    private static File domainCfg;
-
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil masterLifecycleUtil;
     private static DomainLifecycleUtil slaveLifecycleUtil;
+
+    private static final Map<DomainLifecycleUtil, Set<String>> serversByHost = new HashMap<>();
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         testSupport = DomainTestSuite.createSupport(IgnoredResourcesProfileCloneTestCase.class.getSimpleName());
         masterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         slaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
-
-        File masterDir = new File(testSupport.getDomainMasterConfiguration().getDomainDirectory());
-        domainCfg = new File(masterDir, "configuration"
-                + File.separator + "testing-domain-standard.xml");
+        serversByHost.put(masterLifecycleUtil, masterLifecycleUtil.getRunningServers());
+        serversByHost.put(slaveLifecycleUtil, slaveLifecycleUtil.getRunningServers());
     }
 
     @AfterClass
     public static void afterClass() throws Exception {
+        awaitServers(masterLifecycleUtil);
+        awaitServers(slaveLifecycleUtil);
         testSupport = null;
         masterLifecycleUtil = null;
         slaveLifecycleUtil = null;
+        serversByHost.clear();
         DomainTestSuite.stopSupport();
+    }
+
+    private static void awaitServers(DomainLifecycleUtil util) throws InterruptedException, TimeoutException, IOException {
+        Set<String> required = serversByHost.get(util);
+        Set<String> unstarted;
+        long timeout = TimeoutUtil.adjust(120 * 1000);
+        long deadline = System.currentTimeMillis() + timeout;
+        do {
+            unstarted = new HashSet<>(required);
+            Set<String> running = util.getRunningServers();
+            unstarted.removeAll(running);
+            if (unstarted.isEmpty()) {
+                break;
+            }
+            TimeUnit.MILLISECONDS.sleep(250);
+        } while (System.currentTimeMillis() < deadline);
+
+        if (unstarted.size() > 0) {
+            throw new TimeoutException(String.format("Managed servers were not started within [%d] seconds: %s", timeout, unstarted));
+        }
     }
 
     @Test
