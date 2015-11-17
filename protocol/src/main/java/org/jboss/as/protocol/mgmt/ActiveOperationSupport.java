@@ -168,6 +168,7 @@ class ActiveOperationSupport {
             if(existing != null) {
                 throw ProtocolLogger.ROOT_LOGGER.operationIdAlreadyExists(operationId);
             }
+            ProtocolLogger.ROOT_LOGGER.tracef("Registered active operation %d", operationId);
             activeCount++; // condition.signalAll();
             return request;
         } finally {
@@ -206,6 +207,7 @@ class ActiveOperationSupport {
         lock.lock(); try {
             final ActiveOperation<?, ?> removed = activeRequests.remove(id);
             if(removed != null) {
+                ProtocolLogger.ROOT_LOGGER.tracef("Deregistered active operation %d", id);
                 activeCount--;
                 operationIdManager.freeBatchId(id);
                 condition.signalAll();
@@ -283,11 +285,15 @@ class ActiveOperationSupport {
             while(activeCount != 0) {
                 long remaining = deadline - System.currentTimeMillis();
                 if (remaining <= 0) {
-                    return activeCount == 0;
+                    break;
                 }
                 condition.await(remaining, TimeUnit.MILLISECONDS);
             }
-            return activeCount == 0;
+            boolean allComplete = activeCount == 0;
+            if (!allComplete) {
+                ProtocolLogger.ROOT_LOGGER.debugf("ActiveOperation(s) %s have not completed within %d %s", activeRequests.keySet(), timeout, unit);
+            }
+            return allComplete;
         } finally {
             lock.unlock();
         }

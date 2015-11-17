@@ -302,18 +302,19 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
     /**
      * The get file request.
      */
-    private class GetFileOperation implements ManagementRequestHandler<ModelNode, Void> {
+    private class GetFileOperation implements ManagementRequestHandler<Void, Void> {
 
         @Override
-        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<ModelNode> resultHandler, ManagementRequestContext<Void> context)
+        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context)
                 throws IOException {
+            HostControllerLogger.ROOT_LOGGER.tracef("Handling GetFileOperation with id %d", context.getOperationId());
             final RemoteFileRequestAndHandler.RootFileReader reader = new RemoteFileRequestAndHandler.RootFileReader() {
                 public File readRootFile(byte rootId, String filePath) throws RequestProcessingException {
                     byte[] hash = HashUtil.hexStringToByteArray(filePath);
                     return deploymentFileRepository.getDeploymentRoot(new ContentReference(filePath, hash));
                 }
             };
-            ServerToHostRemoteFileRequestAndHandler.INSTANCE.handleRequest(input, reader, context);
+            ServerToHostRemoteFileRequestAndHandler.INSTANCE.handleRequest(input, reader, resultHandler, context);
         }
     }
 

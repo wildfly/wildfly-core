@@ -167,7 +167,19 @@ public class ReloadHandler extends BaseOperationCommand {
 
     private void doHandleEmbedded(CommandContext ctx, ModelControllerClient client) throws CommandLineException {
 
+        assert(embeddedServerRef != null);
+        assert(embeddedServerRef.get() != null);
+
         final ModelNode op = this.buildRequestWithoutHeaders(ctx);
+        if (embeddedServerRef.get().isHostController()) {
+            // WFCORE-938
+            // for embedded-hc, we require --admin-only=true to be passed until the EHC supports --admin-only=false
+            final ParsedCommandLine args = ctx.getParsedCommandLine();
+            if (!this.adminOnly.isPresent(args) || "FALSE".equalsIgnoreCase(this.adminOnly.getValue(args))) {
+                throw new CommandLineException("Reload into running mode is not supported, --admin-only=true must be specified.");
+            }
+        }
+
         try {
             final ModelNode response = client.execute(op);
             if(!Util.isSuccess(response)) {

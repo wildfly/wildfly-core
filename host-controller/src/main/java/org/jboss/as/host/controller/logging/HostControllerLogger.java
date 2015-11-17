@@ -1253,8 +1253,11 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 168, value = "Socket binding group '%s' includes socket binding group '%s' and socket binding group '%s'. Both these socket binding groups define socket binding '%s', which is not supported")
     OperationFailedException socketBindingGroupIncludesSameSocketBinding(String socketBindingGroup, String include1, String include2, String child);
 
+    @Message(id = 169, value = "Reload into running mode is not supported with embedded host controller, admin-only=true must be specified.")
+    OperationFailedException embeddedHostControllerRestartMustProvideAdminOnlyTrue();
+
     @LogMessage(level = WARN)
-    @Message(id = 169, value = "No security realm or sasl server authentication defined for native management service; all access will be unrestricted.")
+    @Message(id = 170, value = "No security realm or sasl server authentication defined for native management service; all access will be unrestricted.")
     void nativeManagementInterfaceIsUnsecured();
 
 }

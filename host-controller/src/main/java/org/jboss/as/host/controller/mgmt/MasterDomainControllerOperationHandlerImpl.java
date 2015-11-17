@@ -27,6 +27,7 @@ import java.util.concurrent.Executor;
 
 import org.jboss.as.controller.HashUtil;
 import org.jboss.as.domain.controller.DomainController;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
@@ -41,7 +42,6 @@ import org.jboss.as.protocol.mgmt.RequestProcessingException;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.repository.RemoteFileRequestAndHandler.RootFileReader;
-import org.jboss.dmr.ModelNode;
 
 /**
  * Handles for requests from slave DC to master DC on the 'domain' channel.
@@ -76,12 +76,13 @@ class MasterDomainControllerOperationHandlerImpl implements ManagementRequestHan
     private class UnregisterOperation extends AbstractHostRequestHandler {
 
         @Override
-        void handleRequest(String hostId, DataInput input, ManagementRequestContext<Void> context) throws IOException {
+        void handleRequest(String hostId, DataInput input, ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context) throws IOException {
             domainController.unregisterRemoteHost(hostId, null, true);
             final FlushableDataOutput os = writeGenericResponseHeader(context);
             try {
                 os.write(ManagementProtocol.RESPONSE_END);
                 os.close();
+                resultHandler.done(null); // call stack (AbstractMessageHandler) handles failures
             } finally {
                 StreamUtils.safeClose(os);
             }
@@ -94,7 +95,8 @@ class MasterDomainControllerOperationHandlerImpl implements ManagementRequestHan
         private final DomainRemoteFileRequestAndHandler remoteSupport = new DomainRemoteFileRequestAndHandler(asyncExecutor);
 
         @Override
-        void handleRequest(String hostId, DataInput input, ManagementRequestContext<Void> context) throws IOException {
+        void handleRequest(String hostId, DataInput input, ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context) throws IOException {
+            DomainControllerLogger.ROOT_LOGGER.tracef("Handling GetFileOperation with id %d from %s", context.getOperationId(), hostId);
             final RootFileReader reader = new RootFileReader() {
                 public File readRootFile(byte rootId, String filePath) throws RequestProcessingException {
                     final HostFileRepository localFileRepository = domainController.getLocalFileRepository();
@@ -117,20 +119,19 @@ class MasterDomainControllerOperationHandlerImpl implements ManagementRequestHan
                 }
             };
 
-            remoteSupport.handleRequest(input, reader, context);
+            remoteSupport.handleRequest(input, reader, resultHandler, context);
         }
     }
 
-    abstract static class AbstractHostRequestHandler implements ManagementRequestHandler<ModelNode, Void> {
+    abstract static class AbstractHostRequestHandler implements ManagementRequestHandler<Void, Void> {
 
-        abstract void handleRequest(final String hostId, DataInput input, ManagementRequestContext<Void> context) throws IOException;
+        abstract void handleRequest(final String hostId, DataInput input, ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context) throws IOException;
 
         @Override
-        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<ModelNode> resultHandler, ManagementRequestContext<Void> context) throws IOException {
+        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context) throws IOException {
             expectHeader(input, DomainControllerProtocol.PARAM_HOST_ID);
             final String hostId = input.readUTF();
-            handleRequest(hostId, input, context);
-            resultHandler.done(null);
+            handleRequest(hostId, input, resultHandler, context);
         }
 
         protected FlushableDataOutput writeGenericResponseHeader(final ManagementRequestContext<Void> context) throws IOException {
