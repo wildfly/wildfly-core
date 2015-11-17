@@ -108,15 +108,20 @@ public class ConfigurationChangeResourceDefinition extends SimpleResourceDefinit
     }
 
     private static class ConfigurationChangeResourceRemoveHandler extends AbstractRemoveStepHandler {
+        @Override
+        protected boolean requiresRuntime(OperationContext context) {
+            return true;
+        }
 
-        public ConfigurationChangeResourceRemoveHandler() {
+        @Override
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+            super.performRuntime(context, operation, model);
             ConfigurationChangesCollector.INSTANCE.deactivate();
         }
     }
 
     private static class MaxHistoryWriteHandler extends AbstractWriteAttributeHandler<Integer> {
 
-        private static final MaxHistoryWriteHandler INSTANCE = new MaxHistoryWriteHandler(ConfigurationChangesCollector.INSTANCE);
         private final ConfigurationChangesCollector collector;
 
         private MaxHistoryWriteHandler(ConfigurationChangesCollector collector) {
