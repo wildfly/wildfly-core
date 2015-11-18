@@ -363,7 +363,13 @@ public class ManagementHttpServer {
         domainHandler = new AuthenticationConstraintHandler(domainHandler);
         Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier = () ->
             httpAuthenticationFactory.getMechanismNames().stream()
-            .map(httpAuthenticationFactory::createMechanism)
+            .map(s -> {
+                    try {
+                        return httpAuthenticationFactory.createMechanism(s);
+                    } catch (Exception e) {
+                        return null;
+                    }
+                })
             .collect(Collectors.toList());
         domainHandler = new ElytronContextAssociationHandler(domainHandler, mechanismSupplier);
 
