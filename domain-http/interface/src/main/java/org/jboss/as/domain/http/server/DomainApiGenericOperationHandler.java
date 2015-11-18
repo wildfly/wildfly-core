@@ -23,7 +23,9 @@
 package org.jboss.as.domain.http.server;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -32,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.domain.http.server.DomainUtil.writeResponse;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
@@ -175,7 +178,13 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         ModelNode response;
         final Operation builtOp = builder.build();
         try {
-            operation.get(OPERATION_HEADERS, ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
+            ModelNode opheaders = operation.get(OPERATION_HEADERS);
+            opheaders.get(ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
+            opheaders.get(CALLER_TYPE).set(USER);
+            // Don't allow a domain-uuid operation header from a user call
+            if (opheaders.hasDefined(DOMAIN_UUID)) {
+                opheaders.remove(DOMAIN_UUID);
+            }
             response = modelController.execute(operation, OperationMessageHandler.DISCARD, control, builtOp);
         } catch (Throwable t) {
             ROOT_LOGGER.modelRequestError(t);

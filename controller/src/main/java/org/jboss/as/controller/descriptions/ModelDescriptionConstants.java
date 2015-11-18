@@ -147,6 +147,7 @@ public class ModelDescriptionConstants {
     public static final String DOMAIN_ORGANIZATION = "domain-organization";
     public static final String DOMAIN_MODEL = "domain-model";
     public static final String DOMAIN_RESULTS = "domain-results";
+    public static final String DOMAIN_ROLLOUT = "domain-rollout";
     public static final String DOMAIN_UUID = "domain-uuid";
     public static final String DYNAMIC = "dynamic";
     public static final String DUMP_SERVICES = "dump-services";
