@@ -90,7 +90,10 @@ public class ManagedMulticastSocketBinding extends MulticastSocket implements Ma
         try {
             super.close();
         } finally {
-            socketBindings.unregisterBinding(this);
+            // This method might have been called from the super constructor
+            if (this.socketBindings != null) {
+                socketBindings.unregisterBinding(this);
+            }
         }
     }
 }
