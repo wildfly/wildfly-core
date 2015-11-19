@@ -53,10 +53,10 @@ import org.jboss.threads.AsyncFuture;
 public interface Bootstrap {
 
     /**
-     * Bootstrap a new server instance.  The list of updates should begin with extensions, followed by
-     * subsystem adds, followed by deployments.  The boot action of each update will be executed; this is
-     * the only time that this will happen.  This method will not block; the return value may be used to
-     * wait for the result (with an optional timeout) or register an asynchronous callback.
+     * Bootstrap a new server instance, providing a {@code Future} that will provide the
+     * server's MSC {@link ServiceContainer} once the root service for the server is started.
+     * <strong>Note:</strong> The future will provide its value before the full server boot is
+     * complete. To await the full boot, use {@link #startup(Configuration, List)}.
      *
      * @param configuration the server configuration
      * @param extraServices additional services to start and stop with the server instance
@@ -73,6 +73,12 @@ public interface Bootstrap {
      * @return the future service container
      */
     AsyncFuture<ServiceContainer> startup(Configuration configuration, List<ServiceActivator> extraServices);
+
+    /**
+     * Alerts this bootstrap instance that a failure has occurred during bootstrap or startup and it should
+     * clean up resources.
+     */
+    void failed();
 
     /**
      * The configuration for server bootstrap.

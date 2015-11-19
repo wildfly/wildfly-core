@@ -244,6 +244,7 @@ public class EmbeddedStandaloneServerFactory {
         @Override
         public void start() throws ServerStartException {
 
+            Bootstrap bootstrap = null;
             try {
                 final long startTime = System.currentTimeMillis();
 
@@ -266,7 +267,7 @@ public class EmbeddedStandaloneServerFactory {
                 // Determine the ServerEnvironment
                 ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED, startTime);
 
-                Bootstrap bootstrap = Bootstrap.Factory.newInstance();
+                bootstrap = Bootstrap.Factory.newInstance();
 
                 Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
 
@@ -308,8 +309,14 @@ public class EmbeddedStandaloneServerFactory {
                 establishModelControllerClient(controlledProcessStateService.getCurrentState());
 
             } catch (RuntimeException rte) {
+                if (bootstrap != null) {
+                    bootstrap.failed();
+                }
                 throw rte;
             } catch (Exception ex) {
+                if (bootstrap != null) {
+                    bootstrap.failed();
+                }
                 throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
             }
         }
