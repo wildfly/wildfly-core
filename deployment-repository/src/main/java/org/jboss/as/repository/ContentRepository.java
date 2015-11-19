@@ -436,20 +436,24 @@ public interface ContentRepository {
             private Set<ContentReference> listLocalContents() {
                 Set<ContentReference> localReferences = new HashSet<>();
                 File[] rootHashes = repoRoot.listFiles();
-                for (File rootHash : rootHashes) {
-                    if (rootHash.isDirectory()) {
-                        File[] complementaryHashes = rootHash.listFiles();
-                        if (complementaryHashes == null || complementaryHashes.length == 0) {
-                            ContentReference reference = new ContentReference(rootHash.getAbsolutePath(), rootHash.getName());
-                            localReferences.add(reference);
-                        } else {
-                            for (File complementaryHash : complementaryHashes) {
-                                String hash = rootHash.getName() + complementaryHash.getName();
-                                ContentReference reference = new ContentReference(complementaryHash.getAbsolutePath(), hash);
+                if (rootHashes != null) {
+                    for (File rootHash : rootHashes) {
+                        if (rootHash.isDirectory()) {
+                            File[] complementaryHashes = rootHash.listFiles();
+                            if (complementaryHashes == null || complementaryHashes.length == 0) {
+                                ContentReference reference = new ContentReference(rootHash.getAbsolutePath(), rootHash.getName());
                                 localReferences.add(reference);
+                            } else {
+                                for (File complementaryHash : complementaryHashes) {
+                                    String hash = rootHash.getName() + complementaryHash.getName();
+                                    ContentReference reference = new ContentReference(complementaryHash.getAbsolutePath(), hash);
+                                    localReferences.add(reference);
+                                }
                             }
                         }
                     }
+                } else {
+                    DeploymentRepositoryLogger.ROOT_LOGGER.localContentListError(repoRoot.getAbsolutePath());
                 }
                 return localReferences;
             }
