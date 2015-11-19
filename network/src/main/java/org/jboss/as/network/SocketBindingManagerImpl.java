@@ -257,10 +257,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
+            // First unregister, then close. This allows UnnamedRegistryImpl
+            // to get the bind address before it's gone
             try {
-                closeable.close();
-            } finally {
                 registry.unregisterBinding(this);
+            } finally {
+                closeable.close();
             }
         }
     }
@@ -288,10 +290,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
+            // First unregister, then close. This allows UnnamedRegistryImpl
+            // to get the bind address before it's gone
             try {
-                socket.close();
-            } finally {
                 registry.unregisterBinding(this);
+            } finally {
+                socket.close();
             }
         }
     }
@@ -313,10 +317,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
+            // First unregister, then close. This allows UnnamedRegistryImpl
+            // to get the bind address before it's gone
             try {
-                wrapped.close();
-            } finally {
                 registry.unregisterBinding(this);
+            } finally {
+                wrapped.close();
             }
         }
     }
@@ -343,10 +349,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
+            // First unregister, then close. This allows UnnamedRegistryImpl
+            // to get the bind address before it's gone
             try {
-                socket.close();
-            } finally {
                 registry.unregisterBinding(this);
+            } finally {
+                socket.close();
             }
         }
     }
@@ -373,10 +381,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
+            // First unregister, then close. This allows UnnamedRegistryImpl
+            // to get the bind address before it's gone
             try {
-                socket.close();
-            } finally {
                 registry.unregisterBinding(this);
+            } finally {
+                socket.close();
             }
         }
     }
@@ -497,9 +507,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         @Override
         public void unregisterBinding(ManagedBinding binding) {
             final InetSocketAddress address = binding.getBindAddress();
-            if(address == null) {
-                throw new IllegalStateException();
-            }
+            // WFCORE-1127 - we don't care if there is no address.
+            // This allows us to handle cases where a ManagedSocketBinding
+            // is closed before being bound.
+            //if(address == null) {
+            //    throw new IllegalStateException();
+            //}
             unregisterBinding(address);
         }
 
