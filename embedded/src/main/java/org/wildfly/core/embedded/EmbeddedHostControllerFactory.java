@@ -262,6 +262,7 @@ public class EmbeddedHostControllerFactory {
 
         @Override
         public void start() throws ServerStartException {
+            EmbeddedHostControllerBootstrap hostControllerBootstrap = null;
             try {
                 final long startTime = System.currentTimeMillis();
                 // Take control of server use of System.exit
@@ -286,7 +287,7 @@ public class EmbeddedHostControllerFactory {
                 // Determine the ServerEnvironment
                 HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, authCode, startTime);
                 FutureServiceContainer futureContainer = new FutureServiceContainer();
-                EmbeddedHostControllerBootstrap hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, authCode);
+                hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, authCode);
                 hostControllerBootstrap.bootstrap();
                 serviceContainer = futureContainer.get();
                 executorService = Executors.newCachedThreadPool();
@@ -296,8 +297,14 @@ public class EmbeddedHostControllerFactory {
                 controlledProcessStateService.addPropertyChangeListener(processStateListener);
                 establishModelControllerClient(controlledProcessStateService.getCurrentState());
             } catch (RuntimeException rte) {
+                if (hostControllerBootstrap != null) {
+                    hostControllerBootstrap.failed();
+                }
                 throw rte;
             } catch (Exception ex) {
+                if (hostControllerBootstrap != null) {
+                    hostControllerBootstrap.failed();
+                }
                 throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
             }
         }
