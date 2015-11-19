@@ -83,6 +83,15 @@ public class TransformerAttachmentAndInspectModelSubsystemTestCase extends Abstr
         //Don't do the checks, we have a fake parser, and the purpose of this test is completely different
     }
 
+    @Override
+    public void testSchema() throws Exception {
+        //This test does not have a schema for the subsystem so simply override the test method with this no-impl
+    }
+
+    @Override
+    public void testSchemaOfSubsystemTemplates() throws Exception {
+        //This test does not have a schema for the subsystem so simply override the test method with this no-impl
+    }
 
     @Test
     public void testTransformers() throws Exception {

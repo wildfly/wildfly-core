@@ -49,8 +49,8 @@ public class ThreadsSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-threads_2_0.xsd";
+    public void testSchemaOfSubsystemTemplates() throws Exception {
+        //Since this subsystem does not have a subsystem template, make this test a no-op
     }
 
     @Override

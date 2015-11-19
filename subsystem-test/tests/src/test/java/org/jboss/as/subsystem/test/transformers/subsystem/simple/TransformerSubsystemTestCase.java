@@ -94,6 +94,16 @@ public class TransformerSubsystemTestCase extends AbstractSubsystemBaseTest {
         testTransformers(ModelTestControllerVersion.EAP_6_4_0);
     }
 
+    @Override
+    public void testSchema() throws Exception {
+        //This test does not have a schema for the subsystem so simply override the test method with this no-impl
+    }
+
+    @Override
+    public void testSchemaOfSubsystemTemplates() throws Exception {
+        //This test does not have a schema for the subsystem so simply override the test method with this no-impl
+    }
+
     private void testTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
         ModelVersion oldVersion = ModelVersion.create(1, 0, 0);
         KernelServicesBuilder builder = createKernelServicesBuilder(null)
