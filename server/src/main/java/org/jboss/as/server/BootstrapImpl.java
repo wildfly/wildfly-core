@@ -28,6 +28,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.management.ObjectName;
+
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.server.logging.ServerLogger;
@@ -69,7 +70,7 @@ final class BootstrapImpl implements Bootstrap {
             return internalBootstrap(configuration, extraServices);
         } catch (RuntimeException | Error e) {
             // Clean up our container
-            shutdownHook.run();
+            shutdownHook.shutdown(true);
             throw e;
         }
     }
@@ -163,13 +164,18 @@ final class BootstrapImpl implements Bootstrap {
             ServiceController<?> controller = container.getRequiredService(Services.JBOSS_AS);
             return (AsyncFuture<ServiceContainer>) controller.getValue();
         } catch (Exception ex) {
+            shutdownHook.shutdown(true);
             throw ServerLogger.ROOT_LOGGER.cannotStartServer(ex);
         }
     }
 
+    @Override
+    public void failed() {
+        shutdownHook.shutdown(true);
+    }
+
     static class FutureServiceContainer extends AsyncFutureTask<ServiceContainer> {
         private final ServiceContainer container;
-
         FutureServiceContainer(final ServiceContainer container) {
             super(JBossExecutors.directExecutor());
             this.container = container;
@@ -219,6 +225,10 @@ final class BootstrapImpl implements Bootstrap {
 
         @Override
         public void run() {
+            shutdown(false);
+        }
+
+        private void shutdown(boolean failed) {
             final ServiceContainer sc;
             final ControlledProcessState ps;
             synchronized (this) {
@@ -232,7 +242,9 @@ final class BootstrapImpl implements Bootstrap {
                 }
             } finally {
                 if (sc != null && !sc.isShutdownComplete()) {
-                    ServerLogger.ROOT_LOGGER.shutdownHookInvoked();
+                    if (!failed) {
+                        ServerLogger.ROOT_LOGGER.shutdownHookInvoked();
+                    }
                     final CountDownLatch latch = new CountDownLatch(1);
                     sc.addTerminateListener(new ServiceContainer.TerminateListener() {
                         @Override
