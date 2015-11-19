@@ -28,19 +28,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -121,22 +116,10 @@ public class HcExtensionAndSubsystemManagementTestCase {
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
         // Initialize the test extension
         ExtensionSetup.initializeHostTestExtension(testSupport);
-        Set<String> servers = getRunningServers(domainMasterLifecycleUtil, "master");
+        Set<String> servers = domainMasterLifecycleUtil.getRunningServers();
         serversByHost.put(domainMasterLifecycleUtil, servers);
-        servers = getRunningServers(domainSlaveLifecycleUtil, "slave");
+        servers = domainSlaveLifecycleUtil.getRunningServers();
         serversByHost.put(domainSlaveLifecycleUtil, servers);
-    }
-
-    private static Set<String> getRunningServers(DomainLifecycleUtil lifecycleUtil, String hcName) throws IOException {
-        ModelNode op = Util.createEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, PathAddress.pathAddress(HOST, hcName));
-        op.get(CHILD_TYPE).set(RUNNING_SERVER);
-        ModelNode response = lifecycleUtil.getDomainClient().execute(op);
-        Assert.assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
-        Set<String> result = new HashSet<>();
-        for (ModelNode node : response.get(RESULT).asList()) {
-            result.add(node.asString());
-        }
-        return result;
     }
 
     @AfterClass
@@ -458,13 +441,13 @@ public class HcExtensionAndSubsystemManagementTestCase {
             util.executeAwaitConnectionClosed(reload);
             util.connect();
             util.awaitHostController(System.currentTimeMillis());
-            awaitServers(util, address.getLastElement().getValue());
+            awaitServers(util);
             return true;
         }
         return false;
     }
 
-    private void awaitServers(DomainLifecycleUtil util, String hostName) throws InterruptedException, TimeoutException, IOException {
+    private void awaitServers(DomainLifecycleUtil util) throws InterruptedException, TimeoutException, IOException {
 
         Set<String> required = serversByHost.get(util);
         Set<String> unstarted;
@@ -472,9 +455,9 @@ public class HcExtensionAndSubsystemManagementTestCase {
         long deadline = System.currentTimeMillis() + timeout;
         do {
             unstarted = new HashSet<>(required);
-            Set<String> running = getRunningServers(util, hostName);
+            Set<String> running = util.getRunningServers();
             unstarted.removeAll(running);
-            if (unstarted.size() == 0) {
+            if (unstarted.isEmpty()) {
                 break;
             }
             TimeUnit.MILLISECONDS.sleep(250);
