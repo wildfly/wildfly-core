@@ -49,6 +49,11 @@ public final class Utils {
         // forbidden instantiation
     }
 
+    /**
+     * Normalizes given path. Normalized path never contains ending slash.
+     * @param path to be normalized
+     * @return normalized path
+     */
     public static String normalizePath(final String path) {
         if (path == null || path.isEmpty()) {
             throw new IllegalArgumentException("Path can be neither null nor empty string");
