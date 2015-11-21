@@ -24,6 +24,10 @@ package org.jboss.as.domain.controller;
 
 import java.io.Serializable;
 
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+
 /**
  * Identifying information for a server in a domain. A bit of a misnomer, as
  * the server's name is sufficient identification since all servers in a
@@ -38,6 +42,7 @@ public class ServerIdentity implements Serializable {
     private final String hostName;
     private final String serverName;
     private final String serverGroupName;
+    private volatile PathAddress pathAddress;
 
     public ServerIdentity(final String hostName, final String serverGroupName, final String serverName) {
         this.hostName = hostName;
@@ -55,6 +60,16 @@ public class ServerIdentity implements Serializable {
 
     public String getServerName() {
         return serverName;
+    }
+
+    public PathAddress toPathAddress() {
+        if (pathAddress == null) {
+            pathAddress = PathAddress.pathAddress(
+                    PathElement.pathElement(ModelDescriptionConstants.HOST, hostName),
+                    PathElement.pathElement(ModelDescriptionConstants.RUNNING_SERVER, serverName)
+            );
+        }
+        return pathAddress;
     }
 
     /**

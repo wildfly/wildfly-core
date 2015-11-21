@@ -45,6 +45,7 @@ import java.util.concurrent.ExecutorService;
 
 import javax.security.auth.Subject;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.operations.coordination.MultiphaseOverallContext;
 import org.jboss.dmr.ModelNode;
@@ -74,7 +75,8 @@ public class RolloutPlanController {
                                  final ModelNode rolloutPlan,
                                  final MultiphaseOverallContext domainOperationContext,
                                  final ServerTaskExecutor taskExecutor,
-                                 final ExecutorService executor) {
+                                 final ExecutorService executor,
+                                 final BlockingTimeout blockingTimeout) {
         this.domainOperationContext = domainOperationContext;
 
         this.rollbackAcrossGroups = !rolloutPlan.hasDefined(ROLLBACK_ACROSS_GROUPS) || rolloutPlan.get(ROLLBACK_ACROSS_GROUPS).asBoolean();
@@ -131,8 +133,8 @@ public class RolloutPlanController {
                     }
                     ServerUpdatePolicy policy = new ServerUpdatePolicy(parent, serverGroupName, servers, maxFailures);
 
-                    seriesTasks.add(rollingGroup ? new RollingServerGroupUpdateTask(groupTasks, policy, taskExecutor, subject)
-                        : new ConcurrentServerGroupUpdateTask(groupTasks, policy, taskExecutor, subject));
+                    seriesTasks.add(rollingGroup ? new RollingServerGroupUpdateTask(groupTasks, policy, taskExecutor, subject, blockingTimeout)
+                        : new ConcurrentServerGroupUpdateTask(groupTasks, policy, taskExecutor, subject, blockingTimeout));
 
                     updatePolicies.put(serverGroupName, policy);
 

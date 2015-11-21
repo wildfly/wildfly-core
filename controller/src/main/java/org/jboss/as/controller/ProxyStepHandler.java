@@ -76,6 +76,9 @@ public class ProxyStepHandler implements OperationStepHandler {
             executeWFCORE621(context, operation);
             return;
         }
+
+        final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
+
         OperationMessageHandler messageHandler = new DelegatingMessageHandler(context);
 
         final AtomicReference<ModelController.OperationTransaction> txRef = new AtomicReference<ModelController.OperationTransaction>();
@@ -164,7 +167,8 @@ public class ProxyStepHandler implements OperationStepHandler {
                         proxyControl.operationPrepared(transaction, transformed);
                     }
                 };
-                proxyController.execute(transformedOperation, messageHandler, transformingProxyControl, new DelegatingOperationAttachments(context));
+                proxyController.execute(transformedOperation, messageHandler, transformingProxyControl,
+                        new DelegatingOperationAttachments(context), blockingTimeout);
             } else {
                 // discard the operation
                 final ModelNode transformedResult = resultTransformer.transformResult(new ModelNode());
@@ -175,7 +179,8 @@ public class ProxyStepHandler implements OperationStepHandler {
                 return;
             }
         } else {
-            proxyController.execute(operation, messageHandler, proxyControl, new DelegatingOperationAttachments(context));
+            proxyController.execute(operation, messageHandler, proxyControl, new DelegatingOperationAttachments(context),
+                    blockingTimeout);
         }
         OperationResponse finalResult = finalResultRef.get();
         if (finalResult != null) {
