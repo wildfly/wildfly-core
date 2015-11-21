@@ -467,7 +467,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     void awaitServiceContainerStability() throws InterruptedException, TimeoutException {
         if (affectsRuntime) {
             MGMT_OP_LOGGER.debugf("Entered VERIFY stage; waiting for service container to settle");
-            long timeout = getBlockingTimeout().getBlockingTimeout();
+            long timeout = getBlockingTimeout().getLocalBlockingTimeout();
             ExecutionStatus originalExecutionStatus = executionStatus;
             try {
                 // First wait until any removals we've initiated have begun processing, otherwise
@@ -497,7 +497,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     protected void waitForRemovals() throws InterruptedException, TimeoutException {
         if (affectsRuntime && !cancelled) {
             synchronized (realRemovingControllers) {
-                long waitTime = getBlockingTimeout().getBlockingTimeout();
+                long waitTime = getBlockingTimeout().getLocalBlockingTimeout();
                 long end = System.currentTimeMillis() + waitTime;
                 boolean wait = !realRemovingControllers.isEmpty() && !cancelled;
                 while (wait && waitTime > 0) {
@@ -779,7 +779,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     throw ControllerLogger.ROOT_LOGGER.invalidModificationAfterCompletedStep();
                 }
                 containerMonitorStep = activeStep;
-                int timeout = getBlockingTimeout().getBlockingTimeout();
+                int timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 ExecutionStatus origStatus = executionStatus;
                 try {
                     executionStatus = ExecutionStatus.AWAITING_STABILITY;
@@ -1136,7 +1136,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 // will not be cancellable. I (BES 2012/01/24) chose the former as the lesser evil.
                 // Any subsequent step that calls getServiceRegistry/getServiceTarget/removeService
                 // is going to have to await the monitor uninterruptibly anyway before proceeding.
-                long timeout = getBlockingTimeout().getBlockingTimeout();
+                long timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 try {
                     modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, true);
                 }  catch (InterruptedException e) {
@@ -1338,6 +1338,9 @@ final class OperationContextImpl extends AbstractOperationContext {
     @Override
     ResultAction executeOperation() {
         try {
+            if (!isBooting()) {
+                attach(BlockingTimeout.Factory.ATTACHMENT_KEY, getBlockingTimeout());
+            }
             return super.executeOperation();
         } finally {
             synchronized (done) {
@@ -1811,7 +1814,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (blockingTimeout == null) {
             synchronized (this) {
                 if (blockingTimeout == null) {
-                    blockingTimeout = new BlockingTimeout(blockingTimeoutConfig);
+                    blockingTimeout = new BlockingTimeoutImpl(blockingTimeoutConfig);
                 }
             }
         }
@@ -2097,7 +2100,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 boolean intr = false;
                 try {
                     boolean containsKey = realRemovingControllers.containsKey(name);
-                    long timeout = getBlockingTimeout().getBlockingTimeout();
+                    long timeout = getBlockingTimeout().getLocalBlockingTimeout();
                     long waitTime = timeout;
                     long end = System.currentTimeMillis() + waitTime;
                     while (containsKey && waitTime > 0) {

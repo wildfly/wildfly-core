@@ -382,8 +382,9 @@ public interface DomainControllerLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = 31, value = "Exception getting result from host %s: %s")
-    String exceptionAwaitingResultFromHost(String name, String message);
+    // Disabled as part of WFCORE-378
+//    @Message(id = 31, value = "Exception getting result from host %s: %s")
+//    String exceptionAwaitingResultFromHost(String name, String message);
 
     /**
      * A message indicating the operation, represented by the {@code operation} parameter, for the {@code address} can
@@ -748,4 +749,23 @@ public interface DomainControllerLogger extends BasicLogger {
             "b) Reload the domain controller into admin-only mode, perform the clone, then reload the domain controller " +
             "into normal mode again, and check whether the slaves need reloading.")
     String cloneOperationNotSupportedOnHost(String hostName);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 79, value = "Timed out after %d ms awaiting host prepared response(s) from hosts %s -- cancelling updates for hosts %s")
+    void timedOutAwaitingHostPreparedResponses(long timeout, Set<String> timeoutHosts, Set<String> allHosts);
+
+    @Message(id = 80, value = "Timed out after %d ms awaiting host prepared response(s) -- remote host %s has been notified to cancel operation")
+    String timedOutAwaitingHostPreparedResponse(long timeout, String host);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 81, value = "Timed out after %d ms awaiting final response from host %s; remote process has been notified to cancel operation")
+    void timedOutAwaitingFinalResponse(long timeout, String hostName);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 82, value = "%s timed out after %d ms awaiting server prepared response(s) -- cancelling updates for servers %s")
+    void timedOutAwaitingPreparedResponse(String callerClass, long timeout, Set<ServerIdentity> servers);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 83, value = "Timed out after %d ms awaiting final response from server %s on host %s; remote process has been notified to cancel operation")
+    void timedOutAwaitingFinalResponse(int patient, String serverName, String hostName);
 }

@@ -3384,4 +3384,12 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = Level.ERROR)
     @Message(id = 408, value = "Failed sending failure response %s for %d")
     void failedSendingFailedResponse(@Cause Throwable cause, ModelNode response, int operationId);
+
+    @Message(id = 409, value = "Execution of operation '%s' on remote process at address '%s' timed out after %d ms while awaiting initial response; remote process has been notified to terminate operation")
+    String proxiedOperationTimedOut(String operation, PathAddress target, long timeout);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 410, value = "Execution of operation '%s' on remote process at address '%s' timed out after %d ms while awaiting final response; remote process has been notified to terminate operation")
+    void timeoutAwaitingFinalResponse(String operation, PathAddress proxyNodeAddress, long timeout);
+
 }

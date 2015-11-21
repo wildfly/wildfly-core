@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import org.jboss.as.controller.Cancellable;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.client.MessageSeverity;
@@ -44,6 +43,7 @@ import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.dmr.ModelNode;
+import org.jboss.threads.AsyncFuture;
 
 /**
  * @author Emanuel Muckenhuber
@@ -66,19 +66,19 @@ public abstract class ServerTaskExecutor {
      * @param listener the transactional operation listener
      * @param identity the server identity
      * @param operation the operation
-     * @return whether the operation was executed or not
+     * @return time to wait in ms for a response from the server, or {@code -1} if the task execution failed locally
      * @throws OperationFailedException
      */
-    protected abstract boolean execute(final TransactionalProtocolClient.TransactionalOperationListener<ServerOperation> listener, final ServerIdentity identity, final ModelNode operation) throws OperationFailedException;
+    protected abstract int execute(final TransactionalProtocolClient.TransactionalOperationListener<ServerOperation> listener, final ServerIdentity identity, final ModelNode operation) throws OperationFailedException;
 
     /**
      * Execute a server task.
      *
      * @param listener the transactional server listener
      * @param task the server task
-     * @return whether the task was executed or not
+     * @return time to wait in ms for a response from the server, or {@code -1} if the task execution failed locally
      */
-    public boolean executeTask(final TransactionalProtocolClient.TransactionalOperationListener<ServerOperation> listener, final ServerUpdateTask task) {
+    public int executeTask(final TransactionalProtocolClient.TransactionalOperationListener<ServerOperation> listener, final ServerUpdateTask task) {
         try {
             return execute(listener, task.getServerIdentity(), task.getOperation());
         } catch (OperationFailedException e) {
@@ -88,13 +88,16 @@ public abstract class ServerTaskExecutor {
             final TransactionalProtocolClient.PreparedOperation<ServerOperation> result = BlockingQueueOperationListener.FailedOperation.create(serverOperation, e);
             listener.operationPrepared(result);
             recordExecutedRequest(new ExecutedServerRequest(identity, result.getFinalResult(), OperationResultTransformer.ORIGINAL_RESULT));
+            return 1; // 1 ms timeout since there is no reason to wait for the locally stored result
         }
-        return true;
+
     }
 
-    public boolean cancelTask(ServerIdentity toCancel) {
+    void cancelTask(ServerIdentity toCancel) {
         ExecutedServerRequest task = submittedTasks.get(toCancel);
-        return task != null && task.cancel();
+        if (task != null) {
+            task.asyncCancel();
+        }
     }
 
     /**
@@ -144,6 +147,22 @@ public abstract class ServerTaskExecutor {
      */
     void recordPreparedOperation(final TransactionalProtocolClient.PreparedOperation<ServerTaskExecutor.ServerOperation> preparedOperation) {
         recordPreparedTask(new ServerTaskExecutor.ServerPreparedResponse(preparedOperation));
+    }
+
+    /**
+     * Record a prepare operation timeout.
+     *
+     * @param failedOperation the prepared operation
+     */
+    void recordOperationPrepareTimeout(final BlockingQueueOperationListener.FailedOperation<ServerOperation> failedOperation) {
+        recordPreparedTask(new ServerTaskExecutor.ServerPreparedResponse(failedOperation));
+        // Swap out the submitted task so we don't wait for the final result. Use a future the returns
+        // prepared response
+        ServerIdentity identity = failedOperation.getOperation().getIdentity();
+        AsyncFuture<OperationResponse> finalResult = failedOperation.getFinalResult();
+        synchronized (submittedTasks) {
+            submittedTasks.put(identity, new ServerTaskExecutor.ExecutedServerRequest(identity, finalResult));
+        }
     }
 
     /**
@@ -245,7 +264,7 @@ public abstract class ServerTaskExecutor {
     /**
      * The executed request.
      */
-    public static class ExecutedServerRequest implements OperationResultTransformer, Cancellable {
+    public static class ExecutedServerRequest implements OperationResultTransformer {
 
         private final ServerIdentity identity;
         private final Future<OperationResponse> finalResult;
@@ -274,9 +293,10 @@ public abstract class ServerTaskExecutor {
             return transformer.transformResult(result);
         }
 
-        @Override
-        public boolean cancel() {
-            return finalResult.cancel(true);
+        private void asyncCancel() {
+            if (finalResult instanceof AsyncFuture) {
+                ((AsyncFuture) finalResult).asyncCancel(true);
+            }
         }
 
     }
