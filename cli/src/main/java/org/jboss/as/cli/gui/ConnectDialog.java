@@ -72,7 +72,6 @@ public class ConnectDialog extends JInternalFrame {
     static final String HINT_CONNECT = "<protocol>://<hostname>:<port> OR empty";
     static final String HINT_CONNECT_BUTTON = "Connect to server CLI";
     static final String TEXT_CONNECT = "Connect";
-    static final String TEXT_CANCEL = "Cancel";
     static final String TEXT_USERNAME = "Username: ";
     static final String TEXT_PASSWORD = "Password: ";
     static boolean IS_WIN;
@@ -88,7 +87,7 @@ public class ConnectDialog extends JInternalFrame {
     private JTextField tfURL;
 
 
-    private Action actionConnect, actionCancel;
+    private Action actionConnect;
 
     private Color hintTextColor;
     private JLabel statusBar;
@@ -204,15 +203,6 @@ public class ConnectDialog extends JInternalFrame {
                 clearStatus();
             }
         };
-        actionCancel = new AbstractAction(TEXT_CANCEL) {
-
-            public void actionPerformed(ActionEvent ev) {
-                clearStatus();
-                tfURL.setText(DEFAULT_REMOTE);
-                tfPassword.setText("");
-                tfUserName.setText("");
-            }
-        };
     }
 
     private void createContent() {
@@ -278,17 +268,9 @@ public class ConnectDialog extends JInternalFrame {
         final JButton connectButton = new JButton(this.actionConnect);
         connectButton.setToolTipText(HINT_CONNECT_BUTTON);
 
-        final JButton cancelButton = new JButton(actionCancel);
-
         final JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING));
         buttonPanel.setBorder(new EmptyBorder(12, 12, 2, 12));
-        if (IS_GTK) {
-            buttonPanel.add(cancelButton);
-            buttonPanel.add(connectButton);
-        } else {
-            buttonPanel.add(connectButton);
-            buttonPanel.add(cancelButton);
-        }
+        buttonPanel.add(connectButton);
         bottomPanel.add(buttonPanel, NORTH);
         bottomPanel.add(statusBar, SOUTH);
         this.pack();
