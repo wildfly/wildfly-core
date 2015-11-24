@@ -130,6 +130,7 @@ public class CustomCLIExecutor {
             cliConfigPath = Paths.get(jbossDist, "bin", "jboss-cli.xml");
         }
         commandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigPath);
+        commandBuilder.addCliArgument("--timeout="+CLI_PROC_TIMEOUT);
 
         // Note that this only allows for a single system property
         if (System.getProperty("cli.args") != null) {
