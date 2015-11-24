@@ -22,6 +22,17 @@
 
 package org.jboss.as.test.integration.management.cli.extensions;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.inject.Inject;
+
 import org.jboss.as.cli.CommandHandlerProvider;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathAddress;
@@ -42,16 +53,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-
-import javax.inject.Inject;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Petr Kremensky pkremens@redhat.com
