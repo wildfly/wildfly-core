@@ -51,10 +51,12 @@ import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
+import org.xnio.IoUtils;
 
 /**
  * Generic http POST handler accepting a single operation and multiple input streams passed as part of
@@ -171,13 +173,21 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         } : ModelController.OperationTransactionControl.COMMIT;
 
         ModelNode response;
+        final Operation builtOp = builder.build();
         try {
             operation.get(OPERATION_HEADERS, ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
-            response = modelController.execute(operation, OperationMessageHandler.DISCARD, control, builder.build());
+            response = modelController.execute(operation, OperationMessageHandler.DISCARD, control, builtOp);
         } catch (Throwable t) {
             ROOT_LOGGER.modelRequestError(t);
             Common.sendError(exchange, opParam.isEncode(), t.getLocalizedMessage());
             return;
+        } finally {
+            // Close any input streams that were open
+            if (builtOp.isAutoCloseStreams()) {
+                for (InputStream in : builtOp.getInputStreams()) {
+                    IoUtils.safeClose(in);
+                }
+            }
         }
 
         callback.sendResponse(response);
