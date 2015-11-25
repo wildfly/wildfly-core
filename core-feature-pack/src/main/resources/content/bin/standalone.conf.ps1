@@ -1,6 +1,6 @@
 ### -*- Power Shell file -*- ################################################
 #                                                                          ##
-#  WildFly bootstrap Script Configuration                                    ##
+#  JBoss EAP bootstrap Script Configuration                                ##
 #                                                                          ##
 #############################################################################
 
@@ -39,8 +39,8 @@ if (-Not(test-path env:JBOSS_MODULES_SYSTEM_PKGS )) {
 $JAVA_OPTS = @()
 
 # JVM memory allocation pool parameters - modify as appropriate.
-$JAVA_OPTS += '-Xms64M'
-$JAVA_OPTS += '-Xmx512M'
+$JAVA_OPTS += '-Xms1G'
+$JAVA_OPTS += '-Xmx1G'
 
 # Reduce the RMI GCs to once per hour for Sun JVMs.
 #$JAVA_OPTS += '-Dsun.rmi.dgc.client.gcInterval=3600000'
