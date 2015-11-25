@@ -188,13 +188,12 @@ public class DefaultOperationDescriptionProvider implements DescriptionProvider 
                     deprecated.get(ModelDescriptionConstants.REASON).set(attributeDescriptionResolver.getOperationParameterDeprecatedDescription(operationName, ad.getName(), locale, attributeBundle));
                 }*/
                 ModelNode param = new ModelNode();
-                ad.addOperationParameterDescription(param, operationName, attributeDescriptionResolver, locale, attributeBundle);
-                reply.set(param.get(REQUEST_PROPERTIES).get(ad.getName()));
-
+                ad.addOperationReplyDescription(param, operationName, attributeDescriptionResolver, locale, attributeBundle);
+                reply.set(param.get(REPLY_PROPERTIES).get(ad.getName()));
             } else {
                 reply.get(TYPE).set(replyType == null ? ModelType.OBJECT : replyType);
                 for (AttributeDefinition ad : replyParameters) {
-                    final ModelNode param = ad.addOperationParameterDescription(new ModelNode(), operationName, attributeDescriptionResolver, locale, bundle);
+                    final ModelNode param = ad.addOperationReplyDescription(new ModelNode(), operationName, attributeDescriptionResolver, locale, bundle);
                     reply.get(VALUE_TYPE, ad.getName()).set(param);
                 }
             }

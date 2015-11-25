@@ -175,6 +175,15 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
         return result;
     }
 
+    @Override
+    public ModelNode addOperationReplyDescription(final ModelNode resourceDescription, final String operationName,
+                                                      final ResourceDescriptionResolver resolver,
+                                                      final Locale locale, final ResourceBundle bundle) {
+        final ModelNode result = super.addOperationReplyDescription(resourceDescription, operationName, resolver, locale, bundle);
+        addOperationReplyValueTypeDescription(result, operationName, resolver, locale, bundle);
+        return result;
+    }
+
     protected abstract void addValueTypeDescription(final ModelNode node, final ResourceBundle bundle);
 
     protected abstract void addAttributeValueTypeDescription(final ModelNode node, final ResourceDescriptionResolver resolver,
@@ -183,6 +192,13 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
     protected abstract void addOperationParameterValueTypeDescription(final ModelNode node, final String operationName,
                                                                       final ResourceDescriptionResolver resolver,
                                                                       final Locale locale, final ResourceBundle bundle);
+
+    protected void addOperationReplyValueTypeDescription(final ModelNode node, final String operationName,
+                                                                      final ResourceDescriptionResolver resolver,
+                                                                      final Locale locale, final ResourceBundle bundle) {
+        //TODO WFCORE-1178: use reply value types description instead of parameter value type
+        addOperationParameterValueTypeDescription(node, operationName, resolver, locale, bundle);
+    }
 
     @Override
     public void marshallAsElement(ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
