@@ -24,6 +24,7 @@ package org.jboss.as.controller.registry;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +35,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -85,13 +87,42 @@ final class NodeSubregistry {
         return new HashSet<String>(snapshot.keySet());
     }
 
-    ManagementResourceRegistration register(final String elementValue, final ResourceDefinition provider, boolean ordered) {
-        final AbstractResourceRegistration newRegistry =
+    ManagementResourceRegistration registerChild(final String elementValue, final ResourceDefinition provider) {
+        boolean ordered = provider.isOrderedChild();
+
+        final ConcreteResourceRegistration newRegistry =
                 new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, ordered, capabilityRegistry);
-        final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
-        if (existingRegistry != null) {
-            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
+
+        newRegistry.beginInitialization();
+        try {
+
+            final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
+            if (existingRegistry != null) {
+                throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
+            }
+
+            provider.registerAttributes(newRegistry);
+            provider.registerOperations(newRegistry);
+            provider.registerNotifications(newRegistry);
+            provider.registerChildren(newRegistry);
+            provider.registerCapabilities(newRegistry);
+
+            if (constraintUtilizationRegistry != null) {
+                PathAddress childAddress = newRegistry.getPathAddress();
+                List<AccessConstraintDefinition> constraintDefinitions = provider.getAccessConstraints();
+                for (AccessConstraintDefinition acd : constraintDefinitions) {
+                    constraintUtilizationRegistry.registerAccessConstraintResourceUtilization(acd.getKey(), childAddress);
+                }
+            }
+        } finally {
+            newRegistry.initialized();
         }
+
+        if (ordered) {
+            AbstractResourceRegistration parentRegistration = getParent();
+            parentRegistration.setOrderedChild(keyName);
+        }
+
         return newRegistry;
     }
 
