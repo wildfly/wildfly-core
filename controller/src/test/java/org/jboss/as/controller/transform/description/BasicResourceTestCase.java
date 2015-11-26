@@ -71,6 +71,8 @@ public class BasicResourceTestCase {
     private static PathElement PATH = PathElement.pathElement("toto", "testSubsystem");
     private static PathElement DISCARD = PathElement.pathElement("discard");
     private static PathElement DYNAMIC = PathElement.pathElement("dynamic");
+    private static PathElement DYNAMIC_REDIRECT_ORIGINAL = PathElement.pathElement("dynamic-redirect-original");
+    private static PathElement DYNAMIC_REDIRECT_NEW = PathElement.pathElement("dynamic-redirect-new");
 
     private static PathElement CONFIGURATION_TEST = PathElement.pathElement("configuration", "test");
     private static PathElement TEST_CONFIGURATION = PathElement.pathElement("test", "configuration");
@@ -179,6 +181,17 @@ public class BasicResourceTestCase {
                     }
                 }, "attribute");
 
+        builder.addChildRedirection(DYNAMIC_REDIRECT_ORIGINAL, DYNAMIC_REDIRECT_NEW, new TestDynamicDiscardPolicy())
+                .getAttributeBuilder()
+                .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
+                    @Override
+                    protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+                        attributeValue.set(attributeValue.asString().toUpperCase());
+                    }
+                }, "attribute");
+
+
+
         // configuration=test/setting=directory > test=configuration/directory=setting
         builder.addChildRedirection(CONFIGURATION_TEST, TEST_CONFIGURATION)
                 .getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, "test-config").end()
@@ -213,6 +226,17 @@ public class BasicResourceTestCase {
         final Resource dynamicDiscard = Resource.Factory.create();
         dynamicDiscard.getModel().get("attribute").set("discard");
         toto.registerChild(PathElement.pathElement("dynamic", "discard"), dynamicDiscard);
+
+        //dynamic discard and child redirection
+        final Resource dynamicRedirectKeep = Resource.Factory.create();
+        dynamicRedirectKeep.getModel().get("attribute").set("keep");
+        toto.registerChild(PathElement.pathElement("dynamic-redirect-original", "keep"), dynamicRedirectKeep);
+        final Resource dynamicRedirectReject = Resource.Factory.create();
+        dynamicRedirectReject.getModel().get("attribute").set("reject");
+        toto.registerChild(PathElement.pathElement("dynamic-redirect-original", "reject"), dynamicRedirectReject);
+        final Resource dynamicRedirectDiscard = Resource.Factory.create();
+        dynamicRedirectDiscard.getModel().get("attribute").set("discard");
+        toto.registerChild(PathElement.pathElement("dynamic-redirect-original", "discard"), dynamicRedirectDiscard);
 
         // configuration
         final Resource configuration = Resource.Factory.create();
@@ -266,6 +290,11 @@ public class BasicResourceTestCase {
         Resource dynamicKeep = toto.getChild(PathElement.pathElement("dynamic", "keep"));
         Assert.assertEquals("KEEP", dynamicKeep.getModel().get("attribute").asString());
 
+        Assert.assertFalse(toto.hasChildren("dynamic-redirect-original")); //Make sure that we didn't keep the originals
+        Assert.assertFalse(toto.hasChild(PathElement.pathElement("dynamic-redirect-new", "discard")));
+        Assert.assertFalse(toto.hasChild(PathElement.pathElement("dynamic-redirect-new", "reject")));
+        Resource dynamicRedirectKeep = toto.getChild(PathElement.pathElement("dynamic-redirect-new", "keep"));
+        Assert.assertEquals("KEEP", dynamicRedirectKeep.getModel().get("attribute").asString());
 
         final Resource attResource = toto.getChild(PathElement.pathElement("attribute-resource", "test"));
         Assert.assertNotNull(attResource);
@@ -273,7 +302,6 @@ public class BasicResourceTestCase {
         Assert.assertFalse(attResourceModel.get("test-resource").isDefined());  // check that the resource got removed
         Assert.assertTrue(attResourceModel.hasDefined("test-attribute"));
         Assert.assertTrue(attResource.hasChild(PathElement.pathElement("resource", "test")));
-
     }
 
     @Test
@@ -477,24 +505,29 @@ public class BasicResourceTestCase {
     public void testDynamicDiscardOperations() throws Exception {
         PathAddress subsystem = PathAddress.pathAddress("toto", "testSubsystem");
 
-        final ModelNode opKeep = Util.createAddOperation(subsystem.append("dynamic", "keep"));
+        final PathAddress keepAddress = subsystem.append("dynamic", "keep");
+        final ModelNode opKeep = Util.createAddOperation(keepAddress);
         opKeep.get("attribute").set("keep");
         OperationTransformer.TransformedOperation txKeep = transformOperation(ModelVersion.create(1), opKeep.clone());
         Assert.assertFalse(txKeep.rejectOperation(success()));
         Assert.assertNotNull(txKeep.getTransformedOperation());
         Assert.assertEquals("KEEP", txKeep.getTransformedOperation().get("attribute").asString());
+        Assert.assertEquals(keepAddress, PathAddress.pathAddress(txKeep.getTransformedOperation().get(OP_ADDR)));
         txKeep = transformOperation(ModelVersion.create(1, 0, 1), opKeep.clone());
         Assert.assertFalse(txKeep.rejectOperation(success()));
         Assert.assertNotNull(txKeep.getTransformedOperation());
         Assert.assertEquals("KEEP", txKeep.getTransformedOperation().get("attribute").asString());
+        Assert.assertEquals(keepAddress, PathAddress.pathAddress(txKeep.getTransformedOperation().get(OP_ADDR)));
         txKeep = transformOperation(ModelVersion.create(1, 0, 5), opKeep.clone());
         Assert.assertFalse(txKeep.rejectOperation(success()));
         Assert.assertNotNull(txKeep.getTransformedOperation());
         Assert.assertEquals("KEEP", txKeep.getTransformedOperation().get("attribute").asString());
+        Assert.assertEquals(keepAddress, PathAddress.pathAddress(txKeep.getTransformedOperation().get(OP_ADDR)));
         txKeep = transformOperation(ModelVersion.create(1, 1), opKeep.clone());
         Assert.assertFalse(txKeep.rejectOperation(success()));
         Assert.assertNotNull(txKeep.getTransformedOperation());
         Assert.assertEquals("keep", txKeep.getTransformedOperation().get("attribute").asString());
+        Assert.assertEquals(keepAddress, PathAddress.pathAddress(txKeep.getTransformedOperation().get(OP_ADDR)));
 
         final ModelNode opDiscard = Util.createAddOperation(subsystem.append("dynamic", "discard"));
         OperationTransformer.TransformedOperation txDiscard = transformOperation(ModelVersion.create(1), opDiscard.clone());
@@ -524,6 +557,65 @@ public class BasicResourceTestCase {
         Assert.assertFalse(txReject.rejectOperation(success()));
         Assert.assertNotNull(txReject.getTransformedOperation());
     }
+
+    @Test
+    public void testDynamicDiscardRedirectOperations() throws Exception {
+        PathAddress subsystem = PathAddress.pathAddress("toto", "testSubsystem");
+
+        final PathAddress keepNewAddress = subsystem.append("dynamic-redirect-new", "keep");
+        final PathAddress keepOriginalAddress = subsystem.append("dynamic-redirect-original", "keep");
+        final ModelNode opKeep = Util.createAddOperation(keepOriginalAddress);
+        opKeep.get("attribute").set("keep");
+        OperationTransformer.TransformedOperation txKeep = transformOperation(ModelVersion.create(1), opKeep.clone());
+        Assert.assertFalse(txKeep.rejectOperation(success()));
+        Assert.assertNotNull(txKeep.getTransformedOperation());
+        Assert.assertEquals("KEEP", txKeep.getTransformedOperation().get("attribute").asString());
+        Assert.assertEquals(keepNewAddress, PathAddress.pathAddress(txKeep.getTransformedOperation().get(OP_ADDR)));
+        txKeep = transformOperation(ModelVersion.create(1, 0, 1), opKeep.clone());
+        Assert.assertFalse(txKeep.rejectOperation(success()));
+        Assert.assertNotNull(txKeep.getTransformedOperation());
+        Assert.assertEquals("KEEP", txKeep.getTransformedOperation().get("attribute").asString());
+        Assert.assertEquals(keepNewAddress, PathAddress.pathAddress(txKeep.getTransformedOperation().get(OP_ADDR)));
+        txKeep = transformOperation(ModelVersion.create(1, 0, 5), opKeep.clone());
+        Assert.assertFalse(txKeep.rejectOperation(success()));
+        Assert.assertNotNull(txKeep.getTransformedOperation());
+        Assert.assertEquals("KEEP", txKeep.getTransformedOperation().get("attribute").asString());
+        Assert.assertEquals(keepNewAddress, PathAddress.pathAddress(txKeep.getTransformedOperation().get(OP_ADDR)));
+        txKeep = transformOperation(ModelVersion.create(1, 1), opKeep.clone());
+        Assert.assertFalse(txKeep.rejectOperation(success()));
+        Assert.assertNotNull(txKeep.getTransformedOperation());
+        Assert.assertEquals("keep", txKeep.getTransformedOperation().get("attribute").asString());
+        Assert.assertEquals(keepOriginalAddress, PathAddress.pathAddress(txKeep.getTransformedOperation().get(OP_ADDR)));
+
+        final ModelNode opDiscard = Util.createAddOperation(subsystem.append("dynamic-redirect-original", "discard"));
+        OperationTransformer.TransformedOperation txDiscard = transformOperation(ModelVersion.create(1), opDiscard.clone());
+        Assert.assertFalse(txDiscard.rejectOperation(success()));
+        Assert.assertNull(txDiscard.getTransformedOperation());
+        txDiscard = transformOperation(ModelVersion.create(1, 0, 1), opDiscard.clone());
+        Assert.assertFalse(txDiscard.rejectOperation(success()));
+        Assert.assertNull(txDiscard.getTransformedOperation());
+        txDiscard = transformOperation(ModelVersion.create(1, 0, 5), opDiscard.clone());
+        Assert.assertFalse(txDiscard.rejectOperation(success()));
+        Assert.assertNull(txDiscard.getTransformedOperation());
+        txDiscard = transformOperation(ModelVersion.create(1, 1), opDiscard.clone());
+        Assert.assertFalse(txDiscard.rejectOperation(success()));
+        Assert.assertNotNull(txDiscard.getTransformedOperation());
+
+        final ModelNode opReject = Util.createAddOperation(subsystem.append("dynamic-redirect-original", "reject"));
+        OperationTransformer.TransformedOperation txReject = transformOperation(ModelVersion.create(1), opReject.clone());
+        Assert.assertTrue(txReject.rejectOperation(success()));
+        Assert.assertNotNull(txReject.getTransformedOperation());
+        txReject = transformOperation(ModelVersion.create(1, 0, 1), opReject.clone());
+        Assert.assertTrue(txReject.rejectOperation(success()));
+        Assert.assertNotNull(txReject.getTransformedOperation());
+        txReject = transformOperation(ModelVersion.create(1, 0, 5), opReject.clone());
+        Assert.assertTrue(txReject.rejectOperation(success()));
+        Assert.assertNotNull(txReject.getTransformedOperation());
+        txReject = transformOperation(ModelVersion.create(1, 1), opReject.clone());
+        Assert.assertFalse(txReject.rejectOperation(success()));
+        Assert.assertNotNull(txReject.getTransformedOperation());
+    }
+
 
 
     private Resource transformResource(final ModelVersion version) throws OperationFailedException {
