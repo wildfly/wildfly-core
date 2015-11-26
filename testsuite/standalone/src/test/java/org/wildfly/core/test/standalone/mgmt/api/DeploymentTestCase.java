@@ -34,6 +34,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -470,6 +472,46 @@ public class DeploymentTestCase {
     }
 
     @Test
+    public void testAddingDeploymentScannerWillLaunchScan() throws Exception {
+        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
+        final Path dir = new File("target/archives").toPath();
+        Files.createDirectories(dir);
+        final Path file = dir.resolve("test-deployment.jar");
+        archive.as(ZipExporter.class).exportTo(file.toFile(), true);
+
+        final Path deployDir = createDeploymentDir("first-scan").toPath();
+
+        ModelControllerClient client = managementClient.getControllerClient();
+        final String scannerName = "first-scan";
+        final Path target = deployDir.resolve("test-deployment.jar");
+        final Path deployed = deployDir.resolve("test-deployment.jar.deployed");
+        Files.copy(file, target);
+        Assert.assertFalse(Files.exists(deployed));
+        Assert.assertTrue(Files.exists(target));
+        addDeploymentScanner(deployDir.toFile(), client, scannerName, true, -1);
+        try {
+            for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                if (Files.exists(deployed)) {
+                    break;
+                }
+                try {
+                    Thread.sleep(BACKOFF);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
+                }
+            }
+            Assert.assertTrue(Files.exists(deployed));
+            ServiceActivatorDeploymentUtil.validateProperties(managementClient.getControllerClient(), properties);
+        } finally {
+            removeDeploymentScanner(client, scannerName);
+            Files.delete(target);
+            Files.delete(deployed);
+            Files.delete(deployDir);
+        }
+    }
+
+    @Test
     public void testExplodedFilesystemDeployment() throws Exception {
 
         final File deployDir = createDeploymentDir("exploded-deployments");
@@ -594,6 +636,11 @@ public class DeploymentTestCase {
 
     private ModelNode addDeploymentScanner(final File deployDir, final ModelControllerClient client, final String scannerName, final boolean autoDeployZipped)
             throws IOException {
+        return addDeploymentScanner(deployDir, client, scannerName, autoDeployZipped, 1000);
+    }
+
+    private ModelNode addDeploymentScanner(final File deployDir, final ModelControllerClient client, final String scannerName, final boolean autoDeployZipped, int scanInterval)
+            throws IOException {
         ModelNode add = new ModelNode();
         add.get(OP).set(ADD);
         ModelNode addr = new ModelNode();
@@ -602,9 +649,9 @@ public class DeploymentTestCase {
         add.get(OP_ADDR).set(addr);
         add.get("path").set(deployDir.getAbsolutePath());
         add.get("scan-enabled").set(true);
-        add.get("scan-interval").set(1000);
-        if (autoDeployZipped == false) {
-            add.get("auto-deploy-zipped").set(false);
+        add.get("scan-interval").set(scanInterval);
+        if (!autoDeployZipped) {
+            add.get("auto-deploy-zipped").set(autoDeployZipped);
         }
         ModelNode result = client.execute(add);
         Assert.assertEquals(result.toString(), ModelDescriptionConstants.SUCCESS, result.require(ModelDescriptionConstants.OUTCOME).asString());
@@ -650,7 +697,7 @@ public class DeploymentTestCase {
             initialDeploymentHash = currentHashes.iterator().next();
         }
 
-            // Full replace
+        // Full replace
         // listener.reset(2);
         deploymentExecutor.fullReplace();
 
