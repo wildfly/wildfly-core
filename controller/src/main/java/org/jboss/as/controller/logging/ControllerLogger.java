@@ -3392,4 +3392,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 410, value = "Execution of operation '%s' on remote process at address '%s' timed out after %d ms while awaiting final response; remote process has been notified to terminate operation")
     void timeoutAwaitingFinalResponse(String operation, PathAddress proxyNodeAddress, long timeout);
 
+    @LogMessage(level = Level.WARN)
+    @Message(id = 411, value = "Failed to parse element '%s', ingoring ...")
+    void failedToParseElementLenient(@Cause XMLStreamException e, String elementName);
 }
