@@ -3376,4 +3376,8 @@ public interface ControllerLogger extends BasicLogger {
      */
     @Message(id = 406, value = "Could not convert the attribute '%s' to a %s")
     OperationFailedException selectFailedCouldNotConvertAttributeToType(String attribute, ModelType type);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 407, value = "Failed to parse element '%s', ingoring ...")
+    void failedToParseElementLenient(@Cause XMLStreamException e, String elementName);
 }
