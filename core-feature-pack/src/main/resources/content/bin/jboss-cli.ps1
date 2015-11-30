@@ -4,7 +4,8 @@
 #                                                                          ##
 #############################################################################
 $PROGNAME=$MyInvocation.MyCommand.Name
-. ".\common.ps1"
+$scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
+. $scripts'\common.ps1'
 
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
 
