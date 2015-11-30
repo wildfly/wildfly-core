@@ -609,7 +609,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @throws IllegalStateException if the {@code deprecationData} is null
          */
         public Parameters setDeprecatedSince(ModelVersion deprecatedSince) {
-            if (deprecationData == null) {
+            if (deprecatedSince == null) {
                 throw ControllerLogger.ROOT_LOGGER.nullVar("deprecatedSince");
             }
 
