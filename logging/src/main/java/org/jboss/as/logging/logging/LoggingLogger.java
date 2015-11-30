@@ -440,6 +440,16 @@ public interface LoggingLogger extends BasicLogger {
     DeploymentUnitProcessingException failedToConfigureLogging(@Cause Throwable cause, String fileName);
 
     /**
+     * Creates an exception indicating an error occurred while searching for logging configuration files.
+     *
+     * @param cause the cause of the error.
+     *
+     * @return a {@link DeploymentUnitProcessingException} for the error.
+     */
+    //@Message(id = 43, value = "Error occurred while searching for logging configuration files.")
+    //DeploymentUnitProcessingException errorProcessingLoggingConfiguration(@Cause Throwable cause);
+
+    /**
      * A message indicating the handler is attached to the handlers.
      *
      * @param handlerName the name of tha attached handler.
