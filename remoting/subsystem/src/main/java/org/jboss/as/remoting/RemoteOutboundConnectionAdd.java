@@ -46,8 +46,7 @@ class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
     static final RemoteOutboundConnectionAdd INSTANCE = new RemoteOutboundConnectionAdd();
 
     private RemoteOutboundConnectionAdd() {
-        super(AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY,
-                RemoteOutboundConnectionResourceDefinition.ATTRIBUTE_DEFINITIONS);
+        super(RemoteOutboundConnectionResourceDefinition.ATTRIBUTE_DEFINITIONS);
     }
 
     @Override
