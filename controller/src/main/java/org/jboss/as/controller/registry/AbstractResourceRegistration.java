@@ -165,14 +165,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         // else we are the root
 
         OperationEntry inheritable = getInheritableOperationEntry(operationName);
-        OperationEntry result =  getOperationEntry(pathAddress.iterator(), operationName, inheritable);
-        NodeSubregistry ancestorSubregistry = parent;
-        while (result == null && ancestorSubregistry != null) {
-            AbstractResourceRegistration ancestor = ancestorSubregistry.getParent();
-            result = ancestor.getInheritableOperationEntry(operationName);
-            ancestorSubregistry = ancestor.parent;
-        }
-        return result;
+        return getOperationEntry(pathAddress.iterator(), operationName, inheritable);
     }
 
     abstract OperationEntry getOperationEntry(ListIterator<PathElement> iterator, String operationName, OperationEntry inherited);

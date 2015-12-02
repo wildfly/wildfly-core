@@ -39,7 +39,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_PROFILE;
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,11 +77,6 @@ public class IgnoredResourcesProfileCloneTestCase {
     private static final String CLONED_PROFILE = "cloned-profile";
 
     private static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "slave");
-    /**
-     * Domain configuration
-     */
-    private static File domainCfg;
-
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil masterLifecycleUtil;
     private static DomainLifecycleUtil slaveLifecycleUtil;
@@ -92,14 +86,11 @@ public class IgnoredResourcesProfileCloneTestCase {
         testSupport = DomainTestSuite.createSupport(IgnoredResourcesProfileCloneTestCase.class.getSimpleName());
         masterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         slaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
-
-        File masterDir = new File(testSupport.getDomainMasterConfiguration().getDomainDirectory());
-        domainCfg = new File(masterDir, "configuration"
-                + File.separator + "testing-domain-standard.xml");
     }
 
     @AfterClass
     public static void afterClass() throws Exception {
+        slaveLifecycleUtil.awaitServers(System.currentTimeMillis());
         testSupport = null;
         masterLifecycleUtil = null;
         slaveLifecycleUtil = null;

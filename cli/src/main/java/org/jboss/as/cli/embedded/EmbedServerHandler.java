@@ -183,6 +183,15 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                 cmdsList.add("--server-config=" + xml);
             }
 
+            // if --empty-config is present but the config file already exists we error unless --remove-config has also been used
+            if (startEmpty && !removeConfig) {
+                String configFileName = xml == null ? "standalone.xml" : xml;
+                File configFile = new File(jbossHome + File.separator + "standalone/configuration" + File.separator + configFileName);
+                if (configFile.exists()) {
+                    throw new CommandFormatException("The configuration file " + configFileName + " already exists, please use --remove-existing if you wish to overwrite.");
+                }
+            }
+
             if (adminOnlySetting) {
                 cmdsList.add("--admin-only");
             }

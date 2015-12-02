@@ -755,7 +755,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 String failed = ROOT_LOGGER.unsuccessfulBoot();
                 ROOT_LOGGER.fatal(failed);
                 bootstrapListener.bootFailure(failed);
-                SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+
+                // don't exit if we're embedded
+                if (processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
+                    SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                }
             }
         }
     }

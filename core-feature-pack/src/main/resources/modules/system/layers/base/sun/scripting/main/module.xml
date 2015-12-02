@@ -33,6 +33,7 @@
     <dependencies>
         <system export="true">
             <paths>
+                <path name="apple/applescript"/>
                 <path name="com/sun/script/javascript"/>
                 <path name="jdk/nashorn/api/scripting"/>
                 <path name="jdk/nashorn/api/scripting/resources"/>
