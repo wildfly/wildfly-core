@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller.transform.description;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -34,16 +37,21 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
+import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
+import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformationTargetImpl;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.controller.transform.TransformersSubRegistration;
+import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +72,6 @@ public class ChildRedirectTestCase {
     private TransformerRegistry registry = TransformerRegistry.Factory.create();
     private ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
     private TransformersSubRegistration transformersSubRegistration;
-    //private ModelNode resourceModel;
 
     @Before
     public void setUp() {
@@ -119,6 +126,19 @@ public class ChildRedirectTestCase {
             }
             Assert.assertTrue(found);
         }
+
+        //Test operations get redirected
+        final ModelNode addOp = Util.createAddOperation(PathAddress.pathAddress(PATH, CHILD));
+        OperationTransformer.TransformedOperation txOp = transformOperation(ModelVersion.create(1), addOp.clone());
+        Assert.assertFalse(txOp.rejectOperation(success()));
+        final ModelNode expectedTx = Util.createAddOperation(PathAddress.pathAddress(PATH, NEW_CHILD));
+        Assert.assertEquals(expectedTx, txOp.getTransformedOperation());
+
+        //Test operations in a composite get redirected
+        final ModelNode composite = createComposite(addOp, addOp);
+        txOp = transformOperation(ModelVersion.create(1), composite);
+        Assert.assertFalse(txOp.rejectOperation(success()));
+        Assert.assertEquals(createComposite(expectedTx, expectedTx), txOp.getTransformedOperation());
     }
 
     @Test
@@ -145,6 +165,20 @@ public class ChildRedirectTestCase {
         childEntries = toto.getChildren(newChild.getKey());
         Assert.assertEquals(1, childEntries.size());
         Assert.assertEquals(newChild, childEntries.iterator().next().getPathElement());
+
+        //Test operations get redirected
+        final ModelNode addOp = Util.createAddOperation(PathAddress.pathAddress(PATH, CHILD_ONE));
+        OperationTransformer.TransformedOperation txOp = transformOperation(ModelVersion.create(1), addOp.clone());
+        Assert.assertFalse(txOp.rejectOperation(success()));
+        final ModelNode expectedTx = Util.createAddOperation(PathAddress.pathAddress(PATH, newChild));
+        Assert.assertEquals(expectedTx, txOp.getTransformedOperation());
+
+        //Test operations in a composite get redirected
+        final ModelNode composite = createComposite(addOp, addOp);
+        txOp = transformOperation(ModelVersion.create(1), composite);
+        Assert.assertFalse(txOp.rejectOperation(success()));
+        Assert.assertEquals(createComposite(expectedTx, expectedTx), txOp.getTransformedOperation());
+
     }
 
 
@@ -171,5 +205,27 @@ public class ChildRedirectTestCase {
         return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), type, false);
     }
 
+    private OperationTransformer.TransformedOperation transformOperation(final ModelVersion version, final ModelNode operation) throws OperationFailedException {
+        final TransformationTarget target = create(registry, version);
+        final TransformationContext context = createContext(target);
+        return getTransfomers(target).transformOperation(context, operation);
+    }
+
     private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver());
+
+    private static ModelNode success() {
+        final ModelNode result = new ModelNode();
+        result.get(ModelDescriptionConstants.OUTCOME).set(ModelDescriptionConstants.SUCCESS);
+        result.get(ModelDescriptionConstants.RESULT);
+        return result;
+    }
+
+    private ModelNode createComposite(ModelNode... steps) {
+        ModelNode composite = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+        ModelNode stepsNode = composite.get(STEPS);
+        for (ModelNode step : steps) {
+            stepsNode.add(step);
+        }
+        return composite;
+    }
 }
