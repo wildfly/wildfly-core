@@ -30,6 +30,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathInfoHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -135,6 +136,8 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(FileSystemDeploymentScanHandler.DEFINITION, FileSystemDeploymentScanHandler.INSTANCE);
+        PathInfoHandler.registerOperation(resourceRegistration,
+                PathInfoHandler.Builder.of(pathManager).addAttribute(PATH, RELATIVE_TO).build());
     }
 
 }
