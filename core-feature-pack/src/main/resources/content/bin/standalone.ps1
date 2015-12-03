@@ -4,11 +4,12 @@
 #                                                                          ##
 #############################################################################
 
-. ".\common.ps1"
+$scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
+. $scripts'\common.ps1'
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
 
 # Read an optional running configuration file
-$STANDALONE_CONF_FILE = '.\standalone.conf.ps1'
+$STANDALONE_CONF_FILE = $scripts + '\standalone.conf.ps1'
 $STANDALONE_CONF_FILE = Get-Env RUN_CONF $STANDALONE_CONF_FILE
 . $STANDALONE_CONF_FILE
 
