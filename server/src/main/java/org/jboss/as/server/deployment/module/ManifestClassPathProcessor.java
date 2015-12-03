@@ -22,7 +22,7 @@
 
 package org.jboss.as.server.deployment.module;
 
-import static org.jboss.as.server.loaders.Utils.resourceOrPathExists;
+import static org.wildfly.loaders.Utils.resourceOrPathExists;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -33,8 +33,6 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import org.jboss.as.server.loaders.ResourceLoader;
-import org.jboss.as.server.loaders.ResourceLoaders;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachable;
 import org.jboss.as.server.deployment.Attachments;
@@ -48,6 +46,8 @@ import org.jboss.as.server.deployment.annotation.ResourceRootIndexer;
 import org.jboss.as.server.moduleservice.ExternalModuleService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.ModuleIdentifier;
+import org.wildfly.loaders.ResourceLoader;
+import org.wildfly.loaders.ResourceLoaders;
 
 /**
  * A processor which adds class path entries for each manifest entry.

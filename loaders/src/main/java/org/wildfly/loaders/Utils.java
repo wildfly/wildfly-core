@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.loaders;
+package org.wildfly.loaders;
 
 import static org.jboss.modules.PathUtils.canonicalize;
 import static org.jboss.modules.PathUtils.relativize;

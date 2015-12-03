@@ -24,8 +24,8 @@ package org.jboss.as.server.deployment.module.descriptor;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
-import static org.jboss.as.server.loaders.Utils.normalizePath;
-import static org.jboss.as.server.loaders.Utils.resourceOrPathExists;
+import static org.wildfly.loaders.Utils.normalizePath;
+import static org.wildfly.loaders.Utils.resourceOrPathExists;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,8 +43,6 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.jboss.as.server.loaders.ResourceLoader;
-import org.jboss.as.server.loaders.ResourceLoaders;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -60,6 +58,8 @@ import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.wildfly.loaders.ResourceLoader;
+import org.wildfly.loaders.ResourceLoaders;
 
 /**
  * @author Stuart Douglas

@@ -22,8 +22,6 @@
 package org.jboss.as.server.moduleservice;
 
 import org.jboss.as.server.deployment.module.ModuleDependency;
-import org.jboss.as.server.loaders.ResourceLoader;
-import org.jboss.as.server.loaders.ResourceLoaders;
 import org.jboss.as.server.Utils;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleIdentifier;
@@ -33,6 +31,8 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.loaders.ResourceLoader;
+import org.wildfly.loaders.ResourceLoaders;
 
 import java.io.File;
 import java.io.IOException;

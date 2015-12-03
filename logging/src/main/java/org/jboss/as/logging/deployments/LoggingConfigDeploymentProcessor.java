@@ -39,14 +39,14 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.loaders.ResourceLoader;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.Module;
 import org.jboss.modules.Resource;
+import org.wildfly.loaders.ResourceLoader;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
-import static org.jboss.as.server.loaders.Utils.getResourceName;
+import static org.wildfly.loaders.Utils.getResourceName;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>

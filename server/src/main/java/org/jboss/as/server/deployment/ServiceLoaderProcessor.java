@@ -22,7 +22,7 @@
 
 package org.jboss.as.server.deployment;
 
-import static org.jboss.as.server.loaders.Utils.getResourceName;
+import static org.wildfly.loaders.Utils.getResourceName;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,11 +36,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.server.Utils;
-import org.jboss.as.server.loaders.ResourceLoader;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.module.ModuleRootMarker;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.modules.Resource;
+import org.wildfly.loaders.ResourceLoader;
 
 /**
  * A processor which creates a service loader index.

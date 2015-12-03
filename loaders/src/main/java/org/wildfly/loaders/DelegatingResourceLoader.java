@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.loaders;
+package org.wildfly.loaders;
 
 import org.jboss.modules.ClassSpec;
 import org.jboss.modules.PackageSpec;
@@ -28,125 +28,100 @@ import org.jboss.modules.Resource;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessControlContext;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 
 /**
+ * ResourceLoader that delegates all method calls to its delegate.
+ *
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class SingleFileResourceLoader implements ResourceLoader {
+class DelegatingResourceLoader implements ResourceLoader {
 
-    private final String name;
-    private final String path;
-    private final ResourceLoader parent;
-    private final Resource resource;
+    private final ResourceLoader delegate;
 
-    SingleFileResourceLoader(final String name, final File root, final String path, final ResourceLoader parent, final AccessControlContext context) {
-        this.name = name;
-        this.parent = parent;
-        this.path = path == null ? "" : path;
-        try {
-            resource = new FileEntryResource(name, root, root.toURI().toURL(), context);
-        } catch (final MalformedURLException ignored) {
-            throw new RuntimeException(); // should never happen
-        }
+    DelegatingResourceLoader(final ResourceLoader delegate) {
+        this.delegate = delegate;
     }
 
-    @Override
-    public ResourceLoader getParent() {
-        return parent;
-    }
-
-    @Override
-    public ResourceLoader getChild(final String path) {
-        return null;
-    }
-
-    @Override
-    public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
-        return Collections.emptyIterator();
-    }
-
-    @Override
-    public void addOverlay(final String path, final File content) {
-        // unsupported
+    final ResourceLoader getDelegate() {
+        return delegate;
     }
 
     @Override
     public Iterator<Resource> iterateResources(final String startPath, final boolean recursive) {
-        if (!"".equals(startPath)) return Collections.emptyIterator();
-        // one shot iterator
-        return new Iterator<Resource>() {
-            boolean done;
+        return getDelegate().iterateResources(startPath, recursive);
+    }
 
-            @Override
-            public boolean hasNext() {
-                return !done;
-            }
-
-            @Override
-            public Resource next() {
-                try {
-                    return resource;
-                } finally {
-                    done = true;
-                }
-            }
-        };
+    @Override
+    public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
+        return getDelegate().iteratePaths(startPath, recursive);
     }
 
     @Override
     public String getRootName() {
-        return name;
+        return getDelegate().getRootName();
     }
 
     @Override
     public ClassSpec getClassSpec(final String fileName) throws IOException {
-        return null;
+        return getDelegate().getClassSpec(fileName);
     }
 
     @Override
     public PackageSpec getPackageSpec(final String name) throws IOException {
-        return null;
+        return getDelegate().getPackageSpec(name);
     }
 
     @Override
     public Resource getResource(final String name) {
-        return "".equals(name) ? resource : null;
+        return getDelegate().getResource(name);
     }
 
     @Override
     public String getLibrary(final String name) {
-        return null;
+        return getDelegate().getLibrary(name);
     }
 
     @Override
     public Collection<String> getPaths() {
-        return Collections.emptyList();
+        return getDelegate().getPaths();
     }
 
     @Override
     public void close() {
-        // does nothing
+        getDelegate().close();
+    }
+
+    @Override
+    public ResourceLoader getParent() {
+        return getDelegate().getParent();
+    }
+
+    @Override
+    public ResourceLoader getChild(final String path) {
+        return getDelegate().getChild(path);
+    }
+
+    @Override
+    public void addOverlay(final String path, final File content) {
+        getDelegate().addOverlay(path, content);
     }
 
     @Override
     public File getRoot() {
-        return null;
+        return getDelegate().getRoot();
     }
 
     @Override
     public String getPath() {
-        return path;
+        return getDelegate().getPath();
     }
 
     @Override
     public URL getRootURL() {
-        return null;
+        return getDelegate().getRootURL();
     }
 
 }

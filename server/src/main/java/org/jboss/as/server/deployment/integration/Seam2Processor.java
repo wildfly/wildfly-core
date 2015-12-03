@@ -28,8 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.loaders.ResourceLoader;
-import org.jboss.as.server.loaders.ResourceLoaders;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -41,6 +39,8 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.ResourceLoaderSpec;
+import org.wildfly.loaders.ResourceLoader;
+import org.wildfly.loaders.ResourceLoaders;
 
 /**
  * Recognize Seam deployments and add org.jboss.seam.int module to it.

@@ -20,10 +20,10 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.loaders;
+package org.wildfly.loaders;
 
-import static org.jboss.as.server.loaders.Utils.isEmptyPath;
-import static org.jboss.as.server.loaders.Utils.normalizePath;
+import static org.wildfly.loaders.Utils.isEmptyPath;
+import static org.wildfly.loaders.Utils.normalizePath;
 
 import org.jboss.modules.AbstractResourceLoader;
 import org.jboss.modules.ClassSpec;

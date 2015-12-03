@@ -27,8 +27,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.jboss.as.server.Utils;
-import org.jboss.as.server.loaders.ResourceLoader;
-import org.jboss.as.server.loaders.ResourceLoaders;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -36,6 +34,8 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.ExplodedDeploymentMarker;
+import org.wildfly.loaders.ResourceLoader;
+import org.wildfly.loaders.ResourceLoaders;
 
 /**
  * Deployment processor responsible for creating the resource root for this deployment.

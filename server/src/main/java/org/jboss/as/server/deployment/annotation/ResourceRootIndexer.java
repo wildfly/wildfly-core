@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.server.Utils;
-import org.jboss.as.server.loaders.ResourceLoader;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -39,6 +38,7 @@ import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.Indexer;
 import org.jboss.modules.Resource;
+import org.wildfly.loaders.ResourceLoader;
 
 /**
  * Utility class for indexing a resource root

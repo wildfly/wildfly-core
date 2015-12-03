@@ -177,6 +177,7 @@
         <module>domain-management</module>
         <module>embedded</module>
         <module>host-controller</module>
+        <module>loaders</module>
         <module>logging</module>
         <module>management-client-content</module>
         <module>io</module>
@@ -831,6 +832,12 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-loaders</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

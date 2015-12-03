@@ -26,11 +26,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.jboss.as.server.loaders.ResourceLoader;
 import org.jboss.modules.ClassSpec;
 import org.jboss.modules.PackageSpec;
 import org.jboss.modules.Resource;
 import org.junit.Test;
+import org.wildfly.loaders.ResourceLoader;
 
 import java.io.File;
 import java.io.IOException;

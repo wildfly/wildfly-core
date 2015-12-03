@@ -112,6 +112,11 @@
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-loaders</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-server</artifactId>
             <exclusions>
                 <exclusion>

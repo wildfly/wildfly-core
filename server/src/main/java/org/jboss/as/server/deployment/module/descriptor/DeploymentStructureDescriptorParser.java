@@ -37,7 +37,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.server.DeployerChainAddHandler;
-import org.jboss.as.server.loaders.ResourceLoader;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.ServerService;
 import org.jboss.as.server.deployment.AttachmentKey;
@@ -60,6 +59,7 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.Resource;
 import org.jboss.staxmapper.XMLMapper;
+import org.wildfly.loaders.ResourceLoader;
 
 /**
  * Parses <code>jboss-deployment-structure.xml</code>, and merges the result with the deployment.

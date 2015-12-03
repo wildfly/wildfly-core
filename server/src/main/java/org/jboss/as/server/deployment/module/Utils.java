@@ -22,7 +22,7 @@
 package org.jboss.as.server.deployment.module;
 
 import org.jboss.modules.Resource;
-import org.jboss.as.server.loaders.ResourceLoader;
+import org.wildfly.loaders.ResourceLoader;
 
 import java.io.File;
 import java.io.IOException;
