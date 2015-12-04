@@ -63,5 +63,10 @@
            <artifactId>junit</artifactId>
            <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.woodstox</groupId>
+            <artifactId>woodstox-core-asl</artifactId>
+            <scope>test</scope> <!-- here to test WFCORE-1136 -->
+        </dependency>
     </dependencies>
 </project>

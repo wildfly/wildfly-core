@@ -92,6 +92,7 @@ public class TransformerAttachmentAndInspectModelSubsystemTestCase extends Abstr
         builder.createLegacyKernelServicesBuilder(null, ModelTestControllerVersion.MASTER, oldVersion)
                 .setExtensionClassName(OldExtension.class.getName())
                 .addSimpleResourceURL("target/legacy-archive.jar")
+                .dontPersistXml()//don't test xml persistence as woodstox parser for legacy test will break it
                 .skipReverseControllerCheck();
         KernelServices mainServices = builder.build();
         KernelServices legacyServices = mainServices.getLegacyServices(oldVersion);
