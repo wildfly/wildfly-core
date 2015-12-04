@@ -4,12 +4,13 @@
 #                                                                          ##
 #############################################################################
 
-. ".\common.ps1"
+$scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
+. $scripts'\common.ps1'
 
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
 
 # Read an optional running configuration file
-$DOMAIN_CONF = '.\domain.conf.ps1'
+$DOMAIN_CONF = $scripts +'\domain.conf.ps1'
 $DOMAIN_CONF = Get-Env RUN_CONF $DOMAIN_CONF
 . $DOMAIN_CONF
 
