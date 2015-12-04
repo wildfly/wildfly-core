@@ -19,6 +19,9 @@
 package org.jboss.as.host.controller.operations;
 
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+
 import java.util.EnumSet;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -26,10 +29,13 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.host.controller.descriptions.HostResolver;
@@ -81,7 +87,11 @@ public class HostShutdownHandler implements OperationStepHandler {
                 // it will have to wait for container stability, so skipping this only matters for the case
                 // where this step is the only runtime change.
 //                context.getServiceRegistry(true);
-                context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                AuthorizationResult authorizationResult = context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                if (authorizationResult.getDecision() == AuthorizationResult.Decision.DENY) {
+                    throw ControllerLogger.ACCESS_LOGGER.unauthorized(operation.get(OP).asString(),
+                            PathAddress.pathAddress(operation.get(OP_ADDR)), authorizationResult.getExplanation());
+                }
                 if (restart) {
                     //Add the exit code so that we get respawned
                     domainController.stopLocalHost(ExitCodes.RESTART_PROCESS_FROM_STARTUP_SCRIPT);

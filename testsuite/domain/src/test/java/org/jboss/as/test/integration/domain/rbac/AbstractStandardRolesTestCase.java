@@ -24,7 +24,9 @@ package org.jboss.as.test.integration.domain.rbac;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.ADMINISTRATOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.AUDITOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.DEPLOYER_USER;
@@ -36,7 +38,9 @@ import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNo
 
 import java.io.IOException;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.rbac.Outcome;
 import org.jboss.as.test.integration.management.rbac.RbacUtil;
 import org.jboss.dmr.ModelNode;
@@ -91,6 +95,9 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
         addPath(client, Outcome.UNAUTHORIZED, MONITOR_USER);
         removeSecurityDomain(client, Outcome.HIDDEN, MONITOR_USER);
         restartServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, MONITOR_USER);
+
+        // Monitor can't shutdown
+        testWCORE1067(client, MONITOR_USER);
     }
 
     @Test
@@ -159,6 +166,9 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
         addPath(client, Outcome.UNAUTHORIZED, DEPLOYER_USER);
         removeSecurityDomain(client, Outcome.HIDDEN, DEPLOYER_USER);
         restartServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+
+        // Deployer can't shutdown
+        testWCORE1067(client, DEPLOYER_USER);
     }
 
     @Test
@@ -205,6 +215,9 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
         addPath(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
         removeSecurityDomain(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
         restartServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
+
+        // Auditor can't shutdown
+        testWCORE1067(client, AUDITOR_USER);
     }
 
     @Test
@@ -245,5 +258,11 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
 
     private void removeSecurityDomain(ModelControllerClient client, Outcome expected, String... roles) throws IOException {
         removeSecurityDomain(client, "other", expected, roles);
+    }
+
+    private void testWCORE1067(ModelControllerClient client, String... roles) throws IOException {
+        ModelNode op = Util.createEmptyOperation(SHUTDOWN, PathAddress.pathAddress(HOST, "master"));
+        configureRoles(op, roles);
+        RbacUtil.executeOperation(client, op, Outcome.UNAUTHORIZED);
     }
 }
