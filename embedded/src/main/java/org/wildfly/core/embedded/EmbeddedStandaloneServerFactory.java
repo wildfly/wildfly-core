@@ -201,6 +201,7 @@ public class EmbeddedStandaloneServerFactory {
         }
     }
 
+
     private static class StandaloneServerImpl implements StandaloneServer {
 
         private final PropertyChangeListener processStateListener;
