@@ -71,6 +71,8 @@ public final class TestParser implements  ModelTestParser {
                 if (subsystemWriter != null) {
                     subsystemWriter.writeContent(writer, new SubsystemMarshallingContext(subsystem, writer));
                 }
+            }else{
+                writer.writeEmptyElement(Element.SUBSYSTEM.getLocalName());
             }
         }catch (Throwable t){
             Assert.fail("could not marshal subsystem xml: "+t.getMessage()+":\n"+ Arrays.toString(t.getStackTrace()).replaceAll(", ","\n"));
