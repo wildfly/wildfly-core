@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package generator;
+package org.wildfly.loaders;
 
 /**
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>

@@ -32,7 +32,7 @@
 
     <servlet>
         <servlet-name>GreetingServlet</servlet-name>
-        <servlet-class>my.company.GreetingServlet</servlet-class>
+        <servlet-class>org.wildfly.loaders.GreetingServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>

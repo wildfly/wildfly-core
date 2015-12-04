@@ -27,6 +27,13 @@ import static org.junit.Assert.assertFalse;
 
 import org.jboss.modules.Resource;
 import org.jboss.modules.PathUtils;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.FileAsset;
+import org.jboss.shrinkwrap.api.exporter.ExplodedExporter;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 
 import java.io.File;
@@ -50,17 +57,18 @@ public class ResourceLoadersTest {
 
     private static final String[] JAR_PATHS = {
             "",
-            "META-INF",
-            "generator",
+            "org",
+            "org/wildfly",
+            "org/wildfly/loaders",
     };
 
     private static final String[] WAR_PATHS = {
             "",
-            "META-INF",
             "WEB-INF",
             "WEB-INF/classes",
-            "WEB-INF/classes/my",
-            "WEB-INF/classes/my/company",
+            "WEB-INF/classes/org",
+            "WEB-INF/classes/org/wildfly",
+            "WEB-INF/classes/org/wildfly/loaders",
             "WEB-INF/lib"
     };
 
@@ -70,20 +78,62 @@ public class ResourceLoadersTest {
     };
 
     private static final String[] JAR_RESOURCE_NAMES = {
-            "META-INF/MANIFEST.MF",
-            "generator/Messages.class",
-            "generator/Messages.class",
+            "org/wildfly/loaders/Messages.class",
+            "org/wildfly/loaders/Messages.java",
     };
     private static final String[] WAR_RESOURCE_NAMES = {
-            "META-INF/MANIFEST.MF",
             "WEB-INF/web.xml",
-            "WEB-INF/classes/my/company/GreetingServlet.class",
-            "WEB-INF/classes/my/company/GreetingServlet.java",
+            "WEB-INF/classes/org/wildfly/loaders/GreetingServlet.class",
+            "WEB-INF/classes/org/wildfly/loaders/GreetingServlet.java",
     };
     private static final String[] EAR_RESOURCE_NAMES = {
-            "META-INF/MANIFEST.MF",
             "META-INF/application.xml",
     };
+
+    static {
+        // initialize
+        final String loadersModuleDir = System.getProperty("user.dir");
+        final File sourcesDir = new File(loadersModuleDir, "src/test/java");
+        final File classesDir = new File(loadersModuleDir, "target/test-classes");
+        // define lib.jar
+        final JavaArchive libJar = ShrinkWrap.create(JavaArchive.class, "lib.jar");
+        libJar.addClass(Messages.class);
+        libJar.add(new FileAsset(new File(sourcesDir, "org/wildfly/loaders/Messages.java")), "org/wildfly/loaders/Messages.java");
+        // define app.war
+        final WebArchive appWar = ShrinkWrap.create(WebArchive.class, "app.war");
+        appWar.setWebXML(new File(sourcesDir, "org/wildfly/loaders/web.xml"));
+        appWar.addAsLibraries(libJar);
+        appWar.addClass(GreetingServlet.class);
+        appWar.add(new FileAsset(new File(sourcesDir, "org/wildfly/loaders/GreetingServlet.java")), "WEB-INF/classes/org/wildfly/loaders/GreetingServlet.java");
+        // define foo.ear
+        final EnterpriseArchive fooEar = ShrinkWrap.create(EnterpriseArchive.class, "foo.ear");
+        fooEar.addAsManifestResource(new FileAsset(new File(sourcesDir, "org/wildfly/loaders/application.xml")), "application.xml");
+        fooEar.addAsModule(appWar);
+        // scenario 1 - everything exploded
+        File targetDir = new File(classesDir, "loader-test-exploded");
+        targetDir.mkdirs();
+        libJar.as(ExplodedExporter.class);
+        appWar.as(ExplodedExporter.class);
+        fooEar.as(ExplodedExporter.class).exportExploded(targetDir);
+        // scenario 2 - foo.ear and lib.jar packaged, app.war exploded
+        targetDir = new File(classesDir, "loader-test-mixed1");
+        targetDir.mkdirs();
+        libJar.as(ZipExporter.class);
+        appWar.as(ExplodedExporter.class);
+        fooEar.as(ZipExporter.class).exportTo(new File(targetDir, "foo.ear"));
+        // scenario 3 - foo.ear and lib.jar exploded, app.war packaged
+        targetDir = new File(classesDir, "loader-test-mixed2");
+        targetDir.mkdirs();
+        libJar.as(ExplodedExporter.class);
+        appWar.as(ZipExporter.class);
+        fooEar.as(ExplodedExporter.class).exportExploded(targetDir);
+        // scenario 4 - everything packaged
+        targetDir = new File(classesDir, "loader-test-packaged");
+        targetDir.mkdirs();
+        libJar.as(ZipExporter.class);
+        appWar.as(ZipExporter.class);
+        fooEar.as(ZipExporter.class).exportTo(new File(targetDir, "foo.ear"));
+    }
 
     @Test
     public void testExplodedEar() throws Exception {
