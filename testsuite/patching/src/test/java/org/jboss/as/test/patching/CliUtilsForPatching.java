@@ -30,6 +30,7 @@ import java.util.List;
 
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.test.integration.management.util.CLIOpResult;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -57,10 +58,7 @@ public class CliUtilsForPatching {
      * @throws Exception
      */
     public static boolean applyPatch(String patchFilePath, String... args) throws Exception {
-        CLIWrapper cli = null;
-        try {
-            cli = new CLIWrapper(true);
-
+        try (CLIWrapper cli = new CLIWrapper(true)) {
             StringBuilder builder = new StringBuilder("patch apply");
             if (args != null) {
                 for (String arg : args) {
@@ -71,10 +69,6 @@ public class CliUtilsForPatching {
             String command = builder.toString();
             logger.info("----- sending command to CLI: " + command + " -----");
             return cli.sendLine(command, true);
-        } finally {
-            if (cli != null) {
-                cli.quit();
-            }
         }
     }
 
@@ -86,9 +80,7 @@ public class CliUtilsForPatching {
      * @throws Exception
      */
     public static boolean rollbackPatch(String oneoffPatchID, String... args) throws Exception {
-        CLIWrapper cli = null;
-        try {
-            cli = new CLIWrapper(true);
+        try (CLIWrapper cli = new CLIWrapper(true)) {
             StringBuilder builder = new StringBuilder("patch rollback --reset-configuration=false");
             if (args != null) {
                 for (String arg : args) {
@@ -99,12 +91,7 @@ public class CliUtilsForPatching {
             String command = builder.toString();
             logger.info("----- sending command to CLI: " + command + " -----");
             return cli.sendLine(command, true);
-        } finally {
-            if (cli != null) {
-                cli.quit();
-            }
         }
-
     }
 
     /**
@@ -115,9 +102,7 @@ public class CliUtilsForPatching {
      * @throws Exception
      */
     public static boolean rollbackToPatch(String oneoffPatchID, String... args) throws Exception {
-        CLIWrapper cli = null;
-        try {
-            cli = new CLIWrapper(true);
+        try (CLIWrapper cli = new CLIWrapper(true)) {
             StringBuilder builder = new StringBuilder("patch rollback --reset-configuration=false --rollback-to=true");
             if (args != null) {
                 for (String arg : args) {
@@ -128,12 +113,7 @@ public class CliUtilsForPatching {
             String command = builder.toString();
             logger.info("----- sending command to CLI: " + command + " -----");
             return cli.sendLine(command, true);
-        } finally {
-            if (cli != null) {
-                cli.quit();
-            }
         }
-
     }
 
     /**
@@ -154,20 +134,13 @@ public class CliUtilsForPatching {
      * @throws Exception
      */
     public static ModelNode info(boolean connect) throws Exception {
-        CLIWrapper cli = null;
-        try {
-            cli = new CLIWrapper(connect);
+        try (CLIWrapper cli = new CLIWrapper(connect)) {
             String command = "patch info --json-output";
             logger.info("----- sending command to CLI: " + command + " -----");
             cli.sendLine(command);
             String output = cli.readOutput();
             return ModelNode.fromJSONString(output);
-        } finally {
-            if (cli != null) {
-                cli.quit();
-            }
         }
-
     }
 
 
@@ -178,9 +151,7 @@ public class CliUtilsForPatching {
      * @throws Exception
      */
     public static Collection<String> getInstalledPatches() throws Exception {
-        CLIWrapper cli = null;
-        try {
-            cli = new CLIWrapper(true);
+        try (CLIWrapper cli = new CLIWrapper(true)) {
             String command = "patch info --json-output";
             logger.info("----- sending command to CLI: " + command + " -----");
             cli.sendLine(command);
@@ -192,10 +163,6 @@ public class CliUtilsForPatching {
                 patchesListString.add(n.asString());
             }
             return patchesListString;
-        } finally {
-            if (cli != null) {
-                cli.quit();
-            }
         }
     }
 
@@ -206,17 +173,11 @@ public class CliUtilsForPatching {
      * @throws Exception
      */
     public static String getCumulativePatchId() throws Exception {
-        CLIWrapper cli = null;
-        try {
-            cli = new CLIWrapper(true);
+        try (CLIWrapper cli = new CLIWrapper(true)) {
             cli.sendLine("patch info --json-output");
             String response = cli.readOutput();
             ModelNode responseNode = ModelNode.fromJSONString(response);
             return responseNode.get("result").get("cumulative-patch-id").asString();
-        } finally {
-            if (cli != null) {
-                cli.quit();
-            }
         }
     }
 
@@ -228,9 +189,7 @@ public class CliUtilsForPatching {
      * @throws Exception
      */
     public static boolean doesServerRequireRestart() throws Exception {
-        CLIWrapper cli = null;
-        try {
-            cli = new CLIWrapper(true);
+        try (CLIWrapper cli = new CLIWrapper(true)) {
             cli.sendLine("patch info --json-output", true);
             String response = cli.readOutput();
             ModelNode responseNode = ModelNode.fromJSONString(response);
@@ -242,10 +201,6 @@ public class CliUtilsForPatching {
             } else {
                 return false;
             }
-        } finally {
-            if (cli != null) {
-                cli.quit();
-            }
         }
     }
 
@@ -256,12 +211,10 @@ public class CliUtilsForPatching {
      * @throws Exception
      */
     public static boolean rollbackAllOneOffs() throws Exception {
-        CLIWrapper cli = null;
         boolean success = true;
         final String infoCommand = "patch info --distribution=%s --json-output";
         final String rollbackCommand = "patch rollback --patch-id=%s --distribution=%s --reset-configuration=true --override-all";
-        try {
-            cli = new CLIWrapper(false);
+        try (CLIWrapper cli = new CLIWrapper(false)) {
             String command = String.format(infoCommand, PatchingTestUtil.AS_DISTRIBUTION);
             logger.info("----- sending command to CLI: " + command + " -----");
             cli.sendLine(command);
@@ -274,10 +227,6 @@ public class CliUtilsForPatching {
                 success = success && cli.sendLine(command, true);
             }
             return success;
-        } finally {
-            if (cli != null) {
-                cli.quit();
-            }
         }
     }
 
@@ -289,11 +238,9 @@ public class CliUtilsForPatching {
      * @throws Exception
      */
     public static boolean rollbackCumulativePatch(boolean resetConfiguration) throws Exception {
-        CLIWrapper cli = null;
         final String infoCommand = "patch info --json-output";
         final String rollbackCommand = "patch rollback --patch-id=%s --reset-configuration=%s";
-        try {
-            cli = new CLIWrapper(true);
+        try (CLIWrapper cli = new CLIWrapper(true)) {
             String command = infoCommand;
             logger.info("----- sending command to CLI: " + command + " -----");
             cli.sendLine(command);
@@ -303,10 +250,6 @@ public class CliUtilsForPatching {
             command = String.format(rollbackCommand, cumulativePatchId, resetConfiguration);
             logger.info("----- sending command to CLI: " + command + " -----");
             return cli.sendLine(command, true);
-        } finally {
-            if (cli != null) {
-                cli.quit();
-            }
         }
     }
 
@@ -373,29 +316,40 @@ public class CliUtilsForPatching {
 
     public static List<String> getResourceLoaderPathsForModule(String module, boolean ignoreError)
             throws Exception {
-        CLIWrapper cli = new CLIWrapper(true);
-        String command = "/core-service=module-loading:list-resource-loader-paths(module=" + module + ")";
-        logger.info("CLI command: " + command);
-        if (!cli.sendLine(command, ignoreError)) {
-            throw new RuntimeException(cli.readOutput());
+        try(CLIWrapper cli = new CLIWrapper(true)) {
+            String command = "/core-service=module-loading:list-resource-loader-paths(module=" + module + ")";
+            logger.info("CLI command: " + command);
+            if (!cli.sendLine(command, ignoreError)) {
+                throw new RuntimeException(cli.readOutput());
+            }
+            ModelNode response = ModelNode.fromString(cli.readOutput());
+            List<ModelNode> pathList = response.get("result").asList();
+            List<String> patchesListString = new ArrayList<String>();
+            for (ModelNode n : pathList) {
+                patchesListString.add(n.asString());
+            }
+            System.out.println(Arrays.toString(patchesListString.toArray()));
+            return patchesListString;
         }
-        ModelNode response = ModelNode.fromString(cli.readOutput());
-        List<ModelNode> pathList = response.get("result").asList();
-        List<String> patchesListString = new ArrayList<String>();
-        for (ModelNode n : pathList) {
-            patchesListString.add(n.asString());
-        }
-        System.out.println(Arrays.toString(patchesListString.toArray()));
-        return patchesListString;
     }
 
     public static List<ModelNode> getPatchingHistory() throws Exception {
-        CLIWrapper cli = new CLIWrapper(true);
-        String command = "/core-service=patching:show-history";
-        logger.info("CLI command: " + command);
-        cli.sendLine(command, false);
-        ModelNode response = ModelNode.fromString(cli.readOutput());
-        return response.get("result").asList();
+        try(CLIWrapper cli = new CLIWrapper(true)) {
+            String command = "/core-service=patching:show-history";
+            logger.info("CLI command: " + command);
+            cli.sendLine(command, false);
+            ModelNode response = ModelNode.fromString(cli.readOutput());
+            return response.get("result").asList();
+        }
+    }
+
+    public static boolean doesModuleExist(String module) throws Exception {
+        try(CLIWrapper cli = new CLIWrapper(true)) {
+            cli.sendLine("/core-service=module-loading:list-resource-loader-paths(module=" + module + ")",
+                    true);
+            final CLIOpResult result = cli.readAllAsOpResult();
+            return result.isIsOutcomeSuccess();
+        }
     }
 
 }
