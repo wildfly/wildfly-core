@@ -1,8 +1,10 @@
 package org.jboss.as.controller;
 
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.OperationEntry.Flag;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -57,7 +59,6 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
         super(parameters);
     }
 
-
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
@@ -91,6 +92,72 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
          */
         public Parameters(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
             super(pathElement, descriptionResolver);
+        }
+
+        public Parameters setDescriptionResolver(ResourceDescriptionResolver descriptionResolver) {
+            super.setDescriptionResolver(descriptionResolver);
+
+            return this;
+        }
+
+        public Parameters setAddHandler(OperationStepHandler addHandler) {
+            super.setAddHandler(addHandler);
+
+            return this;
+        }
+
+        public Parameters setRemoveHandler(OperationStepHandler removeHandler) {
+            super.setRemoveHandler(removeHandler);
+
+            return this;
+        }
+
+        public Parameters setAddRestartLevel(Flag addRestartLevel) {
+            super.setAddRestartLevel(addRestartLevel);
+
+            return this;
+        }
+
+        public Parameters setRemoveRestartLevel(Flag removeRestartLevel) {
+            super.setRemoveRestartLevel(removeRestartLevel);
+
+            return this;
+        }
+
+        public Parameters setRuntime() {
+            super.setRuntime();
+
+            return this;
+        }
+
+        public Parameters setRuntime(boolean isRuntime) {
+            super.setRuntime(isRuntime);
+
+            return this;
+        }
+
+        public Parameters setDeprecationData(DeprecationData deprecationData) {
+            super.setDeprecationData(deprecationData);
+
+            return this;
+        }
+
+        public org.jboss.as.controller.SimpleResourceDefinition.Parameters setDeprecatedSince(ModelVersion deprecatedSince) {
+            super.setDeprecatedSince(deprecatedSince);
+
+            return this;
+        }
+
+        public Parameters setOrderedChild() {
+            super.setOrderedChild();
+
+            return this;
+        }
+
+        public Parameters setCapabilities(RuntimeCapability... capabilities) {
+            super.setCapabilities(capabilities);
+
+            return this;
         }
 
     }
