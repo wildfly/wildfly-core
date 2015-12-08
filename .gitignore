@@ -50,3 +50,6 @@ local-repo-eap
 .DS_Store
 testsuite-core/standalone/cli_output
 /cli/nbproject/
+
+# Zanata files
+**/.zanata-cache/
