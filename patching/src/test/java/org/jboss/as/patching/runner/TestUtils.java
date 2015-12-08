@@ -202,15 +202,6 @@ public class TestUtils {
         return dir;
     }
 
-    public static File createBundle0(File baseDir, String bundleName, String content) throws IOException {
-        File mainDir = createModuleRoot(baseDir, bundleName);
-        if(content != null) {
-            File f = touch(mainDir, "content");
-            dump(f, content);
-        }
-        return mainDir.getParentFile();
-    }
-
     public static void createPatchXMLFile(File dir, Patch patch) throws Exception {
         createPatchXMLFile(dir, patch, false);
     }

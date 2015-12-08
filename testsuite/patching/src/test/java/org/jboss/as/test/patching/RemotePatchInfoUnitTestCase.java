@@ -22,24 +22,10 @@
 
 package org.jboss.as.test.patching;
 
-import static org.jboss.as.patching.Constants.BASE;
-import static org.jboss.as.patching.IoUtils.mkdir;
-import static org.jboss.as.patching.runner.TestUtils.createBundle0;
-import static org.jboss.as.patching.runner.TestUtils.createModule0;
-import static org.jboss.as.patching.runner.TestUtils.randomString;
-import static org.jboss.as.test.patching.PatchingTestUtil.AS_VERSION;
-import static org.jboss.as.test.patching.PatchingTestUtil.BASE_MODULE_DIRECTORY;
-import static org.jboss.as.test.patching.PatchingTestUtil.MODULES_PATH;
-import static org.jboss.as.test.patching.PatchingTestUtil.PRODUCT;
-import static org.jboss.as.test.patching.PatchingTestUtil.assertPatchElements;
-import static org.jboss.as.test.patching.PatchingTestUtil.createPatchXMLFile;
-import static org.junit.Assert.assertEquals;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +49,18 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.WildflyTestRunner;
+
+import static org.jboss.as.patching.Constants.BASE;
+import static org.jboss.as.patching.IoUtils.mkdir;
+import static org.jboss.as.patching.runner.TestUtils.createModule0;
+import static org.jboss.as.patching.runner.TestUtils.randomString;
+import static org.jboss.as.test.patching.PatchingTestUtil.AS_VERSION;
+import static org.jboss.as.test.patching.PatchingTestUtil.BASE_MODULE_DIRECTORY;
+import static org.jboss.as.test.patching.PatchingTestUtil.MODULES_PATH;
+import static org.jboss.as.test.patching.PatchingTestUtil.PRODUCT;
+import static org.jboss.as.test.patching.PatchingTestUtil.assertPatchElements;
+import static org.jboss.as.test.patching.PatchingTestUtil.createPatchXMLFile;
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -103,27 +101,15 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
         final File moduleDir = createModule0(baseModuleDir, moduleName);
         createdFiles.add(moduleDir);
 
-        // create a bundle to be updated w/o a conflict
-        File baseBundleDir = PatchingTestUtil.BASE_BUNDLE_DIRECTORY;
-        if(!baseBundleDir.exists()) {
-            if(!baseBundleDir.mkdirs()) {
-                Assert.fail("Failed to create dir " + baseBundleDir.getAbsolutePath());
-            }
-            createdFiles.add(baseBundleDir);
-        }
-        String bundleName = "bundle-test";
-        File bundleDir = createBundle0(baseBundleDir, bundleName, "bundle content");
-        createdFiles.add(bundleDir);
-
         ProductConfig productConfig = new ProductConfig(PRODUCT, AS_VERSION, "main");
 
-        final File zippedOneOff = createOneOff(oneOffDir, oneOffID, patchElementId, moduleDir, bundleDir, productConfig);
+        final File zippedOneOff = createOneOff(oneOffDir, oneOffID, patchElementId, moduleDir, productConfig);
         handle("patch apply " + zippedOneOff.getAbsolutePath());
 
         final String cpId = "cp1";
         final String cpElementId = "cp1-element";
         final File cpDir = mkdir(tempDir, cpId);
-        final File zippedCP = createCP(cpDir, cpId, cpElementId, patchElementId, miscDir, baseModuleDir, baseBundleDir, moduleName, bundleName, productConfig);
+        final File zippedCP = createCP(cpDir, cpId, cpElementId, patchElementId, miscDir, baseModuleDir, moduleName, productConfig);
         handle("patch apply " + zippedCP.getAbsolutePath());
 
         productConfig = new ProductConfig(PRODUCT, AS_VERSION + "_CP" + cpId, "main");
@@ -131,13 +117,13 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
         final String oneOff1 = "oneOff1";
         final String oneOffElement1 = "oneOff1element";
         final File oneOff1Dir = mkdir(tempDir, oneOff1);
-        final File zippedOneOff1 = createOneOff2(oneOff1Dir, oneOff1, oneOffElement1, cpElementId, miscDir, baseModuleDir, baseBundleDir, moduleName, bundleName, productConfig);
+        final File zippedOneOff1 = createOneOff2(oneOff1Dir, oneOff1, oneOffElement1, cpElementId, miscDir, baseModuleDir,  moduleName, productConfig);
         handle("patch apply " + zippedOneOff1.getAbsolutePath());
 
         final String oneOff2 = "oneOff2";
         final String oneOffElement2 = "oneOff2element";
         final File oneOff2Dir = mkdir(tempDir, oneOff2);
-        final File zippedOneOff2 = createOneOff2(oneOff2Dir, oneOff2, oneOffElement2, oneOffElement1, miscDir, baseModuleDir, baseBundleDir, moduleName, bundleName, productConfig);
+        final File zippedOneOff2 = createOneOff2(oneOff2Dir, oneOff2, oneOffElement2, oneOffElement1, miscDir, baseModuleDir,  moduleName, productConfig);
         handle("patch apply " + zippedOneOff2.getAbsolutePath());
 
         handle("patch info");
@@ -169,15 +155,13 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
     }
 
     protected File createCP(File cpDir, String cpID, String elementCpID, String overridenElementId, final File miscDir,
-            final File baseModuleDir, File baseBundleDir, String moduleName, String bundleName,
-            final ProductConfig productConfig) throws IOException, Exception {
+            final File baseModuleDir, String moduleName,
+            final ProductConfig productConfig) throws Exception {
 
         final File patchedModule = IoUtils.newFile(baseModuleDir, ".overlays", overridenElementId, moduleName);
-        final File patchedBundle = IoUtils.newFile(baseBundleDir, ".overlays", overridenElementId, bundleName);
 
         final ContentModification fileModified2 = ContentModificationUtils.modifyMisc(cpDir, cpID, "another file update", new File(miscDir, "test-file"), "miscDir", "test-file");
         final ContentModification moduleModified2 = ContentModificationUtils.modifyModule(cpDir, elementCpID, patchedModule, "another module update");
-        final ContentModification bundleModified2 = ContentModificationUtils.modifyBundle(cpDir, elementCpID, patchedBundle, "another bundle update");
 
         final Patch cp = PatchBuilder.create()
                 .setPatchId(cpID)
@@ -189,7 +173,6 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
                 .upgradeElement(elementCpID, "base", false)
                 .setDescription(descriptionFor(elementCpID))
                 .addContentModification(moduleModified2)
-                .addContentModification(bundleModified2)
                 .getParent()
                 .build();
         createPatchXMLFile(cpDir, cp);
@@ -198,15 +181,12 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
     }
 
     protected File createOneOff2(File patchDir, String patchId, String elementId, String overridenElementId, final File miscDir,
-            final File baseModuleDir, File baseBundleDir, String moduleName, String bundleName,
-            final ProductConfig productConfig) throws IOException, Exception {
+            final File baseModuleDir, String moduleName,
+            final ProductConfig productConfig) throws Exception {
 
         final File patchedModule = IoUtils.newFile(baseModuleDir, ".overlays", overridenElementId, moduleName);
-        final File patchedBundle = IoUtils.newFile(baseBundleDir, ".overlays", overridenElementId, bundleName);
-
         final ContentModification fileModified = ContentModificationUtils.modifyMisc(patchDir, patchId, "another file update", new File(miscDir, "test-file"), "miscDir", "test-file");
         final ContentModification moduleModified = ContentModificationUtils.modifyModule(patchDir, elementId, patchedModule, "another module update");
-        final ContentModification bundleModified = ContentModificationUtils.modifyBundle(patchDir, elementId, patchedBundle, "another bundle update");
 
         final Patch patch = PatchBuilder.create()
                 .setPatchId(patchId)
@@ -218,20 +198,17 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
                 .oneOffPatchElement(elementId, "base", false)
                 .setDescription(descriptionFor(elementId))
                 .addContentModification(moduleModified)
-                .addContentModification(bundleModified)
                 .getParent()
                 .build();
         createPatchXMLFile(patchDir, patch);
         return PatchingTestUtil.createZippedPatchFile(patchDir, patchId);
     }
 
-    protected File createOneOff(File oneOffDir, String oneOffId, String patchElementId, File moduleDir, File bundleDir, ProductConfig productConfig) throws Exception {
+    protected File createOneOff(File oneOffDir, String oneOffId, String patchElementId, File moduleDir, ProductConfig productConfig) throws Exception {
         // patch misc file
         final ContentModification miscFileAdded = ContentModificationUtils.addMisc(oneOffDir, oneOffId, "Hello World!", "miscDir", "test-file");
         // patch module
         final ContentModification moduleModified = ContentModificationUtils.modifyModule(oneOffDir, patchElementId, moduleDir, "new resource in the module");
-        // patch the bundle
-        final ContentModification bundleModified = ContentModificationUtils.modifyBundle(oneOffDir, patchElementId, bundleDir, "updated bundle content");
 
         final Patch oneOff = PatchBuilder.create()
                 .setPatchId(oneOffId)
@@ -243,7 +220,6 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
                 .oneOffPatchElement(patchElementId, "base", false)
                 .setDescription(descriptionFor(patchElementId))
                 .addContentModification(moduleModified)
-                .addContentModification(bundleModified)
                 .getParent()
                 .build();
         createPatchXMLFile(oneOffDir, oneOff);

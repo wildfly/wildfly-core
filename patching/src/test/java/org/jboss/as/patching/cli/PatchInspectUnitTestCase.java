@@ -27,7 +27,6 @@ import static org.jboss.as.patching.Constants.LAYERS;
 import static org.jboss.as.patching.Constants.SYSTEM;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.newFile;
-import static org.jboss.as.patching.runner.TestUtils.createBundle0;
 import static org.jboss.as.patching.runner.TestUtils.createInstalledImage;
 import static org.jboss.as.patching.runner.TestUtils.createModule0;
 import static org.jboss.as.patching.runner.TestUtils.createPatchXMLFile;
@@ -116,13 +115,6 @@ public class PatchInspectUnitTestCase extends AbstractTaskTestCase {
         // patch the file
         ContentModification fileModified = ContentModificationUtils.modifyMisc(patchDir, patchID, "updated script", miscFile, "bin", fileName);
 
-        // create a bundle to be updated w/o a conflict
-        File baseBundleDir = newFile(env.getInstalledImage().getBundlesDir(), SYSTEM, LAYERS, BASE);
-        String bundleName = "bundle-test";
-        File bundleDir = createBundle0(baseBundleDir, bundleName, "bundle content");
-        // patch the bundle
-        ContentModification bundleModified = ContentModificationUtils.modifyBundle(patchDir, patchElementId, bundleDir, "updated bundle content");
-
         //TestUtils.tree(env.getInstalledImage().getJbossHome());
 
         final String patchIDDescr = "this is one-off patch 1";
@@ -137,7 +129,6 @@ public class PatchInspectUnitTestCase extends AbstractTaskTestCase {
                 .oneOffPatchElement(patchElementId, "base", false)
                 .setDescription(oneOffElementDescr)
                 .addContentModification(moduleModified)
-                .addContentModification(bundleModified)
                 .getParent()
                 .build();
 
@@ -152,7 +143,6 @@ public class PatchInspectUnitTestCase extends AbstractTaskTestCase {
 
         ContentModification fileModified2 = fileModified;
         ContentModification moduleModified2 = moduleModified;
-        ContentModification bundleModified2 = bundleModified;
 
         final String patchID2Descr = "This is cumulative patch 2";
         final String cpElementDescr = "CP element";
@@ -166,7 +156,6 @@ public class PatchInspectUnitTestCase extends AbstractTaskTestCase {
                 .upgradeElement(patchElementId2, "base", false)
                 .setDescription(cpElementDescr)
                 .addContentModification(moduleModified2)
-                .addContentModification(bundleModified2)
                 .getParent()
                 .build();
 
