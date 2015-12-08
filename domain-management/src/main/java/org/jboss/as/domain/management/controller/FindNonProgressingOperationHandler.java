@@ -90,7 +90,6 @@ public class FindNonProgressingOperationHandler implements OperationStepHandler 
         if (nonProgressing != null) {
             result.set(nonProgressing);
         }
-        context.stepCompleted();
     }
 
     static String findNonProgressingOp(OperationContext context, long timeout) throws OperationFailedException {
