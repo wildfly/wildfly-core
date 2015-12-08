@@ -17,7 +17,7 @@
   -->
 
 <subsystem xmlns="urn:jboss:domain:test:1.0">
-    <mail-session name="custom" >
+    <mail-session session-name="custom" >
         <custom-server name="smtp" buffer-size="10">
             <property name="host" value="mail.example.com"/>
         </custom-server>
