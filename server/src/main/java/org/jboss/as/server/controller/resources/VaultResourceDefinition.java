@@ -24,8 +24,6 @@ package org.jboss.as.server.controller.resources;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
 
-import java.util.List;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.MapAttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
@@ -34,7 +32,6 @@ import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
@@ -78,15 +75,12 @@ public class VaultResourceDefinition extends SimpleResourceDefinition {
 
     public static AttributeDefinition[] ALL_ATTRIBUTES = new AttributeDefinition[]{CODE, MODULE, VAULT_OPTIONS};
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     public VaultResourceDefinition(AbstractVaultReader vaultReader) {
-        super(PATH,
-                ServerDescriptions.getResourceDescriptionResolver(VAULT),
-                new VaultAddHandler(vaultReader),
-                new VaultRemoveHandler(vaultReader));
-        this.accessConstraints = SensitiveTargetAccessConstraintDefinition.SECURITY_VAULT.wrapAsList();
-        setDeprecated(ModelVersion.create(1, 7));
+        super(new Parameters(PATH, ServerDescriptions.getResourceDescriptionResolver(VAULT))
+                .setAddHandler(new VaultAddHandler(vaultReader))
+                .setRemoveHandler(new VaultRemoveHandler(vaultReader))
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_VAULT)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override
@@ -95,10 +89,5 @@ public class VaultResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition def : ALL_ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(def, null, write);
         }
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 }

@@ -31,10 +31,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -292,18 +288,15 @@ public class ReadAttributeTestCase extends AbstractRbacTestBase {
     }
 
     private static final class TestResourceDefinition extends SimpleResourceDefinition {
-        private final List<AccessConstraintDefinition> constraintDefinitions;
         private final boolean useDefaultReadAttributeHandler;
 
         TestResourceDefinition(String path, boolean useDefaultReadAttributeHandler, AccessConstraintDefinition... constraintDefinitions) {
-            super(pathElement(path),
-                    new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
-                    new AbstractRemoveStepHandler() {}
-            );
+             super(new Parameters(pathElement(path), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(constraintDefinitions));
 
             this.useDefaultReadAttributeHandler = useDefaultReadAttributeHandler;
-            this.constraintDefinitions = Collections.unmodifiableList(Arrays.asList(constraintDefinitions));
         }
 
         @Override
@@ -344,11 +337,6 @@ public class ReadAttributeTestCase extends AbstractRbacTestBase {
                     .setAccessConstraints(MY_APPLICATION_CONSTRAINT)
                     .build();
             resourceRegistration.registerReadOnlyAttribute(attributeDefinition, readAttributeHandler);
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return constraintDefinitions;
         }
     }
 

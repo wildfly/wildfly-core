@@ -39,9 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -213,21 +211,12 @@ public class FilteredReadResourceTestCase extends AbstractRbacTestBase {
     }
 
     private static final class TestResourceDefinition extends SimpleResourceDefinition {
-        private final List<AccessConstraintDefinition> constraintDefinitions;
 
         TestResourceDefinition(String path, AccessConstraintDefinition... constraintDefinitions) {
-            super(pathElement(path),
-                    new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
-                    new AbstractRemoveStepHandler() {}
-            );
-
-            this.constraintDefinitions = Collections.unmodifiableList(Arrays.asList(constraintDefinitions));
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return constraintDefinitions;
+             super(new Parameters(pathElement(path), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(constraintDefinitions));
         }
     }
 }
