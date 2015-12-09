@@ -4,6 +4,7 @@ REM -------------------------------------------------------------------------
 REM  Red Hat - JBoss EAP 6 Service Script for Windows
 REM            It has to reside in modules\native\sbin\
 REM
+REM  2015-12-09 Updated Remoting Port
 REM  2013-07-01 Minor changes to make it work with Wildfly
 REM  2012-09-14 fixed service log path
 REM             cmd line options for controller,domain host, loglevel,
@@ -71,14 +72,14 @@ if /I "%1" == "restart"   goto cmdRestart
 
 :cmdUsage
 echo Usage:
-echo   service install [/controller localhost:9990] [/loglevel INFO] [/host [domainhost]] [/user username /password password] 
+echo   service install [/controller localhost:9999] [/loglevel INFO] [/host [domainhost]] [/user username /password password] 
 echo   service uninstall
 echo   service start
 echo   service stop
 echo   service restart
 echo(
 echo The options for "service install":
-echo   /controller        : the host:port of the domain controller, default: 127.0.0.1:9990
+echo   /controller        : the host:port of the domain controller, default: 127.0.0.1:9999
 echo   /loglevel          : the log level for the service:  Error, Info, Warn or Debug ^(Case insensitive^), default: INFO 
 echo   /host [domainhost] : indicated domain mode is to be used with an optional domain controller name, default: master
 echo                        Not specifying /host will install in standalone mode
@@ -90,7 +91,7 @@ goto endBatch
 :cmdInstall
 shift
 
-set CONTROLLER=localhost:9990
+set CONTROLLER=localhost:9999
 set DC_HOST=master
 set IS_DOMAIN=false
 set LOGLEVEL=INFO
@@ -105,7 +106,7 @@ if /I "%1"=="/controller" (
     rem should really check if the format is acceptable
     set CONTROLLER=%2
   ) else (
-    echo ERROR: A controller url should be specified in the format host:port, example:  127.0.0.1:9990
+    echo ERROR: A controller url should be specified in the format host:port, example:  127.0.0.1:9999
     goto endBatch
   )
   shift
