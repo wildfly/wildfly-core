@@ -42,6 +42,7 @@ final class SingleFileResourceLoader implements ResourceLoader {
 
     private final String name;
     private final String path;
+    private final String fullPath;
     private final ResourceLoader parent;
     private final Resource resource;
 
@@ -49,6 +50,7 @@ final class SingleFileResourceLoader implements ResourceLoader {
         this.name = name;
         this.parent = parent;
         this.path = path == null ? "" : path;
+        this.fullPath = parent != null ? parent.getFullPath() + "/" + path : name;
         try {
             resource = new FileEntryResource(name, root, root.toURI().toURL(), context);
         } catch (final MalformedURLException ignored) {
@@ -142,6 +144,11 @@ final class SingleFileResourceLoader implements ResourceLoader {
     @Override
     public String getPath() {
         return path;
+    }
+
+    @Override
+    public String getFullPath() {
+        return fullPath;
     }
 
     @Override

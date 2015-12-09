@@ -65,6 +65,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
 
     private final File root;
     private final String path;
+    private final String fullPath;
     private final ResourceLoader parent;
     private final String rootName;
     private final Manifest manifest;
@@ -92,6 +93,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         this.root = root;
         this.path = path == null ? "" : path;
         this.rootName = rootName;
+        this.fullPath = parent != null ? parent.getFullPath() + "/" + path : rootName;
         final File manifestFile = new File(root, "META-INF" + File.separatorChar + "MANIFEST.MF");
         manifest = readManifestFile(manifestFile);
         final URL rootUrl;
@@ -133,6 +135,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
     }
 
+    @Override
     public ResourceLoader getChild(final String path) {
         synchronized (children) {
             return children.get(path);
@@ -158,14 +161,22 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
     }
 
+    @Override
     public File getRoot() {
         return root;
     }
 
+    @Override
     public String getPath() {
         return path;
     }
 
+    @Override
+    public String getFullPath() {
+        return fullPath;
+    }
+
+    @Override
     public URL getRootURL() {
         try {
             return getRoot().toURI().toURL();
@@ -179,6 +190,11 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         return parent;
     }
 
+    @Override
+    public String getRootName() {
+        return rootName;
+    }
+
     private static Manifest readManifestFile(final File manifestFile) {
         try {
             return manifestFile.exists() ? new Manifest(new FileInputStream(manifestFile)) : null;
@@ -187,10 +203,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
     }
 
-    public String getRootName() {
-        return rootName;
-    }
-
+    @Override
     public ClassSpec getClassSpec(final String fileName) throws IOException {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -245,6 +258,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
     }
 
+    @Override
     public PackageSpec getPackageSpec(final String name) throws IOException {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -270,6 +284,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
     }
 
+    @Override
     public Resource getResource(final String name) {
         if (isEmptyPath(name)) return null;
         final String normalizedPath = normalizePath(name);
@@ -387,6 +402,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
     }
 
+    @Override
     public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
         final String normalizedPath = "".equals(startPath) ? "" : normalizePath(startPath);
         final File start = new File(root, normalizedPath);
@@ -397,6 +413,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         return index.iterator();
     }
 
+    @Override
     public Iterator<Resource> iterateResources(final String startPath, final boolean recursive) {
         final String normalizedPath = "".equals(startPath) ? "" : normalizePath(startPath);
         final File start = new File(root, normalizedPath);
@@ -411,6 +428,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         return new Itr(startPath, normalizedPath, children, overlayPaths.iterator(), recursive);
     }
 
+    @Override
     public Collection<String> getPaths() {
         final List<String> index = new ArrayList<>();
         index.add("");

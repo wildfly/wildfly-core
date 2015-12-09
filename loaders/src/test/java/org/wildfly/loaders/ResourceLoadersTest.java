@@ -170,18 +170,18 @@ public class ResourceLoadersTest {
     private void dumpResourceLoader(ResourceLoader loader) throws Exception {
         synchronized (System.out) {
             System.out.println("------------------------------");
-            System.out.print(loader.getPath() + " -> ");
-            System.out.println(loader.getRootName() + " -> " + loader.getRootURL() + " paths: ");
+            System.out.println(loader.getPath() + " -> " + loader.getFullPath() + " -> " + loader.getRootURL());
+            System.out.println(loader.getFullPath() + " paths: ");
             Collection<String> paths = loader.getPaths();
             for (String path : paths) {
                 System.out.println(" * " + path);
             }
-            System.out.println(loader.getRootName() + " iteratePaths: ");
+            System.out.println(loader.getFullPath() + " iteratePaths: ");
             Collection<String> iteratePaths = iteratorToCollection(loader.iteratePaths("", true));
             for (String path : iteratePaths) {
                 System.out.println(" * " + path);
             }
-            System.out.println(loader.getRootName() + " resources: ");
+            System.out.println(loader.getFullPath() + " resources: ");
             Iterator<Resource> i = loader.iterateResources("", true);
             Resource r;
             while (i.hasNext()) {

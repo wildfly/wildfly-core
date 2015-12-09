@@ -29,7 +29,8 @@ import java.net.URL;
 import java.util.Iterator;
 
 /**
- * Resource loader. Every resource laoder is associated with either deployment, subdeployment or resource inside the deployment.
+ * Resource loader. Resource laoder can be associated with either deployment, subdeployment, library inside the deployment
+ * or standalone archives that are not representing deployments or any parts of it.
  *
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
@@ -48,14 +49,21 @@ public interface ResourceLoader extends IterableResourceLoader {
     URL getRootURL();
 
     /**
-     * Returns loader path. It is either empty string if the loader is associated with top level deployment,
+     * Returns loader path. It is either empty string if the loader is associated with top level archive,
      * or it is loader's relative path to its parent
      * @return loader path
      */
     String getPath();
 
     /**
-     * Returns parent loader of this loader. It returns null if loader is associated with top deployment.
+     * Returns loader full path. It is never empty string. If parent has loader then its
+     * full path consists of parent's full path plus current loader path.
+     * @return full loader path
+     */
+    String getFullPath();
+
+    /**
+     * Returns parent loader of this loader. It returns null if loader is top level loader.
      * @return parent loader of this loader
      */
     ResourceLoader getParent();

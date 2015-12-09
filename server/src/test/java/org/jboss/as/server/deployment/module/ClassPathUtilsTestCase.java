@@ -199,6 +199,11 @@ public class ClassPathUtilsTestCase {
         }
 
         @Override
+        public String getFullPath() {
+            return parent != null ? parent.getFullPath() + "/" + path : path;
+        }
+
+        @Override
         public ResourceLoader getParent() {
             return parent;
         }

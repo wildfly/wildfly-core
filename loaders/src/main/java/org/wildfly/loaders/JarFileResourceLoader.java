@@ -72,6 +72,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     private final String rootName;
     private final URL rootUrl;
     private final String path;
+    private final String fullPath;
     private final String relativePath;
     private final File fileOfJar;
 
@@ -95,6 +96,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         this.path = path == null ? "" : path;
         this.rootName = rootName;
         this.relativePath = isEmptyPath(relativePath) ? null : normalizePath(relativePath);
+        this.fullPath = parent != null ? parent.getFullPath() + "/" + path : rootName;
         try {
             rootUrl = getJarURI(fileOfJar.toURI(), this.relativePath).toURL();
         } catch (URISyntaxException|MalformedURLException e) {
@@ -120,6 +122,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         }
     }
 
+    @Override
     public ResourceLoader getChild(final String path) {
         synchronized (children) {
             return children.get(path);
@@ -150,14 +153,22 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         return parent;
     }
 
+    @Override
     public File getRoot() {
         return fileOfJar;
     }
 
+    @Override
     public String getPath() {
         return path;
     }
 
+    @Override
+    public String getFullPath() {
+        return fullPath;
+    }
+
+    @Override
     public URL getRootURL() {
         try {
             if (relativePath == null || "".equals(relativePath)) {
@@ -192,10 +203,12 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         return new URI("jar", b.toString(), null);
     }
 
+    @Override
     public String getRootName() {
         return rootName;
     }
 
+    @Override
     public synchronized ClassSpec getClassSpec(final String fileName) throws IOException {
         final ClassSpec spec = new ClassSpec();
         final JarEntryResource resource = (JarEntryResource) getResource(fileName);
@@ -259,6 +272,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         return relativePath == null ? jarFile.getJarEntry(fileName) : jarFile.getJarEntry(relativePath + "/" + fileName);
     }
 
+    @Override
     public PackageSpec getPackageSpec(final String name) throws IOException {
         final Manifest manifest;
         File overlay;
@@ -288,11 +302,13 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         return getPackageSpec(name, manifest, rootUrl);
     }
 
+    @Override
     public String getLibrary(final String name) {
         // JARs cannot have libraries in them
         return null;
     }
 
+    @Override
     public Resource getResource(String name) {
         if (isEmptyPath(name)) return null;
         try {
@@ -340,6 +356,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         }
     }
 
+    @Override
     public Iterator<Resource> iterateResources(String startPath, final boolean recursive) {
         final JarFile jarFile = this.jarFile;
         if (relativePath != null) startPath = startPath.equals("") ? relativePath : relativePath + "/" + startPath;
@@ -402,6 +419,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         };
     }
 
+    @Override
     public Iterator<String> iteratePaths(final String startPath, final boolean recursive) {
         final String startName = "".equals(startPath) ? "" : normalizePath(startPath);
         final Collection<String> index = new HashSet<>();
@@ -409,6 +427,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         return index.iterator();
     }
 
+    @Override
     public Collection<String> getPaths() {
         final Collection<String> index = new HashSet<>();
         index.add("");
