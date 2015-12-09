@@ -37,6 +37,10 @@ final class DeploymentURLStreamHandler extends URLStreamHandler {
 
     private final Resource resource;
 
+    public DeploymentURLStreamHandler() {
+        this(null);
+    }
+
     public DeploymentURLStreamHandler(final Resource resource) {
         this.resource = resource;
     }

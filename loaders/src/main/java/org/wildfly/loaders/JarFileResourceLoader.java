@@ -75,7 +75,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     private final String fullPath;
     private final String relativePath;
     private final File fileOfJar;
-    private final boolean isDeployment;
+    private volatile boolean isDeployment;
 
     JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile, final String path, final boolean isDeployment) {
         this(parent, rootName, jarFile, path, null, isDeployment);
@@ -104,6 +104,11 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         } catch (URISyntaxException|MalformedURLException e) {
             throw new IllegalArgumentException("Invalid root file specified", e);
         }
+    }
+
+    @Override
+    public void setUsePhysicalCodeSource(final boolean usePhysicalCodeSource) {
+        this.isDeployment = !usePhysicalCodeSource;
     }
 
     void addChild(final String path, final ResourceLoader loader) {
@@ -265,7 +270,12 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         final CodeSigners codeSigners = entryCodeSigners == null || entryCodeSigners.length == 0 ? EMPTY_CODE_SIGNERS : new CodeSigners(entryCodeSigners);
         CodeSource codeSource = codeSources.get(codeSigners);
         if (codeSource == null) {
-            codeSources.put(codeSigners, codeSource = new CodeSource(rootUrl, entryCodeSigners));
+            try {
+                final URL deploymentUrl = new URL("deployment", null, 0, fullPath, new DeploymentURLStreamHandler());
+                codeSources.put(codeSigners, codeSource = new CodeSource(isDeployment ? deploymentUrl : rootUrl, entryCodeSigners));
+            } catch (final MalformedURLException ignored) {
+                throw new IllegalStateException(); // should never happen
+            }
         }
         return codeSource;
     }

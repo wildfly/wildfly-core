@@ -66,16 +66,17 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     private final File root;
     private final String path;
     private final String fullPath;
-    private final boolean isDeployment;
+    private volatile boolean isDeployment;
     private final ResourceLoader parent;
     private final String rootName;
     private final Manifest manifest;
-    private final CodeSource codeSource;
     private final AccessControlContext context;
     // protected by {@code children}
     private final Map<String, ResourceLoader> children = new HashMap<>();
     // protected by {@code overlays}
     private final Map<String, File> overlays = new HashMap<>();
+    private final URL rootUrl;
+    private final URL deploymentUrl;
 
     FileResourceLoader(final ResourceLoader parent, final String rootName, final File root, final String path, final boolean isDeployment, final AccessControlContext context) {
         if (root == null) {
@@ -98,25 +99,26 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         this.isDeployment = isDeployment;
         final File manifestFile = new File(root, "META-INF" + File.separatorChar + "MANIFEST.MF");
         manifest = readManifestFile(manifestFile);
-        final URL rootUrl;
         final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            rootUrl = doPrivileged(new PrivilegedAction<URL>() {
-                public URL run() {
-                    try {
-                        return root.getAbsoluteFile().toURI().toURL();
-                    } catch (MalformedURLException e) {
-                        throw new IllegalArgumentException("Invalid root file specified", e);
+        try {
+            deploymentUrl = new URL("deployment", null, 0, fullPath, new DeploymentURLStreamHandler());
+            if (sm != null) {
+                rootUrl = doPrivileged(new PrivilegedAction<URL>() {
+                    public URL run() {
+                        try {
+                            return root.getAbsoluteFile().toURI().toURL();
+                        } catch (MalformedURLException e) {
+                            throw new IllegalArgumentException("Invalid root file specified", e);
+                        }
                     }
-                }
-            }, context);
-        } else try {
-            rootUrl = root.getAbsoluteFile().toURI().toURL();
+                }, context);
+            } else {
+                rootUrl = root.getAbsoluteFile().toURI().toURL();
+            }
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Invalid root file specified", e);
         }
         this.context = context;
-        codeSource = new CodeSource(rootUrl, (CodeSigner[])null);
     }
 
     void addChild(final String path, final ResourceLoader loader) {
@@ -135,6 +137,11 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
                 }
             }
         }
+    }
+
+    @Override
+    public void setUsePhysicalCodeSource(final boolean usePhysicalCodeSource) {
+        this.isDeployment = !usePhysicalCodeSource;
     }
 
     @Override
@@ -238,7 +245,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         }
         final long size = resource.getSize();
         final ClassSpec spec = new ClassSpec();
-        spec.setCodeSource(codeSource);
+        spec.setCodeSource(new CodeSource(isDeployment ? deploymentUrl : rootUrl, (CodeSigner[])null));
         final InputStream is = resource.openStream();
         try {
             if (size <= (long) Integer.MAX_VALUE) {

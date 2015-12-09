@@ -64,6 +64,7 @@ public final class ResourceRoot extends SimpleAttachable {
 
     public void setUsePhysicalCodeSource(final boolean usePhysicalCodeSource) {
         this.usePhysicalCodeSource = usePhysicalCodeSource;
+        loader.setUsePhysicalCodeSource(usePhysicalCodeSource);
     }
 
     public boolean isUsePhysicalCodeSource() {
@@ -80,6 +81,7 @@ public final class ResourceRoot extends SimpleAttachable {
             throw ServerLogger.ROOT_LOGGER.cannotMergeResourceRoot(loader.getPath(), additionalResourceRoot.getLoader().getPath());
         }
         usePhysicalCodeSource = additionalResourceRoot.usePhysicalCodeSource;
+        loader.setUsePhysicalCodeSource(usePhysicalCodeSource);
         if (additionalResourceRoot.getExportFilters().isEmpty()) {
             //new root has no filters, so we don't want our existing filters to break anything
             //see WFLY-1527

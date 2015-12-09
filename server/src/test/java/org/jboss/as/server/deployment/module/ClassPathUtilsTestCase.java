@@ -226,6 +226,10 @@ public class ClassPathUtilsTestCase {
         // the following methods are not implemented
 
         @Override
+        public void setUsePhysicalCodeSource(final boolean usePhysicalCodeSource) {
+        }
+
+        @Override
         public File getRoot() {
             return null;
         }

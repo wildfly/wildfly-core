@@ -37,6 +37,13 @@ import java.util.Iterator;
 public interface ResourceLoader extends IterableResourceLoader {
 
     /**
+     * By default all deployment resource URLs begin with <B>deployment:</B> prefix.
+     * Calling this method with <B>true</B> parameter will turn this default behavior off.
+     * @param usePhysicalCodeSource
+     */
+    void setUsePhysicalCodeSource(boolean usePhysicalCodeSource);
+
+    /**
      * Returns loader's root file. It can be either directory or packaged jar archive.
      * @return loaders's root file
      */

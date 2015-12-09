@@ -42,15 +42,23 @@ final class SingleFileResourceLoader implements ResourceLoader {
     private final String name;
     private final String path;
     private final String fullPath;
+    private final File root;
     private final ResourceLoader parent;
-    private final Resource resource;
+    private final AccessControlContext context;
+    private volatile boolean isDeployment;
 
     SingleFileResourceLoader(final String name, final File root, final String path, final ResourceLoader parent, final boolean isDeployment, final AccessControlContext context) {
         this.name = name;
+        this.root = root;
         this.parent = parent;
         this.path = path == null ? "" : path;
+        this.context = context;
         this.fullPath = parent != null ? parent.getFullPath() + "/" + path : name;
-        this.resource = new FileEntryResource(name, root, isDeployment ? fullPath : null, context);
+    }
+
+    @Override
+    public void setUsePhysicalCodeSource(final boolean usePhysicalCodeSource) {
+        this.isDeployment = !usePhysicalCodeSource;
     }
 
     @Override
@@ -88,7 +96,7 @@ final class SingleFileResourceLoader implements ResourceLoader {
             @Override
             public Resource next() {
                 try {
-                    return resource;
+                    return new FileEntryResource(name, root, isDeployment ? fullPath : null, context);
                 } finally {
                     done = true;
                 }
@@ -113,7 +121,7 @@ final class SingleFileResourceLoader implements ResourceLoader {
 
     @Override
     public Resource getResource(final String name) {
-        return "".equals(name) ? resource : null;
+        return "".equals(name) ? new FileEntryResource(name, root, isDeployment ? fullPath : null, context) : null;
     }
 
     @Override

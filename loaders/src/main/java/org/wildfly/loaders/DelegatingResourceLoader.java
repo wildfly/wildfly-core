@@ -129,4 +129,8 @@ class DelegatingResourceLoader implements ResourceLoader {
         return getDelegate().getRootURL();
     }
 
+    @Override
+    public void setUsePhysicalCodeSource(final boolean usePhysicalCodeSource) {
+        getDelegate().setUsePhysicalCodeSource(usePhysicalCodeSource);
+    }
 }
