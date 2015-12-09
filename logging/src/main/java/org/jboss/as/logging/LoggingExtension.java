@@ -34,9 +34,9 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.SimpleResourceDefinition.Parameters;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -182,17 +182,11 @@ public class LoggingExtension implements Extension {
 
         // Register logging profile sub-models
         ApplicationTypeConfig atc = new ApplicationTypeConfig(SUBSYSTEM_NAME, CommonAttributes.LOGGING_PROFILE);
-        final List<AccessConstraintDefinition> accessConstraints = new ApplicationTypeAccessConstraintDefinition(atc).wrapAsList();
-        ResourceDefinition profile = new SimpleResourceDefinition(LOGGING_PROFILE_PATH,
-                getResourceDescriptionResolver(),
-                new LoggingProfileAdd(pathManager),
-                LoggingProfileOperations.REMOVE_PROFILE) {
-
-            @Override
-            public List<AccessConstraintDefinition> getAccessConstraints() {
-                return accessConstraints;
-            }
-        };
+        ResourceDefinition profile = new SimpleResourceDefinition(
+                new Parameters(LOGGING_PROFILE_PATH, getResourceDescriptionResolver())
+                        .setAddHandler(new LoggingProfileAdd(pathManager))
+                        .setRemoveHandler(LoggingProfileOperations.REMOVE_PROFILE)
+                        .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(atc)));
 
         registerLoggingProfileSubModels(registration.registerSubModel(profile), pathManager);
 

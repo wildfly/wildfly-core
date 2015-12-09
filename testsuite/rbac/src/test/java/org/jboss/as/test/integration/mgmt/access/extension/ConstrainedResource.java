@@ -23,7 +23,6 @@
  */
 package org.jboss.as.test.integration.mgmt.access.extension;
 
-import java.util.List;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
@@ -37,7 +36,6 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
@@ -100,18 +98,11 @@ public class ConstrainedResource extends SimpleResourceDefinition {
             })
             .build();
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     public ConstrainedResource(PathElement pathElement) {
-        super(pathElement, new NonResolvingResourceDescriptionResolver(),
-                new AbstractAddStepHandler(PASSWORD, SECURITY_DOMAIN), ReloadRequiredRemoveStepHandler.INSTANCE);
-        ApplicationTypeConfig atc = new ApplicationTypeConfig("rbac", "datasource");
-        accessConstraints = new ApplicationTypeAccessConstraintDefinition(atc).wrapAsList();
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
+        super(new Parameters(pathElement, new NonResolvingResourceDescriptionResolver())
+                .setAddHandler(new AbstractAddStepHandler(PASSWORD, SECURITY_DOMAIN))
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("rbac", "datasource"))));
     }
 
     @Override

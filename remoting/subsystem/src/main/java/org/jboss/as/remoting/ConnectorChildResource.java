@@ -38,9 +38,12 @@ import org.jboss.msc.service.ServiceName;
 abstract class ConnectorChildResource extends SimpleResourceDefinition {
 
     public ConnectorChildResource(PathElement pathElement, ResourceDescriptionResolver descriptionResolver, OperationStepHandler addHandler, OperationStepHandler removeHandler) {
-        super(pathElement, descriptionResolver, addHandler, removeHandler);
+        this(new Parameters(pathElement, descriptionResolver).setAddHandler(addHandler).setRemoveHandler(removeHandler));
     }
 
+    public ConnectorChildResource(Parameters parameters) {
+        super(parameters);
+    }
     static void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
         ConnectorAdd.INSTANCE.launchServices(context, parentAddress.getLastElement().getValue(), parentModel);
     }

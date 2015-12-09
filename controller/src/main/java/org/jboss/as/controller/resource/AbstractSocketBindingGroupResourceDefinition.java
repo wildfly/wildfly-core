@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller.resource;
 
-import java.util.List;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -33,7 +32,6 @@ import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -73,15 +71,13 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
             .setCapabilityReference("org.wildfly.network.interface", SOCKET_BINDING_GROUP_CAPABILITY)
             .build();
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     public AbstractSocketBindingGroupResourceDefinition(final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
         super(new Parameters(PATH, ControllerResolver.getResolver(ModelDescriptionConstants.SOCKET_BINDING_GROUP))
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
                 .setAddHandler(addHandler)
                 .setRemoveHandler(removeHandler)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
-        this.accessConstraints = SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG.wrapAsList();
     }
 
     @Override
@@ -95,11 +91,6 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
             }
         });
 
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 
     public static void validateDefaultInterfaceReference(final OperationContext context, final ModelNode bindingGroup) throws OperationFailedException {

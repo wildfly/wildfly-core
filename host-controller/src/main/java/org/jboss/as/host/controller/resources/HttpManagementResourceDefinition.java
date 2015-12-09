@@ -25,8 +25,6 @@ package org.jboss.as.host.controller.resources;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 
-import java.util.List;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
@@ -35,7 +33,6 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -136,17 +133,15 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = new AttributeDefinition[] {INTERFACE, HTTP_PORT, HTTPS_PORT, SECURE_INTERFACE, SECURITY_REALM,
                                                                                                  CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     public HttpManagementResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo,
                                              final HostControllerEnvironment environment) {
-        super(RESOURCE_PATH,
-                HostModelUtil.getResourceDescriptionResolver("core", "management", "http-interface"),
-                new HttpManagementAddHandler(hostControllerInfo, environment),
-                HttpManagementRemoveHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
-        setDeprecated(ModelVersion.create(1, 7));
+        super(new Parameters(RESOURCE_PATH, HostModelUtil.getResourceDescriptionResolver("core", "management", "http-interface"))
+                .setAddHandler(new HttpManagementAddHandler(hostControllerInfo, environment))
+                .setRemoveHandler(HttpManagementRemoveHandler.INSTANCE)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override
@@ -155,10 +150,5 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition attr : ATTRIBUTE_DEFINITIONS) {
             resourceRegistration.registerReadWriteAttribute(attr, null, HttpManagementWriteAttributeHandler.INSTANCE);
         }
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 }

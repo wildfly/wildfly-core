@@ -36,15 +36,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.SimpleResourceDefinition.Parameters;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
@@ -167,30 +164,16 @@ public class FilteredReadChildrenNamesTestCase extends AbstractRbacTestBase {
     protected void initModel(ManagementModel managementModel) {
         ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
         GlobalOperationHandlers.registerGlobalOperations(registration, ProcessType.EMBEDDED_SERVER);
-
         GlobalNotifications.registerGlobalNotifications(registration, ProcessType.EMBEDDED_SERVER);
 
-        registration.registerSubModel(new TestResourceDefinition(UNCONSTRAINED_RESOURCE));
-        registration.registerSubModel(new TestResourceDefinition(SENSITIVE_CONSTRAINED_RESOURCE,
-                MY_SENSITIVE_CONSTRAINT));
-    }
-
-    private static final class TestResourceDefinition extends SimpleResourceDefinition {
-        private final List<AccessConstraintDefinition> constraintDefinitions;
-
-        TestResourceDefinition(String path, AccessConstraintDefinition... constraintDefinitions) {
-            super(pathElement(path),
-                    new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
-                    new AbstractRemoveStepHandler() {}
-            );
-
-            this.constraintDefinitions = Collections.unmodifiableList(Arrays.asList(constraintDefinitions));
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return constraintDefinitions;
-        }
+        registration.registerSubModel(new SimpleResourceDefinition(
+                new Parameters(pathElement(UNCONSTRAINED_RESOURCE), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})));
+        registration.registerSubModel(new SimpleResourceDefinition(
+                new Parameters(pathElement(SENSITIVE_CONSTRAINED_RESOURCE), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(MY_SENSITIVE_CONSTRAINT)));
     }
 }

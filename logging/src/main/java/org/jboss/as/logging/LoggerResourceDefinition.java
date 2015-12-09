@@ -30,8 +30,6 @@ import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.REMOVE_HANDLER_OPERATION_NAME;
 import static org.jboss.as.logging.Logging.join;
 
-import java.util.List;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationDefinition;
@@ -42,7 +40,6 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -121,18 +118,14 @@ public class LoggerResourceDefinition extends TransformerResourceDefinition {
     private final AttributeDefinition[] writableAttributes;
     private final OperationStepHandler writeHandler;
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     public LoggerResourceDefinition(final boolean includeLegacy) {
-        super(LOGGER_PATH,
-                LoggingExtension.getResourceDescriptionResolver(LOGGER),
-                (includeLegacy ? new LoggerOperations.LoggerAddOperationStepHandler(join(WRITABLE_ATTRIBUTES, LEGACY_ATTRIBUTES))
-                               : new LoggerOperations.LoggerAddOperationStepHandler(WRITABLE_ATTRIBUTES)),
-                LoggerOperations.REMOVE_LOGGER);
+        super(new Parameters(LOGGER_PATH, LoggingExtension.getResourceDescriptionResolver(LOGGER))
+                .setAddHandler(includeLegacy ? new LoggerOperations.LoggerAddOperationStepHandler(join(WRITABLE_ATTRIBUTES, LEGACY_ATTRIBUTES))
+                               : new LoggerOperations.LoggerAddOperationStepHandler(WRITABLE_ATTRIBUTES))
+                .setRemoveHandler(LoggerOperations.REMOVE_LOGGER)
+                .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig(LoggingExtension.SUBSYSTEM_NAME, LOGGER))));
         writableAttributes = (includeLegacy ? join(WRITABLE_ATTRIBUTES, LEGACY_ATTRIBUTES) : WRITABLE_ATTRIBUTES);
         this.writeHandler = new LoggerOperations.LoggerWriteAttributeHandler(writableAttributes);
-        ApplicationTypeConfig atc = new ApplicationTypeConfig(LoggingExtension.SUBSYSTEM_NAME, LOGGER);
-        accessConstraints = new ApplicationTypeAccessConstraintDefinition(atc).wrapAsList();
     }
 
     @Override
@@ -157,11 +150,6 @@ public class LoggerResourceDefinition extends TransformerResourceDefinition {
         registration.registerOperationHandler(REMOVE_HANDLER_OPERATION, LoggerOperations.REMOVE_HANDLER);
         registration.registerOperationHandler(LEGACY_ADD_HANDLER_OPERATION, LoggerOperations.ADD_HANDLER);
         registration.registerOperationHandler(LEGACY_REMOVE_HANDLER_OPERATION, LoggerOperations.REMOVE_HANDLER);
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 
     @Override

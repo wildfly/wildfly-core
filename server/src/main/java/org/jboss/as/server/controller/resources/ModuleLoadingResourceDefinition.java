@@ -46,7 +46,6 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
@@ -72,14 +71,12 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
 
     private static final AttributeDefinition MODULE_NAME = new SimpleAttributeDefinitionBuilder(MODULE, ModelType.STRING).build();
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     public static final ModuleLoadingResourceDefinition INSTANCE = new ModuleLoadingResourceDefinition();
 
     private ModuleLoadingResourceDefinition() {
-        super(PathElement.pathElement(CORE_SERVICE, MODULE_LOADING),
-                ServerDescriptions.getResourceDescriptionResolver("core", MODULE_LOADING));
-        this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MODULE_LOADING.wrapAsList();
+        super(new Parameters(PathElement.pathElement(CORE_SERVICE, MODULE_LOADING),
+                ServerDescriptions.getResourceDescriptionResolver("core", MODULE_LOADING))
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.MODULE_LOADING));
     }
 
     @Override
@@ -108,11 +105,6 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
 
          resourceRegistration.registerOperationHandler(definition, new ModuleLocationHandler());
          resourceRegistration.registerOperationHandler(ModuleInfoHandler.DEFINITION, ModuleInfoHandler.INSTANCE);
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 
     /** Read attribute handler for "module-roots" */

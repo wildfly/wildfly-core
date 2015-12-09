@@ -24,15 +24,12 @@
 
 package org.jboss.as.test.integration.domain.extension;
 
-import java.util.Arrays;
-import java.util.List;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
@@ -41,20 +38,12 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
  */
 public class SensitiveResource extends SimpleResourceDefinition {
-    private final List<AccessConstraintDefinition> accessConstraints;
-
 
     public SensitiveResource(PathElement pathElement) {
-        super(pathElement, new NonResolvingResourceDescriptionResolver(),
-                new AbstractAddStepHandler(), ReloadRequiredRemoveStepHandler.INSTANCE);
-
-        ApplicationTypeConfig atc = new ApplicationTypeConfig("security", "security-domain");
-        AccessConstraintDefinition acd = new ApplicationTypeAccessConstraintDefinition(atc);
-        this.accessConstraints = Arrays.asList(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN, acd);
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
+        super(new  Parameters(pathElement, new NonResolvingResourceDescriptionResolver())
+                .setAddHandler(new AbstractAddStepHandler())
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN,
+                        new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("security", "security-domain"))));
     }
 }

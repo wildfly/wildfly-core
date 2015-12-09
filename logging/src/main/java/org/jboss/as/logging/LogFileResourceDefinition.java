@@ -123,8 +123,8 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
     private final PathManager pathManager;
 
     protected LogFileResourceDefinition(final PathManager pathManager) {
-        super(new Parameters(LOG_FILE_PATH,
-                LoggingExtension.getResourceDescriptionResolver("log-file")).setRuntime());
+        super(new Parameters(LOG_FILE_PATH, LoggingExtension.getResourceDescriptionResolver("log-file"))
+                .setRuntime().setAccessConstraints(VIEW_SERVER_LOGS));
         assert pathManager != null : "PathManager cannot be null";
         this.pathManager = pathManager;
     }
@@ -172,11 +172,6 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
             }
         };
         resourceRegistration.registerReadOnlyAttribute(STREAM, streamHandler);
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return Collections.singletonList(VIEW_SERVER_LOGS);
     }
 
     private abstract class ReadAttributeOperationStepHandler implements OperationStepHandler {

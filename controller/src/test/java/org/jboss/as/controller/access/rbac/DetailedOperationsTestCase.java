@@ -596,20 +596,16 @@ public class DetailedOperationsTestCase extends AbstractRbacTestBase {
     }
 
     private static final class TestResourceDefinition extends SimpleResourceDefinition {
-        private final List<AccessConstraintDefinition> constraintDefinitions;
 
         TestResourceDefinition(String path, AccessConstraintDefinition... constraintDefinitions) {
             this(pathElement(path), constraintDefinitions);
         }
 
         TestResourceDefinition(PathElement element, AccessConstraintDefinition... constraintDefinitions) {
-            super(element,
-                    new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
-                    new AbstractRemoveStepHandler() {}
-            );
-
-            this.constraintDefinitions = Collections.unmodifiableList(Arrays.asList(constraintDefinitions));
+            super(new Parameters(element, new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(constraintDefinitions));
         }
 
         @Override
@@ -642,11 +638,6 @@ public class DetailedOperationsTestCase extends AbstractRbacTestBase {
                     new TestOperationStepHandler(Action.ActionEffect.READ_RUNTIME, Action.ActionEffect.WRITE_CONFIG));
             resourceRegistration.registerOperationHandler(TestOperationStepHandler.WRITE_RUNTIME_WRITE_CONFIG_DEFINITION,
                     new TestOperationStepHandler(Action.ActionEffect.WRITE_RUNTIME, Action.ActionEffect.WRITE_CONFIG));
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return constraintDefinitions;
         }
     }
 

@@ -22,12 +22,10 @@
 
 package org.jboss.as.server.deploymentoverlay;
 
-import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
@@ -52,10 +50,11 @@ public class DeploymentOverlayDefinition extends SimpleResourceDefinition {
 
 
     public DeploymentOverlayDefinition(boolean domainLevel,ContentRepository contentRepo, DeploymentFileRepository fileRepository) {
-        super(DeploymentOverlayModel.DEPLOYMENT_OVERRIDE_PATH,
-                ControllerResolver.getResolver(ModelDescriptionConstants.DEPLOYMENT_OVERLAY),
-                DeploymentOverlayAdd.INSTANCE,
-                ModelOnlyRemoveStepHandler.INSTANCE);
+        super(new Parameters(DeploymentOverlayModel.DEPLOYMENT_OVERRIDE_PATH,
+                ControllerResolver.getResolver(ModelDescriptionConstants.DEPLOYMENT_OVERLAY))
+                .setAddHandler(DeploymentOverlayAdd.INSTANCE)
+                .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE)
+                .setAccessConstraints(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
         this.contentRepo = contentRepo;
         this.fileRepository = fileRepository;
         this.domainLevel = domainLevel;
@@ -76,10 +75,5 @@ public class DeploymentOverlayDefinition extends SimpleResourceDefinition {
         if (!domainLevel) {
             resourceRegistration.registerSubModel(new DeploymentOverlayDeploymentDefinition());
         }
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return ApplicationTypeAccessConstraintDefinition.DEPLOYMENT_AS_LIST;
     }
 }

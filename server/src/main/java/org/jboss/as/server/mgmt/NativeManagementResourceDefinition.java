@@ -25,8 +25,6 @@ package org.jboss.as.server.mgmt;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 
-import java.util.List;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationStepHandler;
@@ -36,7 +34,6 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -98,15 +95,15 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
 
     public static final NativeManagementResourceDefinition INSTANCE = new NativeManagementResourceDefinition();
 
-    private final List<AccessConstraintDefinition> accessConstraints;
 
     private NativeManagementResourceDefinition() {
-        super(RESOURCE_PATH,
-                ServerDescriptions.getResourceDescriptionResolver("core.management.native-interface"),
-                NativeManagementAddHandler.INSTANCE, NativeManagementRemoveHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
-        setDeprecated(ModelVersion.create(3));
+        super(new Parameters(RESOURCE_PATH, ServerDescriptions.getResourceDescriptionResolver("core.management.native-interface"))
+                .setAddHandler(NativeManagementAddHandler.INSTANCE)
+                .setRemoveHandler(NativeManagementRemoveHandler.INSTANCE)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
+                .setDeprecatedSince(ModelVersion.create(3)));
     }
 
     @Override
@@ -115,11 +112,6 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
         for (AttributeDefinition attr : ATTRIBUTE_DEFINITIONS) {
             resourceRegistration.registerReadWriteAttribute(attr, null, writeHandler);
         }
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 
     @Override

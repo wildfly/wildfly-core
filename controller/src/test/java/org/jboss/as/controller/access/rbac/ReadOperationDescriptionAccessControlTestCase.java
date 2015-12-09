@@ -263,18 +263,11 @@ public class ReadOperationDescriptionAccessControlTestCase extends AbstractContr
         this.rootRegistration = managementModel.getRootResourceRegistration();
     }
 
-    private static class TestResourceDefinition extends SimpleResourceDefinition {
-        TestResourceDefinition(PathElement pathElement) {
-            super(pathElement,
-                    new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
-                    new AbstractRemoveStepHandler() {});
-        }
-    }
-
-    private static class RootResourceDefinition extends TestResourceDefinition {
+    private static class RootResourceDefinition extends SimpleResourceDefinition {
         RootResourceDefinition() {
-            super(PathElement.pathElement("root"));
+            super(new Parameters(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {}));
         }
 
         @Override
@@ -284,15 +277,16 @@ public class ReadOperationDescriptionAccessControlTestCase extends AbstractContr
         }
     }
 
-    private static class ChildResourceDefinition extends TestResourceDefinition implements ResourceDefinition {
-        private final List<AccessConstraintDefinition> constraints;
+    private static class ChildResourceDefinition extends SimpleResourceDefinition implements ResourceDefinition {
         private final List<AttributeDefinition> attributes = Collections.synchronizedList(new ArrayList<AttributeDefinition>());
         private final List<AttributeDefinition> readOnlyAttributes = Collections.synchronizedList(new ArrayList<AttributeDefinition>());
         private final List<OperationDefinition> operations = Collections.synchronizedList(new ArrayList<OperationDefinition>());
 
         ChildResourceDefinition(PathElement element, AccessConstraintDefinition...constraints){
-            super(element);
-            this.constraints = Collections.unmodifiableList(Arrays.asList(constraints));
+            super(new Parameters(element, new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(constraints));
         }
 
         void addOperation(String name, boolean readOnly, boolean runtimeOnly, AccessConstraintDefinition...constraints) {
@@ -325,11 +319,6 @@ public class ReadOperationDescriptionAccessControlTestCase extends AbstractContr
             for (OperationDefinition op : operations) {
                 resourceRegistration.registerOperationHandler(op, TestOperationStepHandler.INSTANCE);
             }
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return constraints;
         }
     }
 

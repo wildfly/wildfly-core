@@ -26,8 +26,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 
-import java.util.List;
-
 import javax.management.MBeanServer;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
@@ -40,7 +38,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -77,18 +74,15 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
     static final RuntimeCapability<Void> JMX_CAPABILITY =
             RuntimeCapability.Builder.of(JMX_CAPABILITY_NAME, MBeanServer.class).build();
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     private final ManagedAuditLogger auditLogger;
     private final JmxAuthorizer authorizer;
     private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
     private JMXSubsystemRootResource(ManagedAuditLogger auditLogger, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
-        super(PATH_ELEMENT,
-                JMXExtension.getResourceDescriptionResolver(JMXExtension.SUBSYSTEM_NAME),
-                new JMXSubsystemAdd(auditLogger, authorizer, hostInfoAccessor),
-                new JMXSubsystemRemove(auditLogger, authorizer, hostInfoAccessor));
-        this.accessConstraints = JMXExtension.JMX_SENSITIVITY_DEF.wrapAsList();
+        super(new Parameters(PATH_ELEMENT, JMXExtension.getResourceDescriptionResolver(JMXExtension.SUBSYSTEM_NAME))
+                .setAddHandler(new JMXSubsystemAdd(auditLogger, authorizer, hostInfoAccessor))
+                .setRemoveHandler(new JMXSubsystemRemove(auditLogger, authorizer, hostInfoAccessor))
+                .setAccessConstraints(JMXExtension.JMX_SENSITIVITY_DEF));
         this.auditLogger = auditLogger;
         this.authorizer = authorizer;
         this.hostInfoAccessor = hostInfoAccessor;
@@ -116,11 +110,6 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new ExposeModelResourceExpression(auditLogger, authorizer, hostInfoAccessor));
         resourceRegistration.registerSubModel(RemotingConnectorResource.INSTANCE);
         resourceRegistration.registerSubModel(new JmxAuditLoggerResourceDefinition(auditLogger));
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 
     @Override
