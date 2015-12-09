@@ -80,7 +80,7 @@ public class Seam2Processor implements DeploymentUnitProcessor {
                 if (url == null)
                     throw ServerLogger.ROOT_LOGGER.noSeamIntegrationJarPresent(extModule);
                 File file = new File(url.toURI());
-                ResourceLoader loader = ResourceLoaders.newResourceLoader(SEAM_INT_JAR, file);
+                ResourceLoader loader = ResourceLoaders.newResourceLoader(SEAM_INT_JAR, file, false);
                 seamIntResourceRoot = new ResourceRoot(loader);
             }
             return seamIntResourceRoot;

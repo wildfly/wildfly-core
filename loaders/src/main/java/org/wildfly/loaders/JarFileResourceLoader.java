@@ -75,12 +75,13 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
     private final String fullPath;
     private final String relativePath;
     private final File fileOfJar;
+    private final boolean isDeployment;
 
-    JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile, final String path) {
-        this(parent, rootName, jarFile, path, null);
+    JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile, final String path, final boolean isDeployment) {
+        this(parent, rootName, jarFile, path, null, isDeployment);
     }
 
-    JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile, final String path, final String relativePath) {
+    JarFileResourceLoader(final ResourceLoader parent, final String rootName, final JarFile jarFile, final String path, final String relativePath, final boolean isDeployment) {
         if (jarFile == null) {
             throw new IllegalArgumentException("jarFile cannot be null");
         }
@@ -97,6 +98,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         this.rootName = rootName;
         this.relativePath = isEmptyPath(relativePath) ? null : normalizePath(relativePath);
         this.fullPath = parent != null ? parent.getFullPath() + "/" + path : rootName;
+        this.isDeployment = isDeployment;
         try {
             rootUrl = getJarURI(fileOfJar.toURI(), this.relativePath).toURL();
         } catch (URISyntaxException|MalformedURLException e) {
@@ -346,7 +348,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
             }
             final URL overlayURL = overlay != null ? overlay.toURI().toURL() : null;
             final URL entryURL = entry != null ? new URL(null, getJarURI(uri, entry.getName()).toString(), (URLStreamHandler) null) : null;
-            return new JarEntryResource(jarFile, entry, name, entryURL, overlay, overlayURL);
+            return new JarEntryResource(jarFile, entry, name, entryURL, overlay, overlayURL, isDeployment ? fullPath : null);
         } catch (MalformedURLException e) {
             // must be invalid...?
             return null;
@@ -380,7 +382,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
                                 try {
                                     final File overlay = overlays.get(overlayPath);
                                     final URL overlayURL = overlay != null ? overlay.toURI().toURL() : null;
-                                    next = new JarEntryResource(jarFile, null, overlayPath, null, overlay, overlayURL);
+                                    next = new JarEntryResource(jarFile, null, overlayPath, null, overlay, overlayURL, isDeployment ? fullPath : null);
                                 } catch (Exception ignored) {
                                 }
                             }
@@ -391,7 +393,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
                             if (!isOverlayed && (recursive ? PathUtils.isChild(startName, entry.getName()) : PathUtils.isDirectChild(startName, entry.getName()))) {
                                 if (!entry.isDirectory()) {
                                     try {
-                                        next = new JarEntryResource(jarFile, entry, name, getJarURI(new File(jarFile.getName()).toURI(), entry.getName()).toURL(), null, null);
+                                        next = new JarEntryResource(jarFile, entry, name, getJarURI(new File(jarFile.getName()).toURI(), entry.getName()).toURL(), null, null, isDeployment ? fullPath : null);
                                     } catch (Exception ignored) {
                                     }
                                 }

@@ -58,7 +58,7 @@ public final class DeploymentRootMountProcessor implements DeploymentUnitProcess
         ResourceLoader loader;
         try {
             final String deploymentName = deploymentUnit.getName();
-            loader = ResourceLoaders.newResourceLoader(deploymentName, deployment);
+            loader = ResourceLoaders.newResourceLoader(deploymentName, deployment, true);
         } catch (IOException e) {
             throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
         }

@@ -66,6 +66,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     private final File root;
     private final String path;
     private final String fullPath;
+    private final boolean isDeployment;
     private final ResourceLoader parent;
     private final String rootName;
     private final Manifest manifest;
@@ -76,7 +77,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
     // protected by {@code overlays}
     private final Map<String, File> overlays = new HashMap<>();
 
-    FileResourceLoader(final ResourceLoader parent, final String rootName, final File root, final String path, final AccessControlContext context) {
+    FileResourceLoader(final ResourceLoader parent, final String rootName, final File root, final String path, final boolean isDeployment, final AccessControlContext context) {
         if (root == null) {
             throw new IllegalArgumentException("root is null");
         }
@@ -94,6 +95,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         this.path = path == null ? "" : path;
         this.rootName = rootName;
         this.fullPath = parent != null ? parent.getFullPath() + "/" + path : rootName;
+        this.isDeployment = isDeployment;
         final File manifestFile = new File(root, "META-INF" + File.separatorChar + "MANIFEST.MF");
         manifest = readManifestFile(manifestFile);
         final URL rootUrl;
@@ -297,22 +299,14 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
                     if (!file.exists() || file.isDirectory()) {
                         return null;
                     } else {
-                        try {
-                            return new FileEntryResource(normalizedPath, file, file.toURI().toURL(), context);
-                        } catch (MalformedURLException e) {
-                            return null;
-                        }
+                        return new FileEntryResource(normalizedPath, file, isDeployment ? fullPath : null, context);
                     }
                 }
             }, context);
         } else if (! file.exists() || file.isDirectory()) {
             return null;
         } else {
-            try {
-                return new FileEntryResource(normalizedPath, file, file.toURI().toURL(), context);
-            } catch (MalformedURLException e) {
-                return null;
-            }
+            return new FileEntryResource(normalizedPath, file, isDeployment ? fullPath : null, context);
         }
     }
 
@@ -344,8 +338,7 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
                 if ((recursive ? PathUtils.isChild(startName, overlayPath) : PathUtils.isDirectChild(startName, overlayPath))) {
                     try {
                         final File overlay = overlays.get(overlayPath);
-                        final URL overlayURL = overlay.toURI().toURL();
-                        next = new FileEntryResource(overlayPath, overlay, overlayURL, context);
+                        next = new FileEntryResource(overlayPath, overlay, FileResourceLoader.this.isDeployment ? fullPath : null, context);
                         return true;
                     } catch (Exception ignored) {
                     }
@@ -376,11 +369,8 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
                 }
                 i++;
                 if (file.isFile()) {
-                    try {
-                        next = new FileEntryResource(full, file, file.toURI().toURL(), context);
-                        return true;
-                    } catch (MalformedURLException ignored) {
-                    }
+                    next = new FileEntryResource(full, file, FileResourceLoader.this.isDeployment ? fullPath : null, context);
+                    return true;
                 }
             }
             return false;

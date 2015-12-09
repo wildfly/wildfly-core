@@ -756,7 +756,7 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
                                 ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(path);
                                 return;
                             }
-                            loader = ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), normalizedPath);
+                            loader = ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), normalizedPath, true);
                         }
                         final ResourceRoot resourceRoot = new ResourceRoot(loader);
                         for (final FilterSpecification filter : resourceFilters) {

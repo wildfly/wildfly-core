@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -43,14 +44,16 @@ final class JarEntryResource implements Resource {
     private final URL resourceURL;
     private final File overlay;
     private final URL overlayURL;
+    private final String loaderFullPath;
 
-    JarEntryResource(final JarFile jarFile, final JarEntry entry, final String entryName, final URL resourceURL, final File overlay, final URL overlayURL) {
+    JarEntryResource(final JarFile jarFile, final JarEntry entry, final String entryName, final URL resourceURL, final File overlay, final URL overlayURL, final String loaderFullPath) {
         this.jarFile = jarFile;
         this.entry = entry;
         this.entryName = entryName;
         this.resourceURL = resourceURL;
         this.overlay = overlay;
         this.overlayURL = overlayURL;
+        this.loaderFullPath = loaderFullPath;
     }
 
     public String getName() {
@@ -58,7 +61,15 @@ final class JarEntryResource implements Resource {
     }
 
     public URL getURL() {
-        return overlayURL != null ? overlayURL : resourceURL;
+        if (loaderFullPath != null) {
+            try {
+                return new URL("deployment", null, 0, loaderFullPath + "/" + entryName, new DeploymentURLStreamHandler(this));
+            } catch (final MalformedURLException ignored) {
+                throw new IllegalStateException(); // should never happen
+            }
+        } else {
+            return overlayURL != null ? overlayURL : resourceURL;
+        }
     }
 
     public InputStream openStream() throws IOException {

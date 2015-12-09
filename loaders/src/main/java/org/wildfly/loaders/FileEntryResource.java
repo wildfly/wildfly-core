@@ -31,6 +31,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
@@ -45,13 +46,13 @@ final class FileEntryResource implements Resource {
 
     private final String name;
     private final File file;
-    private final URL url;
+    private final String loaderFullPath;
     private final AccessControlContext context;
 
-    FileEntryResource(final String name, final File file, final URL url, final AccessControlContext context) {
+    FileEntryResource(final String name, final File file, final String loaderFullPath, final AccessControlContext context) {
         this.name = name;
         this.file = file;
-        this.url = url;
+        this.loaderFullPath = loaderFullPath;
         this.context = context;
     }
 
@@ -73,7 +74,11 @@ final class FileEntryResource implements Resource {
     }
 
     public URL getURL() {
-        return url;
+        try {
+            return loaderFullPath != null ? new URL("deployment", null, 0, loaderFullPath + "/" + name, new DeploymentURLStreamHandler(this)) : file.toURI().toURL();
+        } catch (final MalformedURLException ignored) {
+            throw new IllegalStateException(); // should never happen
+        }
     }
 
     public InputStream openStream() throws IOException {

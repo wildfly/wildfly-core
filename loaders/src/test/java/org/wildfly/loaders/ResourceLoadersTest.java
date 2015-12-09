@@ -24,6 +24,8 @@ package org.wildfly.loaders;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.jboss.modules.Resource;
 import org.jboss.modules.PathUtils;
@@ -160,11 +162,11 @@ public class ResourceLoadersTest {
     }
 
     private ResourceLoader wrap(File resourceRoot) throws IOException {
-        return ResourceLoaders.newResourceLoader(EAR_RESOURCE_NAME, resourceRoot);
+        return ResourceLoaders.newResourceLoader(EAR_RESOURCE_NAME, resourceRoot, true);
     }
 
     private ResourceLoader nest(String subResourceLoaderName, ResourceLoader delegate, String subResourcePath) throws IOException {
-        return ResourceLoaders.newResourceLoader(subResourceLoaderName, delegate, subResourcePath);
+        return ResourceLoaders.newResourceLoader(subResourceLoaderName, delegate, subResourcePath, true);
     }
 
     private void dumpResourceLoader(ResourceLoader loader) throws Exception {
@@ -187,6 +189,8 @@ public class ResourceLoadersTest {
             while (i.hasNext()) {
                 r = i.next();
                 System.out.println(" * " + r.getName());
+                assertEquals("deployment:" + loader.getFullPath() + "/" + r.getName(), r.getURL().toString());
+                assertNotNull(r.getURL().openStream());
             }
         }
     }

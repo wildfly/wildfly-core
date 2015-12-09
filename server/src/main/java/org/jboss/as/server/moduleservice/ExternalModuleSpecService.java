@@ -63,7 +63,7 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
     public synchronized void start(StartContext context) throws StartException {
         final ModuleSpec.Builder specBuilder = ModuleSpec.build(moduleIdentifier);
         try {
-            loader = ResourceLoaders.newResourceLoader(file);
+            loader = ResourceLoaders.newResourceLoader(file, false);
             specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(loader));
         } catch (IOException e) {
             throw new StartException(e);

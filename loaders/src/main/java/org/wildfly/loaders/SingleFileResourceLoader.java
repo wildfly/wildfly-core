@@ -28,7 +28,6 @@ import org.jboss.modules.Resource;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlContext;
 import java.util.Collection;
@@ -46,16 +45,12 @@ final class SingleFileResourceLoader implements ResourceLoader {
     private final ResourceLoader parent;
     private final Resource resource;
 
-    SingleFileResourceLoader(final String name, final File root, final String path, final ResourceLoader parent, final AccessControlContext context) {
+    SingleFileResourceLoader(final String name, final File root, final String path, final ResourceLoader parent, final boolean isDeployment, final AccessControlContext context) {
         this.name = name;
         this.parent = parent;
         this.path = path == null ? "" : path;
         this.fullPath = parent != null ? parent.getFullPath() + "/" + path : name;
-        try {
-            resource = new FileEntryResource(name, root, root.toURI().toURL(), context);
-        } catch (final MalformedURLException ignored) {
-            throw new RuntimeException(); // should never happen
-        }
+        this.resource = new FileEntryResource(name, root, isDeployment ? fullPath : null, context);
     }
 
     @Override

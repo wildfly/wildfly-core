@@ -201,7 +201,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         try {
             ResourceLoader retVal = parentLoader.getChild(subresourcePath);
             if (retVal == null) {
-                retVal = ResourceLoaders.newResourceLoader(loaderName, parentLoader, subresourcePath);
+                retVal = ResourceLoaders.newResourceLoader(loaderName, parentLoader, subresourcePath, true);
             }
             return retVal;
         } catch (IOException e) {
