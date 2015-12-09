@@ -41,6 +41,7 @@ import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.accesscontrol.AccessRequirement;
 import org.jboss.as.cli.accesscontrol.AccessRequirementBuilder;
+import org.jboss.as.cli.impl.ArgumentWithListValue;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
@@ -78,11 +79,11 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
     private final ArgumentWithoutValue l;
     private final ArgumentWithValue action;
     private final ArgumentWithValue name;
-    private final ArgumentWithValue content;
-    private final ArgumentWithValue serverGroups;
+    private final ArgumentWithListValue content;
+    private final ArgumentWithListValue serverGroups;
     private final ArgumentWithoutValue allServerGroups;
     private final ArgumentWithoutValue allRelevantServerGroups;
-    private final ArgumentWithValue deployments;
+    private final ArgumentWithListValue deployments;
     private final ArgumentWithoutValue redeployAffected;
 
     private final FilenameTabCompleter pathCompleter;
@@ -158,7 +159,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                 .build());
 
         pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
-        content = new ArgumentWithValue(this, new CommandLineCompleter(){
+        content = new ArgumentWithListValue(this, new CommandLineCompleter(){
             @Override
             public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
                 final String actionStr = action.getValue(ctx.getParsedCommandLine());
@@ -235,7 +236,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         content.addRequiredPreceding(name);
         content.addCantAppearAfter(l);
 
-        serverGroups = new ArgumentWithValue(this, new CommaSeparatedCompleter() {
+        serverGroups = new ArgumentWithListValue(this, new CommaSeparatedCompleter() {
             @Override
             protected Collection<String> getAllCandidates(CommandContext ctx) {
                 return Util.getServerGroups(ctx.getModelControllerClient());
@@ -298,7 +299,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         allServerGroups.addCantAppearAfter(serverGroups);
         serverGroups.addCantAppearAfter(allServerGroups);
 
-        deployments = new ArgumentWithValue(this, new CommaSeparatedCompleter() {
+        deployments = new ArgumentWithListValue(this, new CommaSeparatedCompleter() {
             @Override
             protected Collection<String> getAllCandidates(CommandContext ctx) {
                 final String actionValue = action.getValue(ctx.getParsedCommandLine());

@@ -66,7 +66,8 @@ ARGUMENTS
                    new created module's directory.
 
  --dependencies  - (used with add, optional) a comma-separated list of module
-                   names the module being added depends on.
+                   names the module being added depends on. NOTE: In non-interactive
+                   mode this list must be surrounded by square brackets, e.g. [dep1,dep2].
                    NOTE: this argument makes sense only when the module.xml file
                    is generated, i.e. when the --module-xml argument isn't
                    specified.

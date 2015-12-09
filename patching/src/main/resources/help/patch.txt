@@ -147,11 +147,15 @@ ARGUMENTS:
 
  --override          - The value is a comma-separated list of the miscellaneous
                        items in the patch that can be overridden on the server
-                       whether the item reports a conflict or not.
+                       whether the item reports a conflict or not. NOTE: In
+                       non-interactive mode this list must be surrounded by square
+                       brackets, e.g. [item1,item2].
 
  --preserve          - The value is a comma-separated list of the miscellaneous
                        items that must be preserved and not modified by
-                       applying or rolling back a patch.
+                       applying or rolling back a patch. NOTE: In
+                       non-interactive mode this list must be surrounded by square
+                       brackets, e.g. [item1,item2].
 
  --override-all      - The argument does not expect any value and is
                        optional. The default is 'false'.
