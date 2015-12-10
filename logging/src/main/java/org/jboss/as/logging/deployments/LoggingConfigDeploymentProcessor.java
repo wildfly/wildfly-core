@@ -43,10 +43,10 @@ import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.Module;
 import org.jboss.modules.Resource;
-import org.wildfly.loaders.ResourceLoader;
+import org.wildfly.loaders.deployment.ResourceLoader;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
-import static org.wildfly.loaders.Utils.getResourceName;
+import static org.wildfly.loaders.deployment.Utils.getResourceName;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>

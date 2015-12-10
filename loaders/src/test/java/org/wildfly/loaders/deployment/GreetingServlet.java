@@ -20,28 +20,27 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.loaders;
+package org.wildfly.loaders.deployment;
 
-import java.security.PrivilegedAction;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
-* @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
-*/
-class PropertyReadAction implements PrivilegedAction<String> {
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
+ */
+public final class GreetingServlet extends HttpServlet {
 
-    private final String key;
-    private final String defVal;
-
-    PropertyReadAction(final String key) {
-        this(key, null);
+    public void doGet( final HttpServletRequest req, final HttpServletResponse res )
+    throws ServletException, IOException {
+        final PrintWriter out = res.getWriter();
+        out.write(Messages.sayHello());
+        out.flush();
+        out.close();
     }
 
-    PropertyReadAction(final String key, final String defVal) {
-        this.key = key;
-        this.defVal = defVal;
-    }
-
-    public String run() {
-        return System.getProperty(key, defVal);
-    }
 }

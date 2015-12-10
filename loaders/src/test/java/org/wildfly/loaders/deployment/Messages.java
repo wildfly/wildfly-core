@@ -20,27 +20,19 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.loaders;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+package org.wildfly.loaders.deployment;
 
 /**
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public final class GreetingServlet extends HttpServlet {
+public final class Messages {
 
-    public void doGet( final HttpServletRequest req, final HttpServletResponse res )
-    throws ServletException, IOException {
-        final PrintWriter out = res.getWriter();
-        out.write(Messages.sayHello());
-        out.flush();
-        out.close();
+    private Messages() {
+        // forbidden instantiation
+    }
+
+    public static String sayHello() {
+        return "Hello Dude!";
     }
 
 }

@@ -59,7 +59,7 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.Resource;
 import org.jboss.staxmapper.XMLMapper;
-import org.wildfly.loaders.ResourceLoader;
+import org.wildfly.loaders.deployment.ResourceLoader;
 
 /**
  * Parses <code>jboss-deployment-structure.xml</code>, and merges the result with the deployment.

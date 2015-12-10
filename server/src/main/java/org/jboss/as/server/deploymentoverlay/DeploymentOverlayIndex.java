@@ -22,7 +22,7 @@
 
 package org.jboss.as.server.deploymentoverlay;
 
-import static org.wildfly.loaders.Utils.normalizePath;
+import static org.wildfly.loaders.deployment.Utils.normalizePath;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;

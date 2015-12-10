@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.loaders;
+package org.wildfly.loaders.deployment;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -62,6 +62,7 @@ public class ResourceLoadersTest {
             "org",
             "org/wildfly",
             "org/wildfly/loaders",
+            "org/wildfly/loaders/deployment",
     };
 
     private static final String[] WAR_PATHS = {
@@ -71,6 +72,7 @@ public class ResourceLoadersTest {
             "WEB-INF/classes/org",
             "WEB-INF/classes/org/wildfly",
             "WEB-INF/classes/org/wildfly/loaders",
+            "WEB-INF/classes/org/wildfly/loaders/deployment",
             "WEB-INF/lib"
     };
 
@@ -80,13 +82,13 @@ public class ResourceLoadersTest {
     };
 
     private static final String[] JAR_RESOURCE_NAMES = {
-            "org/wildfly/loaders/Messages.class",
-            "org/wildfly/loaders/Messages.java",
+            "org/wildfly/loaders/deployment/Messages.class",
+            "org/wildfly/loaders/deployment/Messages.java",
     };
     private static final String[] WAR_RESOURCE_NAMES = {
             "WEB-INF/web.xml",
-            "WEB-INF/classes/org/wildfly/loaders/GreetingServlet.class",
-            "WEB-INF/classes/org/wildfly/loaders/GreetingServlet.java",
+            "WEB-INF/classes/org/wildfly/loaders/deployment/GreetingServlet.class",
+            "WEB-INF/classes/org/wildfly/loaders/deployment/GreetingServlet.java",
     };
     private static final String[] EAR_RESOURCE_NAMES = {
             "META-INF/application.xml",
@@ -100,16 +102,16 @@ public class ResourceLoadersTest {
         // define lib.jar
         final JavaArchive libJar = ShrinkWrap.create(JavaArchive.class, "lib.jar");
         libJar.addClass(Messages.class);
-        libJar.add(new FileAsset(new File(sourcesDir, "org/wildfly/loaders/Messages.java")), "org/wildfly/loaders/Messages.java");
+        libJar.add(new FileAsset(new File(sourcesDir, "org/wildfly/loaders/deployment/Messages.java")), "org/wildfly/loaders/deployment/Messages.java");
         // define app.war
         final WebArchive appWar = ShrinkWrap.create(WebArchive.class, "app.war");
-        appWar.setWebXML(new File(sourcesDir, "org/wildfly/loaders/web.xml"));
+        appWar.setWebXML(new File(sourcesDir, "org/wildfly/loaders/deployment/web.xml"));
         appWar.addAsLibraries(libJar);
         appWar.addClass(GreetingServlet.class);
-        appWar.add(new FileAsset(new File(sourcesDir, "org/wildfly/loaders/GreetingServlet.java")), "WEB-INF/classes/org/wildfly/loaders/GreetingServlet.java");
+        appWar.add(new FileAsset(new File(sourcesDir, "org/wildfly/loaders/deployment/GreetingServlet.java")), "WEB-INF/classes/org/wildfly/loaders/deployment/GreetingServlet.java");
         // define foo.ear
         final EnterpriseArchive fooEar = ShrinkWrap.create(EnterpriseArchive.class, "foo.ear");
-        fooEar.addAsManifestResource(new FileAsset(new File(sourcesDir, "org/wildfly/loaders/application.xml")), "application.xml");
+        fooEar.addAsManifestResource(new FileAsset(new File(sourcesDir, "org/wildfly/loaders/deployment/application.xml")), "application.xml");
         fooEar.addAsModule(appWar);
         // scenario 1 - everything exploded
         File targetDir = new File(classesDir, "loader-test-exploded");

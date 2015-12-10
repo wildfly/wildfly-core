@@ -27,7 +27,7 @@ import java.util.List;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.SimpleAttachable;
-import org.wildfly.loaders.ResourceLoader;
+import org.wildfly.loaders.deployment.ResourceLoader;
 
 /**
  * @author John E. Bailey

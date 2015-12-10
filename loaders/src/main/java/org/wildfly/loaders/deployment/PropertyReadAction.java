@@ -20,19 +20,28 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.loaders;
+package org.wildfly.loaders.deployment;
+
+import java.security.PrivilegedAction;
 
 /**
- * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
- */
-public final class Messages {
+* @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+*/
+class PropertyReadAction implements PrivilegedAction<String> {
 
-    private Messages() {
-        // forbidden instantiation
+    private final String key;
+    private final String defVal;
+
+    PropertyReadAction(final String key) {
+        this(key, null);
     }
 
-    public static String sayHello() {
-        return "Hello Dude!";
+    PropertyReadAction(final String key, final String defVal) {
+        this.key = key;
+        this.defVal = defVal;
     }
 
+    public String run() {
+        return System.getProperty(key, defVal);
+    }
 }
