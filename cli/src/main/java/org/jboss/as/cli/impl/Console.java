@@ -283,8 +283,8 @@ public interface Console {
                 }
 
                 @Override
-                public boolean running(){
-                    return console != null && console.isRunning();
+                public boolean running() {
+                    return console != null && (console.isRunning() || console.hasRunningProcesses());
                 }
 
                 @Override
