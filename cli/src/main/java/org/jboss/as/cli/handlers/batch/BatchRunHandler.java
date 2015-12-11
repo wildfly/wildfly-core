@@ -75,6 +75,17 @@ public class BatchRunHandler extends BaseOperationCommand {
         try {
             final ModelNode request = buildRequest(ctx);
 
+            if (ctx.getConfig().isValidateOperationRequests() && request.get(Util.OPERATION).asString().equals(Util.COMPOSITE)
+                    && request.hasDefined(Util.STEPS)) {
+                final List<ModelNode> steps = request.get(Util.STEPS).asList();
+                for (ModelNode step : steps) {
+                    ModelNode opDescOutcome = Util.validateRequest(ctx, step);
+                    if (opDescOutcome != null) { // operation has params that might need to be replaced
+                        Util.replaceFilePathsWithBytes(request, opDescOutcome);
+                    }
+                }
+            }
+
             final ModelControllerClient client = ctx.getModelControllerClient();
             try {
                 response = client.execute(request);
