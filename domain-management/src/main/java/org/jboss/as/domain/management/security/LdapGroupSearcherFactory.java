@@ -40,6 +40,8 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.naming.ldap.LdapReferralException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 
 import org.jboss.as.domain.management.security.BaseLdapGroupSearchResource.GroupName;
 
@@ -51,6 +53,8 @@ import org.jboss.as.domain.management.security.BaseLdapGroupSearchResource.Group
 public class LdapGroupSearcherFactory {
 
     private static final int searchTimeLimit = 10000;
+
+    private static final String PARSE_ROLES_FROM_DN = "org.jboss.as.domain.management.security.parseGroupNameFromLdapDN";
 
     static LdapSearcher<LdapEntry[], LdapEntry> createForGroupToPrincipal(final String baseDn, final String groupDnAttribute,
             final String groupNameAttribute, final String principalAttribute, final boolean recursive,
@@ -256,6 +260,8 @@ public class LdapGroupSearcherFactory {
                 originalReferralAddress = null;
             }
 
+            boolean shouldParseGroupFromDN = Boolean.valueOf(SecurityActions.getSystemProperty(PARSE_ROLES_FROM_DN, null));
+
             if (groupRef != null && groupRef.size() > 0) {
                 NamingEnumeration<String> groupRefValues = (NamingEnumeration<String>) groupRef.getAll();
                 while (groupRefValues.hasMore()) {
@@ -264,6 +270,18 @@ public class LdapGroupSearcherFactory {
 
                     LdapConnectionHandler groupLoadHandler = connectionHandler;
                     URI groupReferralAddress = originalReferralAddress;
+
+                    if (shouldParseGroupFromDN) {
+                        // skip extra ldap search and instead parse group from DN.  similar to parseRoleNameFromDN in LdapExtLoginModule
+                        LdapEntry parsedGroup = parseRole(distingushedName, groupNameAttribute, groupReferralAddress);
+                        if (parsedGroup != null) {
+                            SECURITY_LOGGER.tracef("Parsed group %s for group with distringuishedName=%s", parsedGroup.getSimpleName(), parsedGroup.getDistinguishedName());
+                            foundEntries.add(parsedGroup);
+                        } else {
+                            SECURITY_LOGGER.tracef("Failed to parse %s from distinguishedName=%s", groupNameAttribute, distingushedName);
+                        }
+                        continue;
+                    }
 
                     boolean retry = false;
 
@@ -318,6 +336,27 @@ public class LdapGroupSearcherFactory {
             }
 
             return foundEntries.toArray(new LdapEntry[foundEntries.size()]);
+        }
+
+        private LdapEntry parseRole(String dn, String groupNameAttribute, URI groupReferralAddress) {
+
+            try {
+                LdapName ldapName = new LdapName(dn);
+                for (int i = ldapName.size() - 1; i >= 0; i--) {
+                    String rdnString = ldapName.get(i);
+                    Rdn rdn = new Rdn(rdnString);
+                    Attribute attr = rdn.toAttributes().get(groupNameAttribute);
+                    if (attr != null) {
+                        Object value = attr.get();
+                        if (value != null) {
+                            return new LdapEntry( (value instanceof byte[]) ? new String((byte[]) value) : value.toString(), dn, groupReferralAddress);
+                        }
+                    }
+                }
+            } catch (NamingException e) {
+                SECURITY_LOGGER.tracef("Unable to parse role from DN (%s): %s", dn, e.getMessage());
+            }
+            return null;
         }
 
     }
