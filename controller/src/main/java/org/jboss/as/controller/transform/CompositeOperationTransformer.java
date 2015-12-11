@@ -38,6 +38,8 @@ import java.util.List;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.registry.AliasEntry;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -75,8 +77,17 @@ class CompositeOperationTransformer implements OperationTransformer {
                 // Process nested steps directly
                 result = transformOperation(context, PathAddress.EMPTY_ADDRESS, step, false);
             } else {
-                final OperationTransformer transformer = target.resolveTransformer(context, stepAddress, operationName);
-                final PathAddress transformed = TransformersImpl.transformAddress(stepAddress, target);
+                //If this is an alias, get the real address before transforming
+                ImmutableManagementResourceRegistration reg = context.getResourceRegistration(stepAddress);
+                final PathAddress useAddress;
+                if (reg != null && reg.isAlias()) {
+                    useAddress = reg.getAliasEntry().convertToTargetAddress(stepAddress, AliasEntry.AliasContext.create(step, context));
+                } else {
+                    useAddress = stepAddress;
+                }
+
+                final OperationTransformer transformer = target.resolveTransformer(context, useAddress, operationName);
+                final PathAddress transformed = TransformersImpl.transformAddress(useAddress, target);
                 // Update the operation using the new path address
                 step.get(OP_ADDR).set(transformed.toModelNode()); // TODO should this happen by default?
 

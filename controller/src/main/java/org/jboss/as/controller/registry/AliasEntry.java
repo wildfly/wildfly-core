@@ -24,6 +24,8 @@ package org.jboss.as.controller.registry;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.transform.TransformationContext;
+import org.jboss.as.controller.transform.Transformers;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -69,6 +71,7 @@ public abstract class AliasEntry {
 
     /**
      * Convert the alias address to the target address
+     *
      * @param aliasAddress the alias address
      * @return the target address
      * @deprecated This will be removed in WildFly Core 3; override convertToTargetAddress(PathAddress, AliasContext) instead
@@ -92,26 +95,77 @@ public abstract class AliasEntry {
     /**
      * A wrapper around {@link OperationContext} for the requested alias address, allowing extra
      * contextual information when converting alias addresses.
-     *
      */
     public static class AliasContext {
         public static final String RECURSIVE_GLOBAL_OP = "recursive-global-op";
 
-        final OperationContext delegate;
+        final ResourceProvider delegate;
         final ModelNode operation;
 
-        private AliasContext(final ModelNode operation, final OperationContext delegate) {
+        private AliasContext(final ModelNode operation, final ResourceProvider delegate) {
             this.delegate = delegate;
             this.operation = operation.clone();
             this.operation.protect();
         }
 
         static AliasContext create(final ModelNode operation, final OperationContext delegate) {
-            return new AliasContext(operation, delegate);
+            return new AliasContext(operation, new ResourceProvider() {
+                @Override
+                public Resource readResourceFromRoot(PathAddress address) {
+                    return delegate.readResourceFromRoot(address);
+                }
+
+                @Override
+                public Resource readResourceFromRoot(PathAddress address, boolean recursive) {
+                    return delegate.readResourceFromRoot(address, recursive);
+                }
+            });
         }
 
         public static AliasContext create(final PathAddress address, final OperationContext delegate) {
-            return new AliasContext(Util.createEmptyOperation(RECURSIVE_GLOBAL_OP, address), delegate);
+            return create(Util.createEmptyOperation(RECURSIVE_GLOBAL_OP, address), delegate);
+        }
+
+        public static AliasContext create(final ModelNode operation, final TransformationContext delegate) {
+            return new AliasContext(operation, new ResourceProvider() {
+                @Override
+                public Resource readResourceFromRoot(PathAddress address) {
+                    return delegate.readResourceFromRoot(address);
+                }
+
+                @Override
+                public Resource readResourceFromRoot(PathAddress address, boolean recursive) {
+                    return delegate.readResourceFromRoot(address); //I think this is always recursive
+                }
+            });
+        }
+
+        public static AliasContext create(ModelNode operation, Transformers.TransformationInputs transformationInputs) {
+            return new AliasContext(operation, new ResourceProvider() {
+                @Override
+                public Resource readResourceFromRoot(PathAddress address) {
+                    return readResourceFromRoot(address, false);
+                }
+
+                @Override
+                public Resource readResourceFromRoot(PathAddress address, boolean recursive) {
+                    Resource resource = transformationInputs.getRootResource().navigate(address);
+                    if (resource == null) {
+                        return resource;
+                    }
+                    if (recursive) {
+                        return resource.clone();
+                    }
+                    final Resource copy = Resource.Factory.create();
+                    copy.writeModel(resource.getModel());
+                    for(final String childType : resource.getChildTypes()) {
+                        for(final Resource.ResourceEntry child : resource.getChildren(childType)) {
+                            copy.registerChild(child.getPathElement(), PlaceholderResource.INSTANCE);
+                        }
+                    }
+                    return copy;
+                }
+            });
         }
 
         /**
@@ -138,5 +192,12 @@ public abstract class AliasEntry {
         public ModelNode getOperation() {
             return operation;
         }
+
+    }
+
+    private interface ResourceProvider {
+        Resource readResourceFromRoot(final PathAddress address);
+
+        Resource readResourceFromRoot(final PathAddress address, final boolean recursive);
     }
 }
