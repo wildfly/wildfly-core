@@ -22,26 +22,30 @@
 
 package org.wildfly.loaders.deployment;
 
+import static org.wildfly.loaders.deployment.Handler.DEPLOYMENT_PROTOCOL;
+import static org.wildfly.loaders.deployment.DeploymentURLStreamHandlerFactory.HANDLER;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.PrivilegedAction;
 
 /**
-* @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+* @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
 */
-final class PropertyReadAction implements PrivilegedAction<String> {
+final class DeploymentURLCreateAction implements PrivilegedAction<URL> {
 
-    private final String key;
-    private final String defVal;
+    private final String path;
 
-    PropertyReadAction(final String key) {
-        this(key, null);
+    DeploymentURLCreateAction(final String path) {
+        this.path = path;
     }
 
-    PropertyReadAction(final String key, final String defVal) {
-        this.key = key;
-        this.defVal = defVal;
+    public URL run() {
+        try {
+            return new URL(DEPLOYMENT_PROTOCOL, null, -1, path, HANDLER);
+        } catch (final MalformedURLException ignored) {
+            throw new IllegalStateException(); // should never happen
+        }
     }
 
-    public String run() {
-        return System.getProperty(key, defVal);
-    }
 }

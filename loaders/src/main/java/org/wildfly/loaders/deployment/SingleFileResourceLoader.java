@@ -77,6 +77,11 @@ final class SingleFileResourceLoader implements ResourceLoader {
     }
 
     @Override
+    public Iterator<ResourceLoader> iterateChildren() {
+        return Collections.emptyIterator();
+    }
+
+    @Override
     public void addOverlay(final String path, final File content) {
         // unsupported
     }

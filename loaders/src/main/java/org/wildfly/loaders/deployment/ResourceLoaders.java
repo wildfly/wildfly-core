@@ -29,9 +29,14 @@ import static org.wildfly.loaders.deployment.Utils.normalizePath;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileOutputStream;
+import java.lang.ref.WeakReference;
+import java.net.URL;
 import java.security.AccessController;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarFile;
 
 import org.jboss.modules.Resource;
@@ -43,9 +48,12 @@ import org.jboss.modules.Resource;
  */
 public final class ResourceLoaders {
     private static final String JBOSS_TMP_DIR_PROPERTY = "jboss.server.temp.dir";
+    private static final String JAVA_PROTOCOL_HANDLER_PKGS = "java.protocol.handler.pkgs";
+    private static final String WILDFLY_DEPLOYMENT_PROTOCOL_PKG = "org.wildfly.loaders";
     private static final String JVM_TMP_DIR_PROPERTY = "java.io.tmpdir";
     private static final String XML_SUFFIX = ".xml";
     private static final File TMP_ROOT;
+    static final Map<String, WeakReference<ResourceLoader>> loadersRegistry = new ConcurrentHashMap<>();
 
     static {
         String configTmpDir = AccessController.doPrivileged(new PropertyReadAction(JBOSS_TMP_DIR_PROPERTY));
@@ -53,6 +61,14 @@ public final class ResourceLoaders {
             configTmpDir = AccessController.doPrivileged(new PropertyReadAction(JVM_TMP_DIR_PROPERTY));
         }
         TMP_ROOT = new File(configTmpDir);
+        String pkgs = AccessController.doPrivileged(new PropertyReadAction(JAVA_PROTOCOL_HANDLER_PKGS));
+        if (pkgs == null || pkgs.trim().length() == 0) {
+            pkgs = WILDFLY_DEPLOYMENT_PROTOCOL_PKG;
+            AccessController.doPrivileged(new PropertyWriteAction(JAVA_PROTOCOL_HANDLER_PKGS, pkgs));
+        } else if (!pkgs.contains(WILDFLY_DEPLOYMENT_PROTOCOL_PKG)) {
+            pkgs += ("|" + WILDFLY_DEPLOYMENT_PROTOCOL_PKG);
+            AccessController.doPrivileged(new PropertyWriteAction(JAVA_PROTOCOL_HANDLER_PKGS, pkgs));
+        }
     }
 
     private ResourceLoaders() {
@@ -120,31 +136,63 @@ public final class ResourceLoaders {
             }
             break;
         }
-        if (root.isDirectory()) {
-            return new FileResourceLoader(parent, name, root, path, isDeployment, AccessController.getContext());
-        } else {
-            if (name.toLowerCase(Locale.ENGLISH).endsWith(XML_SUFFIX)) {
-                return new SingleFileResourceLoader(name, root, path, parent, isDeployment, AccessController.getContext());
+        ResourceLoader retVal = null;
+        try {
+            if (root.isDirectory()) {
+                return retVal = new FileResourceLoader(parent, name, root, path, isDeployment, AccessController.getContext());
             } else {
-                if (explodeArchive(name)) {
-                    final File tempDir = new File(TMP_ROOT, getResourceName(name) + ".tmp" + System.currentTimeMillis());
-                    IOUtils.unzip(root, tempDir);
-                    final FileResourceLoader newFileLoader = new FileResourceLoader(parent, name, tempDir, path, isDeployment, AccessController.getContext());
-                    return new DelegatingResourceLoader(newFileLoader) {
-                        @Override
-                        public void close() {
-                            try {
-                                super.close();
-                            } finally {
-                                IOUtils.delete(tempDir);
-                            }
-                        }
-                    };
+                if (name.toLowerCase(Locale.ENGLISH).endsWith(XML_SUFFIX)) {
+                    return retVal = new SingleFileResourceLoader(name, root, path, parent, isDeployment, AccessController.getContext());
                 } else {
-                    return new JarFileResourceLoader(parent, name, new JarFile(root), path, isDeployment);
+                    if (explodeArchive(name)) {
+                        final File tempDir = new File(TMP_ROOT, getResourceName(name) + ".tmp" + System.currentTimeMillis());
+                        IOUtils.unzip(root, tempDir);
+                        final FileResourceLoader newFileLoader = new FileResourceLoader(parent, name, tempDir, path, isDeployment, AccessController.getContext());
+                        return retVal = new DelegatingResourceLoader(newFileLoader) {
+                            @Override
+                            public void close() {
+                                try {
+                                    super.close();
+                                } finally {
+                                    IOUtils.delete(tempDir);
+                                }
+                            }
+                        };
+                    } else {
+                        return retVal = new JarFileResourceLoader(parent, name, new JarFile(root), path, isDeployment);
+                    }
                 }
             }
+        } finally {
+            if (parent == null) {
+                loadersRegistry.put(retVal.getRootName(), new WeakReference(retVal));
+            }
         }
+    }
+
+    /**
+     * Utility method for obtaining resources via URL
+     * @param url to get resource for
+     * @return resource or null if not found
+     */
+    static Resource getResourceFor(final URL url) {
+        final String urlPath = url.getPath().substring(1);
+        final String loaderName = urlPath.substring(0, urlPath.indexOf('/'));
+        final WeakReference<ResourceLoader> loaderRef = loadersRegistry.get(loaderName);
+        ResourceLoader loader = loaderRef != null ? loaderRef.get() : null;
+        if (loader == null) return null;
+        String resourcePath = urlPath.substring(urlPath.indexOf('/') + 1);
+        Iterator<ResourceLoader> childrenLoaders = loader.iterateChildren();
+        ResourceLoader childLoader;
+        while (childrenLoaders.hasNext()) {
+            childLoader = childrenLoaders.next();
+            if (resourcePath.startsWith(childLoader.getPath() + "/")) {
+                loader = childLoader;
+                childrenLoaders = childLoader.iterateChildren();
+                resourcePath = resourcePath.substring(childLoader.getPath().length() + 1);
+            }
+        }
+        return loader.getResource(resourcePath);
     }
 
     /**
@@ -175,8 +223,7 @@ public final class ResourceLoaders {
         if (resource != null) {
             if (loader instanceof FileResourceLoader) {
                 final FileResourceLoader fileLoader = (FileResourceLoader) loader;
-                final File resourceFile = new File(loader.getRoot(), normalizedPath);
-                final JarFileResourceLoader newLoader = new JarFileResourceLoader(loader, name, new JarFile(resourceFile), normalizedPath, isDeployment);
+                final JarFileResourceLoader newLoader = new JarFileResourceLoader(loader, name, new JarFile(((FileEntryResource)resource).getFile()), normalizedPath, isDeployment);
                 fileLoader.addChild(normalizedPath, newLoader);
                 return newLoader;
             } else if (loader instanceof JarFileResourceLoader) {

@@ -33,28 +33,25 @@ import java.net.URLStreamHandler;
 /**
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class DeploymentURLStreamHandler extends URLStreamHandler {
+public final class Handler extends URLStreamHandler {
 
-    private final Resource resource;
-
-    public DeploymentURLStreamHandler() {
-        this(null);
-    }
-
-    public DeploymentURLStreamHandler(final Resource resource) {
-        this.resource = resource;
-    }
+    static final String DEPLOYMENT_PROTOCOL = "deployment";
 
     @Override
-    protected URLConnection openConnection(final URL u) throws IOException {
-        return new URLConnection(u) {
+    protected URLConnection openConnection(final URL url) throws IOException {
+        if (!DEPLOYMENT_PROTOCOL.equals(url.getProtocol())) {
+            throw new IllegalArgumentException("Wrong protocol: " + url.getProtocol());
+        }
+        final Resource urlResource = ResourceLoaders.getResourceFor(url);
+        if (urlResource == null) throw new IllegalArgumentException("Unknown resource: " + url);
+        return new URLConnection(url) {
             @Override
             public void connect() throws IOException {
             }
 
             @Override
             public InputStream getInputStream() throws IOException {
-                return resource.openStream();
+                return urlResource.openStream();
             }
         };
     }

@@ -33,8 +33,6 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * ResourceLoader that delegates all method calls to its delegate.
- *
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class DelegatingResourceLoader implements ResourceLoader {
@@ -102,6 +100,11 @@ class DelegatingResourceLoader implements ResourceLoader {
     @Override
     public ResourceLoader getChild(final String path) {
         return getDelegate().getChild(path);
+    }
+
+    @Override
+    public Iterator<ResourceLoader> iterateChildren() {
+        return getDelegate().iterateChildren();
     }
 
     @Override

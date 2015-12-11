@@ -83,6 +83,12 @@ public interface ResourceLoader extends IterableResourceLoader {
     ResourceLoader getChild(String path);
 
     /**
+     * Iterates children resource loaders.
+     * @return children resource loaders
+     */
+    Iterator<ResourceLoader> iterateChildren();
+
+    /**
      * Iterates sub paths under given start path.
      * @param startPath to search for sub paths
      * @param recursive whether search is recursive or not

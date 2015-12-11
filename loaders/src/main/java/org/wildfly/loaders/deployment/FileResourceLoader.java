@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -95,13 +96,13 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         this.root = root;
         this.path = path == null ? "" : path;
         this.rootName = rootName;
-        this.fullPath = parent != null ? parent.getFullPath() + "/" + path : rootName;
+        this.fullPath = parent != null ? parent.getFullPath() + "/" + path : "/" + rootName;
         this.isDeployment = isDeployment;
         final File manifestFile = new File(root, "META-INF" + File.separatorChar + "MANIFEST.MF");
         manifest = readManifestFile(manifestFile);
         final SecurityManager sm = System.getSecurityManager();
         try {
-            deploymentUrl = new URL("deployment", null, 0, fullPath, new DeploymentURLStreamHandler());
+            deploymentUrl = doPrivileged(new DeploymentURLCreateAction(fullPath));
             if (sm != null) {
                 rootUrl = doPrivileged(new PrivilegedAction<URL>() {
                     public URL run() {
@@ -149,6 +150,15 @@ final class FileResourceLoader extends AbstractResourceLoader implements Resourc
         synchronized (children) {
             return children.get(path);
         }
+    }
+
+    @Override
+    public Iterator<ResourceLoader> iterateChildren() {
+        final Set<ResourceLoader> retVal = new HashSet<>();
+        synchronized (children) {
+            retVal.addAll(children.values());
+        }
+        return retVal.iterator();
     }
 
     @Override

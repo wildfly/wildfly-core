@@ -24,6 +24,7 @@ package org.wildfly.loaders.deployment;
 
 import static org.wildfly.loaders.deployment.Utils.isEmptyPath;
 import static org.wildfly.loaders.deployment.Utils.normalizePath;
+import static java.security.AccessController.doPrivileged;
 
 import org.jboss.modules.AbstractResourceLoader;
 import org.jboss.modules.ClassSpec;
@@ -51,6 +52,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -97,7 +99,7 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         this.path = path == null ? "" : path;
         this.rootName = rootName;
         this.relativePath = isEmptyPath(relativePath) ? null : normalizePath(relativePath);
-        this.fullPath = parent != null ? parent.getFullPath() + "/" + path : rootName;
+        this.fullPath = parent != null ? parent.getFullPath() + "/" + path : "/" + rootName;
         this.isDeployment = isDeployment;
         try {
             rootUrl = getJarURI(fileOfJar.toURI(), this.relativePath).toURL();
@@ -134,6 +136,15 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         synchronized (children) {
             return children.get(path);
         }
+    }
+
+    @Override
+    public Iterator<ResourceLoader> iterateChildren() {
+        final Set<ResourceLoader> retVal = new HashSet<>();
+        synchronized (children) {
+            retVal.addAll(children.values());
+        }
+        return retVal.iterator();
     }
 
     @Override
@@ -270,12 +281,8 @@ final class JarFileResourceLoader extends AbstractResourceLoader implements Reso
         final CodeSigners codeSigners = entryCodeSigners == null || entryCodeSigners.length == 0 ? EMPTY_CODE_SIGNERS : new CodeSigners(entryCodeSigners);
         CodeSource codeSource = codeSources.get(codeSigners);
         if (codeSource == null) {
-            try {
-                final URL deploymentUrl = new URL("deployment", null, 0, fullPath, new DeploymentURLStreamHandler());
-                codeSources.put(codeSigners, codeSource = new CodeSource(isDeployment ? deploymentUrl : rootUrl, entryCodeSigners));
-            } catch (final MalformedURLException ignored) {
-                throw new IllegalStateException(); // should never happen
-            }
+            URL deploymentUrl = doPrivileged(new DeploymentURLCreateAction(fullPath));
+            codeSources.put(codeSigners, codeSource = new CodeSource(isDeployment ? deploymentUrl : rootUrl, entryCodeSigners));
         }
         return codeSource;
     }

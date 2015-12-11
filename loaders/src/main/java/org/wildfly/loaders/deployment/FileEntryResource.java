@@ -22,9 +22,9 @@
 
 package org.wildfly.loaders.deployment;
 
-import org.jboss.modules.Resource;
-
 import static java.security.AccessController.doPrivileged;
+
+import org.jboss.modules.Resource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -75,10 +75,14 @@ final class FileEntryResource implements Resource {
 
     public URL getURL() {
         try {
-            return loaderFullPath != null ? new URL("deployment", null, 0, loaderFullPath + "/" + name, new DeploymentURLStreamHandler(this)) : file.toURI().toURL();
+            return loaderFullPath != null ? doPrivileged(new DeploymentURLCreateAction(loaderFullPath + "/" + name)) : file.toURI().toURL();
         } catch (final MalformedURLException ignored) {
             throw new IllegalStateException(); // should never happen
         }
+    }
+
+    File getFile() {
+        return file;
     }
 
     public InputStream openStream() throws IOException {

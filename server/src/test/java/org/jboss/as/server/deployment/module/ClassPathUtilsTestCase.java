@@ -245,8 +245,12 @@ public class ClassPathUtilsTestCase {
         }
 
         @Override
-        public void addOverlay(String path, File content) {
+        public Iterator<ResourceLoader> iterateChildren() {
+            return null;
+        }
 
+        @Override
+        public void addOverlay(String path, File content) {
         }
 
         @Override

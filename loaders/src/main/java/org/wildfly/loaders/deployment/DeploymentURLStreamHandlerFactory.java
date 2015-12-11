@@ -22,26 +22,23 @@
 
 package org.wildfly.loaders.deployment;
 
-import java.security.PrivilegedAction;
+import static org.wildfly.loaders.deployment.Handler.DEPLOYMENT_PROTOCOL;
+
+import java.net.URLStreamHandler;
+import java.net.URLStreamHandlerFactory;
 
 /**
-* @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
-*/
-final class PropertyReadAction implements PrivilegedAction<String> {
+ * URL stream handler factory for <B>deployment</B> protocol.
+ *
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
+ */
+public final class DeploymentURLStreamHandlerFactory implements URLStreamHandlerFactory {
 
-    private final String key;
-    private final String defVal;
+    static final URLStreamHandler HANDLER = new Handler();
 
-    PropertyReadAction(final String key) {
-        this(key, null);
+    @Override
+    public URLStreamHandler createURLStreamHandler(final String protocol) {
+        return DEPLOYMENT_PROTOCOL.equals(protocol) ? HANDLER : null;
     }
 
-    PropertyReadAction(final String key, final String defVal) {
-        this.key = key;
-        this.defVal = defVal;
-    }
-
-    public String run() {
-        return System.getProperty(key, defVal);
-    }
 }

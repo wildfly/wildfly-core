@@ -25,23 +25,20 @@ package org.wildfly.loaders.deployment;
 import java.security.PrivilegedAction;
 
 /**
-* @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+* @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
 */
-final class PropertyReadAction implements PrivilegedAction<String> {
+final class PropertyWriteAction implements PrivilegedAction<String> {
 
     private final String key;
-    private final String defVal;
+    private final String value;
 
-    PropertyReadAction(final String key) {
-        this(key, null);
-    }
-
-    PropertyReadAction(final String key, final String defVal) {
+    PropertyWriteAction(final String key, final String value) {
         this.key = key;
-        this.defVal = defVal;
+        this.value = value;
     }
 
     public String run() {
-        return System.getProperty(key, defVal);
+        return System.setProperty(key, value);
     }
+
 }

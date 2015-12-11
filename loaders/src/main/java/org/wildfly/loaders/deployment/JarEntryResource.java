@@ -22,13 +22,14 @@
 
 package org.wildfly.loaders.deployment;
 
+import static java.security.AccessController.doPrivileged;
+
 import org.jboss.modules.Resource;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -62,11 +63,7 @@ final class JarEntryResource implements Resource {
 
     public URL getURL() {
         if (loaderFullPath != null) {
-            try {
-                return new URL("deployment", null, 0, loaderFullPath + "/" + entryName, new DeploymentURLStreamHandler(this));
-            } catch (final MalformedURLException ignored) {
-                throw new IllegalStateException(); // should never happen
-            }
+            return doPrivileged(new DeploymentURLCreateAction(loaderFullPath + "/" + entryName));
         } else {
             return overlayURL != null ? overlayURL : resourceURL;
         }
