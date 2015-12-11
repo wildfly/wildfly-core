@@ -313,7 +313,7 @@ public class ServerInventoryImpl implements ServerInventory {
         if(server == null) {
             return;
         }
-        server.destroy(CurrentOperationIdHolder.getCurrentOperationID());
+        server.destroy();
     }
 
     @Override
@@ -322,7 +322,7 @@ public class ServerInventoryImpl implements ServerInventory {
         if(server == null) {
             return;
         }
-        server.kill(CurrentOperationIdHolder.getCurrentOperationID());
+        server.kill();
     }
 
     @Override
