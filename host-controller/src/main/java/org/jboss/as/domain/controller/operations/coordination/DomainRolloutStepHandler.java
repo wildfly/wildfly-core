@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.controller.operations.coordination;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONCURRENT_GROUPS;
@@ -33,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_FAILED_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_FAILURE_PERCENTAGE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -42,6 +44,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.HOST_CONTROLLER_LOGGER;
 
 import java.util.ArrayList;
@@ -87,6 +90,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
     private final Map<String, ProxyController> hostProxies;
     private final Map<String, ProxyController> serverProxies;
     private final ExecutorService executorService;
+    private final ModelNode serverOperationHeaders;
     private final ModelNode providedRolloutPlan;
     private final boolean trace = HOST_CONTROLLER_LOGGER.isTraceEnabled();
 
@@ -94,12 +98,19 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                                     final Map<String, ProxyController> serverProxies,
                                     final MultiphaseOverallContext multiphaseContext,
                                     final ModelNode rolloutPlan,
+                                    final ModelNode serverOperationHeaders,
                                     final ExecutorService executorService) {
         this.hostProxies = hostProxies;
         this.serverProxies = serverProxies;
         this.multiphaseContext = multiphaseContext;
+        this.serverOperationHeaders = serverOperationHeaders.clone();
         this.providedRolloutPlan = rolloutPlan;
         this.executorService = executorService;
+        //Remove the caller-type=user header
+        if (this.serverOperationHeaders.hasDefined(CALLER_TYPE)
+                && this.serverOperationHeaders.get(CALLER_TYPE).asString().equals(USER)) {
+            this.serverOperationHeaders.remove(CALLER_TYPE);
+        }
     }
 
     @Override
@@ -368,8 +379,8 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
 
     private ModelNode translateDomainMappedOperation(final ModelNode domainMappedOperation) {
         if (domainMappedOperation.hasDefined(OP)) {
-            // Simple op; return it
-            return domainMappedOperation;
+            // Simple op; add headers and return it
+            return incorporateServerOperationHeaders(domainMappedOperation);
         }
         ModelNode composite = new ModelNode();
         composite.get(OP).set(COMPOSITE);
@@ -377,7 +388,12 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
         for (Property property : domainMappedOperation.asPropertyList()) {
             steps.add(translateDomainMappedOperation(property.getValue()));
         }
-        return composite;
+        return incorporateServerOperationHeaders(composite);
+    }
+
+    private ModelNode incorporateServerOperationHeaders(ModelNode op) {
+        op.get(OPERATION_HEADERS).set(serverOperationHeaders);
+        return op;
     }
 
     private ModelNode getRolloutPlan(ModelNode rolloutPlan, Map<String, Map<ServerIdentity, ModelNode>> opsByGroup) throws OperationFailedException {
