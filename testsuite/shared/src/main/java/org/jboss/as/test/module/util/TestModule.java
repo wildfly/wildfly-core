@@ -194,7 +194,28 @@ public class TestModule {
      * <p>Removes the module from the modules directory. This operation can not be reverted.</p>
      */
     public void remove() {
-        remove(getModuleDirectory());
+        File moduleDir = getModuleDirectory();
+        File dir = moduleDir.getParentFile();
+        remove(moduleDir);
+
+        File modulesDirectory = getModulesDirectory();
+        // move up through the filesystem and prune any empty directories up to modulesDirectory
+        if (dir != null) {
+            File parent;
+            while ((parent = dir.getParentFile()) != null) {
+                // check we haven't somehow wandered outside modulesDirectory, or reached the top level modulesDirectory.
+                if (dir.equals(modulesDirectory) || !dir.getPath().contains(modulesDirectory.getPath())) {
+                    break;
+                }
+
+                if (dir.isDirectory() && dir.listFiles() != null && dir.listFiles().length == 0) {
+                    if (!dir.delete()) {
+                        throw new RuntimeException("Could not delete directory [" + dir.getPath() + "].");
+                    }
+                }
+                dir = parent;
+            }
+        }
     }
 
     /**
