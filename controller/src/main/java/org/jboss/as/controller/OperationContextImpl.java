@@ -25,7 +25,6 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_THREAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
@@ -33,12 +32,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTION_STATUS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NILLABLE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NIL_SIGNIFICANT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_TIME;
@@ -55,7 +51,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -87,7 +82,6 @@ import org.jboss.as.controller.capability.registry.RuntimeRequirementRegistratio
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
@@ -98,7 +92,6 @@ import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.DelegatingImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.DelegatingManagementResourceRegistration;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -189,14 +182,6 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final ConcurrentMap<RuntimeRequirementRegistration, Set<Step>> addedRequirements = new ConcurrentHashMap<>();
     /** Associates a removed capability with the step that removed it */
     private final ConcurrentMap<CapabilityId, Step> removedCapabilities = new ConcurrentHashMap<>();
-
-    /**
-     * Cache of resource descriptions generated during operation execution. Primarily intended for
-     * read-resource-description execution where the handler will ask for the description but the
-     * description may also be needed internally to support access control decisions.
-     */
-    private final Map<PathAddress, ModelNode> resourceDescriptions =
-            Collections.synchronizedMap(new HashMap<PathAddress, ModelNode>());
 
     private final Integer operationId;
     private final String operationName;
@@ -555,9 +540,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         authorize(false, READ_WRITE_CONFIG);
         ensureLocalManagementResourceRegistration();
         ManagementResourceRegistration mrr =  managementModel.getRootResourceRegistration();
-        ManagementResourceRegistration delegate = absoluteAddress == null ? mrr : mrr.getSubModel(absoluteAddress);
-        return new DescriptionCachingResourceRegistration(delegate, absoluteAddress);
-
+        return absoluteAddress == null ? mrr : mrr.getSubModel(absoluteAddress);
     }
 
     @Override
@@ -567,7 +550,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         authorize(false, Collections.<ActionEffect>emptySet());
         final PathAddress address = activeStep.address;
         ImmutableManagementResourceRegistration delegate = managementModel.getRootResourceRegistration().getSubModel(address);
-        return delegate == null ? null : new DescriptionCachingImmutableResourceRegistration(delegate, address);
+        return delegate == null ? null : new DelegatingImmutableManagementResourceRegistration(delegate);
     }
 
     @Override
@@ -575,7 +558,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         assert isControllingThread();
         assertNotComplete(currentStage);
         ImmutableManagementResourceRegistration delegate = managementModel.getRootResourceRegistration();
-        return delegate == null ? null : new DescriptionCachingImmutableResourceRegistration(delegate, PathAddress.EMPTY_ADDRESS);
+        return delegate == null ? null : new DelegatingImmutableManagementResourceRegistration(delegate);
     }
 
     @Override
@@ -2420,13 +2403,13 @@ final class OperationContextImpl extends AbstractOperationContext {
         private boolean isAddableAttribute(String attrName, ImmutableManagementResourceRegistration resourceRegistration) {
             AttributeAccess attributeAccess = resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attrName);
             if (attributeAccess == null) {
-                return isRequiredConfigFromDescription(attrName, resourceRegistration);
+                return false;
             }
             if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION
                     && attributeAccess.getAccessType() == AttributeAccess.AccessType.READ_WRITE) {
                 AttributeDefinition ad = attributeAccess.getAttributeDefinition();
                 if (ad == null) {
-                    return isRequiredConfigFromDescription(attrName, resourceRegistration);
+                    return false;
                 }
                 if (!ad.isAllowNull() || (ad.getDefaultValue() != null && ad.getDefaultValue().isDefined())
                         || ad.isNullSignificant()) {
@@ -2438,97 +2421,6 @@ final class OperationContextImpl extends AbstractOperationContext {
             return false;
         }
 
-        private boolean isRequiredConfigFromDescription(String attrName, ImmutableManagementResourceRegistration resourceRegistration) {
-            PathAddress address = targetResource.getResourceAddress();
-            ModelNode resourceDescription = resourceDescriptions.get(address);
-            if (resourceDescription == null) {
-                resourceDescription = resourceRegistration.getModelDescription(PathAddress.EMPTY_ADDRESS).getModelDescription(Locale.ENGLISH);
-                resourceDescriptions.put(address, resourceDescription);
-            }
-            if (resourceDescription.hasDefined(ATTRIBUTES)) {
-                ModelNode attributes = resourceDescription.get(ATTRIBUTES);
-                if (attributes.hasDefined(attrName)) {
-                    ModelNode attrDesc = attributes.get(attrName);
-                    if (attrDesc.hasDefined(REQUIRED)) {
-                        return attrDesc.get(REQUIRED).asBoolean();
-                    } else if (attrDesc.hasDefined(NILLABLE)) {
-                        return !attrDesc.get(NILLABLE).asBoolean()
-                                || attrDesc.hasDefined(ModelDescriptionConstants.DEFAULT)
-                                || (attrDesc.hasDefined(NIL_SIGNIFICANT) && attrDesc.get(NIL_SIGNIFICANT).asBoolean());
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }
-
-    }
-
-    /** DescriptionProvider that caches any generated description in our internal cache */
-    private class CachingDescriptionProvider implements DescriptionProvider {
-        private final PathAddress cacheAddress;
-        private final DescriptionProvider delegate;
-
-        private CachingDescriptionProvider(PathAddress cacheAddress, DescriptionProvider delegate) {
-            this.cacheAddress = cacheAddress;
-            this.delegate = delegate;
-        }
-
-        @Override
-        public ModelNode getModelDescription(Locale locale) {
-            // Don't try to read from the cache, as the cached description may have used the wrong locale
-            ModelNode result = delegate.getModelDescription(locale);
-            resourceDescriptions.put(cacheAddress, result);
-            return result;
-        }
-    }
-
-    /** ImmutableManagementResourceRegistration that caches any generated resource description in our internal cache */
-    private class DescriptionCachingImmutableResourceRegistration extends DelegatingImmutableManagementResourceRegistration  {
-
-        private final PathAddress address;
-
-        /**
-         * Creates a new DescriptionCachingImmutableResourceRegistration.
-         *
-         * @param delegate the delegate. Cannot be {@code null}
-         * @param address the address of the resource registration. Cannot be {@code null}
-         */
-        public DescriptionCachingImmutableResourceRegistration(ImmutableManagementResourceRegistration delegate, PathAddress address) {
-            super(delegate);
-            this.address = address;
-        }
-
-        @Override
-        public DescriptionProvider getModelDescription(PathAddress relativeAddress) {
-            PathAddress fullAddress = address.append(relativeAddress);
-            DescriptionProvider realProvider = super.getModelDescription(relativeAddress);
-            return new CachingDescriptionProvider(fullAddress, realProvider);
-        }
-    }
-
-    /** ManagementResourceRegistration that caches any generated resource description in our internal cache */
-    private class DescriptionCachingResourceRegistration extends DelegatingManagementResourceRegistration {
-
-        private final PathAddress address;
-
-        /**
-         * Creates a new DescriptionCachingResourceRegistration.
-         *
-         * @param delegate the delegate. Cannot be {@code null}
-         * @param address the address of the resource registration. Cannot be {@code null}
-         */
-        public DescriptionCachingResourceRegistration(ManagementResourceRegistration delegate, PathAddress address) {
-            super(delegate);
-            this.address = address;
-        }
-
-        @Override
-        public DescriptionProvider getModelDescription(PathAddress relativeAddress) {
-            PathAddress fullAddress = address.append(relativeAddress);
-            DescriptionProvider realProvider = super.getModelDescription(relativeAddress);
-            return new CachingDescriptionProvider(fullAddress, realProvider);
-        }
     }
 
     private class ActiveOperationResource extends PlaceholderResource.PlaceholderResourceEntry implements Cancellable {
