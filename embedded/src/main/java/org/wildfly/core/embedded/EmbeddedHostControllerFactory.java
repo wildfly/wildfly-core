@@ -144,7 +144,7 @@ public class EmbeddedHostControllerFactory {
             props.put(HostControllerEnvironment.DOMAIN_BASE_DIR, tempRoot.getAbsolutePath());
             props.put(HostControllerEnvironment.DOMAIN_CONFIG_DIR, configDir.getAbsolutePath());
             props.put(HostControllerEnvironment.DOMAIN_DATA_DIR, dataDir.getAbsolutePath());
-        }  catch (IOException e) {
+        } catch (IOException e) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
         }
 
@@ -220,8 +220,7 @@ public class EmbeddedHostControllerFactory {
                 throw ServerLogger.ROOT_LOGGER.errorCopyingFile(srcFile.getAbsolutePath(), destFile.getAbsolutePath(), e);
             }
         }
-
-}
+    }
 
     private static class HostControllerImpl implements HostController {
 
@@ -443,9 +442,7 @@ public class EmbeddedHostControllerFactory {
 
         private static HostControllerEnvironment createHostControllerEnvironment(File jbossHome, String[] cmdargs, String hostName, long startTime) {
             try {
-                // for SecurityActions.getSystemProperty("jboss.home.dir") in InstallationManagerService
-                System.setProperty("jboss.home.dir", jbossHome.getAbsolutePath());
-                WildFlySecurityManager.setPropertyPrivileged("jboss.home.dir", jbossHome.getAbsolutePath());
+                WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());
 
                 Map<String, String> props = new HashMap<String, String>();
                 props.put(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());

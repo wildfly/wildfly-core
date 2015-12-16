@@ -71,6 +71,28 @@ public class EmbeddedServerFactory {
     private static final String SYSPROP_KEY_JBOSS_MODULES_DIR = "jboss.modules.dir";
     private static final String SYSPROP_VALUE_JBOSS_LOGMANAGER = "org.jboss.logmanager.LogManager";
 
+    private static final String SYSPROP_KEY_JBOSS_SERVER_BASE_DIR = "jboss.server.base.dir";
+    private static final String SYSPROP_KEY_JBOSS_SERVER_CONFIG_DIR = "jboss.server.config.dir";
+    private static final String SYSPROP_KEY_JBOSS_SERVER_DEPLOY_DIR = "jboss.server.deploy.dir";
+    private static final String SYSPROP_KEY_JBOSS_SERVER_TEMP_DIR = "jboss.server.temp.dir";
+    private static final String SYSPROP_KEY_JBOSS_SERVER_LOG_DIR = "jboss.server.log.dir";
+    private static final String SYSPROP_KEY_JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
+
+    private static final String SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
+    private static final String SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
+    private static final String SYSPROP_KEY_JBOSS_DOMAIN_DEPLOY_DIR = "jboss.domain.deploy.dir";
+    private static final String SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR = "jboss.domain.temp.dir";
+    private static final String SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR = "jboss.domain.log.dir";
+    private static final String SYSPROP_KEY_JBOSS_DOMAIN_DATA_DIR = "jboss.domain.data.dir";
+
+    private static final String JBOSS_MODULES_DIR_NAME = "modules";
+
+    // used internally to differentiate the type of embedded server, without needing to import ProcessType
+    private static enum EmbeddedServerType {
+        STANDALONE,
+        HOST_CONTROLLER
+    };
+
     private EmbeddedServerFactory() {
     }
 
@@ -82,7 +104,7 @@ public class EmbeddedServerFactory {
      *                   location under {@code jbossHomePath} should be used
      * @param systemPackages names of any packages that must be treated as system packages, with the same classes
      *                       visible to the caller's classloader visible to server-side classes loaded from
-     *                       the server's modular classlaoder
+     *                       the server's modular classloader
      * @return the server. Will not be {@code null}
      */
 
@@ -98,7 +120,7 @@ public class EmbeddedServerFactory {
      *                   location under {@code jbossHomePath} should be used
      * @param systemPackages names of any packages that must be treated as system packages, with the same classes
      *                       visible to the caller's classloader visible to server-side classes loaded from
-     *                       the server's modular classlaoder
+     *                       the server's modular classloader
      * @param cmdargs any additional arguments to pass to the embedded server (e.g. -b=192.168.100.10)
      *
      * @return the server. Will not be {@code null}
@@ -113,7 +135,7 @@ public class EmbeddedServerFactory {
         }
 
         if (modulePath == null)
-            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + "modules";
+            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME;
 
         return create(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
     }
@@ -143,11 +165,12 @@ public class EmbeddedServerFactory {
      */
     public static StandaloneServer create(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdargs) {
 
+        // in the case of a stop and a restart with a different jbossHomeDir, we need to reset some properties.
+        // that are set in @org.jboss.as.ServerEnvironment
+        resetEmbeddedServerProperties(jbossHomeDir.getAbsolutePath(), EmbeddedServerType.STANDALONE);
+
         setupVfsModule(moduleLoader);
         setupLoggingSystem(moduleLoader);
-
-        // Embedded Server wants this, too. Seems redundant, but supply it.
-        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, jbossHomeDir.getAbsolutePath());
 
         // Load the Embedded Server Module
         final Module embeddedModule;
@@ -176,19 +199,8 @@ public class EmbeddedServerFactory {
             throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, "create", embeddedServerFactoryClass.getName());
         }
         // Create the server
-        Object standaloneServerImpl;
-        try {
-            Properties sysprops = WildFlySecurityManager.getSystemPropertiesPrivileged();
-            Map<String, String> sysenv = WildFlySecurityManager.getSystemEnvironmentPrivileged();
-            String[] args = cmdargs != null ? cmdargs : new String[0];
-            standaloneServerImpl = createServerMethod.invoke(null, jbossHomeDir, moduleLoader, sysprops, sysenv, args);
-        } catch (final InvocationTargetException ite) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotCreateStandaloneServer(ite.getCause(), createServerMethod);
-        } catch (final IllegalAccessException iae) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotCreateStandaloneServer(iae, createServerMethod);
-        }
-        StandaloneServer server = new EmbeddedServerReference(standaloneServerClass, standaloneServerImpl);
-        return server;
+        Object standaloneServerImpl = createServer(EmbeddedServerType.STANDALONE, createServerMethod, moduleLoader, jbossHomeDir, cmdargs);
+        return new EmbeddedServerReference(standaloneServerClass, standaloneServerImpl);
     }
 
     public static EmbeddedServerReference createStandalone(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdargs) {
@@ -205,7 +217,7 @@ public class EmbeddedServerFactory {
         }
 
         if (modulePath == null)
-            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + "modules";
+            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME;
 
         return createHostController(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
     }
@@ -220,11 +232,11 @@ public class EmbeddedServerFactory {
      */
     public static EmbeddedServerReference createHostController(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdargs) {
 
+        // reset properties if we've restarted with a changed jbossHomeDir
+        resetEmbeddedServerProperties(jbossHomeDir.getAbsolutePath(), EmbeddedServerType.HOST_CONTROLLER);
+
         setupVfsModule(moduleLoader);
         setupLoggingSystem(moduleLoader);
-
-        // Embedded Server wants this, too. Seems redundant, but supply it.
-        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, jbossHomeDir.getAbsolutePath());
 
         // Load the Embedded Server Module
         final Module embeddedModule;
@@ -254,17 +266,7 @@ public class EmbeddedServerFactory {
         }
 
         // Create the server
-        Object hostControllerImpl;
-        try {
-            Properties sysprops = WildFlySecurityManager.getSystemPropertiesPrivileged();
-            Map<String, String> sysenv = WildFlySecurityManager.getSystemEnvironmentPrivileged();
-            String[] args = cmdargs != null ? cmdargs : new String[0];
-            hostControllerImpl = createServerMethod.invoke(null, jbossHomeDir, moduleLoader, sysprops, sysenv, args);
-        } catch (final InvocationTargetException ite) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotCreateStandaloneServer(ite.getCause(), createServerMethod);
-        } catch (final IllegalAccessException iae) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotCreateStandaloneServer(iae, createServerMethod);
-        }
+        Object hostControllerImpl = createServer(EmbeddedServerType.HOST_CONTROLLER, createServerMethod, moduleLoader, jbossHomeDir, cmdargs);
         return new EmbeddedServerReference(hostControllerClass, hostControllerImpl);
     }
 
@@ -274,7 +276,16 @@ public class EmbeddedServerFactory {
     }
 
     private static ModuleLoader setupModuleLoader(String modulePath, String... systemPackages) {
+
         assert modulePath != null : "modulePath not null";
+
+        // verify the supplied modules path exists, and if it does not, stop and allow the user to correct.
+        // Once modules are initialized and loaded we can't change Module.BOOT_MODULE_LOADER (yet).
+
+        File moduleDir = new File(modulePath);
+        if (!moduleDir.exists() || !moduleDir.isDirectory()) {
+            throw new RuntimeException("The specified module directory " + modulePath + " is invalid or does not exist.");
+        }
 
         WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_MODULES_DIR, trimPathToModulesDir(modulePath));
 
@@ -318,7 +329,7 @@ public class EmbeddedServerFactory {
         try {
             logModule = moduleLoader.loadModule(logModuleId);
         } catch (final ModuleLoadException mle) {
-            throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle, MODULE_ID_LOGMANAGER, moduleLoader);
+            throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle,MODULE_ID_LOGMANAGER, moduleLoader);
         }
 
         final ModuleClassLoader logModuleClassLoader = logModule.getClassLoader();
@@ -338,4 +349,55 @@ public class EmbeddedServerFactory {
             WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(tccl);
         }
     }
+
+    private static Object createServer(final EmbeddedServerType embeddedType, final Method createServerMethod, final ModuleLoader moduleLoader, final File jbossHomeDir, final String[] cmdargs) {
+        Object serverImpl;
+        try {
+            Properties sysprops = WildFlySecurityManager.getSystemPropertiesPrivileged();
+            Map<String, String> sysenv = WildFlySecurityManager.getSystemEnvironmentPrivileged();
+            String[] args = cmdargs != null ? cmdargs : new String[0];
+            serverImpl = createServerMethod.invoke(null, jbossHomeDir, moduleLoader, sysprops, sysenv, args);
+        } catch (final InvocationTargetException ite) {
+            if (embeddedType == EmbeddedServerType.HOST_CONTROLLER) {
+                throw EmbeddedLogger.ROOT_LOGGER.cannotCreateHostController(ite.getCause(), createServerMethod);
+            }
+            throw EmbeddedLogger.ROOT_LOGGER.cannotCreateStandaloneServer(ite.getCause(), createServerMethod);
+        } catch (final IllegalAccessException iae) {
+            if (embeddedType == EmbeddedServerType.HOST_CONTROLLER) {
+                throw EmbeddedLogger.ROOT_LOGGER.cannotCreateHostController(iae, createServerMethod);
+            }
+            throw EmbeddedLogger.ROOT_LOGGER.cannotCreateStandaloneServer(iae, createServerMethod);
+        }
+        return serverImpl;
+    }
+
+    private static void resetEmbeddedServerProperties(final String jbossHomeDir, final EmbeddedServerType embeddedServerType) {
+        assert jbossHomeDir != null;
+
+        String jbossBaseDir;
+        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, jbossHomeDir);
+        switch (embeddedServerType) {
+            case STANDALONE:
+                jbossBaseDir = jbossHomeDir + File.separator + "standalone";
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_CONFIG_DIR, jbossBaseDir + File.separator + "configuration");
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_DEPLOY_DIR, jbossBaseDir + File.separator + "data" + File.separator +"content");
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_TEMP_DIR, jbossBaseDir + File.separator + "data" + File.separator + "tmp");
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_LOG_DIR, jbossBaseDir + File.separator + "log");
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_DATA_DIR, jbossBaseDir + File.separator + "data");
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_BASE_DIR, jbossBaseDir);
+                break;
+            case HOST_CONTROLLER:
+                jbossBaseDir = jbossHomeDir + File.separator + "domain";
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR, jbossBaseDir + File.separator + "configuration");
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_DEPLOY_DIR, jbossBaseDir + File.separator + "data" + File.separator +"content");
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR, jbossBaseDir + File.separator + "data" + File.separator + "tmp");
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR, jbossBaseDir + File.separator + "log");
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_DATA_DIR, jbossBaseDir + File.separator + "data");
+                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR, jbossBaseDir);
+                break;
+            default:
+                throw new RuntimeException("Unknown embedded server type: " + embeddedServerType);
+        }
+    }
+
 }

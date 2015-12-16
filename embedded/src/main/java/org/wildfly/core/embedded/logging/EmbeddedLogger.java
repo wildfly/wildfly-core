@@ -193,4 +193,8 @@ public interface EmbeddedLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 25, value = "Unable to configure embedded server logging from %s")
     void cannotConfigureBootLogging(File loggingProperties);
+
+    @Message(id = 26, value = "Cannot create host controller using factory: %s")
+    IllegalStateException cannotCreateHostController(@Cause Throwable cause, Method createMethod);
+
 }
