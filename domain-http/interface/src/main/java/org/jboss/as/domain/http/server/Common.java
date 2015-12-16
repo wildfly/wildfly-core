@@ -58,7 +58,7 @@ public class Common {
 
     static void sendError(HttpServerExchange exchange, boolean encode, String msg) {
         int errorCode = getErrorResponseCode(msg);
-        sendError(exchange, encode, new ModelNode(msg), errorCode);
+        sendError(exchange, encode, new ModelNode(msg == null ? "" : msg), errorCode);
     }
 
     static void sendError(HttpServerExchange exchange, boolean encode, ModelNode msg) {
