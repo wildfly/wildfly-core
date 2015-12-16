@@ -134,7 +134,7 @@ public class RemoteProxyControllerProtocolTestCase {
                     }
                 },
                 commitControl,
-                null);
+                null, null);
         Assert.assertNotNull(commitControl.tx);
         commitControl.tx.commit();
         assertEquals("123", controller.getOperation().get("test").asString());
@@ -180,7 +180,7 @@ public class RemoteProxyControllerProtocolTestCase {
                         completed.set(true);
                     }
                 },
-                null);
+                null, null);
         ModelNode result = failure.get();
         assertEquals(FAILED, result.get(OUTCOME).asString());
         assertEquals("broken", result.get(FAILURE_DESCRIPTION).asString());
@@ -223,7 +223,7 @@ public class RemoteProxyControllerProtocolTestCase {
                         completed.set(true);
                     }
                 },
-                null);
+                null, null);
         ModelNode result = failure.get();
         assertEquals(FAILED, result.get(OUTCOME).asString());
         assertEquals("java.lang.RuntimeException:Crap", result.get(FAILURE_DESCRIPTION).asString());
@@ -290,7 +290,7 @@ public class RemoteProxyControllerProtocolTestCase {
                         result.done(response);
                     }
                 },
-                null);
+                null, null);
 
         ModelNode preparedResult = prepared.get();
         assertEquals(SUCCESS, preparedResult.get(OUTCOME).asString());
@@ -362,7 +362,7 @@ public class RemoteProxyControllerProtocolTestCase {
                         result.done(response);
                     }
                 },
-                null);
+                null, null);
 
         ModelNode preparedResult = prepared.get();
         assertEquals(SUCCESS, preparedResult.get(OUTCOME).asString());
@@ -405,7 +405,7 @@ public class RemoteProxyControllerProtocolTestCase {
                 result.set(response.getResponseNode());
             }
         };
-        proxyController.execute(node, null, commitControl, null);
+        proxyController.execute(node, null, commitControl, null, null);
         commitControl.tx.commit();
         // Needs to call operation-completed
         Assert.assertEquals(2, commitControl.txCompletionStatus.get());
@@ -501,7 +501,7 @@ public class RemoteProxyControllerProtocolTestCase {
         proxyController.execute(operation,
                 null,
                 commitControl,
-                attachments);
+                attachments, null);
         Assert.assertNotNull(commitControl.tx);
         commitControl.tx.commit();
         assertEquals(3, size.get());
@@ -540,7 +540,7 @@ public class RemoteProxyControllerProtocolTestCase {
         operation.get("test").set("123");
 
         CommitProxyOperationControl commitControl = new CommitProxyOperationControl();
-        proxyController.execute(operation, OperationMessageHandler.DISCARD, commitControl, OperationAttachments.EMPTY);
+        proxyController.execute(operation, OperationMessageHandler.DISCARD, commitControl, OperationAttachments.EMPTY, null);
         Assert.assertNull(errorRef.get());
         latch.await(15, TimeUnit.SECONDS);
         Assert.assertEquals(1, commitControl.txCompletionStatus.get());

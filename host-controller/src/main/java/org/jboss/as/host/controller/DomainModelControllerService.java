@@ -69,6 +69,7 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
 import org.jboss.as.controller.AbstractControllerService;
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
@@ -1399,17 +1400,18 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
             @Override
             public ProxyController serverCommunicationRegistered(String serverProcessName, ManagementChannelHandler channelHandler) {
-                ProxyController proxy = new ProxyController() {
+                return new ProxyController() {
                     @Override
                     public PathAddress getProxyNodeAddress() {
                         return null;
                     }
 
                     @Override
-                    public void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control, OperationAttachments attachments) {
+                    public void execute(ModelNode operation, OperationMessageHandler handler,
+                                        ProxyOperationControl control, OperationAttachments attachments,
+                                        BlockingTimeout blockingTimeout) {
                     }
                 };
-                return proxy;
             }
 
             @Override

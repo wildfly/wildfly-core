@@ -118,6 +118,15 @@ class DomainFinalResultHandler implements OperationStepHandler {
                     Map<ServerIdentity, ModelNode> serverResults = multiphaseContext.getServerResults();
                     if (serverResults.size() > 0) {
                         populateServerGroupResults(context, serverResults);
+                        // TODO report post-commit failures on slaves (i.e. in OperationContext.ResultHandler impls).
+                        // Consider enabling this. Problem is this results in the op having
+                        // outcome=failed, but really the model and MSC were updated on all HCs and servers
+                        // so the effect is likely much more like outcome=success
+                        // We don't really know what went wrong.
+//                        if (isDomain) {
+//                            // If there were any post-prepare failures on slaves, report them
+//                            populatePostPrepareHCFailures(context);
+//                        }
                     } else {
                         shouldContinue = collectHostFailures(context, isDomain);
                         if (shouldContinue) {
@@ -361,6 +370,35 @@ class DomainFinalResultHandler implements OperationStepHandler {
             }
         }
     }
+
+    // See TODO above
+//    private void populatePostPrepareHCFailures(OperationContext context) {
+//        ModelNode hostFailureResults = null;
+//        for (Map.Entry<String, ModelNode> entry : multiphaseContext.getHostControllerFinalResults().entrySet()) {
+//            ModelNode hostResult = entry.getValue();
+//            if (hostResult.hasDefined(FAILURE_DESCRIPTION)) {
+//                if (hostFailureResults == null) {
+//                    hostFailureResults = new ModelNode();
+//                }
+//                hostFailureResults.get(entry.getKey()).set(hostResult.get(FAILURE_DESCRIPTION));
+//            }
+//        }
+//
+//        if (hostFailureResults != null) {
+//            //context.getFailureDescription().get(HOST_FAILURE_DESCRIPTIONS).set(hostFailureResults);
+//
+//            //The following is a workaround for AS7-4597
+//            //DomainRolloutStepHandler.pushToServers() puts in a simple string into the failure description, but that might be a red herring.
+//            //If there is a failure description and it is not of type OBJECT, then let's not set it for now
+//            if (!context.getFailureDescription().isDefined() || context.getFailureDescription().getType() == ModelType.OBJECT) {
+//                ModelNode fullFailure = new ModelNode();
+//                fullFailure.get(HOST_FAILURE_DESCRIPTIONS).set(hostFailureResults);
+//                context.getFailureDescription().set(fullFailure);
+//            } else {
+//                DomainControllerLogger.HOST_CONTROLLER_LOGGER.debugf("Failure description is not of type OBJECT '%s'", context.getFailureDescription());
+//            }
+//        }
+//    }
 
     private boolean isDomainOperation(final ModelNode operation) {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));

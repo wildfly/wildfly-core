@@ -85,9 +85,9 @@ class OperationAttachmentsProxy implements Operation {
         //
     }
 
-    void shutdown(Exception error) {
+    void shutdown() {
         for (final ProxiedInputStream stream : proxiedStreams) {
-            stream.shutdown(error);
+            stream.shutdown(null);
         }
     }
 
@@ -118,7 +118,7 @@ class OperationAttachmentsProxy implements Operation {
         private final ManagementChannelAssociation channelAssociation;
 
         private boolean initialized;
-        private volatile Exception error;
+        private volatile Throwable error;
 
         ProxiedInputStream(final ManagementChannelAssociation channelAssociation, final int batchId, final int index) {
             this.channelAssociation = channelAssociation;
@@ -217,7 +217,7 @@ class OperationAttachmentsProxy implements Operation {
             }
         }
 
-        private void shutdown(Exception error) {
+        private void shutdown(Throwable error) {
             StreamUtils.safeClose(this);
             this.error = error;
         }

@@ -79,7 +79,7 @@ public interface ManagementRequestContext<A> {
      * <p>
      * If the executor {@link java.util.concurrent.RejectedExecutionException rejects} the task, or if the task itself
      * throws an exception during execution, the
-     * {@link org.jboss.as.protocol.mgmt.ActiveOperation.ResultHandler#failed(Exception) failed method} of the
+     * {@link ActiveOperation.ResultHandler#failed(Throwable) failed method} of the
      * {@code ResultHander} associated with the request will be invoked, and if it returns {@code true} a failure
      * message will be sent to the remote client.
      * </p>
@@ -95,7 +95,7 @@ public interface ManagementRequestContext<A> {
      * <p>
      * If the executor {@link java.util.concurrent.RejectedExecutionException rejects} the task, or if the task itself
      * throws an exception during execution, the
-     * {@link org.jboss.as.protocol.mgmt.ActiveOperation.ResultHandler#failed(Exception) failed method} of the
+     * {@link ActiveOperation.ResultHandler#failed(Throwable) failed method} of the
      * {@code ResultHander} associated with the request will be invoked, and if it returns {@code true} a failure
      * message will be sent to the remote client.
      * </p>
@@ -113,7 +113,7 @@ public interface ManagementRequestContext<A> {
      * <p>
      * If the executor {@link java.util.concurrent.RejectedExecutionException rejects} the task, or if the task itself
      * throws an exception during execution, the
-     * {@link org.jboss.as.protocol.mgmt.ActiveOperation.ResultHandler#failed(Exception) failed method} of the
+     * {@link ActiveOperation.ResultHandler#failed(Throwable) failed method} of the
      * {@code ResultHander} associated with the request will be invoked, and if it returns {@code true} a failure
      * message will be sent to the remote client.
      * </p>
@@ -131,7 +131,7 @@ public interface ManagementRequestContext<A> {
      * <p>
      * If the executor {@link java.util.concurrent.RejectedExecutionException rejects} the task, or if the task itself
      * throws an exception during execution, the
-     * {@link org.jboss.as.protocol.mgmt.ActiveOperation.ResultHandler#failed(Exception) failed method} of the
+     * {@link ActiveOperation.ResultHandler#failed(Throwable) failed method} of the
      * {@code ResultHander} associated with the request will be invoked, and if it returns {@code true} a failure
      * message will be sent to the remote client.
      * </p>
@@ -160,7 +160,7 @@ public interface ManagementRequestContext<A> {
          * Execute the task.
          * <p>
          * If the task throws an exception during execution, the
-         * {@link org.jboss.as.protocol.mgmt.ActiveOperation.ResultHandler#failed(Exception) failed method} of the
+         * {@link ActiveOperation.ResultHandler#failed(Throwable) failed method} of the
          * {@code ResultHander} associated with the request will be invoked, and if it returns {@code true} a failure
          * message will be sent to the remote client.
          * </p>
@@ -170,5 +170,24 @@ public interface ManagementRequestContext<A> {
          */
         void execute(final ManagementRequestContext<A> context) throws Exception;
 
+    }
+
+    /**
+     * {@link org.jboss.as.protocol.mgmt.ManagementRequestContext.AsyncTask} subinterface implemented
+     * by tasks where the appropriate request header to use for notifying a remote process of a
+     * failure varies through the course of the task.
+     *
+     * @deprecated this is a bit of a hack, plus we can move this method into AsyncTask with a default impl
+     *             once this module no longer requires JDK 6 source level
+     */
+    @Deprecated
+    interface MultipleResponseAsyncTask<A> extends AsyncTask<A> {
+        /**
+         * Gets the current request header for which an error response should be sent
+         * @return the header, or {@code null} if the
+         * {@linkplain ManagementRequestContext#getRequestHeader() default header for the request context}
+         * should be used
+         */
+        ManagementProtocolHeader getCurrentRequestHeader();
     }
 }
