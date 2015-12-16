@@ -90,7 +90,6 @@
         <version.org.apache.httpcomponents.httpcore>4.4.1.redhat-1</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.maven>3.2.1</version.org.apache.maven>
         <version.org.apache.xerces>2.11.0.SP4-redhat-1</version.org.apache.xerces>
-        <version.org.bouncycastle>1.52.0.redhat-2</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.0.21</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>3.1.4.redhat-1</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core-asl>4.4.1.redhat-1</version.org.codehaus.woodstox.woodstox-core-asl>
@@ -996,13 +995,6 @@
                    </exclusion>
                </exclusions>
            </dependency>
-
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>${version.org.bouncycastle}</version>
-                <scope>test</scope>
-            </dependency>
 
 
             <!-- This dependency needs to be managed due to the dependency convergence enforcer rule -->
