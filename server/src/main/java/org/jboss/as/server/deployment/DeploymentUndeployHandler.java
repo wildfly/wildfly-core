@@ -46,12 +46,14 @@ public class DeploymentUndeployHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         ModelNode model = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel();
-        final String runtimeName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
-        model.get(ENABLED.getName()).set(false);
+        if (model.hasDefined(ENABLED.getName()) && model.get(ENABLED.getName()).asBoolean()) {
+            final String runtimeName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
+            model.get(ENABLED.getName()).set(false);
 
-        final String managementName = context.getCurrentAddressValue();
+            final String managementName = context.getCurrentAddressValue();
 
-        DeploymentHandlerUtil.undeploy(context, operation, managementName, runtimeName, vaultReader);
+            DeploymentHandlerUtil.undeploy(context, operation, managementName, runtimeName, vaultReader);
+        }
         DeploymentUtils.disableAttribute(model);
     }
 }
