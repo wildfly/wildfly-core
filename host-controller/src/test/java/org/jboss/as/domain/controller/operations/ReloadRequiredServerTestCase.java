@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -507,7 +508,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
         @Override
         public void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control,
-                OperationAttachments attachments) {
+                            OperationAttachments attachments, BlockingTimeout blockingTimeout) {
         }
 
     }

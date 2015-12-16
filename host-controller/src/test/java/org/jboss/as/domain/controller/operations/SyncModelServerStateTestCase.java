@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
@@ -808,7 +809,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
 
         @Override
         public void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control,
-                            OperationAttachments attachments) {
+                            OperationAttachments attachments, BlockingTimeout blockingTimeout) {
         }
 
         @Override

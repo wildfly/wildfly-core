@@ -57,13 +57,13 @@ public interface ProxyController {
      * {@link ProxyOperationControl#operationPrepared(ModelController.OperationTransaction, org.jboss.dmr.ModelNode)}
      * or the {@link ProxyOperationControl#operationFailed(org.jboss.dmr.ModelNode)} callbacks on the given  {@code control}
      * will have been invoked.
-     *
-     * @param operation the operation to execute. Cannot be {@code null}
+     *  @param operation the operation to execute. Cannot be {@code null}
      * @param handler the message handler. May be {@code null}
      * @param control the callback handler for this operation. Cannot be {@code null}
      * @param attachments the operation attachments. May be {@code null}
+     * @param blockingTimeout control for maximum period any blocking operations can block. Cannot be {@code null}
      */
-    void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control, OperationAttachments attachments);
+    void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control, OperationAttachments attachments, BlockingTimeout blockingTimeout);
 
     /**
      * Gets the {@link ModelVersion} of the kernel management API exposed by the proxied process.
