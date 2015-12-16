@@ -163,8 +163,7 @@ public class OutboundSocketBinding {
         if (this.resolvedDestinationAddress != null) {
             return this.resolvedDestinationAddress;
         }
-        this.resolvedDestinationAddress = InetAddress.getByName(this.unresolvedDestinationAddress);
-        return this.resolvedDestinationAddress;
+        return InetAddress.getByName(this.unresolvedDestinationAddress);
     }
 
     /**
