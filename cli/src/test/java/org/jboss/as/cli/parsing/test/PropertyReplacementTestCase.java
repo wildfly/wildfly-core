@@ -66,6 +66,11 @@ public class PropertyReplacementTestCase {
     private static final String ENV_PROP_NAME = "env.test.prop";
     private static final String ENV_PROP_VALUE = "sysprop";
 
+    private static final String EMPTY_PROP_NAME = "test.node-name-empty"; // an empty property
+    private static final String EMPTY_PROP_VALUE = "";
+
+    private static final String PREFIX = "prefix";
+
     @BeforeClass
     public static void setup() {
         WildFlySecurityManager.setPropertyPrivileged(NODE_TYPE_PROP_NAME, NODE_TYPE_PROP_VALUE);
@@ -79,6 +84,8 @@ public class PropertyReplacementTestCase {
         WildFlySecurityManager.setPropertyPrivileged(PROP_RECURSIVE_NAME, PROP_RECURSIVE_VALUE);
 
         WildFlySecurityManager.setPropertyPrivileged(ENV_PROP_NAME, ENV_PROP_VALUE);
+
+        WildFlySecurityManager.setPropertyPrivileged(EMPTY_PROP_NAME, EMPTY_PROP_VALUE);
     }
 
     @AfterClass
@@ -92,6 +99,7 @@ public class PropertyReplacementTestCase {
         WildFlySecurityManager.clearPropertyPrivileged(PROP_PART2_NAME);
 
         WildFlySecurityManager.clearPropertyPrivileged(PROP_RECURSIVE_NAME);
+        WildFlySecurityManager.clearPropertyPrivileged(EMPTY_PROP_NAME);
     }
 
     @Test
@@ -146,6 +154,15 @@ public class PropertyReplacementTestCase {
     }
 
     @Test
+    public void testNodeTypeWithEmptyProperty() throws Exception {
+        final ParsedCommandLine parsed = parse("/" + PREFIX + "${" + EMPTY_PROP_NAME + "}${" + NODE_TYPE_PROP_NAME + "}=test:op");
+        final OperationRequestAddress address = parsed.getAddress();
+        assertNotNull(address);
+        assertEquals(PREFIX + NODE_TYPE_PROP_VALUE, address.getNodeType());
+        assertEquals("test", address.getNodeName());
+    }
+
+    @Test
     public void testUnresolvedNodeName() throws Exception {
         assertFailedToParse("/test=${" + NODE_TYPE_PROP_NAME + "xxx}:op");
     }
@@ -157,6 +174,15 @@ public class PropertyReplacementTestCase {
         assertNotNull(address);
         assertEquals("test", address.getNodeType());
         assertEquals(NODE_NAME_PROP_VALUE, address.getNodeName());
+    }
+
+    @Test
+    public void testNodeNameWithEmptyProperty() throws Exception {
+        final ParsedCommandLine parsed = parse("/test=" + PREFIX +"${" + EMPTY_PROP_NAME + "}${" + NODE_NAME_PROP_NAME + "}:op");
+        final OperationRequestAddress address = parsed.getAddress();
+        assertNotNull(address);
+        assertEquals("test", address.getNodeType());
+        assertEquals(PREFIX + NODE_NAME_PROP_VALUE, address.getNodeName());
     }
 
     @Test
