@@ -54,8 +54,9 @@ import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
 import org.jboss.stdio.StdioContext;
-import org.wildfly.core.embedded.EmbeddedServerFactory;
-import org.wildfly.core.embedded.EmbeddedServerReference;
+import org.wildfly.core.embedded.EmbeddedManagedProcess;
+import org.wildfly.core.embedded.EmbeddedProcessFactory;
+import org.wildfly.core.embedded.EmbeddedProcessStartException;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -70,7 +71,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private static final String DOMAIN_CONFIG = "--domain-config";
     private static final String HOST_CONFIG = "--host-config";
 
-    private final AtomicReference<EmbeddedServerLaunch> hostControllerReference;
+    private final AtomicReference<EmbeddedProcessLaunch> hostControllerReference;
     private ArgumentWithValue jbossHome;
     private ArgumentWithValue stdOutHandling;
     private ArgumentWithValue domainConfig;
@@ -78,7 +79,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private ArgumentWithValue dashC;
     private ArgumentWithValue timeout;
 
-    static EmbedHostControllerHandler create(final AtomicReference<EmbeddedServerLaunch> hostControllerReference, final CommandContext ctx, final boolean modular) {
+    static EmbedHostControllerHandler create(final AtomicReference<EmbeddedProcessLaunch> hostControllerReference, final CommandContext ctx, final boolean modular) {
         EmbedHostControllerHandler result = new EmbedHostControllerHandler(hostControllerReference);
         final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
         if (!modular) {
@@ -95,7 +96,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         return result;
     }
 
-    private EmbedHostControllerHandler(final AtomicReference<EmbeddedServerLaunch> hostControllerReference) {
+    private EmbedHostControllerHandler(final AtomicReference<EmbeddedProcessLaunch> hostControllerReference) {
         super("embed-host-controller", false);
         assert hostControllerReference != null;
         this.hostControllerReference = hostControllerReference;
@@ -170,15 +171,15 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
-            EmbeddedServerReference hostController;
+            EmbeddedManagedProcess hostController;
             if (this.jbossHome == null) {
                 // Modular environment
-                hostController = EmbeddedServerFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+                hostController = EmbeddedProcessFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             } else {
-                hostController = EmbeddedServerFactory.createHostController(jbossHome.getAbsolutePath(), null, null, cmds);
+                hostController = EmbeddedProcessFactory.createHostController(jbossHome.getAbsolutePath(), null, null, cmds);
             }
             hostController.start();
-            hostControllerReference.set(new EmbeddedServerLaunch(hostController, restorer));
+            hostControllerReference.set(new EmbeddedProcessLaunch(hostController, restorer, true));
 
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(hostController.getModelControllerClient(), contextSelector);
             if (bootTimeout == null || bootTimeout > 0) {
@@ -245,6 +246,8 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                 }
             });
             ok = true;
+        } catch (RuntimeException | EmbeddedProcessStartException e) {
+            throw new CommandLineException("Cannot start embedded Host Controller", e);
         } finally {
             if (!ok) {
                 ctx.disconnectController();
