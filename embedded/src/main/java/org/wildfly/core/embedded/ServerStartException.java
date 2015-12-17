@@ -24,7 +24,10 @@ package org.wildfly.core.embedded;
 
 /**
  * @author John E. Bailey
+ *
+ * @deprecated use the {@link EmbeddedProcessStartException} subclass as this level of the type hierarchy will be removed
  */
+@Deprecated
 public class ServerStartException extends Exception {
     private static final long serialVersionUID = 7991468792402261287L;
 
