@@ -24,8 +24,6 @@ package org.wildfly.loaders.deployment;
 
 import static java.security.AccessController.doPrivileged;
 
-import org.jboss.modules.Resource;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -65,8 +63,12 @@ final class JarEntryResource implements Resource {
         if (loaderFullPath != null) {
             return doPrivileged(new DeploymentURLCreateAction(loaderFullPath + "/" + entryName));
         } else {
-            return overlayURL != null ? overlayURL : resourceURL;
+            return getNativeURL();
         }
+    }
+
+    public URL getNativeURL() {
+        return overlayURL != null ? overlayURL : resourceURL;
     }
 
     public InputStream openStream() throws IOException {
