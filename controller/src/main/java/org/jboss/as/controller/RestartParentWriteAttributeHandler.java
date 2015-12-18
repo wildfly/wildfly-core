@@ -139,6 +139,7 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
      *
      * @deprecated override {@link #recreateParentService(OperationContext, PathAddress, org.jboss.dmr.ModelNode)}
      */
+    @SuppressWarnings("deprecation")
     @Deprecated
     protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel, ServiceVerificationHandler verificationHandler) throws OperationFailedException {
         throw new UnsupportedOperationException();
@@ -166,7 +167,7 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
         ModelNode parentModel = getOriginalModel(context, address);
         if (parentModel != null && context.revertResourceRestarted(address, this)) {
             removeServices(context, serviceName, invalidatedParentModel);
-            recreateParentService(context, address, parentModel, null);
+            recreateParentService(context, address, parentModel);
         }
     }
 
