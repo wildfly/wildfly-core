@@ -88,7 +88,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * </p>
  *
  * @author Ken Wills <kwills@redhat.com>
- * @see EmbeddedServerFactory
+ * @see EmbeddedProcessFactory
  */
 public class EmbeddedHostControllerFactory {
 
@@ -255,12 +255,7 @@ public class EmbeddedHostControllerFactory {
         }
 
         @Override
-        public HostController getHostController() {
-            return this;
-        }
-
-        @Override
-        public void start() throws ServerStartException {
+        public void start() throws EmbeddedProcessStartException {
             EmbeddedHostControllerBootstrap hostControllerBootstrap = null;
             try {
                 final long startTime = System.currentTimeMillis();

@@ -23,7 +23,10 @@ package org.wildfly.core.embedded;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
+ *
+ * @deprecated Not used
  */
+@Deprecated
 public interface ServerEnvironment {
     /**
      * Constant that holds the name of the environment property

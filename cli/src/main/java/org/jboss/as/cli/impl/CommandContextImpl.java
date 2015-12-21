@@ -102,7 +102,7 @@ import org.jboss.as.cli.batch.BatchedCommand;
 import org.jboss.as.cli.batch.impl.DefaultBatchManager;
 import org.jboss.as.cli.batch.impl.DefaultBatchedCommand;
 import org.jboss.as.cli.embedded.EmbeddedControllerHandlerRegistrar;
-import org.jboss.as.cli.embedded.EmbeddedServerLaunch;
+import org.jboss.as.cli.embedded.EmbeddedProcessLaunch;
 import org.jboss.as.cli.handlers.ArchiveHandler;
 import org.jboss.as.cli.handlers.ClearScreenHandler;
 import org.jboss.as.cli.handlers.CommandCommandHandler;
@@ -578,7 +578,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         // supported but hidden from tab-completion until stable implementation
         cmdRegistry.registerHandler(new ArchiveHandler(this), false, "archive");
 
-        final AtomicReference<EmbeddedServerLaunch> embeddedServerLaunch = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
+        final AtomicReference<EmbeddedProcessLaunch> embeddedServerLaunch = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
         cmdRegistry.registerHandler(new ReloadHandler(this, embeddedServerLaunch), "reload");
         cmdRegistry.registerHandler(new ShutdownHandler(this, embeddedServerLaunch), "shutdown");
         registerExtraHandlers();

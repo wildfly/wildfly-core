@@ -33,7 +33,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.accesscontrol.AccessRequirement;
 import org.jboss.as.cli.accesscontrol.AccessRequirementBuilder;
 import org.jboss.as.cli.accesscontrol.PerNodeOperationAccess;
-import org.jboss.as.cli.embedded.EmbeddedServerLaunch;
+import org.jboss.as.cli.embedded.EmbeddedProcessLaunch;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.CLIModelControllerClient;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
@@ -57,11 +57,11 @@ public class ReloadHandler extends BaseOperationCommand {
     private final ArgumentWithValue restartServers;
     private final ArgumentWithValue useCurrentDomainConfig;
     private final ArgumentWithValue useCurrentHostConfig;
-    private final AtomicReference<EmbeddedServerLaunch> embeddedServerRef;
+    private final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef;
 
     private PerNodeOperationAccess hostReloadPermission;
 
-    public ReloadHandler(CommandContext ctx, final AtomicReference<EmbeddedServerLaunch> embeddedServerRef) {
+    public ReloadHandler(CommandContext ctx, final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef) {
         super(ctx, "reload", true);
 
         this.embeddedServerRef = embeddedServerRef;
