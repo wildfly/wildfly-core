@@ -367,6 +367,7 @@ public class AuditLogTestCase {
                 final PathAddress serverAddress = PathAddress.pathAddress(baseAddress.getElement(0)).append(SERVER_CONFIG, servers.get(0));
                 final ModelNode restartOp = Util.createEmptyOperation("reload", serverAddress);
                 restartOp.get(BLOCKING).set(true);
+                masterLifecycleUtil.executeForResult(restartOp);
                 expectNoSyslogData();
 
                 //Now enable the server logger again
