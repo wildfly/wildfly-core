@@ -293,6 +293,7 @@
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>true</failsOnError>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
                         <useFile/>
                     </configuration>
                     <dependencies>
