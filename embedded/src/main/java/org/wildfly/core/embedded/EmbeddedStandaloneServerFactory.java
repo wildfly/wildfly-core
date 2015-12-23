@@ -76,7 +76,7 @@ import org.wildfly.core.embedded.logging.EmbeddedLogger;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author Thomas.Diesler@jboss.com
- * @see EmbeddedServerFactory
+ * @see EmbeddedProcessFactory
  */
 public class EmbeddedStandaloneServerFactory {
 
@@ -243,7 +243,7 @@ public class EmbeddedStandaloneServerFactory {
         }
 
         @Override
-        public void start() throws ServerStartException {
+        public void start() throws EmbeddedProcessStartException {
 
             Bootstrap bootstrap = null;
             try {

@@ -22,20 +22,20 @@
 
 package org.wildfly.core.embedded.logging;
 
-import org.wildfly.core.embedded.ServerStartException;
-import org.jboss.logging.BasicLogger;
-import org.jboss.logging.annotations.Cause;
-import org.jboss.logging.annotations.LogMessage;
-import org.jboss.logging.Logger;
-import org.jboss.logging.annotations.Message;
-import org.jboss.logging.annotations.MessageLogger;
-import org.jboss.modules.ModuleLoader;
-import org.jboss.vfs.VirtualFile;
+import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.File;
 import java.lang.reflect.Method;
 
-import static org.jboss.logging.Logger.Level.WARN;
+import org.jboss.logging.BasicLogger;
+import org.jboss.logging.Logger;
+import org.jboss.logging.annotations.Cause;
+import org.jboss.logging.annotations.LogMessage;
+import org.jboss.logging.annotations.Message;
+import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.modules.ModuleLoader;
+import org.jboss.vfs.VirtualFile;
+import org.wildfly.core.embedded.EmbeddedProcessStartException;
 
 /**
  * Date: 05.11.2011
@@ -175,13 +175,14 @@ public interface EmbeddedLogger extends BasicLogger {
     @Message(id = 19, value = "Cannot create standalone server using factory: %s")
     IllegalStateException cannotCreateStandaloneServer(@Cause Throwable cause, Method createMethod);
 
-    @Message(id = 20, value = "Cannot setup embedded server")
+    @Message(id = 20, value = "Cannot setup embedded process")
     IllegalStateException cannotSetupEmbeddedServer(@Cause Throwable cause);
 
-    @Message(id = 21, value = "Cannot start embedded server")
-    ServerStartException cannotStartEmbeddedServer(@Cause Throwable cause);
+    @Message(id = 21, value = "Cannot start embedded process")
+    EmbeddedProcessStartException cannotStartEmbeddedServer(@Cause Throwable cause);
 
-    @Message(id = 22, value = "Cannot invoke '%s' on standalone server")
+    // TODO This logger method is badly named.
+    @Message(id = 22, value = "Cannot invoke '%s' on embedded process")
     IllegalStateException cannotInvokeStandaloneServer(@Cause Throwable cause, String methodName);
 
     @Message(id = 23, value = "The embedded server is stopping and invocations on the ModelControllerClient are not available")
