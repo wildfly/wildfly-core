@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.jboss.as.cli.operation.OperationFormatException;
@@ -47,6 +48,8 @@ import org.jboss.as.cli.parsing.operation.OperationFormat;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
+import org.jboss.dmr.Property;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -1106,5 +1109,91 @@ public class Util {
             t1 = t1.getCause();
         }
         return buf.toString();
+    }
+
+    // returns the READ_OPERATION_DESCRIPTION outcome used to validate the request params
+    // return null if the operation has no params to validate
+    public static ModelNode validateRequest(CommandContext ctx, ModelNode request) throws CommandFormatException {
+
+        final ModelControllerClient client = ctx.getModelControllerClient();
+        if(client == null) {
+            throw new CommandFormatException("No connection to the controller.");
+        }
+
+        final Set<String> keys = request.keys();
+
+        if(!keys.contains(Util.OPERATION)) {
+            throw new CommandFormatException("Request is missing the operation name.");
+        }
+        final String operationName = request.get(Util.OPERATION).asString();
+
+        if(!keys.contains(Util.ADDRESS)) {
+            throw new CommandFormatException("Request is missing the address part.");
+        }
+        final ModelNode address = request.get(Util.ADDRESS);
+
+        if(keys.size() == 2) { // no props
+            return null;
+        }
+
+        final ModelNode opDescrReq = new ModelNode();
+        opDescrReq.get(Util.ADDRESS).set(address);
+        opDescrReq.get(Util.OPERATION).set(Util.READ_OPERATION_DESCRIPTION);
+        opDescrReq.get(Util.NAME).set(operationName);
+
+        final ModelNode outcome;
+        try {
+            outcome = client.execute(opDescrReq);
+        } catch(Exception e) {
+            throw new CommandFormatException("Failed to perform " + Util.READ_OPERATION_DESCRIPTION + " to validate the request: " + e.getLocalizedMessage());
+        }
+        if (!Util.isSuccess(outcome)) {
+            throw new CommandFormatException("Failed to get the list of the operation properties: \"" + Util.getFailureDescription(outcome) + '\"');
+        }
+
+        if(!outcome.has(Util.RESULT)) {
+            throw new CommandFormatException("Failed to perform " + Util.READ_OPERATION_DESCRIPTION + " to validate the request: result is not available.");
+        }
+        final ModelNode result = outcome.get(Util.RESULT);
+        final Set<String> definedProps = result.hasDefined(Util.REQUEST_PROPERTIES) ? result.get(Util.REQUEST_PROPERTIES).keys() : Collections.emptySet();
+        if(definedProps.isEmpty()) {
+            if(!(keys.size() == 3 && keys.contains(Util.OPERATION_HEADERS))) {
+                throw new CommandFormatException("Operation '" + operationName + "' does not expect any property.");
+            }
+        } else {
+            int skipped = 0;
+            for(String prop : keys) {
+                if(skipped < 2 && (prop.equals(Util.ADDRESS) || prop.equals(Util.OPERATION))) {
+                    ++skipped;
+                    continue;
+                }
+                if(!definedProps.contains(prop)) {
+                    if(!Util.OPERATION_HEADERS.equals(prop)) {
+                        throw new CommandFormatException("'" + prop + "' is not found among the supported properties: " + definedProps);
+                    }
+                }
+            }
+        }
+        return outcome;
+    }
+
+    // For any request params that are of type BYTES, replace the file path with the bytes from the file
+    public static void replaceFilePathsWithBytes(ModelNode request, ModelNode opDescOutcome) throws CommandFormatException {
+        ModelNode requestProps = opDescOutcome.get("result", "request-properties");
+        for (Property prop : requestProps.asPropertyList()) {
+            ModelNode typeDesc = prop.getValue().get("type");
+            if (typeDesc.getType() == ModelType.TYPE && typeDesc.asType() == ModelType.BYTES
+                    && request.hasDefined(prop.getName())) {
+                String filePath = request.get(prop.getName()).asString();
+                File localFile = new File(filePath);
+                if (!localFile.exists())
+                    continue;
+                try {
+                    request.get(prop.getName()).set(Util.readBytes(localFile));
+                } catch (OperationFormatException e) {
+                    throw new CommandFormatException(e);
+                }
+            }
+        }
     }
 }
