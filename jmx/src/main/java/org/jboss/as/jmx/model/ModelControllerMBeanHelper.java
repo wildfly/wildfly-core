@@ -140,7 +140,7 @@ public class ModelControllerMBeanHelper {
 
             @Override
             public Set<ObjectInstance> getResult() {
-                if (set.size() == 1 && set.contains(ModelControllerMBeanHelper.createRootObjectName(domain))) {
+                if (set.size() == 1 && set.contains(ModelControllerMBeanHelper.createRootObjectInstance(domain))) {
                     return Collections.emptySet();
                 }
                 return set;
@@ -578,6 +578,10 @@ public class ModelControllerMBeanHelper {
         } catch (MalformedObjectNameException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static ObjectInstance createRootObjectInstance(String domain) {
+        return new ObjectInstance(createRootObjectName(domain), CLASS_NAME);
     }
 
     String getDomain() {
