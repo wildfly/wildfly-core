@@ -70,6 +70,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @RunWith(WildflyTestRunner.class)
 public class ConfigurationChangesHistoryTestCase extends ContainerResourceMgmtTestBase {
 
+    private static final int ALL_MAX_HISTORY_SIZE = 5;
     private static final int MAX_HISTORY_SIZE = 4;
 
     private static final PathAddress ALLOWED_ORIGINS_ADDRESS = PathAddress.pathAddress()
@@ -151,6 +152,50 @@ public class ConfigurationChangesHistoryTestCase extends ContainerResourceMgmtTe
         assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ALLOWED_ORIGINS_ADDRESS.toModelNode().asString()));
         assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
         currentChange = changes.get(3);
+        currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
+        assertThat(currentChangeOp.get(OP).asString(), is(ADD));
+        assertThat(currentChangeOp.get(OP_ADDR).asString(), is(SYSTEM_PROPERTY_ADDRESS.toModelNode().asString()));
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
+    }
+
+    @Test
+    public void testAllConfigurationChanges() throws Exception {
+        final ModelNode update = Util.getWriteAttributeOperation(ADDRESS, ConfigurationChangeResourceDefinition.MAX_HISTORY.getName(), ALL_MAX_HISTORY_SIZE);
+        getModelControllerClient().execute(update);
+        final ModelNode listConfigurationChanges = Util.createOperation(ConfigurationChangeResourceDefinition.OPERATION_NAME, ADDRESS);
+        List<ModelNode> changes = getManagementClient().executeForResult(listConfigurationChanges).asList();
+        assertThat(changes.size(), is(ALL_MAX_HISTORY_SIZE));
+        for(ModelNode change : changes) {
+            assertThat(change.hasDefined(OPERATION_DATE), is(true));
+            assertThat(change.hasDefined(USER_ID), is(false));
+            assertThat(change.hasDefined(DOMAIN_UUID), is(false));
+            assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
+            assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
+            assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
+            assertThat(change.get(OPERATIONS).asList().size(), is(1));
+        }
+
+        ModelNode currentChange = changes.get(0);
+        ModelNode currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
+        assertThat(currentChangeOp.get(OP).asString(), is(WRITE_ATTRIBUTE_OPERATION));
+        assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ADDRESS.toModelNode().asString()));
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
+        currentChange = changes.get(1);
+        currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
+        assertThat(currentChangeOp.get(OP).asString(), is(WRITE_ATTRIBUTE_OPERATION));
+        assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ALLOWED_ORIGINS_ADDRESS.toModelNode().asString()));
+        assertThat(currentChange.get(OUTCOME).asString(), is(FAILED));
+        currentChange = changes.get(2);
+        currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
+        assertThat(currentChangeOp.get(OP).asString(), is(REMOVE));
+        assertThat(currentChangeOp.get(OP_ADDR).asString(), is(SYSTEM_PROPERTY_ADDRESS.toString()));
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
+        currentChange = changes.get(3);
+        currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
+        assertThat(currentChangeOp.get(OP).asString(), is(UNDEFINE_ATTRIBUTE_OPERATION));
+        assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ALLOWED_ORIGINS_ADDRESS.toModelNode().asString()));
+        assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
+        currentChange = changes.get(4);
         currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(ADD));
         assertThat(currentChangeOp.get(OP_ADDR).asString(), is(SYSTEM_PROPERTY_ADDRESS.toModelNode().asString()));
