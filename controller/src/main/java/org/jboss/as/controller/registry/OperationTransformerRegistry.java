@@ -80,7 +80,7 @@ public class OperationTransformerRegistry {
 
             @Override
             public ResourceTransformer getResourceTransformer() {
-                return resourceTransformer.getTransformer();
+                return resourceTransformer == null ? null : resourceTransformer.getTransformer();
             }
         };
     }
