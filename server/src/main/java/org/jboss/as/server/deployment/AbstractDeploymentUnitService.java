@@ -25,7 +25,12 @@ package org.jboss.as.server.deployment;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -48,12 +53,22 @@ import org.jboss.msc.value.InjectedValue;
 public abstract class AbstractDeploymentUnitService implements Service<DeploymentUnit> {
 
     private static final String FIRST_PHASE_NAME = Phase.values()[0].name();
+    final ImmutableManagementResourceRegistration registration;
+    final ManagementResourceRegistration mutableRegistration;
+    final Resource resource;
+    final CapabilityServiceSupport capabilityServiceSupport;
+    final AbstractVaultReader vaultReader;
     private final InjectedValue<DeployerChains> deployerChainsInjector = new InjectedValue<DeployerChains>();
 
     private DeploymentUnit deploymentUnit;
     private volatile StabilityMonitor monitor;
 
-    protected AbstractDeploymentUnitService() {
+    AbstractDeploymentUnitService(final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, final Resource resource, final CapabilityServiceSupport capabilityServiceSupport, final AbstractVaultReader vaultReader) {
+        this.mutableRegistration = mutableRegistration;
+        this.capabilityServiceSupport = capabilityServiceSupport;
+        this.registration = registration;
+        this.vaultReader = vaultReader;
+        this.resource = resource;
     }
 
     public synchronized void start(final StartContext context) throws StartException {
@@ -99,6 +114,7 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         deploymentUnit = null;
         monitor.removeController(context.getController());
         monitor = null;
+        DeploymentResourceSupport.cleanup(resource);
     }
 
     public synchronized DeploymentUnit getValue() throws IllegalStateException, IllegalArgumentException {
