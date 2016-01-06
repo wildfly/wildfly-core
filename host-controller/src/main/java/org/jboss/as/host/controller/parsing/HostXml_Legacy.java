@@ -91,6 +91,7 @@ import org.jboss.as.host.controller.ignored.IgnoredDomainTypeResourceDefinition;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
+import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
 import org.jboss.as.host.controller.operations.HostModelRegistrationHandler;
 import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
@@ -1384,24 +1385,24 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
                     case HOST: {
-                        RemoteDomainControllerAddHandler.HOST.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.HOST.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case PORT: {
-                        RemoteDomainControllerAddHandler.PORT.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.PORT.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case SECURITY_REALM: {
-                        RemoteDomainControllerAddHandler.SECURITY_REALM.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.SECURITY_REALM.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case USERNAME: {
-                        RemoteDomainControllerAddHandler.USERNAME.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.USERNAME.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case ADMIN_ONLY_POLICY: {
-                        RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY.parseAndSetParameter(value, update, reader);
-                        ModelNode nodeValue = update.get(RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY.getName());
+                        DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY.parseAndSetParameter(value, update, reader);
+                        ModelNode nodeValue = update.get(DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY.getName());
                         if (nodeValue.getType() != ModelType.EXPRESSION) {
                             adminOnlyPolicy = AdminOnlyDomainConfigPolicy.getPolicy(nodeValue.asString());
                         }
@@ -1413,14 +1414,14 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             }
         }
 
-        if (!update.hasDefined(RemoteDomainControllerAddHandler.HOST.getName())) {
+        if (!update.hasDefined(DomainControllerWriteAttributeHandler.HOST.getName())) {
             if (allowDiscoveryOptions) {
                 requireDiscoveryOptions = isRequireDiscoveryOptions(adminOnlyPolicy);
             } else {
                 throw ParseUtils.missingRequired(reader, Collections.singleton(Attribute.HOST.getLocalName()));
             }
         }
-        if (!update.hasDefined(RemoteDomainControllerAddHandler.PORT.getName())) {
+        if (!update.hasDefined(DomainControllerWriteAttributeHandler.PORT.getName())) {
             if (allowDiscoveryOptions) {
                 requireDiscoveryOptions = requireDiscoveryOptions || isRequireDiscoveryOptions(adminOnlyPolicy);
             } else {
@@ -1451,32 +1452,32 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
                     case HOST: {
-                        RemoteDomainControllerAddHandler.HOST.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.HOST.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case PORT: {
-                        RemoteDomainControllerAddHandler.PORT.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.PORT.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case PROTOCOL: {
-                        RemoteDomainControllerAddHandler.PROTOCOL.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.PROTOCOL.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case SECURITY_REALM: {
-                        RemoteDomainControllerAddHandler.SECURITY_REALM.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.SECURITY_REALM.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case USERNAME: {
-                        RemoteDomainControllerAddHandler.USERNAME.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.USERNAME.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case IGNORE_UNUSED_CONFIG: {
-                        RemoteDomainControllerAddHandler.IGNORE_UNUSED_CONFIG.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.IGNORE_UNUSED_CONFIG.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case ADMIN_ONLY_POLICY: {
-                        RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY.parseAndSetParameter(value, update, reader);
-                        ModelNode nodeValue = update.get(RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY.getName());
+                        DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY.parseAndSetParameter(value, update, reader);
+                        ModelNode nodeValue = update.get(DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY.getName());
                         if (nodeValue.getType() != ModelType.EXPRESSION) {
                             adminOnlyPolicy = AdminOnlyDomainConfigPolicy.getPolicy(nodeValue.asString());
                         }
@@ -1488,10 +1489,10 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             }
         }
 
-        if (!update.hasDefined(RemoteDomainControllerAddHandler.HOST.getName())) {
+        if (!update.hasDefined(DomainControllerWriteAttributeHandler.HOST.getName())) {
             requireDiscoveryOptions = isRequireDiscoveryOptions(adminOnlyPolicy);
         }
-        if (!update.hasDefined(RemoteDomainControllerAddHandler.PORT.getName())) {
+        if (!update.hasDefined(DomainControllerWriteAttributeHandler.PORT.getName())) {
             requireDiscoveryOptions = requireDiscoveryOptions || isRequireDiscoveryOptions(adminOnlyPolicy);
         }
 
@@ -1522,28 +1523,28 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
                     case HOST: {
-                        RemoteDomainControllerAddHandler.HOST.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.HOST.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case PORT: {
-                        RemoteDomainControllerAddHandler.PORT.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.PORT.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case SECURITY_REALM: {
-                        RemoteDomainControllerAddHandler.SECURITY_REALM.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.SECURITY_REALM.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case USERNAME: {
-                        RemoteDomainControllerAddHandler.USERNAME.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.USERNAME.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case IGNORE_UNUSED_CONFIG: {
-                        RemoteDomainControllerAddHandler.IGNORE_UNUSED_CONFIG.parseAndSetParameter(value, update, reader);
+                        DomainControllerWriteAttributeHandler.IGNORE_UNUSED_CONFIG.parseAndSetParameter(value, update, reader);
                         break;
                     }
                     case ADMIN_ONLY_POLICY: {
-                        RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY.parseAndSetParameter(value, update, reader);
-                        ModelNode nodeValue = update.get(RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY.getName());
+                        DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY.parseAndSetParameter(value, update, reader);
+                        ModelNode nodeValue = update.get(DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY.getName());
                         if (nodeValue.getType() != ModelType.EXPRESSION) {
                             adminOnlyPolicy = AdminOnlyDomainConfigPolicy.getPolicy(nodeValue.asString());
                         }
@@ -1555,10 +1556,10 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             }
         }
 
-        if (!update.hasDefined(RemoteDomainControllerAddHandler.HOST.getName())) {
+        if (!update.hasDefined(DomainControllerWriteAttributeHandler.HOST.getName())) {
             requireDiscoveryOptions = isRequireDiscoveryOptions(adminOnlyPolicy);
         }
-        if (!update.hasDefined(RemoteDomainControllerAddHandler.PORT.getName())) {
+        if (!update.hasDefined(DomainControllerWriteAttributeHandler.PORT.getName())) {
             requireDiscoveryOptions = requireDiscoveryOptions || isRequireDiscoveryOptions(adminOnlyPolicy);
         }
 

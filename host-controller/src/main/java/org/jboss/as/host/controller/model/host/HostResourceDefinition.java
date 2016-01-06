@@ -82,6 +82,7 @@ import org.jboss.as.host.controller.discovery.DiscoveryOptionsResourceDefinition
 import org.jboss.as.host.controller.discovery.StaticDiscoveryResourceDefinition;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.model.jvm.JvmResourceDefinition;
+import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
 import org.jboss.as.host.controller.operations.HostShutdownHandler;
 import org.jboss.as.host.controller.operations.HostSpecifiedInterfaceAddHandler;
 import org.jboss.as.host.controller.operations.HostSpecifiedInterfaceRemoveHandler;
@@ -89,7 +90,6 @@ import org.jboss.as.host.controller.operations.HostXmlMarshallingHandler;
 import org.jboss.as.host.controller.operations.InstallationReportHandler;
 import org.jboss.as.host.controller.operations.IsMasterHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
-import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.ResolveExpressionOnHostHandler;
 import org.jboss.as.host.controller.operations.StartServersHandler;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
@@ -196,14 +196,13 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
     public static final ObjectTypeAttributeDefinition DC_REMOTE = new ObjectTypeAttributeDefinition.Builder(
                 ModelDescriptionConstants.REMOTE,
-                RemoteDomainControllerAddHandler.PROTOCOL,
-                RemoteDomainControllerAddHandler.HOST,
-                RemoteDomainControllerAddHandler.PORT,
-                RemoteDomainControllerAddHandler.USERNAME,
-                RemoteDomainControllerAddHandler.SECURITY_REALM,
-                RemoteDomainControllerAddHandler.SECURITY_REALM,
-                RemoteDomainControllerAddHandler.IGNORE_UNUSED_CONFIG,
-                RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY)
+                DomainControllerWriteAttributeHandler.PROTOCOL,
+                DomainControllerWriteAttributeHandler.HOST,
+                DomainControllerWriteAttributeHandler.PORT,
+                DomainControllerWriteAttributeHandler.USERNAME,
+                DomainControllerWriteAttributeHandler.SECURITY_REALM,
+                DomainControllerWriteAttributeHandler.IGNORE_UNUSED_CONFIG,
+                DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY)
             .build();
 
     public static final ObjectTypeAttributeDefinition DOMAIN_CONTROLLER = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.DOMAIN_CONTROLLER, DC_LOCAL, DC_REMOTE)
@@ -290,7 +289,6 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerReadOnlyAttribute(MANAGEMENT_MINOR_VERSION, null);
         hostRegistration.registerReadOnlyAttribute(MANAGEMENT_MICRO_VERSION, null);
         hostRegistration.registerReadOnlyAttribute(MASTER, IsMasterHandler.INSTANCE);
-        hostRegistration.registerReadOnlyAttribute(DOMAIN_CONTROLLER, null);
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.NAMESPACES, null);
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SCHEMA_LOCATIONS, null);
         hostRegistration.registerReadWriteAttribute(HostResourceDefinition.NAME, environment.getProcessNameReadHandler(), environment.getProcessNameWriteHandler());

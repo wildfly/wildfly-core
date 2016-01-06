@@ -18,6 +18,7 @@
  */
 package org.jboss.as.host.controller;
 
+
 import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
@@ -49,6 +50,8 @@ import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+
+import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
 
 /**
  * Utility for creating the root element and populating the {@link org.jboss.as.controller.registry.ManagementResourceRegistration}
@@ -123,7 +126,9 @@ public class HostModelUtil {
                         hostControllerInfo, serverInventory, remoteFileRepository,
                         contentRepository, domainController, hostExtensionRegistry,
                         vaultReader, ignoredRegistry, processState, pathManager, authorizer, auditLogger, bootErrorCollector));
-
+        hostRegistration.registerReadWriteAttribute(HostResourceDefinition.DOMAIN_CONTROLLER, null,
+                DomainControllerWriteAttributeHandler.getInstance(root, hostControllerInfo, configurationPersister,
+                        localFileRepository, remoteFileRepository, contentRepository, domainController, extensionRegistry, ignoredRegistry, pathManager));
         //TODO See if some of all these parameters can come from domain controller
         LocalDomainControllerAddHandler localDcAddHandler = LocalDomainControllerAddHandler.getInstance(root, hostControllerInfo,
                 configurationPersister, localFileRepository, contentRepository, domainController, extensionRegistry, pathManager);
