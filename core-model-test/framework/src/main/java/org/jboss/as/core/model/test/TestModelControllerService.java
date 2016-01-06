@@ -82,6 +82,7 @@ import org.jboss.as.host.controller.HostPathManagerService;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
+import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
 import org.jboss.as.host.controller.operations.HostModelRegistrationHandler;
 import org.jboss.as.host.controller.operations.LocalDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
@@ -565,6 +566,9 @@ class TestModelControllerService extends ModelTestModelControllerService {
             //Swap out the write-local-domain-controller operation with one which only does the model part
             hostReg.unregisterOperationHandler(LocalDomainControllerAddHandler.OPERATION_NAME);
             hostReg.registerOperationHandler(LocalDomainControllerAddHandler.DEFINITION, LocalDomainControllerAddHandler.getTestInstance());
+
+            hostReg.unregisterAttribute(HostResourceDefinition.DOMAIN_CONTROLLER.getName());
+            hostReg.registerReadWriteAttribute(HostResourceDefinition.DOMAIN_CONTROLLER, null, DomainControllerWriteAttributeHandler.getTestInstance());
 
             //Register the ops to initialise the schemalocations and namespaces
             hostReg.registerOperationHandler(AddMissingHostNamespacesAttributeForValidationHandler.DEF, AddMissingHostNamespacesAttributeForValidationHandler.INSTANCE);
