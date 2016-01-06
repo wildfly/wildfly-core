@@ -64,6 +64,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -579,6 +580,13 @@ public class CoreModelTestDelegate {
                 if (opName.equals(LocalDomainControllerAddHandler.OPERATION_NAME) || opName.equals(RemoteDomainControllerAddHandler.OPERATION_NAME)) {
                     dcInBootOps = true;
                     break;
+                }
+                if(WRITE_ATTRIBUTE_OPERATION.equals(opName)) {
+                    String attributeName = op.get(NAME).asString();
+                    if(DOMAIN_CONTROLLER.equals(attributeName)) {
+                        dcInBootOps = true;
+                        break;
+                    }
                 }
             }
             if (!dcInBootOps) {

@@ -289,7 +289,6 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerReadOnlyAttribute(MANAGEMENT_MINOR_VERSION, null);
         hostRegistration.registerReadOnlyAttribute(MANAGEMENT_MICRO_VERSION, null);
         hostRegistration.registerReadOnlyAttribute(MASTER, IsMasterHandler.INSTANCE);
-        hostRegistration.registerReadOnlyAttribute(DOMAIN_CONTROLLER, null);
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.NAMESPACES, null);
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SCHEMA_LOCATIONS, null);
         hostRegistration.registerReadWriteAttribute(HostResourceDefinition.NAME, environment.getProcessNameReadHandler(), environment.getProcessNameWriteHandler());
