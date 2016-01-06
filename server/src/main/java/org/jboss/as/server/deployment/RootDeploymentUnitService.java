@@ -32,6 +32,7 @@ import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceRegistry;
+import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.vfs.VirtualFile;
 
@@ -50,6 +51,13 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
     private final ImmutableManagementResourceRegistration registration;
     private final ManagementResourceRegistration mutableRegistration;
     private final Resource resource;
+
+    @Override
+    public synchronized void stop(StopContext context) {
+        super.stop(context);
+        DeploymentResourceSupport.cleanup(resource);
+    }
+
     private final CapabilityServiceSupport capabilityServiceSupport;
     private final AbstractVaultReader vaultReader;
     private final DeploymentOverlayIndex deploymentOverlays;
