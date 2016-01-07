@@ -105,6 +105,9 @@ public class CLIExpressionResolver {
                 }
             } else if(c == '{') {
                 if(state == DOLLAR) {
+                    if (i - 2 >= 0 && input.charAt(i - 2) == '\\') {
+                        return input;
+                    }
                     state = INITIAL;
                     final String[] inputRef = new String[]{input};
                     if(i - 2 == resolveProperty2(inputRef, i - 2, exceptionIfNotResolved)) {
