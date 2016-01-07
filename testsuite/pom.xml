@@ -132,7 +132,7 @@
 
 
         <!-- Common surefire properties. -->
-        <surefire.memory.args>-Xmx512m</surefire.memory.args>
+        <surefire.memory.args>-Xmx512m -XX:MaxMetaspaceSize=256m</surefire.memory.args>
         <surefire.jpda.args></surefire.jpda.args>
         <as.debug.port>8787</as.debug.port>
         <surefire.system.args>${surefire.memory.args} ${surefire.jpda.args} -Djboss.dist=${jboss.dist}</surefire.system.args>
