@@ -63,9 +63,9 @@ public interface ResourceLoader extends IterableResourceLoader {
     String getPath();
 
     /**
-     * Returns loader full path. It is never empty string. If parent has loader then its
-     * full path consists of parent's full path plus current loader path.
-     * @return full loader path
+     * Returns loader full path. It is never empty string. If this loader has parent then its
+     * full path consists of parent's full path plus this loader path.
+     * @return loader full path
      */
     String getFullPath();
 
