@@ -164,6 +164,7 @@ public class RespawnHttpTestCase {
         TestSuiteEnvironment.getIpv6Args(args);
         args.add("-Xms64m");
         args.add("-Xmx512m");
+        args.add("-XX:MaxMetaspaceSize=256m");
         args.add("--");
         args.add("-default-jvm");
         args.add(processUtil.getJavaCommand());
