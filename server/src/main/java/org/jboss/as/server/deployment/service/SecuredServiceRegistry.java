@@ -6,7 +6,6 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.ServiceRegistry;
 
-import java.security.AccessController;
 import java.security.Permission;
 import java.util.List;
 
@@ -30,19 +29,26 @@ public class SecuredServiceRegistry implements ServiceRegistry {
 
     @Override
     public ServiceController<?> getRequiredService(ServiceName serviceName) throws ServiceNotFoundException {
-        AccessController.checkPermission(PERMISSION);
+        checkPermission(PERMISSION);
         return delegate.getRequiredService(serviceName);
     }
 
     @Override
     public ServiceController<?> getService(ServiceName serviceName) {
-        AccessController.checkPermission(PERMISSION);
+        checkPermission(PERMISSION);
         return delegate.getService(serviceName);
     }
 
     @Override
     public List<ServiceName> getServiceNames() {
-        AccessController.checkPermission(PERMISSION);
+        checkPermission(PERMISSION);
         return delegate.getServiceNames();
+    }
+
+    private static void checkPermission(final Permission permission) {
+        SecurityManager securityManager = System.getSecurityManager();
+        if (securityManager != null) {
+            securityManager.checkPermission(permission);
+        }
     }
 }
