@@ -41,6 +41,7 @@ $JAVA_OPTS = @()
 # JVM memory allocation pool parameters - modify as appropriate.
 $JAVA_OPTS += '-Xms1G'
 $JAVA_OPTS += '-Xmx1G'
+$JAVA_OPTS += '-XX:MaxMetaspaceSize=256m'
 
 # Reduce the RMI GCs to once per hour for Sun JVMs.
 #$JAVA_OPTS += '-Dsun.rmi.dgc.client.gcInterval=3600000'
