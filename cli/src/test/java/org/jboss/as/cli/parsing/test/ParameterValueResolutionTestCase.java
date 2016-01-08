@@ -196,6 +196,22 @@ public class ParameterValueResolutionTestCase {
         assertEquals("the value is valuable", value.asString());
     }
 
+    @Test
+    public void testSecurityVaultString() throws Exception {
+        final CommandContext ctx = new MockCommandContext();
+        ctx.setResolveParameterValues(true);
+
+        ModelNode value = parseObject(ctx, "the value is $\\{VAULT::text::password::1\\}");
+        assertNotNull(value);
+        assertEquals(ModelType.STRING, value.getType());
+        assertEquals("the value is ${VAULT::text::password::1}", value.asString());
+
+        value = parseObject(ctx, "the value is ${VAULT::text::password::1}");
+        assertNotNull(value);
+        assertEquals(ModelType.STRING, value.getType());
+        assertEquals("the value is :text::password::1", value.asString());
+    }
+
     protected void setProperty(final String name, final String value) {
         if(System.getSecurityManager() == null) {
             System.setProperty(name, value);
