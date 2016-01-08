@@ -232,7 +232,15 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
     }
 
     protected ResourceTransformer resolveTransformer(TransformerEntry entry, PathAddress address) {
-        final ResourceTransformer transformer = entry.getResourceTransformer();
+        final ResourceTransformer transformer;
+        try {
+            transformer = entry.getResourceTransformer();
+        } catch (NullPointerException e) {
+            //Temp for WFCORE-1270 to get some more information
+            NullPointerException npe = new NullPointerException("NPE for " + address);
+            npe.setStackTrace(e.getStackTrace());
+            throw npe;
+        }
         if (transformer == null) {
             final ImmutableManagementResourceRegistration childReg = originalModel.getRegistration(address);
             if (childReg == null) {
