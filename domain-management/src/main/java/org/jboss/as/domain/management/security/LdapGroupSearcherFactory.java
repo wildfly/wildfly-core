@@ -348,6 +348,7 @@ public class LdapGroupSearcherFactory {
                     Attribute attr = rdn.toAttributes().get(groupNameAttribute);
                     if (attr != null) {
                         Object value = attr.get();
+                        value = Rdn.unescapeValue(value.toString());
                         if (value != null) {
                             return new LdapEntry( (value instanceof byte[]) ? new String((byte[]) value) : value.toString(), dn, groupReferralAddress);
                         }
