@@ -29,6 +29,7 @@ import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.MiscContentItem;
 import org.jboss.as.patching.metadata.ModificationType;
+import org.jboss.as.patching.runner.PatchingTaskContext.Mode;
 
 /**
  * A generic patching task.
@@ -74,7 +75,7 @@ public interface PatchingTask {
 
     static final class Factory {
 
-        static PatchingTask create(final PatchingTaskDescription description, final PatchingTaskContext context) {
+        static PatchingTask create(final PatchingTaskDescription description, final IdentityPatchContext.PatchEntry context) {
             final ContentItem item = description.getContentItem();
             switch (item.getContentType()) {
                 case BUNDLE:
@@ -82,7 +83,7 @@ public interface PatchingTask {
                 case MISC:
                     return createMiscTask(description, (MiscContentItem) item, context);
                 case MODULE:
-                    return createModuleTask(description, context.getCurrentMode());
+                    return createModuleTask(description, context.getCurrentMode() == Mode.ROLLBACK || context.isRolledback(description.getPatchId()));
                 default:
                     throw new IllegalStateException();
             }
@@ -92,16 +93,16 @@ public interface PatchingTask {
             return new BundlePatchingTask(description);
         }
 
-        static PatchingTask createModuleTask(final PatchingTaskDescription description, PatchingTaskContext.Mode mode) {
-            if (mode == PatchingTaskContext.Mode.APPLY) {
+        static PatchingTask createModuleTask(final PatchingTaskDescription description, boolean rollback) {
+            if (rollback) {
+                return new ModuleRollbackTask(description);
+            } else {
                 final ModificationType type = description.getModificationType();
                 if(type == ModificationType.REMOVE) {
                     return new ModuleRemoveTask(description);
                 } else {
                     return new ModuleUpdateTask(description);
                 }
-            } else {
-                return new ModuleRollbackTask(description);
             }
         }
 
