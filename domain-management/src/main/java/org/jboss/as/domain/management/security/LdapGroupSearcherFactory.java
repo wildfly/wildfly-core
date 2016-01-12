@@ -341,14 +341,13 @@ public class LdapGroupSearcherFactory {
         private LdapEntry parseRole(String dn, String groupNameAttribute, URI groupReferralAddress) {
 
             try {
-                LdapName ldapName = new LdapName(dn);
+                LdapName ldapName = new LdapName(Rdn.unescapeValue(dn).toString());
                 for (int i = ldapName.size() - 1; i >= 0; i--) {
                     String rdnString = ldapName.get(i);
                     Rdn rdn = new Rdn(rdnString);
                     Attribute attr = rdn.toAttributes().get(groupNameAttribute);
                     if (attr != null) {
                         Object value = attr.get();
-                        value = Rdn.unescapeValue(value.toString());
                         if (value != null) {
                             return new LdapEntry( (value instanceof byte[]) ? new String((byte[]) value) : value.toString(), dn, groupReferralAddress);
                         }
