@@ -68,6 +68,21 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
 
     /** {@inheritDoc} */
     @Override
+    public DatagramSocket createDatagramSocket(String name) throws SocketException {
+        if (name == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("name");
+        }
+        return new ManagedDatagramSocketBinding(name, this.namedRegistry, null);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public DatagramSocket createDatagramSocket() throws SocketException {
+        return new ManagedDatagramSocketBinding(null, this.unnamedRegistry, null);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public DatagramSocket createDatagramSocket(String name, SocketAddress address) throws SocketException {
         if (name == null) {
             throw NetworkMessages.MESSAGES.nullOrEmptyVar("name");
@@ -85,6 +100,21 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
             throw NetworkMessages.MESSAGES.nullOrEmptyVar("address");
         }
         return new ManagedDatagramSocketBinding(null, this.unnamedRegistry, address);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public MulticastSocket createMulticastSocket(String name) throws IOException {
+        if (name == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("name");
+        }
+        return ManagedMulticastSocketBinding.create(name, this.namedRegistry, null);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public MulticastSocket createMulticastSocket() throws IOException {
+        return ManagedMulticastSocketBinding.create(null, this.unnamedRegistry, null);
     }
 
     /** {@inheritDoc} */
