@@ -61,6 +61,24 @@ public interface SocketBindingManager {
     ManagedSocketFactory getSocketFactory();
 
     /**
+     * Create a named, unbound datagram socket.
+     *
+     * @param name the name for the managed binding. Cannot be {@code null}
+     * @return an unbound datagram socket
+     * @throws SocketException
+     * @throws IllegalArgumentException if {@code name} is {@code null}
+     */
+    DatagramSocket createDatagramSocket(final String name) throws SocketException;
+
+    /**
+     * Create an unnamed, unbound datagram socket.
+     *
+     * @return an unbound datagram socket
+     * @throws SocketException
+     */
+    DatagramSocket createDatagramSocket() throws SocketException;
+
+    /**
      * Create a named datagram socket.
      *
      * @param name the name for the managed binding. Cannot be {@code null}
@@ -80,6 +98,24 @@ public interface SocketBindingManager {
      * @throws IllegalArgumentException if {@code address} is {@code null}
      */
     DatagramSocket createDatagramSocket(final SocketAddress address) throws SocketException;
+
+    /**
+     * Create a named, unbound multicast socket.
+     *
+     * @param name the name for the managed binding. Cannot be {@code null}
+     * @return an unbound multicast socket
+     * @throws IOException
+     * @throws IllegalArgumentException if {@code name} is {@code null}
+     */
+    MulticastSocket createMulticastSocket(final String name) throws IOException;
+
+    /**
+     * Create an unnamed, unbound multicast socket.
+     *
+     * @return an unbound multicast socket
+     * @throws IOException
+     */
+    MulticastSocket createMulticastSocket() throws IOException;
 
     /**
      * Create a named multicast socket.
