@@ -1123,20 +1123,19 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             } else {
                 response = readLine("Accept certificate? [N]o, [T]emporarily : ", false);
             }
-
             if (response == null)
                 break;
             else if (response.length() == 1) {
                 switch (response.toLowerCase(Locale.ENGLISH).charAt(0)) {
                     case 'n':
-                        break;
+                        return;
                     case 't':
                         trustManager.storeChainTemporarily(lastChain);
-                        break;
+                        return;
                     case 'p':
                         if (trustManager.isModifyTrustStore()) {
                             trustManager.storeChainPermenantly(lastChain);
-                            break;
+                            return;
                         }
                 }
             }
