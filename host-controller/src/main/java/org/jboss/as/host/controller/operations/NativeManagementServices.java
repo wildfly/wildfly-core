@@ -7,6 +7,7 @@ import org.jboss.as.host.controller.mgmt.ServerToHostOperationHandlerFactoryServ
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
+import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.RemotingOptions;
@@ -27,6 +28,13 @@ public class NativeManagementServices {
 
     public static final OptionMap CONNECTION_OPTIONS = OptionMap.create(RemotingOptions.HEARTBEAT_INTERVAL, heartbeatInterval,
                                                         Options.READ_TIMEOUT, 45000);
+
+    static synchronized void installManagementWorkerService(final ServiceTarget serviceTarget, final ServiceRegistry serviceContainer) {
+        //install xnio mgmt worker
+        if (serviceContainer.getService(ManagementWorkerService.SERVICE_NAME) == null) {
+            ManagementWorkerService.installService(serviceTarget);
+        }
+    }
 
     static synchronized void installRemotingServicesIfNotInstalled(final ServiceTarget serviceTarget,
                                                                    final String hostName,

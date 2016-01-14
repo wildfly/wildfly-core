@@ -60,6 +60,7 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.HttpManagementRequestsService;
 import org.jboss.as.server.mgmt.HttpManagementResourceDefinition;
 import org.jboss.as.server.mgmt.HttpShutdownService;
+import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.as.server.mgmt.domain.HttpManagement;
 import org.jboss.dmr.ModelNode;
@@ -71,6 +72,7 @@ import org.jboss.remoting3.RemotingOptions;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
+import org.xnio.XnioWorker;
 
 /**
  * A handler that activates the HTTP management API on a Server.
@@ -164,6 +166,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, undertowService.getControlledProcessStateServiceInjector())
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, undertowService.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue())
+                .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, undertowService.getWorker())
                 .addInjection(undertowService.getAllowedOriginsInjector(), allowedOrigins);
 
             if (socketBindingServiceName != null) {
