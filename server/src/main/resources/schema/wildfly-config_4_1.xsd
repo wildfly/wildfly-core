@@ -2561,6 +2561,14 @@
             <!--<xs:element name="loggers" type="loggersType" minOccurs="0"/>-->
             <xs:element name="system-properties" type="properties-with-boottime" minOccurs="0"/>
             <xs:element name="jvm" minOccurs="0" type="serverJvmType"/>
+
+            <xs:element name="ssl" minOccurs="0" type="server-sslType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configuration of the SSLContext used for the connection from the application server back to it's host controller.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required"/>
         <xs:attribute name="group" type="xs:string" use="required"/>
@@ -2569,6 +2577,50 @@
             <xs:annotation>
                 <xs:documentation>
                     Iif the server last status (STARTED or STOPPED) is to be used to define the value of auto-start.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="server-sslType">
+        <xs:attribute name="ssl-protocol" type="xs:string" default="TLS">
+            <xs:annotation>
+                <xs:documentation>
+                    The protocol to initialise the SSLContext, if 'Default' is specified the JVM wide default SSLContext will be used instead.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="trust-manager-algorithm" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The algorithm to use when initialising the TrustManagerFactory.
+
+                    If not specified the JVM default is used instead.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="truststore-Type" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The type of the trust store.
+
+                    If not specified the JVM default is used instead.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="truststore-path" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The fully qualified path to the truststore.
+                    
+                    If not specified the no file will be used to initialise the truststore.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="truststore-password" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The password to open the truststore.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

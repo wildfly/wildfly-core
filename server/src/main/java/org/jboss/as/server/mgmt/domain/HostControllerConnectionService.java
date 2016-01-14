@@ -24,17 +24,25 @@ package org.jboss.as.server.mgmt.domain;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URI;
 import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import org.jboss.as.controller.ControlledProcessState;
@@ -80,12 +88,13 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     private final int connectOperationID;
     private final boolean managementSubsystemEndpoint;
     private volatile ResponseAttachmentInputStreamSupport responseAttachmentSupport;
+    private final Supplier<SSLContext> sslContextSupplier;
 
     private HostControllerClient client;
 
     public HostControllerConnectionService(final URI connectionURI, final String serverName, final String serverProcessName,
                                            final String authKey, final int connectOperationID,
-                                           final boolean managementSubsystemEndpoint) {
+                                           final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier) {
         this.connectionURI= connectionURI;
         this.serverName = serverName;
         this.userName = "=" + serverName;
@@ -93,6 +102,11 @@ public class HostControllerConnectionService implements Service<HostControllerCl
         this.initialAuthKey = authKey;
         this.connectOperationID = connectOperationID;
         this.managementSubsystemEndpoint = managementSubsystemEndpoint;
+        if (sslContextSupplier != null) {
+            this.sslContextSupplier = sslContextSupplier;
+        } else {
+            this.sslContextSupplier = HostControllerConnectionService::getAcceptingSSLContext;
+        }
     }
 
     @Override
@@ -105,7 +119,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
             final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI, options);
             configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialAuthKey));
             configuration.setConnectionTimeout(SERVER_CONNECTION_TIMEOUT);
-            configuration.setSslContext(getAcceptingSSLContext());
+            configuration.setSslContext(sslContextSupplier.get());
             this.responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorInjector.getValue());
             // Create the connection
             final HostControllerConnection connection = new HostControllerConnection(serverProcessName, userName, connectOperationID,
@@ -183,7 +197,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
         return scheduledExecutorInjector;
     }
 
-    private static SSLContext getAcceptingSSLContext() throws IOException {
+    private static SSLContext getAcceptingSSLContext() {
         /*
          * This connection is only a connection back to the local host controller.
          *
@@ -213,4 +227,48 @@ public class HostControllerConnectionService implements Service<HostControllerCl
         }
     }
 
+    public static class SSLContextSupplier implements Supplier<SSLContext>, Serializable {
+
+        private final String sslProtocol;
+        private final String trustManagerAlgorithm;
+        private final String trustStoreType;
+        private final String trustStorePath;
+        private final char[] trustStorePassword;
+
+        public SSLContextSupplier(String sslProtocol, String trustManagerAlgorithm, String trustStoreType, String trustStorePath, char[] trustStorePassword) {
+            this.sslProtocol = sslProtocol;
+            this.trustManagerAlgorithm = trustManagerAlgorithm;
+            this.trustStoreType = trustStoreType;
+            this.trustStorePath = trustStorePath;
+            this.trustStorePassword = trustStorePassword;
+        }
+
+        @Override
+        public SSLContext get() {
+            try {
+                if ("Default".equals(sslProtocol)) {
+                    return SSLContext.getDefault();
+                }
+
+                KeyStore keyStore = KeyStore.getInstance(trustStoreType != null ? trustStoreType : KeyStore.getDefaultType());
+                if (trustStorePath != null) {
+                    try (FileInputStream fis = new FileInputStream(trustStorePath)) {
+                        keyStore.load(fis, trustStorePassword);
+                    }
+                } else {
+                    keyStore.load(null, trustStorePassword);
+                }
+
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerAlgorithm != null ? trustManagerAlgorithm : TrustManagerFactory.getDefaultAlgorithm());
+                trustManagerFactory.init(keyStore);
+
+                SSLContext sslContext = SSLContext.getInstance(sslProtocol);
+                sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
+
+                return sslContext;
+            } catch (NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | KeyManagementException e) {
+                throw ServerLogger.ROOT_LOGGER.unableToInitialiseSSLContext(e.getMessage());
+            }
+        }
+    }
 }

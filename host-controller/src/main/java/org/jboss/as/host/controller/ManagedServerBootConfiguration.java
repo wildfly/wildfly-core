@@ -26,6 +26,9 @@ package org.jboss.as.host.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
+
+import javax.net.ssl.SSLContext;
 
 import org.jboss.dmr.ModelNode;
 
@@ -66,5 +69,13 @@ public interface ManagedServerBootConfiguration {
      * @return the subsystem endpoint config
      */
     ModelNode getSubsystemEndpointConfiguration();
+
+    /**
+     * Get a {@link Serializable} {@link Supplier<SSLContext>} that the server will use to create an SSLContext for connecting
+     * back to the HostController.
+     *
+     * @return A {@link Supplier<SSLContext>} or {@code null} if no SSL configuration specified.
+     */
+    Supplier<SSLContext> getSSLContextSupplier();
 
 }
