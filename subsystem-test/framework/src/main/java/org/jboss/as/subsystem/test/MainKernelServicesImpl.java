@@ -58,6 +58,7 @@ import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.model.test.StringConfigurationPersister;
+import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
@@ -80,6 +81,8 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
         super(container, controllerService, persister, rootRegistration, operationValidator, mainSubsystemName, extensionRegistry,
                 legacyModelVersion, successfulBoot, bootError, registerTransformers);
         this.testClass = testClass;
+        //add mgmt worker
+        ManagementWorkerService.installService(container.subTarget());
     }
 
     /**
