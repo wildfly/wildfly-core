@@ -524,7 +524,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             iterative = PrincipalToGroupResourceDefinition.ITERATIVE.resolveModelAttribute(context, principalToGroup).asBoolean();
             boolean skipMissingGroups = PrincipalToGroupResourceDefinition.SKIP_MISSING_GROUPS.resolveModelAttribute(context, principalToGroup).asBoolean();
 
-            groupSearcher = LdapGroupSearcherFactory.createForPrincipalToGroup(groupAttribute, groupNameAttribute, preferOriginalConnection, skipMissingGroups);
+            groupSearcher = LdapGroupSearcherFactory.createForPrincipalToGroup(groupAttribute, groupNameAttribute, preferOriginalConnection, skipMissingGroups, GroupName.SIMPLE == groupName);
         }
 
         LdapCacheService<LdapEntry[], LdapEntry> groupCacheService = createCacheService(context, groupSearcher, groupCache);
