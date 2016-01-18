@@ -22,20 +22,30 @@
 
 package org.jboss.as.threads;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.msc.service.ServiceName;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for a queueless thread pool resource.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
-public class QueuelessThreadPoolResourceDefinition extends SimpleResourceDefinition {
+public class QueuelessThreadPoolResourceDefinition extends PersistentResourceDefinition {
+
+    private final QueuelessThreadPoolWriteAttributeHandler writeHandler;
+    private final QueuelessThreadPoolMetricsHandler metricsHandler;
+    private final boolean blocking;
+    private final boolean registerRuntimeOnly;
+
 
     public static QueuelessThreadPoolResourceDefinition create(boolean blocking, boolean registerRuntimeOnly) {
         if (blocking) {
@@ -68,9 +78,6 @@ public class QueuelessThreadPoolResourceDefinition extends SimpleResourceDefinit
         return new QueuelessThreadPoolResourceDefinition(blocking, registerRuntimeOnly, type, serviceNameBase, resolverPrefix, addHandler, removeHandler);
     }
 
-    private final boolean registerRuntimeOnly;
-    private final boolean blocking;
-    private final ServiceName serviceNameBase;
 
     private QueuelessThreadPoolResourceDefinition(boolean blocking, boolean registerRuntimeOnly,
                                                   String type, ServiceName serviceNameBase, String resolverPrefix, OperationStepHandler addHandler,
@@ -80,27 +87,26 @@ public class QueuelessThreadPoolResourceDefinition extends SimpleResourceDefinit
                 addHandler, removeHandler);
         this.registerRuntimeOnly = registerRuntimeOnly;
         this.blocking = blocking;
-        this.serviceNameBase = serviceNameBase;
+        writeHandler = new QueuelessThreadPoolWriteAttributeHandler(blocking, serviceNameBase);
+        metricsHandler = new QueuelessThreadPoolMetricsHandler(serviceNameBase);
     }
+
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(PoolAttributeDefinitions.NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-        QueuelessThreadPoolWriteAttributeHandler writeHandler = new QueuelessThreadPoolWriteAttributeHandler(blocking, serviceNameBase);
         writeHandler.registerAttributes(resourceRegistration);
         if (registerRuntimeOnly) {
-            new QueuelessThreadPoolMetricsHandler(serviceNameBase).registerAttributes(resourceRegistration);
+            metricsHandler.registerAttributes(resourceRegistration);
         }
     }
 
-    public static void registerTransformers1_0(ResourceTransformationDescriptionBuilder parent) {
-        registerTransformers1_0(parent, CommonAttributes.BLOCKING_QUEUELESS_THREAD_POOL);
-        registerTransformers1_0(parent, CommonAttributes.QUEUELESS_THREAD_POOL);
+    public boolean isBlocking() {
+        return blocking;
     }
 
-    public static void registerTransformers1_0(ResourceTransformationDescriptionBuilder parent, String type) {
-        parent.addChildResource(PathElement.pathElement(type))
-        .getAttributeBuilder()
-            .addRejectCheck(KeepAliveTimeAttributeDefinition.TRANSFORMATION_CHECKER, PoolAttributeDefinitions.KEEPALIVE_TIME);
+    @Override
+    public Collection<AttributeDefinition> getAttributes() {
+        return Arrays.asList(writeHandler.attributes);
     }
 }

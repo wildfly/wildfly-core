@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.jboss.as.controller.registry.Resource;
 
 /**
- * Contextual object that the {@code ModelController} and {@link CapabilityContext} implementations
+ * Contextual object that the {@code ModelController} and {@link CapabilityScope} implementations
  * can use to temporarily store data during the course of a capability resolution.
  *
  * @author Brian Stansberry
@@ -110,8 +110,8 @@ public abstract class CapabilityResolutionContext {
      *
      * @param <T> the attachment value type
      */
-    @SuppressWarnings("UnusedDeclaration")
     public static final class AttachmentKey<T> {
+
         private final Class<T> valueClass;
 
         /**

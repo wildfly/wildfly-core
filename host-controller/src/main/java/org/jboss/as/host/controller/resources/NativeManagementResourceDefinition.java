@@ -46,6 +46,7 @@ import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.NativeManagementAddHandler;
 import org.jboss.as.host.controller.operations.NativeManagementWriteAttributeHandler;
+import org.jboss.as.server.operations.NativeManagementRemoveHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -73,6 +74,7 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
             .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
+            .setCapabilityReference("org.wildfly.network.interface", NATIVE_MANAGEMENT_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition NATIVE_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT, false)
@@ -101,8 +103,8 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
     public NativeManagementResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo) {
         super(RESOURCE_PATH,
                 HostModelUtil.getResourceDescriptionResolver("core","management","native-interface"),
-                new NativeManagementAddHandler(hostControllerInfo), null,
-                OperationEntry.Flag.RESTART_NONE, null);
+                new NativeManagementAddHandler(hostControllerInfo), NativeManagementRemoveHandler.INSTANCE,
+                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
         setDeprecated(ModelVersion.create(1, 7));
     }
@@ -117,5 +119,10 @@ public class NativeManagementResourceDefinition extends SimpleResourceDefinition
     @Override
     public List<AccessConstraintDefinition> getAccessConstraints() {
         return accessConstraints;
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(NATIVE_MANAGEMENT_CAPABILITY);
     }
 }

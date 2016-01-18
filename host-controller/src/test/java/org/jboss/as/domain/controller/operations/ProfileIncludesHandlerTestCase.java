@@ -90,19 +90,20 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
         ModelNode list = new ModelNode().add("profile-two");
         ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
         MockOperationContext operationContext = getOperationContext(addr);
-        ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+        ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
         operationContext.executeNextStep();
     }
 
-    @Test(expected=OperationFailedException.class)
-    public void testBadProfileIncludesWrite() throws Exception {
-        PathAddress addr = getProfileAddress("profile-one");
-        ModelNode list = new ModelNode().add("bad-profile");
-        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
-        MockOperationContext operationContext = getOperationContext(addr);
-        ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
-        operationContext.executeNextStep();
-    }
+//    // WFCORE-833 Replaced with test in core-model-test ProfileTestCase
+//    @Test(expected=OperationFailedException.class)
+//    public void testBadProfileIncludesWrite() throws Exception {
+//        PathAddress addr = getProfileAddress("profile-one");
+//        ModelNode list = new ModelNode().add("bad-profile");
+//        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+//        MockOperationContext operationContext = getOperationContext(addr);
+//        ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
+//        operationContext.executeNextStep();
+//    }
 
     @Test(expected=OperationFailedException.class)
     public void testCyclicProfileIncludesWrite() throws Exception {
@@ -110,7 +111,7 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
         ModelNode list = new ModelNode().add("profile-four");
         ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
         MockOperationContext operationContext = getOperationContextWithIncludes(addr);
-        ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+        ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
         operationContext.executeNextStep();
     }
 
@@ -120,17 +121,19 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
         ModelNode op = Util.createRemoveOperation(addr);
         MockOperationContext operationContext = getOperationContextWithIncludes(addr);
         ProfileRemoveHandler.INSTANCE.execute(operationContext, op);
-        operationContext.executeNextStep();
+        // WFCORE-833 no next validation step any more
+        //operationContext.executeNextStep();
     }
 
-    @Test(expected=OperationFailedException.class)
-    public void testBadProfileIncludesRemove() throws Exception {
-        PathAddress addr = getProfileAddress("profile-three");
-        ModelNode op = Util.createRemoveOperation(addr);
-        MockOperationContext operationContext = getOperationContextWithIncludes(addr);
-        ProfileRemoveHandler.INSTANCE.execute(operationContext, op);
-        operationContext.executeNextStep();
-    }
+//    // WFCORE-833 Replaced with test in core-model-test ProfileTestCase
+//    @Test(expected=OperationFailedException.class)
+//    public void testBadProfileIncludesRemove() throws Exception {
+//        PathAddress addr = getProfileAddress("profile-three");
+//        ModelNode op = Util.createRemoveOperation(addr);
+//        MockOperationContext operationContext = getOperationContextWithIncludes(addr);
+//        ProfileRemoveHandler.INSTANCE.execute(operationContext, op);
+//        operationContext.executeNextStep();
+//    }
 
     @Test
     public void testIncludesWithNoOverriddenSubsystems() throws Exception {
@@ -152,7 +155,7 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
                 profile4.registerChild(PathElement.pathElement(SUBSYSTEM, "b"), subsystemB);
             }
         });
-        ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+        ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
         operationContext.executeNextStep();
     }
 
@@ -177,7 +180,7 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
                     profile4.registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemB);
                 }
             });
-            ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+            ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -213,7 +216,7 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
                     profile5.registerChild(PathElement.pathElement(SUBSYSTEM, "x"), subsystemC);
                 }
             });
-            ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+            ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -248,7 +251,7 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
                     //profile-four is empty
                 }
             });
-            ProfileResourceDefinition.createReferenceValidationHandler().execute(operationContext, op);
+            ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -340,7 +343,7 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
         }
 
         public void addStep(OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
-            if (step instanceof DomainModelReferenceValidator) {
+            if (step instanceof DomainModelIncludesValidator) {
                 nextStep = step;
             }
         }

@@ -217,7 +217,7 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
             }
         }
         addAllowedValuesToDescription(node, validator);
-        valueType.addValueTypeDescription(node, prefix, bundle,resolver,locale);
+        valueType.addValueTypeDescription(node, prefix, bundle, forOperation, resolver,locale);
     }
 
     @Override

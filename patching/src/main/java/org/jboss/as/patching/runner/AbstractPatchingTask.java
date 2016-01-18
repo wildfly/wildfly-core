@@ -27,10 +27,12 @@ import static org.jboss.as.patching.IoUtils.NO_CONTENT;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.ContentType;
+import org.jboss.as.patching.metadata.ModificationCondition;
 
 /**
  * Basic patching task implementation.
@@ -54,6 +56,15 @@ abstract class AbstractPatchingTask<T extends ContentItem> implements PatchingTa
     @Override
     public T getContentItem() {
         return contentItem;
+    }
+
+    @Override
+    public boolean isRelevant(PatchingTaskContext context) throws PatchingException {
+        final ModificationCondition condition = description.getModification().getCondition();
+        if(condition == null) {
+            return true;
+        }
+        return condition.isSatisfied(context);
     }
 
     /**

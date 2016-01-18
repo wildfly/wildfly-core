@@ -64,13 +64,13 @@ import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
+import org.wildfly.common.cpu.ProcessorInfo;
 
 /**
  * Parser for the threads subsystem or for other subsystems that use pieces of the basic threads subsystem
  * xsd and resource structure.
  */
-public final class ThreadsParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>,
-        XMLElementWriter<SubsystemMarshallingContext> {
+public final class ThreadsParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>,XMLElementWriter<SubsystemMarshallingContext> {
 
     static final ThreadsParser INSTANCE = new ThreadsParser();
 
@@ -514,7 +514,6 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
                 }
                 case KEEPALIVE_TIME: {
                     PoolAttributeDefinitions.KEEPALIVE_TIME.parseAndSetParameter(op, reader);
-                    //op.get(KEEPALIVE_TIME).set(parseTimeSpec(reader));
                     break;
                 }
                 case THREAD_FACTORY: {
@@ -824,14 +823,14 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
         int fullCount = getScaledCount(count, perCpu);
         if (!perCpu.equals(new BigDecimal(0))) {
             ThreadsLogger.ROOT_LOGGER.perCpuNotSupported(Attribute.PER_CPU, count, Attribute.COUNT,
-                    perCpu, Attribute.PER_CPU, Runtime.getRuntime().availableProcessors(), fullCount, Attribute.COUNT);
+                    perCpu, Attribute.PER_CPU, ProcessorInfo.availableProcessors(), fullCount, Attribute.COUNT);
         }
 
         return String.valueOf(fullCount);
     }
 
     private static int getScaledCount(BigDecimal count, BigDecimal perCpu) {
-        return count.add(perCpu.multiply(BigDecimal.valueOf((long) Runtime.getRuntime().availableProcessors()), MathContext.DECIMAL64), MathContext.DECIMAL64).round(MathContext.DECIMAL64).intValueExact();
+        return count.add(perCpu.multiply(BigDecimal.valueOf((long) ProcessorInfo.availableProcessors()), MathContext.DECIMAL64), MathContext.DECIMAL64).round(MathContext.DECIMAL64).intValueExact();
     }
 
     private void parseProperties(final XMLExtendedStreamReader reader, final Namespace threadsNamespace) throws XMLStreamException {

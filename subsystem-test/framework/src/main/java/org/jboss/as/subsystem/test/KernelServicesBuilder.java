@@ -118,5 +118,9 @@ public interface KernelServicesBuilder {
      */
     List<ModelNode> parseXmlResource(String xmlResource) throws Exception;
 
+    /**
+     * @deprecated this is no longer required, the grabber is always registered
+     */
+    @Deprecated
     KernelServicesBuilder enableTransformerAttachmentGrabber();
 }

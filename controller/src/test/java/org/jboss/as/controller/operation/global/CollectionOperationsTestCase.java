@@ -18,6 +18,8 @@
 
 package org.jboss.as.controller.operation.global;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
 import java.util.List;
@@ -25,8 +27,10 @@ import java.util.Map;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
+import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -58,6 +62,10 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
             .setAllowNull(true)
             .setStorageRuntime()
             .build();
+
+    private static final StringListAttributeDefinition WRONG_ATTRIBUTE_NAME = new StringListAttributeDefinition.Builder("attribute.with.wrong.name")
+                .setAllowNull(true)
+                .build();
     private static PathAddress TEST_ADDRESS = PathAddress.pathAddress("subsystem", "test");
 
     private static ModelNode runtimeListAttributeValue = new ModelNode();
@@ -70,6 +78,8 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
         GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
         // register the global notifications so there is no warning that emitted notifications are not described by the resource.
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
+
+        rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
 
         ResourceDefinition profileDefinition = createDummyProfileResourceDefinition();
         rootRegistration.registerSubModel(profileDefinition);
@@ -84,10 +94,12 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
                     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
                         LIST_ATTRIBUTE.validateAndSet(operation, model);
                         MAP_ATTRIBUTE.validateAndSet(operation, model);
+                        WRONG_ATTRIBUTE_NAME.validateAndSet(operation, model);
                     }
 
                 })
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .addReadWriteAttribute(WRONG_ATTRIBUTE_NAME, null ,new ModelOnlyWriteAttributeHandler(WRONG_ATTRIBUTE_NAME))
                 .addReadWriteAttribute(LIST_ATTRIBUTE, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -196,6 +208,67 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
     }
 
     @Test
+    public void testMapOperationsInComposite() throws OperationFailedException {
+        executeCheckNoFailure(createOperation("add", TEST_ADDRESS));
+
+        ModelNode composite = createOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+        ModelNode op = createOperation("map-put", TEST_ADDRESS);
+        op.get("name").set(MAP_ATTRIBUTE.getName());
+        op.get("key").set("map-key1");
+        op.get("value").set("map-value1");
+        composite.get(STEPS).add(op);
+
+        op = createOperation("map-put", TEST_ADDRESS);
+        op.get("name").set(MAP_ATTRIBUTE.getName());
+        op.get("key").set("map-key2");
+        op.get("value").set("map-value2");
+        composite.get(STEPS).add(op);
+
+        op = createOperation("map-put", TEST_ADDRESS);
+        op.get("name").set(MAP_ATTRIBUTE.getName());
+        op.get("key").set("map-key3");
+        op.get("value").set("map-value3");
+        composite.get(STEPS).add(op);
+
+        op = createOperation("map-put", TEST_ADDRESS);
+        op.get("name").set(MAP_ATTRIBUTE.getName());
+        op.get("key").set("map-key4");
+        op.get("value").set("map-value4");
+        composite.get(STEPS).add(op);
+
+        executeCheckNoFailure(composite);
+
+        Map<String, String> map = PropertiesAttributeDefinition.unwrapModel(ExpressionResolver.TEST_RESOLVER, runtimeMapAttributeValue);
+        Assert.assertEquals(4, map.size());
+        Assert.assertEquals("map-value1", map.get("map-key1"));
+        Assert.assertEquals("map-value2", map.get("map-key2"));
+        Assert.assertEquals("map-value3", map.get("map-key3"));
+        Assert.assertEquals("map-value4", map.get("map-key4"));
+
+        composite = createOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+        op = createOperation("map-remove", TEST_ADDRESS);
+        op.get("name").set(MAP_ATTRIBUTE.getName());
+        op.get("key").set("map-key1");
+        composite.get(STEPS).add(op);
+
+        op = createOperation("map-remove", TEST_ADDRESS);
+        op.get("name").set(MAP_ATTRIBUTE.getName());
+        op.get("key").set("map-key2");
+        composite.get(STEPS).add(op);
+
+        op = createOperation("map-remove", TEST_ADDRESS);
+        op.get("name").set(MAP_ATTRIBUTE.getName());
+        op.get("key").set("map-key4");
+        composite.get(STEPS).add(op);
+
+        executeCheckNoFailure(composite);
+
+        map = PropertiesAttributeDefinition.unwrapModel(ExpressionResolver.TEST_RESOLVER, runtimeMapAttributeValue);
+        Assert.assertEquals(1, map.size());
+        Assert.assertEquals("map-value3", map.get("map-key3"));
+    }
+
+    @Test
     public void testListOperations() throws OperationFailedException {
         executeCheckNoFailure(createOperation("add", TEST_ADDRESS));
 
@@ -293,6 +366,84 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
         op.get("name").set(LIST_ATTRIBUTE.getName());
         op.get("value").set("one");*/
         executeCheckForFailure(op); //duplicates not allowed
+    }
+
+    @Test
+    public void testListOperationsInComposite() throws OperationFailedException {
+        executeCheckNoFailure(createOperation("add", TEST_ADDRESS));
+
+        ModelNode composite = createOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+
+        ModelNode op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName());
+        op.get("value").set("value1");
+        composite.get(STEPS).add(op);
+
+        op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName());
+        op.get("value").set("value2");
+        composite.get(STEPS).add(op);
+
+        op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName());
+        op.get("value").set("value3");
+        composite.get(STEPS).add(op);
+
+        op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName());
+        op.get("value").set("value4");
+        composite.get(STEPS).add(op);
+
+        executeCheckNoFailure(composite);
+
+        List<String> list = StringListAttributeDefinition.unwrapValue(ExpressionResolver.TEST_RESOLVER, runtimeListAttributeValue);
+        Assert.assertEquals(4, list.size());
+        Assert.assertEquals("value1", list.get(0));
+        Assert.assertEquals("value2", list.get(1));
+        Assert.assertEquals("value3", list.get(2));
+        Assert.assertEquals("value4", list.get(3));
+
+        composite = createOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+
+        op = createOperation("list-remove", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName());
+        op.get("value").set("value4");
+        composite.get(STEPS).add(op);
+
+        op = createOperation("list-remove", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName());
+        op.get("value").set("value3");
+        composite.get(STEPS).add(op);
+
+        op = createOperation("list-remove", TEST_ADDRESS);
+        op.get("name").set(LIST_ATTRIBUTE.getName());
+        op.get("value").set("value1");
+        composite.get(STEPS).add(op);
+
+        executeCheckNoFailure(composite);
+
+        list = StringListAttributeDefinition.unwrapValue(ExpressionResolver.TEST_RESOLVER, runtimeListAttributeValue);
+        Assert.assertEquals(1, list.size());
+        Assert.assertEquals("value2", list.get(0));
+    }
+
+    @Test
+    public void testListForWrongAttributeNameOperations() throws OperationFailedException {
+        executeCheckNoFailure(createOperation("add", TEST_ADDRESS));
+
+        ModelNode op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(WRONG_ATTRIBUTE_NAME.getName());
+        op.get("value").set("value1");
+        executeCheckNoFailure(op);
+
+        //add second value
+        op.get("value").set("value2");
+        executeCheckNoFailure(op);
+
+        op = createOperation("list-get", TEST_ADDRESS);
+        op.get("name").set(WRONG_ATTRIBUTE_NAME.getName());
+        op.get("index").set(0);
+        Assert.assertEquals("value1", executeForResult(op).asString());
 
     }
 }

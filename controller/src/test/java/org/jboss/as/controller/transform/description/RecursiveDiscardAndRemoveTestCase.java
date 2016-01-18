@@ -240,7 +240,7 @@ public class RecursiveDiscardAndRemoveTestCase {
     }
 
     protected TransformationTarget create(final TransformerRegistry registry, ModelVersion version, TransformationTarget.TransformationTargetType type) {
-        return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), type);
+        return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), type, false);
     }
 
     private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver());
@@ -261,7 +261,7 @@ public class RecursiveDiscardAndRemoveTestCase {
         Assert.assertNull(transformed.getFailureDescription());
     }
 
-    private static final ModelNode success() {
+    private static ModelNode success() {
         final ModelNode result = new ModelNode();
         result.get(ModelDescriptionConstants.OUTCOME).set(ModelDescriptionConstants.SUCCESS);
         result.get(ModelDescriptionConstants.RESULT);

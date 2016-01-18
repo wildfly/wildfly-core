@@ -25,8 +25,11 @@
 package org.jboss.as.controller.audit;
 
 
+import java.util.Collections;
+import java.util.List;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.audit.SyslogAuditLogHandler.Facility;
+import org.jboss.dmr.ModelNode;
 
 /**
  * Abstract base class for {@link AuditLogger} implementations.
@@ -149,7 +152,13 @@ public interface ManagedAuditLogger extends AuditLogger {
     void updateSyslogHandlerReconnectTimeout(String name, int reconnectTimeout);
     //ImmediateUpdates - end
 
-
+    /**
+     * Update the handler history size.
+     *
+     * @param name the name of the handler
+     * @param maxHistory the history size of the handler
+     */
+    void updateInMemoryHandlerMaxHistory(String name, int maxHistory);
     /**
      * Remove a formatter
      *
@@ -180,6 +189,16 @@ public interface ManagedAuditLogger extends AuditLogger {
      * @return the formatter
      */
     JsonAuditLogItemFormatter getJsonFormatter(String name);
+
+    /**
+     * Gets the last log entries
+     *
+     * @param name the name of the handler
+     * @return the last log entries of the handler
+     */
+    default List<ModelNode> listLastEntries(String name){
+        return Collections.emptyList();
+    }
 
     /**
      * Callback for the controller to call before the controller is booted

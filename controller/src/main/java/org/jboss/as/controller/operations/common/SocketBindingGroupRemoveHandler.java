@@ -24,6 +24,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -41,6 +42,7 @@ public class SocketBindingGroupRemoveHandler extends AbstractRemoveStepHandler {
      * Create the AbstractSocketBindingRemoveHandler
      */
     protected SocketBindingGroupRemoveHandler() {
+        super(AbstractSocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY);
     }
 
     protected boolean requiresRuntime(OperationContext context) {

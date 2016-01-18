@@ -23,18 +23,24 @@
 package org.jboss.as.server.operations;
 
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+
 import java.util.EnumSet;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
@@ -95,7 +101,11 @@ public class ServerShutdownHandler implements OperationStepHandler {
                 // it will have to wait for container stability, so skipping this only matters for the case
                 // where this step is the only runtime change.
 //                context.getServiceRegistry(true);
-                context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                AuthorizationResult authorizationResult = context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                if (authorizationResult.getDecision() == AuthorizationResult.Decision.DENY) {
+                    throw ControllerLogger.ACCESS_LOGGER.unauthorized(operation.get(OP).asString(),
+                            PathAddress.pathAddress(operation.get(OP_ADDR)), authorizationResult.getExplanation());
+                }
                 context.completeStep(new OperationContext.ResultHandler() {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {

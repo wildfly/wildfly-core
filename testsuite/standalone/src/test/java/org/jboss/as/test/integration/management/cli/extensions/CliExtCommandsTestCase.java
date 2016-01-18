@@ -22,6 +22,15 @@
 
 package org.jboss.as.test.integration.management.cli.extensions;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.IOException;
+
+import javax.inject.Inject;
+
 import org.jboss.as.cli.CommandHandlerProvider;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathAddress;
@@ -29,25 +38,18 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.model.test.ModelTestUtils;
-import org.jboss.as.test.integration.management.cli.CliScriptTestBase;
+import org.jboss.as.test.integration.management.cli.CliProcessWrapper;
 import org.jboss.as.test.module.util.TestModule;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ArchivePath;
 import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-
-import javax.inject.Inject;
-import java.io.File;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Testing commands loaded from the available management model extensions.
@@ -55,7 +57,7 @@ import static org.junit.Assert.assertTrue;
  * @author Alexey Loubyansky
  */
 @RunWith(WildflyTestRunner.class)
-public class CliExtCommandsTestCase extends CliScriptTestBase {
+public class CliExtCommandsTestCase {
 
     private static final String MODULE_NAME = "test.cli.extension.commands";
 
@@ -88,35 +90,33 @@ public class CliExtCommandsTestCase extends CliScriptTestBase {
 
     @Test
     public void testExtensionCommand() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument(CliExtCommandHandler.NAME);
+        cli.executeNonInteractive();
+        assertNotEquals(0, cli.getProcessExitValue());
 
-        Assert.assertNotEquals(0,
-                execute(client.getMgmtAddress(),
-                        client.getMgmtPort(),
-                        false, // the command won't be available unless the cli connects to the controller
-                        CliExtCommandHandler.NAME,
-                        false));
+        cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument(CliExtCommandHandler.NAME);
+        cli.executeNonInteractive();
+        assertEquals(0, cli.getProcessExitValue());
 
-        assertEquals(0,
-                execute(client.getMgmtAddress(),
-                        client.getMgmtPort(),
-                        true,
-                        CliExtCommandHandler.NAME,
-                        true));
         // the output may contain other logs from the cli initialization
-        assertTrue(getLastCommandOutput().trim().endsWith(CliExtCommandHandler.OUTPUT));
+        assertTrue("Output: '" + cli.getOutput() + "'", cli.getOutput().trim().endsWith(CliExtCommandHandler.OUTPUT));
     }
 
     @Test
-    public void testExtensionCommandHelp() {
-        final String help = "--help";
-        assertEquals(0,
-                execute(client.getMgmtAddress(),
-                        client.getMgmtPort(),
-                        true,
-                        String.format("%s %s", CliExtCommandHandler.NAME, help),
-                        true));
+    public void testExtensionCommandHelp() throws IOException {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument(String.format("%s %s", CliExtCommandHandler.NAME, "--help"));
+        cli.executeNonInteractive();
+
         // the output may contain other logs from the cli initialization
-        assertTrue(getLastCommandOutput().trim().endsWith(CliExtCommandHandler.NAME + help));
+        assertTrue("Output: '" + cli.getOutput() + "'",cli.getOutput().trim().endsWith(CliExtCommandHandler.NAME + "--help"));
     }
 
     private static void createTestModule() throws Exception {

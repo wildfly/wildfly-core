@@ -82,7 +82,7 @@ public class ActiveOperationResourceDefinition extends SimpleResourceDefinition 
                     .build();
 
     private ActiveOperationResourceDefinition() {
-        super(PATH_ELEMENT, DomainManagementResolver.getResolver(CORE, MANAGEMENT_OPERATIONS, ACTIVE_OPERATION));
+        super(new Parameters(PATH_ELEMENT, DomainManagementResolver.getResolver(CORE, MANAGEMENT_OPERATIONS, ACTIVE_OPERATION)).setRuntime());
     }
 
     @Override
@@ -103,8 +103,5 @@ public class ActiveOperationResourceDefinition extends SimpleResourceDefinition 
         resourceRegistration.registerReadOnlyAttribute(RUNNING_TIME, null);
         resourceRegistration.registerReadOnlyAttribute(EXCLUSIVE_RUNNING_TIME, null);
         resourceRegistration.registerReadOnlyAttribute(CANCELLED, null);
-
-        // HACK -- workaround WFCORE-17
-        resourceRegistration.setRuntimeOnly(true);
     }
 }

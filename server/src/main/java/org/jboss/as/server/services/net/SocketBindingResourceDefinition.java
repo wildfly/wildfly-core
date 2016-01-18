@@ -43,10 +43,9 @@ import org.jboss.dmr.ModelType;
  */
 public class SocketBindingResourceDefinition extends AbstractSocketBindingResourceDefinition {
 
-    static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
-    static final RuntimeCapability<Void> SOCKET_BINDING_CAPABILITY =
-            RuntimeCapability.Builder.of(SOCKET_BINDING_CAPABILITY_NAME, true, SocketBinding.class)
-                    .build(); // TODO require interface capability
+    public static final RuntimeCapability<Void> SOCKET_BINDING_CAPABILITY =
+            RuntimeCapability.Builder.of(AbstractSocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME, true, SocketBinding.class)
+                    .build();
 
     public static final SocketBindingResourceDefinition INSTANCE = new SocketBindingResourceDefinition();
 
@@ -62,6 +61,11 @@ public class SocketBindingResourceDefinition extends AbstractSocketBindingResour
         resourceRegistration.registerMetric(BindingMetricHandlers.BoundHandler.ATTRIBUTE_DEFINITION, BindingMetricHandlers.BoundHandler.INSTANCE);
         resourceRegistration.registerMetric(BindingMetricHandlers.BoundAddressHandler.ATTRIBUTE_DEFINITION, BindingMetricHandlers.BoundAddressHandler.INSTANCE);
         resourceRegistration.registerMetric(BindingMetricHandlers.BoundPortHandler.ATTRIBUTE_DEFINITION, BindingMetricHandlers.BoundPortHandler.INSTANCE);
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(SOCKET_BINDING_CAPABILITY);
     }
 
     @Override

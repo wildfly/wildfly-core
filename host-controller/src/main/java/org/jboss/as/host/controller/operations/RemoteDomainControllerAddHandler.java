@@ -97,9 +97,9 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .build();
 
     public static final SimpleAttributeDefinition IGNORE_UNUSED_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.IGNORE_UNUSED_CONFIG, ModelType.BOOLEAN, true)
+            .setAllowNull(true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_JVM)
-            .setDefaultValue(new ModelNode(false))
             .build();
 
     public static final SimpleAttributeDefinition ADMIN_ONLY_POLICY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ADMIN_ONLY_POLICY, ModelType.STRING, true)
@@ -202,8 +202,17 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             hostControllerInfo.setRemoteDomainControllerUsername(usernameNode.asString());
         }
 
-        hostControllerInfo.setRemoteDomainControllerIgnoreUnaffectedConfiguration(IGNORE_UNUSED_CONFIG.resolveModelAttribute(context, remoteDC).asBoolean());
+        ModelNode ignoreUnusedConfiguration = IGNORE_UNUSED_CONFIG.resolveModelAttribute(context, remoteDC);
 
+        if (!ignoreUnusedConfiguration.isDefined()) {
+            if (hostControllerInfo.isBackupDc()) { // started up with --backup, ignore-unused-configuration not set
+                hostControllerInfo.setRemoteDomainControllerIgnoreUnaffectedConfiguration(false);
+            } else {
+                hostControllerInfo.setRemoteDomainControllerIgnoreUnaffectedConfiguration(true);
+            }
+        } else {
+               hostControllerInfo.setRemoteDomainControllerIgnoreUnaffectedConfiguration(ignoreUnusedConfiguration.asBoolean());
+        }
         AdminOnlyDomainConfigPolicy domainConfigPolicy =
                 AdminOnlyDomainConfigPolicy.getPolicy(ADMIN_ONLY_POLICY.resolveModelAttribute(context, remoteDC).asString());
                         hostControllerInfo.setAdminOnlyDomainConfigPolicy(domainConfigPolicy);

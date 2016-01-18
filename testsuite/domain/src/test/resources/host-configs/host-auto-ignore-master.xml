@@ -69,10 +69,11 @@
 
  	<jvms>
  	   <jvm name="default">
-          <heap size="64m" max-size="128m"/>
-          <environment-variables>
-              <variable name="DOMAIN_TEST_JVM" value="jvm"/>
-          </environment-variables>
+           <heap size="64m" max-size="128m"/>
+           <jvm-options><option value="-ea"/></jvm-options>
+           <environment-variables>
+               <variable name="DOMAIN_TEST_JVM" value="jvm"/>
+           </environment-variables>
             <!--
             <jvm-options>
                 <option value="-Xdebug"/>

@@ -30,6 +30,7 @@ import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
@@ -61,14 +62,11 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.resource.InterfaceDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
-import org.jboss.as.domain.controller.operations.DomainSocketBindingGroupRemoveHandler;
 import org.jboss.as.domain.controller.operations.HostProcessReloadHandler;
-import org.jboss.as.host.controller.operations.InstallationReportHandler;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.audit.EnvironmentNameReader;
 import org.jboss.as.host.controller.DirectoryGrouping;
@@ -88,6 +86,7 @@ import org.jboss.as.host.controller.operations.HostShutdownHandler;
 import org.jboss.as.host.controller.operations.HostSpecifiedInterfaceAddHandler;
 import org.jboss.as.host.controller.operations.HostSpecifiedInterfaceRemoveHandler;
 import org.jboss.as.host.controller.operations.HostXmlMarshallingHandler;
+import org.jboss.as.host.controller.operations.InstallationReportHandler;
 import org.jboss.as.host.controller.operations.IsMasterHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
@@ -108,6 +107,7 @@ import org.jboss.as.server.operations.CleanObsoleteContentHandler;
 import org.jboss.as.server.operations.InstanceUuidReadHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.SuspendStateReadHandler;
+import org.jboss.as.server.services.net.InterfaceResourceDefinition;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
 import org.jboss.as.server.services.security.AbstractVaultReader;
@@ -325,15 +325,16 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         StartServersHandler ssh = new StartServersHandler(environment, serverInventory, runningModeControl);
         hostRegistration.registerOperationHandler(StartServersHandler.DEFINITION, ssh);
 
-        HostShutdownHandler hsh = new HostShutdownHandler(domainController);
-        hostRegistration.registerOperationHandler(HostShutdownHandler.DEFINITION, hsh);
+        if (environment.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER) {
+            HostShutdownHandler hsh = new HostShutdownHandler(domainController);
+            hostRegistration.registerOperationHandler(HostShutdownHandler.DEFINITION, hsh);
+        }
 
-        HostProcessReloadHandler reloadHandler = new HostProcessReloadHandler(HostControllerService.HC_SERVICE_NAME, runningModeControl, processState);
+        HostProcessReloadHandler reloadHandler = new HostProcessReloadHandler(HostControllerService.HC_SERVICE_NAME, runningModeControl, processState, environment.getProcessType());
         hostRegistration.registerOperationHandler(HostProcessReloadHandler.getDefinition(hostControllerInfo), reloadHandler);
 
 
         DomainServerLifecycleHandlers.initializeServerInventory(serverInventory);
-        DomainSocketBindingGroupRemoveHandler.INSTANCE.initializeServerInventory(serverInventory);
 
         ValidateOperationHandler validateOperationHandler = hostControllerInfo.isMasterDomainController() ? ValidateOperationHandler.INSTANCE : ValidateOperationHandler.SLAVE_HC_INSTANCE;
         hostRegistration.registerOperationHandler(ValidateOperationHandler.DEFINITION_PRIVATE, validateOperationHandler);
@@ -413,6 +414,9 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerSubModel(HostEnvironmentResourceDefinition.of(environment));
         hostRegistration.registerSubModel(ModuleLoadingResourceDefinition.INSTANCE);
 
+        // TODO enable once we have consensus on the API with the HAL team
+        //hostRegistration.registerSubModel(new CapabilityRegistryResourceDefinition(domainController.getCapabilityRegistry()));
+
         // discovery options
         ManagementResourceRegistration discoveryOptions = hostRegistration.registerSubModel(DiscoveryOptionsResourceDefinition.INSTANCE);
         discoveryOptions.registerSubModel(new StaticDiscoveryResourceDefinition(hostControllerInfo));
@@ -425,7 +429,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerSubModel(PathResourceDefinition.createResolvableSpecified(pathManager));
 
         //interface
-        ManagementResourceRegistration interfaces = hostRegistration.registerSubModel(new InterfaceDefinition(
+        ManagementResourceRegistration interfaces = hostRegistration.registerSubModel(new InterfaceResourceDefinition(
                 new HostSpecifiedInterfaceAddHandler(),
                 new HostSpecifiedInterfaceRemoveHandler(),
                 true,

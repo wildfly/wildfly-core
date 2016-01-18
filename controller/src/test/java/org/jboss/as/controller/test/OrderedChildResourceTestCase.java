@@ -181,7 +181,7 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
                     .setRemoveHandler(new ModelOnlyRemoveStepHandler())
                     .setOrderedChild());
         }
-        
+
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             resourceRegistration.registerReadWriteAttribute(ATTR, null, new ModelOnlyWriteAttributeHandler(ATTR));

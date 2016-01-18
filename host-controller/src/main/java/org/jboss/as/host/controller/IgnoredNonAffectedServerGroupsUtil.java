@@ -320,7 +320,7 @@ public class IgnoredNonAffectedServerGroupsUtil {
         ServerConfigInfoImpl(String name, ModelNode model) {
             this.name = name;
             this.serverGroup = model.get(GROUP).asString();
-            this.socketBindingGroup = model.has(SOCKET_BINDING_GROUP) ? model.get(SOCKET_BINDING_GROUP).asString() : null;
+            this.socketBindingGroup = model.hasDefined(SOCKET_BINDING_GROUP) ? model.get(SOCKET_BINDING_GROUP).asString() : null;
         }
 
         ServerConfigInfoImpl(String name, String serverGroup, String socketBindingGroup) {

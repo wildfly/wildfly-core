@@ -139,6 +139,7 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
     }
 
     protected ModelNode getSyslogRecord(byte[] bytes) {
+        Assert.assertNotNull("bytes to create syslog record cannot be null.", bytes);
         String msg = new String(bytes, StandardCharsets.UTF_8);
         return getSyslogRecord(msg);
     }

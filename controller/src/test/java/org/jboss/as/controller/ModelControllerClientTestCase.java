@@ -367,7 +367,7 @@ public class ModelControllerClientTestCase {
         }
     }
 
-    private static abstract class MockModelController extends org.jboss.as.controller.MockModelController {
+    private abstract static class MockModelController extends org.jboss.as.controller.MockModelController {
         protected volatile ModelNode operation;
         private final NotificationHandlerRegistration notificationRegistry = NotificationHandlerRegistration.Factory.create();
 

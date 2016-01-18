@@ -61,33 +61,29 @@ public final class InMemoryAuditLogHander extends AuditLogHandler {
     private int maxHistory;
     private final AuditLogItemFormatter myFormatter = new InMemoryFormatter();
 
+
     public InMemoryAuditLogHander(String name, int maxHistory) {
         super(name, IN_MEMORY_FORMATTER_NAME, maxHistory);
-        items = new ArrayList<>(maxHistory);
+        this.items = new ArrayList<>(maxHistory);
         this.maxHistory = maxHistory;
         setFormatter(myFormatter);
     }
 
-    public List<ModelNode> getItems() {
+    @Override
+    public List<ModelNode> listLastEntries() {
         return Collections.unmodifiableList(items);
     }
 
     public void setMaxHistory(int maxHistory) {
-        synchronized (items) {
-            this.maxHistory = maxHistory;
-            while (maxHistory < items.size()) {
-                items.remove(0);
-            }
+        this.maxHistory = maxHistory;
+        while (maxHistory < items.size()) {
+            items.remove(0);
         }
     }
 
     @Override
     void setFormatter(AuditLogItemFormatter formatter) {
-        if (formatter != null) {
-            super.setFormatter(formatter);
-        } else {
-            super.setFormatter(myFormatter);
-        }
+        super.setFormatter(myFormatter);
     }
 
     public AuditLogItemFormatter getFormatter() {
@@ -103,12 +99,10 @@ public final class InMemoryAuditLogHander extends AuditLogHandler {
     }
 
     private void addItem(ModelNode item) {
-        synchronized (items) {
-            if (items.size() == maxHistory) {
-                items.remove(0);
-            }
-            items.add(item);
+        if (items.size() == maxHistory) {
+            items.remove(0);
         }
+        items.add(item);
     }
 
     @Override

@@ -366,9 +366,8 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 33, value = "Caught exception during boot")
     void caughtExceptionDuringBoot(@Cause Exception e);
 
-    @LogMessage(level = Level.FATAL)
     @Message(id = 34, value = "Host Controller boot has failed in an unrecoverable manner; exiting. See previous messages for details.")
-    void unsuccessfulBoot();
+    String unsuccessfulBoot();
 
     @LogMessage(level = Level.ERROR)
     @Message(id = 35, value = "Installation of the domain-wide configuration has failed. Because the running mode of this Host Controller is ADMIN_ONLY boot has been allowed to proceed. If ADMIN_ONLY mode were not in effect the process would be terminated due to a critical boot failure.")
@@ -1251,5 +1250,8 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message(id = 168, value = "Socket binding group '%s' includes socket binding group '%s' and socket binding group '%s'. Both these socket binding groups define socket binding '%s', which is not supported")
     OperationFailedException socketBindingGroupIncludesSameSocketBinding(String socketBindingGroup, String include1, String include2, String child);
+
+    @Message(id = 169, value = "Reload into running mode is not supported with embedded host controller, admin-only=true must be specified.")
+    OperationFailedException embeddedHostControllerRestartMustProvideAdminOnlyTrue();
 
 }

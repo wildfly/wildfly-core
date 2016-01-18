@@ -180,8 +180,8 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
 
 
     private MemoryPoolResourceDefinition() {
-        super(PathElement.pathElement(NAME.getName()),
-                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.MEMORY_POOL));
+        super(new Parameters(PathElement.pathElement(NAME.getName()),
+                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.MEMORY_POOL)).setRuntime());
     }
 
     @Override
@@ -199,9 +199,6 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, MemoryPoolMXBeanAttributeHandler.INSTANCE);
         }
-
-        // HACK -- workaround WFCORE-17
-        registration.setRuntimeOnly(true);
     }
 
     @Override

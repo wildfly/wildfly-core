@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -314,14 +315,25 @@ public abstract class ModelTestModelControllerService extends AbstractController
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) throws ConfigurationPersistenceException {
         try {
             preBoot(bootOperations, rollbackOnRuntimeFailure);
-            OperationValidator validator = new OperationValidator(rootRegistration);
+
+            // See what we need to validate, but defer doing it to after super.boot to allow
+            // initModel to run first and given tests a chance to set things up
+            List<ModelNode> validationList = new ArrayList<>();
             for (ModelNode op : bootOperations) {
                 ModelNode toValidate = validateOpsFilter.adjustForValidation(op.clone());
                 if (toValidate != null) {
-                    validator.validateOperation(toValidate);
+                    validationList.add(toValidate);
                 }
             }
+
             bootSuccess = super.boot(persister.getBootOperations(), rollbackOnRuntimeFailure);
+
+            // Ok, now we can validate
+            OperationValidator validator = new OperationValidator(rootRegistration);
+            for (ModelNode op : validationList) {
+                validator.validateOperation(op);
+            }
+
             return bootSuccess;
         } catch (Exception e) {
             error = e;

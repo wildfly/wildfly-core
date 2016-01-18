@@ -48,7 +48,6 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.wildfly.core.embedded.EmbeddedServerFactory;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
@@ -56,7 +55,9 @@ import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
 import org.jboss.stdio.StdioContext;
-import org.wildfly.core.embedded.EmbeddedServerReference;
+import org.wildfly.core.embedded.EmbeddedManagedProcess;
+import org.wildfly.core.embedded.EmbeddedProcessFactory;
+import org.wildfly.core.embedded.EmbeddedProcessStartException;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -69,7 +70,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     private static final String ECHO = "echo";
     private static final String DISCARD_STDOUT = "discard";
 
-    private final AtomicReference<EmbeddedServerLaunch> serverReference;
+    private final AtomicReference<EmbeddedProcessLaunch> serverReference;
     private ArgumentWithValue jbossHome;
     private ArgumentWithValue stdOutHandling;
     private ArgumentWithValue adminOnly;
@@ -79,7 +80,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     private ArgumentWithoutValue removeExisting;
     private ArgumentWithValue timeout;
 
-    static EmbedServerHandler create(final AtomicReference<EmbeddedServerLaunch> serverReference, CommandContext ctx, boolean modular) {
+    static EmbedServerHandler create(final AtomicReference<EmbeddedProcessLaunch> serverReference, CommandContext ctx, boolean modular) {
         EmbedServerHandler result = new EmbedServerHandler(serverReference);
         final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
         if (!modular) {
@@ -99,7 +100,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         return result;
     }
 
-    private EmbedServerHandler(final AtomicReference<EmbeddedServerLaunch> serverReference) {
+    private EmbedServerHandler(final AtomicReference<EmbeddedProcessLaunch> serverReference) {
         super("embed-server", false);
         assert serverReference != null;
         this.serverReference = serverReference;
@@ -108,14 +109,6 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     @Override
     public boolean isAvailable(CommandContext ctx) {
         return ctx.getModelControllerClient() == null;
-    }
-
-    @Override
-    protected void recognizeArguments(CommandContext ctx) throws CommandFormatException {
-        final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
-        if(parsedCmd.getOtherProperties().size() > 1) {
-            throw new CommandFormatException("The command accepts only one argument but received: " + parsedCmd.getOtherProperties());
-        }
     }
 
     @Override
@@ -138,7 +131,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         final List<String> args = parsedCmd.getOtherProperties();
         if (!args.isEmpty()) {
             if (args.size() != 1) {
-                throw new CommandFormatException("The command expects only one argument but got " + args);
+                throw new CommandFormatException("The command accepts 0 unnamed argument(s) but received: " + args);
             }
         }
 
@@ -175,9 +168,31 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             LogContext.setLogContextSelector(contextSelector);
 
             List<String> cmdsList = new ArrayList<>();
-            if (xml != null && xml.trim().length() > 0) {
-                cmdsList.add("--server-config=" + xml.trim());
+
+            if (xml == null && (parsedCmd.hasProperty("--server-config") || parsedCmd.hasProperty("-c"))) {
+                throw new CommandFormatException("The --server-config (or -c) parameter requires a value.");
             }
+
+            if (xml != null) {
+                xml = xml.trim();
+                if (xml.length() == 0) {
+                    throw new CommandFormatException("The --server-config parameter requires a value.");
+                }
+                if (!xml.endsWith(".xml")) {
+                    throw new CommandFormatException("The --server-config filename must end with .xml.");
+                }
+                cmdsList.add("--server-config=" + xml);
+            }
+
+            // if --empty-config is present but the config file already exists we error unless --remove-config has also been used
+            if (startEmpty && !removeConfig) {
+                String configFileName = xml == null ? "standalone.xml" : xml;
+                File configFile = new File(jbossHome + File.separator + "standalone/configuration" + File.separator + configFileName);
+                if (configFile.exists()) {
+                    throw new CommandFormatException("The configuration file " + configFileName + " already exists, please use --remove-existing if you wish to overwrite.");
+                }
+            }
+
             if (adminOnlySetting) {
                 cmdsList.add("--admin-only");
             }
@@ -190,15 +205,15 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
-            EmbeddedServerReference server;
+            EmbeddedManagedProcess server;
             if (this.jbossHome == null) {
                 // Modular environment
-                server = EmbeddedServerFactory.createStandalone(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+                server = EmbeddedProcessFactory.createStandaloneServer(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             } else {
-                server = EmbeddedServerFactory.createStandalone(jbossHome.getAbsolutePath(), null, null, cmds);
+                server = EmbeddedProcessFactory.createStandaloneServer(jbossHome.getAbsolutePath(), null, null, cmds);
             }
             server.start();
-            serverReference.set(new EmbeddedServerLaunch(server, restorer));
+            serverReference.set(new EmbeddedProcessLaunch(server, restorer, false));
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(server.getModelControllerClient(), contextSelector);
             if (bootTimeout == null || bootTimeout > 0) {
                 // Poll for server state. Alternative would be to get ControlledProcessStateService
@@ -254,7 +269,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             });
 
             ok = true;
-        } catch (Exception e) {
+        } catch (RuntimeException | EmbeddedProcessStartException e) {
             throw new CommandLineException("Cannot start embedded server", e);
         } finally {
             if (!ok) {
@@ -270,7 +285,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         File standaloneDir =  new File(jbossHome, "standalone");
         File configDir =  new File(standaloneDir, "configuration");
         File logDir =  new File(standaloneDir, "log");
-        File bootLog = new File(logDir, "boot.log");
+        File bootLog = new File(logDir, "server.log");
         File loggingProperties = new File(configDir, "logging.properties");
         if (loggingProperties.exists()) {
 

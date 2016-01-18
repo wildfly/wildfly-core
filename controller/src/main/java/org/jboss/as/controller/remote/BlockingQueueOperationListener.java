@@ -25,11 +25,8 @@ package org.jboss.as.controller.remote;
 import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -166,7 +163,7 @@ public class BlockingQueueOperationListener<T extends TransactionalProtocolClien
 
         @Override
         public AsyncFuture<OperationResponse> getFinalResult() {
-            return new CompletedResult<>(OperationResponse.Factory.createSimple(finalResult));
+            return new CompletedFuture<>(OperationResponse.Factory.createSimple(finalResult));
         }
 
         @Override
@@ -179,85 +176,6 @@ public class BlockingQueueOperationListener<T extends TransactionalProtocolClien
             throw new IllegalStateException();
         }
 
-    }
-
-    static class CompletedResult<T> implements AsyncFuture<T> {
-        private final T result;
-        CompletedResult(T result) {
-            this.result = result;
-        }
-
-        @Override
-        public Status await() throws InterruptedException {
-            return Status.COMPLETE;
-        }
-
-        @Override
-        public Status await(long timeout, TimeUnit unit) throws InterruptedException {
-            return Status.COMPLETE;
-        }
-
-        @Override
-        public T getUninterruptibly() throws CancellationException, ExecutionException {
-            return result;
-        }
-
-        @Override
-        public T getUninterruptibly(long timeout, TimeUnit unit) throws CancellationException, ExecutionException, TimeoutException {
-            return result;
-        }
-
-        @Override
-        public Status awaitUninterruptibly() {
-            return Status.COMPLETE;
-        }
-
-        @Override
-        public Status awaitUninterruptibly(long timeout, TimeUnit unit) {
-            return Status.COMPLETE;
-        }
-
-        @Override
-        public Status getStatus() {
-            return Status.COMPLETE;
-        }
-
-        @Override
-        public <A> void addListener(Listener<? super T, A> listener, A attachment) {
-            if(listener != null) {
-                listener.handleComplete(this, attachment);
-            }
-        }
-
-        @Override
-        public boolean cancel(boolean interruptionDesired) {
-            return false;
-        }
-
-        @Override
-        public void asyncCancel(boolean interruptionDesired) {
-            //
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public boolean isDone() {
-            return true;
-        }
-
-        @Override
-        public T get() throws InterruptedException, ExecutionException {
-            return result;
-        }
-
-        @Override
-        public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return result;
-        }
     }
 
 }

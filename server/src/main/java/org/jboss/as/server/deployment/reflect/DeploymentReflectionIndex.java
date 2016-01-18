@@ -34,7 +34,7 @@ import org.jboss.as.server.security.ServerPermission;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public final class DeploymentReflectionIndex {
-    private final Map<Class<?>, ClassReflectionIndex<?>> classes = new HashMap<Class<?>, ClassReflectionIndex<?>>();
+    private final Map<Class<?>, ClassReflectionIndex> classes = new HashMap<Class<?>, ClassReflectionIndex>();
 
     DeploymentReflectionIndex() {
     }
@@ -59,11 +59,11 @@ public final class DeploymentReflectionIndex {
      * @return the index
      */
     @SuppressWarnings({"unchecked"})
-    public synchronized <T> ClassReflectionIndex<T> getClassIndex(Class<T> clazz) {
+    public synchronized ClassReflectionIndex getClassIndex(Class clazz) {
         try {
-            ClassReflectionIndex<T> index = (ClassReflectionIndex<T>) classes.get(clazz);
+            ClassReflectionIndex index = classes.get(clazz);
             if (index == null) {
-                classes.put(clazz, index = new ClassReflectionIndex<T>(clazz, this));
+                classes.put(clazz, index = new ClassReflectionIndex(clazz, this));
             }
             return index;
         } catch (Throwable e) {

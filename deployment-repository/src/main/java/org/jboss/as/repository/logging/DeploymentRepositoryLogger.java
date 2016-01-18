@@ -121,4 +121,8 @@ public interface DeploymentRepositoryLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 10, value = "Couldn't delete content %s")
     void contentDeletionError(@Cause Throwable cause, String name);
+
+    @LogMessage(level = INFO)
+    @Message(id = 11, value = "Couldn't list directory files for %s")
+    void localContentListError(String name);
 }

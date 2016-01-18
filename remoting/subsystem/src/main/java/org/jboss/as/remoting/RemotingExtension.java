@@ -22,10 +22,19 @@
 
 package org.jboss.as.remoting;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODULE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+
+import java.util.List;
+import java.util.Map;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
@@ -33,7 +42,9 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
+import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.ResourceTransformer;
@@ -42,6 +53,7 @@ import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
+import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -74,7 +86,10 @@ public class RemotingExtension implements Extension {
     private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
 
     private static final ModelVersion VERSION_1_3 = ModelVersion.create(1, 3);
+    private static final ModelVersion VERSION_1_4 = ModelVersion.create(1, 4, 0);
     private static final ModelVersion VERSION_2_1 = ModelVersion.create(2, 1);
+
+    private static final String IO_EXTENSION_MODULE = "org.wildfly.extension.io";
 
     @Override
     public void initialize(ExtensionContext context) {
@@ -118,22 +133,26 @@ public class RemotingExtension implements Extension {
         // Current 3.0.0 to 2.1.0
         buildTransformers_2_1(chainedBuilder.createBuilder(registration.getSubsystemVersion(), VERSION_2_1));
 
+        // Current 3.0.0 to 2.1.0
+        buildTransformers_1_4(chainedBuilder.createBuilder(VERSION_2_1, VERSION_1_4));
+
         //2.1.0 to 1.3.0
-        buildTransformers_1_3(chainedBuilder.createBuilder(VERSION_2_1, VERSION_1_3)); //todo we need to add 1.4 version
+        buildTransformers_1_3(chainedBuilder.createBuilder(VERSION_1_4, VERSION_1_3));
 
-        //1.3.0 to 1.2.0 (do nothing)
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_3, VERSION_2_1});
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_3, VERSION_1_4, VERSION_2_1});
     }
 
-    private void buildTransformers_1_3(ResourceTransformationDescriptionBuilder builder) {
+    private void buildTransformers_1_4(ResourceTransformationDescriptionBuilder builder) {
         builder.rejectChildResource(HttpConnectorResource.PATH);
-
         endpointTransform(builder);
-
         builder.addChildResource(RemoteOutboundConnectionResourceDefinition.ADDRESS).getAttributeBuilder()
                 .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(Protocol.REMOTE.toString())), RemoteOutboundConnectionResourceDefinition.PROTOCOL)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, RemoteOutboundConnectionResourceDefinition.PROTOCOL);
+    }
+
+    private void buildTransformers_1_3(ResourceTransformationDescriptionBuilder builder) {
+        //Nothing (the 1.3 changes are handled by the 2.1 transformer)
     }
 
     private void buildTransformers_2_1(ResourceTransformationDescriptionBuilder builder) {
@@ -173,6 +192,69 @@ public class RemotingExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_1_2.getUriString(), RemotingSubsystem12Parser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_2_0.getUriString(), RemotingSubsystem20Parser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_3_0.getUriString(), RemotingSubsystem30Parser.INSTANCE);
+
+        context.setProfileParsingCompletionHandler(new IOCompletionHandler());
+    }
+
+    private static class IOCompletionHandler implements ProfileParsingCompletionHandler {
+
+        @Override
+        public void handleProfileParsingCompletion(Map<String, List<ModelNode>> profileBootOperations, List<ModelNode> otherBootOperations) {
+
+            // If the namespace used for our subsystem predates the introduction of the IO subsystem,
+            // check if the profile includes io and if not add it
+
+            String legacyNS = null;
+            List<ModelNode> legacyRemotingOps = null;
+            for (Namespace ns : Namespace.values()) {
+                String nsString = ns.getUriString();
+                if (nsString != null && nsString.startsWith("urn:jboss:domain:remoting:1.")) {
+                    legacyRemotingOps = profileBootOperations.get(nsString);
+                    if (legacyRemotingOps != null) {
+                        legacyNS = nsString;
+                        break;
+                    }
+                }
+            }
+
+            if (legacyRemotingOps != null) {
+                boolean foundIO = false;
+                for (String ns : profileBootOperations.keySet()) {
+                    if (ns.startsWith("urn:jboss:domain:io:")) {
+                        foundIO = true;
+                        break;
+                    }
+                }
+
+                if (!foundIO) {
+                    // legacy Remoting subsystem and no io subsystem, add it
+
+                    // See if we need to add the extension as well
+                    boolean hasIoExtension = false;
+                    for (ModelNode op : otherBootOperations) {
+                        PathAddress pa = PathAddress.pathAddress(op.get(OP_ADDR));
+                        if (pa.size() == 1 && EXTENSION.equals(pa.getElement(0).getKey())
+                                && IO_EXTENSION_MODULE.equals(pa.getElement(0).getValue())) {
+                            hasIoExtension = true;
+                            break;
+                        }
+                    }
+
+                    if (!hasIoExtension) {
+                        final ModelNode addIoExtensionOp = Util.createAddOperation(PathAddress.pathAddress(EXTENSION, IO_EXTENSION_MODULE));
+                        addIoExtensionOp.get(MODULE).set(IO_EXTENSION_MODULE);
+                        otherBootOperations.add(addIoExtensionOp);
+                    }
+
+                    PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM, "io");
+                    legacyRemotingOps.add(Util.createAddOperation(subsystemAddress));
+                    legacyRemotingOps.add(Util.createAddOperation(subsystemAddress.append("worker", "default")));
+                    legacyRemotingOps.add(Util.createAddOperation(subsystemAddress.append("buffer-pool", "default")));
+
+                    RemotingLogger.ROOT_LOGGER.addingIOSubsystem(legacyNS);
+                }
+            }
+        }
     }
 
 }

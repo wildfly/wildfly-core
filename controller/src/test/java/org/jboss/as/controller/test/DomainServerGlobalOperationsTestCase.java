@@ -43,7 +43,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.Set;
 
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;

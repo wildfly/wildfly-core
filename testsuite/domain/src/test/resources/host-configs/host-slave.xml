@@ -115,6 +115,7 @@
  	<jvms>
  	   <jvm name="default">
           <heap size="64m" max-size="128m"/>
+           <jvm-options><option value="-ea"/></jvm-options>
        </jvm>
  	</jvms>
 
@@ -144,7 +145,7 @@
         </server>
     </servers>
 
-    
+
     <profile>
         <subsystem xmlns="urn:jboss:domain:jmx:1.3">
             <expose-resolved-model/>

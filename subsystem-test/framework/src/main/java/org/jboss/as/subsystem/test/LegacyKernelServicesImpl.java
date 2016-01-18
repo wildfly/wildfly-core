@@ -80,6 +80,14 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl impleme
 
     @Override
     public TransformerOperationAttachment executeAndGrabTransformerAttachment(ModelNode op) {
+        //Will throw an error since we are not the main controller
+        checkIsMainController();
+        return null;
+    }
+
+    @Override
+    public TransformedOperation executeInMainAndGetTheTransformedOperation(ModelNode op, ModelVersion modelVersion) {
+        //Will throw an error since we are not the main controller
         checkIsMainController();
         return null;
     }

@@ -27,15 +27,17 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttri
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
+import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeParser;
+import org.jboss.as.controller.DefaultAttributeMarshaller;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PropagatingCorrector;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -44,7 +46,6 @@ import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
-import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -58,30 +59,33 @@ class KeepAliveTimeAttributeDefinition extends ObjectTypeAttributeDefinition {
 
     static final SimpleAttributeDefinition KEEPALIVE_TIME_TIME = new SimpleAttributeDefinitionBuilder(CommonAttributes.TIME, ModelType.LONG, false)
             .setAllowExpression(true)
+            .setXmlName("time")
             .build();
 
     static final SimpleAttributeDefinition KEEPALIVE_TIME_UNIT = new SimpleAttributeDefinitionBuilder(CommonAttributes.UNIT, ModelType.STRING, false)
+            .setXmlName("unit")
             .setAllowExpression(true)
             .setValidator(new EnumValidator<TimeUnit>(TimeUnit.class, false, true))
+            .setAttributeMarshaller( new DefaultAttributeMarshaller(){
+                @Override
+                public void marshallAsAttribute(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+                    writer.writeAttribute(attribute.getXmlName(), resourceModel.get(attribute.getName()).asString().toLowerCase(Locale.ENGLISH));
+                }
+            })
             .build();
-
-
-    static final RejectAttributeChecker TRANSFORMATION_CHECKER;
-    static {
-
-        Map<String, RejectAttributeChecker> fieldCheckers = new HashMap<String, RejectAttributeChecker>();
-        fieldCheckers.put(KeepAliveTimeAttributeDefinition.KEEPALIVE_TIME_TIME.getName(), RejectAttributeChecker.SIMPLE_EXPRESSIONS);
-        fieldCheckers.put(KeepAliveTimeAttributeDefinition.KEEPALIVE_TIME_UNIT.getName(), RejectAttributeChecker.SIMPLE_EXPRESSIONS);
-        TRANSFORMATION_CHECKER = new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(fieldCheckers);
-    }
 
     KeepAliveTimeAttributeDefinition() {
         super(Builder.of(CommonAttributes.KEEPALIVE_TIME, KEEPALIVE_TIME_TIME, KEEPALIVE_TIME_UNIT)
-                .setCorrector(PropagatingCorrector.INSTANCE));
+                        .setCorrector(PropagatingCorrector.INSTANCE)
+                        .setXmlName("keepalive-time")
+                        .setAttributeParser(AttributeParser.OBJECT_PARSER)
+                        .setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT)
+        );
     }
 
+
     @Override
-    protected void addValueTypeDescription(ModelNode node, String prefix, ResourceBundle bundle, final ResourceDescriptionResolver resolver, Locale locale) {
+    protected void addValueTypeDescription(ModelNode node, String prefix, ResourceBundle bundle, boolean forOperation, final ResourceDescriptionResolver resolver, Locale locale) {
         // Swap out the resolver to use the threadpool.common keys
         ResourceDescriptionResolver override = new StandardResourceDescriptionResolver("threadpool.common", "", getClass().getClassLoader()) {
             @Override
@@ -89,7 +93,7 @@ class KeepAliveTimeAttributeDefinition extends ObjectTypeAttributeDefinition {
                 return resolver.getResourceBundle(locale);
             }
         };
-        super.addValueTypeDescription(node, prefix, bundle, override, locale);
+        super.addValueTypeDescription(node, prefix, bundle, forOperation, override, locale);
     }
 
     public void parseAndSetParameter(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {

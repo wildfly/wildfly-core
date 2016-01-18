@@ -125,6 +125,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private ConfigurationPersister configurationPersister;
     private final ManagedAuditLogger auditLogger;
     private final BootErrorCollector bootErrorCollector;
+    private final CapabilityRegistry capabilityRegistry;
 
     /**
      * Construct a new instance.
@@ -145,7 +146,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
                                         final ManagedAuditLogger auditLogger, DelegatingConfigurableAuthorizer authorizer) {
         this(processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
-                prepareStep, expressionResolver, auditLogger, authorizer);
+                prepareStep, expressionResolver, auditLogger, authorizer, new CapabilityRegistry(processType.isServer()));
 
     }
 
@@ -165,9 +166,9 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ConfigurationPersister configurationPersister,
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
-                                        final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer) {
+                                        final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer, CapabilityRegistry capabilityRegistry) {
         this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, auditLogger, authorizer);
+                prepareStep, expressionResolver, auditLogger, authorizer, capabilityRegistry);
     }
 
     /**
@@ -190,7 +191,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ControlledProcessState processState, final DescriptionProvider rootDescriptionProvider,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver) {
         this(processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
-                prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
+                prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new CapabilityRegistry(processType.isServer()));
 
     }
 
@@ -213,19 +214,43 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver) {
         this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
+                prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new CapabilityRegistry(processType.isServer()));
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param processType            the type of process being controlled
+     * @param runningModeControl     the controller of the process' running mode
+     * @param configurationPersister the configuration persister
+     * @param processState           the controlled process state
+     * @param rootResourceDefinition the root resource definition
+     * @param prepareStep            the prepare step to prepend to operation execution
+     * @param expressionResolver     the expression resolver
+     * @deprecated Here for backwards compatibility for ModelTestModelControllerService
+     */
+    @Deprecated
+    protected AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
+                                        final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
+                                        final ResourceDefinition rootResourceDefinition, final OperationStepHandler prepareStep,
+                                        final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
+                                        final DelegatingConfigurableAuthorizer authorizer) {
+        this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+                prepareStep, expressionResolver, auditLogger, authorizer, new CapabilityRegistry(processType.isServer()));
+
     }
 
     private AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
                                       final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                       final ResourceDefinition rootResourceDefinition, final DescriptionProvider rootDescriptionProvider,
                                       final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
-                                      final DelegatingConfigurableAuthorizer authorizer) {
+                                      final DelegatingConfigurableAuthorizer authorizer, CapabilityRegistry capabilityRegistry) {
         assert rootDescriptionProvider == null: "description provider cannot be used anymore";
         assert rootResourceDefinition != null: "Null root resource definition";
         assert expressionResolver != null : "Null expressionResolver";
         assert auditLogger != null : "Null auditLogger";
         assert authorizer != null : "Null authorizer";
+        assert capabilityRegistry!=null : "Null capabilityRegistry";
         this.processType = processType;
         this.runningModeControl = runningModeControl;
         this.configurationPersister = configurationPersister;
@@ -236,10 +261,12 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.auditLogger = auditLogger;
         this.authorizer = authorizer;
         this.bootErrorCollector = new BootErrorCollector();
+        this.capabilityRegistry = capabilityRegistry.createShadowCopy(); //create shadow copy of proper registry so changes can only be visible by .publish()
     }
 
     @Override
     public void start(final StartContext context) throws StartException {
+        assert capabilityRegistry.getPossibleCapabilities().isEmpty(): "registry is not empty";
 
         if (configurationPersister == null) {
             throw ControllerLogger.ROOT_LOGGER.persisterNotInjected();
@@ -252,13 +279,13 @@ public abstract class AbstractControllerService implements Service<ModelControll
         final NotificationSupport notificationSupport = NotificationSupport.Factory.create(executorService);
         WritableAuthorizerConfiguration authorizerConfig = authorizer.getWritableAuthorizerConfiguration();
         authorizerConfig.reset();
-        ManagementResourceRegistration rootResourceRegistration = ManagementResourceRegistration.Factory.create(rootResourceDefinition, authorizerConfig);
+        ManagementResourceRegistration rootResourceRegistration = ManagementResourceRegistration.Factory.create(rootResourceDefinition, authorizerConfig, capabilityRegistry);
         final ModelControllerImpl controller = new ModelControllerImpl(container, target,
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),
                 configurationPersister, processType, runningModeControl, prepareStep,
                 processState, executorService, expressionResolver, authorizer, auditLogger, notificationSupport,
-                bootErrorCollector, createExtraValidationStepHandler());
+                bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry);
 
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
@@ -310,23 +337,55 @@ public abstract class AbstractControllerService implements Service<ModelControll
         finishBoot();
     }
 
+    /**
+     * Boot with the given operations, performing full model and capability registry validation.
+     *
+     * @param bootOperations the operations. Cannot be {@code null}
+     * @param rollbackOnRuntimeFailure {@code true} if the boot should fail if operations fail in the runtime stage
+     * @return {@code true} if boot was successful
+     * @throws ConfigurationPersistenceException
+     */
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) throws ConfigurationPersistenceException {
         return boot(bootOperations, rollbackOnRuntimeFailure, false, ModelControllerImpl.getMutableRootResourceRegistrationProvider());
     }
 
+    /**
+     * Boot with the given operations, optionally disabling model and capability registry validation.
+     *
+     * @param bootOperations the operations. Cannot be {@code null}
+     * @param rollbackOnRuntimeFailure {@code true} if the boot should fail if operations fail in the runtime stage
+     * @param skipModelValidation {@code true} if model and capability validation should be skipped.
+     * @return {@code true} if boot was successful
+     * @throws ConfigurationPersistenceException
+     */
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure, boolean skipModelValidation) throws ConfigurationPersistenceException {
         return boot(bootOperations, rollbackOnRuntimeFailure, skipModelValidation, ModelControllerImpl.getMutableRootResourceRegistrationProvider());
     }
 
+    /**
+     * @deprecated internal use only  only for use by legacy test controllers
+     */
+    @Deprecated
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure,
             MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
         return boot(bootOperations, rollbackOnRuntimeFailure, false, parallelBootRootResourceRegistrationProvider);
     }
 
+    /**
+     * Boot, optionally disabling model and capability registry validation, using the given provider for the root
+     * {@link ManagementResourceRegistration}.
+     *
+     * @param bootOperations the operations. Cannot be {@code null}
+     * @param rollbackOnRuntimeFailure {@code true} if the boot should fail if operations fail in the runtime stage
+     * @param skipModelValidation {@code true} if model and capability validation should be skipped.
+     * @param parallelBootRootResourceRegistrationProvider provider of the root resource registration
+     * @return {@code true} if boot was successful
+     * @throws ConfigurationPersistenceException
+     */
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure, boolean skipModelValidation,
-            MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
+                           MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
         return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT,
-                rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider, skipModelValidation);
+                rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider, skipModelValidation, skipModelValidation);
     }
 
     /** @deprecated internal use only  only for use by legacy test controllers */
@@ -334,7 +393,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     protected ModelNode internalExecute(final ModelNode operation, final OperationMessageHandler handler,
                                         final ModelController.OperationTransactionControl control,
                                         final OperationAttachments attachments, final OperationStepHandler prepareStep) {
-        OperationResponse or = controller.internalExecute(operation, handler, control, attachments, prepareStep, false);
+        OperationResponse or = controller.internalExecute(operation, handler, control, attachments, prepareStep, false, false);
         ModelNode result = or.getResponseNode();
         try {
             or.close();
@@ -346,12 +405,17 @@ public abstract class AbstractControllerService implements Service<ModelControll
     }
 
     protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
-        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false);
+        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false, false);
     }
 
     protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control,
                                                 final OperationStepHandler prepareStep, final boolean attemptLock) {
-        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, attemptLock);
+        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, attemptLock, false);
+    }
+
+    protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control,
+                                                final OperationStepHandler prepareStep, final boolean attemptLock, final boolean partialModel) {
+        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, attemptLock, partialModel);
     }
 
     /**
@@ -383,6 +447,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     protected void finishBoot() throws ConfigurationPersistenceException {
         controller.finishBoot();
         configurationPersister.successfulBoot();
+        capabilityRegistry.publish();
     }
 
     protected void bootThreadDone() {
@@ -394,6 +459,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
     }
 
     public void stop(final StopContext context) {
+        capabilityRegistry.clear();
+        capabilityRegistry.publish();
         controller = null;
 
         Runnable r = new Runnable() {

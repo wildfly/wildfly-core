@@ -67,16 +67,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
+
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
@@ -111,19 +111,18 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
 
     private final AccessControlXml accessControlXml;
+    private final StandaloneXml.ParsingOption[] parsingOptions;
     private AuditLogXml auditLogDelegate;
-
-    private final ExtensionXml extensionXml;
-    private final ExtensionRegistry extensionRegistry;
     private final Namespace namespace;
+    private ExtensionHandler extensionHandler;
 
-    StandaloneXml_5(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final Namespace namespace) {
+    StandaloneXml_5(ExtensionHandler extensionHandler, Namespace namespace, StandaloneXml.ParsingOption... options) {
         super(new SocketBindingsXml.ServerSocketBindingsXml());
-        accessControlXml = AccessControlXml.newInstance(namespace);
-        auditLogDelegate = AuditLogXml.newInstance(namespace, false);
-        this.extensionXml = extensionXml;
-        this.extensionRegistry = extensionRegistry;
         this.namespace = namespace;
+        this.extensionHandler = extensionHandler;
+        this.accessControlXml = AccessControlXml.newInstance(namespace);
+        this.auditLogDelegate = AuditLogXml.newInstance(namespace, false);
+        this.parsingOptions = options;
     }
 
     public void readElement(final XMLExtendedStreamReader reader, final List<ModelNode> operationList)
@@ -217,7 +216,7 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
 
         Element element = nextElement(reader, namespace);
         if (element == Element.EXTENSIONS) {
-            extensionXml.parseExtensions(reader, address, namespace, list);
+            extensionHandler.parseExtensions(reader, address, namespace, list);
             element = nextElement(reader, namespace);
         }
         // System properties
@@ -544,13 +543,24 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             }
             // parse subsystem
             final List<ModelNode> subsystems = new ArrayList<ModelNode>();
-            reader.handleAny(subsystems);
+            try {
+                reader.handleAny(subsystems);
+            } catch (XMLStreamException e) {
+                if(StandaloneXml.ParsingOption.IGNORE_SUBSYSTEM_FAILURES.isSet(this.parsingOptions)) {
+                    QName element = new QName(reader.getNamespaceURI(), reader.getLocalName());
+                    ControllerLogger.ROOT_LOGGER.failedToParseElementLenient(e, element.toString());
+                    reader.discardRemainder();
+                }
+                else {
+                    throw e;
+                }
+            }
 
             profileOps.put(namespace, subsystems);
         }
 
         // Let extensions modify the profile
-        Set<ProfileParsingCompletionHandler> completionHandlers = extensionRegistry.getProfileParsingCompletionHandlers();
+        Set<ProfileParsingCompletionHandler> completionHandlers = extensionHandler.getProfileParsingCompletionHandlers();
         for (ProfileParsingCompletionHandler completionHandler : completionHandlers) {
             completionHandler.handleProfileParsingCompletion(profileOps, list);
         }
@@ -603,7 +613,7 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
         WriteUtils.writeNewLine(writer);
 
         if (modelNode.hasDefined(EXTENSION)) {
-            extensionXml.writeExtensions(writer, modelNode.get(EXTENSION));
+            extensionHandler.writeExtensions(writer, modelNode.get(EXTENSION));
             WriteUtils.writeNewLine(writer);
         }
 

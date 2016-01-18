@@ -22,6 +22,17 @@
 
 package org.jboss.as.test.integration.management.cli.extensions;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.inject.Inject;
+
 import org.jboss.as.cli.CommandHandlerProvider;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathAddress;
@@ -29,7 +40,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.model.test.ModelTestUtils;
-import org.jboss.as.test.integration.management.cli.CliScriptTestBase;
+import org.jboss.as.test.integration.management.cli.CliProcessWrapper;
 import org.jboss.as.test.module.util.TestModule;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ArchivePath;
@@ -43,17 +54,11 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
-import javax.inject.Inject;
-import java.io.*;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 /**
  * @author Petr Kremensky pkremens@redhat.com
  */
 @RunWith(WildflyTestRunner.class)
-public class DuplicateExtCommandTestCase extends CliScriptTestBase {
+public class DuplicateExtCommandTestCase {
 
     private static final String MODULE_NAME = "test.cli.extension.duplicate";
 
@@ -87,13 +92,14 @@ public class DuplicateExtCommandTestCase extends CliScriptTestBase {
 
     @Test
     public void testExtensionCommandCollision() throws Exception {
-        assertEquals(0,
-                execute(client.getMgmtAddress(),
-                        client.getMgmtPort(),
-                        true,
-                        "extension-commands --errors",
-                        true));
-        assertTrue(getLastCommandOutput().trim().endsWith(DuplicateExtCommandHandler.NAME));
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument("extension-commands --errors");
+        cli.executeNonInteractive();
+
+        assertEquals(0, cli.getProcessExitValue());
+        assertTrue(cli.getOutput().trim().endsWith(DuplicateExtCommandHandler.NAME));
     }
 
     private static void createTestModule() throws Exception {

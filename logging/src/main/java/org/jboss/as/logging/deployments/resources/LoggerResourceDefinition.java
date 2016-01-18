@@ -66,7 +66,7 @@ class LoggerResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public LoggerResourceDefinition() {
-        super(PATH, LoggingExtension.getResourceDescriptionResolver("deployment", NAME));
+        super(new Parameters(PATH, LoggingExtension.getResourceDescriptionResolver("deployment", NAME)).setRuntime());
     }
 
     @Override

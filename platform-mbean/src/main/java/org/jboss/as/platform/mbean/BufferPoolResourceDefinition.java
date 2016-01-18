@@ -79,8 +79,8 @@ class BufferPoolResourceDefinition extends SimpleResourceDefinition {
 
 
     private BufferPoolResourceDefinition() {
-        super(PathElement.pathElement(NAME.getName()),
-                PlatformMBeanUtil.getResolver(BUFFER_POOL));
+        super(new Parameters(PathElement.pathElement(NAME.getName()),
+                PlatformMBeanUtil.getResolver(BUFFER_POOL)).setRuntime());
     }
 
     @Override
@@ -94,9 +94,6 @@ class BufferPoolResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, BufferPoolMXBeanAttributeHandler.INSTANCE);
         }
-
-        // HACK -- workaround WFCORE-17
-        registration.setRuntimeOnly(true);
     }
 
 }

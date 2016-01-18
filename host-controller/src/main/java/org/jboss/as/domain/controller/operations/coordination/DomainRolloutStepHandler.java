@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.controller.operations.coordination;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONCURRENT_GROUPS;
@@ -33,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_FAILED_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_FAILURE_PERCENTAGE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -42,6 +44,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.HOST_CONTROLLER_LOGGER;
 
 import java.util.ArrayList;
@@ -56,6 +59,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -68,12 +72,14 @@ import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.controller.transform.OperationTransformer;
+import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.plan.RolloutPlanController;
 import org.jboss.as.domain.controller.plan.ServerTaskExecutor;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.threads.AsyncFuture;
 
 /**
  * Formulates a rollout plan, invokes the proxies to execute it on the servers.
@@ -86,6 +92,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
     private final Map<String, ProxyController> hostProxies;
     private final Map<String, ProxyController> serverProxies;
     private final ExecutorService executorService;
+    private final ModelNode serverOperationHeaders;
     private final ModelNode providedRolloutPlan;
     private final boolean trace = HOST_CONTROLLER_LOGGER.isTraceEnabled();
 
@@ -93,12 +100,19 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                                     final Map<String, ProxyController> serverProxies,
                                     final MultiphaseOverallContext multiphaseContext,
                                     final ModelNode rolloutPlan,
+                                    final ModelNode serverOperationHeaders,
                                     final ExecutorService executorService) {
         this.hostProxies = hostProxies;
         this.serverProxies = serverProxies;
         this.multiphaseContext = multiphaseContext;
+        this.serverOperationHeaders = serverOperationHeaders.clone();
         this.providedRolloutPlan = rolloutPlan;
         this.executorService = executorService;
+        //Remove the caller-type=user header
+        if (this.serverOperationHeaders.hasDefined(CALLER_TYPE)
+                && this.serverOperationHeaders.get(CALLER_TYPE).asString().equals(USER)) {
+            this.serverOperationHeaders.remove(CALLER_TYPE);
+        }
     }
 
     @Override
@@ -112,6 +126,8 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
 
         // Temporary hack to prevent CompositeOperationHandler throwing away domain failure data
         context.attachIfAbsent(CompositeOperationHandler.DOMAIN_EXECUTION_KEY, Boolean.TRUE);
+
+        final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getDomainBlockingTimeout(context);
 
         // Confirm no host failures
         boolean pushToServers = !multiphaseContext.hasHostLevelFailures();
@@ -148,18 +164,18 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
             final List<ServerTaskExecutor.ServerPreparedResponse> preparedResults = new ArrayList<ServerTaskExecutor.ServerPreparedResponse>();
             boolean completeStepCalled = false;
             try {
-                pushToServers(context, submittedTasks, preparedResults);
+                pushToServers(context, submittedTasks, preparedResults, blockingTimeout);
                 context.completeStep(new OperationContext.ResultHandler() {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                        finalizeOp(context, submittedTasks, preparedResults);
+                        finalizeOp(context, submittedTasks, preparedResults, blockingTimeout);
                     }
                 });
 
                 completeStepCalled = true;
             } finally {
                 if (!completeStepCalled) {
-                    finalizeOp(context, submittedTasks, preparedResults);
+                    finalizeOp(context, submittedTasks, preparedResults, blockingTimeout);
                 }
             }
         } else {
@@ -170,7 +186,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
     }
 
     private void finalizeOp(final OperationContext context, final Map<ServerIdentity, ServerTaskExecutor.ExecutedServerRequest> submittedTasks,
-                            final List<ServerTaskExecutor.ServerPreparedResponse> preparedResults) {
+                            final List<ServerTaskExecutor.ServerPreparedResponse> preparedResults, final BlockingTimeout blockingTimeout) {
 
         boolean interrupted = false;
         // Inform the remote hosts whether to commit or roll back their updates
@@ -210,7 +226,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                     // 3) Passing that OperationResponse through the various callbacks related to prepared responses
                     // Doable, but I (BES) am not doing it now for such a corner case
                     OperationResponse originalResponse = OperationResponse.Factory.createSimple(result);
-                    final Future<OperationResponse> future = executorService.submit(new ServerRequireRestartTask(identity, proxy, originalResponse));
+                    final Future<OperationResponse> future = executorService.submit(new ServerRequireRestartTask(identity, proxy, originalResponse, blockingTimeout));
                     // replace the existing future
                     submittedTasks.put(identity, new ServerTaskExecutor.ExecutedServerRequest(identity, future));
                 } catch (Exception ignore) {
@@ -222,7 +238,10 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
         // before we expose the servers to further requests
 
         try {
-            boolean patient = !interrupted;
+            // If we've been interrupted, only wait 50 ms for a final response, otherwise wait the domain blocking timeout
+            // Before WFCORE-996 was analyzed, in the interrupted case we would wait 0 ms. 50 ms is a
+            // workaround attempt to avoid a race
+            int patient = interrupted ? 50 : blockingTimeout.getDomainBlockingTimeout(multiphaseContext.getLocalHostInfo().isMasterDomainController());
             for (Map.Entry<ServerIdentity, ServerTaskExecutor.ExecutedServerRequest> entry : submittedTasks.entrySet()) {
                 final ServerTaskExecutor.ExecutedServerRequest request = entry.getValue();
                 final ServerIdentity sid = entry.getKey();
@@ -230,7 +249,7 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                 try {
                     final OperationResponse finalResponse = future.isCancelled()
                             ? getCancelledResult()
-                            : patient ? future.get() : future.get(0, TimeUnit.MILLISECONDS);
+                            : future.get(patient, TimeUnit.MILLISECONDS);
 
                     final ModelNode untransformedResponse = finalResponse.getResponseNode();
                     HOST_CONTROLLER_LOGGER.tracef("Final response from %s is %s (untransformed)", sid, untransformedResponse);
@@ -244,19 +263,25 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
 
                     multiphaseContext.addServerResult(sid, transformedResult);
                 } catch (InterruptedException e) {
-                    future.cancel(true);
+                    cancelPreferAsync(future, true);
                     interrupted = true;
                     // We suppressed an interrupt, so don't block indefinitely waiting for other responses;
                     // just grab them if they are already available
-                    patient = false;
+                    patient = patient == 0 ? 0 : 50; // if we were already really impatient, we still are
                     HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(sid.getServerName(), sid.getHostName());
                 } catch (ExecutionException e) {
-                    future.cancel(true);
+                    cancelPreferAsync(future, true);
                     HOST_CONTROLLER_LOGGER.caughtExceptionAwaitingFinalResponse(e.getCause(), sid.getServerName(), sid.getHostName());
                 } catch (TimeoutException e) {
-                    future.cancel(true);
-                    // This only happens if we were interrupted previously, so treat it that way
-                    HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(sid.getServerName(), sid.getHostName());
+                    cancelPreferAsync(future, true);
+                    if (interrupted) {
+                        HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(sid.getServerName(), sid.getHostName());
+                    } else {
+                        HOST_CONTROLLER_LOGGER.timedOutAwaitingFinalResponse(patient, sid.getServerName(), sid.getHostName());
+                    }
+                    // we already waited at least the original 'patient' value since we sent out commit/rollback msgs;
+                    // don't need to wait so long any more
+                    patient = 0;
                 }
             }
         } finally {
@@ -266,14 +291,23 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
         }
     }
 
+    private void cancelPreferAsync(Future<?> future, boolean mayInterruptIfRunning) {
+
+        if (future instanceof AsyncFuture) { // the normal case
+            ((AsyncFuture) future).asyncCancel(mayInterruptIfRunning);
+        } else { // the ServerRequireRestartTask case, where we're interrupting a thread executing an op locally
+            future.cancel(mayInterruptIfRunning);
+        }
+    }
+
     private OperationResponse getCancelledResult() {
         ModelNode cancelled = new ModelNode();
         cancelled.get(OUTCOME).set(CANCELLED);
         return OperationResponse.Factory.createSimple(cancelled);
     }
 
-    private void pushToServers(final OperationContext context, final Map<ServerIdentity,ServerTaskExecutor.ExecutedServerRequest> submittedTasks,
-                               final List<ServerTaskExecutor.ServerPreparedResponse> preparedResults) throws OperationFailedException {
+    private void pushToServers(final OperationContext context, final Map<ServerIdentity, ServerTaskExecutor.ExecutedServerRequest> submittedTasks,
+                               final List<ServerTaskExecutor.ServerPreparedResponse> preparedResults, final BlockingTimeout blockingTimeout) throws OperationFailedException {
 
         final String localHostName = multiphaseContext.getLocalHostInfo().getLocalHostName();
         Map<String, ModelNode> hostResults = new HashMap<String, ModelNode>(multiphaseContext.getHostControllerPreparedResults());
@@ -292,10 +326,11 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                 HOST_CONTROLLER_LOGGER.tracef("Rollout plan is %s", rolloutPlan);
             }
 
+            final Transformers.TransformationInputs transformationInputs = Transformers.TransformationInputs.getOrCreate(context);
             final ServerTaskExecutor taskExecutor = new ServerTaskExecutor(context, submittedTasks, preparedResults) {
 
                 @Override
-                protected boolean execute(TransactionalProtocolClient.TransactionalOperationListener<ServerTaskExecutor.ServerOperation> listener, ServerIdentity server, ModelNode original) throws OperationFailedException {
+                protected int execute(TransactionalProtocolClient.TransactionalOperationListener<ServerTaskExecutor.ServerOperation> listener, ServerIdentity server, ModelNode original) throws OperationFailedException {
                     final String hostName = server.getHostName();
                     ProxyController proxy = hostProxies.get(hostName);
                     if (proxy == null) {
@@ -307,19 +342,24 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
                             if (trace) {
                                 HOST_CONTROLLER_LOGGER.tracef("No proxy for %s", server);
                             }
-                            return false;
+                            return -1;
                         }
                     }
                     // Transform the server-results
                     final TransformingProxyController remoteProxyController = (TransformingProxyController) proxy;
-                    final OperationTransformer.TransformedOperation transformed = multiphaseContext.transformServerOperation(hostName, remoteProxyController, context, original);
+                    final OperationTransformer.TransformedOperation transformed = multiphaseContext.transformServerOperation(hostName, remoteProxyController, transformationInputs, original);
                     final ModelNode transformedOperation = transformed.getTransformedOperation();
                     final OperationResultTransformer resultTransformer = transformed.getResultTransformer();
                     final TransactionalProtocolClient client = remoteProxyController.getProtocolClient();
-                    return executeOperation(listener, client, server, transformedOperation, resultTransformer);
+                    if (executeOperation(listener, client, server, transformedOperation, resultTransformer)) {
+                        return blockingTimeout.getProxyBlockingTimeout(server.toPathAddress(), remoteProxyController);
+                    } else {
+                        return -1;
+                    }
                 }
             };
-            RolloutPlanController rolloutPlanController = new RolloutPlanController(opsByGroup, rolloutPlan, multiphaseContext, taskExecutor, executorService);
+            RolloutPlanController rolloutPlanController = new RolloutPlanController(opsByGroup, rolloutPlan,
+                    multiphaseContext, taskExecutor, executorService, blockingTimeout);
             RolloutPlanController.Result planResult = rolloutPlanController.execute();
             if (trace) {
                 HOST_CONTROLLER_LOGGER.tracef("Rollout plan result is %s", planResult);
@@ -366,8 +406,8 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
 
     private ModelNode translateDomainMappedOperation(final ModelNode domainMappedOperation) {
         if (domainMappedOperation.hasDefined(OP)) {
-            // Simple op; return it
-            return domainMappedOperation;
+            // Simple op; add headers and return it
+            return incorporateServerOperationHeaders(domainMappedOperation);
         }
         ModelNode composite = new ModelNode();
         composite.get(OP).set(COMPOSITE);
@@ -375,7 +415,12 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
         for (Property property : domainMappedOperation.asPropertyList()) {
             steps.add(translateDomainMappedOperation(property.getValue()));
         }
-        return composite;
+        return incorporateServerOperationHeaders(composite);
+    }
+
+    private ModelNode incorporateServerOperationHeaders(ModelNode op) {
+        op.get(OPERATION_HEADERS).set(serverOperationHeaders);
+        return op;
     }
 
     private ModelNode getRolloutPlan(ModelNode rolloutPlan, Map<String, Map<ServerIdentity, ModelNode>> opsByGroup) throws OperationFailedException {

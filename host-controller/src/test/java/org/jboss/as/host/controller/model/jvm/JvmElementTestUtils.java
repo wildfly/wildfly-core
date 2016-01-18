@@ -21,9 +21,6 @@
  */
 package org.jboss.as.host.controller.model.jvm;
 
-import org.jboss.as.host.controller.model.jvm.JvmElement;
-import org.jboss.as.host.controller.model.jvm.JvmType;
-
 
 /**
  *

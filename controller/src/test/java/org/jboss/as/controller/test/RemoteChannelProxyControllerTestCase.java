@@ -36,7 +36,6 @@ import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.junit.After;
-import org.junit.Before;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>

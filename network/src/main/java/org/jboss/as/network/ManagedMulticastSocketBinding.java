@@ -39,7 +39,7 @@ public class ManagedMulticastSocketBinding extends MulticastSocket implements Ma
         if (NetworkUtils.isBindingToMulticastDressSupported()) {
             return new ManagedMulticastSocketBinding(name, socketBindings, address);
         } else if (address instanceof InetSocketAddress) {
-            return new ManagedMulticastSocketBinding(name, socketBindings, ((InetSocketAddress) address).getPort());
+            return new ManagedMulticastSocketBinding(name, socketBindings, new InetSocketAddress(((InetSocketAddress) address).getPort()));
         } else {
             // Probably non-existing case; only happens if an end-user caller deliberately passes such an
             // address to SocketBindingManager
@@ -48,18 +48,17 @@ public class ManagedMulticastSocketBinding extends MulticastSocket implements Ma
     }
 
     private final String name;
+    private final SocketAddress address;
     private final ManagedBindingRegistry socketBindings;
 
     private ManagedMulticastSocketBinding(final String name, final ManagedBindingRegistry socketBindings, SocketAddress address) throws IOException {
         super(address);
         this.name = name;
+        this.address = address;
         this.socketBindings = socketBindings;
-    }
-
-    private ManagedMulticastSocketBinding(final String name, final ManagedBindingRegistry socketBindings, int port) throws IOException {
-        super(port);
-        this.name = name;
-        this.socketBindings = socketBindings;
+        if (this.isBound()) {
+            this.socketBindings.registerBinding(this);
+        }
     }
 
     @Override
@@ -69,23 +68,35 @@ public class ManagedMulticastSocketBinding extends MulticastSocket implements Ma
 
     @Override
     public InetSocketAddress getBindAddress() {
-        return (InetSocketAddress) getLocalSocketAddress();
+        if (name == null) {
+            // unnamed multicast socket
+            return (InetSocketAddress) address;
+        } else {
+            return (InetSocketAddress) getLocalSocketAddress();
+        }
     }
 
     @Override
     public synchronized void bind(SocketAddress addr) throws SocketException {
         super.bind(addr);
-        this.socketBindings.registerBinding(this);
+        // This method might have been called from the super constructor
+        if (this.socketBindings != null) {
+            this.socketBindings.registerBinding(this);
+        }
     }
 
     @Override
     public void close() {
+        // First unregister, then close. This allows UnnamedRegistryImpl
+        // to get the bind address before it's gone
         try {
-            super.close();
+            // This method might have been called from the super constructor
+            if (this.socketBindings != null) {
+                socketBindings.unregisterBinding(this);
+            }
         } finally {
-            socketBindings.unregisterBinding(this);
+            super.close();
         }
     }
-
 }
 

@@ -223,4 +223,13 @@ public interface PatchLogger extends BasicLogger {
 
     @Message(id = 42, value = "Patch bundle is empty")
     String patchBundleIsEmpty();
+
+    @Message(id = 43, value = "Content item type is missing in '%s'")
+    PatchingException contentItemTypeMissing(String condition);
+
+    @Message(id = 44, value = "Unsupported content type '%s'")
+    String unsupportedContentType(String type);
+
+    @Message(id = 45, value = "Unrecognized condition format '%s'")
+    PatchingException unrecognizedConditionFormat(String condition);
 }

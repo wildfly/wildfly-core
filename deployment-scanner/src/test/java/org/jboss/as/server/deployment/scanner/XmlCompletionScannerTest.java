@@ -43,9 +43,8 @@ import org.junit.Before;
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
  */
 public class XmlCompletionScannerTest {
-        
     private FakeHandler handler;
-    private final static DeploymentScannerLogger logger = DeploymentScannerLogger.ROOT_LOGGER;
+    private static final DeploymentScannerLogger logger = DeploymentScannerLogger.ROOT_LOGGER;
 
     public XmlCompletionScannerTest() {
     }
@@ -56,7 +55,7 @@ public class XmlCompletionScannerTest {
         handler = new FakeHandler();
         lmLogger.addHandler(handler);
     }
-    
+
     @After
     public void removehandler() {
         Logger lmLogger = Logger.getLogger("org.jboss.as.server.deployment.scanner");
@@ -70,8 +69,7 @@ public class XmlCompletionScannerTest {
         boolean result = XmlCompletionScanner.isCompleteDocument(file);
         assertThat(result, is(true));
     }
-    
-    
+
     @Test
     public void testIncompleteDocument() throws Exception {
         File file = new File(XmlCompletionScannerTest.class.getClassLoader().getResource("loop-vdb-error.xml").toURI());
@@ -86,7 +84,7 @@ public class XmlCompletionScannerTest {
         assertThat(infoMessage, containsString("columnNumber: 7"));
         handler.messages.clear();
     }
-    
+
     private static class FakeHandler extends Handler {
         private List<String> messages = new ArrayList<String>();
 
@@ -102,6 +100,5 @@ public class XmlCompletionScannerTest {
         @Override
         public void close() throws SecurityException {
         }
-        
     }
 }

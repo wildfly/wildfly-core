@@ -26,14 +26,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.controller.operations.validation.MinMaxValidator;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.dmr.ModelNode;
@@ -125,7 +122,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
     @Override
     public ModelNode addResourceAttributeDescription(ResourceBundle bundle, String prefix, ModelNode resourceDescription) {
         final ModelNode result = super.addResourceAttributeDescription(bundle, prefix, resourceDescription);
-        addValueTypeDescription(result, prefix, bundle, null, null);
+        addValueTypeDescription(result, prefix, bundle, false, null, null);
         return result;
     }
 
@@ -133,14 +130,14 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
                                                       final ResourceDescriptionResolver resolver,
                                                       final Locale locale, final ResourceBundle bundle) {
         final ModelNode result = super.addOperationParameterDescription(resourceDescription, operationName, resolver, locale, bundle);
-        addValueTypeDescription(result, getName(), bundle, resolver, locale);
+        addValueTypeDescription(result, getName(), bundle, true, resolver, locale);
         return result;
     }
 
     public ModelNode addResourceAttributeDescription(final ModelNode resourceDescription, final ResourceDescriptionResolver resolver,
                                                      final Locale locale, final ResourceBundle bundle) {
         final ModelNode result = super.addResourceAttributeDescription(resourceDescription, resolver, locale, bundle);
-        addValueTypeDescription(result, getName(), bundle, resolver, locale);
+        addValueTypeDescription(result, getName(), bundle, false, resolver, locale);
         return result;
     }
 
@@ -148,7 +145,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
     @Override
     public ModelNode addOperationParameterDescription(ResourceBundle bundle, String prefix, ModelNode operationDescription) {
         final ModelNode result = super.addOperationParameterDescription(bundle, prefix, operationDescription);
-        addValueTypeDescription(result, prefix, bundle, null, null);
+        addValueTypeDescription(result, prefix, bundle, true, null, null);
         return result;
     }
 
@@ -196,12 +193,30 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         return result;
     }
 
+    /**
+     *
+     * @deprecated use #addValueTypeDescription(ModelNode, String, ResourceBundle, boolean, ResourceDescriptionResolver, Locale)
+     */
+    @Deprecated
     protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle,
+                                               final ResourceDescriptionResolver resolver,
+                                               final Locale locale) {
+        addValueTypeDescription(node, prefix, bundle, false, resolver, locale);
+    }
+
+    protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle,
+                                           boolean forOperation,
                                            final ResourceDescriptionResolver resolver,
                                            final Locale locale) {
         for (AttributeDefinition valueType : valueTypes) {
+            if (forOperation && valueType.isResourceOnly()) {
+                continue; //WFCORE-597
+            }
             // get the value type description of the attribute
-            final ModelNode valueTypeDesc = getValueTypeDescription(valueType, false);
+            final ModelNode valueTypeDesc = valueType.getNoTextDescription(false);
+            if(valueTypeDesc.has(ModelDescriptionConstants.ATTRIBUTE_GROUP)) {
+                valueTypeDesc.remove(ModelDescriptionConstants.ATTRIBUTE_GROUP);
+            }
             final String p;
             boolean prefixUnusable = prefix == null || prefix.isEmpty() ;
             boolean suffixUnusable = suffix == null || suffix.isEmpty() ;
@@ -221,12 +236,13 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
             } else {
                 valueTypeDesc.get(ModelDescriptionConstants.DESCRIPTION).set(valueType.getAttributeTextDescription(bundle, p));
             }
+
             // set it as one of our value types, and return the value
             final ModelNode childType = node.get(ModelDescriptionConstants.VALUE_TYPE, valueType.getName()).set(valueTypeDesc);
             // if it is of type OBJECT itself (add its nested descriptions)
             // seeing that OBJECT represents a grouping, use prefix+"."+suffix for naming the entries
             if (valueType instanceof ObjectTypeAttributeDefinition) {
-                ObjectTypeAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, p, bundle, resolver, locale);
+                ObjectTypeAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, p, bundle, forOperation, resolver, locale);
             }
             // if it is of type LIST, and its value type
             // seeing that LIST represents a grouping, use prefix+"."+suffix for naming the entries
@@ -240,68 +256,6 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
                 ObjectListAttributeDefinition.class.cast(valueType).addValueTypeDescription(childType, p, bundle, false, resolver, locale);
             }
         }
-    }
-
-    private ModelNode getValueTypeDescription(final AttributeDefinition valueType, final boolean forOperation) {
-        final ModelNode result = new ModelNode();
-        result.get(ModelDescriptionConstants.TYPE).set(valueType.getType());
-        result.get(ModelDescriptionConstants.DESCRIPTION); // placeholder
-        result.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(valueType.isAllowExpression());
-        if (forOperation) {
-            result.get(ModelDescriptionConstants.REQUIRED).set(!valueType.isAllowNull());
-        }
-        result.get(ModelDescriptionConstants.NILLABLE).set(valueType.isAllowNull());
-        final ModelNode defaultValue = valueType.getDefaultValue();
-        if (!forOperation && defaultValue != null && defaultValue.isDefined()) {
-            result.get(ModelDescriptionConstants.DEFAULT).set(defaultValue);
-        }
-        MeasurementUnit measurementUnit = valueType.getMeasurementUnit();
-        if (measurementUnit != null && measurementUnit != MeasurementUnit.NONE) {
-            result.get(ModelDescriptionConstants.UNIT).set(measurementUnit.getName());
-        }
-        final String[] alternatives = valueType.getAlternatives();
-        if (alternatives != null) {
-            for (final String alternative : alternatives) {
-                result.get(ModelDescriptionConstants.ALTERNATIVES).add(alternative);
-            }
-        }
-        final String[] requires = valueType.getRequires();
-        if (requires != null) {
-            for (final String required : requires) {
-                result.get(ModelDescriptionConstants.REQUIRES).add(required);
-            }
-        }
-        final ParameterValidator validator = valueType.getValidator();
-        if (validator instanceof MinMaxValidator) {
-            MinMaxValidator minMax = (MinMaxValidator) validator;
-            Long min = minMax.getMin();
-            if (min != null) {
-                switch (valueType.getType()) {
-                    case STRING:
-                    case LIST:
-                    case OBJECT:
-                    case BYTES:
-                        result.get(ModelDescriptionConstants.MIN_LENGTH).set(min);
-                        break;
-                    default:
-                        result.get(ModelDescriptionConstants.MIN).set(min);
-                }
-            }
-            Long max = minMax.getMax();
-            if (max != null) {
-                switch (valueType.getType()) {
-                    case STRING:
-                    case LIST:
-                    case OBJECT:
-                    case BYTES:
-                        result.get(ModelDescriptionConstants.MAX_LENGTH).set(max);
-                        break;
-                    default:
-                        result.get(ModelDescriptionConstants.MAX).set(max);
-                }
-            }
-        }
-        return result;
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ServerService;
 import org.jboss.as.server.Services;
+import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.xnio.OptionMap;
@@ -25,6 +26,10 @@ class NativeManagementServices {
                                                                    final ServiceRegistry serviceContainer) {
 
         if (serviceContainer.getService(ManagementRemotingServices.MANAGEMENT_ENDPOINT) == null) {
+
+            //install xnio mgmt worker
+            ManagementWorkerService.installService(serviceTarget);
+
 
             ManagementChannelRegistryService.addService(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT);
 

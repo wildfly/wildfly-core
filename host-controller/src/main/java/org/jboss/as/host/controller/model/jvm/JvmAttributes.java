@@ -27,6 +27,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -169,12 +170,14 @@ public class JvmAttributes {
             SimpleAttributeDefinitionBuilder.create(JvmAttributes.JVM_PERMGEN, ModelType.STRING, true)
             .setAllowExpression(true)
             .setXmlName(JvmAttributes.SIZE)
+            .setDeprecated(ModelVersion.create(4))
             .build();
 
     public static final SimpleAttributeDefinition MAX_PERMGEN_SIZE =
             SimpleAttributeDefinitionBuilder.create(JvmAttributes.JVM_MAX_PERMGEN, ModelType.STRING, true)
             .setAllowExpression(true)
             .setXmlName(JvmAttributes.MAX_SIZE)
+            .setDeprecated(ModelVersion.create(4))
             .build();
 
     public static final SimpleAttributeDefinition DEBUG_ENABLED =

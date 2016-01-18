@@ -15,26 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.jboss.as.test.manualmode.deployment;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -46,13 +41,10 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.protocol.StreamUtils;
+import org.jboss.as.server.deployment.DeploymentUndeployHandler;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -67,10 +59,14 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class DeploymentScannerUnitTestCase {
+public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCase {
 
-    private static final PathAddress DEPLOYMENT_ONE = PathAddress.pathAddress(DEPLOYMENT, "deployment-one.jar");
-    private static final PathAddress DEPLOYMENT_TWO = PathAddress.pathAddress(DEPLOYMENT, "deployment-two.jar");
+    private static final String JAR_ONE = "deployment-startup-one.jar";
+    private static final String JAR_TWO = "deployment-startup-two.jar";
+    private static final PathAddress DEPLOYMENT_ONE = PathAddress.pathAddress(DEPLOYMENT, JAR_ONE);
+    private static final PathAddress DEPLOYMENT_TWO = PathAddress.pathAddress(DEPLOYMENT, JAR_TWO);
+    private static final int TIMEOUT = 30000;
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss,SSS");
 
     @Inject
     private ServerController container;
@@ -96,23 +92,23 @@ public class DeploymentScannerUnitTestCase {
 
     @Test
     public void testStartup() throws Exception {
-
+        final Path oneDeployed = deployDir.toPath().resolve(JAR_ONE + ".deployed");
+        final Path twoFailed = deployDir.toPath().resolve(JAR_TWO + ".failed");
         container.start();
         try {
             client = TestSuiteEnvironment.getModelControllerClient();
+            //set the logging to debug
+            addDebugDeploymentLogger();
             try {
-
-                final File deploymentOne = new File(deployDir, "deployment-one.jar");
-                final File deploymentTwo = new File(deployDir, "deployment-two.jar");
+                final File deploymentOne = new File(deployDir, JAR_ONE);
+                final File deploymentTwo = new File(deployDir, JAR_TWO);
 
                 createDeployment(deploymentOne, "org.jboss.modules");
                 createDeployment(deploymentTwo, "non.existing.dependency");
-
-                // Add a new de
-                addDeploymentScanner();
+                addDeploymentScanner(0);
                 try {
                     // Wait until deployed ...
-                    long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+                    long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
                     while (!exists(DEPLOYMENT_ONE) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(100);
                     }
@@ -121,33 +117,49 @@ public class DeploymentScannerUnitTestCase {
                     Assert.assertTrue(exists(DEPLOYMENT_TWO));
                     Assert.assertEquals("FAILED", deploymentState(DEPLOYMENT_TWO));
 
-                    final File oneDeployed = new File(deployDir, "deployment-one.jar.deployed");
-                    final File twoFailed = new File(deployDir, "deployment-two.jar.failed");
+                    Assert.assertTrue(Files.exists(oneDeployed));
+                    Assert.assertTrue(Files.exists(twoFailed));
 
                     // Restart ...
                     container.stop();
                     container.start();
 
                     // Wait until started ...
-                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
                     while (!isRunning() && System.currentTimeMillis() < timeout) {
-                        Thread.sleep(200);
+                        Thread.sleep(10);
                     }
 
-                    Assert.assertTrue(oneDeployed.exists());
-                    Assert.assertTrue(twoFailed.exists());
+                    Assert.assertTrue(Files.exists(oneDeployed));
+                    Assert.assertTrue(Files.exists(twoFailed));
 
                     Assert.assertTrue(exists(DEPLOYMENT_ONE));
                     Assert.assertEquals("OK", deploymentState(DEPLOYMENT_ONE));
 
-                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
                     while (exists(DEPLOYMENT_TWO) && System.currentTimeMillis() < timeout) {
-                        Thread.sleep(200);
+                        Thread.sleep(10);
                     }
-                    Assert.assertFalse(exists(DEPLOYMENT_TWO));
+                    Assert.assertFalse("Deployment two shouldn't exist at " + formatter.format(LocalDateTime.now()), exists(DEPLOYMENT_TWO));
+                    ModelNode disableScanner = Util.getWriteAttributeOperation(PathAddress.parseCLIStyleAddress("/subsystem=deployment-scanner/scanner=testScanner"), "scan-interval", 300000);
+                    ModelNode result = executeOperation(disableScanner);
+                    assertEquals("Unexpected outcome of disabling the test deployment scanner: " + disableScanner, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
 
+                    final ModelNode undeployOp = Util.getEmptyOperation(DeploymentUndeployHandler.OPERATION_NAME, DEPLOYMENT_ONE.toModelNode());
+                    result = executeOperation(undeployOp);
+                    assertEquals("Unexpected outcome of undeploying deployment one: " + undeployOp, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
+                    Assert.assertTrue(exists(DEPLOYMENT_ONE));
+                    Assert.assertEquals("STOPPED", deploymentState(DEPLOYMENT_ONE));
+
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
+
+                    while (Files.exists(oneDeployed) && System.currentTimeMillis() < timeout) {
+                        Thread.sleep(10);
+                    }
+                    Assert.assertFalse(Files.exists(oneDeployed));
                 } finally {
                     removeDeploymentScanner();
+                    removeDebugDeploymentLogger();
                 }
 
             } finally {
@@ -158,105 +170,42 @@ public class DeploymentScannerUnitTestCase {
         }
     }
 
-    private void addDeploymentScanner() throws Exception {
-        ModelNode addOp = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, "org.jboss.as.deployment-scanner")));
-        ModelNode result = executeOperation(addOp);
-        assertEquals("Unexpected outcome of adding the test deployment scanner extension: " + addOp, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
-        addOp = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "deployment-scanner")));
-        result = executeOperation(addOp);
-        assertEquals("Unexpected outcome of adding the test deployment scanner subsystem: " + addOp, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
-        // add deployment scanner
-        final ModelNode op = getAddDeploymentScannerOp();
-        result = executeOperation(op);
-        assertEquals("Unexpected outcome of adding the test deployment scanner: " + op, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
-    }
-
-    private void removeDeploymentScanner() throws Exception {
+    private void addDebugDeploymentLogger() throws Exception {
         boolean ok = false;
         try {
-            // remove deployment scanner
-            final ModelNode op = getRemoveDeploymentScannerOp();
+            final ModelNode op = Util.createAddOperation(getScannerLoggerResourcePath());
+            op.get("category").set("org.jboss.as.server.deployment.scanner");
+            op.get("level").set("TRACE");
+            op.get("use-parent-handlers").set(true);
             ModelNode result = executeOperation(op);
-            assertEquals("Unexpected outcome of removing the test deployment scanner: " + op, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
+            assertEquals("Unexpected outcome of setting the test deployment logger to debug: " + op, SUCCESS, result.get(OUTCOME).asString());
             ok = true;
         } finally {
-            try {
-                boolean wasOK = ok;
-                ok = false;
-                ModelNode removeOp = Util.createRemoveOperation(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "deployment-scanner")));
+            if (!ok) {
+                ModelNode removeOp = Util.createRemoveOperation(getScannerLoggerResourcePath());
                 ModelNode result = executeOperation(removeOp);
-                if (wasOK) {
-                    assertEquals("Unexpected outcome of removing the test deployment scanner subsystem: " + removeOp, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
-                } // else don't override the previous assertion error in this finally block
-                ok = wasOK;
-            } finally {
-                ModelNode removeOp = Util.createRemoveOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, "org.jboss.as.deployment-scanner")));
-                ModelNode result = executeOperation(removeOp);
-                if (ok) {
-                    assertEquals("Unexpected outcome of removing the test deployment scanner extension: " + removeOp, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
-                }  // else don't override the previous assertion error in this finally block
+                assertEquals("Unexpected outcome of removing the test deployment logger: " + removeOp, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
             }
         }
     }
 
-    private ModelNode executeOperation(ModelNode op) throws IOException {
+    private void removeDebugDeploymentLogger() throws Exception {
+        ModelNode removeOp = Util.createRemoveOperation(getScannerLoggerResourcePath());
+        ModelNode result = executeOperation(removeOp);
+        assertEquals("Unexpected outcome of removing the test deployment logger: " + result, SUCCESS, result.get(OUTCOME).asString());
+    }
+
+    private PathAddress getScannerLoggerResourcePath() {
+        return PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "logging"), PathElement.pathElement("logger", "org.jboss.as.server.deployment.scanner"));
+    }
+
+    @Override
+    protected ModelNode executeOperation(ModelNode op) throws IOException {
         return client.execute(op);
     }
 
-    private ModelNode getAddDeploymentScannerOp() {
-        final ModelNode op = Util.createAddOperation(getTestDeploymentScannerResourcePath());
-        op.get("scan-interval").set(0);
-        op.get("path").set(deployDir.getAbsolutePath());
-        return op;
+    @Override
+    protected File getDeployDir() {
+        return deployDir;
     }
-
-    private ModelNode getRemoveDeploymentScannerOp() {
-        return createOpNode("subsystem=deployment-scanner/scanner=testScanner", "remove");
-    }
-
-    private PathAddress getTestDeploymentScannerResourcePath() {
-        return PathAddress.pathAddress(PathElement.pathElement("subsystem", "deployment-scanner"), PathElement.pathElement("scanner", "testScanner"));
-    }
-
-    protected void createDeployment(final File file, final String dependency) throws IOException {
-        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
-        final String dependencies = "Dependencies: " + dependency;
-        archive.add(new StringAsset(dependencies), "META-INF/MANIFEST.MF");
-        archive.as(ZipExporter.class).exportTo(file);
-    }
-
-    protected boolean exists(PathAddress address) throws IOException {
-        final ModelNode operation = Util.createEmptyOperation(READ_RESOURCE_OPERATION, address);
-        operation.get(INCLUDE_RUNTIME).set(true);
-        operation.get(RECURSIVE).set(true);
-
-        final ModelNode result = executeOperation(operation);
-        if (SUCCESS.equals(result.get(OUTCOME).asString())) {
-            return true;
-        }
-        return false;
-    }
-
-    protected String deploymentState(final PathAddress address) throws IOException {
-        final ModelNode operation = Util.createEmptyOperation(READ_ATTRIBUTE_OPERATION, address);
-        operation.get(NAME).set("status");
-
-        final ModelNode result = executeOperation(operation);
-        if (SUCCESS.equals(result.get(OUTCOME).asString())) {
-            return result.get(RESULT).asString();
-        }
-        return "failed";
-    }
-
-    protected boolean isRunning() throws IOException {
-        final ModelNode operation = Util.createEmptyOperation(READ_ATTRIBUTE_OPERATION, PathAddress.EMPTY_ADDRESS);
-        operation.get(NAME).set("server-state");
-
-        final ModelNode result = executeOperation(operation);
-        if (SUCCESS.equals(result.get(OUTCOME).asString())) {
-            return "running".equals(result.get(RESULT).asString());
-        }
-        return false;
-    }
-
 }

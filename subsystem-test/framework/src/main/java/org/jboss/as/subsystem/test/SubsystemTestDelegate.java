@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -68,7 +67,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -86,11 +85,9 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.OperationEntry.EntryType;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
-import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.model.test.ChildFirstClassLoaderBuilder;
 import org.jboss.as.model.test.EAPRepositoryReachableUtil;
 import org.jboss.as.model.test.ModelFixer;
@@ -529,7 +526,7 @@ final class SubsystemTestDelegate {
 
     private ResourceDefinition getResourceDefinition(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
         //Look for the file in the org.jboss.as.subsystem.test package - this is where we used to store them before the split
-        ResourceDefinition rd = TransformerRegistry.loadSubsystemDefinitionFromFile(this.getClass(), mainSubsystemName, modelVersion);
+        ResourceDefinition rd = TransformationUtils.loadSubsystemDefinitionFromFile(this.getClass(), mainSubsystemName, modelVersion);
 
         if (rd == null) {
             //This is the 'new' post-split way. First check for a cached .dmr file. This which also allows people
@@ -539,7 +536,7 @@ final class SubsystemTestDelegate {
                 generateLegacySubsystemResourceRegistrationDmr(kernelServices, modelVersion);
             }
             System.out.println("Using legacy resource definition dmr: " + file);
-            rd = TransformerRegistry.loadSubsystemDefinitionFromFile(kernelServices.getTestClass(), mainSubsystemName, modelVersion);
+            rd = TransformationUtils.loadSubsystemDefinitionFromFile(kernelServices.getTestClass(), mainSubsystemName, modelVersion);
         }
         return rd;
     }
@@ -607,7 +604,6 @@ final class SubsystemTestDelegate {
         private final ModelTestBootOperationsBuilder bootOperationBuilder;
         private final AdditionalInitialization additionalInit;
         private Map<ModelVersion, LegacyKernelServiceInitializerImpl> legacyControllerInitializers = new HashMap<ModelVersion, LegacyKernelServiceInitializerImpl>();
-        private boolean enableTransformerAttachmentGrabber;
 
         public KernelServicesBuilderImpl(AdditionalInitialization additionalInit) {
             this.additionalInit = additionalInit == null ? new AdditionalInitialization() : additionalInit;
@@ -634,12 +630,6 @@ final class SubsystemTestDelegate {
         @Override
         public KernelServicesBuilder setBootOperations(ModelNode... bootOperations) {
             bootOperationBuilder.setBootOperations(Arrays.asList(bootOperations));
-            return this;
-        }
-
-        @Override
-        public KernelServicesBuilder enableTransformerAttachmentGrabber() {
-            enableTransformerAttachmentGrabber = true;
             return this;
         }
 
@@ -673,7 +663,7 @@ final class SubsystemTestDelegate {
             bootOperationBuilder.validateNotAlreadyBuilt();
             List<ModelNode> bootOperations = bootOperationBuilder.build();
             AbstractKernelServicesImpl kernelServices = AbstractKernelServicesImpl.create(testClass, mainSubsystemName, additionalInit, ModelTestOperationValidatorFilter.createValidateAll(), cloneExtensionRegistry(additionalInit), bootOperations,
-                    testParser, mainExtension, null, legacyControllerInitializers.size() > 0, true, enableTransformerAttachmentGrabber);
+                    testParser, mainExtension, null, legacyControllerInitializers.size() > 0, true);
             SubsystemTestDelegate.this.kernelServices.add(kernelServices);
 
             validateDescriptionProviders(additionalInit, kernelServices);
@@ -722,6 +712,11 @@ final class SubsystemTestDelegate {
             ModelTestBootOperationsBuilder builder = new ModelTestBootOperationsBuilder(testClass, this);
             builder.setXmlResource(xmlResource);
             return builder.build();
+        }
+
+        @Override
+        public KernelServicesBuilder enableTransformerAttachmentGrabber() {
+            return this;
         }
 
     }
@@ -1074,32 +1069,6 @@ final class SubsystemTestDelegate {
         }
 
         @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, EnumSet<Flag> flags) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited, EntryType entryType) {
-        }
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited, EnumSet<Flag> flags) {
-        }
-
-
-        @Override
-        public void registerOperationHandler(String operationName, OperationStepHandler handler,
-                                             DescriptionProvider descriptionProvider, boolean inherited, EntryType entryType, EnumSet<Flag> flags) {
-        }
-
-        @Override
         public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler) {
 
         }
@@ -1110,12 +1079,12 @@ final class SubsystemTestDelegate {
         }
 
         @Override
-        public void registerCapability(Capability capability) {
+        public void registerCapability(RuntimeCapability capability) {
 
         }
 
         @Override
-        public Set<Capability> getCapabilities() {
+        public Set<RuntimeCapability> getCapabilities() {
             return Collections.emptySet();
         }
 

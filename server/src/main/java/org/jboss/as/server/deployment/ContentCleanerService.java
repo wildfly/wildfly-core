@@ -21,6 +21,11 @@
 package org.jboss.as.server.deployment;
 
 
+import static java.lang.Long.getLong;
+import static java.lang.System.getSecurityManager;
+import static java.security.AccessController.doPrivileged;
+
+import java.security.PrivilegedAction;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -41,10 +46,18 @@ import org.jboss.as.server.Services;
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
  */
 public class ContentCleanerService implements Service<Void> {
+
+   /**
+     * For testing purpose only.
+     *
+     * @deprecated DON'T USE IT.
+     */
+    @Deprecated
+    private static final String UNSUPPORTED_PROPERTY = "org.wildfly.unsupported.content.repository.obsolescence";
     /**
      * The conten repository cleaner will test content for clean-up every 5 minutes.
      */
-    public static final long DEFAULT_INTERVAL = 300000L;
+    public static final long DEFAULT_INTERVAL = getSecurityManager() == null ? getLong(UNSUPPORTED_PROPERTY, 300000L) : doPrivileged((PrivilegedAction<Long>) () -> getLong(UNSUPPORTED_PROPERTY, 300000L));
     /**
      * Standard ServiceName under which a service controller for an instance of
      * @code Service<ContentRepository> would be registered.

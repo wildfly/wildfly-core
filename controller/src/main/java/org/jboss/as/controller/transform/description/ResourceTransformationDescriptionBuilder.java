@@ -149,6 +149,21 @@ public interface ResourceTransformationDescriptionBuilder extends Transformation
     ResourceTransformationDescriptionBuilder addChildRedirection(PathElement current, PathElement legacy);
 
     /**
+     * Add a child resource, where all operations will get redirected to the legacy address. You can either pass in
+     * <ul>
+     * <li><b>Fixed elements</b> - e.g. {@code current:addr1=test} + {@code legacy:addr2=toast}, in which case {@code addr1=test} gets redirected to {@code addr2=toast}}</li>
+     * <li><b>Wildcard elements</b> - e.g. {@code current:addr1=*} + {@code legacy:addr2=*}, in which case {@code addr1=test} gets redirected to {@code addr2=test},
+     * {@code addr1=ping} gets redirected to {@code addr2=ping}, etc.</li>
+     * </ul>
+     *
+     * @param current the current path element
+     * @param legacy the legacy path element.
+     * @param dynamicDiscardPolicy a checker to decide whether the child should be added or not
+     * @return the builder for the child resource
+     */
+    ResourceTransformationDescriptionBuilder addChildRedirection(PathElement current, PathElement legacy, DynamicDiscardPolicy dynamicDiscardPolicy);
+
+    /**
      * Add a child resource, where all operation will get redirected to a different address defined by
      * the path transformation.
      *
@@ -159,13 +174,23 @@ public interface ResourceTransformationDescriptionBuilder extends Transformation
     ResourceTransformationDescriptionBuilder addChildRedirection(PathElement pathElement, PathAddressTransformer pathAddressTransformer);
 
     /**
+     * Add a child resource, where all operation will get redirected to a different address defined by
+     * the path transformation.
+     *
+     * @param pathElement the path element of the child
+     * @param pathAddressTransformer the path transformation
+     * @param dynamicDiscardPolicy a checker to decide whether the child should be added or not
+     * @return the builder for the child resource
+     */
+    ResourceTransformationDescriptionBuilder addChildRedirection(PathElement pathElement, PathAddressTransformer pathAddressTransformer, DynamicDiscardPolicy dynamicDiscardPolicy);
+
+    /**
      * Add an already created {@link TransformationDescriptionBuilder} as a child of this builder.
      *
      * @param builder the builder
      * @return the builder for this resource
      */
     ResourceTransformationDescriptionBuilder addChildBuilder(TransformationDescriptionBuilder builder);
-
 
     /**
      * Don't forward and just discard the operation.

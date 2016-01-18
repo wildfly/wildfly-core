@@ -55,6 +55,6 @@ public class ChildFirstClassLoaderKernelServicesFactory {
             additionalInit = AdditionalInitialization.MANAGEMENT;
         }
         return AbstractKernelServicesImpl.create(null, mainSubsystemName, additionalInit, validateOpsFilter,
-                extensionRegistry, bootOperations, testParser, extension, legacyModelVersion, false, persistXml, false);
+                extensionRegistry, bootOperations, testParser, extension, legacyModelVersion, false, persistXml);
     }
 }

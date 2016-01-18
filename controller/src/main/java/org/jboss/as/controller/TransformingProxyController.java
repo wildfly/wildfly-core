@@ -69,15 +69,48 @@ public interface TransformingProxyController extends ProxyController {
      */
     OperationTransformer.TransformedOperation transformOperation(OperationContext context, ModelNode operation) throws OperationFailedException;
 
-    public static class Factory {
+    /**
+     * Transform the operation.
+     *
+     * @param parameters parameters that drive the transformation
+     * @param operation the operation to transform.
+     * @return the transformed operation
+     * @throws OperationFailedException
+     */
+    OperationTransformer.TransformedOperation transformOperation(Transformers.TransformationInputs parameters, ModelNode operation) throws OperationFailedException;
 
+
+    /**
+     * Factory methods for creating a {@link TransformingProxyController}
+     */
+    class Factory {
+
+        /**
+         * Creates a {@link TransactionalProtocolClient} based on the given {@code channelAssociation} and then
+         * uses that to create a {@link TransformingProxyController}.
+         *
+         * @param channelAssociation the channel handler. Cannot be {@code null}
+         * @param transformers transformers to use for transforming resources and operations. Cannot be {@code null}
+         * @param pathAddress address under which the proxy controller is registered in the resource tree
+         * @param addressTranslator translator to use for converting local addresses to addresses appropriate for the target process
+         * @return the proxy controller. Will not be {@code null}
+         */
         public static TransformingProxyController create(final ManagementChannelHandler channelAssociation, final Transformers transformers, final PathAddress pathAddress, final ProxyOperationAddressTranslator addressTranslator) {
             final TransactionalProtocolClient client = TransactionalProtocolHandlers.createClient(channelAssociation);
             return create(client, transformers, pathAddress, addressTranslator);
         }
 
+        /**
+         * Creates a {@link TransformingProxyController} based on the given {@link TransactionalProtocolClient}.
+         * @param client the client for communicating with the target process. Cannot be {@code null}
+         * @param transformers transformers to use for transforming resources and operations. Cannot be {@code null}
+         * @param pathAddress address under which the proxy controller is registered in the resource tree
+         * @param addressTranslator translator to use for converting local addresses to addresses appropriate for the target process
+         * @return the proxy controller. Will not be {@code null}
+         */
         public static TransformingProxyController create(final TransactionalProtocolClient client, final Transformers transformers, final PathAddress pathAddress, final ProxyOperationAddressTranslator addressTranslator) {
-            final RemoteProxyController proxy = RemoteProxyController.create(client, pathAddress, addressTranslator);
+            final ModelVersion targetKernelVersion = transformers.getTarget().getVersion();
+            final RemoteProxyController proxy = RemoteProxyController.create(client, pathAddress, addressTranslator, targetKernelVersion);
             final Transformers delegating = new Transformers() {
                 @Override
                 public TransformationTarget getTarget() {
@@ -96,19 +129,19 @@ public interface TransformingProxyController extends ProxyController {
                 }
 
                 @Override
-                public OperationTransformer.TransformedOperation transformOperation(OperationContext operationContext, ModelNode original) throws OperationFailedException {
+                public OperationTransformer.TransformedOperation transformOperation(TransformationInputs transformationParameters, ModelNode original) throws OperationFailedException {
                     final ModelNode operation = proxy.translateOperationForProxy(original);
-                    return transformers.transformOperation(operationContext, operation);
+                    return transformers.transformOperation(transformationParameters, operation);
                 }
 
                 @Override
-                public Resource transformRootResource(OperationContext operationContext, Resource resource) throws OperationFailedException {
-                    return transformers.transformRootResource(operationContext, resource);
+                public Resource transformRootResource(TransformationInputs transformationParameters, Resource resource) throws OperationFailedException {
+                    return transformers.transformRootResource(transformationParameters, resource);
                 }
 
                 @Override
-                public Resource transformRootResource(OperationContext operationContext, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
-                    return transformers.transformRootResource(operationContext, resource, ignoredTransformationRegistry);
+                public Resource transformRootResource(TransformationInputs transformationParameters, Resource resource, ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
+                    return transformers.transformRootResource(transformationParameters, resource, ignoredTransformationRegistry);
                 }
             };
             return create(proxy, delegating);
@@ -118,53 +151,64 @@ public interface TransformingProxyController extends ProxyController {
             return new TransformingProxyControllerImpl(transformers, delegate);
         }
 
-    }
+        private static class TransformingProxyControllerImpl implements TransformingProxyController {
 
-    static class TransformingProxyControllerImpl implements TransformingProxyController {
+            private final RemoteProxyController proxy;
+            private final Transformers transformers;
 
-        private final RemoteProxyController proxy;
-        private final Transformers transformers;
-
-        public TransformingProxyControllerImpl(Transformers transformers, RemoteProxyController proxy) {
-            this.transformers = transformers;
-            this.proxy = proxy;
-        }
-
-        @Override
-        public TransactionalProtocolClient getProtocolClient() {
-            return proxy.getTransactionalProtocolClient();
-        }
-
-        @Override
-        public Transformers getTransformers() {
-            return transformers;
-        }
-
-        @Override
-        public PathAddress getProxyNodeAddress() {
-            return proxy.getProxyNodeAddress();
-        }
-
-        @Override
-        public OperationTransformer.TransformedOperation transformOperation(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            //Some transformers don't propagate the headers, back them up here and add them again
-            ModelNode operationHeaders = operation.hasDefined(OPERATION_HEADERS) ? operation.get(OPERATION_HEADERS) : null;
-            OperationTransformer.TransformedOperation transformed = transformers.transformOperation(context, operation);
-
-            if (operationHeaders != null) {
-                ModelNode transformedOp = transformed.getTransformedOperation();
-                if (transformedOp != null && !transformedOp.hasDefined(OPERATION_HEADERS)) {
-                    transformedOp.get(OPERATION_HEADERS).set(operationHeaders);
-                }
+            public TransformingProxyControllerImpl(Transformers transformers, RemoteProxyController proxy) {
+                this.transformers = transformers;
+                this.proxy = proxy;
             }
-            return transformed;
+
+            @Override
+            public TransactionalProtocolClient getProtocolClient() {
+                return proxy.getTransactionalProtocolClient();
+            }
+
+            @Override
+            public Transformers getTransformers() {
+                return transformers;
+            }
+
+            @Override
+            public PathAddress getProxyNodeAddress() {
+                return proxy.getProxyNodeAddress();
+            }
+
+            @Override
+            public OperationTransformer.TransformedOperation transformOperation(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+                return transformOperation(Transformers.TransformationInputs.getOrCreate(context), operation);
+            }
+
+            @Override
+            public OperationTransformer.TransformedOperation transformOperation(Transformers.TransformationInputs parameters, ModelNode operation) throws OperationFailedException {
+                //Some transformers don't propagate the headers, back them up here and add them again
+                ModelNode operationHeaders = operation.hasDefined(OPERATION_HEADERS) ? operation.get(OPERATION_HEADERS) : null;
+                OperationTransformer.TransformedOperation transformed = transformers.transformOperation(parameters, operation);
+
+                if (operationHeaders != null) {
+                    ModelNode transformedOp = transformed.getTransformedOperation();
+                    if (transformedOp != null && !transformedOp.hasDefined(OPERATION_HEADERS)) {
+                        transformedOp.get(OPERATION_HEADERS).set(operationHeaders);
+                    }
+                }
+                return transformed;
+            }
+
+            @Override
+            public void execute(final ModelNode operation, final OperationMessageHandler handler, final ProxyOperationControl control,
+                                final OperationAttachments attachments, final BlockingTimeout blockingTimeout) {
+                // Execute untransformed
+                proxy.execute(operation, handler, control, attachments, blockingTimeout);
+            }
+
+            @Override
+            public ModelVersion getKernelModelVersion() {
+                return proxy.getKernelModelVersion();
+            }
         }
 
-        @Override
-        public void execute(final ModelNode operation, final OperationMessageHandler handler, final ProxyOperationControl control, final OperationAttachments attachments) {
-            // Execute untransformed
-            proxy.execute(operation, handler, control, attachments);
-        }
     }
 
 }

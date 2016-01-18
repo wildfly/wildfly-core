@@ -43,10 +43,13 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.operations.MultistepUtil;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.MasterDomainControllerClient;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceNotFoundException;
 
 /**
  * Generic wrapper for certain slave host operations to determine whether there is missing or not needed configuration
@@ -126,8 +129,18 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
 
         // Validate references on the new model
         final Resource domain = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
+
         if (syncWithMaster(domain, hostElement)) {
-            final MasterDomainControllerClient masterDomainControllerClient = (MasterDomainControllerClient) context.getServiceRegistry(false).getRequiredService(MasterDomainControllerClient.SERVICE_NAME).getValue();
+            MasterDomainControllerClient masterDomainControllerClient = null;
+            try {
+                masterDomainControllerClient = (MasterDomainControllerClient) context.getServiceRegistry(false).getRequiredService(MasterDomainControllerClient.SERVICE_NAME).getValue();
+            } catch (ServiceNotFoundException e) {
+                // running in admin-only we shouldn't fail if the MDCC isn't available
+                if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
+                    return;
+                }
+                throw e;
+            }
             // This adds an immediate step to synchronize the model configuration before any other step will be executed
             masterDomainControllerClient.fetchAndSyncMissingConfiguration(context, original);
         }
@@ -246,8 +259,13 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
         }
 
         @Override
-        protected OperationStepHandler getOperationStepHandler(String operationName, PathAddress address, ModelNode operation, OperationEntry operationEntry) {
-            return wrapHandler(hostName, operationName, address, operationEntry);
+        protected MultistepUtil.OperationHandlerResolver getOperationHandlerResolver() {
+            return new MultistepUtil.OperationHandlerResolver() {
+                @Override
+                public OperationStepHandler getOperationStepHandler(String operationName, PathAddress address, ModelNode operation, OperationEntry operationEntry) {
+                    return wrapHandler(hostName, operationName, address, operationEntry);
+                }
+            };
         }
     }
 

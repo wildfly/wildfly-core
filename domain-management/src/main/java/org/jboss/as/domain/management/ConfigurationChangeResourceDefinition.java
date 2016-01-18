@@ -66,7 +66,7 @@ import org.jboss.dmr.ModelType;
 public class ConfigurationChangeResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition MAX_HISTORY = SimpleAttributeDefinitionBuilder.create(
-            ModelDescriptionConstants.MAX_HISTORY, ModelType.INT)
+            ModelDescriptionConstants.MAX_HISTORY, ModelType.INT, true)
             .setDefaultValue(new ModelNode(10))
             .build();
     public static final PathElement PATH = PathElement.pathElement(SERVICE, CONFIGURATION_CHANGES);
@@ -108,31 +108,35 @@ public class ConfigurationChangeResourceDefinition extends SimpleResourceDefinit
     }
 
     private static class ConfigurationChangeResourceRemoveHandler extends AbstractRemoveStepHandler {
+        @Override
+        protected boolean requiresRuntime(OperationContext context) {
+            return true;
+        }
 
-        public ConfigurationChangeResourceRemoveHandler() {
+        @Override
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+            super.performRuntime(context, operation, model);
             ConfigurationChangesCollector.INSTANCE.deactivate();
         }
     }
 
     private static class MaxHistoryWriteHandler extends AbstractWriteAttributeHandler<Integer> {
 
-        private static final MaxHistoryWriteHandler INSTANCE = new MaxHistoryWriteHandler(ConfigurationChangesCollector.INSTANCE);
         private final ConfigurationChangesCollector collector;
 
         private MaxHistoryWriteHandler(ConfigurationChangesCollector collector) {
+            super(MAX_HISTORY);
             this.collector = collector;
         }
 
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Integer> handbackHolder) throws OperationFailedException {
-            MAX_HISTORY.validateAndSet(operation, context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel());
             collector.setMaxHistory(resolvedValue.asInt());
             return true;
         }
 
         @Override
         protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Integer handback) throws OperationFailedException {
-            MAX_HISTORY.validateAndSet(operation, context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel());
             collector.setMaxHistory(valueToRestore.asInt());
         }
     }

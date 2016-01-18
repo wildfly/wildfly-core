@@ -23,7 +23,6 @@ package org.jboss.as.test.integration.management.base;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -32,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -40,9 +38,10 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.stream.StreamSource;
 
 import org.jboss.as.cli.operation.OperationFormatException;
-import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.test.integration.management.ManagementOperations;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
@@ -50,10 +49,6 @@ import org.jboss.as.test.integration.management.util.ModelUtil;
 import org.jboss.as.test.shared.staxmapper.XMLExtendedStreamWriterFactory;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
@@ -70,8 +65,6 @@ import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNo
  * @author Dominik Pospisil <dpospisi@redhat.com>
  */
 public abstract class AbstractMgmtTestBase {
-
-    private static File brokenWar = null;
 
     protected abstract ModelControllerClient getModelControllerClient();
 
@@ -98,7 +91,10 @@ public abstract class AbstractMgmtTestBase {
 
     protected ModelNode executeAndRollbackOperation(final ModelNode op) throws IOException, OperationFormatException {
 
-        ModelNode addDeploymentOp = createOpNode("deployment=malformedDeployment.war", "add");
+        ModelNode broken = Util.createOperation("read-attribute", PathAddress.EMPTY_ADDRESS);
+        broken.get("no-such-attribute").set("fail");
+
+        /*ModelNode addDeploymentOp = createOpNode("deployment=malformedDeployment.war", "add");
         addDeploymentOp.get("content").get(0).get("input-stream-index").set(0);
 
         DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
@@ -113,7 +109,13 @@ public abstract class AbstractMgmtTestBase {
         ModelNode compositeOp = ModelUtil.createCompositeNode(steps);
 
         OperationBuilder ob = new OperationBuilder(compositeOp, true);
-        ob.addInputStream(new FileInputStream(getBrokenWar()));
+        ob.addInputStream(new FileInputStream(getBrokenWar()));*/
+
+        ModelNode[] steps = new ModelNode[2];
+        steps[0] = op;
+        steps[1] = broken;
+        ModelNode compositeOp = ModelUtil.createCompositeNode(steps);
+        OperationBuilder ob = new OperationBuilder(compositeOp, true);
 
         return getModelControllerClient().execute(ob.build());
     }
@@ -124,19 +126,6 @@ public abstract class AbstractMgmtTestBase {
         operation.get(OP_ADDR).set(address);
         executeOperation(operation);
     }
-
-    private File getBrokenWar() {
-        if (brokenWar != null) return brokenWar;
-
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "deployment2.war");
-        //war.addClass(SimpleServlet.class);
-        war.addAsWebInfResource(new StringAsset("Malformed"), "web.xml");
-        brokenWar = new File(System.getProperty("java.io.tmpdir") + File.separator + "malformedDeployment.war");
-        brokenWar.deleteOnExit();
-        new ZipExporterImpl(war).exportTo(brokenWar, true);
-        return brokenWar;
-    }
-
     protected Map<String, ModelNode> getChildren(final ModelNode result) {
         assert result.isDefined();
         final Map<String, ModelNode> steps = new HashMap<String, ModelNode>();

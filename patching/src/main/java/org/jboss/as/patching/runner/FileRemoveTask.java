@@ -33,10 +33,12 @@ import java.util.List;
 
 import org.jboss.as.patching.HashUtils;
 import org.jboss.as.patching.IoUtils;
+import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.MiscContentItem;
+import org.jboss.as.patching.metadata.ModificationCondition;
 import org.jboss.as.patching.metadata.ModificationType;
 
 /**
@@ -64,6 +66,15 @@ class FileRemoveTask implements PatchingTask {
     @Override
     public ContentItem getContentItem() {
         return item;
+    }
+
+    @Override
+    public boolean isRelevant(PatchingTaskContext context) throws PatchingException {
+        final ModificationCondition condition = description.getModification().getCondition();
+        if(condition == null) {
+            return true;
+        }
+        return condition.isSatisfied(context);
     }
 
     @Override

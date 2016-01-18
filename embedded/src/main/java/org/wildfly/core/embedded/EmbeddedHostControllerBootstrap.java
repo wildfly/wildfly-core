@@ -56,15 +56,24 @@ public class EmbeddedHostControllerBootstrap {
     }
 
     public FutureServiceContainer bootstrap() throws Exception {
-        final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
-        final ControlledProcessState processState = new ControlledProcessState(true);
-        shutdownHook.setControlledProcessState(processState);
-        ServiceTarget target = serviceContainer.subTarget();
+        try {
+            final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
+            final ControlledProcessState processState = new ControlledProcessState(true);
+            shutdownHook.setControlledProcessState(processState);
+            ServiceTarget target = serviceContainer.subTarget();
 
-        final ServiceController<ControlledProcessStateService> serviceController = ControlledProcessStateService.addService(target, processState);
-        final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, true, futureContainer);
-        target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
-        return futureContainer;
+            final ServiceController<ControlledProcessStateService> serviceController = ControlledProcessStateService.addService(target, processState);
+            final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, futureContainer);
+            target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
+            return futureContainer;
+        } catch (RuntimeException | Error e) {
+            shutdownHook.run();
+            throw e;
+        }
+    }
+
+    public void failed() {
+        shutdownHook.run();
     }
 
     private static class ShutdownHook extends Thread {

@@ -50,7 +50,7 @@ final class FileUpdateTask extends AbstractFileTask {
         } else {
             type = ModificationType.MODIFY;
         }
-        return new ContentModification(item, targetHash, type);
+        return new ContentModification(item, targetHash, type, original.getCondition());
     }
 
     protected ContentModification getOriginalModification(byte[] targetHash, byte[] itemHash) {
@@ -61,6 +61,6 @@ final class FileUpdateTask extends AbstractFileTask {
         } else {
             type = ModificationType.MODIFY;
         }
-        return new ContentModification(original.getItem(), original.getTargetHash(), type);
+        return new ContentModification(original.getItem(), original.getTargetHash(), type, original.getCondition());
     }
 }

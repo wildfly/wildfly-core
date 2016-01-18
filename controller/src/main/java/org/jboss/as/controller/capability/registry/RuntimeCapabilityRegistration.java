@@ -22,13 +22,6 @@
 
 package org.jboss.as.controller.capability.registry;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.capability.RuntimeCapability;
 
 /**
@@ -40,11 +33,8 @@ import org.jboss.as.controller.capability.RuntimeCapability;
  */
 public class RuntimeCapabilityRegistration extends CapabilityRegistration<RuntimeCapability> {
 
-    private final Map<PathAddress, RegistrationPoint> registrationPoints = new LinkedHashMap<>();
-
-    public RuntimeCapabilityRegistration(RuntimeCapability capability, CapabilityContext context, RegistrationPoint registrationPoint) {
-        super(capability, context);
-        this.registrationPoints.put(registrationPoint.getAddress(), registrationPoint);
+    public RuntimeCapabilityRegistration(RuntimeCapability capability, CapabilityScope context, RegistrationPoint registrationPoint) {
+        super(capability, context, registrationPoint);
     }
 
     /**
@@ -53,46 +43,6 @@ public class RuntimeCapabilityRegistration extends CapabilityRegistration<Runtim
      * @param toCopy the registration to copy. Cannot be {@code null}
      */
     public RuntimeCapabilityRegistration(RuntimeCapabilityRegistration toCopy) {
-        super(toCopy.getCapability(), toCopy.getCapabilityContext());
-        this.registrationPoints.putAll(toCopy.registrationPoints);
-    }
-
-    /**
-     * Gets the registration point that been associated with the registration for the longest period.
-     * @return the initial registration point, or {@code null} if there are no longer any registration points
-     */
-    public synchronized RegistrationPoint getOldestRegistrationPoint() {
-        return registrationPoints.size() == 0 ? null : registrationPoints.values().iterator().next();
-    }
-
-    /**
-     * Get all registration points associated with this registration.
-     *
-     * @return all registration points. Will not be {@code null} but may be empty
-     */
-    public synchronized Set<RegistrationPoint> getRegistrationPoints() {
-        return Collections.unmodifiableSet(new HashSet<>(registrationPoints.values()));
-    }
-
-    public synchronized boolean addRegistrationPoint(RegistrationPoint toAdd) {
-        PathAddress addedAddress = toAdd.getAddress();
-        if (registrationPoints.containsKey(addedAddress)) {
-            return false;
-        }
-        registrationPoints.put(addedAddress, toAdd);
-        return true;
-    }
-
-    public synchronized boolean removeRegistrationPoint(RegistrationPoint toAdd) {
-        PathAddress addedAddress = toAdd.getAddress();
-        if (!registrationPoints.containsKey(addedAddress)) {
-            return false;
-        }
-        registrationPoints.remove(addedAddress);
-        return true;
-    }
-
-    public synchronized int getRegistrationPointCount() {
-        return registrationPoints.size();
+        super(toCopy);
     }
 }

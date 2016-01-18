@@ -63,12 +63,15 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USE
 import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingOneOf;
+import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
 import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import static org.jboss.as.controller.parsing.WriteUtils.writeAttribute;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_ACCESS_TIME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_SEARCH_TIME;
@@ -93,11 +96,13 @@ import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionPropertyResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition;
@@ -129,13 +134,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
-
-import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
 
 
 /**
@@ -1920,11 +1918,11 @@ class ManagementXml_4 extends ManagementXml {
         ModelNode securityRealms = management.get(SECURITY_REALM);
         writer.writeStartElement(Element.SECURITY_REALMS.getLocalName());
 
-        for (Property variable : securityRealms.asPropertyList()) {
+        for (String variableName : securityRealms.keys()) {
             writer.writeStartElement(Element.SECURITY_REALM.getLocalName());
-            writeAttribute(writer, Attribute.NAME, variable.getName());
+            writeAttribute(writer, Attribute.NAME, variableName);
 
-            ModelNode realm = variable.getValue();
+            ModelNode realm = securityRealms.get(variableName);
             if (realm.hasDefined(PLUG_IN)) {
                 writePlugIns(writer, realm.get(PLUG_IN));
             }
@@ -1945,9 +1943,9 @@ class ManagementXml_4 extends ManagementXml {
 
     private void writePlugIns(XMLExtendedStreamWriter writer, ModelNode plugIns) throws XMLStreamException {
         writer.writeStartElement(Element.PLUG_INS.getLocalName());
-        for (Property variable : plugIns.asPropertyList()) {
+        for (String variable : plugIns.keys()) {
             writer.writeEmptyElement(Element.PLUG_IN.getLocalName());
-            writer.writeAttribute(Attribute.MODULE.getLocalName(), variable.getName());
+            writer.writeAttribute(Attribute.MODULE.getLocalName(), variable);
         }
         writer.writeEndElement();
     }
@@ -1960,11 +1958,11 @@ class ManagementXml_4 extends ManagementXml {
             ModelNode kerberos = serverIdentities.require(KERBEROS);
 
             if (kerberos.hasDefined(KEYTAB)) {
-                List<Property> keytabList = kerberos.get(KEYTAB).asPropertyList();
-                for (Property current : keytabList) {
-                    ModelNode currentNode = current.getValue();
+                ModelNode keytabs = kerberos.get(KEYTAB);
+                for (String current : keytabs.keys()) {
+                    ModelNode currentNode = keytabs.get(current);
                     writer.writeEmptyElement(KEYTAB);
-                    writer.writeAttribute(Attribute.PRINCIPAL.getLocalName(), current.getName());
+                    writer.writeAttribute(Attribute.PRINCIPAL.getLocalName(), current);
                     KeytabResourceDefinition.PATH.marshallAsAttribute(currentNode, writer);
                     KeytabResourceDefinition.RELATIVE_TO.marshallAsAttribute(currentNode, writer);
                     KeytabResourceDefinition.FOR_HOSTS.getAttributeMarshaller()
@@ -2099,9 +2097,8 @@ class ManagementXml_4 extends ManagementXml {
             ModelNode userDomain = authentication.get(USERS);
             ModelNode users = userDomain.hasDefined(USER) ? userDomain.require(USER) : new ModelNode().setEmptyObject();
             writer.writeStartElement(Element.USERS.getLocalName());
-            for (Property userProps : users.asPropertyList()) {
-                String userName = userProps.getName();
-                ModelNode currentUser = userProps.getValue();
+            for (String userName : users.keys()) {
+                ModelNode currentUser = users.get(userName);
                 writer.writeStartElement(Element.USER.getLocalName());
                 writer.writeAttribute(Attribute.USERNAME.getLocalName(), userName);
                 UserResourceDefinition.PASSWORD.marshallAsElement(currentUser, writer);
@@ -2121,10 +2118,11 @@ class ManagementXml_4 extends ManagementXml {
         PlugInAuthenticationResourceDefinition.MECHANISM.marshallAsAttribute(plugIn, writer);
         if (plugIn.hasDefined(PROPERTY)) {
             writer.writeStartElement(PROPERTIES);
-            for (Property current : plugIn.get(PROPERTY).asPropertyList()) {
+            ModelNode properties = plugIn.get(PROPERTY);
+            for (String current : properties.keys()) {
                 writer.writeEmptyElement(PROPERTY);
-                writer.writeAttribute(Attribute.NAME.getLocalName(), current.getName());
-                PropertyResourceDefinition.VALUE.marshallAsAttribute(current.getValue(), writer);
+                writer.writeAttribute(Attribute.NAME.getLocalName(), current);
+                PropertyResourceDefinition.VALUE.marshallAsAttribute(properties.get(current), writer);
             }
             writer.writeEndElement();
         }
@@ -2240,10 +2238,11 @@ class ManagementXml_4 extends ManagementXml {
         AbstractPlugInAuthResourceDefinition.NAME.marshallAsAttribute(plugIn, writer);
         if (plugIn.hasDefined(PROPERTY)) {
             writer.writeStartElement(PROPERTIES);
-            for (Property current : plugIn.get(PROPERTY).asPropertyList()) {
+            ModelNode properties = plugIn.get(PROPERTY);
+            for (String current : properties.keys()) {
                 writer.writeEmptyElement(PROPERTY);
-                writer.writeAttribute(Attribute.NAME.getLocalName(), current.getName());
-                PropertyResourceDefinition.VALUE.marshallAsAttribute(current.getValue(), writer);
+                writer.writeAttribute(Attribute.NAME.getLocalName(), current);
+                PropertyResourceDefinition.VALUE.marshallAsAttribute(properties.get(current), writer);
             }
             writer.writeEndElement();
         }
@@ -2254,10 +2253,11 @@ class ManagementXml_4 extends ManagementXml {
 
         writer.writeStartElement(Element.OUTBOUND_CONNECTIONS.getLocalName());
 
-        for (Property variable : management.get(LDAP_CONNECTION).asPropertyList()) {
-            ModelNode connection = variable.getValue();
+        ModelNode ldapConns = management.get(LDAP_CONNECTION);
+        for (String variable : ldapConns.keys()) {
+            ModelNode connection = ldapConns.get(variable);
             writer.writeStartElement(Element.LDAP.getLocalName());
-            writer.writeAttribute(Attribute.NAME.getLocalName(), variable.getName());
+            writer.writeAttribute(Attribute.NAME.getLocalName(), variable);
             LdapConnectionResourceDefinition.URL.marshallAsAttribute(connection, writer);
             LdapConnectionResourceDefinition.SEARCH_DN.marshallAsAttribute(connection, writer);
             LdapConnectionResourceDefinition.SEARCH_CREDENTIAL.marshallAsAttribute(connection, writer);
@@ -2268,13 +2268,14 @@ class ManagementXml_4 extends ManagementXml {
                     .marshallAsAttribute(LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR, connection, true, writer);
 
             if (connection.hasDefined(PROPERTY)) {
-                List<Property> propertyList = connection.get(PROPERTY).asPropertyList();
-                if (propertyList.size() > 0) {
+                ModelNode properties = connection.get(PROPERTY);
+                Set<String> propertySet = properties.keys();
+                if (propertySet.size() > 0) {
                     writer.writeStartElement(PROPERTIES);
-                    for (Property current : propertyList) {
+                    for (String current : propertySet) {
                         writer.writeEmptyElement(PROPERTY);
-                        writer.writeAttribute(Attribute.NAME.getLocalName(), current.getName());
-                        LdapConnectionPropertyResourceDefinition.VALUE.marshallAsAttribute(current.getValue(), writer);
+                        writer.writeAttribute(Attribute.NAME.getLocalName(), current);
+                        LdapConnectionPropertyResourceDefinition.VALUE.marshallAsAttribute(properties.get(current), writer);
                     }
                     writer.writeEndElement();
                 }

@@ -59,7 +59,7 @@
 
     <domain-controller>
         <!-- Remote domain controller configuration with a host and port -->
-        <remote host="${jboss.test.host.master.address}" port="9999" security-realm="ManagementRealm">
+        <remote host="${jboss.test.host.master.address}" port="9999" security-realm="ManagementRealm" ignore-unused-configuration="false">
         </remote>
     </domain-controller>
 
@@ -75,6 +75,7 @@
  	<jvms>
  	   <jvm name="default">
           <heap size="64m" max-size="128m"/>
+           <jvm-options><option value="-ea"/></jvm-options>
        </jvm>
  	</jvms>
 

@@ -54,7 +54,6 @@ import java.security.Principal;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumMap;
@@ -69,10 +68,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.jboss.as.controller.ConfigurationChangesCollector.ConfigurationChange;
 
 import javax.security.auth.Subject;
 
+import org.jboss.as.controller.ConfigurationChangesCollector.ConfigurationChange;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.audit.AuditLogger;
@@ -131,10 +130,18 @@ abstract class AbstractOperationContext implements OperationContext {
     boolean respectInterruption = true;
 
     /**
-     * The notifications are stored when {@code emit(Notification)} is callend and effectively
+     * The notifications are stored when {@code emit(Notification)} is called and effectively
      * emitted at the end of the operation execution if it is successful
      */
     private final Queue<Notification> notifications;
+
+    /**
+     * Notifications descriptions are checked in {@code emit(Notification)} to use the resource registration
+     * when the operation is performed on the resource [WFCORE-1007]
+     * Similar to {@code notifications}, the eventual warnings will be buffered and actually logged
+     * at the end of the operation execution if it is successful.
+     */
+    private final Queue<String> missingNotificationDescriptionWarnings;
 
     Stage currentStage = Stage.MODEL;
 
@@ -187,6 +194,7 @@ abstract class AbstractOperationContext implements OperationContext {
         this.auditLogger = auditLogger;
         this.notificationSupport = notificationSupport;
         this.notifications = new ConcurrentLinkedQueue<Notification>();
+        this.missingNotificationDescriptionWarnings = new ConcurrentLinkedQueue<String>();
         this.controller = controller;
         steps = new EnumMap<Stage, Deque<Step>>(Stage.class);
         for (Stage stage : Stage.values()) {
@@ -366,7 +374,9 @@ abstract class AbstractOperationContext implements OperationContext {
             } else {
                 report(MessageSeverity.INFO, ControllerLogger.ROOT_LOGGER.operationRollingBack());
             }
-            return resultAction;
+        } catch (RuntimeException e) {
+            handleUncaughtException(e);
+            ControllerLogger.MGMT_OP_LOGGER.unexpectedOperationExecutionException(e, controllerOperations);
         } finally {
             // On failure close any attached response streams
             if (resultAction != ResultAction.KEEP && !isBooting()) {
@@ -386,6 +396,13 @@ abstract class AbstractOperationContext implements OperationContext {
                 }
             }
         }
+
+
+        return resultAction;
+    }
+
+    /** Opportunity to do required cleanup after an exception propagated all the way to {@link #executeOperation()}.*/
+    void handleUncaughtException(RuntimeException e) {
     }
 
     @Override
@@ -462,6 +479,11 @@ abstract class AbstractOperationContext implements OperationContext {
      * @throws ConfigurationPersistenceException if there is a problem creating the persistence resource
      */
     abstract ConfigurationPersister.PersistenceResource createPersistenceResource() throws ConfigurationPersistenceException;
+
+    /**
+     * publish any changes to capability registery
+     */
+    abstract void publishCapabilityRegistry();
 
     /**
      * Notification that the operation is not going to proceed to normal completion.
@@ -594,7 +616,7 @@ abstract class AbstractOperationContext implements OperationContext {
                 }
                 // No steps remain in this stage; give subclasses a chance to check status
                 // and approve moving to the next stage
-                if (!stageCompleted(currentStage)) {
+                if (!tryStageCompleted(currentStage)) {
                     // Can't continue
                     resultAction = ResultAction.ROLLBACK;
                     executeResultHandlerPhase(null);
@@ -658,6 +680,20 @@ abstract class AbstractOperationContext implements OperationContext {
         executeDoneStage(primaryResponse);
     }
 
+    private boolean tryStageCompleted(Stage currentStage) {
+        boolean result;
+        try {
+            result = stageCompleted(currentStage);
+        } catch (RuntimeException e) {
+            result = false;
+            if (!initialResponse.hasDefined(FAILURE_DESCRIPTION)) {
+                initialResponse.get(FAILURE_DESCRIPTION).set(ControllerLogger.MGMT_OP_LOGGER.unexpectedOperationExecutionFailureDescription(e));
+            }
+            ControllerLogger.MGMT_OP_LOGGER.unexpectedOperationExecutionException(e, controllerOperations);
+        }
+        return result;
+    }
+
     private void executeDoneStage(ModelNode primaryResponse) {
 
         // All steps are completed without triggering rollback;
@@ -707,6 +743,9 @@ abstract class AbstractOperationContext implements OperationContext {
                     persistenceResource.commit();
                 }
             }
+            if (resultAction != ResultAction.ROLLBACK) {
+                publishCapabilityRegistry();
+            }
         } catch (Throwable t) {
             toThrow = t;
             resultAction = ResultAction.ROLLBACK;
@@ -731,7 +770,9 @@ abstract class AbstractOperationContext implements OperationContext {
 
     @Override
     public void emit(Notification notification) {
-        // buffer the notifications but emit them only when an operation is successful.
+        // buffer the notification and eventual missing description warning now
+        // but emit it and log the warning only when an operation is successful in emitNotifications()
+        checkUndefinedNotification(notification);
         notifications.add(notification);
 
         if (modifiedResourcesForModelValidation != null) {
@@ -765,13 +806,18 @@ abstract class AbstractOperationContext implements OperationContext {
 
 
     private void emitNotifications() {
-        // emit notifications only if the action is kept
+        // emit notifications and log missing descriptions warnings only if the action is kept
         if (resultAction != ResultAction.ROLLBACK) {
+            synchronized (missingNotificationDescriptionWarnings) {
+                for (String warning : missingNotificationDescriptionWarnings) {
+                    ControllerLogger.ROOT_LOGGER.warn(warning);
+                }
+                missingNotificationDescriptionWarnings.clear();
+            }
             synchronized (notifications) {
                 if (notifications.isEmpty()) {
                     return;
                 }
-                checkUndefinedNotifications(notifications);
                 notificationSupport.emit(notifications.toArray(new Notification[notifications.size()]));
                 notifications.clear();
             }
@@ -781,14 +827,12 @@ abstract class AbstractOperationContext implements OperationContext {
     /**
      * Check that each emitted notification is properly described by its source.
      */
-    private void checkUndefinedNotifications(Collection<Notification> notifications) {
-        for (Notification notification : notifications) {
-            String type = notification.getType();
-            PathAddress source = notification.getSource();
-            Map<String, NotificationEntry> descriptions = getRootResourceRegistration().getNotificationDescriptions(source, true);
-            if (!descriptions.keySet().contains(type)) {
-                ControllerLogger.ROOT_LOGGER.notificationIsNotDescribed(type, source);
-            }
+    private void checkUndefinedNotification(Notification notification) {
+        String type = notification.getType();
+        PathAddress source = notification.getSource();
+        Map<String, NotificationEntry> descriptions = getRootResourceRegistration().getNotificationDescriptions(source, true);
+        if (!descriptions.keySet().contains(type)) {
+            missingNotificationDescriptionWarnings.add(ControllerLogger.ROOT_LOGGER.notificationIsNotDescribed(type, source));
         }
     }
 

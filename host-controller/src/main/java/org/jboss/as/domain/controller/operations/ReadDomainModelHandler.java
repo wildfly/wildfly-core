@@ -25,8 +25,6 @@ package org.jboss.as.domain.controller.operations;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.dmr.ModelNode;
 
@@ -49,8 +47,9 @@ class ReadDomainModelHandler implements OperationStepHandler {
         // Acquire the lock to make sure that nobody can modify the model before the slave has applied it
         context.acquireControllerLock();
 
-        final Resource rootResource = context.readResource(PathAddress.EMPTY_ADDRESS, true);
-        final ReadMasterDomainModelUtil readUtil = ReadMasterDomainModelUtil.readMasterDomainResourcesForInitialConnect(context, transformers, rootResource, ignoredTransformationRegistry);
+        final Transformers.TransformationInputs transformationInputs = new Transformers.TransformationInputs(context);
+        final ReadMasterDomainModelUtil readUtil = ReadMasterDomainModelUtil.readMasterDomainResourcesForInitialConnect(transformers,
+                transformationInputs, ignoredTransformationRegistry, transformationInputs.getRootResource());
         context.getResult().set(readUtil.getDescribedResources());
     }
 

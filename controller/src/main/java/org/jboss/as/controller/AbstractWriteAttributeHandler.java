@@ -74,7 +74,6 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
         final String attributeName = operation.require(NAME).asString();
         // Don't require VALUE. Let the validator decide if it's bothered by an undefined value
         ModelNode newValue = operation.hasDefined(VALUE) ? operation.get(VALUE) : new ModelNode();
-        validateUnresolvedValue(attributeName, newValue);
         final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         final ModelNode submodel = resource.getModel();
         final ModelNode currentValue = submodel.get(attributeName).clone();
@@ -101,7 +100,6 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                     final ModelNode resolvedValue = attributeDefinition != null ? attributeDefinition.resolveModelAttribute(context, submodel) : updatedValue.resolve();
-                    validateResolvedValue(attributeName, updatedValue);
                     final HandbackHolder<T> handback = new HandbackHolder<T>();
                     final boolean reloadRequired = applyUpdateToRuntime(context, operation, attributeName, resolvedValue, currentValue, handback);
                     if (reloadRequired) {
@@ -176,31 +174,6 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
     protected abstract void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                                                   ModelNode valueToRestore, ModelNode valueToRevert, T handback)
             throws OperationFailedException;
-
-    /**
-     * Does nothing. Subclasses can alter this behavior.
-     *
-     * @param attributeName the name of the attribute being updated
-     * @param unresolvedValue the unresolved value
-     *
-     * @deprecated the {@link AttributeDefinition} provided to the constructor will validate
-     */
-    @Deprecated
-    protected void validateUnresolvedValue(final String attributeName, final ModelNode unresolvedValue) throws OperationFailedException {
-        // TODO remove
-    }
-
-    /**
-     * Does nothing. Subclasses can alter this behavior.
-     *
-     * @param attributeName the name of the attribute being updated
-     * @param resolvedValue the resolved value
-     * @deprecated the {@link AttributeDefinition} provided to the constructor will validate
-     */
-    @Deprecated
-    protected void validateResolvedValue(final String attributeName, final ModelNode resolvedValue) throws OperationFailedException {
-        // TODO remove
-    }
 
     /**
      * Record any new requirements for other {@link org.jboss.as.controller.capability.RuntimeCapability capabilities}

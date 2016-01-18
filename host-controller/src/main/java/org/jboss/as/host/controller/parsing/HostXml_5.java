@@ -240,8 +240,9 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         }
         if (modelNode.hasDefined(JVM)) {
             writer.writeStartElement(Element.JVMS.getLocalName());
-            for (final Property jvm : modelNode.get(JVM).asPropertyList()) {
-                JvmXml.writeJVMElement(writer, jvm.getName(), jvm.getValue());
+            ModelNode jvms = modelNode.get(JVM);
+            for (final String jvm : jvms.keys()) {
+                JvmXml.writeJVMElement(writer, jvm, jvms.get(jvm));
             }
             writer.writeEndElement();
             WriteUtils.writeNewLine(writer);

@@ -27,8 +27,10 @@ package org.jboss.as.cli.handlers.ifelse;
  */
 public class LesserThanOperation extends SameTypeOperation {
 
+    static final String SYMBOL = "<";
+
     LesserThanOperation() {
-        super(ExpressionParser.LT);
+        super(SYMBOL);
     }
 
     @Override

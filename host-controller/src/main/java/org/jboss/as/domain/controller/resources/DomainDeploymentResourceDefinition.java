@@ -55,7 +55,7 @@ class DomainDeploymentResourceDefinition extends DeploymentResourceDefinition {
     public static DomainDeploymentResourceDefinition createForDomainSlave(boolean backupDC, HostFileRepository fileRepository, ContentRepository contentRepository) {
         return new DomainDeploymentResourceDefinition(DeploymentResourceParent.DOMAIN,
                 DeploymentAttributes.DOMAIN_DEPLOYMENT_ADD_DEFINITION,
-                new DeploymentAddHandler(backupDC ? fileRepository : null),
+                backupDC ? new DeploymentAddHandler(fileRepository, contentRepository) :  new DeploymentAddHandler(null, null),
                 DeploymentRemoveHandler.createForSlave(fileRepository, contentRepository));
     }
 

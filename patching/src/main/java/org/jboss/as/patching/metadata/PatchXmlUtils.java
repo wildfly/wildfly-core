@@ -38,9 +38,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.metadata.impl.PatchElementImpl;
 import org.jboss.as.patching.metadata.impl.PatchElementProviderImpl;
@@ -52,7 +55,6 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author Emanuel Muckenhuber
  */
 class PatchXmlUtils implements XMLStreamConstants {
-
 
     private static final String PATH_DELIMITER = "/";
 
@@ -110,6 +112,7 @@ class PatchXmlUtils implements XMLStreamConstants {
         NAME("name"),
         NEW_HASH("new-hash"),
         PATH("path"),
+        CONDITION("condition"),
         SLOT("slot"),
         TO_VERSION("to-version"),
         URL("url"),
@@ -441,12 +444,11 @@ class PatchXmlUtils implements XMLStreamConstants {
         boolean isAddOn = false;
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            if(Attribute.NAME == attribute) {
-                name = value;
+            if (Attribute.NAME == attribute) {
+                name = reader.getAttributeValue(i);
             } else if (Attribute.ADD_ON == attribute) {
-                isAddOn = Boolean.valueOf(value);
+                isAddOn = Boolean.valueOf(reader.getAttributeValue(i));
             } else {
                 throw unexpectedAttribute(reader, i);
             }
@@ -495,14 +497,13 @@ class PatchXmlUtils implements XMLStreamConstants {
         String resultingVersion = null;
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            if(Attribute.VERSION == attribute) {
-                version = value;
-            } else if(Attribute.TO_VERSION == attribute) {
-                resultingVersion = value;
-            } else if(Attribute.NAME == attribute) {
-                name = value;
+            if (Attribute.VERSION == attribute) {
+                version = reader.getAttributeValue(i);
+            } else if (Attribute.TO_VERSION == attribute) {
+                resultingVersion = reader.getAttributeValue(i);
+            } else if (Attribute.NAME == attribute) {
+                name = reader.getAttributeValue(i);
             } else {
                 throw unexpectedAttribute(reader, i);
             }
@@ -633,27 +634,26 @@ class PatchXmlUtils implements XMLStreamConstants {
 
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
             switch (attribute) {
                 case NAME:
-                    moduleName = value;
+                    moduleName = reader.getAttributeValue(i);
                     break;
                 case SLOT:
-                    slot = value;
+                    slot = reader.getAttributeValue(i);
                     break;
                 case HASH:
-                    if(modificationType == ModificationType.REMOVE) {
-                        targetHash = hexStringToByteArray(value);
+                    if (modificationType == ModificationType.REMOVE) {
+                        targetHash = hexStringToByteArray(reader.getAttributeValue(i));
                     } else {
-                        hash = hexStringToByteArray(value);
+                        hash = hexStringToByteArray(reader.getAttributeValue(i));
                     }
                     break;
                 case NEW_HASH:
-                    if(modificationType == ModificationType.REMOVE) {
-                        hash = hexStringToByteArray(value);
+                    if (modificationType == ModificationType.REMOVE) {
+                        hash = hexStringToByteArray(reader.getAttributeValue(i));
                     } else {
-                        targetHash = hexStringToByteArray(value);
+                        targetHash = hexStringToByteArray(reader.getAttributeValue(i));
                     }
                     break;
                 default:
@@ -673,34 +673,42 @@ class PatchXmlUtils implements XMLStreamConstants {
         boolean directory = false;
         boolean affectsRuntime = false;
         byte[] targetHash = NO_CONTENT;
+        ModificationCondition condition = null;
 
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
             switch (attribute) {
                 case DIRECTORY:
-                    directory = Boolean.parseBoolean(value);
+                    directory = Boolean.parseBoolean(reader.getAttributeValue(i));
                     break;
                 case PATH:
-                    path = value;
+                    path = reader.getAttributeValue(i);
                     break;
                 case HASH:
-                    if(type == ModificationType.REMOVE) {
-                        targetHash = hexStringToByteArray(value);
+                    if (type == ModificationType.REMOVE) {
+                        targetHash = hexStringToByteArray(reader.getAttributeValue(i));
                     } else {
-                        hash = hexStringToByteArray(value);
+                        hash = hexStringToByteArray(reader.getAttributeValue(i));
                     }
                     break;
                 case NEW_HASH:
-                    if(type == ModificationType.REMOVE) {
-                        hash = hexStringToByteArray(value);
+                    if (type == ModificationType.REMOVE) {
+                        hash = hexStringToByteArray(reader.getAttributeValue(i));
                     } else {
-                        targetHash = hexStringToByteArray(value);
+                        targetHash = hexStringToByteArray(reader.getAttributeValue(i));
                     }
                     break;
                 case IN_RUNTIME_USE:
-                    affectsRuntime = Boolean.parseBoolean(value);
+                    affectsRuntime = Boolean.parseBoolean(reader.getAttributeValue(i));
+                    break;
+                case CONDITION:
+                    try {
+                        condition = ModificationCondition.Factory.fromString(reader.getAttributeValue(i));
+                    } catch (PatchingException e) {
+                        throw ControllerLogger.ROOT_LOGGER.invalidAttributeValue(reader.getAttributeValue(i), new QName(
+                                attribute.name), reader.getLocation());
+                    }
                     break;
                 default:
                     throw unexpectedAttribute(reader, i);
@@ -708,14 +716,16 @@ class PatchXmlUtils implements XMLStreamConstants {
         }
         requireNoContent(reader);
 
-        // process path
+        final MiscContentItem item = createMiscItem(path, hash, directory, affectsRuntime);
+        return new ContentModification(item, targetHash, type, condition);
+    }
+
+    private static MiscContentItem createMiscItem(String path, byte[] hash, boolean directory, boolean affectsRuntime) {
         final String[] s = path.split(PATH_DELIMITER);
         final int length = s.length;
         final String name = s[length - 1];
         final String[] itemPath = Arrays.copyOf(s, length - 1);
-
-        final MiscContentItem item = new MiscContentItem(name, itemPath, hash, directory, affectsRuntime);
-        return new ContentModification(item, targetHash, type);
+        return new MiscContentItem(name, itemPath, hash, directory, affectsRuntime);
     }
 
     protected static void writeAppliesToVersions(XMLExtendedStreamWriter writer, List<String> appliesTo) throws XMLStreamException {
@@ -782,6 +792,11 @@ class PatchXmlUtils implements XMLStreamConstants {
         writer.writeAttribute(Attribute.PATH.name, path.toString());
         if (item.isDirectory()) {
             writer.writeAttribute(Attribute.DIRECTORY.name, "true");
+        }
+
+        final ModificationCondition condition = modification.getCondition();
+        if(condition != null) {
+            writer.writeAttribute(Attribute.CONDITION.name, condition.toString());
         }
 
         if(type == ModificationType.REMOVE) {

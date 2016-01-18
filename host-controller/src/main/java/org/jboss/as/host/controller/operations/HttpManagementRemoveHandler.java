@@ -19,22 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
 
 import java.util.Collections;
-
-import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.host.controller.HostControllerEnvironment;
-import org.jboss.as.remoting.RemotingHttpUpgradeService;
-import org.jboss.as.remoting.RemotingServices;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
-import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -42,15 +40,12 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
+public class HttpManagementRemoveHandler extends ReloadRequiredRemoveStepHandler {
 
-    private final LocalHostControllerInfoImpl hostControllerInfo;
-    private final HostControllerEnvironment environment;
+    public static final HttpManagementRemoveHandler INSTANCE = new HttpManagementRemoveHandler();
 
-    public HttpManagementRemoveHandler(final LocalHostControllerInfoImpl hostControllerInfo, final HostControllerEnvironment environment) {
+    public HttpManagementRemoveHandler() {
         super(HTTP_MANAGEMENT_CAPABILITY);
-        this.hostControllerInfo = hostControllerInfo;
-        this.environment = environment;
     }
 
     @Override
@@ -59,20 +54,12 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        context.removeService(UndertowHttpManagementService.SERVICE_NAME);
-        context.removeService(UndertowHttpManagementService.SERVICE_NAME.append("requests"));
-        context.removeService(UndertowHttpManagementService.SERVICE_NAME.append("shutdown"));
-
-        RemotingServices.removeConnectorServices(context, ManagementRemotingServices.HTTP_CONNECTOR);
-        context.removeService(RemotingHttpUpgradeService.UPGRADE_SERVICE_NAME.append(ManagementRemotingServices.HTTP_CONNECTOR));
-        clearHostControllerInfo(hostControllerInfo);
-    }
-
-    @Override
-    protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        HttpManagementAddHandler.populateHostControllerInfo(hostControllerInfo, context, model);
-        HttpManagementAddHandler.installHttpManagementServices(environment, hostControllerInfo, context, model);
+    protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        final PathAddress nativeAddress = context.getCurrentAddress().getParent().append(PathElement.pathElement(MANAGEMENT_INTERFACE, NATIVE_INTERFACE));
+        context.addStep((OperationContext opContext, ModelNode op) -> {
+            ManagementRemotingServices.isManagementResourceRemoveable(opContext, nativeAddress);
+        }, OperationContext.Stage.MODEL, false);
+        super.performRemove(context, operation, model);
     }
 
     static void clearHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo) {
@@ -81,6 +68,6 @@ public class HttpManagementRemoveHandler extends AbstractRemoveStepHandler {
         hostControllerInfo.setHttpManagementSecureInterface(null);
         hostControllerInfo.setHttpManagementSecurePort(0);
         hostControllerInfo.setHttpManagementSecurityRealm(null);
-        hostControllerInfo.setAllowedOrigins(Collections.EMPTY_LIST);
+        hostControllerInfo.setAllowedOrigins(Collections.emptyList());
     }
 }

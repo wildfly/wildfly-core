@@ -37,6 +37,7 @@ ACTION: rollback
 
     patch rollback  --reset-configuration=(true|false)
       [--patch-id=<id>]
+      [--patch-stream=<patch-stream-name>]
       [--rollback-to]
       [--override-all]
       [--override-modules]
@@ -71,7 +72,7 @@ ACTION: info
 
     patch info
       [--host=<host>]
-      [--patch-id=<id> [--verbose]]
+      [(--patch-id=<id> [--verbose] [--patch-stream=<patch-stream-name>]) | --streams]
       [--distribution=<target-distribution>]
       [--module-path=<modules-dir>]
       [--bundle-path=<bundles-dir>]
@@ -86,11 +87,15 @@ ACTION: info
                            include details of the layer/add-on patches included
                            in the patch.
 
+      --streams          - Optional, will print patch stream names of the patches
+                           applied to the installation.
+
 ACTION: history
 
     Patching history
 
     patch history
+      [--patch-stream=<patch-stream-name>]
       [--host=<host>]
       [--distribution=<target-distribution>]
       [--module-path=<modules-dir>]
@@ -116,10 +121,10 @@ DESCRIPTION
 
     Apply a patch to the server or rollback a patch that has been applied.
 
-    This command does not required to be connected to the server.
+    This command does not require a connection to the server.
     If it is connected, it will patch the server's installation.
-    If it is not connected, it will patch the command-line interface's own
-    installation.
+    If it is not connected, it will patch the server installation
+    the command line interface belongs to.
 
     Applying and rolling back a patch will run consistency checks for all
     modified items. In case file conflicts are detected the operation will fail
@@ -134,6 +139,11 @@ ARGUMENTS:
                        in the standalone mode or if the cli is disconnected.
                        The argument expects the name of the host of the
                        installation to patch.
+
+ --patch-stream      - Optional argument which specifies the patch stream
+                       the patch-id belongs to. If the argument is not
+                       present, the default patch stream is assumed
+                       (the one specified in org.jboss.as.product module)
 
  --override          - The value is a comma-separated list of the miscellaneous
                        items in the patch that can be overridden on the server

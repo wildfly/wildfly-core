@@ -93,11 +93,11 @@ class BundlePatchingTask extends AbstractPatchingTask<BundleItem> {
         final BundleItem item = new BundleItem(contentItem.getName(), contentItem.getSlot(), itemHash);
         switch (original.getType()) {
             case ADD:
-                return new ContentModification(item, targetHash, ModificationType.REMOVE);
+                return new ContentModification(item, targetHash, ModificationType.REMOVE, original.getCondition());
             case REMOVE:
-                return new ContentModification(item, targetHash, ModificationType.ADD);
+                return new ContentModification(item, targetHash, ModificationType.ADD, original.getCondition());
             default:
-                return new ContentModification(item, targetHash, ModificationType.MODIFY);
+                return new ContentModification(item, targetHash, ModificationType.MODIFY, original.getCondition());
         }
     }
 

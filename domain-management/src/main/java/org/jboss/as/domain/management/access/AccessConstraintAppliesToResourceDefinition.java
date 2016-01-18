@@ -72,7 +72,7 @@ public class AccessConstraintAppliesToResourceDefinition extends SimpleResourceD
                     .build();
 
     public AccessConstraintAppliesToResourceDefinition() {
-        super(PATH_ELEMENT, DomainManagementResolver.getResolver("core.access-control.constraint.applies-to"));
+        super(new Parameters(PATH_ELEMENT, DomainManagementResolver.getResolver("core.access-control.constraint.applies-to")).setRuntime());
     }
 
     @Override
@@ -81,9 +81,6 @@ public class AccessConstraintAppliesToResourceDefinition extends SimpleResourceD
         resourceRegistration.registerReadOnlyAttribute(ENTIRE_RESOURCE, new EntireResourceHandler());
         resourceRegistration.registerReadOnlyAttribute(ATTRIBUTES, new AttributesHandler());
         resourceRegistration.registerReadOnlyAttribute(OPERATIONS, new OperationsHandler());
-
-        // HACK -- workaround WFCORE-17
-        resourceRegistration.setRuntimeOnly(true);
     }
 
     static Resource.ResourceEntry createResource(AccessConstraintUtilization constraintUtilization) {

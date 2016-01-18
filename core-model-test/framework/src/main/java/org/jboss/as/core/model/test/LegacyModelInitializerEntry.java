@@ -38,14 +38,16 @@ public class LegacyModelInitializerEntry implements Serializable {
     private final PathAddress parentAddress;
     private final PathElement relativeResourceAddress;
     private final ModelNode model;
+    private final String[] capabilities;
 
-    public LegacyModelInitializerEntry(PathAddress parentAddress, PathElement relativeResourceAddress, ModelNode model) {
+    public LegacyModelInitializerEntry(PathAddress parentAddress, PathElement relativeResourceAddress, ModelNode model, String... capabilities) {
         if (relativeResourceAddress == null) {
             throw new IllegalArgumentException("Null relativeResourceAddress");
         }
         this.parentAddress = parentAddress;
         this.relativeResourceAddress = relativeResourceAddress;
         this.model = model;
+        this.capabilities = capabilities == null || capabilities.length == 0 ? null : capabilities;
     }
 
     public PathAddress getParentAddress() {
@@ -60,6 +62,8 @@ public class LegacyModelInitializerEntry implements Serializable {
         return model;
     }
 
-
+    public String[] getCapabilities() {
+        return capabilities;
+    }
 
 }

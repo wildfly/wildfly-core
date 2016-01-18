@@ -22,7 +22,6 @@
 
 package org.jboss.as.domain.management.security.adduser;
 
-import org.jboss.as.domain.management.security.adduser.AddUser;
 import org.jboss.msc.service.StartException;
 import org.junit.Test;
 

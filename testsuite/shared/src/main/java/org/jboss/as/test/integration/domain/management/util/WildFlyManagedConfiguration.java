@@ -67,7 +67,7 @@ public class WildFlyManagedConfiguration {
 
     private String modulePath = System.getProperty("module.path");
 
-    private String javaVmArguments = System.getProperty("server.jvm.args", "-Xmx512m");
+    private String javaVmArguments = System.getProperty("server.jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
 
     private int startupTimeoutInSeconds = TimeoutUtil.adjust(120);
 
@@ -104,6 +104,11 @@ public class WildFlyManagedConfiguration {
     private boolean backupDC;
 
     private boolean cachedDC;
+
+    // TODO MixedDomainTestSuite in full fails with this enabled as the legacy HC is broken with -ea
+    // So, turn this off by default for now, until MixedDomainTestSupport can use the setter to disable
+    // assertions for the slave HC
+    private boolean enableAssertions;
 
     public WildFlyManagedConfiguration(String jbossHome) {
         if (jbossHome != null) {
@@ -348,5 +353,13 @@ public class WildFlyManagedConfiguration {
 
     public void setCachedDC(boolean cachedDC) {
         this.cachedDC = cachedDC;
+    }
+
+    public boolean isEnableAssertions() {
+        return enableAssertions;
+    }
+
+    public void setEnableAssertions(boolean enableAssertions) {
+        this.enableAssertions = enableAssertions;
     }
 }

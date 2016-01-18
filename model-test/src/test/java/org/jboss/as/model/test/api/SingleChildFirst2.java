@@ -22,7 +22,6 @@
 package org.jboss.as.model.test.api;
 
 /**
- * 
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class SingleChildFirst2 {

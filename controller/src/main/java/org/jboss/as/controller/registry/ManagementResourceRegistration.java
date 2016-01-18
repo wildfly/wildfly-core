@@ -23,7 +23,6 @@
 package org.jboss.as.controller.registry;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -36,7 +35,8 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -121,7 +121,10 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * persistent configuration model; {@code false} otherwise
      *
      * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+     *
+     * @deprecated this property should be controlled by {@link ResourceDefinition#isRuntime()}
      */
+    @Deprecated
     void setRuntimeOnly(final boolean runtimeOnly);
 
     /**
@@ -148,80 +151,6 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
      */
     void unregisterOverrideModel(final String name);
-
-    /**
-     * Register an operation handler for this resource.
-     *
-     * @param operationName the operation name
-     * @param handler the operation handler
-     * @param descriptionProvider the description provider for this operation
-     * @param flags operational modifier flags for this operation (e.g. read-only)
-     * @throws IllegalArgumentException if either parameter is {@code null}
-     * @deprecated use {@link #registerOperationHandler(org.jboss.as.controller.OperationDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, EnumSet<OperationEntry.Flag> flags);
-
-    /**
-     * Register an operation handler for this resource.
-     *
-     * @param operationName the operation name
-     * @param handler the operation handler
-     * @param descriptionProvider the description provider for this operation
-     * @param inherited {@code true} if the operation is inherited to child nodes, {@code false} otherwise
-     * @throws IllegalArgumentException if either parameter is {@code null}
-     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-     * @deprecated use {@link #registerOperationHandler(org.jboss.as.controller.OperationDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited);
-
-    /**
-     * Register an operation handler for this resource.
-     *
-     * @param operationName the operation name
-     * @param handler the operation handler
-     * @param descriptionProvider the description provider for this operation
-     * @param inherited {@code true} if the operation is inherited to child nodes, {@code false} otherwise
-     * @param entryType the operation entry type
-     * @throws IllegalArgumentException if either parameter is {@code null}
-     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-     * @deprecated use {@link #registerOperationHandler(org.jboss.as.controller.OperationDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType);
-
-
-    /**
-     * Register an operation handler for this resource.
-     *
-     * @param operationName the operation name
-     * @param handler the operation handler
-     * @param descriptionProvider the description provider for this operation
-     * @param inherited {@code true} if the operation is inherited to child nodes, {@code false} otherwise
-     * @param flags operational modifier flags for this operation (e.g. read-only)
-     * @throws IllegalArgumentException if either parameter is {@code null}
-     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-     * @deprecated use {@link #registerOperationHandler(org.jboss.as.controller.OperationDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, EnumSet<OperationEntry.Flag> flags);
-
-    /**
-     * Register an operation handler for this resource.
-     *
-     * @param operationName the operation name
-     * @param handler the operation handler
-     * @param descriptionProvider the description provider for this operation
-     * @param inherited {@code true} if the operation is inherited to child nodes, {@code false} otherwise
-     * @param entryType the operation entry type
-     * @param flags operational modifier flags for this operation (e.g. read-only)
-     * @throws IllegalArgumentException if either parameter is {@code null}
-     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-     * @deprecated use {@link #registerOperationHandler(org.jboss.as.controller.OperationDefinition, org.jboss.as.controller.OperationStepHandler)}
-     */
-    @Deprecated
-    void registerOperationHandler(String operationName, OperationStepHandler handler, DescriptionProvider descriptionProvider, boolean inherited, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags);
 
     /**
      * Register an operation handler for this resource.
@@ -374,7 +303,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * Registers passed capability on resource
      * @param capability a capability to register
      */
-    void registerCapability(Capability capability);
+    void registerCapability(RuntimeCapability capability);
 
     /**
      * A factory for creating a new, root model node registration.
@@ -467,7 +396,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
                     return false;
                 }
             };
-            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, rootResourceDefinition.isRuntime(), false);
+            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, false, null);
         }
 
         /**
@@ -479,8 +408,25 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
          */
         public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition) {
-            return create(resourceDefinition, null);
+            return create(resourceDefinition, null, null);
         }
+
+        /**
+         * Create a new root model node registration.
+         *
+         * @param resourceDefinition            the facotry for the model description provider for the root model node
+         * @param constraintUtilizationRegistry registry for recording access constraints. Can be {@code null} if
+         *                                      tracking access constraint usage is not supported
+         * @return the new root model node registration
+         * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+         * @deprecated use {@link #create(ResourceDefinition, AccessConstraintUtilizationRegistry, CapabilityRegistry)}
+         */
+        @Deprecated
+        public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition,
+                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry) {
+            return create(resourceDefinition, constraintUtilizationRegistry, null);
+        }
+
 
         /**
          * Create a new root model node registration.
@@ -493,13 +439,14 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
          */
         public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition,
-                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry) {
+                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
+                                                            CapabilityRegistry registry) {
             if (resourceDefinition == null) {
                 throw ControllerLogger.ROOT_LOGGER.nullVar("rootModelDescriptionProviderFactory");
             }
             ConcreteResourceRegistration resourceRegistration =
                     new ConcreteResourceRegistration(null, null, resourceDefinition,
-                            constraintUtilizationRegistry, resourceDefinition.isRuntime(), false);
+                            constraintUtilizationRegistry, false, registry);
             resourceDefinition.registerAttributes(resourceRegistration);
             resourceDefinition.registerOperations(resourceRegistration);
             resourceDefinition.registerChildren(resourceRegistration);

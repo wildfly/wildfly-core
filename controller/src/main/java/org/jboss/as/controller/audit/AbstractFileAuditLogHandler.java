@@ -71,11 +71,7 @@ public abstract class AbstractFileAuditLogHandler extends AuditLogHandler {
             initializeAtStartup(file);
 
             if (!file.exists()) {
-                try {
-                    file.createNewFile();
-                } catch (IOException e){
-                    throw new RuntimeException(e);
-                }
+                createNewFile(file);
             }
 
             this.file = file;
@@ -168,4 +164,34 @@ public abstract class AbstractFileAuditLogHandler extends AuditLogHandler {
             file.delete();
         }
     }
+
+    /**
+     * This creates a new audit log file with default permissions.
+     *
+     * @param file File to create
+     */
+    protected void createNewFile(final File file) {
+        try {
+            file.createNewFile();
+            setFileNotWorldReadablePermissions(file);
+        } catch (IOException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * This procedure sets permissions to the given file to not allow everybody to read it.
+     *
+     * Only when underlying OS allows the change.
+     *
+     * @param file File to set permissions
+     */
+    private void setFileNotWorldReadablePermissions(File file) {
+       file.setReadable(false, false);
+       file.setWritable(false, false);
+       file.setExecutable(false, false);
+       file.setReadable(true, true);
+       file.setWritable(true, true);
+    }
+
 }

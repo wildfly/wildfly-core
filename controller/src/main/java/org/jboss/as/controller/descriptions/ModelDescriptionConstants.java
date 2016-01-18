@@ -44,6 +44,7 @@ public class ModelDescriptionConstants {
     public static final String ADMIN_ONLY = "admin-only";
     public static final String ADMIN_ONLY_POLICY = "admin-only-policy";
     public static final String ADVANCED_FILTER = "advanced-filter";
+    public static final String ALIAS = "alias";
     public static final String ALLOWED = "allowed";
     public static final String ALLOW_EMPTY_PASSWORDS = "allow-empty-passwords";
     public static final String ALLOW_RESOURCE_SERVICE_RESTART = "allow-resource-service-restart";
@@ -83,8 +84,9 @@ public class ModelDescriptionConstants {
     public static final String CALLER_THREAD = "caller-thread";
     public static final String CALLER_TYPE = "caller-type";
     public static final String CANCELLED = "cancelled";
-    public static final String CAPABILITIES = " capabilities";
+    public static final String CAPABILITIES = "capabilities";
     public static final String CAPABILITY_REFERENCE = "capability-reference";
+    public static final String CAPABILITY_REGISTRY = "capability-registry";
     public static final String CHILD_TYPE = "child-type";
     public static final String CHILDREN = "children";
     public static final String CLASSIFICATION = "classification";
@@ -120,7 +122,9 @@ public class ModelDescriptionConstants {
     public static final String DEFAULT_REQUIRES_ADDRESSABLE = "default-requires-addressable";
     public static final String DEPLOY = "deploy";
     public static final String DEPLOYMENT = "deployment";
+    public static final String DEPLOYMENT_DEPLOYED_NOTIFICATION = "deployment-deployed";
     public static final String DEPLOYMENT_OVERLAY = "deployment-overlay";
+    public static final String DEPLOYMENT_UNDEPLOYED_NOTIFICATION = "deployment-undeployed";
     public static final String DEPRECATED = "deprecated";
     public static final String DESCRIBE = "describe";
     public static final String DESCRIPTION = "description";
@@ -169,6 +173,7 @@ public class ModelDescriptionConstants {
     public static final String FAILURE_DESCRIPTION = "failure-description";
     public static final String FILE = "file";
     public static final String FILE_HANDLER = "file-handler";
+    public static final String FILESYSTEM_PATH = "filesystem-path";
     public static final String FILTER = "filter";
     //public final static String FILTER_CONJUNCT = "conjunct";
     public static final String FILTERED_ATTRIBUTES = "filtered-attributes";
@@ -225,6 +230,11 @@ public class ModelDescriptionConstants {
     public static final String ITERATIVE = "iterative";
     public static final String JSON_FORMATTER = "json-formatter";
     public static final String JVM = "jvm";
+    public static final String KEY_PASSWORD = "key-password";
+    public static final String KEYSTORE_PASSWORD = "keystore-password";
+    public static final String KEYSTORE_PATH = "keystore-path";
+    public static final String KEYSTORE_PROVIDER = "keystore-provider";
+    public static final String KEYSTORE_RELATIVE_TO = "keystore-relative-to";
     public static final String LDAP = "ldap";
     public static final String LDAP_CONNECTION = "ldap-connection";
     public static final String LOCAL = "local";
@@ -402,6 +412,7 @@ public class ModelDescriptionConstants {
     public static final String SENSITIVITY_CLASSIFICATION = "sensitivity-classification";
     public static final String SERVER = "server";
     public static final String SERVERS = "servers";
+    public static final String SERVER_BOOTING = "server-booting";
     public static final String SERVER_CONFIG = "server-config";
     public static final String SERVER_GROUP = "server-group";
     public static final String SERVER_GROUPS = "server-groups";
@@ -506,6 +517,7 @@ public class ModelDescriptionConstants {
     public static final String VAULT_EXPRESSION = "vault-expression";
     public static final String VAULT_OPTION = "vault-option";
     public static final String VAULT_OPTIONS = "vault-options";
+    public static final String WEB_URL = "web-url";
     public static final String WHERE = "where";
     public static final String WILDCARD = "wildcard";
     public static final String WRITE = "write";

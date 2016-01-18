@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2013 Red Hat, Inc., and individual contributors 
- * as indicated by the @author tags. See the copyright.txt file 
+ * Copyright (C) 2013 Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file
  * in the distribution for a full listing of individual contributors.
  *
  * This library is free software; you can redistribute it and/or
@@ -20,15 +20,16 @@
  */
 package org.jboss.as.host.controller;
 
+import static org.hamcrest.CoreMatchers.is;
+
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Base64;
-import static org.hamcrest.CoreMatchers.is;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
- *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2013 Red Hat, inc.
  */
 public class ServerInventoryImplTestCase {

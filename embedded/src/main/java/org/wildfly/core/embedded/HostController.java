@@ -21,21 +21,11 @@
  */
 package org.wildfly.core.embedded;
 
-import org.jboss.as.controller.client.ModelControllerClient;
-
 /**
  * The embedded host controller interface.
  *
  * @author Ken Wills <kwills@redhat.com>
  *
  */
-public interface HostController {
-
-    HostController getHostController();
-
-    ModelControllerClient getModelControllerClient();
-
-    void start() throws ServerStartException;
-
-    void stop();
+public interface HostController extends EmbeddedManagedProcess {
 }

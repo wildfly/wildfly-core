@@ -29,13 +29,13 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.dmr.ModelNode;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -123,17 +123,25 @@ public class IPv6ScopeIdMatchUnitTestCase {
                 if (pos > -1) {
                     hostAddress = hostAddress.substring(0, pos);
                 }
-                InetAddressMatchInterfaceCriteria criteria = new InetAddressMatchInterfaceCriteria(hostAddress);
-                assertEquals(address, criteria.isAcceptable(nif, address));
-                criteria = new InetAddressMatchInterfaceCriteria(hostAddress + "%" + nif.getName());
-                assertEquals(address, criteria.isAcceptable(nif, address));
-                criteria = new InetAddressMatchInterfaceCriteria(hostAddress + "%" + address.getScopeId());
-                assertEquals(address, criteria.isAcceptable(nif, address));
-                criteria = new InetAddressMatchInterfaceCriteria(hostAddress + "%" + (address.getScopeId() + 1));
-                assertNull(criteria.isAcceptable(nif, address));
-                criteria = new InetAddressMatchInterfaceCriteria(hostAddress + "%bogus");
-                assertNull(criteria.isAcceptable(nif, address));
+
+                matchCriteriaTest(hostAddress, nif, address, true);
+                if (address.isLinkLocalAddress() || address.isSiteLocalAddress()) {
+                    matchCriteriaTest(hostAddress + "%" + nif.getName(), nif, address, true);
+                    matchCriteriaTest(hostAddress + "%" + address.getScopeId(), nif, address, true);
+                    matchCriteriaTest(hostAddress + "%" + (address.getScopeId() + 1), nif, address, false);
+                    matchCriteriaTest(hostAddress + "%bogus", nif, address, false);
+                }
             }
+        }
+    }
+
+    private static void matchCriteriaTest(String criteriaString, NetworkInterface nif, InetAddress address,
+                                     boolean expectMatch) throws SocketException {
+        InetAddressMatchInterfaceCriteria criteria = new InetAddressMatchInterfaceCriteria(criteriaString);
+        if (expectMatch) {
+            assertEquals(criteriaString, address, criteria.isAcceptable(nif, address));
+        } else {
+            assertNull(criteriaString, criteria.isAcceptable(nif, address));
         }
     }
 }

@@ -20,8 +20,12 @@ package org.jboss.as.server.deployment;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_DEPLOYED_NOTIFICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_UNDEPLOYED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_BOOTING;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
 
@@ -32,6 +36,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -84,7 +89,7 @@ public class DeploymentHandlerUtil {
     private DeploymentHandlerUtil() {
     }
 
-    public static void deploy(final OperationContext context, final String deploymentUnitName, final String managementName, final AbstractVaultReader vaultReader, final ContentItem... contents) throws OperationFailedException {
+    public static void deploy(final OperationContext context, final ModelNode operation, final String deploymentUnitName, final String managementName, final AbstractVaultReader vaultReader, final ContentItem... contents) throws OperationFailedException {
         assert contents != null : "contents is null";
 
         if (context.isNormalServer()) {
@@ -94,6 +99,17 @@ public class DeploymentHandlerUtil {
             final ManagementResourceRegistration mutableRegistration = context.getResourceRegistrationForUpdate();
 
             DeploymentResourceSupport.cleanup(deployment);
+            ModelNode notificationData = new ModelNode();
+            notificationData.get(NAME).set(managementName);
+            notificationData.get(SERVER_BOOTING).set(context.isBooting());
+            if (operation.hasDefined(OWNER.getName())) {
+                try {
+                    notificationData.get(OWNER.getName()).set(OWNER.resolveModelAttribute(context, operation));
+                } catch (OperationFailedException ex) {//No resolvable owner we won't set one
+                }
+            }
+            notificationData.get(DEPLOYMENT).set(deploymentUnitName);
+            context.emit(new Notification(DEPLOYMENT_DEPLOYED_NOTIFICATION, context.getCurrentAddress(), ServerLogger.ROOT_LOGGER.deploymentDeployedNotification(managementName, deploymentUnitName), notificationData));
 
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) {
@@ -278,18 +294,29 @@ public class DeploymentHandlerUtil {
         }
     }
 
-    public static void undeploy(final OperationContext context, final String managementName, final String deploymentUnitName, final AbstractVaultReader vaultReader) {
+    public static void undeploy(final OperationContext context, final ModelNode operation, final String managementName, final String runtimeName, final AbstractVaultReader vaultReader) {
         if (context.isNormalServer()) {
             final Resource deployment = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
             final ManagementResourceRegistration mutableRegistration = context.getResourceRegistrationForUpdate();
             DeploymentResourceSupport.cleanup(deployment);
+            ModelNode notificationData = new ModelNode();
+            notificationData.get(NAME).set(managementName);
+            notificationData.get(SERVER_BOOTING).set(context.isBooting());
+            if (operation.hasDefined(OWNER.getName())) {
+                try {
+                    notificationData.get(OWNER.getName()).set(OWNER.resolveModelAttribute(context, operation));
+                } catch (OperationFailedException ex) {//No resolvable owner we won't set one
+                }
+            }
+            notificationData.get(DEPLOYMENT).set(runtimeName);
+            context.emit(new Notification(DEPLOYMENT_UNDEPLOYED_NOTIFICATION, context.getCurrentAddress(), ServerLogger.ROOT_LOGGER.deploymentUndeployedNotification(managementName, runtimeName), notificationData));
 
             context.addStep(new OperationStepHandler() {
+                @Override
                 public void execute(OperationContext context, ModelNode operation) {
-                    final ServiceRegistry registry = context.getServiceRegistry(true);
 
-                    final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
+                    final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(runtimeName);
 
                     context.removeService(deploymentUnitServiceName);
                     context.removeService(deploymentUnitServiceName.append("contents"));
@@ -300,18 +327,16 @@ public class DeploymentHandlerUtil {
                             if(resultAction == OperationContext.ResultAction.ROLLBACK) {
 
                                 final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-                                final String name = model.require(NAME).asString();
-                                final String runtimeName = model.require(RUNTIME_NAME).asString();
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(model.require(CONTENT));
-                                doDeploy(context, runtimeName, name, deployment, registration, mutableRegistration, vaultReader, contents);
+                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
 
                                 if (context.hasFailureDescription()) {
-                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBack(deploymentUnitName, getFormattedFailureDescription(context));
+                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBack(runtimeName, getFormattedFailureDescription(context));
                                 } else {
-                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBackWithNoMessage(deploymentUnitName);
+                                    ServerLogger.ROOT_LOGGER.undeploymentRolledBackWithNoMessage(runtimeName);
                                 }
                             } else {
-                                ServerLogger.ROOT_LOGGER.deploymentUndeployed(managementName, deploymentUnitName);
+                                ServerLogger.ROOT_LOGGER.deploymentUndeployed(managementName, runtimeName);
                             }
                         }
                     });

@@ -657,7 +657,6 @@ public class JBossDeploymentStructureParser11 implements XMLElementReader<ParseR
                         dependency.addImportFilter(PathFilters.getMetaInfSubdirectoriesFilter(), false);
                         dependency.addImportFilter(PathFilters.getMetaInfFilter(), false);
                     }
-                    specBuilder.addModuleDependency(dependency);
                     return;
                 }
                 case XMLStreamConstants.START_ELEMENT: {

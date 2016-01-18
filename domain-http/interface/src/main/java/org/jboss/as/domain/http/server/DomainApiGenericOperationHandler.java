@@ -36,6 +36,9 @@ import static org.jboss.as.domain.http.server.DomainUtil.writeResponse;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Deque;
 import java.util.Iterator;
 
@@ -44,13 +47,16 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.form.FormData;
 import io.undertow.server.handlers.form.FormDataParser;
 import io.undertow.server.handlers.form.FormParserFactory;
+import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
+import org.xnio.IoUtils;
 
 /**
  * Generic http POST handler accepting a single operation and multiple input streams passed as part of
@@ -67,6 +73,8 @@ class DomainApiGenericOperationHandler implements HttpHandler {
 
     private static final String OPERATION = "operation";
 
+    private static final String CLIENT_NAME = "X-Management-Client-Name";
+
     private final ModelController modelController;
     private final FormParserFactory formParserFactory;
 
@@ -80,8 +88,20 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         final FormDataParser parser = formParserFactory.createParser(exchange);
         if (parser == null) {
             Common.UNSUPPORTED_MEDIA_TYPE.handleRequest(exchange);
+        }
+
+        // Prevent CSRF which can occur from standard a multipart/form-data submission from a standard HTML form.
+        // If the browser sends an Origin header (Chrome / Webkit) then the earlier origin check will have passed
+        // to reach this point. If the browser doesn't (FireFox), then  only requests which came from Javascript,
+        // which enforces same-origin policy when no Origin header is present, should be allowed. The presence of
+        // a custom header indicates usage of XHR since simple forms can not set them.
+        HeaderMap headers = exchange.getRequestHeaders();
+        if (!headers.contains(Headers.ORIGIN) && !headers.contains(CLIENT_NAME)) {
+            ROOT_LOGGER.debug("HTTP Origin or X-Management-Client-Name header is required for all multipart form data posts.");
+            Common.UNAUTHORIZED.handleRequest(exchange);
             return;
         }
+
         // Parse the form data
         final FormData data = parser.parseBlocking();
         final OperationParameter.Builder operationParameterBuilder = new OperationParameter.Builder(false);
@@ -90,13 +110,22 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         final FormData.FormValue op = data.getFirst(OPERATION);
         final ModelNode operation;
         try {
-            if (Common.APPLICATION_DMR_ENCODED.equals(op.getHeaders().getFirst(Headers.CONTENT_TYPE))) {
-                operation = ModelNode.fromBase64(new ByteArrayInputStream(op.getValue().getBytes()));
+            String type = op.getHeaders().getFirst(Headers.CONTENT_TYPE);
+            if (Common.APPLICATION_DMR_ENCODED.equals(type)) {
+                try (InputStream stream = convertToStream(op)) {
+                    operation = ModelNode.fromBase64(stream);
+                }
                 operationParameterBuilder.encode(true);
+            } else if (Common.APPLICATION_JSON.equals(stripSuffix(type))) {
+                try (InputStream stream = convertToStream(op)) {
+                    operation = ModelNode.fromJSONStream(stream);
+                }
             } else {
-                operation = ModelNode.fromJSONString(op.getValue());
+                ROOT_LOGGER.debug("Content-type must be application/dmr-encoded or application/json");
+                Common.UNAUTHORIZED.handleRequest(exchange);
+                return;
             }
-        }  catch (Exception e) {
+        } catch (Exception e) {
             ROOT_LOGGER.errorf("Unable to construct ModelNode '%s'", e.getMessage());
             Common.sendError(exchange, false, e.getLocalizedMessage());
             return;
@@ -144,16 +173,46 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         } : ModelController.OperationTransactionControl.COMMIT;
 
         ModelNode response;
+        final Operation builtOp = builder.build();
         try {
             operation.get(OPERATION_HEADERS, ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
-            response = modelController.execute(operation, OperationMessageHandler.DISCARD, control, builder.build());
+            response = modelController.execute(operation, OperationMessageHandler.DISCARD, control, builtOp);
         } catch (Throwable t) {
             ROOT_LOGGER.modelRequestError(t);
             Common.sendError(exchange, opParam.isEncode(), t.getLocalizedMessage());
             return;
+        } finally {
+            // Close any input streams that were open
+            if (builtOp.isAutoCloseStreams()) {
+                for (InputStream in : builtOp.getInputStreams()) {
+                    IoUtils.safeClose(in);
+                }
+            }
         }
 
         callback.sendResponse(response);
+    }
+
+    private InputStream convertToStream(FormData.FormValue op) throws IOException {
+        if (op.isFile()) {
+            return Files.newInputStream(op.getPath());
+        } else {
+            return new ByteArrayInputStream(op.getValue().getBytes());
+        }
+    }
+
+    private static String stripSuffix(String contentType) {
+        if (contentType == null) {
+            return null;
+        }
+
+        int index = contentType.indexOf(';');
+
+        if (index > 0) {
+            contentType = contentType.substring(0, index);
+        }
+
+        return contentType;
     }
 
     static final String RELOAD = "reload";

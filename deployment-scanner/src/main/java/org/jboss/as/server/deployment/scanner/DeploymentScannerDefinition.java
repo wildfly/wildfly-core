@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deployment.scanner;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
+
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -58,6 +60,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
                     .setXmlName(Attribute.PATH.getLocalName())
                     .setAllowExpression(true)
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
+                    .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
                     .build();
     protected static final SimpleAttributeDefinition RELATIVE_TO =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.RELATIVE_TO, ModelType.STRING, true)

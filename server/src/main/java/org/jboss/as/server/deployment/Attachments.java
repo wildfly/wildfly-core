@@ -38,7 +38,6 @@ import org.jboss.as.server.deployment.module.ExtensionListEntry;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.deployment.reflect.DeploymentClassIndex;
 import org.jboss.as.server.deployment.reflect.DeploymentReflectionIndex;
 import org.jboss.as.server.deployment.reflect.ProxyMetadataSource;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
@@ -314,10 +313,6 @@ public final class Attachments {
      */
     public static final AttachmentKey<DeploymentReflectionIndex> REFLECTION_INDEX = AttachmentKey.create(DeploymentReflectionIndex.class);
 
-    /**
-     * The class index for the deployment.
-     */
-    public static final AttachmentKey<DeploymentClassIndex> CLASS_INDEX = AttachmentKey.create(DeploymentClassIndex.class);
     /**
      * The reflection index used to generate jboss-invocation proxies
      */

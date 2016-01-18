@@ -23,11 +23,18 @@ package org.jboss.as.core.model.bridge.impl;
 
 import java.util.List;
 
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.core.model.test.AbstractKernelServicesImpl;
@@ -70,6 +77,30 @@ public class ChildFirstClassLoaderKernelServicesFactory {
 
         LegacyModelInitializer(List<LegacyModelInitializerEntry> entries) {
             this.entries = entries;
+        }
+
+        @Override
+        public void populateModel(ManagementModel managementModel) {
+            populateModel(managementModel.getRootResource());
+            for (LegacyModelInitializerEntry entry : entries) {
+                if (entry.getCapabilities() != null) {
+                    PathAddress parent = entry.getParentAddress();
+                    if (parent == null) {
+                        parent = PathAddress.EMPTY_ADDRESS;
+                    }
+                    PathAddress pa = parent.append(entry.getRelativeResourceAddress());
+                    CapabilityScope scope = CapabilityScope.Factory.create(ProcessType.HOST_CONTROLLER, pa);
+                    RuntimeCapabilityRegistry cr = managementModel.getCapabilityRegistry();
+
+                    for (String capabilityName : entry.getCapabilities()) {
+                        RuntimeCapability<Void> capability =
+                                RuntimeCapability.Builder.of(capabilityName).build();
+                        RuntimeCapabilityRegistration reg = new RuntimeCapabilityRegistration(capability, scope,
+                                new RegistrationPoint(pa, null));
+                        cr.registerCapability(reg);
+                    }
+                }
+            }
         }
 
         @Override

@@ -109,4 +109,27 @@ public interface ResourceDefinition {
      * @return {@code true} if this child is ordered within the parent, false otherwise
      */
     boolean isOrderedChild();
+
+    /**
+     * Gets the maximum number of times a resource of the type described by this definition
+     * can occur under its parent resource (or, for a root resource, the minimum number of times it can
+     * occur at all.)
+     *
+     * @return the minimum number of occurrences
+     */
+    default int getMaxOccurs() {
+        PathElement pe = getPathElement();
+        return pe == null || !pe.isWildcard() ? 1 : Integer.MAX_VALUE;
+    }
+
+    /**
+     * Gets the minimum number of times a resource of the type described by this definition
+     * can occur under its parent resource (or, for a root resource, the number of times it can
+     * occur at all.)
+     *
+     * @return the minimum number of occurrences
+     */
+    default int getMinOccurs() {
+        return getPathElement() != null ? 0 : 1;
+    }
 }

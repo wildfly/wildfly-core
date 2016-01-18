@@ -120,6 +120,12 @@ public class CommandExecutor {
     }
 
     private OperationResponse execute(ModelNode request, boolean useWaitCursor) throws IOException {
+
+        if(request.get(Util.OPERATION).asString().equals(Util.COMPOSITE) &&
+                (!request.get(Util.STEPS).isDefined() || request.get(Util.STEPS).asList().isEmpty())) {
+            return OperationResponse.Factory.createSimple(new ModelNode("WARN: no request was sent as there were no server-side operations to execute"));
+        }
+
         try {
             if (useWaitCursor) {
                 cliGuiCtx.getMainWindow().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));

@@ -61,10 +61,12 @@ class ManagedSocketBinding extends Socket implements ManagedBinding {
     }
 
     public synchronized void close() throws IOException {
+        // First unregister, then close. This allows UnnamedRegistryImpl
+        // to get the bind address before it's gone
         try {
-            super.close();
-        } finally {
             socketBindings.unregisterBinding(this);
+        } finally {
+            super.close();
         }
     }
 

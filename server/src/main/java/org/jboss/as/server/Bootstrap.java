@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 
 import javax.xml.namespace.QName;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -52,10 +53,10 @@ import org.jboss.threads.AsyncFuture;
 public interface Bootstrap {
 
     /**
-     * Bootstrap a new server instance.  The list of updates should begin with extensions, followed by
-     * subsystem adds, followed by deployments.  The boot action of each update will be executed; this is
-     * the only time that this will happen.  This method will not block; the return value may be used to
-     * wait for the result (with an optional timeout) or register an asynchronous callback.
+     * Bootstrap a new server instance, providing a {@code Future} that will provide the
+     * server's MSC {@link ServiceContainer} once the root service for the server is started.
+     * <strong>Note:</strong> The future will provide its value before the full server boot is
+     * complete. To await the full boot, use {@link #startup(Configuration, List)}.
      *
      * @param configuration the server configuration
      * @param extraServices additional services to start and stop with the server instance
@@ -74,6 +75,12 @@ public interface Bootstrap {
     AsyncFuture<ServiceContainer> startup(Configuration configuration, List<ServiceActivator> extraServices);
 
     /**
+     * Alerts this bootstrap instance that a failure has occurred during bootstrap or startup and it should
+     * clean up resources.
+     */
+    void failed();
+
+    /**
      * The configuration for server bootstrap.
      */
     final class Configuration {
@@ -81,6 +88,7 @@ public interface Bootstrap {
         private final ServerEnvironment serverEnvironment;
         private final RunningModeControl runningModeControl;
         private final ExtensionRegistry extensionRegistry;
+        private final CapabilityRegistry capabilityRegistry;
         private final ManagedAuditLogger auditLogger;
         private final DelegatingConfigurableAuthorizer authorizer;
         private ModuleLoader moduleLoader = Module.getBootModuleLoader();
@@ -94,6 +102,7 @@ public interface Bootstrap {
             this.auditLogger = serverEnvironment.createAuditLogger();
             this.authorizer = new DelegatingConfigurableAuthorizer();
             this.extensionRegistry = new ExtensionRegistry(serverEnvironment.getLaunchType().getProcessType(), runningModeControl, this.auditLogger, authorizer, RuntimeHostControllerInfoAccessor.SERVER);
+            this.capabilityRegistry = new CapabilityRegistry(true);
             this.startTime = serverEnvironment.getStartTime();
         }
 
@@ -121,6 +130,15 @@ public interface Bootstrap {
          */
         public ExtensionRegistry getExtensionRegistry() {
             return extensionRegistry;
+        }
+
+        /**
+         * Get the capability registry.
+         *
+         * @return the capability registry. Will not be {@code null}
+         */
+        public CapabilityRegistry getCapabilityRegistry() {
+            return capabilityRegistry;
         }
 
         /**

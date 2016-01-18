@@ -490,7 +490,7 @@ public abstract class TestProcessUtils {
     }
 
 
-    private static abstract class TestCommand {
+    private abstract static class TestCommand {
         String processName;
 
         TestCommand() {

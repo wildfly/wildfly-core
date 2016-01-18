@@ -21,7 +21,9 @@
 */
 package org.jboss.as.core.model.test.interfaces;
 
+import org.jboss.as.core.model.test.ModelInitializer;
 import org.jboss.as.core.model.test.TestModelType;
+import org.jboss.as.core.model.test.util.ServerConfigInitializers;
 
 /**
  *
@@ -36,6 +38,11 @@ public class HostSpecifiedInterfacesTestCase extends AbstractSpecifiedInterfaces
     @Override
     protected String getXmlResource() {
         return "host.xml";
+    }
+
+    @Override
+    protected ModelInitializer getModelInitializer() {
+        return ServerConfigInitializers.XML_MODEL_INITIALIZER;
     }
 
 }

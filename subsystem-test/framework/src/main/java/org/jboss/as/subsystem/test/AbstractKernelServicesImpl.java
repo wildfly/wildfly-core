@@ -56,7 +56,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
 
     public static AbstractKernelServicesImpl create(Class<?> testClass, String mainSubsystemName, AdditionalInitialization additionalInit, ModelTestOperationValidatorFilter validateOpsFilter,
             ExtensionRegistry controllerExtensionRegistry, List<ModelNode> bootOperations, ModelTestParser testParser, Extension mainExtension, ModelVersion legacyModelVersion,
-            boolean registerTransformers, boolean persistXml, boolean enableTransformerAttachmentGrabber) throws Exception {
+            boolean registerTransformers, boolean persistXml) throws Exception {
         ControllerInitializer controllerInitializer = additionalInit.createControllerInitializer();
 
         PathManagerService pathManager = new PathManagerService() {
@@ -88,7 +88,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
                                                            StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
                                                            boolean registerTransformers){
                 return TestModelControllerService.create(mainExtension, controllerInitializer, additionalInit, extensionRegistry,
-                        persister, validateOpsFilter, registerTransformers, enableTransformerAttachmentGrabber);
+                        persister, validateOpsFilter, registerTransformers);
             }
         };
         if (legacyModelVersion != null) {
@@ -115,7 +115,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
                     new MainKernelServicesImpl(container, svc, persister, svc.getRootRegistration(),
                             new OperationValidator(svc.getRootRegistration()),
                             mainSubsystemName, controllerExtensionRegistry, legacyModelVersion, svc.isSuccessfulBoot(),
-                            svc.getBootError(), registerTransformers, testClass, enableTransformerAttachmentGrabber)
+                            svc.getBootError(), registerTransformers, testClass)
                     :
                     new LegacyKernelServicesImpl(container, svc, persister, svc.getRootRegistration()
                             , new OperationValidator(svc.getRootRegistration()),

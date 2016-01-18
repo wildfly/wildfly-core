@@ -47,9 +47,6 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     static final RuntimeCapability<Void> IO_WORKER_RUNTIME_CAPABILITY =
             RuntimeCapability.Builder.of(IO_WORKER_RUNTIME_CAPABILITY_NAME, true, XnioWorker.class).build();
 
-    static final OptionAttributeDefinition WORKER_TASK_CORE_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_CORE_THREADS, Options.WORKER_TASK_CORE_THREADS)
-            .setDefaultValue(new ModelNode(2))
-            .build();
     static final OptionAttributeDefinition WORKER_TASK_MAX_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_MAX_THREADS, Options.WORKER_TASK_MAX_THREADS)
             .build();
     static final OptionAttributeDefinition WORKER_TASK_KEEPALIVE = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_KEEPALIVE, Options.WORKER_TASK_KEEPALIVE)
@@ -60,13 +57,9 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             .build();
     static final OptionAttributeDefinition WORKER_IO_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_IO_THREADS, Options.WORKER_IO_THREADS)
             .build();
-    /*static final OptionAttributeDefinition WORKER_TASK_LIMIT = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_LIMIT, Options.WORKER_TASK_LIMIT)
-            .setDefaultValue(new ModelNode(0x4000))
-            .build();*/
 
     static OptionAttributeDefinition[] ATTRIBUTES = new OptionAttributeDefinition[]{
             WORKER_IO_THREADS,
-            WORKER_TASK_CORE_THREADS,
             WORKER_TASK_KEEPALIVE,
             WORKER_TASK_MAX_THREADS,
             STACK_SIZE
@@ -90,7 +83,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
         super(IOExtension.WORKER_PATH,
                 IOExtension.getResolver(Constants.WORKER),
                 WorkerAdd.INSTANCE,
-                new ReloadRequiredRemoveStepHandler(IO_WORKER_RUNTIME_CAPABILITY)
+                new ReloadRequiredRemoveStepHandler()
         );
     }
 

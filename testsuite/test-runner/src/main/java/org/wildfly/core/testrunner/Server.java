@@ -26,7 +26,7 @@ public class Server {
 
     private final String jbossHome = System.getProperty("jboss.home", System.getenv("JBOSS_HOME"));
     private final String modulePath = System.getProperty("module.path");
-    private final String jvmArgs = System.getProperty("jvm.args", "-Xmx512m");
+    private final String jvmArgs = System.getProperty("jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
     private final String jbossArgs = System.getProperty("jboss.args");
     private final String javaHome = System.getProperty("java.home", System.getenv("JAVA_HOME"));
     //Use this when specifying an older java to be used for running the server
@@ -169,7 +169,7 @@ public class Server {
                 try {
                     // AS7-6620: Create the shutdown operation and run it asynchronously and wait for process to terminate
                     client.getControllerClient().executeAsync(Operations.createOperation("shutdown"), null);
-                } catch (AssertionError e) {
+                } catch (AssertionError | RuntimeException e) {
                     //ignore as this can only fail if shutdown is already in progress
                 }
 

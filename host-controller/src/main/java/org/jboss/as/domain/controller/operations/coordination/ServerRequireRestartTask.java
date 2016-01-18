@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.controller.operations.coordination;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.client.OperationAttachments;
@@ -57,11 +58,13 @@ class ServerRequireRestartTask implements Callable<OperationResponse> {
     private final ServerIdentity identity;
     private final ProxyController controller;
     private final OperationResponse originalResult;
+    private final BlockingTimeout blockingTimeout;
 
-    public ServerRequireRestartTask(final ServerIdentity identity, ProxyController controller, final OperationResponse originalResult) {
+    public ServerRequireRestartTask(final ServerIdentity identity, ProxyController controller, final OperationResponse originalResult, BlockingTimeout blockingTimeout) {
         this.identity = identity;
         this.controller = controller;
         this.originalResult = originalResult;
+        this.blockingTimeout = blockingTimeout;
     }
 
     @Override
@@ -88,7 +91,7 @@ class ServerRequireRestartTask implements Callable<OperationResponse> {
             };
             // Execute
             final ModelNode operation = createOperation(identity);
-            controller.execute(operation, OperationMessageHandler.DISCARD, proxyControl, OperationAttachments.EMPTY);
+            controller.execute(operation, OperationMessageHandler.DISCARD, proxyControl, OperationAttachments.EMPTY, blockingTimeout);
             final ModelController.OperationTransaction tx = txRef.get();
             if(tx != null) {
                 // Commit right away

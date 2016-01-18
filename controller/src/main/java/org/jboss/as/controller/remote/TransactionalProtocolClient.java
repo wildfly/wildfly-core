@@ -45,7 +45,7 @@ public interface TransactionalProtocolClient {
      * DC > HC    : HostControllerRegistrationHandler > RemoteDomainConnection
      * HC > server: HostControllerConnection > ManagedServer
      */
-    Attachments.Key<Boolean> SEND_SUBJECT = new Attachments.Key(Boolean.class);
+    Attachments.Key<Boolean> SEND_SUBJECT = new Attachments.Key<>(Boolean.class);
 
     /**
      * Execute an operation. This returns a future for the final result, which will only available after the prepared

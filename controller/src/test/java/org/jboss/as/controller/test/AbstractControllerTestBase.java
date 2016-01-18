@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
@@ -73,8 +74,9 @@ public abstract class AbstractControllerTestBase {
     protected abstract void initModel(ManagementModel managementModel);
 
     private ServiceContainer container;
-    private ModelController controller;
+    protected ModelController controller;
     protected final ProcessType processType;
+    protected CapabilityRegistry capabilityRegistry;
 
     protected AbstractControllerTestBase(ProcessType processType) {
         this.processType = processType;
@@ -118,6 +120,13 @@ public abstract class AbstractControllerTestBase {
         return operation;
     }
 
+    protected ModelNode createOperation(String operationName) {
+        ModelNode operation = new ModelNode();
+        operation.get(OP).set(operationName);
+        operation.get(OP_ADDR).setEmptyList();
+        return operation;
+    }
+
     public ModelNode executeForResult(ModelNode operation) throws OperationFailedException {
         return executeCheckNoFailure(operation).get(RESULT);
     }
@@ -157,6 +166,7 @@ public abstract class AbstractControllerTestBase {
         builder.install();
         svc.awaitStartup(30, TimeUnit.SECONDS);
         controller = svc.getValue();
+        capabilityRegistry = svc.getCapabilityRegistry();
         ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
         controller.execute(setup, null, null, null);
     }

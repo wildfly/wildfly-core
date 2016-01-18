@@ -75,10 +75,13 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
     private volatile TransportErrorManager errorManager;
     private volatile int reconnectTimeout = -1;
     private volatile long lastErrorTime = -1;
+    // This should be guarded by the config lock in the ManagedAuditLoggerImpl
+    private boolean initialized;
 
     public SyslogAuditLogHandler(String name, String formatterName, int maxFailureCount, PathManagerService pathManager) {
         super(name, formatterName, maxFailureCount);
         this.pathManager = pathManager;
+        initialized = false;
     }
 
     public void setHostName(String hostName) {
@@ -182,10 +185,13 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
 
     @Override
     void initialize() {
+        // Only attempt initialization if this if the first invocation, the server has been stopped or a previous
+        // initialization invocation has failed
+        if (initialized) {
+            return;
+        }
+        SyslogHandler handler = this.handler;
         try {
-            if (handler != null) {
-                return;
-            }
             final Protocol protocol;
             switch (transport) {
             case UDP:
@@ -261,14 +267,23 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
                     handler.setProtocol(transport == Transport.TCP ? Protocol.TCP : Protocol.SSL_TCP);
                 }
             }
-
+            this.handler = handler;
+            initialized = true;
         } catch (Exception e) {
+            // Failed to initialize the handler, clean up the resources
+            initialized = false;
+            if (handler != null) {
+                try {
+                    handler.close();
+                } catch (Exception ignore){}
+            }
             throw new RuntimeException(e);
         }
     }
 
     @Override
     void stop() {
+        initialized = false;
         SyslogHandler handler = this.handler;
         this.handler = null;
         if (handler != null) {
@@ -294,13 +309,17 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
         } else {
             ControllerLogger.MGMT_OP_LOGGER.attemptingReconnectToSyslog(name, reconnectTimeout);
             try {
-                //Reinitialise the delegating syslog handler
-                stop();
-                initialize();
+                //Reinitialise the delegating syslog handler if required
+                if (!initialized) {
+                    stop();
+                    initialize();
+                }
                 handler.publish(new ExtLogRecord(Level.WARN, formattedItem, SyslogAuditLogHandler.class.getName()));
                 errorManager.getAndThrowError();
                 lastErrorTime = -1;
             } catch (Exception e) {
+                // A failure has occurred and initialization should be reattempted
+                initialized = false;
                 lastErrorTime = System.currentTimeMillis();
                 errorManager.throwAsIoOrRuntimeException(e);
             }
@@ -435,6 +454,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
 
     // By default the TcpOutputStream attempts to reconnect on it's own, use our own to avoid the automatic reconnect
     // See LOGMGR-113 for details on a better way to do this in the future
+    @SuppressWarnings("deprecation")
     private static class AuditLogTcpOutputStream extends TcpOutputStream {
         protected AuditLogTcpOutputStream(InetAddress host, int port) throws IOException {
             super(SocketFactory.getDefault().createSocket(host, port));
@@ -442,6 +462,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
     }
 
 
+    @SuppressWarnings("deprecation")
     private static class SSLContextOutputStream extends TcpOutputStream {
         protected SSLContextOutputStream(SSLContext sslContext, InetAddress host, int port) throws IOException {
             // Continue to use the deprecated constructor until LOGMGR-113 is resolved

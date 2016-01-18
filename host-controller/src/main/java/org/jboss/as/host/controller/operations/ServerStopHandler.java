@@ -34,6 +34,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -87,7 +88,11 @@ public class ServerStopHandler implements OperationStepHandler {
                 context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
 
                 final ServerStatus status = serverInventory.stopServer(serverName, timeout, blocking);
-                context.readResource(PathAddress.EMPTY_ADDRESS, false);
+                try {
+                    context.readResource(PathAddress.EMPTY_ADDRESS, false); //reading the resource to persist the autostart state.
+                } catch (Resource.NoSuchResourceException ex) {
+                    //in case the resource no longer exists.
+                }
                 context.getResult().set(status.toString());
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
