@@ -278,7 +278,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         // Validate that all required capabilities are available and fail any steps that broke this
-        boolean hostXmlOnly = isBooting() && !getProcessType().isServer() && partialModel;
+        boolean hostXmlOnly = !getProcessType().isServer() && partialModel;
         CapabilityRegistry.CapabilityValidation validation = managementModel.validateCapabilityRegistry(false, hostXmlOnly);
         boolean ok = validation.isValid();
         final boolean adminOnly = this.getRunningMode() == RunningMode.ADMIN_ONLY;

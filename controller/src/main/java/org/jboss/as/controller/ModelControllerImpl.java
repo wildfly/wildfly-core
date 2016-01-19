@@ -142,6 +142,8 @@ class ModelControllerImpl implements ModelController {
     private final Resource.ResourceEntry modelControllerResource;
     private final OperationStepHandler extraValidationStepHandler;
 
+    private final AbstractControllerService.PartialModelIndicator partialModelIndicator;
+
 
     ModelControllerImpl(final ServiceRegistry serviceRegistry, final ServiceTarget serviceTarget,
                         final ManagementResourceRegistration rootRegistration,
@@ -151,7 +153,9 @@ class ModelControllerImpl implements ModelController {
                         final ExpressionResolver expressionResolver, final Authorizer authorizer,
                         final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport,
                         final BootErrorCollector bootErrorCollector, final OperationStepHandler extraValidationStepHandler,
-                        final CapabilityRegistry capabilityRegistry) {
+                        final CapabilityRegistry capabilityRegistry,
+                        final AbstractControllerService.PartialModelIndicator partialModelIndicator) {
+        this.partialModelIndicator = partialModelIndicator;
         assert serviceRegistry != null;
         this.serviceRegistry = serviceRegistry;
         assert serviceTarget != null;
@@ -201,7 +205,8 @@ class ModelControllerImpl implements ModelController {
      */
     @Override
     public ModelNode execute(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control, final OperationAttachments attachments) {
-        OperationResponse or = internalExecute(operation, handler, control, attachments, prepareStep, false, false);
+        OperationResponse or = internalExecute(operation, handler, control, attachments, prepareStep, false,
+                partialModelIndicator.isModelPartial());
         ModelNode result = or.getResponseNode();
         try {
             or.close();
@@ -214,7 +219,7 @@ class ModelControllerImpl implements ModelController {
 
     @Override
     public OperationResponse execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control) {
-        return internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false, false);
+        return internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false, partialModelIndicator.isModelPartial());
     }
 
     private AbstractOperationContext getDelegateContext(final int operationId) {

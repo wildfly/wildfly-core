@@ -285,7 +285,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 new ContainerStateMonitor(container),
                 configurationPersister, processType, runningModeControl, prepareStep,
                 processState, executorService, expressionResolver, authorizer, auditLogger, notificationSupport,
-                bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry);
+                bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry, getPartialModelIndicator());
 
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
@@ -385,7 +385,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure, boolean skipModelValidation,
                            MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
         return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT,
-                rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider, skipModelValidation, skipModelValidation);
+                rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider, skipModelValidation,
+                getPartialModelIndicator().isModelPartial());
     }
 
     /** @deprecated internal use only  only for use by legacy test controllers */
@@ -405,12 +406,14 @@ public abstract class AbstractControllerService implements Service<ModelControll
     }
 
     protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
-        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false, false);
+        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false,
+                getPartialModelIndicator().isModelPartial());
     }
 
     protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control,
                                                 final OperationStepHandler prepareStep, final boolean attemptLock) {
-        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, attemptLock, false);
+        return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, attemptLock,
+                getPartialModelIndicator().isModelPartial());
     }
 
     protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control,
@@ -456,6 +459,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     protected final MutableRootResourceRegistrationProvider getMutableRootResourceRegistrationProvider() {
         return ModelControllerImpl.getMutableRootResourceRegistrationProvider();
+    }
+
+    protected PartialModelIndicator getPartialModelIndicator() {
+        return PartialModelIndicator.DEFAULT;
     }
 
     public void stop(final StopContext context) {
@@ -637,6 +644,24 @@ public abstract class AbstractControllerService implements Service<ModelControll
          * @return the host name
          */
         protected abstract String getHostName();
+    }
+
+    /**
+     * Tracks whether the controller is working with a complete model or just a partial one.
+     * Use case for this is host controller operation, particularly with --admin-only slaves,
+     * where the domain-wide model may not be available.
+     */
+    protected interface PartialModelIndicator {
+
+        PartialModelIndicator DEFAULT = new PartialModelIndicator(){};
+
+        /**
+         * Gets whether the configuration model be regarded as only being partial.
+         * @return  {@code true} if the model is partial
+         */
+        default boolean isModelPartial() {
+            return false;
+        }
     }
 
 }
