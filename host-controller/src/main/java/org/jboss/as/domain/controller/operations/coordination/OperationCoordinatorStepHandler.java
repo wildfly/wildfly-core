@@ -146,10 +146,13 @@ public class OperationCoordinatorStepHandler {
 
         MultiphaseOverallContext overallContext = new MultiphaseOverallContext(localHostControllerInfo);
 
-        // Get a copy of the rollout plan so it doesn't get disrupted by any handlers
-        ModelNode rolloutPlan = operation.hasDefined(OPERATION_HEADERS) && operation.get(OPERATION_HEADERS).has(ROLLOUT_PLAN)
-            ? operation.get(OPERATION_HEADERS).remove(ROLLOUT_PLAN) : new ModelNode();
+        // Get a copy of the headers for use on the servers so they don't get disrupted by any handlers
+        // Also get a copy of the rollout plan. Remove it from the headers as no one needs it but us
+        final ModelNode operationHeaders = operation.get(OPERATION_HEADERS);
+        final ModelNode rolloutPlan = operationHeaders.has(ROLLOUT_PLAN)
+                ? operation.get(OPERATION_HEADERS).remove(ROLLOUT_PLAN) : new ModelNode();
 
+        // Create the op we'll ask the HCs to execute
         final ModelNode slaveOp = operation.clone();
         slaveOp.get(OPERATION_HEADERS, EXECUTE_FOR_COORDINATOR).set(true);
         slaveOp.protect();
@@ -198,7 +201,7 @@ public class OperationCoordinatorStepHandler {
         }
 
         // Finally, the step to formulate and execute the 2nd phase rollout plan
-        context.addStep(new DomainRolloutStepHandler(hostProxies, serverProxies, overallContext, rolloutPlan, getExecutorService()), OperationContext.Stage.DOMAIN);
+        context.addStep(new DomainRolloutStepHandler(hostProxies, serverProxies, overallContext, rolloutPlan, operationHeaders, getExecutorService()), OperationContext.Stage.DOMAIN);
     }
 
     static void configureDomainUUID(ModelNode operation) {

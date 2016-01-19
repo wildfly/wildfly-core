@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
@@ -72,6 +73,13 @@ public abstract class DeploymentResourceDefinition extends SimpleResourceDefinit
         return ApplicationTypeAccessConstraintDefinition.DEPLOYMENT_AS_LIST;
     }
 
+    @Override
+    public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
+        for (NotificationDefinition notif : parent.getNotifications()) {
+            resourceRegistration.registerNotification(notif);
+        }
+    }
+
     protected DeploymentResourceParent getParent() {
         return parent;
     }
@@ -82,13 +90,17 @@ public abstract class DeploymentResourceDefinition extends SimpleResourceDefinit
     public static enum DeploymentResourceParent {
         DOMAIN (DeploymentAttributes.DOMAIN_RESOURCE_ATTRIBUTES, DeploymentAttributes.DOMAIN_ADD_ATTRIBUTES),
         SERVER_GROUP (DeploymentAttributes.SERVER_GROUP_RESOURCE_ATTRIBUTES, DeploymentAttributes.SERVER_GROUP_ADD_ATTRIBUTES),
-        SERVER (DeploymentAttributes.SERVER_RESOURCE_ATTRIBUTES, DeploymentAttributes.SERVER_ADD_ATTRIBUTES);
+        SERVER (DeploymentAttributes.SERVER_RESOURCE_ATTRIBUTES, DeploymentAttributes.SERVER_ADD_ATTRIBUTES,
+            new NotificationDefinition[] {DeploymentAttributes.NOTIFICATION_DEPLOYMENT_DEPLOYED, DeploymentAttributes.NOTIFICATION_DEPLOYMENT_UNDEPLOYED});
 
         final AttributeDefinition[] resourceAttributes;
         final AttributeDefinition[] addAttributes;
-        private DeploymentResourceParent(AttributeDefinition[] resourceAttributes, AttributeDefinition[] addAttributes) {
+        final NotificationDefinition[] notifications;
+
+        private DeploymentResourceParent(AttributeDefinition[] resourceAttributes, AttributeDefinition[] addAttributes, NotificationDefinition... notifications) {
             this.resourceAttributes = resourceAttributes;
             this.addAttributes = addAttributes;
+            this.notifications = notifications == null ? new NotificationDefinition[0] : notifications;
         }
 
         AttributeDefinition[] getResourceAttributes() {
@@ -97,6 +109,10 @@ public abstract class DeploymentResourceDefinition extends SimpleResourceDefinit
 
         AttributeDefinition[] getAddAttributes() {
             return addAttributes;
+        }
+
+        NotificationDefinition[] getNotifications() {
+            return notifications;
         }
     }
 }

@@ -22,6 +22,7 @@
 package org.jboss.as.domain.management.connections.ldap;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -109,6 +110,14 @@ public class ThreadLocalSSLSocketFactory extends SSLSocketFactory {
     @Override
     public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
         return delegate.createSocket(address, port, localAddress, localPort);
+    }
+
+    public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException {
+        return delegate.createSocket(s, consumed, autoClose);
+    }
+
+    public Socket createSocket() throws IOException {
+        return delegate.createSocket();
     }
 
 }

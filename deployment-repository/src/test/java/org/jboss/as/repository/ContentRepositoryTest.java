@@ -22,7 +22,9 @@ package org.jboss.as.repository;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -51,7 +53,7 @@ public class ContentRepositoryTest {
 
     @Before
     public void createRepository() {
-        if(rootDir.exists()) {
+        if (rootDir.exists()) {
             deleteRecursively(rootDir);
         }
         rootDir.mkdirs();
@@ -67,8 +69,8 @@ public class ContentRepositoryTest {
     private void deleteRecursively(File file) {
         if (file.exists()) {
             if (file.isDirectory()) {
-                for (String name : file.list()) {
-                    deleteRecursively(new File(file, name));
+                for (File child : file.listFiles()) {
+                    deleteRecursively(child);
                 }
             }
             file.delete();
@@ -153,17 +155,30 @@ public class ContentRepositoryTest {
     @Test
     public void testRemoveContent() throws Exception {
         String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
+        Path grandparent = rootDir.toPath().resolve("0c");
+        Path parent = grandparent.resolve("40ffacd15b0f66d5081a93407d3ff5e3c65a71");
+        Path expectedContent = parent.resolve("content");
+        assertFalse(expectedContent + " shouldn't exist", Files.exists(expectedContent));
+        assertFalse(expectedContent.getParent() + " shouldn't exist", Files.exists(parent));
+        assertFalse(expectedContent.getParent().getParent() + " shouldn't exist", Files.exists(grandparent));
+        byte[] result;
         try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
             assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
-            byte[] result = repository.addContent(stream);
-            assertThat(result, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(result), is(expResult));
-            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(true));
-            repository.removeContent(new ContentReference("overlay.xhtml", expResult));
-            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
-            VirtualFile content = repository.getContent(result);
-            assertThat(content.exists(), is(false));
+            result = repository.addContent(stream);
         }
+        assertThat(result, is(notNullValue()));
+        assertThat(HashUtil.bytesToHexString(result), is(expResult));
+        assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(true));
+        assertTrue(expectedContent + " should have been created", Files.exists(expectedContent));
+        assertTrue(parent + " should have been created", Files.exists(parent));
+        assertTrue(grandparent + " should have been created", Files.exists(grandparent));
+        repository.removeContent(new ContentReference("overlay.xhtml", expResult));
+        assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
+        assertFalse(expectedContent + " should have been deleted", Files.exists(expectedContent));
+        assertFalse(parent.toAbsolutePath() + " should have been deleted", Files.exists(parent));
+        assertFalse(grandparent + " should have been deleted", Files.exists(grandparent));
+        VirtualFile content = repository.getContent(result);
+        assertFalse(content.exists());
     }
 
     /**
@@ -198,7 +213,7 @@ public class ContentRepositoryTest {
         File emptyGrandParent = new File(rootDir, "ae");
         emptyGrandParent.mkdir();
         assertThat(emptyGrandParent.exists(), is(true));
-        Map<String, Set<String>>  result = repository.cleanObsoleteContent(); //Mark content for deletion
+        Map<String, Set<String>> result = repository.cleanObsoleteContent(); //Mark content for deletion
         assertThat(result.get(ContentRepository.MARKED_CONTENT).size(), is(1));
         assertThat(result.get(ContentRepository.DELETED_CONTENT).size(), is(0));
         assertThat(result.get(ContentRepository.MARKED_CONTENT).contains(emptyGrandParent.getAbsolutePath()), is(true));
@@ -208,7 +223,39 @@ public class ContentRepositoryTest {
         assertThat(result.get(ContentRepository.DELETED_CONTENT).size(), is(1));
         assertThat(result.get(ContentRepository.MARKED_CONTENT).size(), is(0));
         assertThat(result.get(ContentRepository.DELETED_CONTENT).contains(emptyGrandParent.getAbsolutePath()), is(true));
+    }
 
+    /**
+     * Test that an empty dir will be removed during cleaning.
+     */
+    @Test
+    public void testCleanNotEmptyGrandParentDir() throws Exception {
+        String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
+        Path grandparent = rootDir.toPath().resolve("0c");
+        Path parent = grandparent.resolve("40ffacd15b0f66d5081a93407d3ff5e3c65a71");
+        Path other = grandparent.resolve("40ffacd15b0f66d5081a93407d3ff5e3c65a81");
+        Files.createDirectories(other);
+        Path expectedContent = parent.resolve("content");
+        assertFalse(expectedContent + " shouldn't exist", Files.exists(expectedContent));
+        assertFalse(parent + " shouldn't exist", Files.exists(parent));
+        byte[] result;
+        try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
+            result = repository.addContent(stream);
+        }
+        assertThat(result, is(notNullValue()));
+        assertThat(HashUtil.bytesToHexString(result), is(expResult));
+        assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(true));
+        assertTrue(expectedContent + " should have been created", Files.exists(expectedContent));
+        assertTrue(parent + " should have been created", Files.exists(parent));
+        repository.removeContent(new ContentReference("overlay.xhtml", expResult));
+        assertFalse(repository.hasContent(HashUtil.hexStringToByteArray(expResult)));
+        assertFalse(expectedContent + " should have been deleted", Files.exists(expectedContent));
+        assertFalse(parent.toAbsolutePath() + " should have been deleted", Files.exists(parent));
+        assertTrue(other + " should not have been deleted", Files.exists(other));
+        assertTrue(grandparent + " should not have been deleted", Files.exists(grandparent));
+        VirtualFile content = repository.getContent(result);
+        assertFalse(content.exists());
     }
 
     /**

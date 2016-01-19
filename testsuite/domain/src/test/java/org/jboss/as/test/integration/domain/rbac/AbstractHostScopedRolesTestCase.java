@@ -61,9 +61,18 @@ public abstract class AbstractHostScopedRolesTestCase extends AbstractRbacTestCa
     public static final String ADMINISTRATOR_USER = "HostMasterAdministrator";
     public static final String AUDITOR_USER = "HostMasterAuditor";
     public static final String SUPERUSER_USER = "HostMasterSuperUser";
+    public static final String SLAVE_MONITOR_USER = "HostSlaveMonitor";
+    public static final String SLAVE_OPERATOR_USER = "HostSlaveOperator";
+    public static final String SLAVE_MAINTAINER_USER = "HostSlaveMaintainer";
+    public static final String SLAVE_DEPLOYER_USER = "HostSlaveDeployer";
+    public static final String SLAVE_ADMINISTRATOR_USER = "HostSlaveAdministrator";
+    public static final String SLAVE_AUDITOR_USER = "HostSlaveAuditor";
+    public static final String SLAVE_SUPERUSER_USER = "HostSlaveSuperUser";
 
     static final String[] USERS = { MONITOR_USER, OPERATOR_USER, MAINTAINER_USER, DEPLOYER_USER,
             ADMINISTRATOR_USER, AUDITOR_USER, SUPERUSER_USER };
+    static final String[] SLAVE_USERS = {SLAVE_MONITOR_USER, SLAVE_OPERATOR_USER, SLAVE_MAINTAINER_USER,
+            SLAVE_DEPLOYER_USER, SLAVE_ADMINISTRATOR_USER, SLAVE_AUDITOR_USER, SLAVE_SUPERUSER_USER};
     private static final String[] BASES = { RbacUtil.MONITOR_USER, RbacUtil.OPERATOR_USER, RbacUtil.MAINTAINER_USER,
             RbacUtil.DEPLOYER_USER, RbacUtil.ADMINISTRATOR_USER, RbacUtil.AUDITOR_USER,
             RbacUtil.SUPERUSER_USER };
@@ -77,10 +86,20 @@ public abstract class AbstractHostScopedRolesTestCase extends AbstractRbacTestCa
             op.get(HOSTS).add(MASTER);
             RbacUtil.executeOperation(domainClient, op, Outcome.SUCCESS);
         }
+        for (int i = 0; i < SLAVE_USERS.length; i++) {
+            ModelNode op = createOpNode(SCOPED_ROLE + SLAVE_USERS[i], ADD);
+            op.get(BASE_ROLE).set(BASES[i]);
+            op.get(HOSTS).add(SLAVE);
+            RbacUtil.executeOperation(domainClient, op, Outcome.SUCCESS);
+        }
     }
 
     protected static void tearDownRoles(DomainClient domainClient) throws IOException {
         for (String role : USERS) {
+            ModelNode op = createOpNode(SCOPED_ROLE + role, REMOVE);
+            RbacUtil.executeOperation(domainClient, op, Outcome.SUCCESS);
+        }
+        for (String role : SLAVE_USERS) {
             ModelNode op = createOpNode(SCOPED_ROLE + role, REMOVE);
             RbacUtil.executeOperation(domainClient, op, Outcome.SUCCESS);
         }

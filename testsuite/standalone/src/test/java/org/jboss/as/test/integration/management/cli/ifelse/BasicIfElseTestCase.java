@@ -23,13 +23,8 @@ package org.jboss.as.test.integration.management.cli.ifelse;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.ByteArrayOutputStream;
-
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -39,23 +34,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Alexey Loubyansky
  */
 @RunWith(WildflyTestRunner.class)
-public class BasicIfElseTestCase {
-
-    private static final String RESPONSE_VALUE_PREFIX = "\"value\" => \"";
-
-    private static final String PROP_NAME = "jboss-cli-test";
-
-    private static ByteArrayOutputStream cliOut;
-
-    @BeforeClass
-    public static void setup() throws Exception {
-        cliOut = new ByteArrayOutputStream();
-    }
-
-    @AfterClass
-    public static void tearDown() throws Exception {
-        cliOut = null;
-    }
+public class BasicIfElseTestCase extends CLISystemPropertyTestBase {
 
     @Test
     public void testMain() throws Exception {
@@ -81,34 +60,5 @@ public class BasicIfElseTestCase {
         cliOut.reset();
         ctx.handle(getReadPropertyReq());
         return getValue();
-    }
-
-    protected String getAddPropertyReq(String value) {
-        return "/system-property=" + PROP_NAME + ":add(value=" + value + ")";
-    }
-
-    protected String getWritePropertyReq(String value) {
-        return "/system-property=" + PROP_NAME + ":write-attribute(name=\"value\",value=" + value + ")";
-    }
-
-    protected String getReadPropertyReq() {
-        return "/system-property=" + PROP_NAME + ":read-resource";
-    }
-
-    protected String getRemovePropertyReq() {
-        return "/system-property=" + PROP_NAME + ":remove";
-    }
-
-    protected String getValue() {
-        final String response = cliOut.toString();
-        final int start = response.indexOf(RESPONSE_VALUE_PREFIX);
-        if(start < 0) {
-            Assert.fail("Value not found in the response: " + response);
-        }
-        final int end = response.indexOf('"', start + RESPONSE_VALUE_PREFIX.length() + 1);
-        if(end < 0) {
-            Assert.fail("Couldn't locate the closing quote: " + response);
-        }
-        return response.substring(start + RESPONSE_VALUE_PREFIX.length(), end);
     }
 }

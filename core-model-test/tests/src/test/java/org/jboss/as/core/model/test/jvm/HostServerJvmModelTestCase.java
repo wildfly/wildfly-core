@@ -32,6 +32,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.ModelInitializer;
 import org.jboss.as.core.model.test.TestModelType;
+import org.jboss.as.core.model.test.util.ServerConfigInitializers;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
@@ -68,6 +69,7 @@ public class HostServerJvmModelTestCase extends AbstractJvmModelTest {
     public void testFullServerJvmXml() throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder()
             .setXmlResource("host-server-full.xml")
+            .setModelInitializer(ServerConfigInitializers.XML_MODEL_INITIALIZER, null)
             .build();
 
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
@@ -83,6 +85,7 @@ public class HostServerJvmModelTestCase extends AbstractJvmModelTest {
     public void testEmptyServerJvmXml() throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder()
             .setXmlResource("host-server-empty.xml")
+            .setModelInitializer(ServerConfigInitializers.XML_MODEL_INITIALIZER, null)
             .build();
 
         Assert.assertTrue(kernelServices.isSuccessfulBoot());

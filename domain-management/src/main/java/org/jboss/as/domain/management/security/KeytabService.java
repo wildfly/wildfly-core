@@ -56,7 +56,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 
 /**
- * An extension to {@link AbstractKeyManagerService} so that a KeyManager[] can be provided based on a JKS file based key store.
+ * A service used for loading Kerberos keytabs.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
@@ -125,15 +125,20 @@ public class KeytabService implements Service<KeytabService> {
             }, Event.REMOVED, Event.UPDATED);
         }
 
+        File keyTabFile = new File(file);
+        if (keyTabFile.exists() == false) {
+            throw SECURITY_LOGGER.keyTabFileNotFound(file);
+        }
+
         try {
-            clientConfiguration = createConfiguration(false, file);
-            serverConfiguration = createConfiguration(true, file);
+            clientConfiguration = createConfiguration(false, keyTabFile);
+            serverConfiguration = createConfiguration(true, keyTabFile);
         } catch (MalformedURLException e) {
             throw SECURITY_LOGGER.invalidKeytab(e);
         }
     }
 
-    private Configuration createConfiguration(final boolean isServer, final String keytabLocation) throws MalformedURLException {
+    private Configuration createConfiguration(final boolean isServer, final File keyTabFile) throws MalformedURLException {
         Map<String, Object> options = new HashMap<String, Object>();
         if (debug) {
             options.put("debug", "true");
@@ -144,12 +149,12 @@ public class KeytabService implements Service<KeytabService> {
         if (IS_IBM) {
             options.put("noAddress", "true");
             options.put("credsType", isServer ? "acceptor" : "initiator");
-            options.put("useKeytab", new File(keytabLocation).toURI().toURL().toString());
+            options.put("useKeytab", keyTabFile.toURI().toURL().toString());
             ace = new AppConfigurationEntry(IBMKRB5LoginModule, REQUIRED, options);
         } else {
             options.put("storeKey", "true");
             options.put("useKeyTab", "true");
-            options.put("keyTab", keytabLocation);
+            options.put("keyTab", keyTabFile.getAbsolutePath());
             options.put("isInitiator", isServer ? "false" : "true");
 
             ace = new AppConfigurationEntry(KRB5LoginModule, REQUIRED, options);

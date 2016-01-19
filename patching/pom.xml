@@ -29,12 +29,17 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>2.0.0.Beta2-SNAPSHOT</version>
+        <version>2.0.8.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-patching</artifactId>
 
     <name>WildFly: Patching Core</name>
+
+    <properties>
+        <byteman.host>127.0.0.1</byteman.host>
+        <byteman.port>9091</byteman.port>
+    </properties>
 
     <build>
         <plugins>
@@ -64,11 +69,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                     <argLine>-javaagent:${org.jboss.byteman:byteman:jar}=port:9091,boot:${org.jboss.byteman:byteman:jar} -Dorg.jboss.byteman.debug=true</argLine>
+                     <argLine>-javaagent:${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar} -Dorg.jboss.byteman.debug=true</argLine>
                     <systemPropertyVariables>
                         <org.jboss.byteman.contrib.bmunit.agent.inhibit>true</org.jboss.byteman.contrib.bmunit.agent.inhibit>
                         <org.jboss.byteman.debug>true</org.jboss.byteman.debug>
-                        <org.jboss.byteman.contrib.bmunit.agent.port>9091</org.jboss.byteman.contrib.bmunit.agent.port>
+                        <org.jboss.byteman.contrib.bmunit.agent.host>${byteman.host}</org.jboss.byteman.contrib.bmunit.agent.host>
+                        <org.jboss.byteman.contrib.bmunit.agent.port>${byteman.port}</org.jboss.byteman.contrib.bmunit.agent.port>
                         <org.wildfly.patching.jar.invalidation>true</org.wildfly.patching.jar.invalidation>
                     </systemPropertyVariables>
                 </configuration>
@@ -158,4 +164,20 @@
         </dependency>
 
     </dependencies>
+
+    <profiles>
+        <!-- profile is the same name as the test IPv6 profile for consistency and in case the profile is enabled via
+        the profile name rather than the system property. -->
+        <profile>
+            <id>ts.ipv6</id>
+            <activation>
+                <property>
+                    <name>ipv6</name>
+                </property>
+            </activation>
+            <properties>
+                <byteman.host>::1</byteman.host>
+            </properties>
+        </profile>
+    </profiles>
 </project>

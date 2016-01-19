@@ -1,12 +1,12 @@
 package org.jboss.as.controller;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A persistent resource definition. This needs to be combined with {@link PersistentResourceXMLDescription} to
@@ -25,17 +25,36 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
     }
 
     protected PersistentResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver, OperationStepHandler addHandler, OperationStepHandler removeHandler, OperationEntry.Flag addRestartLevel, OperationEntry.Flag removeRestartLevel) {
-        super(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel);
+        super(new Parameters(pathElement, descriptionResolver)
+                        .setAddHandler(addHandler)
+                        .setRemoveHandler(removeHandler)
+                        .setAddRestartLevel(addRestartLevel)
+                        .setRemoveRestartLevel(removeRestartLevel)
+        );
     }
 
     protected PersistentResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver, OperationStepHandler addHandler,
                                            OperationStepHandler removeHandler, boolean isRuntime) {
-        super(pathElement, descriptionResolver, addHandler, removeHandler, isRuntime);
+        super(new Parameters(pathElement, descriptionResolver)
+                               .setAddHandler(addHandler)
+                               .setRemoveHandler(removeHandler)
+                               .setRuntime(isRuntime)
+               );
     }
 
     protected PersistentResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver, OperationStepHandler addHandler,
                                            OperationStepHandler removeHandler, OperationEntry.Flag addRestartLevel, OperationEntry.Flag removeRestartLevel, boolean isRuntime) {
-        super(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel, null, isRuntime);
+        super(new Parameters(pathElement, descriptionResolver)
+                        .setAddHandler(addHandler)
+                        .setRemoveHandler(removeHandler)
+                        .setAddRestartLevel(addRestartLevel)
+                        .setRemoveRestartLevel(removeRestartLevel)
+                        .setRuntime(isRuntime)
+        );
+    }
+
+    protected PersistentResourceDefinition(Parameters parameters){
+        super(parameters);
     }
 
 
@@ -61,4 +80,18 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
     }
 
     public abstract Collection<AttributeDefinition> getAttributes();
+
+    public static class Parameters extends SimpleResourceDefinition.Parameters {
+
+        /**
+         * Creates a Parameters object
+         *
+         * @param pathElement         the path element of the created ResourceDefinition. Cannot be {@code null}
+         * @param descriptionResolver the description provider. Cannot be {@code null}
+         */
+        public Parameters(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
+            super(pathElement, descriptionResolver);
+        }
+
+    }
 }

@@ -36,7 +36,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -75,15 +74,18 @@ public class ReadMasterDomainModelUtil {
     /**
      * Used to read the domain model when a slave host connects to the DC
      *
-     *  @param context the operation context
      *  @param transformers the transformers for the host
-     *  @param domainRoot the domain root resource
-     *  @return a read master domain model util instance
+     *  @param transformationInputs parameters for the transformation
+     *  @param ignoredTransformationRegistry registry of resources ignored by the transformation target
+     *  @param domainRoot the root resource for the domain resource tree
+     * @return a read master domain model util instance
      */
-    static ReadMasterDomainModelUtil readMasterDomainResourcesForInitialConnect(
-            final OperationContext context, final Transformers transformers, final Resource domainRoot, final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) throws OperationFailedException {
+    static ReadMasterDomainModelUtil readMasterDomainResourcesForInitialConnect(final Transformers transformers,
+                                                                                final Transformers.TransformationInputs transformationInputs,
+                                                                                final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry,
+                                                                                final Resource domainRoot) throws OperationFailedException {
 
-        Resource transformedResource = transformers.transformRootResource(context, domainRoot, ignoredTransformationRegistry);
+        Resource transformedResource = transformers.transformRootResource(transformationInputs, domainRoot, ignoredTransformationRegistry);
         ReadMasterDomainModelUtil util = new ReadMasterDomainModelUtil();
         util.describedResources = util.describeAsNodeList(PathAddress.EMPTY_ADDRESS, transformedResource, false);
         return util;
@@ -362,10 +364,9 @@ public class ReadMasterDomainModelUtil {
      *
      * @param hostInfo the host info
      * @param rc       the resolution context
-     * @param local    whether the operation is executed on the slave host locally
      * @return
      */
-    public static Transformers.ResourceIgnoredTransformationRegistry createHostIgnoredRegistry(final HostInfo hostInfo, final RequiredConfigurationHolder rc, final boolean local) {
+    public static Transformers.ResourceIgnoredTransformationRegistry createHostIgnoredRegistry(final HostInfo hostInfo, final RequiredConfigurationHolder rc) {
         return new Transformers.ResourceIgnoredTransformationRegistry() {
             @Override
             public boolean isResourceTransformationIgnored(PathAddress address) {
@@ -412,11 +413,10 @@ public class ReadMasterDomainModelUtil {
      * to a server-config.
      *
      * @param rc       the resolution context
-     * @param local    whether the operation is executed on the slave host locally
      * @param delegate the delegate ignored resource transformation registry for manually ignored resources
      * @return
      */
-    public static Transformers.ResourceIgnoredTransformationRegistry createServerIgnoredRegistry(final RequiredConfigurationHolder rc, final boolean local, final Transformers.ResourceIgnoredTransformationRegistry delegate) {
+    public static Transformers.ResourceIgnoredTransformationRegistry createServerIgnoredRegistry(final RequiredConfigurationHolder rc, final Transformers.ResourceIgnoredTransformationRegistry delegate) {
         return new Transformers.ResourceIgnoredTransformationRegistry() {
             @Override
             public boolean isResourceTransformationIgnored(PathAddress address) {

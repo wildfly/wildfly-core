@@ -25,6 +25,7 @@ package org.jboss.as.patching.runner;
 import java.io.File;
 import java.io.IOException;
 
+import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.MiscContentItem;
 import org.jboss.as.patching.metadata.ModificationType;
@@ -42,6 +43,16 @@ public interface PatchingTask {
      * @return the content item
      */
     ContentItem getContentItem();
+
+    /**
+     * Checks whether this task is relevant in the given context or it can be skipped.
+     *
+     * @param context  patching task context
+     * @return  true if this task is relevant in the current context and should be executed,
+     *          otherwise - false
+     * @throws PatchingException
+     */
+    boolean isRelevant(PatchingTaskContext context) throws PatchingException;
 
     /**
      * Prepare the content modification. This will backup the current target file and check

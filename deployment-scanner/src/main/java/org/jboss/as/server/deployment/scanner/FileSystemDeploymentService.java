@@ -27,6 +27,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_DEPLOYED_NOTIFICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_UNDEPLOYED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -52,6 +54,8 @@ import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -72,6 +76,8 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.notification.Notification;
+import org.jboss.as.controller.notification.NotificationHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.server.deployment.DeploymentAddHandler;
 import org.jboss.as.server.deployment.DeploymentDeployHandler;
@@ -91,7 +97,7 @@ import org.jboss.dmr.Property;
  *
  * @author Brian Stansberry
  */
-class FileSystemDeploymentService implements DeploymentScanner {
+class FileSystemDeploymentService implements DeploymentScanner, NotificationHandler {
 
     static final Pattern ARCHIVE_PATTERN = Pattern.compile("^.*\\.(?:(?:[SsWwJjEeRr][Aa][Rr])|(?:[Ww][Aa][Bb])|(?:[Ee][Ss][Aa]))$");
 
@@ -152,6 +158,89 @@ class FileSystemDeploymentService implements DeploymentScanner {
     private final String relativePath;
     private final PropertyChangeListener propertyChangeListener;
     private Future<?> undeployScanTask;
+
+    @Override
+    public void handleNotification(Notification notification) {
+        if (acquireScanLock()) {
+            try {
+                switch (notification.getType()) {
+                    case DEPLOYMENT_DEPLOYED_NOTIFICATION: {
+                        String runtimeName = notification.getData().get(DEPLOYMENT).asString();
+                        if (!deployed.containsKey(runtimeName)) {
+                            updateStatusAfterDeploymentNotification(deploymentDir.toPath(), runtimeName);
+                        }
+                        break;
+                    }
+                    case DEPLOYMENT_UNDEPLOYED_NOTIFICATION: {
+                        String runtimeName = notification.getData().get(DEPLOYMENT).asString();
+                        if (deployed.containsKey(runtimeName)) {
+                            clearMarkers(deployed.get(runtimeName).parentFolder.toPath(), runtimeName);
+                            updateStatusAfterUndeploymentNotification(deploymentDir.toPath(), runtimeName);
+                            deployed.remove(runtimeName);
+                        }
+                        break;
+                    }
+                    default:
+                    //ignore
+                }
+            } finally {
+                releaseScanLock();
+            }
+        }
+    }
+    private void updateStatusAfterUndeploymentNotification(Path dir, String runtimeName) {
+        ROOT_LOGGER.debugf("Updating status after undeployment notification for %s", runtimeName);
+        Path undeployedMarker = dir.resolve(runtimeName + UNDEPLOYED);
+        final Path deploymentFile = dir.resolve(runtimeName);
+        if (!Files.exists(undeployedMarker) && Files.exists(deploymentFile)) {
+             try {
+                Files.createFile(undeployedMarker);
+            } catch (IOException ioex) {
+                ROOT_LOGGER.errorWritingDeploymentMarker(ioex, undeployedMarker.toString());
+            }
+        }
+    }
+    private void updateStatusAfterDeploymentNotification(Path dir, String runtimeName) {
+        ROOT_LOGGER.debugf("Updating status after deployment notification for %s", runtimeName);
+        Path undeployedMarker = dir.resolve(runtimeName + UNDEPLOYED);
+        Path deployedMarker = dir.resolve(runtimeName + DEPLOYED);
+        if (Files.exists(undeployedMarker)) {
+            try {
+                Files.delete(undeployedMarker);
+            } catch (IOException ioex) {
+                ROOT_LOGGER.cannotRemoveDeploymentMarker(undeployedMarker.toFile());
+            }
+        }
+        final Path deploymentFile = dir.resolve(runtimeName);
+        if (! Files.exists(deployedMarker) && Files.exists(deploymentFile)) {
+            try {
+                deployedMarker = Files.createFile(deployedMarker);
+                boolean isArchive = Files.isRegularFile(deploymentFile);
+                if (Files.exists(deploymentFile)) {
+                    Files.setLastModifiedTime(deployedMarker, Files.getLastModifiedTime(deploymentFile));
+                }
+                deployed.put(runtimeName, new DeploymentMarker(Files.getLastModifiedTime(deployedMarker).toMillis(), isArchive, dir.toFile()));
+            } catch (IOException ioex) {
+                ROOT_LOGGER.errorWritingDeploymentMarker(ioex, deployedMarker.toString());
+            }
+        }
+    }
+
+    private void clearMarkers(Path dir, String runtimeName) {
+        String fileName = runtimeName + DO_DEPLOY;
+        try {
+            Files.deleteIfExists(dir.resolve(fileName));
+            fileName = runtimeName + FAILED_DEPLOY;
+            Files.deleteIfExists(dir.resolve(fileName));
+            fileName = runtimeName + SKIP_DEPLOY;
+            Files.deleteIfExists(dir.resolve(fileName));
+            fileName = runtimeName + DEPLOYED;
+            Files.deleteIfExists(dir.resolve(fileName));
+        } catch (IOException ioex) {
+            ROOT_LOGGER.cannotRemoveDeploymentMarker(fileName);
+        }
+
+    }
 
     private class DeploymentScanRunnable implements Runnable {
 
@@ -422,7 +511,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
 
         if (acquireScanLock()) {
             try {
-                ROOT_LOGGER.tracef("Performing a post-boot forced undeploy scan for scan directory %oManu", deploymentDir.getAbsolutePath());
+                ROOT_LOGGER.tracef("Performing a post-boot forced undeploy scan for scan directory %s", deploymentDir.getAbsolutePath());
                 ScanContext scanContext = new ScanContext(deploymentOperations);
 
                 // Add remove actions to the plan for anything we count as
@@ -1332,6 +1421,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
             addOp.get(PERSISTENT).set(false);
             addOp.get(OWNER).set(resourceAddress);
             final ModelNode deployOp = Util.getEmptyOperation(DeploymentDeployHandler.OPERATION_NAME, address);
+            deployOp.get(OWNER).set(resourceAddress);
             return getCompositeUpdate(addOp, deployOp);
         }
 
@@ -1383,7 +1473,9 @@ class FileSystemDeploymentService implements DeploymentScanner {
         @Override
         protected ModelNode getUpdate() {
             final ModelNode address = new ModelNode().add(DEPLOYMENT, deploymentName);
-            return Util.getEmptyOperation(DeploymentRedeployHandler.OPERATION_NAME, address);
+            final ModelNode redployOp = Util.getEmptyOperation(DeploymentRedeployHandler.OPERATION_NAME, address);
+            redployOp.get(OWNER).set(resourceAddress);
+            return redployOp;
         }
 
         @Override
@@ -1422,6 +1514,7 @@ class FileSystemDeploymentService implements DeploymentScanner {
         protected ModelNode getUpdate() {
             final ModelNode address = new ModelNode().add(DEPLOYMENT, deploymentName);
             final ModelNode undeployOp = Util.getEmptyOperation(DeploymentUndeployHandler.OPERATION_NAME, address);
+            undeployOp.get(OWNER).set(resourceAddress);
             final ModelNode removeOp = Util.getEmptyOperation(DeploymentRemoveHandler.OPERATION_NAME, address);
             return getCompositeUpdate(undeployOp, removeOp);
         }

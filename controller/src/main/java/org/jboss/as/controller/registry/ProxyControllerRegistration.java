@@ -41,7 +41,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyStepHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -92,6 +92,16 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
+    public int getMaxOccurs() {
+        return 1;
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return 1;
+    }
+
+    @Override
     public boolean isRuntimeOnly() {
         checkPermission();
         return true;
@@ -120,7 +130,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public void registerCapability(Capability capability) {
+    public void registerCapability(RuntimeCapability capability) {
         throw alreadyRegistered();
     }
 
@@ -137,20 +147,6 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     @Override
     public void unregisterOverrideModel(String name) {
         throw alreadyRegistered();
-    }
-
-    @Override
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited, OperationEntry.EntryType entryType) {
-        if (operationsUpdater.putIfAbsent(this, operationName, new OperationEntry(handler, descriptionProvider, inherited, entryType)) != null) {
-            throw alreadyRegistered("operation handler", operationName);
-        }
-    }
-
-    @Override
-    public void registerOperationHandler(final String operationName, final OperationStepHandler handler, final DescriptionProvider descriptionProvider, final boolean inherited, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
-        if (operationsUpdater.putIfAbsent(this, operationName, new OperationEntry(handler, descriptionProvider, inherited, entryType, flags, null)) != null) {
-            throw alreadyRegistered("operation handler", operationName);
-        }
     }
 
     @Override
@@ -260,6 +256,11 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
+    Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator) {
+        return Collections.emptySet();
+    }
+
+    @Override
     DescriptionProvider getModelDescription(final ListIterator<PathElement> iterator) {
         checkPermission();
         return this;
@@ -360,11 +361,6 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public Set<Capability> getCapabilities() {
-        return Collections.emptySet();
-    }
-
-    @Override
     protected void registerAlias(PathElement address, AliasEntry alias, AbstractResourceRegistration target) {
         throw ControllerLogger.ROOT_LOGGER.proxyHandlerAlreadyRegistered(getLocationString());
     }
@@ -376,7 +372,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public Set<String> getOrderedChildTypes() {
+    Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator) {
         checkPermission();
         return Collections.emptySet();
     }

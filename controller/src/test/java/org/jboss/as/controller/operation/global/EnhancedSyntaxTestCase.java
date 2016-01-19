@@ -36,6 +36,7 @@ import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -77,6 +78,7 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
     private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE = ObjectTypeAttributeDefinition.Builder.of("complex-attribute", ATTR_1, ATTR_2, MAP_ATTRIBUTE).build();
     private static final ObjectListAttributeDefinition OBJECT_LIST = ObjectListAttributeDefinition.Builder.of("object-list", COMPLEX_ATTRIBUTE).setAllowNull(true).build();
     private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE2 = ObjectTypeAttributeDefinition.Builder.of("complex-attribute2", OBJECT_LIST).build();
+    private static final AttributeDefinition NORMAL_LOOKING_EXTENDED = new SimpleAttributeDefinitionBuilder("normal.looking.extended", ModelType.STRING, true).build();
 
 
     private static PathAddress TEST_ADDRESS = PathAddress.pathAddress("subsystem", "test");
@@ -108,6 +110,7 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
                         COMPLEX_ATTRIBUTE.validateAndSet(operation, model);
                         OBJECT_LIST.validateAndSet(operation, model);
                         COMPLEX_ATTRIBUTE2.validateAndSet(operation, model);
+                        NORMAL_LOOKING_EXTENDED.validateAndSet(operation, model);
                     }
 
                 })
@@ -133,6 +136,7 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
                 }).addReadWriteAttribute(COMPLEX_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(COMPLEX_ATTRIBUTE))
                 .addReadWriteAttribute(OBJECT_LIST, null, new ModelOnlyWriteAttributeHandler(OBJECT_LIST))
                 .addReadWriteAttribute(COMPLEX_ATTRIBUTE2, null, new ModelOnlyWriteAttributeHandler(COMPLEX_ATTRIBUTE2))
+                .addReadWriteAttribute(NORMAL_LOOKING_EXTENDED, null, new ModelOnlyWriteAttributeHandler(NORMAL_LOOKING_EXTENDED))
                 .build();
     }
 
@@ -476,6 +480,48 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
         op.get("key").set("map-put-key");
         Assert.assertEquals("map-put-value", executeForResult(op).asString());
 
+    }
+
+    @Test
+    public void testNormalAttributeLookingExtended() throws Exception {
+        final ModelNode wa = createOperation("write-attribute", TEST_ADDRESS);
+        wa.get("name").set(NORMAL_LOOKING_EXTENDED.getName());
+        wa.get("value").set("test123");
+        executeCheckNoFailure(wa);
+
+        final ModelNode ra = createOperation("read-attribute", TEST_ADDRESS);
+        ra.get("name").set(NORMAL_LOOKING_EXTENDED.getName());
+        Assert.assertEquals("test123", executeForResult(ra).asString());
+
+        executeCheckNoFailure(createOperation("remove", TEST_ADDRESS));
+        final ModelNode add = createOperation("add", TEST_ADDRESS);
+        add.get(NORMAL_LOOKING_EXTENDED.getName()).set("test456");
+        executeCheckNoFailure(add);
+
+        Assert.assertEquals("test456", executeForResult(ra).asString());
+    }
+
+    @Test
+    public void testComplexListValue()throws Exception{
+
+        //test List<Object>
+        ModelNode op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName());
+        ModelNode value = new ModelNode();
+        value.get(ATTR_1.getName()).set("complex value");
+        value.get(ATTR_2.getName()).set(true);
+        op.get("value").set(value);
+        executeCheckNoFailure(op);
+
+        ModelNode readOp = createOperation("read-attribute", TEST_ADDRESS);
+        readOp.get("name").set(OBJECT_LIST.getName());
+        ModelNode result = executeForResult(readOp);
+        Assert.assertEquals(1, result.asList().size());
+
+        executeCheckNoFailure(op);
+
+        result = executeForResult(readOp);
+        Assert.assertEquals(2, result.asList().size());
     }
 
 }

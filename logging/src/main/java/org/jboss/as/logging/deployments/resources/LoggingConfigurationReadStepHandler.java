@@ -35,18 +35,14 @@ import org.jboss.msc.service.ServiceController;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 abstract class LoggingConfigurationReadStepHandler implements OperationStepHandler {
-    private static final OperationContext.AttachmentKey<LogContextConfiguration> CONFIGURATION_KEY = OperationContext.AttachmentKey.create(LogContextConfiguration.class);
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-        LogContextConfiguration configuration = context.getAttachment(CONFIGURATION_KEY);
-        if (configuration == null) {
-            // Lookup the service
-            final ServiceController<?> controller = context.getServiceRegistry(false).getService(LoggingConfigurationService.forDeployment(context.getCurrentAddress()));
-            if (controller != null) {
-                configuration = (LogContextConfiguration) controller.getValue();
-                context.attachIfAbsent(CONFIGURATION_KEY, configuration);
-            }
+        LogContextConfiguration configuration = null;
+        // Lookup the service
+        final ServiceController<?> controller = context.getServiceRegistry(false).getService(LoggingConfigurationService.forDeployment(context.getCurrentAddress()));
+        if (controller != null) {
+            configuration = (LogContextConfiguration) controller.getValue();
         }
         // Some deployments may not have a logging configuration associated, e.g. log4j configured deployments
         if (configuration != null) {

@@ -574,6 +574,7 @@ public enum Phase {
     public static final int INSTALL_APPLICATION_CLIENT                  = 0x2010;
     public static final int INSTALL_CACHE_DEPENDENCIES                  = 0x2020;
     public static final int INSTALL_MESSAGING_XML_RESOURCES             = 0x2030;
+    public static final int INSTALL_MDB_DELIVERY_DEPENDENCIES           = 0x2038;
     public static final int INSTALL_BUNDLE_ACTIVATE                     = 0x2040;
     public static final int INSTALL_WAB_SERVLETCONTEXT_SERVICE          = 0x2050;
     public static final int INSTALL_PERSISTENCE_SERVICES                = 0x2060;

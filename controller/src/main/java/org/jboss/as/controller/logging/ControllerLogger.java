@@ -1708,7 +1708,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 147, value = "No child type %s")
     OperationFailedRuntimeException noChildType(String name);
 
-    /**
+    /*
      * A message indicating no handler for the step operation, represented by the {@code stepOpName} parameter, at
      * {@code address}.
      *
@@ -3190,9 +3190,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 356, value = "Failed to emit notification %s")
     void failedToEmitNotification(Notification notification, @Cause Throwable cause);
 
-    @LogMessage(level = WARN)
     @Message(id = 357, value = "Notification of type %s is not described for the resource at the address %s")
-    void notificationIsNotDescribed(String type, PathAddress source);
+    String notificationIsNotDescribed(String type, PathAddress source);
 
     @Message(id = 358, value = "The resource was added at the address %s.")
     String resourceWasAdded(PathAddress address);
@@ -3209,7 +3208,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 362, value = "Capabilities required by resource '%s' are not available:")
     String requiredCapabilityMissing(String demandingAddress);
 
-    @Message(id = 363, value = "Capability '%s' is already registered in context '%s.")
+    @Message(id = 363, value = "Capability '%s' is already registered in context '%s'.")
     IllegalStateException capabilityAlreadyRegisteredInContext(String capability, String context);
 
     @Message(id = 364, value = "Capability '%s' is unknown.")
@@ -3241,6 +3240,12 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = NONE, value = "    %s in context '%s'")
     String formattedCapabilityId(String capability, String context);
+
+    @Message(id = NONE, value = "; Possible registration points for this capability: %s")
+    String possibleCapabilityProviderPoints(String providerPoints);
+
+    @Message(id = NONE, value = "; There are no known registration points which can provide this capability.")
+    String noKnownProviderPoints();
 
     @Message(id = 370, value="Incomplete expression: %s")
     OperationFailedException incompleteExpression(String expression);
@@ -3346,4 +3351,48 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 401, value = "Couldn't build the report")
     RuntimeException failedToBuildReport(@Cause Throwable t);
+
+    @Message(id = 402, value = "Subsystems %s provided by legacy extension '%s' are not supported on servers running this version. " +
+            "Both the subsystem and the extension must be removed or migrated before the server will function.")
+    @LogMessage(level = ERROR)
+    void removeUnsupportedLegacyExtension(List<String> subsystemNames, String extensionName);
+
+    @Message(id = 403, value = "Unexpected failure during execution of the following operation(s): %s")
+    @LogMessage(level = ERROR)
+    void unexpectedOperationExecutionException(@Cause Throwable t, List<ModelNode> controllerOperations);
+
+    @Message(id = 404, value = "Unexpected exception during execution: %s")
+    String unexpectedOperationExecutionFailureDescription(RuntimeException e);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 405, value = "Couldn't find a transformer to %s, falling back to %s")
+    void couldNotFindTransformerRegistryFallingBack(ModelVersion currentVersion, ModelVersion fallbackVersion);
+
+    /**
+     * Creates an exception indicating that an attribute could not be converted to the type required by a query select
+     *
+     * @param attribute the name of the attribute
+     * @param type the required type
+     */
+    @Message(id = 406, value = "Could not convert the attribute '%s' to a %s")
+    OperationFailedException selectFailedCouldNotConvertAttributeToType(String attribute, ModelType type);
+
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 407, value = "Failed sending completed response %s for %d")
+    void failedSendingCompletedResponse(@Cause Throwable cause, ModelNode response, int operationId);
+
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 408, value = "Failed sending failure response %s for %d")
+    void failedSendingFailedResponse(@Cause Throwable cause, ModelNode response, int operationId);
+
+    @Message(id = 409, value = "Execution of operation '%s' on remote process at address '%s' timed out after %d ms while awaiting initial response; remote process has been notified to terminate operation")
+    String proxiedOperationTimedOut(String operation, PathAddress target, long timeout);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 410, value = "Execution of operation '%s' on remote process at address '%s' timed out after %d ms while awaiting final response; remote process has been notified to terminate operation")
+    void timeoutAwaitingFinalResponse(String operation, PathAddress proxyNodeAddress, long timeout);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 411, value = "Failed to parse element '%s', ingoring ...")
+    void failedToParseElementLenient(@Cause XMLStreamException e, String elementName);
 }

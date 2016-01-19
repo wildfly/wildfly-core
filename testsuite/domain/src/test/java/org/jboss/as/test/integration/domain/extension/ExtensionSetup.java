@@ -35,6 +35,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
 import org.jboss.as.test.integration.management.extension.blocker.BlockerExtension;
+import org.jboss.as.test.integration.management.extension.error.ErrorExtension;
 import org.jboss.as.test.integration.management.extension.streams.LogStreamExtension;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
@@ -119,6 +120,14 @@ public class ExtensionSetup {
         support.addTestModule(BlockerExtension.MODULE_NAME, moduleXml, content);
     }
 
+    public static void initializeErrorExtension(final DomainTestSupport support) throws IOException {
+        // Get module.xml, create modules.jar and add to test config
+        final InputStream moduleXml = getModuleXml("error-module.xml");
+        StreamExporter exporter = createResourceRoot(ErrorExtension.class, EmptySubsystemParser.class.getPackage());
+        Map<String, StreamExporter> content = Collections.singletonMap("error-extension.jar", exporter);
+        support.addTestModule(ErrorExtension.MODULE_NAME, moduleXml, content);
+    }
+
     public static void initializeLogStreamExtension(final DomainTestSupport support) throws IOException {
         // Get module.xml, create modules.jar and add to test config
         final InputStream moduleXml = getModuleXml("log-stream-module.xml");
@@ -140,6 +149,13 @@ public class ExtensionSetup {
         StreamExporter exporter = createResourceRoot(ProfileIncludesExtension.class, EmptySubsystemParser.class.getPackage());
         Map<String, StreamExporter> content = Collections.singletonMap("profile-includes-extension.jar", exporter);
         support.addTestModule(ProfileIncludesExtension.MODULE_NAME, moduleXml, content);
+    }
+
+    public static void initializeTestAliasReadResourceAddressExtension(final DomainTestSupport support) throws IOException {
+        final InputStream moduleXml = getModuleXml("test-read-resource-description-alias-address-module.xml");
+        StreamExporter exporter = createResourceRoot(TestAliasReadResourceDescriptionAddressExtension.class, EmptySubsystemParser.class.getPackage());
+        Map<String, StreamExporter> content = Collections.singletonMap("test-alias-read-resource-description-address.jar", exporter);
+        support.addTestModule(TestAliasReadResourceDescriptionAddressExtension.MODULE_NAME, moduleXml, content);
     }
 
     static StreamExporter createResourceRoot(Class<? extends Extension> extension, Package... additionalPackages) throws IOException {

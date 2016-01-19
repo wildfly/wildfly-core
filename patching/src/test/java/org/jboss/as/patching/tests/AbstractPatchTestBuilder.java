@@ -22,15 +22,19 @@
 
 package org.jboss.as.patching.tests;
 
+import static org.jboss.as.patching.IoUtils.NO_CONTENT;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
 
 import java.io.File;
 import java.io.IOException;
-
 import java.util.Arrays;
 
+import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.ContentModification;
+import org.jboss.as.patching.metadata.MiscContentItem;
 import org.jboss.as.patching.metadata.ModificationBuilderTarget;
+import org.jboss.as.patching.metadata.ModificationCondition;
+import org.jboss.as.patching.metadata.ModificationType;
 import org.jboss.as.patching.runner.ContentModificationUtils;
 import org.jboss.as.patching.runner.TestUtils;
 
@@ -44,16 +48,29 @@ public abstract class AbstractPatchTestBuilder<T> extends ModificationBuilderTar
     protected abstract T returnThis();
 
     public T addFile(byte[] resultingHash, final String content, String... path) throws IOException {
-        final ContentModification modification = ContentModificationUtils.addMisc(getPatchDir(), getPatchId(), content, path);
+        return addFile(resultingHash, content, path, null);
+    }
+
+    public T addFile(byte[] resultingHash, final String content, String[] path, String[] requiredPath) throws IOException {
+        final ContentModification modification = ContentModificationUtils.addMisc(getPatchDir(), getPatchId(), content, path, requiredPath);
         return addContentModification(modification, resultingHash);
     }
 
     public T addFileWithRandomContent(byte[] resultingHash, String... path) throws IOException {
-        return addFile(resultingHash, randomString(), path);
+        return addFileWithRandomContent(resultingHash, path, null);
+    }
+
+    public T addFileWithRandomContent(byte[] resultingHash, String[] path, String[] requiredPath) throws IOException {
+        return addFile(resultingHash, randomString(), path, requiredPath);
     }
 
     public T updateFileWithRandomContent(byte[] existingHash, byte[] resultingHash, String... path) throws IOException {
-        final ContentModification modification = ContentModificationUtils.modifyMisc(getPatchDir(), getPatchId(), randomString(), Arrays.copyOf(existingHash, existingHash.length), path);
+        return updateFileWithRandomContent(existingHash, resultingHash, path, null);
+    }
+
+    public T updateFileWithRandomContent(byte[] existingHash, byte[] resultingHash, String[] path, String[] requiredPath) throws IOException {
+        final ContentModification modification = ContentModificationUtils.modifyMisc(
+                getPatchDir(), getPatchId(), randomString(), Arrays.copyOf(existingHash, existingHash.length), path, requiredPath);
         return addContentModification(modification, resultingHash);
     }
 
@@ -61,6 +78,21 @@ public abstract class AbstractPatchTestBuilder<T> extends ModificationBuilderTar
         final String name = path[path.length - 1];
         removeFile(name, Arrays.asList(Arrays.copyOf(path, path.length - 1)), existingHash, false);
         return returnThis();
+    }
+
+    public T removeFile(byte[] existingHash, String[] path, String[] requiredPath) {
+        return removeFile(path[path.length - 1], Arrays.copyOf(path, path.length - 1), existingHash, false, requiredPath);
+    }
+
+    public T removeFile(final String name, final String[] path, final byte[] existingHash, final boolean isDirectory, final String[] requiredPath) {
+        final ContentItem item = createMiscItem(name, Arrays.asList(path), NO_CONTENT, isDirectory);
+        ModificationCondition condition = null;
+        if(requiredPath != null && requiredPath.length > 0) {
+            final String[] subdir = new String[requiredPath.length -1];
+            System.arraycopy(requiredPath, 0, subdir, 0, requiredPath.length - 1);
+            condition = ModificationCondition.Factory.exists(new MiscContentItem(requiredPath[requiredPath.length - 1], subdir, null));
+        }
+        return addContentModification(new ContentModification(item, existingHash, ModificationType.REMOVE, condition));
     }
 
     public T addModuleWithContent(final String moduleName, byte[] resultingHash, final String... resourceContents) throws IOException {

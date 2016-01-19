@@ -366,9 +366,8 @@ public interface ServerLogger extends BasicLogger {
     void caughtExceptionDuringBoot(@Cause Exception e);
 
 
-    @LogMessage(level = Logger.Level.FATAL)
     @Message(id = 56, value = "Server boot has failed in an unrecoverable manner; exiting. See previous messages for details.")
-    void unsuccessfulBoot();
+    String unsuccessfulBoot();
 
     /**
      * Logs an error message indicating the content for a configured deployment was unavailable at boot but boot
@@ -1061,8 +1060,8 @@ public interface ServerLogger extends BasicLogger {
     IllegalStateException serverAlreadyPaused();
 
     @LogMessage(level = INFO)
-    @Message(id = 211, value = "Suspending server")
-    void suspendingServer();
+    @Message(id = 211, value = "Suspending server with %dms timeout.")
+    void suspendingServer(long timeoutMillis);
 
     @LogMessage(level = INFO)
     @Message(id = 212, value = "Resuming server")
@@ -1161,7 +1160,20 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 232, value = "Could not get module info for module name: %s")
     OperationFailedException couldNotGetModuleInfo(String moduleName, @Cause Throwable cause);
 
-    @Message(id = 233, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    @Message(id = 233, value = "Undeployed \"%s\" (runtime-name: \"%s\")")
+    String deploymentUndeployedNotification(String managementName, String deploymentUnitName);
+
+    @Message(id = 234, value = "Deployed \"%s\" (runtime-name : \"%s\")")
+    String deploymentDeployedNotification(String managementName, String deploymentUnitName);
+
+    /**
+     * Logs an informational message indicating the Security Manager is in force.
+     */
+    @LogMessage(level = INFO)
+    @Message(id = 235, value = "Security Manager is enabled")
+    void securityManagerEnabled();
+
+    @Message(id = 236, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
     OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
 
 }

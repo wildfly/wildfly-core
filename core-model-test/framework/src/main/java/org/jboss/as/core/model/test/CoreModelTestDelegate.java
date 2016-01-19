@@ -106,6 +106,7 @@ import org.jboss.as.model.test.ModelTestOperationValidatorFilter;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter.Action;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
@@ -118,7 +119,7 @@ import org.wildfly.legacy.test.spi.Version;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class CoreModelTestDelegate {
-
+    public static final ModelTestModelDescriptionValidator.AttributeOrParameterArbitraryDescriptorValidator ARBITRARY_DESCRIPTOR_VALIDATOR = (ModelType currentType, ModelNode currentNode, String descriptor) -> null;
     private static final Set<PathAddress> EMPTY_RESOURCE_ADDRESSES = new HashSet<PathAddress>();
     private static final Set<PathAddress> MISSING_NAME_ADDRESSES = new HashSet<PathAddress>();
 
@@ -177,7 +178,9 @@ public class CoreModelTestDelegate {
         return new KernelServicesBuilderImpl(type);
     }
 
-    private void validateDescriptionProviders(TestModelType type, KernelServices kernelServices) {
+    private void validateDescriptionProviders(TestModelType type, KernelServices kernelServices,
+            Map<ModelNode, Map<String, Set<String>>> attributeDescriptors,
+            Map<ModelNode, Map<String, Map<String, Set<String>>>> operationParameterDescriptors) {
         ModelNode op = new ModelNode();
         op.get(OP).set(READ_RESOURCE_DESCRIPTION_OPERATION);
         op.get(OP_ADDR).setEmptyList();
@@ -202,7 +205,32 @@ public class CoreModelTestDelegate {
         //System.out.println(model);
 
         ValidationConfiguration config = KnownIssuesValidationConfiguration.createAndFixupModel(type, model);
-
+        for(Map.Entry<ModelNode, Map<String, Set<String>>> attributeDescriptor : attributeDescriptors.entrySet()) {
+            ModelNode address = attributeDescriptor.getKey();
+            Map<String, Set<String>> descriptors = attributeDescriptor.getValue();
+            for(Map.Entry<String, Set<String>> descriptor : descriptors.entrySet()) {
+                String attributeName = descriptor.getKey();
+                Set<String> arbitraryAttributeDescriptors =  descriptor.getValue();
+                for(String arbitraryAttributeDescriptor : arbitraryAttributeDescriptors) {
+                    config.registerAttributeArbitraryDescriptor(address, attributeName, arbitraryAttributeDescriptor, ARBITRARY_DESCRIPTOR_VALIDATOR);
+                }
+            }
+        }
+        for (Map.Entry<ModelNode, Map<String, Map<String, Set<String>>>> operationParameterDescriptor : operationParameterDescriptors.entrySet()) {
+            ModelNode address = operationParameterDescriptor.getKey();
+            Map<String, Map<String, Set<String>>> operationDescriptors = operationParameterDescriptor.getValue();
+            for (Map.Entry<String, Map<String, Set<String>>> operationDescriptor : operationDescriptors.entrySet()) {
+                String operationName = operationDescriptor.getKey();
+                Map<String, Set<String>> parameterDescriptors = operationDescriptor.getValue();
+                for (Map.Entry<String, Set<String>> parameterDescriptor : parameterDescriptors.entrySet()) {
+                    String parameter = parameterDescriptor.getKey();
+                    Set<String> arbitraryAttributeDescriptors = parameterDescriptor.getValue();
+                    for (String arbitraryAttributeDescriptor : arbitraryAttributeDescriptors) {
+                        config.registerArbitraryDescriptorForOperationParameter(address, operationName, parameter, arbitraryAttributeDescriptor, ARBITRARY_DESCRIPTOR_VALIDATOR);
+                    }
+                }
+            }
+        }
         ModelTestModelDescriptionValidator validator = new ModelTestModelDescriptionValidator(PathAddress.EMPTY_ADDRESS.toModelNode(), model, config);
         List<ValidationFailure> validationMessages = validator.validateResources();
         if (validationMessages.size() > 0) {
@@ -425,6 +453,8 @@ public class CoreModelTestDelegate {
         private List<String> contentRepositoryContents = new ArrayList<String>();
         private final RunningModeControl runningModeControl;
         ExtensionRegistry extensionRegistry;
+        private final Map<ModelNode, Map<String, Set<String>>> attributeDescriptors = new HashMap<>();
+        private Map<ModelNode, Map<String, Map<String, Set<String>>>> operationParameterDescriptors = new HashMap<>();
 
 
         public KernelServicesBuilderImpl(TestModelType type) {
@@ -502,7 +532,7 @@ public class CoreModelTestDelegate {
             CoreModelTestDelegate.this.kernelServices.add(kernelServices);
 
             if (validateDescription) {
-                validateDescriptionProviders(type, kernelServices);
+                validateDescriptionProviders(type, kernelServices, attributeDescriptors, operationParameterDescriptors);
             }
 
 
@@ -618,6 +648,33 @@ public class CoreModelTestDelegate {
             validateOperations = true;
             return this;
         }
+
+        @Override
+        public KernelServicesBuilder registerAttributeArbitraryDescriptor(ModelNode address, String name, String descriptor) {
+            if(!attributeDescriptors.containsKey(address)) {
+                attributeDescriptors.put(address, new HashMap<>());
+            }
+            if(!attributeDescriptors.get(address).containsKey(name)) {
+               attributeDescriptors.get(address).put(name, new HashSet<>());
+            }
+            attributeDescriptors.get(address).get(name).add(descriptor);
+            return this;
+        }
+
+        @Override
+        public KernelServicesBuilder registerArbitraryDescriptorForOperationParameter(ModelNode address, String operation, String parameter, String descriptor) {
+             if(!operationParameterDescriptors.containsKey(address)) {
+                operationParameterDescriptors.put(address, new HashMap<>());
+            }
+            if(!operationParameterDescriptors.get(address).containsKey(operation)) {
+               operationParameterDescriptors.get(address).put(operation, new HashMap<>());
+            }
+            if(!operationParameterDescriptors.get(address).get(operation).containsKey(parameter)) {
+               operationParameterDescriptors.get(address).get(operation).put(parameter, new HashSet<>());
+            }
+            operationParameterDescriptors.get(address).get(operation).get(parameter).add(descriptor);
+            return this;
+        }
     }
 
     private class LegacyKernelServicesInitializerImpl implements LegacyKernelServicesInitializer {
@@ -685,9 +742,14 @@ public class CoreModelTestDelegate {
         }
 
         @Override
-        public LegacyKernelServicesInitializer initializerCreateModelResource(PathAddress parentAddress, PathElement relativeResourceAddress, ModelNode model) {
-            modelInitializerEntries.add(new LegacyModelInitializerEntry(parentAddress, relativeResourceAddress, model));
+        public LegacyKernelServicesInitializer initializerCreateModelResource(PathAddress parentAddress, PathElement relativeResourceAddress, ModelNode model, String... capabilities) {
+            modelInitializerEntries.add(new LegacyModelInitializerEntry(parentAddress, relativeResourceAddress, model, capabilities));
             return this;
+        }
+
+        @Override
+        public LegacyKernelServicesInitializer initializerCreateModelResource(PathAddress parentAddress, PathElement relativeResourceAddress, ModelNode model) {
+            return initializerCreateModelResource(parentAddress, relativeResourceAddress, model, new String[0]);
         }
 
         @Override

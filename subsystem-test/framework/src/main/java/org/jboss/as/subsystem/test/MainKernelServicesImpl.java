@@ -58,6 +58,7 @@ import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.model.test.StringConfigurationPersister;
+import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
@@ -71,18 +72,17 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
     private Class<?> testClass;
     private static final ModelVersion CURRENT_CORE_VERSION = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION,
             Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
-    private final boolean enableTransformerAttachmentGrabber;
 
     protected MainKernelServicesImpl(ServiceContainer container, ModelTestModelControllerService controllerService,
             StringConfigurationPersister persister, ManagementResourceRegistration rootRegistration,
             OperationValidator operationValidator, String mainSubsystemName, ExtensionRegistry extensionRegistry,
             ModelVersion legacyModelVersion, boolean successfulBoot, Throwable bootError,
-            boolean registerTransformers, Class<?> testClass, boolean enableTransformerAttachmentGrabber) {
-        // FIXME MainKernelServicesImpl constructor
+            boolean registerTransformers, Class<?> testClass) {
         super(container, controllerService, persister, rootRegistration, operationValidator, mainSubsystemName, extensionRegistry,
                 legacyModelVersion, successfulBoot, bootError, registerTransformers);
         this.testClass = testClass;
-        this.enableTransformerAttachmentGrabber = enableTransformerAttachmentGrabber;
+        //add mgmt worker
+        ManagementWorkerService.installService(container.subTarget());
     }
 
     /**
@@ -108,7 +108,7 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
 
             final Map<PathAddress, ModelVersion> subsystem = Collections.singletonMap(PathAddress.EMPTY_ADDRESS.append(pathElement), modelVersion);
             final TransformationTarget transformationTarget = TransformationTargetImpl.create(null, extensionRegistry.getTransformerRegistry(), getCoreModelVersionByLegacyModelVersion(modelVersion),
-                    subsystem, TransformationTarget.TransformationTargetType.SERVER);
+                    subsystem, TransformationTarget.TransformationTargetType.SERVER, false);
 
             final Transformers transformers = Transformers.Factory.create(transformationTarget);
             final TransformationContext transformationContext = createTransformationContext(transformationTarget, attachment);
@@ -181,16 +181,34 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
 
     @Override
     public TransformerOperationAttachment executeAndGrabTransformerAttachment(ModelNode op) {
-        if (!enableTransformerAttachmentGrabber) {
-            throw new IllegalStateException("enableTransformerAttachmentGrabber() was not called on the builder");
+        try {
+            ModelNode wrapper = Util.createEmptyOperation(TransformerAttachmentGrabber.DESC.getName(), PathAddress.EMPTY_ADDRESS);
+            wrapper.get(VALUE).set(op);
+            ModelTestUtils.checkOutcome(executeOperation(wrapper));
+
+            return TransformerAttachmentGrabber.getAttachment();
+        } finally {
+            TransformerAttachmentGrabber.clear();
         }
-
-        ModelNode wrapper = Util.createEmptyOperation(TransformerAttachmentGrabber.DESC.getName(), PathAddress.EMPTY_ADDRESS);
-        wrapper.get(VALUE).set(op);
-        ModelTestUtils.checkOutcome(executeOperation(wrapper));
-
-        return TransformerAttachmentGrabber.attachment;
     }
+
+    @Override
+    public TransformedOperation executeInMainAndGetTheTransformedOperation(ModelNode op, ModelVersion modelVersion) {
+        try {
+            ModelNode wrapper = Util.createEmptyOperation(TransformerAttachmentGrabber.DESC.getName(), PathAddress.EMPTY_ADDRESS);
+            wrapper.get(VALUE).set(op);
+            ModelTestUtils.checkOutcome(executeOperation(wrapper));
+
+            try {
+                return transformOperation(modelVersion, op, TransformerAttachmentGrabber.getAttachment());
+            } catch (OperationFailedException e) {
+                throw new RuntimeException(e);
+            }
+        } finally {
+            TransformerAttachmentGrabber.clear();
+        }
+    }
+
 
     private ModelVersion getCoreModelVersionByLegacyModelVersion(ModelVersion legacyModelVersion) {
         //The reason the core model version is important is that is used to know if the ignored slave resources are known on the host or not

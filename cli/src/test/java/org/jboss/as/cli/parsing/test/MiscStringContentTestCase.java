@@ -139,12 +139,12 @@ public class MiscStringContentTestCase extends BaseStateParserTest {
         assertNull(result.buffer);
 
         ParsedTerm child = result.children.get(0);
-        assertNotNull(child);;
+        assertNotNull(child);
         assertEquals(1, child.children.size());
         assertEquals("ab", child.buffer.toString());
 
         child = child.children.get(0);
-        assertNotNull(child);;
+        assertNotNull(child);
         assertEquals(0, child.children.size());
         assertEquals("\"", child.buffer.toString());
     }

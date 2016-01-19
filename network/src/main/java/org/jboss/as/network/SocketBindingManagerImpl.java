@@ -40,6 +40,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jboss.as.network.logging.NetworkMessages;
+
 
 /**
  * @author Emanuel Muckenhuber
@@ -67,24 +69,42 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
     /** {@inheritDoc} */
     @Override
     public DatagramSocket createDatagramSocket(String name, SocketAddress address) throws SocketException {
-        return new ManagedDatagramSocketBinding(null, this.namedRegistry, address);
+        if (name == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("name");
+        }
+        if (address == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("address");
+        }
+        return new ManagedDatagramSocketBinding(name, this.namedRegistry, address);
     }
 
     /** {@inheritDoc} */
     @Override
     public DatagramSocket createDatagramSocket(SocketAddress address) throws SocketException {
+        if (address == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("address");
+        }
         return new ManagedDatagramSocketBinding(null, this.unnamedRegistry, address);
     }
 
     /** {@inheritDoc} */
     @Override
     public MulticastSocket createMulticastSocket(String name, SocketAddress address) throws IOException {
-        return ManagedMulticastSocketBinding.create(null, this.unnamedRegistry, address);
+        if (name == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("name");
+        }
+        if (address == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("address");
+        }
+        return ManagedMulticastSocketBinding.create(name, this.namedRegistry, address);
     }
 
     /** {@inheritDoc} */
     @Override
     public MulticastSocket createMulticastSocket(SocketAddress address) throws IOException {
+        if (address == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("address");
+        }
         return ManagedMulticastSocketBinding.create(null, this.unnamedRegistry, address);
     }
 
@@ -237,10 +257,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
+            // First unregister, then close. This allows UnnamedRegistryImpl
+            // to get the bind address before it's gone
             try {
-                closeable.close();
-            } finally {
                 registry.unregisterBinding(this);
+            } finally {
+                closeable.close();
             }
         }
     }
@@ -268,10 +290,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
+            // First unregister, then close. This allows UnnamedRegistryImpl
+            // to get the bind address before it's gone
             try {
-                socket.close();
-            } finally {
                 registry.unregisterBinding(this);
+            } finally {
+                socket.close();
             }
         }
     }
@@ -293,10 +317,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
+            // First unregister, then close. This allows UnnamedRegistryImpl
+            // to get the bind address before it's gone
             try {
-                wrapped.close();
-            } finally {
                 registry.unregisterBinding(this);
+            } finally {
+                wrapped.close();
             }
         }
     }
@@ -323,10 +349,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
+            // First unregister, then close. This allows UnnamedRegistryImpl
+            // to get the bind address before it's gone
             try {
-                socket.close();
-            } finally {
                 registry.unregisterBinding(this);
+            } finally {
+                socket.close();
             }
         }
     }
@@ -353,10 +381,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
+            // First unregister, then close. This allows UnnamedRegistryImpl
+            // to get the bind address before it's gone
             try {
-                socket.close();
-            } finally {
                 registry.unregisterBinding(this);
+            } finally {
+                socket.close();
             }
         }
     }
@@ -477,9 +507,12 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         @Override
         public void unregisterBinding(ManagedBinding binding) {
             final InetSocketAddress address = binding.getBindAddress();
-            if(address == null) {
-                throw new IllegalStateException();
-            }
+            // WFCORE-1127 - we don't care if there is no address.
+            // This allows us to handle cases where a ManagedSocketBinding
+            // is closed before being bound.
+            //if(address == null) {
+            //    throw new IllegalStateException();
+            //}
             unregisterBinding(address);
         }
 

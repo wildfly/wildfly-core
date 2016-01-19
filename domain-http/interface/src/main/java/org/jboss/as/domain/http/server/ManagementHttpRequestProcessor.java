@@ -28,6 +28,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
+import org.jboss.as.domain.http.server.logging.HttpServerLogger;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 
 /**
@@ -58,7 +59,11 @@ public class ManagementHttpRequestProcessor implements ManagementChannelInitiali
 
     @Override
     public boolean awaitCompletion(long timeout, TimeUnit unit) throws InterruptedException {
-        return latch.await(timeout, unit);
+        boolean completed = latch.await(timeout, unit);
+        if (!completed) {
+            HttpServerLogger.ROOT_LOGGER.debugf("ShutdownListener(s) %s have not completed within %d %s", listeners, timeout, unit);
+        }
+        return completed;
     }
 
     /**
@@ -109,7 +114,7 @@ public class ManagementHttpRequestProcessor implements ManagementChannelInitiali
      * the request can process or should return a {@code 503} response when the server
      * is about to shutdown.
      *
-     * @return
+     * @return {@code true} if the request can be processed; {@code false} if the server is about to shut down
      */
     protected boolean beginRequest() {
         int oldState, newState;

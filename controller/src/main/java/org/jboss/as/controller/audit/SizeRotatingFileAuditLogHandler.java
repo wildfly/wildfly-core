@@ -77,12 +77,7 @@ public class SizeRotatingFileAuditLogHandler extends AbstractFileAuditLogHandler
                 file.delete();
             }
 
-            try {
-                file.createNewFile();
-            } catch (IOException e){
-                throw new RuntimeException(e);
-            }
-
+            createNewFile(file);
             currentSize = 0;
         }
     }

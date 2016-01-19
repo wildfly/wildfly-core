@@ -24,6 +24,7 @@ package org.jboss.as.subsystem.bridge.impl;
 import java.lang.reflect.Method;
 
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.model.test.ModelTestLegacyControllerKernelServicesProxy;
 import org.jboss.as.subsystem.bridge.local.ClassLoaderObjectConverter;
@@ -53,6 +54,11 @@ public class LegacyControllerKernelServicesProxy extends ModelTestLegacyControll
 
     @Override
     public TransformerOperationAttachment executeAndGrabTransformerAttachment(ModelNode op) {
+        throw new IllegalStateException("Can only be called for the main controller");
+    }
+
+    @Override
+    public OperationTransformer.TransformedOperation executeInMainAndGetTheTransformedOperation(ModelNode op, ModelVersion modelVersion) {
         throw new IllegalStateException("Can only be called for the main controller");
     }
 

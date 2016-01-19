@@ -75,7 +75,7 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
         super(PATH,
                 RemotingExtension.getResourceDescriptionResolver(RemotingExtension.SUBSYSTEM_NAME),
                 RemotingSubsystemAdd.INSTANCE,
-                new ReloadRequiredRemoveStepHandler(REMOTING_ENDPOINT_CAPABILITY),
+                new ReloadRequiredRemoveStepHandler(),
                 OperationEntry.Flag.RESTART_NONE,
                 OperationEntry.Flag.RESTART_ALL_SERVICES);
     }
@@ -99,6 +99,11 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
                 .setAllowExpression(true)
                 .setDeprecated(ModelVersion.create(2,0))
                 .build();
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(REMOTING_ENDPOINT_CAPABILITY);
     }
 
     private static class ThreadWriteAttributeHandler extends RestartParentWriteAttributeHandler {

@@ -20,19 +20,24 @@
  */
 package org.jboss.as.controller.test;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MIN_LENGTH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NILLABLE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
@@ -42,6 +47,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -55,6 +64,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
@@ -68,6 +78,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.AliasEntry;
@@ -84,43 +95,51 @@ import org.junit.Test;
  */
 public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTestCase {
 
+    ManagementResourceRegistration rootRegistration;
     @Override
     protected void initModel(ManagementModel managementModel) {
-        ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
+        rootRegistration = managementModel.getRootResourceRegistration();
+        rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
         GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
 
         rootRegistration.registerOperationHandler(TestUtils.SETUP_OPERATION_DEF, new OperationStepHandler() {
-            @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                final ModelNode model = new ModelNode();
-                //Atttributes
-                model.get("profile", "profileA", "name").set("Profile A");
-                model.get("profile", "profileA", "subsystem", "subsystem1", "attr1").add(1);
-                model.get("profile", "profileA", "subsystem", "subsystem1", "attr1").add(2);
-                //Children
-                model.get("profile", "profileA", "subsystem", "subsystem1", "type1", "thing1", "name").set("Name11");
-                model.get("profile", "profileA", "subsystem", "subsystem1", "type1", "thing1", "value").set("201");
-                model.get("profile", "profileA", "subsystem", "subsystem1", "type1", "thing2", "name").set("Name12");
-                model.get("profile", "profileA", "subsystem", "subsystem1", "type1", "thing2", "value").set("202");
-                model.get("profile", "profileA", "subsystem", "subsystem1", "type2", "other", "name").set("Name2");
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        final ModelNode model = new ModelNode();
+                        //Atttributes
+                        model.get("profile", "profileA", "name").set("Profile A");
+                        model.get("profile", "profileA", "subsystem", "subsystem1", "attr1").add(1);
+                        model.get("profile", "profileA", "subsystem", "subsystem1", "attr1").add(2);
+                        //Children
+                        model.get("profile", "profileA", "subsystem", "subsystem1", "type1", "thing1", "name").set("Name11");
+                        model.get("profile", "profileA", "subsystem", "subsystem1", "type1", "thing1", "value").set("201");
+                        model.get("profile", "profileA", "subsystem", "subsystem1", "type1", "thing2", "name").set("Name12");
+                        model.get("profile", "profileA", "subsystem", "subsystem1", "type1", "thing2", "value").set("202");
+                        model.get("profile", "profileA", "subsystem", "subsystem1", "type2", "other", "name").set("Name2");
 
-                model.get("profile", "profileB", "name").set("Profile B");
+                        model.get("profile", "profileB", "name").set("Profile B");
 
-                model.get("profile", "profileC", "name").set("Profile C");
-                model.get("profile", "profileC", "subsystem", "subsystem4");
-                model.get("profile", "profileC", "subsystem", "subsystem5", "name").set("Test");
+                        model.get("profile", "profileC", "name").set("Profile C");
+                        model.get("profile", "profileC", "subsystem", "subsystem4");
+                        model.get("profile", "profileC", "subsystem", "subsystem5", "name").set("Test");
 
-                model.get("profile", "profileD", "name").set("Profile D");
-                model.get("profile", "profileD", "subsystem", "subsystem3");
-                model.get("profile", "profileD", "subsystem", "subsystem3", "service", "squatter1", "name").set("TestSquatter1");
-                model.get("profile", "profileD", "subsystem", "subsystem3", "service", "squatter1", "thing1").set("squatter");
-                model.get("profile", "profileD", "subsystem", "subsystem3", "service", "squatter3", "name").set("TestSquatter3");
-                model.get("profile", "profileD", "subsystem", "subsystem3", "service", "squatter3", "thing3").set("squatter");
+                        model.get("profile", "profileD", "name").set("Profile D");
+                        model.get("profile", "profileD", "subsystem", "subsystem3");
+                        model.get("profile", "profileD", "subsystem", "subsystem3", "service", "squatter1", "name").set("TestSquatter1");
+                        model.get("profile", "profileD", "subsystem", "subsystem3", "service", "squatter1", "thing1").set("squatter");
+                        model.get("profile", "profileD", "subsystem", "subsystem3", "service", "squatter3", "name").set("TestSquatter3");
+                        model.get("profile", "profileD", "subsystem", "subsystem3", "service", "squatter3", "thing3").set("squatter");
 
-                createModel(context, model);
-            }
-        }
+                        model.get("profile", "profileE", "name").set("Profile E");
+                        model.get("profile", "profileE", "subsystem", "subsystem7");
+                        model.get("profile", "profileE", "subsystem", "subsystem7", "type", "one");
+                        model.get("profile", "profileE", "subsystem", "subsystem7", "type", "one", "squatter", "one");
+                        model.get("profile", "profileE", "subsystem", "subsystem7", "type", "one", "wildcard", "one");
+
+                        createModel(context, model);
+                    }
+                }
         );
 
         ResourceDefinition profileDef = ResourceBuilder.Factory.create(PathElement.pathElement("profile", "*"),
@@ -135,7 +154,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 PathElement.pathElement("subsystem-test"),
                 new AliasEntry(profileSub1Reg) {
                     @Override
-                    public PathAddress convertToTargetAddress(PathAddress address) {
+                    public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                         List<PathElement> list = new ArrayList<PathElement>();
                         for (PathElement element : address) {
                             if ("subsystem-test".equals(element.getKey())) {
@@ -155,7 +174,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 PathElement.pathElement("alias"),
                 new AliasEntry(profileSub1Reg) {
                     @Override
-                    public PathAddress convertToTargetAddress(PathAddress address) {
+                    public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                         List<PathElement> list = new ArrayList<PathElement>();
                         for (PathElement element : address) {
                             if ("alias".equals(element.getKey())) {
@@ -196,7 +215,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 PathElement.pathElement("service", "squatter2"),
                 new AliasEntry(squatter3Reg) {
                     @Override
-                    public PathAddress convertToTargetAddress(PathAddress address) {
+                    public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                         List<PathElement> list = new ArrayList<PathElement>();
                         for (PathElement element : address) {
                             if ("service".equals(element.getKey()) && "squatter2".equals(element.getValue())) {
@@ -212,7 +231,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 PathElement.pathElement("alias", "squatter1"),
                 new AliasEntry(squatter1Reg) {
                     @Override
-                    public PathAddress convertToTargetAddress(PathAddress address) {
+                    public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                         List<PathElement> list = new ArrayList<PathElement>();
                         for (PathElement element : address) {
                             if ("alias".equals(element.getKey()) && "squatter1".equals(element.getValue())) {
@@ -278,6 +297,52 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                     }
                 }
         );
+
+        ManagementResourceRegistration profileESub7Reg = profileReg.registerSubModel(
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem7"), new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration profileESub7TypeReg = profileESub7Reg.registerSubModel(
+                new SimpleResourceDefinition(PathElement.pathElement("type"), new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration profileESub7TypeSquatterOneReg = profileESub7TypeReg.registerSubModel(
+                new SimpleResourceDefinition(PathElement.pathElement("squatter", "one"), new NonResolvingResourceDescriptionResolver()));
+        profileESub7TypeReg.registerAlias(PathElement.pathElement("squatter-alias", "ONE"), new AliasEntry(profileESub7TypeSquatterOneReg) {
+            @Override
+            public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
+                List<PathElement> list = new ArrayList<PathElement>();
+                final PathElement alias = getAliasAddress().getLastElement();
+                for (PathElement element : address) {
+                    if (element.equals(alias)) {
+                        list.add(getTargetAddress().getLastElement());
+                    } else {
+                        list.add(element);
+                    }
+                }
+                return PathAddress.pathAddress(list);
+            }
+
+        });
+        ManagementResourceRegistration profileESub7TypeWildcardReg = profileESub7TypeReg.registerSubModel(
+                new SimpleResourceDefinition(PathElement.pathElement("wildcard"), new NonResolvingResourceDescriptionResolver()));
+        profileESub7TypeReg.registerAlias(PathElement.pathElement("wildcard-alias"), new AliasEntry(profileESub7TypeWildcardReg) {
+            @Override
+            public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
+                List<PathElement> list = new ArrayList<PathElement>();
+                final PathElement alias = getAliasAddress().getLastElement();
+                for (PathElement element : address) {
+                    if (element.getKey().equals(alias.getKey())) {
+                        list.add(PathElement.pathElement(getTargetAddress().getLastElement().getKey(), element.getValue()));
+                    } else {
+                        list.add(element);
+                    }
+                }
+                return PathAddress.pathAddress(list);
+            }
+
+        });
+    }
+
+    protected int getExpectedNumberProfiles() {
+        //We have added a profile
+        return 7;
     }
 
     @Test
@@ -302,7 +367,6 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
     @Test
     public void testReadChildrenTypes() throws Exception {
         ModelNode operation = createOperation(READ_CHILDREN_TYPES_OPERATION, "profile", "profileA");
-
         ModelNode result = executeForResult(operation);
         assertNotNull(result);
         assertEquals(ModelType.LIST, result.getType());
@@ -346,6 +410,21 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
         assertEquals(ModelType.LIST, result.getType());
         assertEquals(1, result.asList().size());
         assertEquals("type1", result.asList().get(0).asString());
+
+        operation = createOperation(READ_CHILDREN_TYPES_OPERATION, "profile", "profileD", "subsystem", "subsystem3");
+        result = executeForResult(operation);
+        assertNotNull(result);
+        assertEquals(ModelType.LIST, result.getType());
+        assertEquals(1, result.asList().size());
+        assertEquals("service", result.asList().get(0).asString());
+
+        operation = createOperation(READ_CHILDREN_TYPES_OPERATION, "profile", "profileD", "subsystem", "subsystem3");
+        operation.get(ModelDescriptionConstants.INCLUDE_ALIASES).set(true);
+        result = executeForResult(operation);
+        assertNotNull(result);
+        assertEquals(2, result.asList().size());
+        stringList = modelNodeListToStringList(result.asList());
+        assertTrue(Arrays.asList("service", "alias").containsAll(stringList));
     }
 
     @Test
@@ -683,6 +762,60 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
         operation.get(RECURSIVE).set(true);
         executeForFailure(operation);
     }
+
+    @Test
+    public void testReadResourceDescriptionAliasMultitargetAddress() throws Exception {
+        final PathAddress parentAddress =
+                PathAddress.pathAddress(PROFILE, "profileE")
+                        .append(SUBSYSTEM, "subsystem7")
+                        .append("type", "*");
+        //This maps to /profile=profileE/subsystem=subsystem7/type=*/squatter=one, but the alias should be used
+        final PathAddress squatterAlias = parentAddress.append("squatter-alias", "ONE");
+        ModelNode result = executeForResult(createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, squatterAlias));
+        checkRrdAddress(squatterAlias, result);
+
+        //This maps to /profile=profileE/subsystem=subsystem7/type=*/wildcard=*, but the alias should be used
+        final PathAddress wildCardAlias = parentAddress.append("wildcard-alias", "*");
+        result = executeForResult(createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, wildCardAlias));
+        checkRrdAddress(wildCardAlias, result);
+
+        //Now do the same with a composite with a mixture of real and alias addresses
+        final PathAddress squatterReal = parentAddress.append("squatter", "one");
+        final PathAddress wildcardReal = parentAddress.append("wildcard");
+        ModelNode composite = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+        ModelNode steps = composite.get(STEPS);
+        final ModelNode[] ops = new ModelNode[]{
+                createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, squatterAlias),
+                createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, squatterReal),
+                createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, wildCardAlias),
+                createOperation(READ_RESOURCE_OPERATION, squatterAlias),
+                createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, wildcardReal)};
+        for (ModelNode op : ops) {
+            steps.add(op.clone());
+        }
+        result = executeForResult(composite);
+
+        Assert.assertEquals(ops.length, result.keys().size());
+        for (int i = 0; i < ops.length; i++) {
+            ModelNode stepResult = result.get("step-" + (i + 1));
+            Assert.assertTrue(stepResult.isDefined());
+            Assert.assertEquals(SUCCESS, stepResult.get(OUTCOME).asString());
+            if (ops[i].get(OP).asString().equals(READ_RESOURCE_DESCRIPTION_OPERATION)) {
+                checkRrdAddress(PathAddress.pathAddress(ops[i].get(OP_ADDR)), stepResult.get(RESULT));
+            }
+        }
+    }
+
+    private void checkRrdAddress(PathAddress expectedAddress, ModelNode result) {
+        List<ModelNode> list = result.asList();
+        Assert.assertEquals(1, list.size());
+        ModelNode entry = list.get(0);
+        Assert.assertEquals(SUCCESS, entry.get(OUTCOME).asString());
+        Assert.assertTrue(entry.hasDefined(ADDRESS));
+        PathAddress returnedAddress = PathAddress.pathAddress(entry.get(ADDRESS));
+        Assert.assertEquals(expectedAddress, returnedAddress);
+    }
+
 
     private void checkNonRecursiveSubsystem1(ModelNode result, boolean includeRuntime) {
         assertEquals(includeRuntime ? 7 : 5, result.keys().size());

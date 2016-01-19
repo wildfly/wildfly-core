@@ -25,6 +25,7 @@ package org.jboss.as.domain.controller;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -160,6 +161,8 @@ public interface DomainController {
     void stopLocalHost(int exitCode);
 
     ExtensionRegistry getExtensionRegistry();
+
+    ImmutableCapabilityRegistry getCapabilityRegistry();
 
     ExpressionResolver getExpressionResolver();
 

@@ -44,7 +44,6 @@ import static org.jboss.as.controller.operations.global.GlobalInstallationReport
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_INSTALLATION_DATE;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_LAST_UPDATE;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PROJECT_TYPE;
-import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.REPORT_VERSION;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.STANDALONE_DOMAIN_IDENTIFIER;
 
 import java.io.File;
@@ -53,8 +52,6 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Properties;
 import org.jboss.as.controller.OperationContext;
@@ -68,6 +65,7 @@ import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.security.manager.action.ReadEnvironmentPropertyAction;
 import org.wildfly.security.manager.action.ReadPropertyAction;
 
@@ -126,7 +124,7 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
     private ModelNode createCPUNode() throws OperationFailedException {
         ModelNode cpu = new ModelNode().setEmptyObject();
         cpu.get(ARCH).set(getProperty("os.arch"));
-        cpu.get(AVAILABLE_PROCESSORS).set(Runtime.getRuntime().availableProcessors());
+        cpu.get(AVAILABLE_PROCESSORS).set(ProcessorInfo.availableProcessors());
         return cpu;
     }
 
@@ -144,7 +142,6 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
 
         ProcessEnvironment environment = installation.getEnvironment();
         ModelNode product = new ModelNode().setEmptyObject();
-        product.get(REPORT_VERSION).set("1.0");
         product.get(HOSTNAME).set(installation.getHostName());
         product.get(INSTANCE_ID).set(environment.getInstanceUuid().toString());
         PathAddress organizationAddress = PathAddress.EMPTY_ADDRESS;
@@ -309,17 +306,6 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
         }
 
         public String getInstallationDate() {
-            if (Files.exists(installationDir)) {
-                BasicFileAttributeView view = Files.getFileAttributeView(installationDir, BasicFileAttributeView.class);
-                try {
-                    BasicFileAttributes attributes = view.readAttributes();
-                    if(attributes.creationTime().toMillis() > 0) {
-                        return attributes.creationTime().toString();
-                    }
-                } catch (IOException ex) {
-                    return "";
-                }
-            }
             return "";
         }
 

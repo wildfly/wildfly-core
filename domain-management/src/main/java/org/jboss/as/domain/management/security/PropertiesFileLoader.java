@@ -67,15 +67,38 @@ public class PropertiesFileLoader {
 
     /**
      * Pattern that matches :
+     *
      * <ul>
-     * <li>{@code #key=value}</li>
-     * <li>{@code key=value}</li>
+     * <li>{@code #username=password}</li>
+     * <li>{@code username=password}</li>
      * </ul>
-     * {@code value} must be any character except "=" and {@code key} must be any character except "#".<br/>
-     * {@code group(1)} returns the key of the property.<br/>
-     * {@code group(2)} returns the value of the property.
+     *
+     * The regular expression is used to obtain 2 capturing groups, {@code group(1)} is used to obtain the username,
+     * {@code group(2)} is used to obtain the password.
+     *
+     * Usernames can contain the following in any number and in any order: -
+     * <ul>
+     *  <li>alphanumeric characters.</li>
+     *  <li>The symbols {@code '.', '-', ',', '@'}</li>
+     *  <li>An escaped backslash.</li>
+     *  <li>An escaped {@code '='}</li>
+     * </ul>
+     *
+     * An optional preceeding '#' is greedily matched.
+     *
+     * Capturing group(1) contains a non-capturing group that specifies all of these options, the non-capturing group is
+     * expected to occur one or more times i.e. a username must contain at least one character. The non-capturing group also
+     * contains a sub non-capturing group to match against an escaped '\' or an escaped '='.
+     *
+     * After capturing group(1) match on a single '=', if an '=' is used within a username it must be escaped and if escaped
+     * would have been captured within the username capturing group.
+     *
+     * The final capturing group captures all characters after the delimiting '=', this capturing group does not require the
+     * same level of complexity as the previous capturing group has enabled matching to the first non-escaped '='.
+     *
+     * Note: Possessive quantifiers are used here as without them invalid test strings become a serious performance burden.
      */
-    public static final Pattern PROPERTY_PATTERN = Pattern.compile("#??([^#]*)=([^=]*)");
+    public static final Pattern PROPERTY_PATTERN = Pattern.compile("#?+((?:[,.\\-@/a-zA-Z0-9]++|(?:\\\\[=\\\\])++)++)=(.++)");
     public static final String DISABLE_SUFFIX_KEY = "!disable";
 
     private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
@@ -205,7 +228,7 @@ public class PropertiesFileLoader {
                 } else {
                     Matcher matcher = PROPERTY_PATTERN.matcher(trimmed);
                     if (matcher.matches()) {
-                        final String key = matcher.group(1);
+                        final String key = cleanKey(matcher.group(1));
                         if (toSave.containsKey(key) || toSave.containsKey(key + DISABLE_SUFFIX_KEY)) {
                             writeProperty(bw, key, matcher.group(2));
                             toSave.remove(key);
@@ -223,6 +246,41 @@ public class PropertiesFileLoader {
         } finally {
             safeClose(bw);
         }
+    }
+
+    protected String cleanKey(final String key) {
+        char[] keyChars = key.toCharArray();
+        char[] cleaned = new char[keyChars.length];
+        int keyPos = 0;
+        int cleanedPos = 0;
+
+        while (keyPos < keyChars.length) {
+            if (keyChars[keyPos++] == '\\') {
+                char current = keyChars[keyPos];
+                switch (current) {
+                    case 't':
+                        cleaned[cleanedPos++] = '\t';
+                        break;
+                    case 'r':
+                        cleaned[cleanedPos++] = '\r';
+                        break;
+                    case 'n':
+                        cleaned[cleanedPos++] = '\n';
+                        break;
+                    case 'f':
+                        cleaned[cleanedPos++] = '\f';
+                        break;
+                    default:
+                        cleaned[cleanedPos++] = current;
+                }
+
+                keyPos++;
+            } else {
+                cleaned[cleanedPos++] = keyChars[keyPos - 1];
+            }
+        }
+
+        return new String(cleaned, 0, cleanedPos);
     }
 
     protected List<String> readFile(File file) throws IOException {

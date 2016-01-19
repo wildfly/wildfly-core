@@ -31,6 +31,8 @@ import org.jboss.dmr.ModelNode;
  */
 public interface LegacyKernelServicesInitializer {
 
+    LegacyKernelServicesInitializer initializerCreateModelResource(PathAddress parentAddress, PathElement relativeResourceAddress, ModelNode model, String... capabilities);
+
     LegacyKernelServicesInitializer initializerCreateModelResource(PathAddress parentAddress, PathElement relativeResourceAddress, ModelNode model);
 
     /**

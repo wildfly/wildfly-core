@@ -26,13 +26,19 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_CONTROLLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
@@ -42,9 +48,11 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.jboss.as.controller.HashUtil;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
@@ -75,10 +83,61 @@ public class IgnoredResourcesTestCase {
         testSupport = DomainTestSuite.createSupport(IgnoredResourcesTestCase.class.getSimpleName());
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+
+        final ModelNode slaveModel = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST, "slave"), DOMAIN_CONTROLLER),
+                domainMasterLifecycleUtil.getDomainClient()).get(REMOTE);
+
+        slaveModel.get(IGNORE_UNUSED_CONFIG).set(false);
+        DomainTestUtils.executeForResult(Util.createEmptyOperation("remove-remote-domain-controller", PathAddress.pathAddress(HOST, "slave")), domainSlaveLifecycleUtil.getDomainClient());
+        ModelNode writeRemoteDc = Util.createEmptyOperation("write-remote-domain-controller", PathAddress.pathAddress(HOST, "slave"));
+        for (String key : slaveModel.keys()) {
+            writeRemoteDc.get(key).set(slaveModel.get(key));
+        }
+        DomainTestUtils.executeForResult(writeRemoteDc, domainSlaveLifecycleUtil.getDomainClient());
+
+        ModelNode restartSlave = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "slave"));
+        restartSlave.get(RESTART_SERVERS).set(false);
+        domainSlaveLifecycleUtil.executeAwaitConnectionClosed(restartSlave);
+        domainSlaveLifecycleUtil.connect();
+        domainSlaveLifecycleUtil.awaitHostController(System.currentTimeMillis());
+
+        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
+        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+
+        ModelNode slaveIgnore = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(HOST, "slave"));
+        ModelNode result = DomainTestUtils.executeForResult(slaveIgnore, domainSlaveLifecycleUtil.getDomainClient());
+        // make sure that ignore-unused-configuration is false
+        Assert.assertFalse(result.get(DOMAIN_CONTROLLER).get(REMOTE).get(IGNORE_UNUSED_CONFIG).asBoolean());
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
+        // reset ignore-unused-configuration back to true, and reload
+        final ModelNode slaveModel = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST, "slave"), DOMAIN_CONTROLLER),
+                domainMasterLifecycleUtil.getDomainClient()).get(REMOTE);
+
+        slaveModel.get(IGNORE_UNUSED_CONFIG).set(true);
+        DomainTestUtils.executeForResult(Util.createEmptyOperation("remove-remote-domain-controller", PathAddress.pathAddress(HOST, "slave")), domainSlaveLifecycleUtil.getDomainClient());
+        ModelNode writeRemoteDc = Util.createEmptyOperation("write-remote-domain-controller", PathAddress.pathAddress(HOST, "slave"));
+        for (String key : slaveModel.keys()) {
+            writeRemoteDc.get(key).set(slaveModel.get(key));
+        }
+        DomainTestUtils.executeForResult(writeRemoteDc, domainSlaveLifecycleUtil.getDomainClient());
+
+        ModelNode restartSlave = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "slave"));
+        restartSlave.get(RESTART_SERVERS).set(false);
+        domainSlaveLifecycleUtil.executeAwaitConnectionClosed(restartSlave);
+        domainSlaveLifecycleUtil.connect();
+        domainSlaveLifecycleUtil.awaitHostController(System.currentTimeMillis());
+
+        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
+        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+
+        ModelNode slaveIgnore = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(HOST, "slave"));
+        ModelNode result = DomainTestUtils.executeForResult(slaveIgnore, domainSlaveLifecycleUtil.getDomainClient());
+        // make sure that ignore-unused-configuration is true
+        Assert.assertTrue(result.get(DOMAIN_CONTROLLER).get(REMOTE).get(IGNORE_UNUSED_CONFIG).asBoolean());
+
         testSupport = null;
         domainMasterLifecycleUtil = null;
         domainSlaveLifecycleUtil = null;
@@ -276,7 +335,6 @@ public class IgnoredResourcesTestCase {
                 // ignored
             }
         }
-
     }
 
     private static ModelNode createOpNode(String address, String operation) {

@@ -80,10 +80,15 @@ class OperationSlaveStepHandler {
 
         final MultiPhaseLocalContext localContext = new MultiPhaseLocalContext(false);
         final HostControllerExecutionSupport hostControllerExecutionSupport = addSteps(context, operation, localContext);
+        final boolean reloadRequired = hostControllerExecutionSupport.isReloadRequired();
+        if (reloadRequired) {
+            context.reloadRequired();
+        }
 
         context.completeStep(new OperationContext.ResultHandler() {
             @Override
             public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                hostControllerExecutionSupport.complete(resultAction == OperationContext.ResultAction.ROLLBACK);
 
                 if (resultAction == OperationContext.ResultAction.KEEP) {
 
@@ -96,6 +101,9 @@ class OperationSlaveStepHandler {
                     ModelNode domainFormatted = hostControllerExecutionSupport.getFormattedDomainResult(localContext.getLocalResponse().get(RESULT));
                     result.get(DOMAIN_RESULTS).set(domainFormatted);
                 } else {
+                    if (reloadRequired) {
+                        context.revertReloadRequired();
+                    }
                     // The actual operation failed but make sure the result still gets formatted
                     if (hostControllerExecutionSupport.getDomainOperation() != null) {
                         ModelNode localResponse = localContext.getLocalResponse();
@@ -118,7 +126,7 @@ class OperationSlaveStepHandler {
         final ModelNode localResponse = multiPhaseLocalContext.getLocalResponse();
 
         final HostControllerExecutionSupport hostControllerExecutionSupport =
-                HostControllerExecutionSupport.Factory.create(operation, localHostControllerInfo.getLocalHostName(),
+                HostControllerExecutionSupport.Factory.create(context, operation, localHostControllerInfo.getLocalHostName(),
                         new LazyDomainModelProvider(context), ignoredDomainResourceRegistry, !localHostControllerInfo.isMasterDomainController() && localHostControllerInfo.isRemoteDomainControllerIgnoreUnaffectedConfiguration(),
                         extensionRegistry);
         ModelNode domainOp = hostControllerExecutionSupport.getDomainOperation();
@@ -147,7 +155,7 @@ class OperationSlaveStepHandler {
     private void addBasicStep(OperationContext context, ModelNode operation, ModelNode localReponse) throws OperationFailedException {
         final String operationName = operation.require(OP).asString();
 
-        final OperationEntry entry = context.getResourceRegistration().getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName);
+        final OperationEntry entry = context.getRootResourceRegistration().getOperationEntry(PathAddress.pathAddress(operation.get(OP_ADDR)), operationName);
         if(entry != null) {
             if (context.isBooting() || localHostControllerInfo.isMasterDomainController()) {
                 context.addStep(localReponse, operation, entry.getOperationHandler(), OperationContext.Stage.MODEL);

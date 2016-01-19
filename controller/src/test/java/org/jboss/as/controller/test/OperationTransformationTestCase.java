@@ -236,7 +236,7 @@ public class OperationTransformationTestCase {
     }
 
     protected TransformationTarget create(final TransformerRegistry registry, ModelVersion version, TransformationTarget.TransformationTargetType type) {
-        return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), type);
+        return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), type, false);
     }
 
     protected Resource transform(final TransformationTarget target, final Resource root) throws OperationFailedException {

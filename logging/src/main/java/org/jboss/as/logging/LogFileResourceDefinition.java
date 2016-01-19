@@ -55,7 +55,6 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.server.ServerEnvironment;
@@ -124,9 +123,8 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
     private final PathManager pathManager;
 
     protected LogFileResourceDefinition(final PathManager pathManager) {
-        super(LOG_FILE_PATH,
-                LoggingExtension.getResourceDescriptionResolver("log-file"),
-                null, null, Flag.RESTART_NONE, Flag.RESTART_NONE);
+        super(new Parameters(LOG_FILE_PATH,
+                LoggingExtension.getResourceDescriptionResolver("log-file")).setRuntime());
         assert pathManager != null : "PathManager cannot be null";
         this.pathManager = pathManager;
     }

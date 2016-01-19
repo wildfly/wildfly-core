@@ -100,7 +100,6 @@ public class SingletonResourceTestCase extends AbstractControllerTestBase {
         coreResourceRegistration.registerSubModel(new ChildResourceDefinition(CHILD));
         coreResourceRegistration.registerSubModel(new SingletonResourceDefinition(SERVICE, ASYNC));
         coreResourceRegistration.registerSubModel(new SingletonResourceDefinition(SERVICE, REMOTE));
-        
         coreResourceRegistration.registerSubModel(new ChildResourceDefinition(DATASOURCE));
         coreResourceRegistration.registerSubModel(new SingletonResourceDefinition(DATASOURCE, DS));
     }

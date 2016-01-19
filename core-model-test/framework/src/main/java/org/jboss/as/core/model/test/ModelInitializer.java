@@ -21,6 +21,7 @@
 */
 package org.jboss.as.core.model.test;
 
+import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.registry.Resource;
 
 /**
@@ -33,5 +34,18 @@ import org.jboss.as.controller.registry.Resource;
  */
 public interface ModelInitializer {
 
+    default void populateModel(ManagementModel managementModel) {
+        populateModel(managementModel.getRootResource());
+    }
+
     void populateModel(Resource rootResource);
+
+    /** An initializer that does nothing. */
+    ModelInitializer NO_OP = new ModelInitializer() { // the lambda for this just looked too funky for my tastes
+        @Override
+        public void populateModel(Resource rootResource) {
+            // no-op
+        }
+    };
+
 }

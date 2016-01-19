@@ -28,7 +28,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class NetworkUtilsTestCase {
@@ -45,69 +44,69 @@ public class NetworkUtilsTestCase {
     }
 
     @Test
-    public void testFormatInetAddress() throws Exception{
+    public void testFormatInetAddress() throws Exception {
         InetAddress inetAddress = InetAddress.getByName("127.0.0.1");
         Assert.assertEquals("127.0.0.1", NetworkUtils.formatAddress(inetAddress));
-        
+
         inetAddress = InetAddress.getByName("0:0:0:0:0:0:0:1");
         Assert.assertEquals("::1", NetworkUtils.formatAddress(inetAddress));
-        
+
         inetAddress = InetAddress.getByName("fe80:0:0:0:f24d:a2ff:fe63:5766");
         Assert.assertEquals("fe80::f24d:a2ff:fe63:5766", NetworkUtils.formatAddress(inetAddress));
-        
+
         inetAddress = InetAddress.getByName("1:0:0:1:0:0:0:1");
         Assert.assertEquals("1:0:0:1::1", NetworkUtils.formatAddress(inetAddress));
-        
+
         inetAddress = InetAddress.getByName("1:0:0:1:1:0:0:1");
         Assert.assertEquals("1::1:1:0:0:1", NetworkUtils.formatAddress(inetAddress));
     }
 
     @Test
-    public void testFormatIPAddressForURI() throws Exception{
+    public void testFormatIPAddressForURI() throws Exception {
         InetAddress inetAddress = InetAddress.getByName("127.0.0.1");
         Assert.assertEquals("127.0.0.1", NetworkUtils.formatIPAddressForURI(inetAddress));
-        
+
         inetAddress = InetAddress.getByName("0:0:0:0:0:0:0:1");
         Assert.assertEquals("[::1]", NetworkUtils.formatIPAddressForURI(inetAddress));
-        
+
         inetAddress = InetAddress.getByName("fe80:0:0:0:f24d:a2ff:fe63:5766");
         Assert.assertEquals("[fe80::f24d:a2ff:fe63:5766]", NetworkUtils.formatIPAddressForURI(inetAddress));
-        
+
         inetAddress = InetAddress.getByName("1:0:0:1:0:0:0:1");
         Assert.assertEquals("[1:0:0:1::1]", NetworkUtils.formatIPAddressForURI(inetAddress));
-        
+
         inetAddress = InetAddress.getByName("1:0:0:1:1:0:0:1");
         Assert.assertEquals("[1::1:1:0:0:1]", NetworkUtils.formatIPAddressForURI(inetAddress));
     }
-    
+
     @Test
     public void testFormatSocketAddress() throws Exception {
         InetAddress inetAddress = InetAddress.getByName("127.0.0.1");
-        InetSocketAddress socketAddress = new InetSocketAddress(inetAddress,8000);
+        InetSocketAddress socketAddress = new InetSocketAddress(inetAddress, 8000);
         Assert.assertEquals("127.0.0.1:8000", NetworkUtils.formatAddress(socketAddress));
-        
+
         inetAddress = InetAddress.getByName("0:0:0:0:0:0:0:1");
-        socketAddress = new InetSocketAddress(inetAddress,8000);
+        socketAddress = new InetSocketAddress(inetAddress, 8000);
         Assert.assertEquals("[::1]:8000", NetworkUtils.formatAddress(socketAddress));
-        
+
         inetAddress = InetAddress.getByName("fe80:0:0:0:f24d:a2ff:fe63:5766");
-        socketAddress = new InetSocketAddress(inetAddress,8000);
+        socketAddress = new InetSocketAddress(inetAddress, 8000);
         Assert.assertEquals("[fe80::f24d:a2ff:fe63:5766]:8000", NetworkUtils.formatAddress(socketAddress));
-        
+
         inetAddress = InetAddress.getByName("1:0:0:1:0:0:0:1");
-        socketAddress = new InetSocketAddress(inetAddress,8000);
+        socketAddress = new InetSocketAddress(inetAddress, 8000);
         Assert.assertEquals("[1:0:0:1::1]:8000", NetworkUtils.formatAddress(socketAddress));
-        
+
         inetAddress = InetAddress.getByName("1:0:0:1:1:0:0:1");
-        socketAddress = new InetSocketAddress(inetAddress,8000);
+        socketAddress = new InetSocketAddress(inetAddress, 8000);
         Assert.assertEquals("[1::1:1:0:0:1]:8000", NetworkUtils.formatAddress(socketAddress));
-        
+
         socketAddress = InetSocketAddress.createUnresolved("127.0.0.1", 8000);
         Assert.assertEquals("127.0.0.1:8000", NetworkUtils.formatAddress(socketAddress));
-        
+
         socketAddress = InetSocketAddress.createUnresolved("fe80:0:0:0:f24d:a2ff:fe63:5766", 8000);
         Assert.assertEquals("fe80:0:0:0:f24d:a2ff:fe63:5766:8000", NetworkUtils.formatAddress(socketAddress));
-        
+
         socketAddress = InetSocketAddress.createUnresolved("jboss.org", 8000);
         Assert.assertEquals("jboss.org:8000", NetworkUtils.formatAddress(socketAddress));
     }

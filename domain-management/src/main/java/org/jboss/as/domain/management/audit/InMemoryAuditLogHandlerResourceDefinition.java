@@ -33,10 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
@@ -88,12 +85,11 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
 
     public static final String OPERATION_NAME = "show-logs";
     protected static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{MAX_OPERATION_COUNT};
-    private static final Map<String, InMemoryAuditLogHander> histories = Collections.synchronizedMap(new HashMap<String, InMemoryAuditLogHander>());
 
     public InMemoryAuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger) {
         super(auditLogger, null, PathElement.pathElement(IN_MEMORY_HANDLER),
                 DomainManagementResolver.getResolver("core.management.in-memory-handler"),
-                new InMemoryAuditLogHandlerAddHandler(auditLogger), new InMemoryAuditLogHandlerRemoveHandler(auditLogger));
+                new InMemoryAuditLogHandlerAddHandler(auditLogger), new HandlerRemoveHandler(auditLogger));
     }
 
     @Override
@@ -105,13 +101,13 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
                 .setRuntimeOnly()
                 .setReplyType(ModelType.LIST)
                 .setReplyValueType(ModelType.STRING)
-                .build(), new ShowInMemoryLogsHandler());
+                .build(), new ShowInMemoryLogsHandler(auditLogger));
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         for (AttributeDefinition def : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(def, null, new InMemoryMaxHistoryWriteHandler());
+            resourceRegistration.registerReadWriteAttribute(def, null, new InMemoryMaxHistoryWriteHandler(auditLogger));
         }
     }
 
@@ -126,19 +122,21 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
     }
 
     protected static class ShowInMemoryLogsHandler extends AbstractRuntimeOnlyHandler {
+        private final ManagedAuditLogger auditLogger;
+
+        public ShowInMemoryLogsHandler(ManagedAuditLogger auditLogger) {
+            this.auditLogger = auditLogger;
+        }
 
         @Override
         protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
             final String name = Util.getNameFromAddress(operation.require(OP_ADDR));
-            InMemoryAuditLogHander loghandler = InMemoryAuditLogHandlerResourceDefinition.histories.get(name);
-            if (loghandler != null) {
-                ModelNode result = context.getResult().setEmptyList();
-                List<ModelNode> items = loghandler.getItems();
-                for (int i = (items.size() - 1); i >= 0; i--) {
-                    ModelNode entry = items.get(i);
-                    ModelNode configurationChange = entry.clone();
-                    result.add(configurationChange);
-                }
+            ModelNode result = context.getResult().setEmptyList();
+            List<ModelNode> items = this.auditLogger.listLastEntries(name);
+            for (int i = (items.size() - 1); i >= 0; i--) {
+                ModelNode entry = items.get(i);
+                ModelNode configurationChange = entry.clone();
+                result.add(configurationChange);
             }
         }
     }
@@ -164,10 +162,8 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
 
         protected InMemoryAuditLogHander createHandler(final OperationContext context, final ModelNode operation) throws OperationFailedException {
             final String name = Util.getNameFromAddress(operation.require(OP_ADDR));
-            final int maxOperationCount = MAX_OPERATION_COUNT.resolveModelAttribute(context, operation).asInt();
-            InMemoryAuditLogHander handler = new InMemoryAuditLogHander(name, maxOperationCount);
-            InMemoryAuditLogHandlerResourceDefinition.histories.put(name, handler);
-            return handler;
+            final int maxHistory = MAX_OPERATION_COUNT.resolveModelAttribute(context, operation).asInt();
+            return new InMemoryAuditLogHander(name, maxHistory);
         }
 
         @Override
@@ -184,24 +180,12 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
         }
     }
 
-    protected static class InMemoryAuditLogHandlerRemoveHandler extends HandlerRemoveHandler {
-
-        public InMemoryAuditLogHandlerRemoveHandler(ManagedAuditLogger auditLogger) {
-            super(auditLogger);
-        }
-
-        @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-            super.performRuntime(context, operation, model);
-            final String name = Util.getNameFromAddress(operation.require(OP_ADDR));
-            InMemoryAuditLogHandlerResourceDefinition.histories.remove(name);
-        }
-    }
-
     protected static class InMemoryMaxHistoryWriteHandler extends AbstractWriteAttributeHandler<Void> {
+        private final ManagedAuditLogger auditLogger;
 
-        public InMemoryMaxHistoryWriteHandler() {
+        public InMemoryMaxHistoryWriteHandler(ManagedAuditLogger auditLogger) {
             super(MAX_OPERATION_COUNT);
+            this.auditLogger = auditLogger;
         }
 
         @Override
@@ -213,10 +197,7 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
         protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Void handback) throws OperationFailedException {
             if (MAX_HISTORY.equals(attributeName)) {
                 final String name = Util.getNameFromAddress(operation.require(OP_ADDR));
-                InMemoryAuditLogHander loghandler = InMemoryAuditLogHandlerResourceDefinition.histories.get(name);
-                if (loghandler != null) {
-                    loghandler.setMaxHistory(valueToRevert.asInt());
-                }
+                auditLogger.updateInMemoryHandlerMaxHistory(name, valueToRevert.asInt());
             }
         }
 
@@ -224,11 +205,7 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Void> handbackHolder) throws OperationFailedException {
             if (MAX_HISTORY.equals(attributeName)) {
                final String name = Util.getNameFromAddress(operation.require(OP_ADDR));
-               InMemoryAuditLogHander loghandler = InMemoryAuditLogHandlerResourceDefinition.histories.get(name);
-               if (loghandler != null) {
-                   loghandler.setMaxHistory(resolvedValue.asInt());
-                   return true;
-               }
+               auditLogger.updateInMemoryHandlerMaxHistory(name, resolvedValue.asInt());
            }
            return false;
         }

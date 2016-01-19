@@ -24,7 +24,8 @@ package org.jboss.as.server.deployment.module;
 
 import java.io.IOException;
 import java.security.PrivilegedAction;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
@@ -54,7 +55,9 @@ public class TempFileProviderService implements Service<TempFileProvider> {
                    return new JBossThreadFactory(new ThreadGroup("TempFileProviderService-temp-threads"), Boolean.TRUE, null, "%G - %t", null, null);
                }
            });
-           PROVIDER = TempFileProvider.create("deployment", Executors.newScheduledThreadPool(0, threadFactory), true);
+           ScheduledThreadPoolExecutor ex = new ScheduledThreadPoolExecutor(0, threadFactory);
+           ex.setKeepAliveTime(60,TimeUnit.SECONDS);
+           PROVIDER = TempFileProvider.create("deployment", ex, true);
        }
        catch (final IOException ioe) {
           throw ServerLogger.ROOT_LOGGER.failedToCreateTempFileProvider(ioe);

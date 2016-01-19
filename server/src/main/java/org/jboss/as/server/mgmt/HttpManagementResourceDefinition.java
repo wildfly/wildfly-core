@@ -144,7 +144,7 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
         super(RESOURCE_PATH,
                 ServerDescriptions.getResourceDescriptionResolver("core.management.http-interface"),
                 HttpManagementAddHandler.INSTANCE, HttpManagementRemoveHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
+                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
         this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
         setDeprecated(ModelVersion.create(1, 7));
     }
@@ -167,6 +167,11 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
         return accessConstraints;
     }
 
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerCapability(HTTP_MANAGEMENT_CAPABILITY);
+    }
+
     private class HttpUpgradeAttributeHandler implements OperationStepHandler {
 
         @Override
@@ -186,7 +191,6 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
                     context.reloadRequired();
                     break;
             }
-
         }
 
     }

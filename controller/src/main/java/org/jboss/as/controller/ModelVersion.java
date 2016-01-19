@@ -26,12 +26,16 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION;
 
+import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 
 /**
  * @author Emanuel Muckenhuber
  */
 public final class ModelVersion implements ModelVersionRange {
+
+    public static final ModelVersion CURRENT = new ModelVersion(Version.MANAGEMENT_MAJOR_VERSION,
+            Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
 
     private final int major;
     private final int minor;

@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -84,7 +85,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(VALUE).set("profile-two");
 
         try {
-            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createRestartRequiredHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {
@@ -118,7 +119,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(VALUE).set("profile-one");
 
         try {
-            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
+            operationContext.executeStep(ServerGroupResourceDefinition.createRestartRequiredHandler(), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {
@@ -131,49 +132,55 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         checkServerOperationResolver(operationContext, operation, pa, false);
     }
 
-    @Test(expected=OperationFailedException.class)
-    public void testChangeServerGroupInvalidProfileMaster() throws Exception {
-        testChangeServerGroupInvalidProfile(true);
-    }
-
-    @Test(expected=OperationFailedException.class)
-    public void testChangeServerGroupInvalidProfileSlave() throws Exception {
-        testChangeServerGroupInvalidProfile(false);
-    }
+//    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidProfile
+//    @Test(expected=OperationFailedException.class)
+//    public void testChangeServerGroupInvalidProfileMaster() throws Exception {
+//        testChangeServerGroupInvalidProfile(true);
+//    }
+//
+//    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidProfile
+//    @Test(expected=OperationFailedException.class)
+//    public void testChangeServerGroupInvalidProfileSlave() throws Exception {
+//        testChangeServerGroupInvalidProfile(false);
+//    }
 
     @Override
     AbstractOperationTestCase.MockOperationContext getOperationContext() {
         return super.getOperationContext();
     }
 
-    private void testChangeServerGroupInvalidProfile(boolean master) throws Exception {
-        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
-
-        final ModelNode operation = new ModelNode();
-        operation.get(OP_ADDR).set(pa.toModelNode());
-        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        operation.get(NAME).set(PROFILE);
-        operation.get(VALUE).set("does-not-exist");
-
-        try {
-            operationContext.executeStep(ServerGroupResourceDefinition.createReferenceValidationHandler(), operation);
-        } catch (RuntimeException e) {
-            final Throwable t = e.getCause();
-            if (t instanceof OperationFailedException) {
-                throw (OperationFailedException) t;
-            }
-            throw e;
-        }
-
-        operationContext.verify();
-
-        if (!master) {
-            Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
-        } else {
-            Assert.fail();
-        }
-    }
+//    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidProfile
+//    private void testChangeServerGroupInvalidProfile(boolean master) throws Exception {
+//        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
+//        final MockOperationContext operationContext = getOperationContext(false, pa);
+//
+//        final ModelNode operation = new ModelNode();
+//        operation.get(OP_ADDR).set(pa.toModelNode());
+//        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
+//        operation.get(NAME).set(PROFILE);
+//        operation.get(VALUE).set("does-not-exist");
+//
+//        try {
+//            operationContext.executeStep(ServerGroupResourceDefinition.createRestartRequiredHandler(), operation);
+//        } catch (RuntimeException e) {
+//            final Throwable t = e.getCause();
+//            if (t instanceof OperationFailedException) {
+//                throw (OperationFailedException) t;
+//            }
+//            throw e;
+//        }
+//
+//        // WFCORE-833 the rest of this would never have executed because the above would have always thrown the OFE
+//        // when the validation handler ran. So really the above test was just a test of the validation and can
+//        // be replaced with stuff in core-model-test. It also means the 'master' param was meaningless
+//        operationContext.verify();
+//
+//        if (!master) {
+//            Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
+//        } else {
+//            Assert.fail();
+//        }
+//    }
 
     @Test
     public void testChangeServerConfigGroupMaster() throws Exception {
@@ -227,44 +234,47 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         checkServerOperationResolver(operationContext, operation, pa, false);
     }
 
-    @Test(expected=OperationFailedException.class)
-    public void testChangeServerConfigGroupBadGroupMaster() throws Exception {
-        testChangeServerConfigGroupBadGroup(true);
-    }
+//    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidServerGroup()
+//    @Test(expected=OperationFailedException.class)
+//    public void testChangeServerConfigGroupBadGroupMaster() throws Exception {
+//        testChangeServerConfigGroupBadGroup(true);
+//    }
 
-    @Test(expected=OperationFailedException.class)
-    public void testChangeServerConfigGroupBadGroupSlave() throws Exception {
-        testChangeServerConfigGroupBadGroup(false);
-    }
+//    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidServerGroup()
+//    @Test(expected=OperationFailedException.class)
+//    public void testChangeServerConfigGroupBadGroupSlave() throws Exception {
+//        testChangeServerConfigGroupBadGroup(false);
+//    }
 
-    private void testChangeServerConfigGroupBadGroup(boolean master) throws Exception {
-        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
-
-        final ModelNode operation = new ModelNode();
-        operation.get(OP_ADDR).set(pa.toModelNode());
-        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        operation.get(NAME).set(GROUP);
-        operation.get(VALUE).set("bad-group");
-
-        try {
-            operationContext.executeStep(ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE, operation);
-        } catch (RuntimeException e) {
-            final Throwable t = e.getCause();
-            if (t instanceof OperationFailedException) {
-                throw (OperationFailedException) t;
-            }
-            throw e;
-        }
-
-        operationContext.verify();
-
-        if (!master) {
-            Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
-        } else {
-            Assert.fail();
-        }
-    }
+//  // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidServerGroup()
+//    private void testChangeServerConfigGroupBadGroup(boolean master) throws Exception {
+//        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
+//        final MockOperationContext operationContext = getOperationContext(false, pa);
+//
+//        final ModelNode operation = new ModelNode();
+//        operation.get(OP_ADDR).set(pa.toModelNode());
+//        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
+//        operation.get(NAME).set(GROUP);
+//        operation.get(VALUE).set("bad-group");
+//
+//        try {
+//            operationContext.executeStep(ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE, operation);
+//        } catch (RuntimeException e) {
+//            final Throwable t = e.getCause();
+//            if (t instanceof OperationFailedException) {
+//                throw (OperationFailedException) t;
+//            }
+//            throw e;
+//        }
+//
+//        operationContext.verify();
+//
+//        if (!master) {
+//            Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
+//        } else {
+//            Assert.fail();
+//        }
+//    }
 
     @Test
     public void testChangeServerConfigSocketBindingGroupMaster() throws Exception {
@@ -318,44 +328,50 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
     }
 
-    @Test(expected=OperationFailedException.class)
-    public void testChangeServerConfigSocketBindingGroupBadGroupMaster() throws Exception {
-        testChangeServerConfigSocketBindingGroupBadGroup(true);
-    }
+//    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidSocketBindingGroup
+//    @Test(expected=OperationFailedException.class)
+//    public void testChangeServerConfigSocketBindingGroupBadGroupMaster() throws Exception {
+//        testChangeServerConfigSocketBindingGroupBadGroup(true);
+//    }
 
-    @Test(expected=OperationFailedException.class)
-    public void testChangeServerConfigSocketBindingGroupBadGroupSlave() throws Exception {
-        testChangeServerConfigSocketBindingGroupBadGroup(false);
-    }
+//    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidSocketBindingGroup
+//    @Test(expected=OperationFailedException.class)
+//    public void testChangeServerConfigSocketBindingGroupBadGroupSlave() throws Exception {
+//        testChangeServerConfigSocketBindingGroupBadGroup(false);
+//    }
 
-    private void testChangeServerConfigSocketBindingGroupBadGroup(boolean master) throws Exception {
-        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
-
-        final ModelNode operation = new ModelNode();
-        operation.get(OP_ADDR).set(pa.toModelNode());
-        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        operation.get(NAME).set(SOCKET_BINDING_GROUP);
-        operation.get(VALUE).set("bad-group");
-
-        try {
-            operationContext.executeStep(ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE, operation);
-        } catch (RuntimeException e) {
-            final Throwable t = e.getCause();
-            if (t instanceof OperationFailedException) {
-                throw (OperationFailedException) t;
-            }
-            throw e;
-        }
-
-        operationContext.verify();
-
-        if (!master) {
-            Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
-        } else {
-            Assert.fail();
-        }
-    }
+//    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidSocketBindingGroup
+//    private void testChangeServerConfigSocketBindingGroupBadGroup(boolean master) throws Exception {
+//        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
+//        final MockOperationContext operationContext = getOperationContext(false, pa);
+//
+//        final ModelNode operation = new ModelNode();
+//        operation.get(OP_ADDR).set(pa.toModelNode());
+//        operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
+//        operation.get(NAME).set(SOCKET_BINDING_GROUP);
+//        operation.get(VALUE).set("bad-group");
+//
+//        try {
+//            operationContext.executeStep(ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE, operation);
+//        } catch (RuntimeException e) {
+//            final Throwable t = e.getCause();
+//            if (t instanceof OperationFailedException) {
+//                throw (OperationFailedException) t;
+//            }
+//            throw e;
+//        }
+//
+//        // WFCORE-833 the rest of this would never have executed because the above would have always thrown the OFE
+//        // when the validation handler ran. So really the above test was just a test of the validation and can
+//        // be replaced with stuff in core-model-test. It also means the 'master' param was meaningless
+//        operationContext.verify();
+//
+//        if (!master) {
+//            Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
+//        } else {
+//            Assert.fail();
+//        }
+//    }
 
     @Test
     public void testChangeServerConfigSocketBindingPortOffset() throws Exception {
@@ -492,7 +508,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
         @Override
         public void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control,
-                OperationAttachments attachments) {
+                            OperationAttachments attachments, BlockingTimeout blockingTimeout) {
         }
 
     }

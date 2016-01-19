@@ -198,7 +198,7 @@ public class ModuleConfigImpl implements ModuleConfig {
         if(mainClass != null) {
             writeNewLine(writer);
             writer.writeStartElement(MAIN_CLASS);
-            writer.writeAttribute(VALUE, mainClass);
+            writer.writeAttribute(NAME, mainClass);
             writer.writeEndElement();
         }
 

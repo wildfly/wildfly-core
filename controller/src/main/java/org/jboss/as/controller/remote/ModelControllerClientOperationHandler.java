@@ -44,6 +44,7 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -209,12 +210,13 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
                 responseAttachmentSupport.registerStreams(context.getOperationId(), response.getInputStreams());
 
                 result.set(response.getResponseNode());
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 final ModelNode failure = new ModelNode();
                 failure.get(OUTCOME).set(FAILED);
-                failure.get(FAILURE_DESCRIPTION).set(e.getClass().getName() + ":" + e.getMessage());
+                failure.get(FAILURE_DESCRIPTION).set(t.getClass().getName() + ":" + t.getMessage());
                 result.set(failure);
-                attachmentsProxy.shutdown(e);
+                attachmentsProxy.shutdown();
+                ControllerLogger.MGMT_OP_LOGGER.unexpectedOperationExecutionException(t, Collections.singletonList(operation));
             } finally {
                 ROOT_LOGGER.tracef("Executed client request %d", batchId);
             }
@@ -282,7 +284,7 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
             final CountDownLatch latch = new CountDownLatch(1);
             final IOExceptionHolder exceptionHolder = new IOExceptionHolder();
 
-            responseContext.executeAsync(new ManagementRequestContext.AsyncTask<Void>() {
+            boolean accepted = responseContext.executeAsync(new ManagementRequestContext.AsyncTask<Void>() {
 
                 @Override
                 public void execute(final ManagementRequestContext<Void> context) throws Exception {
@@ -304,15 +306,17 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
                 }
             }, false);
 
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            if (exceptionHolder.exception != null) {
-                resultHandler.failed(exceptionHolder.exception);
-            } else {
-                resultHandler.done(result);
+            if (accepted) {
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                if (exceptionHolder.exception != null) {
+                    resultHandler.failed(exceptionHolder.exception);
+                } else {
+                    resultHandler.done(result);
+                }
             }
         }
 

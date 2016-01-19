@@ -79,8 +79,8 @@ class GarbageCollectorResourceDefinition extends SimpleResourceDefinition {
     static final GarbageCollectorResourceDefinition INSTANCE = new GarbageCollectorResourceDefinition();
 
     private GarbageCollectorResourceDefinition() {
-        super(PathElement.pathElement(NAME.getName()),
-                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.GARBAGE_COLLECTOR));
+        super(new Parameters(PathElement.pathElement(NAME.getName()),
+                PlatformMBeanUtil.getResolver(PlatformMBeanConstants.GARBAGE_COLLECTOR)).setRuntime());
     }
 
     @Override
@@ -95,9 +95,6 @@ class GarbageCollectorResourceDefinition extends SimpleResourceDefinition {
         for (SimpleAttributeDefinition attribute : METRICS) {
             registration.registerMetric(attribute, GarbageCollectorMXBeanAttributeHandler.INSTANCE);
         }
-
-        // HACK -- workaround WFCORE-17
-        registration.setRuntimeOnly(true);
     }
 
 

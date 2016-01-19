@@ -32,7 +32,9 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
+import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.impl.AttributeNamePathCompleter;
 import org.jboss.as.cli.impl.ValueTypeCompleter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -51,6 +53,8 @@ import org.jboss.dmr.Property;
  * @author Alexey Loubyansky
  */
 public class DefaultOperationCandidatesProvider implements OperationCandidatesProvider {
+
+    private static final SimpleTabCompleter NO_CANDIDATES_COMPLETER = new SimpleTabCompleter(new String[]{});
 
     private static final CommandLineCompleter BOOLEAN_HEADER_COMPLETER = new CommandLineCompleter(){
 
@@ -238,36 +242,7 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
                 final List<Property> propList = reqProps.asPropertyList();
                 result = new ArrayList<CommandArgument>(propList.size());
                 for(final Property prop : propList) {
-                    final CommandLineCompleterFactory factory = globalOpProps == null ? null : globalOpProps.get(prop.getName());
-                    CommandLineCompleter propCompleter = null;
-                    if(factory != null) {
-                        propCompleter = factory.createCompleter(address);
-                    } else {
-                        final ModelNode typeNode = prop.getValue().get(Util.TYPE);
-                        if(typeNode.isDefined() && typeNode.asType().equals(ModelType.BOOLEAN)) {
-                            propCompleter = SimpleTabCompleter.BOOLEAN;
-                        } else {
-                            if(prop.getValue().has(Util.VALUE_TYPE)) {
-                                final ModelNode valueTypeNode = prop.getValue().get(Util.VALUE_TYPE);
-                                try {
-                                    // the logic is: if value-type is set to a specific type
-                                    // (i.e. doesn't describe a custom structure)
-                                    // then if allowed is specified, use it.
-                                    // it might be broken but so far this is not looking clear to me
-                                    valueTypeNode.asType();
-                                    if(prop.getValue().has(Util.ALLOWED)) {
-                                        propCompleter = getAllowedCompleter(prop);
-                                    }
-                                } catch(IllegalArgumentException e) {
-                                    // TODO this means value-type describes a custom structure
-                                    propCompleter = new ValueTypeCompleter(prop.getValue());
-                                }
-                            } else if(prop.getValue().has(Util.ALLOWED)) {
-                                propCompleter = getAllowedCompleter(prop);
-                            }
-                        }
-                    }
-                    final CommandLineCompleter completer = propCompleter;
+                    final CommandLineCompleter completer = getCompleter(globalOpProps, prop, ctx, operationName, address);
                     result.add(new CommandArgument(){
                         final String argName = prop.getName();
                         @Override
@@ -336,6 +311,44 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         return result;
     }
 
+    private CommandLineCompleter getCompleter(final Map<String, CommandLineCompleterFactory> globalOpProps, final Property prop, CommandContext ctx, String operationName, OperationRequestAddress address) throws IllegalArgumentException {
+        CommandLineCompleter propCompleter = null;
+        final CommandLineCompleterFactory factory = globalOpProps == null ? null : globalOpProps.get(prop.getName());
+        if (factory != null) {
+            propCompleter = factory.createCompleter(ctx, address);
+        }
+        if (propCompleter == null) {
+            ModelNode attrDescr = prop.getValue();
+            final ModelNode typeNode = attrDescr.get(Util.TYPE);
+            if (typeNode.isDefined() && ModelType.BOOLEAN.equals(typeNode.asType())) {
+                return SimpleTabCompleter.BOOLEAN;
+            }
+            if (attrDescr.has(Util.FILESYSTEM_PATH) && attrDescr.get(Util.FILESYSTEM_PATH).asBoolean()) {
+                return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+            }
+            if (attrDescr.has(Util.VALUE_TYPE)) {
+                final ModelNode valueTypeNode = attrDescr.get(Util.VALUE_TYPE);
+                try {
+                    // the logic is: if value-type is set to a specific type
+                    // (i.e. doesn't describe a custom structure)
+                    // then if allowed is specified, use it.
+                    // it might be broken but so far this is not looking clear to me
+                    valueTypeNode.asType();
+                    if (attrDescr.has(Util.ALLOWED)) {
+                        return getAllowedCompleter(prop);
+                    }
+                } catch (IllegalArgumentException e) {
+                    // TODO this means value-type describes a custom structure
+                    return new ValueTypeCompleter(attrDescr);
+                }
+            }
+            if (attrDescr.has(Util.ALLOWED)) {
+                return getAllowedCompleter(prop);
+            }
+        }
+        return propCompleter;
+    }
+
     private CommandLineCompleter getAllowedCompleter(final Property prop) {
         final ModelNode allowedNode = prop.getValue().get(Util.ALLOWED);
         if(allowedNode.isDefined()) {
@@ -371,30 +384,64 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
     static {
         final CommandLineCompleterFactory attrNameCompleter = new CommandLineCompleterFactory(){
             @Override
-            public CommandLineCompleter createCompleter(OperationRequestAddress address) {
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
                 return new AttributeNamePathCompleter(address);
             }};
         addGlobalOpPropCompleter(Util.UNDEFINE_ATTRIBUTE, Util.NAME, attrNameCompleter);
         addGlobalOpPropCompleter(Util.READ_ATTRIBUTE, Util.NAME, attrNameCompleter);
         addGlobalOpPropCompleter(Util.WRITE_ATTRIBUTE, Util.NAME, new CommandLineCompleterFactory(){
             @Override
-            public CommandLineCompleter createCompleter(OperationRequestAddress address) {
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
                 return new AttributeNamePathCompleter(address, true);
             }});
         addGlobalOpPropCompleter(Util.WRITE_ATTRIBUTE, Util.VALUE, new CommandLineCompleterFactory(){
             @Override
-            public CommandLineCompleter createCompleter(OperationRequestAddress address) {
-                return new SimpleDependentValueCompleter(address, Util.NAME);
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
+                final String propName = ctx.getParsedCommandLine().getPropertyValue(Util.NAME);
+                if(propName == null) {
+                    return NO_CANDIDATES_COMPLETER;
+                }
+
+                final ModelNode req = new ModelNode();
+                final ModelNode addrNode = req.get(Util.ADDRESS);
+                for (OperationRequestAddress.Node node : address) {
+                    addrNode.add(node.getType(), node.getName());
+                }
+                req.get(Util.OPERATION).set(Util.READ_RESOURCE_DESCRIPTION);
+                final ModelNode response;
+                try {
+                    response = ctx.getModelControllerClient().execute(req);
+                } catch (Exception e) {
+                    return NO_CANDIDATES_COMPLETER;
+                }
+                final ModelNode result = response.get(Util.RESULT);
+                if (!result.isDefined()) {
+                    return NO_CANDIDATES_COMPLETER;
+                }
+                final ModelNode attrs = result.get(Util.ATTRIBUTES);
+                if(!attrs.isDefined()) {
+                    return NO_CANDIDATES_COMPLETER;
+                }
+                final ModelNode attrDescr = attrs.get(propName);
+                if(!attrDescr.isDefined()) {
+                    return NO_CANDIDATES_COMPLETER;
+                }
+
+                if (attrDescr.has(Util.FILESYSTEM_PATH) && attrDescr.get(Util.FILESYSTEM_PATH).asBoolean()) {
+                    return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+                }
+
+                return new AttributeTypeDescrValueCompleter(attrDescr);
             }});
         addGlobalOpPropCompleter(Util.READ_OPERATION_DESCRIPTION, Util.NAME, new CommandLineCompleterFactory(){
             @Override
-            public CommandLineCompleter createCompleter(OperationRequestAddress address) {
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
                 return new OperationNameCompleter(address);
             }});
 
         final CommandLineCompleterFactory childTypeCompleter = new CommandLineCompleterFactory(){
             @Override
-            public CommandLineCompleter createCompleter(OperationRequestAddress address) {
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
                 return new ChildTypeCompleter(address);
             }};
         addGlobalOpPropCompleter(Util.READ_CHILDREN_NAMES, Util.CHILD_TYPE, childTypeCompleter);
@@ -411,6 +458,6 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         addGlobalOpPropCompleter("list-clear", Util.NAME, attrNameCompleter);
     }
     interface CommandLineCompleterFactory {
-        CommandLineCompleter createCompleter(OperationRequestAddress address);
+        CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address);
     }
 }

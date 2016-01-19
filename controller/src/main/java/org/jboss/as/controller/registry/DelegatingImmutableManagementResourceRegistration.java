@@ -31,7 +31,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 
 /**
@@ -57,6 +57,16 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     @Override
     public PathAddress getPathAddress() {
         return delegate.getPathAddress();
+    }
+
+    @Override
+    public int getMaxOccurs() {
+        return delegate.getMaxOccurs();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return delegate.getMinOccurs();
     }
 
     @Override
@@ -166,7 +176,7 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     }
 
     @Override
-    public Set<Capability> getCapabilities() {
+    public Set<RuntimeCapability> getCapabilities() {
         return delegate.getCapabilities();
     }
 }

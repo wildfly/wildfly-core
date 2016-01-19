@@ -109,9 +109,9 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
             .build();
     private static final String TYPE_STANDALONE = "STANDALONE";
 
-    private final static ObjectName OBJECT_NAME;
-    private final static ObjectName OBJECT_NAME_MODEL;
-    private final static ObjectName OBJECT_NAME2;
+    private static final ObjectName OBJECT_NAME;
+    private static final ObjectName OBJECT_NAME_MODEL;
+    private static final ObjectName OBJECT_NAME2;
     static {
         try {
             OBJECT_NAME = new ObjectName("test:name=bean");

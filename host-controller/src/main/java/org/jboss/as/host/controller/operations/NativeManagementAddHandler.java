@@ -73,6 +73,7 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
         NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(false), onDemand);
 
         OptionMap options = createConnectorOptions(context, model);
+        NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
         installNativeManagementServices(serviceTarget, hostControllerInfo, options);
     }
 

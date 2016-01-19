@@ -21,6 +21,11 @@
  */
 package org.jboss.as.jmx.rbac;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import javax.management.Attribute;
 import javax.management.AttributeChangeNotification;
 import javax.management.AttributeList;
@@ -51,6 +56,9 @@ import javax.management.modelmbean.ModelMBeanOperationInfo;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class TestModelMBean implements ModelMBean {
+
+    // WFCORE-1039 hold a ref to listeners so we avoid weird test bugs when the platform MBeanServer gcs unreferenced ones
+    private final Map<String, Set<NotificationListener>> listeners = new HashMap<>();
 
     public TestModelMBean() {
 
@@ -131,20 +139,24 @@ public class TestModelMBean implements ModelMBean {
     @Override
     public void addAttributeChangeNotificationListener(NotificationListener listener, String attributeName, Object handback)
             throws MBeanException, RuntimeOperationsException, IllegalArgumentException {
+        addListener(listener, attributeName);
     }
 
     @Override
     public void removeAttributeChangeNotificationListener(NotificationListener listener, String attributeName)
             throws MBeanException, RuntimeOperationsException, ListenerNotFoundException {
+        removeListener(listener, attributeName);
     }
 
     @Override
     public void addNotificationListener(NotificationListener listener, NotificationFilter filter, Object handback)
             throws IllegalArgumentException {
+        addListener(listener, null);
     }
 
     @Override
     public void removeNotificationListener(NotificationListener listener) throws ListenerNotFoundException {
+        removeListener(listener, null);
     }
 
     @Override
@@ -159,5 +171,29 @@ public class TestModelMBean implements ModelMBean {
     @Override
     public void setManagedResource(Object mr, String mr_type) throws MBeanException, RuntimeOperationsException,
             InstanceNotFoundException, InvalidTargetObjectTypeException {
+    }
+
+    private void addListener(NotificationListener listener, String attribute) {
+        synchronized (listeners) {
+            Set<NotificationListener> set = listeners.get(attribute);
+            if (set == null) {
+                set = new HashSet<>();
+                listeners.put(attribute, set);
+            }
+            set.add(listener);
+        }
+    }
+
+    private void removeListener(NotificationListener listener, String attribute) {
+        synchronized (listeners) {
+            Set<NotificationListener> set = listeners.get(attribute);
+            if (set != null) {
+                set.remove(listener);
+                if (set.size() == 0) {
+                    listeners.remove(attribute);
+                }
+            }
+        }
+
     }
 }

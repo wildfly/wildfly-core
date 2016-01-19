@@ -12,7 +12,7 @@
         </deployment-overlay>
     </deployment-overlays>
 
-   <server-groups>
+    <server-groups>
         <server-group name="test" profile="test" management-subsystem-endpoint="true">
 
             <jvm name="full" java-home="javaHome" type="SUN" env-classpath-ignored="true">

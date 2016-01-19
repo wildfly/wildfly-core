@@ -23,6 +23,7 @@ package org.jboss.as.domain.http.server.logging;
 
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
+import static org.jboss.logging.Logger.Level.WARN;
 
 import java.net.InetAddress;
 
@@ -51,7 +52,7 @@ public interface HttpServerLogger extends BasicLogger {
     @Message(id = 2, value = "Unexpected error executing deployment upload request")
     void uploadError(@Cause Throwable cause);
 
-    @LogMessage(level = ERROR)
+    @LogMessage(level = WARN)
     @Message(id = 3, value = "Unable to load console module for slot %s, disabling console")
     void consoleModuleNotFound(String slot);
 

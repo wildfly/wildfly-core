@@ -145,77 +145,7 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
         final ManagementRequestHeader header = new ManagementRequestHeader(ManagementProtocol.VERSION, requestId, support.getOperationId(), request.getOperationType());
         final ActiveOperation.ResultHandler<T> resultHandler = support.getResultHandler();
         try {
-            request.sendRequest(resultHandler, new ManagementRequestContext<A>() {
-
-                @Override
-                public Integer getOperationId() {
-                    return support.getOperationId();
-                }
-
-                @Override
-                public A getAttachment() {
-                    return support.getAttachment();
-                }
-
-                @Override
-                public Channel getChannel() {
-                    return channel;
-                }
-
-                @Override
-                public ManagementProtocolHeader getRequestHeader() {
-                    return header;
-                }
-
-                Runnable createAsyncTaskRunner(final AsyncTask<A> task, final boolean cancellable) {
-                    final ManagementRequestContext<A> context = this;
-                    final AsyncTaskRunner runner = new AsyncTaskRunner(cancellable) {
-                        @Override
-                        protected void doExecute() {
-                            try {
-                                task.execute(context);
-                            } catch (Exception e) {
-                                resultHandler.failed(e);
-                                requests.remove(requestId);
-                                if (e instanceof InterruptedException) {
-                                    Thread.currentThread().interrupt();
-                                }
-                            }
-                        }
-                    };
-                    if (cancellable) {
-                        support.addCancellable(runner);
-                    }
-                    return runner;
-                }
-
-                @Override
-                public void executeAsync(final AsyncTask<A> task) {
-                    executeAsync(task, true, getExecutor());
-                }
-
-                @Override
-                public void executeAsync(final AsyncTask<A> task, boolean cancellable) {
-                    executeAsync(task, cancellable, getExecutor());
-                }
-
-                @Override
-                public void executeAsync(AsyncTask<A> task, Executor executor) {
-                    executeAsync(task, true, executor);
-                }
-
-                @Override
-                public void executeAsync(AsyncTask<A> task, boolean cancellable, Executor executor) {
-                    executor.execute(createAsyncTaskRunner(task, cancellable));
-                }
-
-                @Override
-                public FlushableDataOutput writeMessage(final ManagementProtocolHeader header) throws IOException {
-                    final MessageOutputStream os = channel.writeMessage();
-                    return writeHeader(header, os);
-                }
-            });
-
+            request.sendRequest(resultHandler, new ManagementRequestContextImpl<T, A>(support, channel, header, getExecutor()));
         } catch (Exception e) {
             resultHandler.failed(e);
             requests.remove(requestId);
@@ -267,82 +197,8 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
         updateChannelRef(support, channel);
         final ActiveOperation.ResultHandler<T> resultHandler = support.getResultHandler();
         try {
-            handler.handleRequest(message, resultHandler, new ManagementRequestContext<A>() {
-
-                @Override
-                public Integer getOperationId() {
-                    return support.getOperationId();
-                }
-
-                @Override
-                public A getAttachment() {
-                    return support.getAttachment();
-                }
-
-                @Override
-                public Channel getChannel() {
-                    return channel;
-                }
-
-                @Override
-                public ManagementProtocolHeader getRequestHeader() {
-                    return header;
-                }
-
-                Runnable createAsyncTaskRunner(final AsyncTask<A> task, final boolean cancellable) {
-                    final ManagementRequestContext<A> context = this;
-                    final AsyncTaskRunner runner = new AsyncTaskRunner(cancellable) {
-                        @Override
-                        protected void doExecute() {
-                            try {
-                                task.execute(context);
-                            } catch (Exception e) {
-                                ProtocolLogger.ROOT_LOGGER.debugf(e, " failed to process async request for %s on channel %s", task, channel);
-                                if(resultHandler.failed(e)) {
-                                    safeWriteErrorResponse(channel, header, e);
-                                }
-                            }
-                        }
-                    };
-                    if (cancellable) {
-                        support.addCancellable(runner);
-                    }
-                    return runner;
-                }
-
-                @Override
-                public void executeAsync(final AsyncTask<A> task) {
-                    executeAsync(task, true, getExecutor());
-                }
-
-                @Override
-                public void executeAsync(final AsyncTask<A> task, boolean cancellable) {
-                    executeAsync(task, cancellable, getExecutor());
-                }
-
-                @Override
-                public void executeAsync(AsyncTask<A> task, Executor executor) {
-                    executeAsync(task, true, executor);
-                }
-
-                @Override
-                public void executeAsync(final AsyncTask<A> task, boolean cancellable, final Executor executor) {
-                    try {
-                        executor.execute(createAsyncTaskRunner(task, cancellable));
-                    } catch (RejectedExecutionException e) {
-                        if(resultHandler.failed(e)) {
-                            safeWriteErrorResponse(channel, header, e);
-                        }
-                    }
-                }
-
-                @Override
-                public FlushableDataOutput writeMessage(final ManagementProtocolHeader header) throws IOException {
-                    final MessageOutputStream os = channel.writeMessage();
-                    return writeHeader(header, os);
-                }
-
-            });
+            handler.handleRequest(message, resultHandler,
+                    new ManagementRequestContextImpl<T, A>(support, channel, header, getExecutor()));
         } catch (Exception e) {
             resultHandler.failed(e);
             safeWriteErrorResponse(channel, header, e);
@@ -403,7 +259,7 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
      * @param header the request header
      * @param error the exception
      */
-    protected static void safeWriteErrorResponse(final Channel channel, final ManagementProtocolHeader header, final Exception error) {
+    protected static void safeWriteErrorResponse(final Channel channel, final ManagementProtocolHeader header, final Throwable error) {
         if(header.getType() == ManagementProtocol.TYPE_REQUEST) {
             try {
                 writeErrorResponse(channel, (ManagementRequestHeader) header, error);
@@ -421,7 +277,7 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
      * @param error the error
      * @throws IOException
      */
-    protected static void writeErrorResponse(final Channel channel, final ManagementRequestHeader header, final Exception error) throws IOException {
+    protected static void writeErrorResponse(final Channel channel, final ManagementRequestHeader header, final Throwable error) throws IOException {
         final ManagementResponseHeader response = ManagementResponseHeader.create(header, error);
         final MessageOutputStream output = channel.writeMessage();
         try {
@@ -461,6 +317,104 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
                 }
             }
         };
+    }
+
+    /** Standard {@code ManagementRequestContext} implementation. */
+    private static class ManagementRequestContextImpl<T, A> implements ManagementRequestContext<A> {
+
+        private final ActiveOperation<T, A> support;
+        private final Channel channel;
+        private final ManagementProtocolHeader header;
+        private final Executor executor;
+
+        private ManagementRequestContextImpl(ActiveOperation<T, A> support, Channel channel, ManagementProtocolHeader header, Executor executor) {
+            this.support = support;
+            this.channel = channel;
+            this.header = header;
+            this.executor = executor;
+        }
+
+        @Override
+        public Integer getOperationId() {
+            return support.getOperationId();
+        }
+
+        @Override
+        public A getAttachment() {
+            return support.getAttachment();
+        }
+
+        @Override
+        public Channel getChannel() {
+            return channel;
+        }
+
+        @Override
+        public ManagementProtocolHeader getRequestHeader() {
+            return header;
+        }
+
+        Runnable createAsyncTaskRunner(final AsyncTask<A> task, final boolean cancellable) {
+            final ManagementRequestContext<A> context = this;
+            final AsyncTaskRunner runner = new AsyncTaskRunner(cancellable) {
+                @Override
+                protected void doExecute() {
+                    try {
+                        task.execute(context);
+                    } catch (Throwable t) {
+                        if(support.getResultHandler().failed(t)) {
+                            ManagementProtocolHeader requestHeader;
+                            if (task instanceof MultipleResponseAsyncTask) {
+                                requestHeader = ((MultipleResponseAsyncTask) task).getCurrentRequestHeader();
+                                requestHeader = requestHeader == null ? header : requestHeader;
+                            } else {
+                                requestHeader = header;
+                            }
+                            safeWriteErrorResponse(channel, requestHeader, t);
+                        }
+                        ProtocolLogger.ROOT_LOGGER.debugf(t, " failed to process async request for %s on channel %s", task, channel);
+                    }
+                }
+            };
+            if (cancellable) {
+                support.addCancellable(runner);
+            }
+            return runner;
+        }
+
+        @Override
+        public boolean executeAsync(final AsyncTask<A> task) {
+            return executeAsync(task, true, executor);
+        }
+
+        @Override
+        public boolean executeAsync(final AsyncTask<A> task, boolean cancellable) {
+            return executeAsync(task, cancellable, executor);
+        }
+
+        @Override
+        public boolean executeAsync(AsyncTask<A> task, Executor executor) {
+            return executeAsync(task, true, executor);
+        }
+
+        @Override
+        public boolean executeAsync(final AsyncTask<A> task, boolean cancellable, final Executor executor) {
+            try {
+                executor.execute(createAsyncTaskRunner(task, cancellable));
+                return true;
+            } catch (RejectedExecutionException e) {
+                if(support.getResultHandler().failed(e)) {
+                    safeWriteErrorResponse(channel, header, e);
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public FlushableDataOutput writeMessage(final ManagementProtocolHeader header) throws IOException {
+            final MessageOutputStream os = channel.writeMessage();
+            return writeHeader(header, os);
+        }
     }
 
     private static class ActiveRequest<T, A> {

@@ -35,10 +35,10 @@ import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
  */
 class StopEmbeddedServerHandler extends CommandHandlerWithHelp {
 
-    private final AtomicReference<EmbeddedServerLaunch> serverReference;
+    private final AtomicReference<EmbeddedProcessLaunch> serverReference;
 
 
-    StopEmbeddedServerHandler(final AtomicReference<EmbeddedServerLaunch> serverReference) {
+    StopEmbeddedServerHandler(final AtomicReference<EmbeddedProcessLaunch> serverReference) {
         super("stop-embedded-server", false);
         assert serverReference != null;
         this.serverReference = serverReference;
@@ -46,19 +46,19 @@ class StopEmbeddedServerHandler extends CommandHandlerWithHelp {
 
     @Override
     public boolean isAvailable(CommandContext ctx) {
-        return serverReference.get() != null;
+        return (serverReference.get() != null && serverReference.get().isStandalone());
     }
 
     @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
-        EmbeddedServerLaunch serverLaunch = serverReference.get();
+        EmbeddedProcessLaunch serverLaunch = serverReference.get();
         if (serverLaunch != null) {
             ctx.disconnectController();
         }
     }
 
-    static void cleanup(final AtomicReference<EmbeddedServerLaunch> serverReference) {
-        EmbeddedServerLaunch serverLaunch = serverReference.get();
+    static void cleanup(final AtomicReference<EmbeddedProcessLaunch> serverReference) {
+        EmbeddedProcessLaunch serverLaunch = serverReference.get();
         if (serverLaunch != null) {
             try {
                 serverLaunch.stop();

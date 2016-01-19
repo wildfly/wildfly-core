@@ -22,7 +22,7 @@
 
 <host xmlns="urn:jboss:domain:5.0"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="urn:jboss:domain:5.0 wildfly-config_4_0.xsd"
+      xsi:schemaLocation="urn:jboss:domain:5.0 wildfly-config_5_0.xsd"
       name="slave">
 
     <paths>
@@ -91,6 +91,10 @@
             </ignored-resources>
             <ignored-resources type="foo" wildcard="true">
                 <instance name="ignored"/>
+            </ignored-resources>
+            <ignored-resources type="server-group">
+                <instance name="ignored-sockets"/>
+                <instance name="ignored-profile"/>
             </ignored-resources>
         </remote>
     </domain-controller>

@@ -23,7 +23,9 @@
 package org.jboss.as.domain.management.security;
 
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
+
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -73,8 +75,13 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
                     if (defaultService == null) {
                         defaultService = current;
                     }
-                } else if (hostServiceMap.containsKey(currentHost) == false) {
-                    hostServiceMap.put(currentHost, current);
+                } else if (currentHost != null) {
+                    int idx = currentHost.indexOf("/");
+                    String hostKey = idx > -1 ? currentHost.substring(0, idx) + "/" + currentHost.substring(idx + 1).toLowerCase(Locale.ENGLISH) :
+                        currentHost.toLowerCase(Locale.ENGLISH);
+                    if (hostServiceMap.containsKey(hostKey) == false) {
+                        hostServiceMap.put(hostKey, current);
+                    }
                 }
             }
         }
@@ -89,12 +96,15 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
             int end = principal.indexOf('@');
 
             String currentHost = principal.substring(start > -1 ? start + 1 : 0, end > -1 ? end : principal.length() - 1);
-            if (hostServiceMap.containsKey(currentHost) == false) {
-                hostServiceMap.put(currentHost, current);
+            if (hostServiceMap.containsKey(currentHost.toLowerCase(Locale.ENGLISH)) == false) {
+                hostServiceMap.put(currentHost.toLowerCase(Locale.ENGLISH), current);
             }
             principal = principal.substring(0, end > -1 ? end : principal.length() - 1);
-            if (principal.equals(currentHost) == false && hostServiceMap.containsKey(principal) == false) {
-                hostServiceMap.put(principal, current);
+            if (principal.equals(currentHost) == false) {
+                String principalKey = principal.substring(0, start) + "/" + currentHost.toLowerCase(Locale.ENGLISH);
+                if (hostServiceMap.containsKey(principalKey) == false) {
+                    hostServiceMap.put(principalKey, current);
+                }
             }
         }
     }
@@ -121,11 +131,12 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
     SubjectIdentity getSubjectIdentity(final String protocol, final String forHost) {
         KeytabService selectedService = null;
 
-        String name = protocol + "/" + forHost;
+        final String hostName = forHost == null ? null : forHost.toLowerCase(Locale.ENGLISH);
+        String name = protocol + "/" + hostName;
         selectedService = hostServiceMap.get(name);
         if (selectedService == null) {
             SECURITY_LOGGER.tracef("No mapping for name '%s' to KeytabService, attempting to use host only match.", name);
-            selectedService = hostServiceMap.get(forHost);
+            selectedService = hostServiceMap.get(hostName);
             if (selectedService == null) {
                 SECURITY_LOGGER.tracef("No mapping for host '%s' to KeytabService, attempting to use default.", forHost);
                 selectedService = defaultService;

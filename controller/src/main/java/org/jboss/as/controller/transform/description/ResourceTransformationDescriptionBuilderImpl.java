@@ -50,11 +50,11 @@ class ResourceTransformationDescriptionBuilderImpl extends AbstractTransformatio
         this(pathElement, pathAddressTransformer, null);
     }
 
-    public ResourceTransformationDescriptionBuilderImpl(PathElement pathElement, DynamicDiscardPolicy dynamicDiscardPolicy) {
+    protected ResourceTransformationDescriptionBuilderImpl(PathElement pathElement, DynamicDiscardPolicy dynamicDiscardPolicy) {
         this(pathElement, PathAddressTransformer.DEFAULT, dynamicDiscardPolicy);
     }
 
-    private ResourceTransformationDescriptionBuilderImpl(final PathElement pathElement,
+    protected ResourceTransformationDescriptionBuilderImpl(final PathElement pathElement,
             final PathAddressTransformer pathAddressTransformer, DynamicDiscardPolicy dynamicDiscardPolicy) {
         super(pathElement, pathAddressTransformer, ResourceTransformer.DEFAULT, OperationTransformer.DEFAULT,
                 dynamicDiscardPolicy);
@@ -100,6 +100,11 @@ class ResourceTransformationDescriptionBuilderImpl extends AbstractTransformatio
 
     @Override
     public ResourceTransformationDescriptionBuilder addChildRedirection(final PathElement current, final PathElement legacy) {
+        return addChildRedirection(current, legacy, null);
+    }
+
+    @Override
+    public ResourceTransformationDescriptionBuilder addChildRedirection(PathElement current, PathElement legacy, DynamicDiscardPolicy dynamicDiscardPolicy) {
         final PathAddressTransformer transformation;
         if (legacy.isWildcard()) {
             assert current.isWildcard() : "legacy is wildcard while current is not";
@@ -108,15 +113,22 @@ class ResourceTransformationDescriptionBuilderImpl extends AbstractTransformatio
             assert !current.isWildcard() : "legacy is fixed while current is not";
             transformation = new PathAddressTransformer.BasicPathAddressTransformer(legacy);
         }
-        return addChildRedirection(current, transformation);
+        return addChildRedirection(current, transformation, dynamicDiscardPolicy);
+
     }
 
     @Override
     public ResourceTransformationDescriptionBuilder addChildRedirection(final PathElement oldAddress, final PathAddressTransformer pathAddressTransformer) {
-        final ResourceTransformationDescriptionBuilderImpl builder = new ResourceTransformationDescriptionBuilderImpl(oldAddress, pathAddressTransformer);
+        return addChildRedirection(oldAddress, pathAddressTransformer, null);
+    }
+
+    @Override
+    public ResourceTransformationDescriptionBuilder addChildRedirection(PathElement oldAddress, PathAddressTransformer pathAddressTransformer, DynamicDiscardPolicy dynamicDiscardPolicy) {
+        final ResourceTransformationDescriptionBuilderImpl builder = new ResourceTransformationDescriptionBuilderImpl(oldAddress, pathAddressTransformer, dynamicDiscardPolicy);
         children.add(builder);
         return builder;
     }
+
 
     @Override
     public ResourceTransformationDescriptionBuilder addChildBuilder(TransformationDescriptionBuilder builder) {

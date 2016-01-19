@@ -53,6 +53,7 @@ import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.remote.BlockingQueueOperationListener;
+import org.jboss.as.controller.remote.CompletedFuture;
 import org.jboss.as.controller.remote.TransactionalOperationImpl;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.transform.OperationRejectionPolicy;
@@ -74,13 +75,16 @@ class HostControllerUpdateTask {
     private final ModelNode operation;
     private final OperationContext context;
     private final TransformingProxyController proxyController;
+    private final Transformers.TransformationInputs transformationInputs;
 
     public HostControllerUpdateTask(final String name, final ModelNode operation, final OperationContext context,
-                                    final TransformingProxyController proxyController) {
+                                    final TransformingProxyController proxyController,
+                                    final Transformers.TransformationInputs transformationInputs) {
         this.name = name;
         this.context = context;
         this.operation = operation;
         this.proxyController = proxyController;
+        this.transformationInputs = transformationInputs;
     }
 
     public ExecutedHostRequest execute(final ProxyOperationListener listener) {
@@ -91,7 +95,7 @@ class HostControllerUpdateTask {
         final SubsystemInfoOperationListener subsystemListener = new SubsystemInfoOperationListener(listener, proxyController.getTransformers());
         try {
 
-            final OperationTransformer.TransformedOperation transformationResult = proxyController.transformOperation(context, operation);
+            final OperationTransformer.TransformedOperation transformationResult = proxyController.transformOperation(transformationInputs, operation);
             final ModelNode transformedOperation = transformationResult.getTransformedOperation();
             final ProxyOperation proxyOperation = new ProxyOperation(name, transformedOperation, messageHandler, operationAttachments);
             try {
@@ -215,6 +219,11 @@ class HostControllerUpdateTask {
 
         public void asyncCancel() {
             futureResult.asyncCancel(true);
+        }
+
+        ExecutedHostRequest toFailedRequest(ModelNode finalResponse) {
+            OperationResponse simpleResponse = OperationResponse.Factory.createSimple(finalResponse);
+            return new ExecutedHostRequest(new CompletedFuture<>(simpleResponse), resultTransformer, rejectPolicy);
         }
     }
 

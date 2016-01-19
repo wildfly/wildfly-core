@@ -4,6 +4,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.TestModelType;
+import org.jboss.as.core.model.test.util.ServerConfigInitializers;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,6 +47,7 @@ public class HostModelTestCase extends AbstractCoreModelTest {
     private void doHostXml(String hostXmlFile) throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder(TestModelType.HOST)
                 .setXmlResource(hostXmlFile)
+                .setModelInitializer(ServerConfigInitializers.XML_MODEL_INITIALIZER, null)
                 .build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
         String xml = kernelServices.getPersistedSubsystemXml();
@@ -56,6 +58,7 @@ public class HostModelTestCase extends AbstractCoreModelTest {
     private void doRemoteHostXml(String hostXmlFile) throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder(TestModelType.HOST)
                 .setXmlResource(hostXmlFile)
+                .setModelInitializer(ServerConfigInitializers.XML_MODEL_INITIALIZER, null)
                 .build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
         String xml = kernelServices.getPersistedSubsystemXml();

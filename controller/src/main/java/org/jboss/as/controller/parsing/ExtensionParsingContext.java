@@ -26,6 +26,7 @@ import java.util.List;
 
 
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 
@@ -43,6 +44,12 @@ public interface ExtensionParsingContext {
      * @return the current process type. Will not be {@code null}
      */
     ProcessType getProcessType();
+
+    /**
+     * Gets the current running mode of the process.
+     * @return the current running mode. Will not be {@code null}
+     */
+    RunningMode getRunningMode();
 
     /**
      * Set the parser for the profile-wide subsystem configuration XML element.  The element is always

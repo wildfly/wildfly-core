@@ -72,6 +72,7 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
                     }
                 }
             })
+            .setCapabilityReference(SOCKET_BINDING_GROUP_CAPABILITY_NAME, SOCKET_BINDING_GROUP_CAPABILITY_NAME, true)
             .build();
 
     private SocketBindingGroupResourceDefinition() {
@@ -81,7 +82,7 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        resourceRegistration.registerReadWriteAttribute(INCLUDES, null, createReferenceValidationHandler());
+        resourceRegistration.registerReadWriteAttribute(INCLUDES, null, createIncludesValidationHandler());
     }
 
     @Override
@@ -91,8 +92,8 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
         resourceRegistration.registerSubModel(LocalDestinationOutboundSocketBindingResourceDefinition.INSTANCE);
     }
 
-    public static OperationStepHandler createReferenceValidationHandler() {
-        return new DomainReferenceValidationWriteAttributeHandler(INCLUDES);
+    public static OperationStepHandler createIncludesValidationHandler() {
+        return new DomainIncludesValidationWriteAttributeHandler(INCLUDES);
     }
 
 }

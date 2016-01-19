@@ -52,6 +52,19 @@ public interface KernelServicesBuilder {
      */
     KernelServicesBuilder validateDescription();
 
+    /**
+     * Register an arbitrary descriptor for description validation.
+     *
+     * @return this builder
+     */
+    KernelServicesBuilder registerAttributeArbitraryDescriptor(ModelNode address, String attribute, String descriptor);
+
+    /**
+     * Register an arbitrary descriptor for description validation.
+     *
+     * @return this builder
+     */
+    KernelServicesBuilder registerArbitraryDescriptorForOperationParameter(ModelNode address, String operation, String parameter, String descriptor);
 
     /**
      * Sets the subsystem xml resource containing the xml to be parsed to create the boot operations used to initialize the controller. The resource is loaded using similar

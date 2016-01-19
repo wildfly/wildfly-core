@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
@@ -208,6 +209,13 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      */
     public static final String JBOSS_HOST_DEFAULT_CONFIG = "jboss.host.default.config";
 
+    /**
+     * The system property used to set the unique identifier for this host exposed via the
+     * {@code uuid} attribute of the root resource of the host's portion of the management resource tree.
+     * If the property is not set any previously persisted UUID will be used; otherwise a random UUID will be generated.
+     */
+    public static final String JBOSS_HOST_MANAGEMENT_UUID = "jboss.host.management.uuid";
+
     private final Map<String, String> hostSystemProperties;
     private final InetAddress processControllerAddress;
     private final Integer processControllerPort;
@@ -240,8 +248,9 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private volatile String hostControllerName;
     private final HostRunningModeControl runningModeControl;
     private final boolean securityManagerEnabled;
-    private final UUID domainUUID;
+    private final UUID hostControllerUUID;
     private final long startTime;
+    private final ProcessType processType;
 
     /** Only for test cases */
     public HostControllerEnvironment(Map<String, String> hostSystemProperties, boolean isRestart, String modulePath,
@@ -250,14 +259,14 @@ public class HostControllerEnvironment extends ProcessEnvironment {
                                      String initialHostConfig, RunningMode initialRunningMode, boolean backupDomainFiles, boolean useCachedDc, ProductConfig productConfig) {
         this(hostSystemProperties, isRestart, modulePath, processControllerAddress, processControllerPort, hostControllerAddress, hostControllerPort, defaultJVM,
                 domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, useCachedDc, productConfig, false,
-                System.currentTimeMillis());
+                System.currentTimeMillis(), ProcessType.HOST_CONTROLLER);
     }
 
     public HostControllerEnvironment(Map<String, String> hostSystemProperties, boolean isRestart, String modulePath,
                                      InetAddress processControllerAddress, Integer processControllerPort, InetAddress hostControllerAddress,
                                      Integer hostControllerPort, String defaultJVM, String domainConfig, String initialDomainConfig, String hostConfig,
                                      String initialHostConfig, RunningMode initialRunningMode, boolean backupDomainFiles, boolean useCachedDc,
-                                     ProductConfig productConfig, boolean securityManagerEnabled, long startTime) {
+                                     ProductConfig productConfig, boolean securityManagerEnabled, long startTime, ProcessType processType) {
 
         if (hostSystemProperties == null) {
             throw HostControllerLogger.ROOT_LOGGER.nullVar("hostSystemProperties");
@@ -471,17 +480,19 @@ public class HostControllerEnvironment extends ProcessEnvironment {
             this.defaultJVM = null;
         }
         final Path filePath = this.domainDataDir.toPath().resolve(KERNEL_DIR).resolve(UUID_FILE);
-        UUID uuid = null;
+        UUID uuid;
         try {
-            uuid = obtainProcessUUID(filePath);
+            String sysPropUUID = hostSystemProperties.get(JBOSS_HOST_MANAGEMENT_UUID);
+            uuid = obtainProcessUUID(filePath, sysPropUUID);
         } catch(IOException ex) {
             throw HostControllerLogger.ROOT_LOGGER.couldNotObtainDomainUuid(ex, filePath);
         }
-        this.domainUUID = uuid;
+        this.hostControllerUUID = uuid;
         this.backupDomainFiles = backupDomainFiles;
         this.useCachedDc = useCachedDc;
         this.productConfig = productConfig;
         this.securityManagerEnabled = securityManagerEnabled || hostSystemProperties.containsKey("java.security.manager");
+        this.processType = processType;
     }
 
     /**
@@ -767,6 +778,15 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         }
     }
 
+    /**
+     * The process type for this host controller environment.
+     *
+     * @return the process type
+     */
+    public ProcessType getProcessType() {
+        return processType;
+    }
+
     @Override
     protected boolean isRuntimeSystemPropertyUpdateAllowed(String propertyName, String propertyValue, boolean bootTime) {
         // Currently any system-property in host.xml should not be applied to the HC runtime. This method
@@ -834,6 +854,6 @@ public class HostControllerEnvironment extends ProcessEnvironment {
 
     @Override
     public UUID getInstanceUuid() {
-        return this.domainUUID;
+        return this.hostControllerUUID;
     }
 }

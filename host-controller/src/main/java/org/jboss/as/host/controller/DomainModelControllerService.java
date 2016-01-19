@@ -69,6 +69,7 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
 import org.jboss.as.controller.AbstractControllerService;
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
@@ -89,6 +90,8 @@ import org.jboss.as.controller.TransformingProxyController;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
+import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -117,7 +120,8 @@ import org.jboss.as.domain.controller.HostRegistrations;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
-import org.jboss.as.domain.controller.operations.DomainModelReferenceValidator;
+import org.jboss.as.domain.controller.operations.ApplyExtensionsHandler;
+import org.jboss.as.domain.controller.operations.DomainModelIncludesValidator;
 import org.jboss.as.domain.controller.operations.coordination.PrepareStepHandler;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
@@ -207,6 +211,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
     private final PathManagerService pathManager;
     private final ExpressionResolver expressionResolver;
     private final DomainDelegatingResourceDefinition rootResourceDefinition;
+    private final CapabilityRegistry capabilityRegistry;
 
     // @GuardedBy(this)
     private Future<ServerInventory> inventoryFuture;
@@ -223,8 +228,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                                             final HostRunningModeControl runningModeControl,
                                                             final ControlledProcessState processState,
                                                             final BootstrapListener bootstrapListener,
-                                                            final PathManagerService pathManager,
-                                                            final boolean isEmbedded){
+                                                            final PathManagerService pathManager){
         final ConcurrentMap<String, ProxyController> hostProxies = new ConcurrentHashMap<String, ProxyController>();
         final Map<String, ProxyController> serverProxies = new ConcurrentHashMap<String, ProxyController>();
         final LocalHostControllerInfoImpl hostControllerInfo = new LocalHostControllerInfoImpl(processState, environment);
@@ -235,19 +239,17 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ManagedAuditLogger auditLogger = createAuditLogger(environment);
         final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
         final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
-        ProcessType processType = ProcessType.HOST_CONTROLLER;
-        if (isEmbedded) {
-            processType = ProcessType.EMBEDDED_HOST_CONTROLLER;
-        }
+        final ProcessType processType = environment.getProcessType();
         final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
         final ExtensionRegistry extensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, hostControllerInfoAccessor);
+        CapabilityRegistry capabilityRegistry = new CapabilityRegistry(processType.isServer());
         final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo,
                 hostProxies, serverProxies, ignoredRegistry, extensionRegistry);
         final ExpressionResolver expressionResolver = new RuntimeExpressionResolver(vaultReader);
         final DomainModelControllerService service = new DomainModelControllerService(environment, runningModeControl, processState,
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
                 ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
-                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, isEmbedded);
+                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, capabilityRegistry);
         return serviceTarget.addService(SERVICE_NAME, service)
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
@@ -274,9 +276,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final ExtensionRegistry extensionRegistry,
                                          final ManagedAuditLogger auditLogger,
                                          final DelegatingConfigurableAuthorizer authorizer,
-                                         final boolean isEmbedded) {
-        super(isEmbedded ? ProcessType.EMBEDDED_HOST_CONTROLLER : ProcessType.HOST_CONTROLLER, runningModeControl, null, processState,
-                rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer);
+                                         final CapabilityRegistry capabilityRegistry) {
+        super(environment.getProcessType(), runningModeControl, null, processState,
+                rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer, capabilityRegistry);
         this.environment = environment;
         this.runningModeControl = runningModeControl;
         this.processState = processState;
@@ -296,6 +298,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         this.pathManager = pathManager;
         this.expressionResolver = expressionResolver;
         this.rootResourceDefinition = rootResourceDefinition;
+        this.capabilityRegistry = capabilityRegistry;
     }
 
     private static ManagedAuditLogger createAuditLogger(HostControllerEnvironment environment) {
@@ -551,7 +554,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     if (addr.size() > 0 && addr.getLastElement().getKey().equals(SUBSYSTEM)) {
                         //For subsystem adds in domain mode we need to check that the new subsystem does not break the rule
                         //that when profile includes are used, we don't allow overriding subsystems.
-                        DomainModelReferenceValidator.addValidationStep(context, operation);
+                        DomainModelIncludesValidator.addValidationStep(context, operation);
                     }
                 }
             }
@@ -571,9 +574,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
             ServerInventoryCallbackService.install(serviceTarget);
 
             // Parse the host.xml and invoke all the ops. The ops should rollback on any Stage.RUNTIME failure
-            // We run the first op ("add-host") separately to let it set up the host ManagementResourceRegistration
             List<ModelNode> hostBootOps = hostControllerConfigurationPersister.load();
+
+            // We run the first op ("add-host") separately to let it set up the host ManagementResourceRegistration
             ModelNode addHostOp = hostBootOps.remove(0);
+            HostControllerLogger.ROOT_LOGGER.debug("Invoking the initial add-host op");
             //Disable model validation here since it will will fail
             ok = boot(Collections.singletonList(addHostOp), true, true);
 
@@ -582,11 +587,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
             //Pass in a custom mutable root resource registration provider for the remaining host model ops boot
             //This will be used to make sure that any extensions added in parallel get registered in the host model
-            ok = ok && boot(hostBootOps, true, new MutableRootResourceRegistrationProvider() {
-                public ManagementResourceRegistration getRootResourceRegistrationForUpdate(OperationContext context) {
-                    return hostModelRegistration;
-                }
-            });
+            if (ok) {
+                HostControllerLogger.ROOT_LOGGER.debug("Invoking remaining host.xml ops");
+                ok = boot(hostBootOps, true, true, new MutableRootResourceRegistrationProvider() {
+                    public ManagementResourceRegistration getRootResourceRegistrationForUpdate(OperationContext context) {
+                        return hostModelRegistration;
+                    }
+                });
+            }
 
             final RunningMode currentRunningMode = runningModeControl.getRunningMode();
 
@@ -664,7 +672,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     // parse the domain.xml and load the steps
                     // TODO look at having LocalDomainControllerAdd do this, using Stage.IMMEDIATE for the steps
                     ConfigurationPersister domainPersister = hostControllerConfigurationPersister.getDomainPersister();
-                    ok = boot(domainPersister.load(), false);
+                    List<ModelNode> domainBootOps = domainPersister.load();
+                    HostControllerLogger.ROOT_LOGGER.debug("Invoking domain.xml ops");
+                    ok = boot(domainBootOps, false);
 
                     if (!ok && runningModeControl.getRunningMode().equals(RunningMode.ADMIN_ONLY)) {
                         ROOT_LOGGER.reportAdminOnlyDomainXmlFailure();
@@ -695,7 +705,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 final ModelNode result = internalExecute(OperationBuilder.create(validate).build(), OperationMessageHandler.DISCARD, OperationTransactionControl.COMMIT, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        DomainModelReferenceValidator.validateAtBoot(context, operation);
+                        DomainModelIncludesValidator.validateAtBoot(context, operation);
                     }
                 }).getResponseNode();
 
@@ -743,8 +753,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 }
             } else {
                 // Die!
-                ROOT_LOGGER.unsuccessfulBoot();
-                SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                String failed = ROOT_LOGGER.unsuccessfulBoot();
+                ROOT_LOGGER.fatal(failed);
+                bootstrapListener.bootFailure(failed);
+
+                // don't exit if we're embedded
+                if (processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
+                    SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                }
             }
         }
     }
@@ -791,7 +807,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 getValue(),
                 extensionRegistry,
                 hostControllerInfo,
-                environment.getProductConfig(),
                 hostControllerInfo.getRemoteDomainControllerSecurityRealm(),
                 remoteFileRepository,
                 contentRepository,
@@ -1171,6 +1186,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
     }
 
     @Override
+    public ImmutableCapabilityRegistry getCapabilityRegistry() {
+        return capabilityRegistry;
+    }
+
+    @Override
     public ExpressionResolver getExpressionResolver() {
         return expressionResolver;
     }
@@ -1208,6 +1228,13 @@ public class DomainModelControllerService extends AbstractControllerService impl
         public ModelNode execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control,
                 OperationStepHandler step) {
             return internalExecute(operation, handler, control, step).getResponseNode();
+        }
+
+        @Override
+        public ModelNode installSlaveExtensions(List<ModelNode> extensions) {
+            Operation operation = ApplyExtensionsHandler.getOperation(extensions);
+            OperationStepHandler stepHandler = modelNodeRegistration.getOperationHandler(PathAddress.EMPTY_ADDRESS, ApplyExtensionsHandler.OPERATION_NAME);
+            return internalExecute(operation, OperationMessageHandler.logging, OperationTransactionControl.COMMIT, stepHandler, false, true).getResponseNode();
         }
 
         @Override
@@ -1373,17 +1400,18 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
             @Override
             public ProxyController serverCommunicationRegistered(String serverProcessName, ManagementChannelHandler channelHandler) {
-                ProxyController proxy = new ProxyController() {
+                return new ProxyController() {
                     @Override
                     public PathAddress getProxyNodeAddress() {
                         return null;
                     }
 
                     @Override
-                    public void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control, OperationAttachments attachments) {
+                    public void execute(ModelNode operation, OperationMessageHandler handler,
+                                        ProxyOperationControl control, OperationAttachments attachments,
+                                        BlockingTimeout blockingTimeout) {
                     }
                 };
-                return proxy;
             }
 
             @Override

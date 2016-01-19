@@ -62,8 +62,9 @@ public class CustomCLIExecutor {
             + MANAGEMENT_HTTPS_PORT;
 
     private static Logger LOGGER = Logger.getLogger(CustomCLIExecutor.class);
-    private static final int CLI_PROC_TIMEOUT = 5000;
-    private static final int STATUS_CHECK_INTERVAL = 2000;
+
+    private static final int CLI_PROC_TIMEOUT = TimeoutUtil.adjust(30000);
+    private static final int STATUS_CHECK_INTERVAL = TimeoutUtil.adjust(2000);
     private static final byte[] NEW_LINE = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
 
     public static String execute(File cliConfigFile, String operation) {
@@ -129,6 +130,7 @@ public class CustomCLIExecutor {
             cliConfigPath = Paths.get(jbossDist, "bin", "jboss-cli.xml");
         }
         commandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigPath);
+        commandBuilder.addCliArgument("--timeout="+CLI_PROC_TIMEOUT);
 
         // Note that this only allows for a single system property
         if (System.getProperty("cli.args") != null) {
@@ -150,7 +152,7 @@ public class CustomCLIExecutor {
         ConsoleConsumer.start(cliProc.getErrorStream(), err);
         boolean wait = true;
         int runningTime = 0;
-        int exitCode = 0;
+        int exitCode = Integer.MIN_VALUE;
         do {
             try {
                 Thread.sleep(STATUS_CHECK_INTERVAL);
@@ -176,6 +178,7 @@ public class CustomCLIExecutor {
             if (runningTime >= CLI_PROC_TIMEOUT) {
                 cliProc.destroy();
                 wait = false;
+                LOGGER.info("A timeout has occurred while invoking CLI command.");
             }
         } while (wait);
 

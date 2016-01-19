@@ -207,12 +207,16 @@ class Arguments {
      */
     void add(final Argument argument) {
         if (argument != null) {
-            Collection<Argument> arguments = map.get(argument.getKey());
-            if (arguments == null) {
-                arguments = new ArrayList<>();
-                map.put(argument.getKey(), arguments);
+            if (argument.multipleValuesAllowed()) {
+                Collection<Argument> arguments = map.get(argument.getKey());
+                if (arguments == null) {
+                    arguments = new ArrayList<>();
+                    map.put(argument.getKey(), arguments);
+                }
+                arguments.add(argument);
+            } else {
+                set(argument);
             }
-            arguments.add(argument);
         }
     }
 
@@ -311,6 +315,16 @@ class Arguments {
         }
 
         /**
+         * Indicates whether or not multiple values are allowed for the argument. In the case of system properties only
+         * one value should be set for the property.
+         *
+         * @return {@code true} if multiple values should be allowed for an argument, otherwise {@code false}
+         */
+        public boolean multipleValuesAllowed() {
+            return true;
+        }
+
+        /**
          * The argument formatted for the command line.
          *
          * @return the command line argument
@@ -334,6 +348,11 @@ class Arguments {
             } else {
                 cliArg = "-D" + key;
             }
+        }
+
+        @Override
+        public boolean multipleValuesAllowed() {
+            return false;
         }
 
         @Override

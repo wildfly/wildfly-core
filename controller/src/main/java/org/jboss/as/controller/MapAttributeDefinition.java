@@ -26,9 +26,11 @@ package org.jboss.as.controller;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.MapValidator;
@@ -285,6 +287,7 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
          *
          * @throws java.lang.IllegalArgumentException if {@code elementValidator} is {@code null}
          */
+        @SuppressWarnings("unchecked")
         public final BUILDER setElementValidator(ParameterValidator elementValidator) {
             if (elementValidator == null) {
                 throw ControllerLogger.ROOT_LOGGER.nullVar("elementValidator");
@@ -348,6 +351,7 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
          * @param allowNullElement whether undefined elements are valid
          * @return a builder that can be used to continue building the attribute definition
          */
+        @SuppressWarnings("unchecked")
         public BUILDER setAllowNullElement(boolean allowNullElement) {
             this.allowNullElement = allowNullElement;
             return (BUILDER) this;

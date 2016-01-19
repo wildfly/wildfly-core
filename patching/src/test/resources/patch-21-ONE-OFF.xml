@@ -21,7 +21,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<patch xmlns="urn:jboss:patch:1.1" id="patch-02">
+<patch xmlns="urn:jboss:patch:1.2" id="patch-02">
 
     <description>patch-02 description</description>
     <link url="http://www.jboss.org/release/notes/6.4.1" />

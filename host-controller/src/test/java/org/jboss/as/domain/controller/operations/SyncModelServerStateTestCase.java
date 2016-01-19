@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
@@ -142,7 +143,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
     }
 
     private void executeTriggerSyncOperation(Resource rootResource) throws Exception {
-        ReadMasterDomainModelUtil util = ReadMasterDomainModelUtil.readMasterDomainResourcesForInitialConnect(null, new NoopTransformers(), rootResource, null);
+        ReadMasterDomainModelUtil util = ReadMasterDomainModelUtil.readMasterDomainResourcesForInitialConnect(new NoopTransformers(), null, null, rootResource);
         ModelNode op = Util.createEmptyOperation(TRIGGER_SYNC.getName(), PathAddress.EMPTY_ADDRESS);
         op.get(DOMAIN_MODEL).set(util.getDescribedResources());
         executeForResult(op);
@@ -808,7 +809,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
 
         @Override
         public void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control,
-                            OperationAttachments attachments) {
+                            OperationAttachments attachments, BlockingTimeout blockingTimeout) {
         }
 
         @Override

@@ -42,8 +42,9 @@ ARGUMENTS
                  configured management interfaces and accept management
                  requests, but will not start servers or, if this host
                  controller is the master for the domain, accept incoming
-                 connections from slave host controllers. If not present, false
-                 value is assumed.
+                 connections from slave host controllers. For embedded host
+                 controllers, this value is required and must be set to true.
+                 If not present, false value is assumed.
 
  --host        - is allowed and required only in the domain mode, specifies
                  the host name to reload.

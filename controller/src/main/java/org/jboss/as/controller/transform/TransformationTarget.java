@@ -121,6 +121,8 @@ public interface TransformationTarget {
      */
     boolean isIgnoredResourceListAvailableAtRegistration();
 
+    boolean isIgnoreUnaffectedConfig();
+
     enum TransformationTargetType {
 
         DOMAIN,

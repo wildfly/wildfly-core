@@ -37,6 +37,8 @@ public class CommandContextConfiguration {
     private final boolean initConsole;
     private final boolean disableLocalAuth;
     private final int connectionTimeout;
+    private boolean silent;
+    private Boolean errorOnInteract;
 
     private CommandContextConfiguration(String controller, String username, char[] password, String clientBindAddress, boolean disableLocalAuth, boolean initConsole, int connectionTimeout, InputStream consoleInput, OutputStream consoleOutput) {
         this.controller = controller;
@@ -86,6 +88,14 @@ public class CommandContextConfiguration {
         return disableLocalAuth;
     }
 
+    public boolean isSilent() {
+        return silent;
+    }
+
+    public Boolean isErrorOnInteract() {
+        return errorOnInteract;
+    }
+
     public static class Builder {
         private String controller;
         private String username;
@@ -97,6 +107,8 @@ public class CommandContextConfiguration {
         private boolean disableLocalAuth;
         private int connectionTimeout = -1;
         private boolean disableLocalAuthUnset = true;
+        private boolean silent;
+        private Boolean errorOnInteract;
 
         public Builder() {
         }
@@ -105,8 +117,11 @@ public class CommandContextConfiguration {
             if(disableLocalAuthUnset) {
                 this.disableLocalAuth = username != null;
             }
-            return new CommandContextConfiguration(controller, username, password, clientBindAddress, disableLocalAuth,
+            final CommandContextConfiguration config = new CommandContextConfiguration(controller, username, password, clientBindAddress, disableLocalAuth,
                     initConsole, connectionTimeout, consoleInput, consoleOutput);
+            config.silent = silent;
+            config.errorOnInteract = errorOnInteract;
+            return config;
         }
         public Builder setController(String controller) {
             this.controller = controller;
@@ -130,6 +145,10 @@ public class CommandContextConfiguration {
 
         public Builder setConsoleInput(InputStream consoleInput) {
             this.consoleInput = consoleInput;
+            if(errorOnInteract == null && consoleInput != null) {
+                // if the input is provided, interaction is assumed
+                this.errorOnInteract = false;
+            }
             return this;
         }
 
@@ -154,5 +173,14 @@ public class CommandContextConfiguration {
             return this;
         }
 
+        public Builder setSilent(boolean silent) {
+            this.silent = silent;
+            return this;
+        }
+
+        public Builder setErrorOnInteract(boolean errorOnInteract) {
+            this.errorOnInteract = errorOnInteract;
+            return this;
+        }
     }
 }

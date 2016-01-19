@@ -116,7 +116,6 @@ public class ReadAttributeGroupTestCase extends AbstractRbacTestCase {
             }
         }
         assertThat("We have found " + attributesNode + " for " + userName, attributeNames.size(), is(canRead ? 2 : 0));
-        
     }
 
     // test utils

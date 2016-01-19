@@ -25,7 +25,6 @@ package org.jboss.as.controller.transform;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.EnumSet;
 import java.util.Locale;
 
 import org.jboss.as.controller.OperationContext;
@@ -35,13 +34,12 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.SubsystemInformation;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -53,7 +51,12 @@ public class SubsystemDescriptionDump implements OperationStepHandler {
     private final ExtensionRegistry extensionRegistry;
     protected static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinition("path", ModelType.STRING, false);
     public static final String OPERATION_NAME = "subsystem-description-dump";
-    public static final OperationDefinition DEFINITION = new SimpleOperationDefinition(OPERATION_NAME, new NonResolvingResourceDescriptionResolver(), OperationEntry.EntryType.PRIVATE, EnumSet.of(OperationEntry.Flag.READ_ONLY), PATH);
+    public static final OperationDefinition DEFINITION =
+            new SimpleOperationDefinitionBuilder(OPERATION_NAME, new NonResolvingResourceDescriptionResolver())
+                    .setPrivateEntry()
+                    .setReadOnly()
+                    .setParameters(PATH)
+                    .build();
 
 
     public SubsystemDescriptionDump(final ExtensionRegistry extensionRegistry) {

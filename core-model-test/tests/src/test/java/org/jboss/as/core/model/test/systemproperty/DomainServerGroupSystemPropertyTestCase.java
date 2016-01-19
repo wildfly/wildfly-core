@@ -42,7 +42,7 @@ import org.junit.Assert;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class DomainServerGroupSystemPropertyTestCase extends AbstractSystemPropertyTest {
-    final static PathAddress PARENT = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "test"));
+    static final PathAddress PARENT = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "test"));
 
     public DomainServerGroupSystemPropertyTestCase() {
         super(false, true);
@@ -75,6 +75,12 @@ public class DomainServerGroupSystemPropertyTestCase extends AbstractSystemPrope
     protected String getXmlResource() {
         return "domain-servergroup-systemproperties.xml";
     }
+
+    @Override
+    protected ModelInitializer getModelInitializer() {
+        return StandardServerGroupInitializers.XML_MODEL_INITIALIZER;
+    }
+
     private ModelInitializer BOOT_OP_MODEL_INITIALIZER = new ModelInitializer() {
         @Override
         public void populateModel(Resource rootResource) {
