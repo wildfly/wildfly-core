@@ -186,11 +186,15 @@ public class PatchToolImpl implements PatchTool {
             // Create a working dir
             workDir = parentWorkDir == null ? IdentityPatchRunner.createTempDir() : IdentityPatchRunner.createTempDir(parentWorkDir);
 
-            // Save the content
-            final File cachedContent = new File(workDir, "content");
-            IoUtils.copy(is, cachedContent);
-            // Unpack to the work dir
-            ZipUtils.unzip(cachedContent, workDir);
+            try {
+                // Save the content
+                final File cachedContent = new File(workDir, "content");
+                IoUtils.copy(is, cachedContent);
+                // Unpack to the work dir
+                ZipUtils.unzip(cachedContent, workDir);
+            } catch (IOException e) {
+                throw PatchLogger.ROOT_LOGGER.cannotCopyFilesToTempDir(workDir.getAbsolutePath(), e.getMessage(), e); // add info that temp dir is involved
+            }
 
             // Execute
             return execute(workDir, contentPolicy);
