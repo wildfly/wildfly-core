@@ -216,6 +216,13 @@ public class DomainModelControllerService extends AbstractControllerService impl
     private final DomainDelegatingResourceDefinition rootResourceDefinition;
     private final CapabilityRegistry capabilityRegistry;
     private final DomainHostExcludeRegistry domainHostExcludeRegistry;
+    private final AtomicBoolean domainModelComplete = new AtomicBoolean(false);
+    private final PartialModelIndicator partialModelIndicator = new PartialModelIndicator() {
+        @Override
+        public boolean isModelPartial() {
+            return !domainModelComplete.get();
+        }
+    };
 
     // @GuardedBy(this)
     private Future<ServerInventory> inventoryFuture;
@@ -683,6 +690,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     List<ModelNode> domainBootOps = domainPersister.load();
                     HostControllerLogger.ROOT_LOGGER.debug("Invoking domain.xml ops");
                     ok = boot(domainBootOps, false);
+                    domainModelComplete.set(ok);
 
                     if (!ok && runningModeControl.getRunningMode().equals(RunningMode.ADMIN_ONLY)) {
                         ROOT_LOGGER.reportAdminOnlyDomainXmlFailure();
@@ -773,6 +781,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
     }
 
+    @Override
+    protected final PartialModelIndicator getPartialModelIndicator() {
+        return partialModelIndicator;
+    }
+
     private Future<ServerInventory> installServerInventory(final ServiceTarget serviceTarget) {
         if (hostControllerInfo.getHttpManagementSecureInterface() != null && !hostControllerInfo.getHttpManagementSecureInterface().isEmpty()
                 && hostControllerInfo.getHttpManagementSecurePort() > 0) {
@@ -824,7 +837,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 environment,
                 getExecutorServiceInjector().getValue(),
                 currentRunningMode,
-                serverProxies);
+                serverProxies,
+                domainModelComplete);
         MasterDomainControllerClient masterDomainControllerClient = getFuture(clientFuture);
         //Registers us with the master and gets down the master copy of the domain model to our DC
         //TODO make sure that the RDCS checks env.isUseCachedDC, and if true falls through to that
@@ -904,6 +918,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
         }
         extensionRegistry.clear();
+        domainModelComplete.set(false);
         super.stop(context);
     }
 
