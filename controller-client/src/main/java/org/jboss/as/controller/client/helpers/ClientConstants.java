@@ -28,6 +28,7 @@ package org.jboss.as.controller.client.helpers;
  */
 public class ClientConstants {
     public static final String ADD = "add";
+    public static final String ADDRESS = "address";
     public static final String ATTACHED_STREAMS = "attached-streams";
     @Deprecated
     public static final String AUTO_START = "auto-start";
@@ -42,9 +43,11 @@ public class ClientConstants {
     public static final String DEPLOYMENT_REPLACE_OPERATION = "replace-deployment";
     public static final String DEPLOYMENT_UNDEPLOY_OPERATION = "undeploy";
     public static final String EXTENSION = "extension";
+    public static final String FILE = "file";
     public static final String FAILURE_DESCRIPTION = "failure-description";
     public static final String GROUP = "group";
     public static final String HOST = "host";
+    public static final String HOST_STATE = "host-state";
     public static final String INCLUDE_RUNTIME = "include-runtime";
     public static final String INPUT_STREAM_INDEX = "input-stream-index";
     public static final String NAME = "name";
@@ -76,6 +79,7 @@ public class ClientConstants {
     public static final String SUCCESS = "success";
     public static final String TO_REPLACE = "to-replace";
     public static final String UNDEFINE_ATTRIBUTE_OPERATION = "undefine-attribute";
+    public static final String UUID = "uuid";
     public static final String VALUE = "value";
     public static final String WRITE_ATTRIBUTE_OPERATION = "write-attribute";
 

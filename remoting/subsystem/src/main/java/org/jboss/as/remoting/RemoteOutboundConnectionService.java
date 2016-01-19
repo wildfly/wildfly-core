@@ -65,7 +65,6 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
 
     private final String username;
     private final String protocol;
-    private URI connectionURI;
 
     public RemoteOutboundConnectionService(final String connectionName, final OptionMap connectionCreationOptions, final String username, final String protocol) {
         super(connectionName, connectionCreationOptions);
@@ -145,15 +144,12 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
      * @throws URISyntaxException
      */
     private synchronized URI getConnectionURI() throws IOException, URISyntaxException {
-        if (this.connectionURI != null) {
-            return this.connectionURI;
-        }
+        /* WFCORE-851 - do not cache connectionURI else reconnect will fail if DNS changes */
         final OutboundSocketBinding destinationOutboundSocket = this.destinationOutboundSocketBindingInjectedValue.getValue();
         final InetAddress destinationAddress = destinationOutboundSocket.getResolvedDestinationAddress();
         final int port = destinationOutboundSocket.getDestinationPort();
 
-        this.connectionURI = new URI(protocol + "://" + NetworkUtils.formatPossibleIpv6Address(destinationAddress.getHostAddress()) + ":" + port);
-        return this.connectionURI;
+        return new URI(protocol + "://" + NetworkUtils.formatPossibleIpv6Address(destinationAddress.getHostAddress()) + ":" + port);
     }
 
     @Override

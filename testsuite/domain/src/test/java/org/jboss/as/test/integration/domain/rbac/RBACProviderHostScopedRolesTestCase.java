@@ -93,6 +93,12 @@ public class RBACProviderHostScopedRolesTestCase extends AbstractHostScopedRoles
             rolesToUsers.put(ADMINISTRATOR_USER, Collections.singleton(ADMINISTRATOR_USER));
             rolesToUsers.put(AUDITOR_USER, Collections.singleton(AUDITOR_USER));
             rolesToUsers.put(SUPERUSER_USER, Collections.singleton(SUPERUSER_USER));
+            rolesToUsers.put(SLAVE_OPERATOR_USER, Collections.singleton(SLAVE_OPERATOR_USER));
+            rolesToUsers.put(SLAVE_MAINTAINER_USER, Collections.singleton(SLAVE_MAINTAINER_USER));
+            rolesToUsers.put(SLAVE_DEPLOYER_USER, Collections.singleton(SLAVE_DEPLOYER_USER));
+            rolesToUsers.put(SLAVE_ADMINISTRATOR_USER, Collections.singleton(SLAVE_ADMINISTRATOR_USER));
+            rolesToUsers.put(SLAVE_AUDITOR_USER, Collections.singleton(SLAVE_AUDITOR_USER));
+            rolesToUsers.put(SLAVE_SUPERUSER_USER, Collections.singleton(SLAVE_SUPERUSER_USER));
             STANDARD_USERS = rolesToUsers;
         }
 

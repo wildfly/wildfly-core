@@ -39,6 +39,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
@@ -164,14 +165,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         // else we are the root
 
         OperationEntry inheritable = getInheritableOperationEntry(operationName);
-        OperationEntry result =  getOperationEntry(pathAddress.iterator(), operationName, inheritable);
-        NodeSubregistry ancestorSubregistry = parent;
-        while (result == null && ancestorSubregistry != null) {
-            AbstractResourceRegistration ancestor = ancestorSubregistry.getParent();
-            result = ancestor.getInheritableOperationEntry(operationName);
-            ancestorSubregistry = ancestor.parent;
-        }
-        return result;
+        return getOperationEntry(pathAddress.iterator(), operationName, inheritable);
     }
 
     abstract OperationEntry getOperationEntry(ListIterator<PathElement> iterator, String operationName, OperationEntry inherited);
@@ -414,6 +408,19 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     abstract void getInheritedNotificationEntries(final Map<String, NotificationEntry> providers);
 
+    @Override
+    public final Set<RuntimeCapability> getCapabilities() {
+
+        if (parent != null) {
+            RootInvocation ri = getRootInvocation();
+            return ri.root.getCapabilities(ri.pathAddress.iterator());
+        }
+        // else we are the root
+        return getCapabilities(pathAddress.iterator());
+    }
+
+    abstract Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator);
+
     private RootInvocation getRootInvocation() {
         RootInvocation result = null;
         if (parent != null) {
@@ -480,6 +487,19 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     public PathAddress getPathAddress() {
         return pathAddress;
     }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+
+        if (parent != null) {
+            RootInvocation ri = getRootInvocation();
+            return ri.root.getOrderedChildTypes(ri.pathAddress.iterator());
+        }
+        // else we are the root
+        return getOrderedChildTypes(pathAddress.iterator());
+    }
+
+    abstract Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator);
 
     protected abstract void setOrderedChild(String key);
 

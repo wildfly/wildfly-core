@@ -47,8 +47,6 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
@@ -56,8 +54,9 @@ import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
 import org.jboss.stdio.StdioContext;
-import org.wildfly.core.embedded.EmbeddedServerFactory;
-import org.wildfly.core.embedded.EmbeddedServerReference;
+import org.wildfly.core.embedded.EmbeddedManagedProcess;
+import org.wildfly.core.embedded.EmbeddedProcessFactory;
+import org.wildfly.core.embedded.EmbeddedProcessStartException;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -69,8 +68,10 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
     private static final String ECHO = "echo";
     private static final String DISCARD_STDOUT = "discard";
+    private static final String DOMAIN_CONFIG = "--domain-config";
+    private static final String HOST_CONFIG = "--host-config";
 
-    private final AtomicReference<EmbeddedServerLaunch> hostControllerReference;
+    private final AtomicReference<EmbeddedProcessLaunch> hostControllerReference;
     private ArgumentWithValue jbossHome;
     private ArgumentWithValue stdOutHandling;
     private ArgumentWithValue domainConfig;
@@ -78,15 +79,15 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private ArgumentWithValue dashC;
     private ArgumentWithValue timeout;
 
-    static EmbedHostControllerHandler create(final AtomicReference<EmbeddedServerLaunch> hostControllerReference, final CommandContext ctx, final boolean modular) {
+    static EmbedHostControllerHandler create(final AtomicReference<EmbeddedProcessLaunch> hostControllerReference, final CommandContext ctx, final boolean modular) {
         EmbedHostControllerHandler result = new EmbedHostControllerHandler(hostControllerReference);
         final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
         if (!modular) {
             result.jbossHome = new FileSystemPathArgument(result, pathCompleter, "--jboss-home");
         }
         result.stdOutHandling = new ArgumentWithValue(result, new SimpleTabCompleter(new String[]{ECHO, DISCARD_STDOUT}), "--std-out");
-        result.domainConfig = new ArgumentWithValue(result, "--domain-config");
-        result.hostConfig = new ArgumentWithValue(result, "--host-config");
+        result.domainConfig = new ArgumentWithValue(result, DOMAIN_CONFIG);
+        result.hostConfig = new ArgumentWithValue(result, HOST_CONFIG);
         result.dashC = new ArgumentWithValue(result, "-c");
         result.dashC.addCantAppearAfter(result.domainConfig);
         result.domainConfig.addCantAppearAfter(result.dashC);
@@ -95,7 +96,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         return result;
     }
 
-    private EmbedHostControllerHandler(final AtomicReference<EmbeddedServerLaunch> hostControllerReference) {
+    private EmbedHostControllerHandler(final AtomicReference<EmbeddedProcessLaunch> hostControllerReference) {
         super("embed-host-controller", false);
         assert hostControllerReference != null;
         this.hostControllerReference = hostControllerReference;
@@ -159,26 +160,26 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
             List<String> cmdsList = new ArrayList<>();
             if (domainXml != null && domainXml.trim().length() > 0) {
-                cmdsList.add(CommandLineConstants.DOMAIN_CONFIG);
+                cmdsList.add(DOMAIN_CONFIG);
                 cmdsList.add(domainXml.trim());
             }
 
             if (hostXml != null && hostXml.trim().length() > 0) {
-                cmdsList.add(CommandLineConstants.HOST_CONFIG);
+                cmdsList.add(HOST_CONFIG);
                 cmdsList.add(hostXml.trim());
             }
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
-            EmbeddedServerReference hostController;
+            EmbeddedManagedProcess hostController;
             if (this.jbossHome == null) {
                 // Modular environment
-                hostController = EmbeddedServerFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+                hostController = EmbeddedProcessFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             } else {
-                hostController = EmbeddedServerFactory.createHostController(jbossHome.getAbsolutePath(), null, null, cmds);
+                hostController = EmbeddedProcessFactory.createHostController(jbossHome.getAbsolutePath(), null, null, cmds);
             }
             hostController.start();
-            hostControllerReference.set(new EmbeddedServerLaunch(hostController, restorer));
+            hostControllerReference.set(new EmbeddedProcessLaunch(hostController, restorer, true));
 
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(hostController.getModelControllerClient(), contextSelector);
             if (bootTimeout == null || bootTimeout > 0) {
@@ -194,9 +195,9 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
                 final ModelNode getStateOp = new ModelNode();
                 getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-                ModelNode address = getStateOp.get(ModelDescriptionConstants.ADDRESS);
+                ModelNode address = getStateOp.get(ClientConstants.ADDRESS);
                 address.add(ClientConstants.HOST, localName);
-                getStateOp.get(ClientConstants.NAME).set(ModelDescriptionConstants.HOST_STATE);
+                getStateOp.get(ClientConstants.NAME).set(ClientConstants.HOST_STATE);
                 do {
                     try {
                         final ModelNode nameResponse = mcc.execute(getNameOp);
@@ -245,6 +246,8 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                 }
             });
             ok = true;
+        } catch (RuntimeException | EmbeddedProcessStartException e) {
+            throw new CommandLineException("Cannot start embedded Host Controller", e);
         } finally {
             if (!ok) {
                 ctx.disconnectController();

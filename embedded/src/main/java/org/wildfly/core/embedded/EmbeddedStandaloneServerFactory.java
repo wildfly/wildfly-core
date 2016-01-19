@@ -27,10 +27,9 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -77,7 +76,7 @@ import org.wildfly.core.embedded.logging.EmbeddedLogger;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author Thomas.Diesler@jboss.com
- * @see EmbeddedServerFactory
+ * @see EmbeddedProcessFactory
  */
 public class EmbeddedStandaloneServerFactory {
 
@@ -98,37 +97,37 @@ public class EmbeddedStandaloneServerFactory {
         if (cmdargs == null)
             throw EmbeddedLogger.ROOT_LOGGER.nullVar("cmdargs");
 
-        setupCleanDirectories(jbossHomeDir, systemProps);
+        setupCleanDirectories(jbossHomeDir.toPath(), systemProps);
 
         return new StandaloneServerImpl(cmdargs, systemProps, systemEnv, moduleLoader);
     }
 
-    static void setupCleanDirectories(File jbossHomeDir, Properties props) {
-        File tempRoot = getTempRoot(props);
+    static void setupCleanDirectories(Path jbossHomeDir, Properties props) {
+        Path tempRoot = getTempRoot(props);
         if (tempRoot == null) {
             return;
         }
 
-        File originalConfigDir = getFileUnderAsRoot(jbossHomeDir, props, ServerEnvironment.SERVER_CONFIG_DIR, "configuration", true);
-        File originalDataDir = getFileUnderAsRoot(jbossHomeDir, props, ServerEnvironment.SERVER_DATA_DIR, "data", false);
+        File originalConfigDir = getFileUnderAsRoot(jbossHomeDir.toFile(), props, ServerEnvironment.SERVER_CONFIG_DIR, "configuration", true);
+        File originalDataDir = getFileUnderAsRoot(jbossHomeDir.toFile(), props, ServerEnvironment.SERVER_DATA_DIR, "data", false);
 
         try {
-            File configDir = new File(tempRoot, "config");
-            Files.createDirectory(configDir.toPath());
-            File dataDir = new File(tempRoot, "data");
-            Files.createDirectory(dataDir.toPath());
+            Path configDir = tempRoot.resolve("config");
+            Files.createDirectory(configDir);
+            Path dataDir = tempRoot.resolve("data");
+            Files.createDirectory(dataDir);
             // For jboss.server.deployment.scanner.default
-            File deploymentsDir = new File(tempRoot, "deployments");
-            Files.createDirectory(deploymentsDir.toPath());
+            Path deploymentsDir = tempRoot.resolve("deployments");
+            Files.createDirectory(deploymentsDir);
 
-            copyDirectory(originalConfigDir, configDir);
+            copyDirectory(originalConfigDir, configDir.toFile());
             if (originalDataDir.exists()) {
-                copyDirectory(originalDataDir, dataDir);
+                copyDirectory(originalDataDir, dataDir.toFile());
             }
 
-            props.put(ServerEnvironment.SERVER_BASE_DIR, tempRoot.getAbsolutePath());
-            props.put(ServerEnvironment.SERVER_CONFIG_DIR, configDir.getAbsolutePath());
-            props.put(ServerEnvironment.SERVER_DATA_DIR, dataDir.getAbsolutePath());
+            props.put(ServerEnvironment.SERVER_BASE_DIR, tempRoot.toAbsolutePath().toString());
+            props.put(ServerEnvironment.SERVER_CONFIG_DIR, configDir.toAbsolutePath().toString());
+            props.put(ServerEnvironment.SERVER_DATA_DIR, dataDir.toAbsolutePath().toString());
         }  catch (IOException e) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
         }
@@ -158,7 +157,7 @@ public class EmbeddedStandaloneServerFactory {
 
     }
 
-    private static File getTempRoot(Properties props) {
+    private static Path getTempRoot(Properties props) {
         String tempRoot = props.getProperty(JBOSS_EMBEDDED_ROOT, null);
         if (tempRoot == null) {
             return null;
@@ -171,12 +170,7 @@ public class EmbeddedStandaloneServerFactory {
                 Files.createDirectories(root.toPath());
             }
             validateDirectory("jboss.test.clean.root", root);
-            root = new File(root, "configs");
-            Files.createDirectories(root.toPath());
-            SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-            root = new File(root, format.format(new Date()));
-            Files.createDirectory(root.toPath());
-            return root;
+            return Files.createTempDirectory(root.toPath(),"configs");//let OS handle the temp creation
         } catch (IOException e) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
         }
@@ -206,6 +200,7 @@ public class EmbeddedStandaloneServerFactory {
             }
         }
     }
+
 
     private static class StandaloneServerImpl implements StandaloneServer {
 
@@ -248,8 +243,9 @@ public class EmbeddedStandaloneServerFactory {
         }
 
         @Override
-        public void start() throws ServerStartException {
+        public void start() throws EmbeddedProcessStartException {
 
+            Bootstrap bootstrap = null;
             try {
                 final long startTime = System.currentTimeMillis();
 
@@ -272,7 +268,7 @@ public class EmbeddedStandaloneServerFactory {
                 // Determine the ServerEnvironment
                 ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED, startTime);
 
-                Bootstrap bootstrap = Bootstrap.Factory.newInstance();
+                bootstrap = Bootstrap.Factory.newInstance();
 
                 Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
 
@@ -314,8 +310,14 @@ public class EmbeddedStandaloneServerFactory {
                 establishModelControllerClient(controlledProcessStateService.getCurrentState());
 
             } catch (RuntimeException rte) {
+                if (bootstrap != null) {
+                    bootstrap.failed();
+                }
                 throw rte;
             } catch (Exception ex) {
+                if (bootstrap != null) {
+                    bootstrap.failed();
+                }
                 throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
             }
         }

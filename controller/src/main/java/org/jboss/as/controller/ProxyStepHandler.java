@@ -29,7 +29,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.QUERY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -74,6 +76,9 @@ public class ProxyStepHandler implements OperationStepHandler {
             executeWFCORE621(context, operation);
             return;
         }
+
+        final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
+
         OperationMessageHandler messageHandler = new DelegatingMessageHandler(context);
 
         final AtomicReference<ModelController.OperationTransaction> txRef = new AtomicReference<ModelController.OperationTransaction>();
@@ -162,7 +167,8 @@ public class ProxyStepHandler implements OperationStepHandler {
                         proxyControl.operationPrepared(transaction, transformed);
                     }
                 };
-                proxyController.execute(transformedOperation, messageHandler, transformingProxyControl, new DelegatingOperationAttachments(context));
+                proxyController.execute(transformedOperation, messageHandler, transformingProxyControl,
+                        new DelegatingOperationAttachments(context), blockingTimeout);
             } else {
                 // discard the operation
                 final ModelNode transformedResult = resultTransformer.transformResult(new ModelNode());
@@ -173,7 +179,8 @@ public class ProxyStepHandler implements OperationStepHandler {
                 return;
             }
         } else {
-            proxyController.execute(operation, messageHandler, proxyControl, new DelegatingOperationAttachments(context));
+            proxyController.execute(operation, messageHandler, proxyControl, new DelegatingOperationAttachments(context),
+                    blockingTimeout);
         }
         OperationResponse finalResult = finalResultRef.get();
         if (finalResult != null) {
@@ -303,9 +310,10 @@ public class ProxyStepHandler implements OperationStepHandler {
         // so that's proxied controllers running kernel version 1.x or 2.x
         if (proxyController.getKernelModelVersion().getMajor() < 3 && address.size() > 1) {
             String opName = operation.get(OP).asString();
-            if (READ_RESOURCE_OPERATION.equals(opName) || READ_ATTRIBUTE_OPERATION.equals(opName)
-                    /* Uncomment if WFCORE-948 is fixed
-                    || (READ_RESOURCE_DESCRIPTION_OPERATION.equals(opName) && address.size() > 2)*/) {
+            if (READ_RESOURCE_OPERATION.equals(opName)
+                    || READ_ATTRIBUTE_OPERATION.equals(opName)
+                    || QUERY.equals(opName)
+                    || (READ_RESOURCE_DESCRIPTION_OPERATION.equals(opName) && address.size() >= 2)) {
                 PathElement pe = address.getElement(1);
                 return pe.isMultiTarget() && RUNNING_SERVER.equals(pe.getKey());
             }

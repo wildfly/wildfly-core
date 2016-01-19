@@ -78,6 +78,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
             ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
+        NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
         ManagementRemotingServices.installDomainConnectorServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                 nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), securityRealm, options);
     }

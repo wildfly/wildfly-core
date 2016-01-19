@@ -88,7 +88,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * </p>
  *
  * @author Ken Wills <kwills@redhat.com>
- * @see EmbeddedServerFactory
+ * @see EmbeddedProcessFactory
  */
 public class EmbeddedHostControllerFactory {
 
@@ -144,7 +144,7 @@ public class EmbeddedHostControllerFactory {
             props.put(HostControllerEnvironment.DOMAIN_BASE_DIR, tempRoot.getAbsolutePath());
             props.put(HostControllerEnvironment.DOMAIN_CONFIG_DIR, configDir.getAbsolutePath());
             props.put(HostControllerEnvironment.DOMAIN_DATA_DIR, dataDir.getAbsolutePath());
-        }  catch (IOException e) {
+        } catch (IOException e) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
         }
 
@@ -220,8 +220,7 @@ public class EmbeddedHostControllerFactory {
                 throw ServerLogger.ROOT_LOGGER.errorCopyingFile(srcFile.getAbsolutePath(), destFile.getAbsolutePath(), e);
             }
         }
-
-}
+    }
 
     private static class HostControllerImpl implements HostController {
 
@@ -256,12 +255,8 @@ public class EmbeddedHostControllerFactory {
         }
 
         @Override
-        public HostController getHostController() {
-            return this;
-        }
-
-        @Override
-        public void start() throws ServerStartException {
+        public void start() throws EmbeddedProcessStartException {
+            EmbeddedHostControllerBootstrap hostControllerBootstrap = null;
             try {
                 final long startTime = System.currentTimeMillis();
                 // Take control of server use of System.exit
@@ -286,7 +281,7 @@ public class EmbeddedHostControllerFactory {
                 // Determine the ServerEnvironment
                 HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, authCode, startTime);
                 FutureServiceContainer futureContainer = new FutureServiceContainer();
-                EmbeddedHostControllerBootstrap hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, authCode);
+                hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, authCode);
                 hostControllerBootstrap.bootstrap();
                 serviceContainer = futureContainer.get();
                 executorService = Executors.newCachedThreadPool();
@@ -296,8 +291,14 @@ public class EmbeddedHostControllerFactory {
                 controlledProcessStateService.addPropertyChangeListener(processStateListener);
                 establishModelControllerClient(controlledProcessStateService.getCurrentState());
             } catch (RuntimeException rte) {
+                if (hostControllerBootstrap != null) {
+                    hostControllerBootstrap.failed();
+                }
                 throw rte;
             } catch (Exception ex) {
+                if (hostControllerBootstrap != null) {
+                    hostControllerBootstrap.failed();
+                }
                 throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
             }
         }
@@ -436,9 +437,7 @@ public class EmbeddedHostControllerFactory {
 
         private static HostControllerEnvironment createHostControllerEnvironment(File jbossHome, String[] cmdargs, String hostName, long startTime) {
             try {
-                // for SecurityActions.getSystemProperty("jboss.home.dir") in InstallationManagerService
-                System.setProperty("jboss.home.dir", jbossHome.getAbsolutePath());
-                WildFlySecurityManager.setPropertyPrivileged("jboss.home.dir", jbossHome.getAbsolutePath());
+                WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());
 
                 Map<String, String> props = new HashMap<String, String>();
                 props.put(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());
@@ -478,6 +477,9 @@ public class EmbeddedHostControllerFactory {
                 String initialDomainConfig = null;
                 String initialHostConfig = null;
                 Map<String, String> hostSystemProperties = getHostSystemProperties();
+
+                // WFCORE-938
+                // see also {@link org.jboss.as.cli.handlers.ReloadHandler} for ADMIN_ONLY being forced
                 RunningMode initialRunningMode = RunningMode.ADMIN_ONLY;
                 boolean backupDomainFiles = false;
                 boolean useCachedDc = false;

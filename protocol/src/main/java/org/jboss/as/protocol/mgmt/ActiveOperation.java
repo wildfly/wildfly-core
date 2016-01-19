@@ -98,9 +98,9 @@ public interface ActiveOperation<T, A> {
          * Mark the operation as failed.
          *
          * @return {@code true} if the result was successfully set, or {@code false} if a result was already set
-         * @param e the exception
+         * @param t the exception
          */
-        boolean failed(Exception e);
+        boolean failed(Throwable t);
 
         /**
          * Cancel the operation.

@@ -28,23 +28,36 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
@@ -99,6 +112,8 @@ public class HcExtensionAndSubsystemManagementTestCase {
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
     private static DomainLifecycleUtil domainSlaveLifecycleUtil;
 
+    private static final Map<DomainLifecycleUtil, Set<String>> serversByHost = new HashMap<>();
+
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(HcExtensionAndSubsystemManagementTestCase.class.getSimpleName());
@@ -106,6 +121,22 @@ public class HcExtensionAndSubsystemManagementTestCase {
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
         // Initialize the test extension
         ExtensionSetup.initializeHostTestExtension(testSupport);
+        Set<String> servers = getRunningServers(domainMasterLifecycleUtil, "master");
+        serversByHost.put(domainMasterLifecycleUtil, servers);
+        servers = getRunningServers(domainSlaveLifecycleUtil, "slave");
+        serversByHost.put(domainSlaveLifecycleUtil, servers);
+    }
+
+    private static Set<String> getRunningServers(DomainLifecycleUtil lifecycleUtil, String hcName) throws IOException {
+        ModelNode op = Util.createEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, PathAddress.pathAddress(HOST, hcName));
+        op.get(CHILD_TYPE).set(RUNNING_SERVER);
+        ModelNode response = lifecycleUtil.getDomainClient().execute(op);
+        Assert.assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
+        Set<String> result = new HashSet<>();
+        for (ModelNode node : response.get(RESULT).asList()) {
+            result.add(node.asString());
+        }
+        return result;
     }
 
     @AfterClass
@@ -113,6 +144,7 @@ public class HcExtensionAndSubsystemManagementTestCase {
         testSupport = null;
         domainMasterLifecycleUtil = null;
         domainSlaveLifecycleUtil = null;
+        serversByHost.clear();
         DomainTestSuite.stopSupport();
     }
 
@@ -145,13 +177,11 @@ public class HcExtensionAndSubsystemManagementTestCase {
 
     @Test
     public void testSocketBindingCapabilities() throws Exception {
-        final ModelControllerClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        final ModelControllerClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
 
         //I think for the DC this is, or at least will/should be tested properly elsewhere.
         //The main aim of this test is to make sure that the host capability context provides isolation
-        checkSocketBindingCapabilities(masterClient, slaveClient, MASTER_EXTENSION_ADDRESS);
-        checkSocketBindingCapabilities(masterClient, slaveClient, SLAVE_EXTENSION_ADDRESS);
+        checkSocketBindingCapabilities(MASTER_EXTENSION_ADDRESS);
+        checkSocketBindingCapabilities(SLAVE_EXTENSION_ADDRESS);
     }
 
     private void checkSubsystemNeedsExtensionInLocalModel(ModelControllerClient masterClient, ModelControllerClient slaveClient, PathAddress extensionAddress) throws Exception {
@@ -195,15 +225,16 @@ public class HcExtensionAndSubsystemManagementTestCase {
             err = e;
         } finally {
             //Cleanup
-            if (err != null) {
-                removeIgnoreFailure(masterClient, DOMAIN_SUBSYSTEM_ADDRESS);
-                removeIgnoreFailure(masterClient, MASTER_SUBSYSTEM_ADDRESS);
-                removeIgnoreFailure(slaveClient, SLAVE_SUBSYSTEM_ADDRESS);
-                removeIgnoreFailure(masterClient, DOMAIN_EXTENSION_ADDRESS);
-                removeIgnoreFailure(masterClient, MASTER_EXTENSION_ADDRESS);
-                removeIgnoreFailure(masterClient, SLAVE_EXTENSION_ADDRESS);
-                throw err;
-            }
+            removeIgnoreFailure(masterClient, DOMAIN_SUBSYSTEM_ADDRESS);
+            removeIgnoreFailure(masterClient, MASTER_SUBSYSTEM_ADDRESS);
+            removeIgnoreFailure(slaveClient, SLAVE_SUBSYSTEM_ADDRESS);
+            removeIgnoreFailure(masterClient, DOMAIN_EXTENSION_ADDRESS);
+            removeIgnoreFailure(masterClient, MASTER_EXTENSION_ADDRESS);
+            removeIgnoreFailure(masterClient, SLAVE_EXTENSION_ADDRESS);
+        }
+
+        if (err != null) {
+            throw err;
         }
     }
 
@@ -258,13 +289,16 @@ public class HcExtensionAndSubsystemManagementTestCase {
             //Cleanup
             removeIgnoreFailure(extensionClient, subsystemAddress);
             removeIgnoreFailure(extensionClient, extensionAddress);
-            if (err != null) {
-                throw err;
-            }
+        }
+
+        if (err != null) {
+            throw err;
         }
     }
 
-    private void checkSocketBindingCapabilities(ModelControllerClient masterClient, ModelControllerClient slaveClient, PathAddress extensionAddress) throws Exception {
+    private void checkSocketBindingCapabilities(PathAddress extensionAddress) throws Exception {
+        ModelControllerClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        ModelControllerClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
         Target target = Target.determineFromExtensionAddress(extensionAddress);
         final PathAddress subsystemAddress;
         final PathAddress socketBindingGroupAddress;
@@ -313,10 +347,11 @@ public class HcExtensionAndSubsystemManagementTestCase {
             removeIgnoreFailure(client, socketBindingGroupAddress);
             removeIgnoreFailure(client, subsystemAddress);
             removeIgnoreFailure(client, extensionAddress);
-            reloadHostsIfReloadRequired(masterClient, slaveClient);
-            if (err != null) {
-                throw err;
-            }
+            reloadHostsIfReloadRequired();
+        }
+
+        if (err != null) {
+            throw err;
         }
     }
 
@@ -398,31 +433,56 @@ public class HcExtensionAndSubsystemManagementTestCase {
         return port;
     }
 
-    private void reloadHostsIfReloadRequired(ModelControllerClient masterClient, ModelControllerClient slaveClient) throws Exception {
+    private void reloadHostsIfReloadRequired() throws Exception {
         //Later tests fail if we leave the host in reload-required
-        boolean reloaded = reloadHostsIfReloadRequired(masterClient, PathAddress.pathAddress(MASTER_HOST_ELEMENT));
-        reloaded = reloaded || reloadHostsIfReloadRequired(slaveClient, PathAddress.pathAddress(SLAVE_HOST_ELEMENT));
+        boolean reloaded = reloadHostsIfReloadRequired(domainMasterLifecycleUtil, PathAddress.pathAddress(MASTER_HOST_ELEMENT));
+        reloaded = reloaded || reloadHostsIfReloadRequired(domainSlaveLifecycleUtil, PathAddress.pathAddress(SLAVE_HOST_ELEMENT));
         if (reloaded) {
             //Wait for the slave to reconnect, look for the slave in the list of hosts
             long end = System.currentTimeMillis() + 20 * ADJUSTED_SECOND;
-            boolean slaveReconnected = false;
+            boolean slaveReconnected;
             do {
-                Thread.sleep(1 * ADJUSTED_SECOND);
-                slaveReconnected = checkSlaveReconnected(masterClient);
+                Thread.sleep(ADJUSTED_SECOND);
+                slaveReconnected = checkSlaveReconnected(domainMasterLifecycleUtil.getDomainClient());
             } while (!slaveReconnected && System.currentTimeMillis() < end);
 
         }
     }
 
-    private boolean reloadHostsIfReloadRequired(ModelControllerClient client, PathAddress address) throws Exception {
+    private boolean reloadHostsIfReloadRequired(DomainLifecycleUtil util, PathAddress address) throws Exception {
+        DomainClient client = util.getDomainClient();
         String state = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(address, HOST_STATE), client).asString();
         if (!state.equals("running")) {
             ModelNode reload = Util.createEmptyOperation("reload", address);
             reload.get(RESTART_SERVERS).set(false);
-            DomainTestUtils.executeForResult(reload, client);
+            util.executeAwaitConnectionClosed(reload);
+            util.connect();
+            util.awaitHostController(System.currentTimeMillis());
+            awaitServers(util, address.getLastElement().getValue());
             return true;
         }
         return false;
+    }
+
+    private void awaitServers(DomainLifecycleUtil util, String hostName) throws InterruptedException, TimeoutException, IOException {
+
+        Set<String> required = serversByHost.get(util);
+        Set<String> unstarted;
+        long timeout = TimeoutUtil.adjust(120 * 1000);
+        long deadline = System.currentTimeMillis() + timeout;
+        do {
+            unstarted = new HashSet<>(required);
+            Set<String> running = getRunningServers(util, hostName);
+            unstarted.removeAll(running);
+            if (unstarted.size() == 0) {
+                break;
+            }
+            TimeUnit.MILLISECONDS.sleep(250);
+        } while (System.currentTimeMillis() < deadline);
+
+        if (unstarted.size() > 0) {
+            throw new TimeoutException(String.format("Managed servers were not started within [%d] seconds: %s", timeout, unstarted));
+        }
     }
 
     private boolean checkSlaveReconnected(ModelControllerClient masterClient) throws Exception {
@@ -439,11 +499,12 @@ public class HcExtensionAndSubsystemManagementTestCase {
                 }
             }
         } catch (Exception e) {
+            // ignored
         }
         return false;
     }
 
-    private static enum Target {
+    private enum Target {
         DOMAIN,
         MASTER,
         SLAVE;
@@ -456,8 +517,7 @@ public class HcExtensionAndSubsystemManagementTestCase {
             } else if (extensionAddress == SLAVE_EXTENSION_ADDRESS) {
                 return SLAVE;
             }
-            Assert.fail("Unknown extension address");
-            return null;
+            throw new AssertionError("Unknown extension address");
         }
     }
 }

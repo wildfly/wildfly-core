@@ -33,7 +33,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.accesscontrol.AccessRequirement;
 import org.jboss.as.cli.accesscontrol.AccessRequirementBuilder;
 import org.jboss.as.cli.accesscontrol.PerNodeOperationAccess;
-import org.jboss.as.cli.embedded.EmbeddedServerLaunch;
+import org.jboss.as.cli.embedded.EmbeddedProcessLaunch;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.CLIModelControllerClient;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
@@ -50,10 +50,10 @@ public class ShutdownHandler extends BaseOperationCommand {
 
     private final ArgumentWithValue restart;
     private final ArgumentWithValue host;
-    private final AtomicReference<EmbeddedServerLaunch> embeddedServerRef;
+    private final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef;
     private PerNodeOperationAccess hostShutdownPermission;
 
-    public ShutdownHandler(CommandContext ctx, final AtomicReference<EmbeddedServerLaunch> embeddedServerRef) {
+    public ShutdownHandler(CommandContext ctx, final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef) {
         super(ctx, "shutdown", true);
 
         this.embeddedServerRef = embeddedServerRef;

@@ -16,80 +16,58 @@
  */
 package org.wildfly.core.embedded;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
- * Indirection to the {@link StandaloneServer}; used to encapsulate access to the underlying embedded AS Server instance in a
- * manner that does not directly link this class. Necessary to avoid {@link ClassCastException} when this class is loaded by the
- * application {@link ClassLoader} (or any other hierarchical CL) while the server is loaded by a modular environment.
+ * Implements both {@link StandaloneServer} and {@link HostController}.
  *
  * @author <a href="mailto:alr@jboss.org">Andrew Lee Rubinger</a>
  * @author Thomas.Diesler@jboss.com
+ *
+ * @deprecated use the {@link EmbeddedManagedProcess}, {@link StandaloneServer} or {@link HostController} interface
+ *             and not this implementation class
  */
+@Deprecated
 public final class EmbeddedServerReference implements StandaloneServer, HostController {
 
-    private final Object server;
-    private final Method methodStart;
-    private final Method methodStop;
-    private final Method methodGetModelControllerClient;
+    private final EmbeddedManagedProcess delegate;
+    private final boolean hostController;
 
-    EmbeddedServerReference(Class<?> serverClass, Object serverImpl) {
-        this.server = serverImpl;
-
-        // Get a handle on the {@link StandaloneServer} methods
-        try {
-            methodStart = serverClass.getMethod("start");
-            methodStop = serverClass.getMethod("stop");
-            methodGetModelControllerClient = serverClass.getMethod("getModelControllerClient");
-        } catch (final NoSuchMethodException nsme) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, nsme.getMessage(), serverClass.getName());
-        }
+    EmbeddedServerReference(final EmbeddedManagedProcess delegate, boolean hostController) {
+        this.delegate = delegate;
+        this.hostController = hostController;
     }
 
     @Override
     public void start()  {
-        invokeOnServer(methodStart);
+        try {
+            delegate.start();
+        } catch (EmbeddedProcessStartException e) {
+            // TODO This logger method is badly named.
+            throw EmbeddedLogger.ROOT_LOGGER.cannotInvokeStandaloneServer(e, "start");
+        }
     }
 
     @Override
     public void stop()  {
-        invokeOnServer(methodStop);
+        delegate.stop();
     }
 
     @Override
     public ModelControllerClient getModelControllerClient()  {
-        ModelControllerClient client = (ModelControllerClient) invokeOnServer(methodGetModelControllerClient);
-        return client;
+        return delegate.getModelControllerClient();
     }
 
     public StandaloneServer getStandaloneServer() {
-        return (StandaloneServer) server;
+        return (StandaloneServer) delegate;
     }
 
-    @Override
     public HostController getHostController() {
-        return (HostController) server;
+        return (HostController) delegate;
     }
 
     public boolean isHostController() {
-        return server instanceof HostController;
-    }
-
-    private Object invokeOnServer(final Method method, Object... args) {
-        try {
-            return method.invoke(server, args);
-        } catch (RuntimeException rte) {
-            throw rte;
-        } catch (Exception ex) {
-            Throwable cause = ex;
-            if (ex instanceof InvocationTargetException) {
-                cause = ((InvocationTargetException)ex).getCause();
-            }
-            throw EmbeddedLogger.ROOT_LOGGER.cannotInvokeStandaloneServer(cause, method.getName());
-        }
+        return hostController;
     }
 }

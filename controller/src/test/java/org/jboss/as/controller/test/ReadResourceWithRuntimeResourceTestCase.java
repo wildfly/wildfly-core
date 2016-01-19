@@ -30,6 +30,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -158,7 +159,7 @@ public class ReadResourceWithRuntimeResourceTestCase extends AbstractControllerT
         }
 
         @Override
-        public void execute(ModelNode operation, OperationMessageHandler handler, final ProxyOperationControl control, OperationAttachments attachments) {
+        public void execute(ModelNode operation, OperationMessageHandler handler, final ProxyOperationControl control, OperationAttachments attachments, BlockingTimeout blockingTimeout) {
             final ModelNode response = new ModelNode();
             response.get("outcome").set("success");
             response.get("result", "attr").set(true);

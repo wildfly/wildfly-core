@@ -293,7 +293,7 @@ public class ResponseAttachmentInputStreamSupportTestCase {
         }
 
         @Override
-        public void executeAsync(AsyncTask<Void> task) {
+        public boolean executeAsync(AsyncTask<Void> task) {
             try {
                 task.execute(this);
             } catch (RuntimeException r) {
@@ -302,20 +302,21 @@ public class ResponseAttachmentInputStreamSupportTestCase {
             catch (Exception e) {
                 throw new RuntimeException(e);
             }
+            return true;
         }
 
         @Override
-        public void executeAsync(AsyncTask<Void> task, boolean cancellable) {
+        public boolean executeAsync(AsyncTask<Void> task, boolean cancellable) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void executeAsync(AsyncTask<Void> task, Executor executor) {
+        public boolean executeAsync(AsyncTask<Void> task, Executor executor) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void executeAsync(AsyncTask<Void> task, boolean cancellable, Executor executor) {
+        public boolean executeAsync(AsyncTask<Void> task, boolean cancellable, Executor executor) {
             throw new UnsupportedOperationException();
         }
 
@@ -336,7 +337,7 @@ public class ResponseAttachmentInputStreamSupportTestCase {
         }
 
         @Override
-        public boolean failed(Exception e) {
+        public boolean failed(Throwable t) {
             int was = this.result;
             this.result += 10;
             return was == 0;

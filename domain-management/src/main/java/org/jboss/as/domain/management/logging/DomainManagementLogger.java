@@ -1136,6 +1136,15 @@ public interface DomainManagementLogger extends BasicLogger {
     IllegalStateException unsupportedResource(String name);
 
     /**
+     * The error to indicate that a specified KeyTab can not be found.
+     *
+     * @param fileName the full path to the KeyTab.
+     * @return The exception for the error.
+     */
+    @Message(id = 109, value = "The Keytab file '%s' does not exist.")
+    StartException keyTabFileNotFound(String fileName);
+
+    /**
      * Information message saying the username and password must be different.
      *
      * @return an {@link String} for the error.

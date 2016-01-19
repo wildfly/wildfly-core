@@ -30,9 +30,7 @@ import java.util.List;
 
 import org.jboss.aesh.complete.CompleteOperation;
 import org.jboss.aesh.complete.Completion;
-import org.jboss.aesh.console.AeshConsoleCallback;
 import org.jboss.aesh.console.ConsoleCallback;
-import org.jboss.aesh.console.ConsoleOperation;
 import org.jboss.aesh.console.Prompt;
 import org.jboss.aesh.console.settings.Settings;
 import org.jboss.aesh.parser.Parser;
@@ -92,6 +90,10 @@ public interface Console {
      */
     void interrupt();
 
+    void controlled();
+
+    void continuous();
+
     void setCallback(ConsoleCallback consoleCallback);
 
     void start();
@@ -126,8 +128,6 @@ public interface Console {
                 private CommandContext cmdCtx = ctx;
                 private org.jboss.aesh.console.Console console = finalAeshConsole;
                 private CommandHistory history = new HistoryImpl();
-                private InternalReadline activeRead = new InternalReadline();
-
 
                 @Override
                 public void addCompleter(final CommandLineCompleter completer) {
@@ -203,9 +203,37 @@ public interface Console {
                 }
 
                 private String read(String prompt, Character mask) {
-                    // Only use this threaded madness while we use the AESH low-level console
-                    if(console.getConsoleCallback() instanceof CommandContextImpl.CLIAeshConsoleCallback){
-                        return activeRead.executeReadLine(prompt, mask);
+                    int PID = -1;
+
+                    try {
+                        ConsoleCallback callback = console.getConsoleCallback();
+                        if (callback instanceof CommandContextImpl.CLIAeshConsoleCallback) {
+                            CommandContextImpl.CLIAeshConsoleCallback cliCallback = ((CommandContextImpl.CLIAeshConsoleCallback) callback);
+
+                            if (cliCallback.hasActiveProcess()) {
+                                PID = cliCallback.getProcessPID();
+                                console.putProcessInBackground(PID);
+                            }
+
+                        }
+                        Prompt origPrompt = null;
+                        if(!console.getPrompt().getPromptAsString().equals(prompt)) {
+                            origPrompt = console.getPrompt();
+                            console.setPrompt(new Prompt(prompt, mask));
+                        }
+                        try {
+                            return console.getInputLine();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } finally {
+                            if(origPrompt != null) {
+                                console.setPrompt(origPrompt);
+                            }
+                        }
+                    } finally {
+                        if( PID != -1) {
+                            console.putProcessInForeground(PID);
+                        }
                     }
 
                     // Something is wrong.
@@ -229,7 +257,16 @@ public interface Console {
 
                 @Override
                 public void interrupt() {
-                    activeRead.interrupt();
+                }
+
+                @Override
+                public void controlled() {
+                    console.controlled();
+                }
+
+                @Override
+                public void continuous() {
+                    console.continuous();
                 }
 
                 @Override
@@ -248,13 +285,12 @@ public interface Console {
                 public void stop() {
                     if(console != null) {
                         console.stop();
-                        console.isRunning();
                     }
                 }
 
                 @Override
-                public boolean running(){
-                    return console != null && console.isRunning();
+                public boolean running() {
+                    return console != null && (console.isRunning() || console.hasRunningProcesses());
                 }
 
                 @Override
@@ -270,7 +306,6 @@ public interface Console {
 
                 class HistoryImpl implements CommandHistory {
 
-                    @SuppressWarnings("unchecked")
                     @Override
                     public List<String> asList() {
                         return console.getHistory().getAll();
@@ -299,76 +334,6 @@ public interface Console {
                     public int getMaxSize() {
                         return settings.getHistorySize();
                     }
-                }
-
-                class InternalReadline {
-
-                    private volatile boolean active = false;
-                    private volatile String line;
-                    private volatile boolean interrupt = false;
-
-                    public void interrupt(){
-                        if(active){
-                            interrupt = true;
-                        }
-                    }
-
-                    public String executeReadLine(String prompt, Character mask){
-                        active = true;
-                        try {
-                            Prompt existingPrompt = console.getPrompt();
-                            ConsoleCallback existingCallback = console.getConsoleCallback();
-
-                            try {
-                                setPrompt(prompt, mask);
-
-                                console.setConsoleCallback(new AeshConsoleCallback() {
-                                    @Override
-                                    public int execute(ConsoleOperation output) throws InterruptedException {
-                                        line = output.getBuffer().trim();
-                                        return 0;
-                                    }
-                                });
-
-                                if (existingCallback instanceof CommandContextImpl.CLIAeshConsoleCallback) {
-                                    // If there is an active process, push it back to allow a read to occur
-                                    if(((CommandContextImpl.CLIAeshConsoleCallback) existingCallback).hasActiveProcess()) {
-                                        int pid = ((CommandContextImpl.CLIAeshConsoleCallback) existingCallback).getProcessPID();
-                                        console.putProcessInBackground(pid);
-
-                                        while (line == null && !interrupt) {
-                                            try {
-                                                Thread.sleep(500);
-                                            } catch (InterruptedException e) {
-                                                break;
-                                            }
-                                        }
-
-                                        console.putProcessInForeground(pid);
-                                    } else{
-                                        // If no process is active, just read
-                                        while (line == null && !interrupt) {
-                                            try {
-                                                Thread.sleep(500);
-                                            } catch (InterruptedException e) {
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-
-                            } finally {
-                                console.setConsoleCallback(existingCallback);
-                                interrupt = false;
-                            }
-
-                            return line;
-                        }finally{
-                            line = null;
-                            active = false;
-                        }
-                    }
-
                 }
             };
 

@@ -27,16 +27,18 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOT
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
@@ -46,46 +48,37 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.as.controller.registry.AttributeAccess.Storage;
 
-@SuppressWarnings("deprecation")
 final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
-    @SuppressWarnings("unused")
-    private volatile Map<String, NodeSubregistry> children;
+    private Map<String, NodeSubregistry> children;
 
-    @SuppressWarnings("unused")
-    private volatile Map<String, OperationEntry> operations;
+    private Map<String, OperationEntry> operations;
 
-    @SuppressWarnings("unused")
-    private volatile Map<String, NotificationEntry> notifications;
+    private Map<String, NotificationEntry> notifications;
 
     private final ResourceDefinition resourceDefinition;
     private final List<AccessConstraintDefinition> accessConstraintDefinitions;
 
-    @SuppressWarnings("unused")
-    private volatile Map<String, AttributeAccess> attributes;
+    // We assume at least 2 attrs, so just instantiate a hash map
+    private final Map<String, AttributeAccess> attributes = new HashMap<>();
 
-    @SuppressWarnings("unused")
-    private volatile Map<String, Empty> orderedChildTypes;
+    private Set <String> orderedChildTypes;
 
-    private final AtomicBoolean runtimeOnly = new AtomicBoolean();
+    private boolean runtimeOnly;
     private final boolean ordered;
     private final AccessConstraintUtilizationRegistry constraintUtilizationRegistry;
     private final CapabilityRegistry capabilityRegistry;
 
-    private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, NodeSubregistry> childrenUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "children"));
-    private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, OperationEntry> operationsUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "operations"));
-    private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, NotificationEntry> notificationsUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "notifications"));
-    private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, AttributeAccess> attributesUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "attributes"));
-    private static final AtomicMapFieldUpdater<ConcreteResourceRegistration, String, Empty> orderedChildUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(ConcreteResourceRegistration.class, Map.class, "orderedChildTypes"));
+    private Set<RuntimeCapability> capabilities;
 
-    private final Set<RuntimeCapability>  capabilities = new CopyOnWriteArraySet<>();
+    private final Lock readLock;
+    private final Lock writeLock;
 
     ConcreteResourceRegistration(final String valueString, final NodeSubregistry parent, final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
@@ -93,15 +86,31 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         super(valueString, parent);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
-        childrenUpdater.clear(this);
-        operationsUpdater.clear(this);
-        attributesUpdater.clear(this);
-        notificationsUpdater.clear(this);
-        orderedChildUpdater.clear(this);
         this.resourceDefinition = definition;
-        this.runtimeOnly.set(definition.isRuntime());
+        this.runtimeOnly = definition.isRuntime();
         this.accessConstraintDefinitions = buildAccessConstraints();
         this.ordered = ordered;
+        if (parent == null) {
+            // For a root MRR we expect concurrent reads in critical performance code, i.e. boot
+            // So we use a read-write lock
+            ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+            this.readLock = rwLock.readLock();
+            this.writeLock = rwLock.writeLock();
+        } else {
+            // For non-root MRRs we don't expect much in the way of concurrent reads in performance
+            // critical situations, so we want lock/unlock to be as simple and fast as possible
+            // So we just use a single non-r/w lock for both reads and writes
+            this.readLock = this.writeLock = new ReentrantLock();
+        }
+
+    }
+
+    void beginInitialization() {
+        writeLock.lock();
+    }
+
+    void initialized() {
+        writeLock.unlock();
     }
 
     @Override
@@ -117,13 +126,23 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     @Override
     public boolean isRuntimeOnly() {
         checkPermission();
-        return runtimeOnly.get();
+        readLock.lock();
+        try {
+            return runtimeOnly;
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
     public void setRuntimeOnly(final boolean runtimeOnly) {
         checkPermission();
-        this.runtimeOnly.set(runtimeOnly);
+        writeLock.lock();
+        try {
+            this.runtimeOnly = runtimeOnly;
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     @Override
@@ -138,13 +157,23 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public Set<String> getOrderedChildTypes() {
-        Map<String, Empty> snapshot = orderedChildUpdater.get(this);
-        if (snapshot == null || snapshot.size() == 0) {
-            return Collections.emptySet();
+    Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator) {
+        if (iterator.hasNext()) {
+            final PathElement next = iterator.next();
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
+            if (subregistry == null) {
+                return Collections.emptySet();
+            }
+            return subregistry.getOrderedChildTypes(iterator, next.getValue());
+        } else {
+            checkPermission();
+            readLock.lock();
+            try {
+                return orderedChildTypes == null ? Collections.emptySet() : new HashSet<>(orderedChildTypes);
+            } finally {
+                readLock.unlock();
+            }
         }
-
-        return new HashSet<>(snapshot.keySet());
     }
 
     @Override
@@ -185,63 +214,76 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
         }
-        final String key = address.getKey();
-        final NodeSubregistry child = getOrCreateSubregistry(key);
-        final boolean ordered = resourceDefinition.isOrderedChild();
-        final ManagementResourceRegistration resourceRegistration =
-                child.register(address.getValue(), resourceDefinition, ordered);
-        if (ordered) {
-            AbstractResourceRegistration parentRegistration = child.getParent();
-            parentRegistration.setOrderedChild(key);
-        }
-        resourceDefinition.registerAttributes(resourceRegistration);
-        resourceDefinition.registerOperations(resourceRegistration);
-        resourceDefinition.registerNotifications(resourceRegistration);
-        resourceDefinition.registerChildren(resourceRegistration);
-        resourceDefinition.registerCapabilities(resourceRegistration);
-        if (constraintUtilizationRegistry != null) {
-            PathAddress childAddress = getPathAddress().append(address);
-            List<AccessConstraintDefinition> constraintDefinitions = resourceDefinition.getAccessConstraints();
-            for (AccessConstraintDefinition acd : constraintDefinitions) {
-                constraintUtilizationRegistry.registerAccessConstraintResourceUtilization(acd.getKey(), childAddress);
-            }
-        }
-        return resourceRegistration;
+        final NodeSubregistry child = getOrCreateSubregistry(address.getKey());
+        return child.registerChild(address.getValue(), resourceDefinition);
     }
 
     @Override
     public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
         checkPermission();
-        if (operationsUpdater.putIfAbsent(this, definition.getName(), new OperationEntry(handler, definition.getDescriptionProvider(), inherited, definition.getEntryType(),
-                definition.getFlags(), definition.getAccessConstraints())) != null) {
-            throw alreadyRegistered("operation handler", definition.getName());
+        String opName = definition.getName();
+        OperationEntry entry = new OperationEntry(handler, definition.getDescriptionProvider(), inherited, definition.getEntryType(),
+                definition.getFlags(), definition.getAccessConstraints());
+        writeLock.lock();
+        try {
+            if (operations == null) {
+                operations = new HashMap<>();
+            } else if (operations.containsKey(opName)) {
+                throw alreadyRegistered("operation handler", opName);
+            }
+            operations.put(opName, entry);
+            if (constraintUtilizationRegistry != null) {
+                for (AccessConstraintDefinition acd : definition.getAccessConstraints()) {
+                    constraintUtilizationRegistry.registerAccessConstraintOperationUtilization(acd.getKey(), getPathAddress(), opName);
+                }
+            }
+        } finally {
+            writeLock.unlock();
         }
-        registerOperationAccessConstraints(definition);
     }
 
     public void unregisterSubModel(final PathElement address) throws IllegalArgumentException {
-        final Map<String, NodeSubregistry> snapshot = childrenUpdater.get(this);
-        final NodeSubregistry subregistry = snapshot.get(address.getKey());
-        if (subregistry != null) {
-            subregistry.unregisterSubModel(address.getValue());
+        writeLock.lock();
+        try {
+            final NodeSubregistry subregistry = getSubregistry(address.getKey());
+            if (subregistry != null) {
+                subregistry.unregisterSubModel(address.getValue());
+            }
+            if (constraintUtilizationRegistry != null) {
+                constraintUtilizationRegistry.unregisterAccessConstraintUtilizations(getPathAddress().append(address));
+            }
+        } finally {
+            writeLock.unlock();
         }
-        unregisterAccessConstraints(address);
     }
 
     @Override
     OperationEntry getOperationEntry(final ListIterator<PathElement> iterator, final String operationName, OperationEntry inherited) {
         if (iterator.hasNext()) {
-            OperationEntry ourInherited = getInheritableOperationEntry(operationName);
-            OperationEntry inheritance = ourInherited == null ? inherited : ourInherited;
+            final NodeSubregistry subregistry;
+            final OperationEntry inheritance;
             final PathElement next = iterator.next();
-            final NodeSubregistry subregistry = children.get(next.getKey());
-            if (subregistry == null) {
-                return null;
+            readLock.lock();
+            try {
+                subregistry = children == null ? null : children.get(next.getKey());
+                if (subregistry == null) {
+                    return null;
+                }
+                OperationEntry ourInherited = getInheritableOperationEntryLocked(operationName);
+                inheritance = ourInherited == null ? inherited : ourInherited;
+            } finally {
+                readLock.unlock();
             }
             return subregistry.getOperationEntry(iterator, next.getValue(), operationName, inheritance);
         } else {
             checkPermission();
-            final OperationEntry entry = operationsUpdater.get(this, operationName);
+            final OperationEntry entry;
+            readLock.lock();
+            try {
+                entry = operations == null ? null : operations.get(operationName);
+            } finally {
+                readLock.unlock();
+            }
             return entry == null ? inherited : entry;
         }
     }
@@ -249,7 +291,17 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     @Override
     OperationEntry getInheritableOperationEntry(final String operationName) {
         checkPermission();
-        final OperationEntry entry = operationsUpdater.get(this, operationName);
+        readLock.lock();
+        try {
+            return getInheritableOperationEntryLocked(operationName);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    // Only call with the read lock held
+    private OperationEntry getInheritableOperationEntryLocked(final String operationName) {
+        final OperationEntry entry = operations == null ? null : operations.get(operationName);
         if (entry != null && entry.isInherited()) {
             return entry;
         }
@@ -261,7 +313,14 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
         if (!iterator.hasNext() ) {
             checkPermission();
-            providers.putAll(operationsUpdater.get(this));
+            readLock.lock();
+            try {
+                if (operations != null) {
+                    providers.putAll(operations);
+                }
+            } finally {
+                readLock.unlock();
+            }
             if (inherited) {
                 getInheritedOperations(providers, true);
             }
@@ -270,8 +329,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         final PathElement next = iterator.next();
         try {
             final String key = next.getKey();
-            final Map<String, NodeSubregistry> snapshot = childrenUpdater.get(this);
-            final NodeSubregistry subregistry = snapshot.get(key);
+            final NodeSubregistry subregistry = getSubregistry(key);
             if (subregistry != null) {
                 subregistry.getHandlers(iterator, next.getValue(), providers, inherited);
             }
@@ -283,18 +341,30 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     @Override
     void getInheritedOperationEntries(final Map<String, OperationEntry> providers) {
         checkPermission();
-        for (final Map.Entry<String, OperationEntry> entry : operationsUpdater.get(this).entrySet()) {
-            if (entry.getValue().isInherited() && !providers.containsKey(entry.getKey())) {
-                providers.put(entry.getKey(), entry.getValue());
+        readLock.lock();
+        try {
+            if (operations != null) {
+                for (final Map.Entry<String, OperationEntry> entry : operations.entrySet()) {
+                    if (entry.getValue().isInherited() && !providers.containsKey(entry.getKey())) {
+                        providers.put(entry.getKey(), entry.getValue());
+                    }
+                }
             }
+        } finally {
+            readLock.unlock();
         }
     }
 
     @Override
     public void unregisterOperationHandler(final String operationName) {
         checkPermission();
-        if (operationsUpdater.remove(this, operationName) == null) {
-            throw operationNotRegisteredException(operationName, resourceDefinition.getPathElement());
+        writeLock.lock();
+        try {
+            if (operations == null || operations.remove(operationName) == null) {
+                throw operationNotRegisteredException(operationName, resourceDefinition.getPathElement());
+            }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -303,13 +373,9 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
         final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
-        final String attributeName = definition.getName();
         AttributeAccess.Storage storage = (flags != null && flags.contains(AttributeAccess.Flag.STORAGE_RUNTIME)) ? Storage.RUNTIME : Storage.CONFIGURATION;
         AttributeAccess aa = new AttributeAccess(AccessType.READ_WRITE, storage, readHandler, writeHandler, definition, flags);
-        if (attributesUpdater.putIfAbsent(this, attributeName, aa) != null) {
-            throw alreadyRegistered("attribute", attributeName);
-        }
-        registerAttributeAccessConstraints(definition);
+        storeAttribute(definition, aa);
     }
 
     @Override
@@ -317,27 +383,42 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
         final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
-        final String attributeName = definition.getName();
         AttributeAccess.Storage storage = (flags != null && flags.contains(AttributeAccess.Flag.STORAGE_RUNTIME)) ? Storage.RUNTIME : Storage.CONFIGURATION;
         AttributeAccess aa = new AttributeAccess(AccessType.READ_ONLY, storage, readHandler, null, definition, flags);
-        if (attributesUpdater.putIfAbsent(this, attributeName, aa) != null) {
-            throw alreadyRegistered("attribute", attributeName);
-        }
-        registerAttributeAccessConstraints(definition);
+        storeAttribute(definition, aa);
     }
 
     @Override
     public void unregisterAttribute(String attributeName) {
         checkPermission();
-        attributesUpdater.remove(this, attributeName);
+        writeLock.lock();
+        try {
+            attributes.remove(attributeName);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     @Override
     public void registerNotification(NotificationDefinition notification, boolean inherited) {
-        NotificationEntry entry = new NotificationEntry(notification.getDescriptionProvider(), inherited);
         checkPermission();
-        if (notificationsUpdater.putIfAbsent(this, notification.getType(), entry) != null) {
-            throw alreadyRegistered(NOTIFICATION, notification.getType());
+        String type = notification.getType();
+        NotificationEntry entry = new NotificationEntry(notification.getDescriptionProvider(), inherited);
+        writeLock.lock();
+        try {
+            if (notifications == null) {
+                notifications = Collections.singletonMap(type, entry);
+            } else {
+                if (notifications.containsKey(type)) {
+                    throw alreadyRegistered(NOTIFICATION, type);
+                }
+                if (notifications.size() == 1) {
+                    notifications = new HashMap<>(notifications);
+                }
+                notifications.put(type, entry);
+            }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -347,9 +428,16 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-         public void unregisterNotification(String notificationType) {
+    public void unregisterNotification(String notificationType) {
         checkPermission();
-        notificationsUpdater.remove(this, notificationType);
+        writeLock.lock();
+        try {
+            if (notifications != null) {
+                notifications.remove(notificationType);
+            }
+        } finally {
+            writeLock.unlock();
+        }
     }
 
 
@@ -358,10 +446,21 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         assert assertMetricValues(definition); //The real message will be in an assertion thrown by assertMetricValues
         checkPermission();
         AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition, definition.getFlags());
-        if (attributesUpdater.putIfAbsent(this, definition.getName(), aa) != null) {
-            throw alreadyRegistered("attribute", definition.getName());
+        storeAttribute(definition, aa);
+    }
+
+    private void storeAttribute(AttributeDefinition definition, AttributeAccess aa) {
+        String attributeName = definition.getName();
+        writeLock.lock();
+        try {
+            if (attributes.containsKey(attributeName)) {
+                throw alreadyRegistered("attribute", attributeName);
+            }
+            attributes.put(attributeName, aa);
+            registerAttributeAccessConstraints(definition);
+        } finally {
+            writeLock.unlock();
         }
-        registerAttributeAccessConstraints(definition);
     }
 
     private boolean assertMetricValues(AttributeDefinition definition) {
@@ -388,26 +487,19 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
     }
 
-    private void registerOperationAccessConstraints(OperationDefinition od) {
-        if (constraintUtilizationRegistry != null) {
-            for (AccessConstraintDefinition acd : od.getAccessConstraints()) {
-                constraintUtilizationRegistry.registerAccessConstraintOperationUtilization(acd.getKey(), getPathAddress(), od.getName());
-            }
-        }
-    }
-
-    private void unregisterAccessConstraints(PathElement childAddress) {
-        if (constraintUtilizationRegistry != null) {
-            constraintUtilizationRegistry.unregisterAccessConstraintUtilizations(getPathAddress().append(childAddress));
-        }
-    }
-
     @Override
     void getNotificationDescriptions(final ListIterator<PathElement> iterator, final Map<String, NotificationEntry> providers, final boolean inherited) {
 
         if (!iterator.hasNext() ) {
             checkPermission();
-            providers.putAll(notificationsUpdater.get(this));
+            readLock.lock();
+            try {
+                if (notifications != null) {
+                    providers.putAll(notifications);
+                }
+            } finally {
+                readLock.unlock();
+            }
             if (inherited) {
                 getInheritedNotifications(providers, true);
             }
@@ -416,8 +508,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         final PathElement next = iterator.next();
         try {
             final String key = next.getKey();
-            final Map<String, NodeSubregistry> snapshot = childrenUpdater.get(this);
-            final NodeSubregistry subregistry = snapshot.get(key);
+            final NodeSubregistry subregistry = getSubregistry(key);
             if (subregistry != null) {
                 subregistry.getNotificationDescriptions(iterator, next.getValue(), providers, inherited);
             }
@@ -426,12 +517,48 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
     }
 
+    private NodeSubregistry getSubregistry(String key) {
+        readLock.lock();
+        try {
+            return children == null ? null : children.get(key);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
     @Override
     void getInheritedNotificationEntries(final Map<String, NotificationEntry> providers) {
         checkPermission();
-        for (final Map.Entry<String, NotificationEntry> entry : notificationsUpdater.get(this).entrySet()) {
-            if (entry.getValue().isInherited() && !providers.containsKey(entry.getKey())) {
-                providers.put(entry.getKey(), entry.getValue());
+        readLock.lock();
+        try {
+            if (notifications != null) {
+                for (final Map.Entry<String, NotificationEntry> entry : notifications.entrySet()) {
+                    if (entry.getValue().isInherited() && !providers.containsKey(entry.getKey())) {
+                        providers.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
+    Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator) {
+        if (iterator.hasNext()) {
+            final PathElement next = iterator.next();
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
+            if (subregistry == null) {
+                return Collections.emptySet();
+            }
+            return subregistry.getCapabilities(iterator, next.getValue());
+        } else {
+            checkPermission();
+            readLock.lock();
+            try {
+                return capabilities == null ? Collections.emptySet() : Collections.unmodifiableSet(capabilities);
+            } finally {
+                readLock.unlock();
             }
         }
     }
@@ -448,8 +575,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void unregisterProxyController(final PathElement address) throws IllegalArgumentException {
-        final Map<String, NodeSubregistry> snapshot = childrenUpdater.get(this);
-        final NodeSubregistry subregistry = snapshot.get(address.getKey());
+        final NodeSubregistry subregistry = getSubregistry(address.getKey());
         if (subregistry != null) {
             subregistry.unregisterProxyController(address.getValue());
         }
@@ -462,39 +588,50 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void unregisterAlias(PathElement address) {
-        final Map<String, NodeSubregistry> snapshot = childrenUpdater.get(this);
-        final NodeSubregistry subregistry = snapshot.get(address.getKey());
+        final NodeSubregistry subregistry = getSubregistry(address.getKey());
         if (subregistry != null) {
             subregistry.unregisterAlias(address.getValue());
         }
     }
 
     @Override
-    public void registerCapability(RuntimeCapability capability){
-        capabilities.add(capability);
-        if (capabilityRegistry != null) {
-            capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
+    public void registerCapability(RuntimeCapability capability) {
+        writeLock.lock();
+        try {
+            if (capabilities == null) {
+                capabilities = new HashSet<>();
+            }
+            capabilities.add(capability);
+            if (capabilityRegistry != null) {
+                capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
+            }
+        } finally {
+            writeLock.unlock();
         }
     }
 
     NodeSubregistry getOrCreateSubregistry(final String key) {
-        for (;;) {
-            final Map<String, NodeSubregistry> snapshot = childrenUpdater.get(this);
-            final NodeSubregistry subregistry = snapshot.get(key);
+
+        writeLock.lock();
+        try {
+            final NodeSubregistry subregistry = children == null ? null : children.get(key);
             if (subregistry != null) {
                 return subregistry;
             } else {
                 checkPermission();
                 final NodeSubregistry newRegistry = new NodeSubregistry(key, this, constraintUtilizationRegistry, capabilityRegistry);
-                final NodeSubregistry appearing = childrenUpdater.putAtomic(this, key, newRegistry, snapshot);
-                if (appearing == null) {
-                    return newRegistry;
-                } else if (appearing != newRegistry) {
-                    // someone else added one
-                    return appearing;
+                if (children == null) {
+                    children = Collections.singletonMap(key, newRegistry);
+                } else {
+                    if (children.size() == 1) {
+                        children = new HashMap<>(children);
+                    }
+                    children.put(key, newRegistry);
                 }
-                // otherwise, retry the loop because the map changed
+                return newRegistry;
             }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -502,7 +639,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     DescriptionProvider getModelDescription(final ListIterator<PathElement> iterator) {
         if (iterator.hasNext()) {
             final PathElement next = iterator.next();
-            final NodeSubregistry subregistry = children.get(next.getKey());
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
             if (subregistry == null) {
                 return null;
             }
@@ -517,15 +654,16 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     Set<String> getAttributeNames(final ListIterator<PathElement> iterator) {
         if (iterator.hasNext()) {
             final PathElement next = iterator.next();
-            final NodeSubregistry subregistry = children.get(next.getKey());
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
             if (subregistry == null) {
                 return Collections.emptySet();
             }
             return subregistry.getAttributeNames(iterator, next.getValue());
         } else {
             checkPermission();
-            final Map<String, AttributeAccess> snapshot = attributesUpdater.get(this);
-            return snapshot.keySet();
+            synchronized (this) {
+                return new HashSet<>(attributes.keySet());
+            }
         }
     }
 
@@ -534,15 +672,19 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
         if (iterator.hasNext()) {
             final PathElement next = iterator.next();
-            final NodeSubregistry subregistry = children.get(next.getKey());
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
             if (subregistry == null) {
                 return null;
             }
             return subregistry.getAttributeAccess(iterator, next.getValue(), attributeName);
         } else {
             checkPermission();
-            final Map<String, AttributeAccess> snapshot = attributesUpdater.get(this);
-            return snapshot.get(attributeName);
+            readLock.lock();
+            try {
+                return attributes.get(attributeName);
+            } finally {
+                readLock.unlock();
+            }
         }
     }
 
@@ -550,18 +692,22 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     Set<String> getChildNames(final ListIterator<PathElement> iterator) {
         if (iterator.hasNext()) {
             final PathElement next = iterator.next();
-            final NodeSubregistry subregistry = children.get(next.getKey());
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
             if (subregistry == null) {
                 return Collections.emptySet();
             }
             return subregistry.getChildNames(iterator, next.getValue());
         } else {
             checkPermission();
-            final Map<String, NodeSubregistry> children = this.children;
-            if (children != null) {
-                return Collections.unmodifiableSet(children.keySet());
+            readLock.lock();
+            try {
+                if (children != null) {
+                    return Collections.unmodifiableSet(children.keySet());
+                }
+                return Collections.emptySet();
+            } finally {
+                readLock.unlock();
             }
-            return Collections.emptySet();
         }
     }
 
@@ -569,22 +715,26 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     Set<PathElement> getChildAddresses(final ListIterator<PathElement> iterator) {
         if (iterator.hasNext()) {
             final PathElement next = iterator.next();
-            final NodeSubregistry subregistry = children.get(next.getKey());
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
             if (subregistry == null) {
                 return Collections.emptySet();
             }
             return subregistry.getChildAddresses(iterator, next.getValue());
         } else {
             checkPermission();
-            final Map<String, NodeSubregistry> children = this.children;
-            if (children != null) {
-                final Set<PathElement> elements = new HashSet<PathElement>();
-                for (final Map.Entry<String, NodeSubregistry> entry : children.entrySet()) {
-                    for (final String entryChild : entry.getValue().getChildNames()) {
-                        elements.add(PathElement.pathElement(entry.getKey(), entryChild));
+            readLock.lock();
+            try {
+                if (children != null) {
+                    final Set<PathElement> elements = new HashSet<PathElement>();
+                    for (final Map.Entry<String, NodeSubregistry> entry : children.entrySet()) {
+                        for (final String entryChild : entry.getValue().getChildNames()) {
+                            elements.add(PathElement.pathElement(entry.getKey(), entryChild));
+                        }
                     }
+                    return elements;
                 }
-                return elements;
+            } finally {
+                readLock.unlock();
             }
             return Collections.emptySet();
         }
@@ -594,7 +744,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     ProxyController getProxyController(ListIterator<PathElement> iterator) {
         if (iterator.hasNext()) {
             final PathElement next = iterator.next();
-            final NodeSubregistry subregistry = children.get(next.getKey());
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
             if (subregistry == null) {
                 return null;
             }
@@ -608,7 +758,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     void getProxyControllers(ListIterator<PathElement> iterator, Set<ProxyController> controllers) {
         if (iterator.hasNext()) {
             final PathElement next = iterator.next();
-            final NodeSubregistry subregistry = children.get(next.getKey());
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
             if (subregistry == null) {
                 return;
             }
@@ -622,9 +772,15 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
                 subregistry.getProxyControllers(iterator, next.getValue(), controllers);
             }
         } else {
-            final Map<String, NodeSubregistry> snapshot = childrenUpdater.get(this);
-            for (NodeSubregistry subregistry : snapshot.values()) {
-                subregistry.getProxyControllers(iterator, null, controllers);
+            readLock.lock();
+            try {
+                if (children != null) {
+                    for (NodeSubregistry subregistry : children.values()) {
+                        subregistry.getProxyControllers(iterator, null, controllers);
+                    }
+                }
+            } finally {
+                readLock.unlock();
             }
         }
     }
@@ -636,8 +792,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             return this;
         } else {
             final PathElement address = iterator.next();
-            final Map<String, NodeSubregistry> snapshot = childrenUpdater.get(this);
-            final NodeSubregistry subregistry = snapshot.get(address.getKey());
+            final NodeSubregistry subregistry = getSubregistry(address.getKey());
             if (subregistry != null) {
                 return subregistry.getResourceRegistration(iterator, address.getValue());
             } else {
@@ -662,19 +817,21 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     protected void setOrderedChild(String type) {
-        if (orderedChildUpdater.putIfAbsent(this, type, Empty.INSTANCE) != null) {
-            throw alreadyRegistered("Ordered child", type);
+        writeLock.lock();
+        try {
+            if (orderedChildTypes == null) {
+                orderedChildTypes = Collections.singleton(type);
+            } else {
+                if (orderedChildTypes.size() == 1) {
+                    orderedChildTypes = new HashSet<>(orderedChildTypes);
+                }
+                if (!orderedChildTypes.add(type)) {
+                    throw alreadyRegistered("Ordered child", type);
+                }
+            }
+        } finally {
+            writeLock.unlock();
         }
-
-    }
-
-    @Override
-    public Set<RuntimeCapability> getCapabilities() {
-        return Collections.unmodifiableSet(capabilities);
-    }
-
-    private static class Empty {
-        static final Empty INSTANCE = new Empty();
     }
 }
 

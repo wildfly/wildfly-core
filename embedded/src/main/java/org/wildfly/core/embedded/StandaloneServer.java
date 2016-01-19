@@ -21,19 +21,11 @@
  */
 package org.wildfly.core.embedded;
 
-import org.jboss.as.controller.client.ModelControllerClient;
-
 /**
  * The standalone server interface.
  *
  * @author Thomas.Diesler@jboss.com
  * @since 17-Nov-2010
  */
-public interface StandaloneServer {
-
-    ModelControllerClient getModelControllerClient();
-
-    void start() throws ServerStartException;
-
-    void stop();
+public interface StandaloneServer extends EmbeddedManagedProcess {
 }

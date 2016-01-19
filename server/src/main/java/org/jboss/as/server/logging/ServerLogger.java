@@ -1166,4 +1166,14 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 234, value = "Deployed \"%s\" (runtime-name : \"%s\")")
     String deploymentDeployedNotification(String managementName, String deploymentUnitName);
 
+    /**
+     * Logs an informational message indicating the Security Manager is in force.
+     */
+    @LogMessage(level = INFO)
+    @Message(id = 235, value = "Security Manager is enabled")
+    void securityManagerEnabled();
+
+    //@Message(id = 236, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    //OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
 }

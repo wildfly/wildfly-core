@@ -77,7 +77,7 @@ public class PathElement {
             final String element = key + "=" + value;
             throw new OperationClientIllegalArgumentException(ControllerLogger.ROOT_LOGGER.invalidPathElementKey(element, key));
         }
-        if (value == null) {
+        if (value == null || value.isEmpty()) {
             final String element = key + "=" + value;
             throw new OperationClientIllegalArgumentException(ControllerLogger.ROOT_LOGGER.invalidPathElementValue(element, value, ' '));
         }

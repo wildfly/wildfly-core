@@ -3190,9 +3190,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 356, value = "Failed to emit notification %s")
     void failedToEmitNotification(Notification notification, @Cause Throwable cause);
 
-    @LogMessage(level = WARN)
     @Message(id = 357, value = "Notification of type %s is not described for the resource at the address %s")
-    void notificationIsNotDescribed(String type, PathAddress source);
+    String notificationIsNotDescribed(String type, PathAddress source);
 
     @Message(id = 358, value = "The resource was added at the address %s.")
     String resourceWasAdded(PathAddress address);
@@ -3358,9 +3357,9 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     void removeUnsupportedLegacyExtension(List<String> subsystemNames, String extensionName);
 
-    @Message(id = 403, value = "Unexpected exception during execution of the following operation(s): %s")
+    @Message(id = 403, value = "Unexpected failure during execution of the following operation(s): %s")
     @LogMessage(level = ERROR)
-    void unexpectedOperationExecutionException(@Cause RuntimeException e, List<ModelNode> controllerOperations);
+    void unexpectedOperationExecutionException(@Cause Throwable t, List<ModelNode> controllerOperations);
 
     @Message(id = 404, value = "Unexpected exception during execution: %s")
     String unexpectedOperationExecutionFailureDescription(RuntimeException e);
@@ -3369,7 +3368,35 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 405, value = "Couldn't find a transformer to %s, falling back to %s")
     void couldNotFindTransformerRegistryFallingBack(ModelVersion currentVersion, ModelVersion fallbackVersion);
 
-    @Message(id = 406, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    /**
+     * Creates an exception indicating that an attribute could not be converted to the type required by a query select
+     *
+     * @param attribute the name of the attribute
+     * @param type the required type
+     */
+    @Message(id = 406, value = "Could not convert the attribute '%s' to a %s")
+    OperationFailedException selectFailedCouldNotConvertAttributeToType(String attribute, ModelType type);
+
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 407, value = "Failed sending completed response %s for %d")
+    void failedSendingCompletedResponse(@Cause Throwable cause, ModelNode response, int operationId);
+
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 408, value = "Failed sending failure response %s for %d")
+    void failedSendingFailedResponse(@Cause Throwable cause, ModelNode response, int operationId);
+
+    @Message(id = 409, value = "Execution of operation '%s' on remote process at address '%s' timed out after %d ms while awaiting initial response; remote process has been notified to terminate operation")
+    String proxiedOperationTimedOut(String operation, PathAddress target, long timeout);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 410, value = "Execution of operation '%s' on remote process at address '%s' timed out after %d ms while awaiting final response; remote process has been notified to terminate operation")
+    void timeoutAwaitingFinalResponse(String operation, PathAddress proxyNodeAddress, long timeout);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 411, value = "Failed to parse element '%s', ingoring ...")
+    void failedToParseElementLenient(@Cause XMLStreamException e, String elementName);
+
+    @Message(id = 412, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
     OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
 
 }

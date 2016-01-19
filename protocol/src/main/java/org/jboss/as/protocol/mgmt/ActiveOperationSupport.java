@@ -37,7 +37,6 @@ import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Channel;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
-import org.wildfly.common.cpu.ProcessorInfo;
 import org.xnio.Cancellable;
 
 /**
@@ -75,7 +74,7 @@ class ActiveOperationSupport {
         }
     };
 
-    private final ConcurrentMap<Integer, ActiveOperationImpl<?, ?>> activeRequests = new ConcurrentHashMap<Integer, ActiveOperationImpl<?, ?>> (16, 0.75f, ProcessorInfo.availableProcessors());
+    private final ConcurrentMap<Integer, ActiveOperationImpl<?, ?>> activeRequests = new ConcurrentHashMap<Integer, ActiveOperationImpl<?, ?>> (16, 0.75f, Runtime.getRuntime().availableProcessors());
     private final ManagementBatchIdManager operationIdManager = new ManagementBatchIdManager.DefaultManagementBatchIdManager();
 
     private final ReentrantLock lock = new ReentrantLock();
@@ -149,7 +148,10 @@ class ActiveOperationSupport {
     protected <T, A> ActiveOperation<T, A> registerActiveOperation(final Integer id, A attachment, ActiveOperation.CompletedCallback<T> callback) {
         lock.lock(); try {
             // Check that we still allow registration
-            assert ! shutdown;
+            // TODO WFCORE-199 distinguish client uses from server uses and limit this check to server uses
+            // Using id==null may be one way to do this, but we need to consider ops that involve multiple requests
+            // TODO WFCORE-845 consider using an IllegalStateException for this
+            //assert ! shutdown;
             final Integer operationId;
             if(id == null) {
                 // If we did not get an operationId, create a new one
@@ -166,6 +168,7 @@ class ActiveOperationSupport {
             if(existing != null) {
                 throw ProtocolLogger.ROOT_LOGGER.operationIdAlreadyExists(operationId);
             }
+            ProtocolLogger.ROOT_LOGGER.tracef("Registered active operation %d", operationId);
             activeCount++; // condition.signalAll();
             return request;
         } finally {
@@ -204,6 +207,7 @@ class ActiveOperationSupport {
         lock.lock(); try {
             final ActiveOperation<?, ?> removed = activeRequests.remove(id);
             if(removed != null) {
+                ProtocolLogger.ROOT_LOGGER.tracef("Deregistered active operation %d", id);
                 activeCount--;
                 operationIdManager.freeBatchId(id);
                 condition.signalAll();
@@ -281,11 +285,15 @@ class ActiveOperationSupport {
             while(activeCount != 0) {
                 long remaining = deadline - System.currentTimeMillis();
                 if (remaining <= 0) {
-                    return activeCount == 0;
+                    break;
                 }
                 condition.await(remaining, TimeUnit.MILLISECONDS);
             }
-            return activeCount == 0;
+            boolean allComplete = activeCount == 0;
+            if (!allComplete) {
+                ProtocolLogger.ROOT_LOGGER.debugf("ActiveOperation(s) %s have not completed within %d %s", activeRequests.keySet(), timeout, unit);
+            }
+            return allComplete;
         } finally {
             lock.unlock();
         }
@@ -311,11 +319,11 @@ class ActiveOperationSupport {
             }
 
             @Override
-            public boolean failed(Exception e) {
+            public boolean failed(Throwable t) {
                 try {
-                    boolean failed = ActiveOperationImpl.this.setFailed(e);
+                    boolean failed = ActiveOperationImpl.this.setFailed(t);
                     if(failed) {
-                        ProtocolLogger.ROOT_LOGGER.debugf(e, "active-op (%d) failed %s", operationId, attachment);
+                        ProtocolLogger.ROOT_LOGGER.debugf(t, "active-op (%d) failed %s", operationId, attachment);
                     }
                     return failed;
                 } finally {

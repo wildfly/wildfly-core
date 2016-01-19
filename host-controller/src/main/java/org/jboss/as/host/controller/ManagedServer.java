@@ -262,7 +262,7 @@ class ManagedServer {
         }
     }
 
-    synchronized void destroy(int permit) {
+    synchronized void destroy() {
         final InternalState required = this.requiredState;
         if(required == InternalState.STOPPED) {
             if(internalState != InternalState.STOPPED) {
@@ -273,11 +273,11 @@ class ManagedServer {
                 }
             }
         } else {
-            stop(permit, 0);
+            stop(-1, 0);
         }
     }
 
-    synchronized void kill(int permit) {
+    synchronized void kill() {
         final InternalState required = this.requiredState;
         if(required == InternalState.STOPPED) {
             if(internalState != InternalState.STOPPED) {
@@ -288,7 +288,7 @@ class ManagedServer {
                 }
             }
         } else {
-            stop(permit, 0);
+            stop(-1, 0);
         }
     }
 
@@ -858,7 +858,7 @@ class ManagedServer {
             try {
                 //graceful shutdown
                 //this just suspends the server, it does not actually shut it down
-                if (operationID != -1) {
+                if (permit != -1) {
 
                     final ModelNode operation = new ModelNode();
                     operation.get(OP).set("shutdown");

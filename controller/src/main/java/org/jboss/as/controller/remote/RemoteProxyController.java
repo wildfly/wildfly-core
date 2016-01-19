@@ -33,7 +33,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
@@ -117,7 +119,8 @@ public class RemoteProxyController implements ProxyController {
 
     /** {@inheritDoc} */
     @Override
-    public void execute(final ModelNode original, final OperationMessageHandler messageHandler, final ProxyOperationControl control, final OperationAttachments attachments) {
+    public void execute(final ModelNode original, final OperationMessageHandler messageHandler, final ProxyOperationControl control,
+                        final OperationAttachments attachments, final BlockingTimeout blockingTimeout) {
         // Add blocking support to adhere to the proxy controller API contracts
         final CountDownLatch completed = new CountDownLatch(1);
         final BlockingQueue<TransactionalProtocolClient.PreparedOperation<TransactionalProtocolClient.Operation>> queue = new ArrayBlockingQueue<TransactionalProtocolClient.PreparedOperation<TransactionalProtocolClient.Operation>>(1, true);
@@ -152,18 +155,28 @@ public class RemoteProxyController implements ProxyController {
         Future<OperationResponse> futureResult = null;
         try {
             // Translate the operation
-            final ModelNode translated = translateOperationForProxy(original);
-
-            // Validate the address
-//            if (validateAddresses && !validateAddress(translated, messageHandler)) {
-//                throw ControllerMessages.MESSAGES.managementResourceNotFound(PathAddress.pathAddress(translated.get(OP_ADDR)));
-//            }
+            final PathAddress targetAddress = PathAddress.pathAddress(original.get(OP_ADDR));
+            final ModelNode translated = translateOperationForProxy(original, targetAddress);
 
             // Execute the operation
             ControllerLogger.MGMT_OP_LOGGER.tracef("Executing %s for %s", translated.get(OP).asString(), getProxyNodeAddress());
             futureResult = client.execute(operationListener, translated, messageHandler, attachments);
             // Wait for the prepared response
-            final TransactionalProtocolClient.PreparedOperation<TransactionalProtocolClient.Operation> prepared = queue.take();
+            final TransactionalProtocolClient.PreparedOperation<TransactionalProtocolClient.Operation> prepared;
+            if (blockingTimeout == null) {
+                prepared = queue.take();
+            } else {
+                long timeout = blockingTimeout.getProxyBlockingTimeout(targetAddress, this);
+                prepared = queue.poll(timeout, TimeUnit.MILLISECONDS);
+                if (prepared == null) {
+                    blockingTimeout.proxyTimeoutDetected(targetAddress);
+                    futureResult.cancel(true);
+                    ModelNode response = getTimeoutResponse(translated.get(OP).asString(), timeout);
+                    control.operationFailed(response);
+                    ControllerLogger.MGMT_OP_LOGGER.info(response.get(FAILURE_DESCRIPTION).asString());
+                    return;
+                }
+            }
             if(prepared.isFailed()) {
                 // If the operation failed, there is nothing more to do
                 control.operationFailed(prepared.getPreparedResult());
@@ -175,25 +188,29 @@ public class RemoteProxyController implements ProxyController {
                 @Override
                 public void commit() {
                     prepared.commit();
-                    try {
-                        // Await the completed notification
-                        completed.await();
-                    } catch(InterruptedException e) {
-                        cancellable.cancel(true);
-                        ControllerLogger.MGMT_OP_LOGGER.interruptedAwaitingFinalResponse(translated.get(OP).asString(), getProxyNodeAddress());
-                        Thread.currentThread().interrupt();
-                    } catch (Exception e) {
-                        // ignore
-                    }
+                    awaitCompletion();
                 }
 
                 @Override
                 public void rollback() {
                     prepared.rollback();
+                    awaitCompletion();
+                }
+
+                private void awaitCompletion() {
                     try {
                         // Await the completed notification
-                        completed.await();
-                    } catch(InterruptedException e) {
+                        if (blockingTimeout == null) {
+                            completed.await();
+                        } else {
+                            long timeout = blockingTimeout.getProxyBlockingTimeout(targetAddress, RemoteProxyController.this);
+                            if (!completed.await(timeout, TimeUnit.MILLISECONDS)) {
+                                cancellable.cancel(true);
+                                blockingTimeout.proxyTimeoutDetected(targetAddress);
+                                ControllerLogger.MGMT_OP_LOGGER.timeoutAwaitingFinalResponse(translated.get(OP).asString(), getProxyNodeAddress(), timeout);
+                            }
+                        }
+                    } catch (InterruptedException e) {
                         cancellable.cancel(true);
                         ControllerLogger.MGMT_OP_LOGGER.interruptedAwaitingFinalResponse(translated.get(OP).asString(), getProxyNodeAddress());
                         Thread.currentThread().interrupt();
@@ -232,14 +249,18 @@ public class RemoteProxyController implements ProxyController {
      * @return the new operation
      */
     public ModelNode translateOperationForProxy(final ModelNode op) {
-        final PathAddress addr = PathAddress.pathAddress(op.get(OP_ADDR));
-        final PathAddress translated = addressTranslator.translateAddress(addr);
-        if (addr.equals(translated)) {
+        return translateOperationForProxy(op, PathAddress.pathAddress(op.get(OP_ADDR)));
+    }
+
+    private ModelNode translateOperationForProxy(final ModelNode op, PathAddress targetAddress) {
+        final PathAddress translated = addressTranslator.translateAddress(targetAddress);
+        if (targetAddress.equals(translated)) {
             return op;
         }
         final ModelNode proxyOp = op.clone();
         proxyOp.get(OP_ADDR).set(translated.toModelNode());
         return proxyOp;
+
     }
 
     private static ModelNode getCancelledResponse() {
@@ -247,5 +268,12 @@ public class RemoteProxyController implements ProxyController {
         result.get(OUTCOME).set(CANCELLED);
         result.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.operationCancelled());
         return result;
+    }
+
+    private ModelNode getTimeoutResponse(String operation, long timeout) {
+        ModelNode response = new ModelNode();
+        response.get(OUTCOME).set(FAILED);
+        response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.proxiedOperationTimedOut(operation, pathAddress, timeout));
+        return response;
     }
 }

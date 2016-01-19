@@ -40,6 +40,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.CurrentOperationIdHolder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -51,7 +52,7 @@ import org.jboss.as.controller.operations.DomainOperationTransformer;
 import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
+import org.jboss.as.controller.transform.Transformers;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -79,18 +80,20 @@ public class DomainSlaveHandler implements OperationStepHandler {
             return;
         }
 
+        final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getDomainBlockingTimeout(context);
         final Set<String> outstanding = new HashSet<String>(hostProxies.keySet());
         final List<TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation>> results = new ArrayList<TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation>>();
         final Map<String, HostControllerUpdateTask.ExecutedHostRequest> finalResults = new HashMap<String, HostControllerUpdateTask.ExecutedHostRequest>();
         final HostControllerUpdateTask.ProxyOperationListener listener = new HostControllerUpdateTask.ProxyOperationListener();
+        final Transformers.TransformationInputs transformationInputs = Transformers.TransformationInputs.getOrCreate(context);
         for (Map.Entry<String, ProxyController> entry : hostProxies.entrySet()) {
             // Create the proxy task
             final String host = entry.getKey();
             final TransformingProxyController proxyController = (TransformingProxyController) entry.getValue();
             List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
             ModelNode op = operation;
-            if(transformers != null) {
-                for(final DomainOperationTransformer transformer : transformers) {
+            if (transformers != null) {
+                for (final DomainOperationTransformer transformer : transformers) {
                     op = transformer.transform(context, op);
                     // Set the flag for host controller operations
                     op.get(OPERATION_HEADERS, EXECUTE_FOR_COORDINATOR).set(true);
@@ -99,7 +102,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
 
             ModelNode clonedOp = op.clone();
             clonedOp.get(OPERATION_HEADERS, DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID).set(CurrentOperationIdHolder.getCurrentOperationID());
-            final HostControllerUpdateTask task = new HostControllerUpdateTask(host, clonedOp, context, proxyController);
+            final HostControllerUpdateTask task = new HostControllerUpdateTask(host, clonedOp, context, proxyController, transformationInputs);
             // Execute the operation on the remote host
             final HostControllerUpdateTask.ExecutedHostRequest finalResult = task.execute(listener);
             multiphaseContext.recordHostRequest(host, finalResult);
@@ -110,11 +113,18 @@ public class DomainSlaveHandler implements OperationStepHandler {
         boolean interrupted = false;
         boolean completeStepCalled = false;
         try {
-            try {
-                while(outstanding.size() > 0) {
-                    final TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared = listener.retrievePreparedOperation();
+            long timeout = 0;
+            while (outstanding.size() > 0) {
+                timeout = blockingTimeout.getDomainBlockingTimeout(false);
+                TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared = null;
+                try {
+                    prepared = listener.retrievePreparedOperation(timeout, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException ie) {
+                    interrupted = true;
+                }
+                if (prepared != null) {
                     final String hostName = prepared.getOperation().getName();
-                    if(! outstanding.remove(hostName)) {
+                    if (!outstanding.remove(hostName)) {
                         continue;
                     }
                     final ModelNode preparedResult = prepared.getPreparedResult();
@@ -122,7 +132,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
                     // See if we have to reject the result
                     final HostControllerUpdateTask.ExecutedHostRequest request = finalResults.get(hostName);
                     boolean reject = request.rejectOperation(preparedResult);
-                    if(reject) {
+                    if (reject) {
                         if (HOST_CONTROLLER_LOGGER.isDebugEnabled()) {
                             HOST_CONTROLLER_LOGGER.debugf("Rejecting result for remote host %s is %s", hostName, preparedResult);
                         }
@@ -137,45 +147,26 @@ public class DomainSlaveHandler implements OperationStepHandler {
                         multiphaseContext.addHostControllerPreparedResult(hostName, preparedResult);
                     }
                     results.add(prepared);
+                } else {
+                    // Either interrupted or timed out.
+                    handleMissingHostResponses(finalResults, outstanding, !interrupted, timeout);
+                    break;
                 }
-            } catch (InterruptedException ie) {
-                interrupted = true;
-                // Set rollback only
-                multiphaseContext.setFailureReported(true);
-                // Cancel all HCs
-                HOST_CONTROLLER_LOGGER.interruptedAwaitingHostPreparedResponse(finalResults.keySet());
-                for(final HostControllerUpdateTask.ExecutedHostRequest finalResult : finalResults.values()) {
-                    finalResult.asyncCancel();
-                }
-                // Wait that all hosts are rolled back!?
-                for(final Map.Entry<String, HostControllerUpdateTask.ExecutedHostRequest> entry : finalResults.entrySet()) {
-                    final String hostName = entry.getKey();
-                    try {
-                        final HostControllerUpdateTask.ExecutedHostRequest request = entry.getValue();
-                        final ModelNode result = request.getFinalResult().get().getResponseNode();
-                        final ModelNode transformedResult = request.transformResult(result);
-                        multiphaseContext.addHostControllerPreparedResult(hostName, transformedResult);
-                    } catch (Exception e) {
-                        final ModelNode result = new ModelNode();
-                        result.get(OUTCOME).set(FAILED);
-                        if (e instanceof InterruptedException) {
-                            result.get(FAILURE_DESCRIPTION).set(DomainControllerLogger.HOST_CONTROLLER_LOGGER.interruptedAwaitingResultFromHost(entry.getKey()));
-                            interrupted = true;
-                        } else {
-                            result.get(FAILURE_DESCRIPTION).set(DomainControllerLogger.HOST_CONTROLLER_LOGGER.exceptionAwaitingResultFromHost(entry.getKey(), e.getMessage()));
-                        }
-                        multiphaseContext.addHostControllerPreparedResult(hostName, result);
-                    }
-                }
+
             }
 
             if (interrupted) {
+                // Interrupt the thread so the OC can learn the operation was interrupted
+                // when we call completeStep. The OC will then change the outcome of the
+                // op to "cancelled" and prevent further execution of steps. Our
+                // finalizeOp method will still be called, via the ResultHandler we pass in.
                 Thread.currentThread().interrupt();
             }
+
             context.completeStep(new OperationContext.ResultHandler() {
                 @Override
                 public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                    finalizeOp(results, finalResults, false, context);
+                    finalizeOp(results, finalResults, false, context, blockingTimeout);
                 }
             });
 
@@ -183,41 +174,85 @@ public class DomainSlaveHandler implements OperationStepHandler {
 
         } finally {
             if (!completeStepCalled) {
-                finalizeOp(results, finalResults, interrupted, context);
+                finalizeOp(results, finalResults, interrupted, context, blockingTimeout);
             }
+        }
+    }
+
+    private void handleMissingHostResponses(Map<String, HostControllerUpdateTask.ExecutedHostRequest> finalResults,
+                                            Set<String> outstanding, boolean timedOut, long timeout) {
+
+        // Set rollback only
+        multiphaseContext.setFailureReported(true);
+
+        // Cancel all HCs
+        if (timedOut) {
+            HOST_CONTROLLER_LOGGER.timedOutAwaitingHostPreparedResponses(timeout, outstanding, finalResults.keySet());
+        } else {
+            HOST_CONTROLLER_LOGGER.interruptedAwaitingHostPreparedResponse(finalResults.keySet());
+        }
+        for (final HostControllerUpdateTask.ExecutedHostRequest finalResult : finalResults.values()) {
+            finalResult.asyncCancel();
+        }
+
+        // Record "prepared" responses
+        for (String hostName : outstanding) {
+            ModelNode failureResponse;
+            if (timedOut) {
+                failureResponse = getTimeoutResponse(timeout, hostName);
+                // Store this locally created response as the final response, since
+                // as far as this operation is concerned this slave is non-responsive,
+                // what we do here is what rules (i.e. the op failed due to timeout) and
+                // we have no idea if any final response from the remote node will make sense
+                finalResults.put(hostName, finalResults.get(hostName).toFailedRequest(failureResponse));
+            } else {
+                failureResponse = getInterruptedResponse(hostName);
+                // Here we don't regard this as the final response as we are willing to wait
+                // for a final response from the cancelled slave. The slave didn't time out,
+                // rather the user cancelled. So we want to report the slave's reaction to that,
+                // as that is an aspect of cancellation.
+            }
+            multiphaseContext.addHostControllerPreparedResult(hostName, failureResponse);
         }
     }
 
     private void finalizeOp(final List<TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation>> results,
                             final Map<String, HostControllerUpdateTask.ExecutedHostRequest> finalResults,
-                            final boolean interrupted, final OperationContext context) {
+                            final boolean interrupted, final OperationContext context, final BlockingTimeout blockingTimeout) {
+
+        // If an interrupt occurred, either in our execute method or after it called completeStep,
+        // we will be less patient in waiting for final responses, as the user has indicated
+        // they want the op ended. Quite likely that is because the op is taking too long.
         boolean interruptThread = Thread.interrupted() || interrupted;
         try {
             // Inform the remote hosts whether to commit or roll back their updates
-            // Do this in parallel
+            // The slaves will then being doing the commit/rollback in parallel
             boolean rollback = multiphaseContext.isCompleteRollback();
-            for(final TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared : results) {
+            for (final TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared : results) {
 
                 // Clear any thread interrupted status so we know the commit/rollback message will go out
                 interruptThread = Thread.interrupted() || interruptThread;
 
-                if(prepared.isDone()) {
+                if (prepared.isDone()) {
                     continue;
                 }
-                if(! rollback) {
+                if (!rollback) {
                     prepared.commit();
                 } else {
                     prepared.rollback();
                 }
             }
             // Now get the final results from the hosts
-            boolean patient = !interruptThread;
-            for(final TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared : results) {
+            // If we've been interrupted, only wait 50 ms for a final response, otherwise wait the domain blocking timeout
+            // Before WFCORE-996 was analyzed, in the interrupted case we would wait 0 ms. 50 ms is a
+            // workaround attempt to avoid a race
+            int patient = interruptThread ? 50 : blockingTimeout.getDomainBlockingTimeout(false);
+            for (final TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared : results) {
                 final String hostName = prepared.getOperation().getName();
                 final HostControllerUpdateTask.ExecutedHostRequest request = finalResults.get(hostName);
                 final Future<OperationResponse> future = prepared.getFinalResult();
                 try {
-                    final OperationResponse finalResponse = patient ? future.get() : future.get(0, TimeUnit.MILLISECONDS);
+                    final OperationResponse finalResponse = future.get(patient, TimeUnit.MILLISECONDS);
                     final ModelNode transformedResult = request.transformResult(finalResponse.getResponseNode());
                     multiphaseContext.addHostControllerFinalResult(hostName, transformedResult);
 
@@ -233,14 +268,20 @@ public class DomainSlaveHandler implements OperationStepHandler {
                     future.cancel(true);
                     // We suppressed an interrupt, so don't block indefinitely waiting for other responses;
                     // just grab them if they are already available
-                    patient = false;
+                    patient = patient == 0 ? 0 : 50; // if we were already really impatient, we still are
                     HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
                 } catch (ExecutionException e) {
                     HOST_CONTROLLER_LOGGER.caughtExceptionAwaitingFinalResponse(e.getCause(), hostName);
                 } catch (TimeoutException e) {
-                    // This only happens if we were interrupted previously, so treat it that way
                     future.cancel(true);
-                    HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
+                    if (interruptThread) {
+                        HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
+                    } else {
+                        HOST_CONTROLLER_LOGGER.timedOutAwaitingFinalResponse(patient, hostName);
+                    }
+                    // we already waited at least the original 'patient' value since we sent out commit/rollback msgs;
+                    // don't need to wait so long any more
+                    patient = 0;
                 }
             }
         } finally {
@@ -248,6 +289,22 @@ public class DomainSlaveHandler implements OperationStepHandler {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    private static ModelNode getTimeoutResponse(long timeout, String hostName) {
+        String msg = HOST_CONTROLLER_LOGGER.timedOutAwaitingHostPreparedResponse(timeout, hostName);
+        final ModelNode response = new ModelNode();
+        response.get(OUTCOME).set(FAILED);
+        response.get(FAILURE_DESCRIPTION).set(msg);
+        return response;
+    }
+
+    private static ModelNode getInterruptedResponse(String hostName) {
+        String msg = HOST_CONTROLLER_LOGGER.interruptedAwaitingResultFromHost(hostName);
+        final ModelNode response = new ModelNode();
+        response.get(OUTCOME).set(FAILED);
+        response.get(FAILURE_DESCRIPTION).set(msg);
+        return response;
     }
 
 }

@@ -102,7 +102,7 @@ import org.jboss.as.cli.batch.BatchedCommand;
 import org.jboss.as.cli.batch.impl.DefaultBatchManager;
 import org.jboss.as.cli.batch.impl.DefaultBatchedCommand;
 import org.jboss.as.cli.embedded.EmbeddedControllerHandlerRegistrar;
-import org.jboss.as.cli.embedded.EmbeddedServerLaunch;
+import org.jboss.as.cli.embedded.EmbeddedProcessLaunch;
 import org.jboss.as.cli.handlers.ArchiveHandler;
 import org.jboss.as.cli.handlers.ClearScreenHandler;
 import org.jboss.as.cli.handlers.CommandCommandHandler;
@@ -184,6 +184,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private static final Logger log = Logger.getLogger(CommandContext.class);
 
+    private static final byte RUNNING = 0;
+    private static final byte TERMINATING = 1;
+    private static final byte TERMINATED = 2;
+
     /**
      * State Tracking
      *
@@ -209,7 +213,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private Console console;
 
     /** whether the session should be terminated */
-    private boolean terminate;
+    private byte terminate;
 
     /** current command line */
     private String cmdLine;
@@ -269,8 +273,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private CliShutdownHook.Handler shutdownHook;
 
-    private InterruptHook interruptHook;
-
     /** command line handling redirection */
     private CommandLineRedirectionRegistration redirection;
 
@@ -280,7 +282,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private final CLIPrintStream cliPrintStream;
 
     // Store a ref to the default input stream aesh will use before we do any manipulation of stdin
-    private InputStream stdIn = new SettingsBuilder().create().getInputStream();
+    //private InputStream stdIn = new SettingsBuilder().create().getInputStream();
     private boolean uninstallIO;
 
     private static JaasConfigurationWrapper jaasConfigurationWrapper; // we want this wrapper to be only created once
@@ -348,7 +350,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         initJaasConfig();
         if (configuration.isInitConsole() || configuration.getConsoleInput() != null) {
             cmdCompleter = new CommandCompleter(cmdRegistry);
-            initBasicConsole(configuration.getConsoleInput());
+            // we don't ask to start the console here because it will start reading the input immediately
+            // this will break in case the launching line had input redirection and switch to connect to the controller,
+            // e.g. jboss-cli.ch -c < some_file
+            // the input will be read before the connection is established
+            initBasicConsole(configuration.getConsoleInput(), false);
             console.addCompleter(cmdCompleter);
             this.operationCandidatesProvider = new DefaultOperationCandidatesProvider();
         } else {
@@ -373,12 +379,18 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     protected void initBasicConsole(InputStream consoleInput) throws CliInitializationException {
+        initBasicConsole(consoleInput, true);
+    }
+
+    protected void initBasicConsole(InputStream consoleInput, boolean start) throws CliInitializationException {
         // this method shouldn't be called twice during the session
         assert console == null : "the console has already been initialized";
         Settings settings = createSettings(consoleInput);
         this.console = Console.Factory.getConsole(this, settings);
         console.setCallback(initCallback());
-        console.start();
+        if(start) {
+            console.start();
+        }
     }
 
     private ConsoleCallback initCallback() {
@@ -398,7 +410,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         terminateSession();
                     else {
                         handleSafe(output.getBuffer().trim());
-                        if (INTERACT && !terminate) {
+                        if (INTERACT && terminate == 0) {
                             console.setPrompt(getPrompt());
                         }
                     }
@@ -458,7 +470,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         settings.parseOperators(false);
 
         settings.interruptHook(
-                interruptHook = new InterruptHook() {
+                new InterruptHook() {
                     @Override
                     public void handleInterrupt(org.jboss.aesh.console.Console console, Action action) {
                         if(shutdownHook != null ){
@@ -466,6 +478,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         }else {
                             terminateSession();
                         }
+                        Thread.currentThread().interrupt();
                     }
                 }
         );
@@ -565,7 +578,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         // supported but hidden from tab-completion until stable implementation
         cmdRegistry.registerHandler(new ArchiveHandler(this), false, "archive");
 
-        final AtomicReference<EmbeddedServerLaunch> embeddedServerLaunch = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
+        final AtomicReference<EmbeddedProcessLaunch> embeddedServerLaunch = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
         cmdRegistry.registerHandler(new ReloadHandler(this, embeddedServerLaunch), "reload");
         cmdRegistry.registerHandler(new ShutdownHandler(this, embeddedServerLaunch), "shutdown");
         registerExtraHandlers();
@@ -690,7 +703,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public boolean isTerminated() {
-        return terminate;
+        return terminate == TERMINATED;
     }
 
     private StringBuilder lineBuffer;
@@ -808,15 +821,17 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void terminateSession() {
-        if(!terminate) {
+        if(terminate == 0) {
+            terminate = TERMINATING;
             disconnectController();
             restoreStdIO();
-            if(console != null)
+            if(console != null) {
                 console.stop();
+            }
             if (shutdownHook != null) {
                 CliShutdownHook.remove(shutdownHook);
             }
-            terminate = true;
+            terminate = TERMINATED;
         }
     }
 
@@ -869,11 +884,13 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private String readLine(String prompt, boolean password) throws CommandLineException {
         // Only fail an interact if we're not in interactive.
         if(!INTERACT && ERROR_ON_INTERACT){
-            throw new CommandLineException("Invalid Usage. Prompt attempted in non-interactive mode. Please check commands or change CLI mode.");
+            interactionDisabled();
         }
 
         if (console == null) {
             initBasicConsole(null);
+        } else if(!console.running()) {
+            console.start();
         }
 
         if (password) {
@@ -882,6 +899,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             return console.readLine(prompt);
         }
 
+    }
+
+    protected void interactionDisabled() throws CommandLineException {
+        throw new CommandLineException("Invalid Usage. Prompt attempted in non-interactive mode. Please check commands or change CLI mode.");
     }
 
 
@@ -961,6 +982,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void connectController(String controller) throws CommandLineException {
+
         ControllerAddress address = addressResolver.resolveAddress(controller);
 
         // In case the alias mappings cause us to enter some form of loop or a badly
@@ -1101,20 +1123,19 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             } else {
                 response = readLine("Accept certificate? [N]o, [T]emporarily : ", false);
             }
-
             if (response == null)
                 break;
             else if (response.length() == 1) {
                 switch (response.toLowerCase(Locale.ENGLISH).charAt(0)) {
                     case 'n':
-                        break;
+                        return;
                     case 't':
                         trustManager.storeChainTemporarily(lastChain);
-                        break;
+                        return;
                     case 'p':
                         if (trustManager.isModifyTrustStore()) {
                             trustManager.storeChainPermenantly(lastChain);
-                            break;
+                            return;
                         }
                 }
             }
@@ -1133,7 +1154,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             final long start = System.currentTimeMillis();
             final long timeoutMillis = config.getConnectionTimeout() + 1000;
             boolean tryConnection = true;
-            int i = 1;
             while (tryConnection) {
                 final ModelNode response = client.execute(builder.buildRequest());
                 if (!Util.isSuccess(response)) {
@@ -1211,6 +1231,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             extLoader.resetHandlers();
         }
         promptConnectPart = null;
+        if(console != null && terminate == 0) {
+            console.setPrompt(getPrompt());
+        }
     }
 
     @Override
@@ -1295,13 +1318,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public CommandHistory getHistory() {
-        if( !INTERACT ){
-            return null;
-        }
-
         if(console == null) {
             try {
-                initBasicConsole(null);
+                initBasicConsole(null, INTERACT);
             } catch (CliInitializationException e) {
                 throw new IllegalStateException("Failed to initialize console.", e);
             }
@@ -1438,8 +1457,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         }
 
         console.setPrompt(getPrompt());
+        if(!console.running()) {
+            console.start();
+        }
 
-        while(!isTerminated() && console.running()){
+        while(/*!isTerminated() && */console.running()){
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -1473,10 +1495,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         || Util.TRUE.equals(parsedCmd.getPropertyValue(Util.RESTART))) {
                     // do nothing
                 } else {
-                    disconnectController();
                     printLine("");
                     printLine("The controller has closed the connection.");
-                    printLine("(Although the command prompt may still wrongly indicate connection until the next line is entered)");
+                    disconnectController();
                 }
             } else {
                 // we don't disconnect here because the connection may be closed by another
@@ -1603,12 +1624,42 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     @Override
                     public void run() {
 
+                        // TODO in general, this is the wrong place for the logic below blocking the console's reading thread.
+                        // Because the reading thread will be unblocked right after the authentication is done at which point
+                        // not all the necessary initializations will have been performed related to establishing
+                        // the connection to the controller, e.g. reading the commands from the extensions, etc.
+                        // In addition, there is a chance a few commands could be read before we get to this point.
+                        // So, the best place for the logic below would be connectController(...) with unblocking
+                        // the console's reading thread at the end of the method.
+                        // The reason this logic is here is to minimize chances for initializing the console
+                        // during the non-interactive mode for the CLI API clients since multiple console initializations
+                        // (i.e. connect/disconnect) will lead to an out of memory error due to an issue in Aesh.
+                        // This logic here will initialize the console only in case the required authentication input
+                        // has not already been provided by the user.
+                        // Which doesn't fix the problem in general but also doesn't introduce a regression against
+                        // the previous releases (that are also affected by the same general issue).
+                        final boolean controlConsole = username == null || password == null;
                         try {
+                            if (controlConsole) {
+                                if (console == null) {
+                                    initBasicConsole(null, false);
+                                }
+                                console.controlled();
+                                if (!console.running()) {
+                                    console.start();
+                                }
+                            }
                             dohandle(callbacks);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         } catch (UnsupportedCallbackException e) {
                             throw new RuntimeException(e);
+                        } catch (CliInitializationException e) {
+                            throw new RuntimeException(e);
+                        } finally {
+                            if (controlConsole) {
+                                console.continuous();
+                            }
                         }
                     }
                 });
@@ -1643,6 +1694,12 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     if (username == null) {
                         showRealm();
                         try {
+                            if(console == null) {
+                                if(ERROR_ON_INTERACT) {
+                                    interactionDisabled();
+                                }
+                                initBasicConsole(null);
+                            }
                             console.setCompletion(false);
                             console.getHistory().setUseHistory(false);
                             username = readLine("Username: ", false);
@@ -1665,6 +1722,12 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         showRealm();
                         String temp;
                         try {
+                            if(console == null) {
+                                if(ERROR_ON_INTERACT) {
+                                    interactionDisabled();
+                                }
+                                initBasicConsole(null);
+                            }
                             console.setCompletion(false);
                             console.getHistory().setUseHistory(false);
                             temp = readLine("Password: ", true);

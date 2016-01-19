@@ -25,9 +25,14 @@ package org.jboss.as.server.deployment.scanner;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OWNER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+
+import static org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -72,6 +77,11 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        // Ensure the operation succeeded before we use the result
+        if(response.get(OUTCOME).isDefined() && !SUCCESS.equals(response.get(OUTCOME).asString()))
+           throw ROOT_LOGGER.deployModelOperationFailed(response.get(FAILURE_DESCRIPTION).asString());
+
         final ModelNode result = response.get(RESULT);
         final Map<String, Boolean> deployments = new HashMap<String, Boolean>();
         if (result.isDefined()) {
@@ -97,6 +107,11 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        // Ensure the operation succeeded before we use the result
+        if(response.get(OUTCOME).isDefined() && !SUCCESS.equals(response.get(OUTCOME).asString()))
+           throw ROOT_LOGGER.deployModelOperationFailed(response.get(FAILURE_DESCRIPTION).asString());
+
         final ModelNode result = response.get(RESULT);
         final Set<String> deployments = new HashSet<String>();
         if (result.isDefined()) {

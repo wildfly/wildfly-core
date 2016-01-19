@@ -24,9 +24,11 @@ package org.jboss.as.domain.controller.plan;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.Subject;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.ServerIdentity;
@@ -37,8 +39,8 @@ import org.jboss.as.domain.controller.ServerIdentity;
 class RollingServerGroupUpdateTask extends AbstractServerGroupRolloutTask implements Runnable {
 
     public RollingServerGroupUpdateTask(List<ServerUpdateTask> tasks, ServerUpdatePolicy updatePolicy,
-                                        ServerTaskExecutor executor, Subject subject) {
-        super(tasks, updatePolicy, executor, subject);
+                                        ServerTaskExecutor executor, Subject subject, BlockingTimeout blockingTimeout) {
+        super(tasks, updatePolicy, executor, subject, blockingTimeout);
     }
 
     @Override
@@ -52,11 +54,19 @@ class RollingServerGroupUpdateTask extends AbstractServerGroupRolloutTask implem
                 continue;
             }
             // Execute the task
-            if(executor.executeTask(listener, task)) {
+            long timeout = executor.executeTask(listener, task);
+            if (timeout > -1) {
                 try {
                     // Wait for the prepared result
-                    final TransactionalProtocolClient.PreparedOperation<ServerTaskExecutor.ServerOperation> prepared = listener.retrievePreparedOperation();
-                    recordPreparedOperation(identity, prepared);
+                    final TransactionalProtocolClient.PreparedOperation<ServerTaskExecutor.ServerOperation> prepared =
+                            listener.retrievePreparedOperation(timeout, TimeUnit.MILLISECONDS);
+                    if (prepared != null) {
+                        recordPreparedOperation(identity, prepared);
+                    } else {
+                        DomainControllerLogger.HOST_CONTROLLER_LOGGER.timedOutAwaitingPreparedResponse(getClass().getSimpleName(), timeout, Collections.singleton(identity));
+                        executor.cancelTask(identity);
+                        handlePreparePhaseTimeout(identity, task, timeout);
+                    }
                 } catch (InterruptedException e) {
                     DomainControllerLogger.HOST_CONTROLLER_LOGGER.interruptedAwaitingPreparedResponse(getClass().getSimpleName(), Collections.singleton(identity));
                     executor.cancelTask(identity);

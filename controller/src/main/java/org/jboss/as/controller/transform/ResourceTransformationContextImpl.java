@@ -52,19 +52,12 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
     private final TransformerOperationAttachment transformerOperationAttachment;
     private final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry;
 
-    static ResourceTransformationContext create(final OperationContext context, final TransformationTarget target,
-                                                final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) {
-        return create(context, target, PathAddress.EMPTY_ADDRESS, PathAddress.EMPTY_ADDRESS, ignoredTransformationRegistry);
-    }
-
-    static ResourceTransformationContext create(final OperationContext context, final TransformationTarget target,
+    static ResourceTransformationContext create(final Transformers.TransformationInputs tp, final TransformationTarget target,
                                                 final PathAddress current, final PathAddress read,
                                                 final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry) {
         final Resource root = Resource.Factory.create();
-        final Resource original = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true);
-        final ImmutableManagementResourceRegistration registration = context.getRootResourceRegistration().getSubModel(PathAddress.EMPTY_ADDRESS);
-        final OriginalModel originalModel = new OriginalModel(original, context.getRunningMode(), context.getProcessType(), target, registration);
-        final TransformerOperationAttachment attachment = context.getAttachment(TransformerOperationAttachment.KEY);
+        final OriginalModel originalModel = new OriginalModel(tp.getRootResource(), tp.getRunningMode(), tp.getProcessType(), target, tp.getRootRegistration());
+        final TransformerOperationAttachment attachment = tp.getTransformerOperationAttachment();
         return new ResourceTransformationContextImpl(root, current, read, originalModel, attachment, ignoredTransformationRegistry);
     }
 
@@ -412,7 +405,7 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         private final ImmutableManagementResourceRegistration registration;
 
         OriginalModel(Resource original, RunningMode mode, ProcessType type, TransformationTarget target, ImmutableManagementResourceRegistration registration) {
-            this.original = original;
+            this.original = original.clone();
             this.mode = mode;
             this.type = type;
             this.target = target;

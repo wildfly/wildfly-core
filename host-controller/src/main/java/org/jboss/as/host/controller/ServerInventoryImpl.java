@@ -276,8 +276,6 @@ public class ServerInventoryImpl implements ServerInventory {
         if(running) {
             if(!stopping) {
                  server.reconnectServerProcess(createBootFactory(serverName, domainModel));
-                 // Register the server proxy at the domain controller
-                 domainController.registerRunningServer(server.getProxyController());
             } else {
                  server.setServerProcessStopping();
             }
@@ -315,7 +313,7 @@ public class ServerInventoryImpl implements ServerInventory {
         if(server == null) {
             return;
         }
-        server.destroy(CurrentOperationIdHolder.getCurrentOperationID());
+        server.destroy();
     }
 
     @Override
@@ -324,7 +322,7 @@ public class ServerInventoryImpl implements ServerInventory {
         if(server == null) {
             return;
         }
-        server.kill(CurrentOperationIdHolder.getCurrentOperationID());
+        server.kill();
     }
 
     @Override
@@ -477,6 +475,8 @@ public class ServerInventoryImpl implements ServerInventory {
         serverCommunicationRegistered(serverProcessName, channelHandler);
         // Mark the server as started
         serverStarted(serverProcessName);
+        // Register the server proxy at the domain controller
+        domainController.registerRunningServer(server.getProxyController());
         // If the server requires a reload, means we are out of sync
         return server.isRequiresReload() == false;
     }

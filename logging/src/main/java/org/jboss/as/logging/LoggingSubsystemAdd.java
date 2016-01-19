@@ -120,6 +120,7 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
         subsystemHandlers.addAll(resource.getChildrenNames(CustomHandlerResourceDefinition.CUSTOM_HANDLER));
         subsystemHandlers.addAll(resource.getChildrenNames(FileHandlerResourceDefinition.FILE_HANDLER));
         subsystemHandlers.addAll(resource.getChildrenNames(PeriodicHandlerResourceDefinition.PERIODIC_ROTATING_FILE_HANDLER));
+        subsystemHandlers.addAll(resource.getChildrenNames(PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_FILE_HANDLER));
         subsystemHandlers.addAll(resource.getChildrenNames(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_FILE_HANDLER));
         subsystemHandlers.addAll(resource.getChildrenNames(SyslogHandlerResourceDefinition.SYSLOG_HANDLER));
 

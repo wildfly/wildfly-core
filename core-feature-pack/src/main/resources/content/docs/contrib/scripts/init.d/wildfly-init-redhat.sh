@@ -202,7 +202,7 @@ case "$1" in
 		;;
 	*)
 		## If no parameters are given, print which are avaiable.
-		echo "Usage: $0 {start|stop|status|restart|reload}"
+		echo "Usage: $0 {start|stop|status|restart}"
 		exit 1
 		;;
 esac

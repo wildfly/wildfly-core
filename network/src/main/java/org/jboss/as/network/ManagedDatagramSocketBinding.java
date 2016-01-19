@@ -35,12 +35,17 @@ import java.net.SocketException;
 public class ManagedDatagramSocketBinding extends DatagramSocket implements ManagedBinding {
 
     private final String name;
+    private final SocketAddress address;
     private final ManagedBindingRegistry registry;
 
     ManagedDatagramSocketBinding(final String name, final ManagedBindingRegistry socketBindings, SocketAddress address) throws SocketException {
         super(address);
         this.name = name;
+        this.address = address;
         this.registry = socketBindings;
+        if (this.isBound()) {
+            this.registry.registerBinding(this);
+        }
     }
 
     @Override
@@ -48,22 +53,37 @@ public class ManagedDatagramSocketBinding extends DatagramSocket implements Mana
         return name;
     }
 
+    @Override
     public InetSocketAddress getBindAddress() {
-        return (InetSocketAddress) getLocalSocketAddress();
-    }
-
-    public synchronized void bind(SocketAddress addr) throws SocketException {
-        super.bind(addr);
-        registry.registerBinding(this);
-    }
-
-    public void close() {
-        try {
-            super.close();
-        } finally {
-            registry.unregisterBinding(this);
+        if (name == null) {
+            // unnamed datagram socket
+            return (InetSocketAddress) address;
+        } else {
+            return (InetSocketAddress) getLocalSocketAddress();
         }
     }
 
+    @Override
+    public synchronized void bind(SocketAddress addr) throws SocketException {
+        super.bind(addr);
+        // This method might have been called from the super constructor
+        if (this.registry != null) {
+            this.registry.registerBinding(this);
+        }
+    }
+
+    @Override
+    public void close() {
+        // First unregister, then close. This allows UnnamedRegistryImpl
+        // to get the bind address before it's gone
+        try {
+            // This method might have been called from the super constructor
+            if (this.registry != null) {
+                registry.unregisterBinding(this);
+            }
+        } finally {
+            super.close();
+        }
+    }
 }
 

@@ -21,6 +21,8 @@
  */
 package org.jboss.as.domain.http.server;
 
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
 import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
 
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
@@ -92,6 +94,7 @@ import org.xnio.StreamConnection;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 import org.xnio.channels.AcceptingChannel;
+import org.xnio.conduits.StreamSinkConduit;
 import org.xnio.ssl.SslConnection;
 import org.xnio.ssl.XnioSsl;
 
@@ -105,19 +108,21 @@ public class ManagementHttpServer {
     private final HttpOpenListener openListener;
     private final InetSocketAddress httpAddress;
     private final InetSocketAddress secureAddress;
-    private volatile XnioWorker worker;
+    private final XnioWorker worker;
     private volatile AcceptingChannel<StreamConnection> normalServer;
     private volatile AcceptingChannel<SslConnection> secureServer;
     private final SSLContext sslContext;
     private final SslClientAuthMode sslClientAuthMode;
 
 
-    private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext, SslClientAuthMode sslClientAuthMode) {
+    private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext,
+                                 SslClientAuthMode sslClientAuthMode, XnioWorker worker) {
         this.openListener = openListener;
         this.httpAddress = httpAddress;
         this.secureAddress = secureAddress;
         this.sslContext = sslContext;
         this.sslClientAuthMode = sslClientAuthMode;
+        this.worker = worker;
     }
 
 
@@ -130,14 +135,6 @@ public class ManagementHttpServer {
             throw new IllegalStateException(e.getLocalizedMessage());
         }
         try {
-            //TODO make this configurable
-            worker = xnio.createWorker(OptionMap.builder()
-                    .set(Options.WORKER_IO_THREADS, 2)
-                    .set(Options.WORKER_TASK_CORE_THREADS, 5)
-                    .set(Options.WORKER_TASK_MAX_THREADS, 10)
-                    .set(Options.TCP_NODELAY, true)
-                    .set(Options.CORK, true)
-                    .getMap());
 
             Builder serverOptionsBuilder = OptionMap.builder()
                     .set(Options.TCP_NODELAY, true)
@@ -164,13 +161,12 @@ public class ManagementHttpServer {
     public void stop() {
         IoUtils.safeClose(normalServer);
         IoUtils.safeClose(secureServer);
-        worker.shutdown();
     }
 
     public static ManagementHttpServer create(InetSocketAddress bindAddress, InetSocketAddress secureBindAddress, int backlog,
                                               ModelController modelController, SecurityRealm securityRealm, ControlledProcessStateService controlledProcessStateService,
                                               ConsoleMode consoleMode, String consoleSlot, final ChannelUpgradeHandler upgradeHandler,
-                                              ManagementHttpRequestProcessor managementHttpRequestProcessor, Collection<String> allowedOrigins) throws IOException, StartException {
+                                              ManagementHttpRequestProcessor managementHttpRequestProcessor, Collection<String> allowedOrigins, XnioWorker worker) throws IOException, StartException {
 
         SSLContext sslContext = null;
         SslClientAuthMode sslClientAuthMode = null;
@@ -203,7 +199,7 @@ public class ManagementHttpServer {
 
         setupOpenListener(openListener, modelController, consoleMode, consoleSlot, controlledProcessStateService,
                 secureRedirectPort, securityRealm, upgradeHandler, managementHttpRequestProcessor, allowedOrigins);
-        return new ManagementHttpServer(openListener, bindAddress, secureBindAddress, sslContext, sslClientAuthMode);
+        return new ManagementHttpServer(openListener, bindAddress, secureBindAddress, sslContext, sslClientAuthMode, worker);
     }
 
 
@@ -216,7 +212,7 @@ public class ManagementHttpServer {
         CanonicalPathHandler canonicalPathHandler = new CanonicalPathHandler();
         ManagementHttpRequestHandler managementHttpRequestHandler = new ManagementHttpRequestHandler(managementHttpRequestProcessor, canonicalPathHandler);
         CorsHttpHandler corsHandler = new CorsHttpHandler(managementHttpRequestHandler, allowedOrigins);
-        listener.setRootHandler(corsHandler);
+        listener.setRootHandler(new UpgradeFixHandler(corsHandler));
 
         PathHandler pathHandler = new PathHandler();
         HttpHandler current = pathHandler;
@@ -314,4 +310,31 @@ public class ManagementHttpServer {
         return new AuthenticationMechanismWrapper(toWrap, mechanism);
     }
 
+    /**
+     * Handler to work around a bug with old XNIO versions that did not handle
+     * content-length for HTTP upgrade. This should be removed when it is no longer
+     * nessesary to support WF 8.x clients.
+     */
+    private static class UpgradeFixHandler implements HttpHandler {
+
+        final HttpHandler next;
+
+        private UpgradeFixHandler(HttpHandler next) {
+            this.next = next;
+        }
+
+        @Override
+        public void handleRequest(HttpServerExchange exchange) throws Exception {
+            if(exchange.getRequestHeaders().contains(Headers.UPGRADE)) {
+                exchange.addResponseWrapper((factory, ex) -> {
+                    StreamSinkConduit ret = factory.create();
+                    if(exchange.getResponseHeaders().contains(Headers.UPGRADE)) {
+                        exchange.getResponseHeaders().add(Headers.CONTENT_LENGTH, "0");
+                    }
+                    return ret;
+                });
+            }
+            next.handleRequest(exchange);
+        }
+    }
 }

@@ -24,18 +24,21 @@ package org.jboss.as.controller.registry;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 
@@ -50,6 +53,8 @@ final class NodeSubregistry {
             sm.checkPermission(ImmutableManagementResourceRegistration.ACCESS_PERMISSION);
         }
     }
+
+    private static final ListIterator<PathElement> EMPTY_ITERATOR = PathAddress.EMPTY_ADDRESS.iterator();
 
     private static final String WILDCARD_VALUE = PathElement.WILDCARD_VALUE;
 
@@ -82,13 +87,42 @@ final class NodeSubregistry {
         return new HashSet<String>(snapshot.keySet());
     }
 
-    ManagementResourceRegistration register(final String elementValue, final ResourceDefinition provider, boolean ordered) {
-        final AbstractResourceRegistration newRegistry =
+    ManagementResourceRegistration registerChild(final String elementValue, final ResourceDefinition provider) {
+        boolean ordered = provider.isOrderedChild();
+
+        final ConcreteResourceRegistration newRegistry =
                 new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, ordered, capabilityRegistry);
-        final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
-        if (existingRegistry != null) {
-            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
+
+        newRegistry.beginInitialization();
+        try {
+
+            final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
+            if (existingRegistry != null) {
+                throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
+            }
+
+            provider.registerAttributes(newRegistry);
+            provider.registerOperations(newRegistry);
+            provider.registerNotifications(newRegistry);
+            provider.registerChildren(newRegistry);
+            provider.registerCapabilities(newRegistry);
+
+            if (constraintUtilizationRegistry != null) {
+                PathAddress childAddress = newRegistry.getPathAddress();
+                List<AccessConstraintDefinition> constraintDefinitions = provider.getAccessConstraints();
+                for (AccessConstraintDefinition acd : constraintDefinitions) {
+                    constraintUtilizationRegistry.registerAccessConstraintResourceUtilization(acd.getKey(), childAddress);
+                }
+            }
+        } finally {
+            newRegistry.initialized();
         }
+
+        if (ordered) {
+            AbstractResourceRegistration parentRegistration = getParent();
+            parentRegistration.setOrderedChild(keyName);
+        }
+
         return newRegistry;
     }
 
@@ -126,8 +160,13 @@ final class NodeSubregistry {
         checkPermission();
         AbstractResourceRegistration rr = childRegistriesUpdater.remove(this, elementValue);
         if (rr!=null) {
-            for (Capability c : rr.getCapabilities()) {
-                capabilityRegistry.removePossibleCapability(c, getPathAddress(elementValue));
+            // We want to remove the possible capabilities.
+            // We've removed the MRR so the normal getCapabilities() won't work as it
+            // relies on walking the tree from the root. So we just use the local call
+            // with a iterator whose hasNext() returns false
+            PathAddress pa = getPathAddress(elementValue);
+            for (Capability c : rr.getCapabilities(EMPTY_ITERATOR)) {
+                capabilityRegistry.removePossibleCapability(c, pa);
             }
         }
     }
@@ -353,6 +392,50 @@ final class NodeSubregistry {
 
     PathAddress getPathAddress(String valueString) {
         return parent.getPathAddress().append(PathElement.pathElement(keyName, valueString));
+    }
+
+    Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator, String child) {
+
+        final RegistrySearchControl searchControl = new RegistrySearchControl(iterator, child);
+
+        Set<RuntimeCapability> result = null;
+        if (searchControl.getSpecifiedRegistry() != null) {
+            result = searchControl.getSpecifiedRegistry().getCapabilities(searchControl.getIterator());
+        }
+
+        if (searchControl.getWildCardRegistry() != null) {
+            final Set<RuntimeCapability> wildCardChildren = searchControl.getWildCardRegistry().getCapabilities(searchControl.getIterator());
+            if (result == null) {
+                result = wildCardChildren;
+            } else if (wildCardChildren != null) {
+                // Merge
+                result = new HashSet<RuntimeCapability>(result);
+                result.addAll(wildCardChildren);
+            }
+        }
+        return result;
+    }
+
+    Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator, String child) {
+
+        final RegistrySearchControl searchControl = new RegistrySearchControl(iterator, child);
+
+        Set<String> result = null;
+        if (searchControl.getSpecifiedRegistry() != null) {
+            result = searchControl.getSpecifiedRegistry().getOrderedChildTypes(searchControl.getIterator());
+        }
+
+        if (searchControl.getWildCardRegistry() != null) {
+            final Set<String> wildCardChildren = searchControl.getWildCardRegistry().getOrderedChildTypes(searchControl.getIterator());
+            if (result == null) {
+                result = wildCardChildren;
+            } else if (wildCardChildren != null) {
+                // Merge
+                result = new HashSet<String>(result);
+                result.addAll(wildCardChildren);
+            }
+        }
+        return result;
     }
 
     /**

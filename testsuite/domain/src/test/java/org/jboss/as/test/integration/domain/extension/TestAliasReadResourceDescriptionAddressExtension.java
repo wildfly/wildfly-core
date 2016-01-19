@@ -104,7 +104,7 @@ public class TestAliasReadResourceDescriptionAddressExtension implements Extensi
 
             resourceRegistration.registerAlias(SINGLETON_ALIAS_PATH, new AliasEntry(singleton) {
                 @Override
-                public PathAddress convertToTargetAddress(PathAddress address) {
+                public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                     List<PathElement> list = new ArrayList<>();
                     final PathElement alias = getAliasAddress().getLastElement();
                     for (PathElement element : address) {
@@ -120,7 +120,7 @@ public class TestAliasReadResourceDescriptionAddressExtension implements Extensi
 
             resourceRegistration.registerAlias(WILDCARD_ALIAS_PATH, new AliasEntry(wildcard) {
                 @Override
-                public PathAddress convertToTargetAddress(PathAddress address) {
+                public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
                     List<PathElement> list = new ArrayList<>();
                     final PathElement alias = getAliasAddress().getLastElement();
                     for (PathElement element : address) {

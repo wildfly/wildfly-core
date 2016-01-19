@@ -82,9 +82,7 @@ class FilePersistenceUtils {
     static void moveTempFileToMain(File tempFileName, File fileName) throws ConfigurationPersistenceException {
         //Rename the temp file written to the target file
         try {
-            FilePersistenceUtils.rename(tempFileName, fileName);
-            //Only delete the temp file if all went well, to give people the chance to manually recover it if something really weird happened
-            deleteFile(tempFileName);
+            Files.move(tempFileName.toPath(), fileName.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             throw ControllerLogger.ROOT_LOGGER.failedToRenameTempFile(e, tempFileName, fileName);
         }
@@ -128,7 +126,7 @@ class FilePersistenceUtils {
     }
 
     private static List<FileAttribute<Set<PosixFilePermission>>> getPosixAttributes(Path file) throws IOException {
-        if (Files.getFileStore(file).supportsFileAttributeView(PosixFileAttributeView.class)) {
+        if (Files.exists(file) && Files.getFileStore(file).supportsFileAttributeView(PosixFileAttributeView.class)) {
             PosixFileAttributeView posixView = Files.getFileAttributeView(file, PosixFileAttributeView.class);
             if (posixView != null) {
                 return Collections.singletonList(PosixFilePermissions.asFileAttribute(posixView.readAttributes().permissions()));
@@ -138,7 +136,7 @@ class FilePersistenceUtils {
     }
 
     private static List<FileAttribute<List<AclEntry>>> getAclAttributes(Path file) throws IOException {
-        if (Files.getFileStore(file).supportsFileAttributeView(AclFileAttributeView.class)) {
+        if (Files.exists(file) && Files.getFileStore(file).supportsFileAttributeView(AclFileAttributeView.class)) {
             AclFileAttributeView aclView = Files.getFileAttributeView(file, AclFileAttributeView.class);
             if (aclView != null) {
                 final List<AclEntry> entries = aclView.getAcl();

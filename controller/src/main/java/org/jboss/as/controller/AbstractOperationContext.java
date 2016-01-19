@@ -54,7 +54,6 @@ import java.security.Principal;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumMap;
@@ -131,10 +130,18 @@ abstract class AbstractOperationContext implements OperationContext {
     boolean respectInterruption = true;
 
     /**
-     * The notifications are stored when {@code emit(Notification)} is callend and effectively
+     * The notifications are stored when {@code emit(Notification)} is called and effectively
      * emitted at the end of the operation execution if it is successful
      */
     private final Queue<Notification> notifications;
+
+    /**
+     * Notifications descriptions are checked in {@code emit(Notification)} to use the resource registration
+     * when the operation is performed on the resource [WFCORE-1007]
+     * Similar to {@code notifications}, the eventual warnings will be buffered and actually logged
+     * at the end of the operation execution if it is successful.
+     */
+    private final Queue<String> missingNotificationDescriptionWarnings;
 
     Stage currentStage = Stage.MODEL;
 
@@ -187,6 +194,7 @@ abstract class AbstractOperationContext implements OperationContext {
         this.auditLogger = auditLogger;
         this.notificationSupport = notificationSupport;
         this.notifications = new ConcurrentLinkedQueue<Notification>();
+        this.missingNotificationDescriptionWarnings = new ConcurrentLinkedQueue<String>();
         this.controller = controller;
         steps = new EnumMap<Stage, Deque<Step>>(Stage.class);
         for (Stage stage : Stage.values()) {
@@ -762,7 +770,9 @@ abstract class AbstractOperationContext implements OperationContext {
 
     @Override
     public void emit(Notification notification) {
-        // buffer the notifications but emit them only when an operation is successful.
+        // buffer the notification and eventual missing description warning now
+        // but emit it and log the warning only when an operation is successful in emitNotifications()
+        checkUndefinedNotification(notification);
         notifications.add(notification);
 
         if (modifiedResourcesForModelValidation != null) {
@@ -796,13 +806,18 @@ abstract class AbstractOperationContext implements OperationContext {
 
 
     private void emitNotifications() {
-        // emit notifications only if the action is kept
+        // emit notifications and log missing descriptions warnings only if the action is kept
         if (resultAction != ResultAction.ROLLBACK) {
+            synchronized (missingNotificationDescriptionWarnings) {
+                for (String warning : missingNotificationDescriptionWarnings) {
+                    ControllerLogger.ROOT_LOGGER.warn(warning);
+                }
+                missingNotificationDescriptionWarnings.clear();
+            }
             synchronized (notifications) {
                 if (notifications.isEmpty()) {
                     return;
                 }
-                checkUndefinedNotifications(notifications);
                 notificationSupport.emit(notifications.toArray(new Notification[notifications.size()]));
                 notifications.clear();
             }
@@ -812,14 +827,12 @@ abstract class AbstractOperationContext implements OperationContext {
     /**
      * Check that each emitted notification is properly described by its source.
      */
-    private void checkUndefinedNotifications(Collection<Notification> notifications) {
-        for (Notification notification : notifications) {
-            String type = notification.getType();
-            PathAddress source = notification.getSource();
-            Map<String, NotificationEntry> descriptions = getRootResourceRegistration().getNotificationDescriptions(source, true);
-            if (!descriptions.keySet().contains(type)) {
-                ControllerLogger.ROOT_LOGGER.notificationIsNotDescribed(type, source);
-            }
+    private void checkUndefinedNotification(Notification notification) {
+        String type = notification.getType();
+        PathAddress source = notification.getSource();
+        Map<String, NotificationEntry> descriptions = getRootResourceRegistration().getNotificationDescriptions(source, true);
+        if (!descriptions.keySet().contains(type)) {
+            missingNotificationDescriptionWarnings.add(ControllerLogger.ROOT_LOGGER.notificationIsNotDescribed(type, source));
         }
     }
 

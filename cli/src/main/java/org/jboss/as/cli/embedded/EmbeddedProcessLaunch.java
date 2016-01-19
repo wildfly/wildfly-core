@@ -22,56 +22,42 @@
 
 package org.jboss.as.cli.embedded;
 
-import org.wildfly.core.embedded.EmbeddedServerReference;
-import org.wildfly.core.embedded.HostController;
-import org.wildfly.core.embedded.StandaloneServer;
+import org.wildfly.core.embedded.EmbeddedManagedProcess;
 
 /**
- * Simple data structure to record information related to a launch of an embedded server.
+ * Simple data structure to record information related to a launch of an embedded process.
  *
  * @author Brian Stansberry (c) 2015 Red Hat Inc.
  */
 
-public class EmbeddedServerLaunch {
+public class EmbeddedProcessLaunch {
 
-    private final EmbeddedServerReference server;
+    private final EmbeddedManagedProcess process;
     private final EnvironmentRestorer restorer;
+    private final boolean hostController;
 
-   EmbeddedServerLaunch(EmbeddedServerReference server, EnvironmentRestorer restorer) {
-        this.server = server;
+    EmbeddedProcessLaunch(EmbeddedManagedProcess process, EnvironmentRestorer restorer, boolean hostController) {
+        this.process = process;
         this.restorer = restorer;
+        this.hostController = hostController;
     }
 
     EnvironmentRestorer getEnvironmentRestorer() {
         return restorer;
     }
 
-    public StandaloneServer getServer() {
-        return server.getStandaloneServer();
-    }
-
     public void stop() {
-        if (server == null)
+        if (process == null)
             return;
-        server.stop();
-    }
-
-    public void start() {
-        if (server == null)
-            return;
-        server.start();
-    }
-
-    public HostController getHostController() {
-        return server.getHostController();
+        process.stop();
     }
 
     public boolean isHostController() {
-        return server.isHostController();
+        return hostController;
     }
 
     public boolean isStandalone() {
-        return !server.isHostController();
+        return !hostController;
     }
 
 }

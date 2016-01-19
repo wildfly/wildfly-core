@@ -23,6 +23,7 @@
 package org.jboss.as.domain.management.security;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -162,6 +163,18 @@ class WrapperSSLContext extends SSLContext {
             public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort)
                     throws IOException {
                 Socket socket = wrapped.createSocket(address, port, localAddress, localPort);
+                setSslParams(socket);
+                return socket;
+            }
+
+            public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException {
+                Socket socket = wrapped.createSocket(s, consumed, autoClose);
+                setSslParams(socket);
+                return socket;
+            }
+
+            public Socket createSocket() throws IOException {
+                Socket socket = wrapped.createSocket();
                 setSslParams(socket);
                 return socket;
             }

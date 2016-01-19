@@ -110,6 +110,9 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         final ProductConfig config = environment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion);
+        if (System.getSecurityManager() != null) {
+            ServerLogger.AS_ROOT_LOGGER.securityManagerEnabled();
+        }
         if (ServerLogger.CONFIG_LOGGER.isDebugEnabled()) {
             final Properties properties = System.getProperties();
             final StringBuilder b = new StringBuilder(8192);

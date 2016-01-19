@@ -69,6 +69,7 @@ public class ListRoleNamesTestCase extends AbstractRbacTestCase {
 
         ALL_ROLES_SET_BASIC.addAll(STANDARD_ROLES_SET);
         ALL_ROLES_SET_BASIC.addAll(Arrays.asList(AbstractHostScopedRolesTestCase.USERS));
+        ALL_ROLES_SET_BASIC.addAll(Arrays.asList(AbstractHostScopedRolesTestCase.SLAVE_USERS));
         ALL_ROLES_SET_BASIC.addAll(Arrays.asList(AbstractServerGroupScopedRolesTestCase.USERS));
 
         ALL_ROLES_SET_WITH_ADDITIONAL_ROLES.addAll(ALL_ROLES_SET_BASIC);
