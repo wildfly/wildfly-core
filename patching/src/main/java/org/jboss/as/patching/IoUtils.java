@@ -111,9 +111,14 @@ public class IoUtils {
                     throw PatchLogger.ROOT_LOGGER.cannotCreateDirectory(parent.getAbsolutePath());
                 }
             }
-            final InputStream is = new FileInputStream(sourceFile);
-            final OutputStream os = new FileOutputStream(targetFile);
-            copyStreamAndClose(is, os);
+            try {
+                final InputStream is = new FileInputStream(sourceFile);
+                final OutputStream os = new FileOutputStream(targetFile);
+                copyStreamAndClose(is, os);
+            } catch (IOException e) {
+                throw PatchLogger.ROOT_LOGGER.cannotCopyFiles(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(),
+                        e.getMessage(), e);
+            }
         }
     }
 
@@ -143,6 +148,9 @@ public class IoUtils {
             byte[] nh = HashUtils.copyAndGetHash(is, os);
             os.close();
             return nh;
+        } catch (IOException e) {
+            throw PatchLogger.ROOT_LOGGER.cannotCopyFiles(is.toString(), target.getAbsolutePath(),
+                    e.getMessage(), e);
         } finally {
             safeClose(os);
         }
