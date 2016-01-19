@@ -101,7 +101,7 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
         }, OperationContext.Stage.MODEL);
     }
 
-    private void validateRuntimeNames(String deploymentName, OperationContext context, PathAddress address) throws OperationFailedException {
+    static void validateRuntimeNames(String deploymentName, OperationContext context, PathAddress address) throws OperationFailedException {
         ModelNode deployment = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
 
         if (ENABLED.resolveModelAttribute(context, deployment).asBoolean()) {
