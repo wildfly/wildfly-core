@@ -6,17 +6,12 @@ REM Distributable under LGPL license.
 REM See terms of license at gnu.org.
 REM -------------------------------------------------------------------------
 REM  Red Hat JBoss EAP 7 Service Script for Windows
-REM    It has to reside in one of:
-REM      %JBOSS_HOME%\bin
-REM      %JBOSS_HOME%\modules\native\sbin\
-REM      %JBOSS_HOME%\modules\system\layers\base\native\sbin\
+REM    It has to reside in %JBOSS_HOME%\bin
 REM    It is expecting that prunsrv.exe reside in one of:
 REM      %JBOSS_HOME%\bin
 REM      %JBOSS_HOME%\..\jbcs-jsvc-1.0\sbin
-REM      %JBOSS_HOME%\modules\native\sbin\
-REM      %JBOSS_HOME%\modules\system\layers\base\native\sbin\
 REM
-REM  v8 2015-12-18 customize for EAP 7
+REM  v8 2016-01-20 customize for EAP 7 (Petr Sakar)
 REM  v7 2014-07-09 added /logpath /startup /config /hostconfig /base /debug
 REM                      simplified/corrected use of quotes
 REM
@@ -104,20 +99,11 @@ if not exist "%JBOSS_HOME%\jboss-modules.jar" (
 
 set PRUNSRV=
 if exist "%JBOSS_HOME%\..\jbcs-jsvc-1.0\sbin\prunsrv.exe" (
-  rem EAP 7
   set PRUNSRV="%JBOSS_HOME%\..\jbcs-jsvc-1.0\sbin\prunsrv.exe"
 ) else if exist "%JBOSS_HOME%\bin\prunsrv.exe" (
-  rem EAP 7
   set PRUNSRV="%JBOSS_HOME%\bin\prunsrv.exe"
-) else if exist "%JBOSS_HOME%\modules\native\sbin\prunsrv.exe" (
-  rem EAP 6.0.0 and 6.0.1
-  set PRUNSRV="%JBOSS_HOME%\modules\native\sbin\prunsrv.exe"
-) else if exist "%JBOSS_HOME%\modules\system\layers\base\native\sbin\prunsrv.exe" (
-  rem EAP 6.1.0 (and up)
-  set PRUNSRV="%JBOSS_HOME%\modules\system\layers\base\native\sbin\prunsrv.exe"
 ) else (
-  REM could happen if the user copied the batch file manually
-  echo Native utilities not installed
+  echo Please install native utilities into expected location %JBOSS_HOME%\..\jbcs-jsvc-1.0
   goto cmdEnd
 )
 
