@@ -20,6 +20,8 @@ package org.jboss.as.host.controller.resources;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 
+import java.util.List;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -32,6 +34,8 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.host.controller.descriptions.HostResolver;
@@ -47,8 +51,6 @@ import org.jboss.dmr.ModelType;
 public class SslLoopbackResourceDefinition extends SimpleResourceDefinition {
 
     private static final String DESCRIPTION_PREFIX = SERVER_CONFIG + "." + ModelDescriptionConstants.SSL + "." + ModelDescriptionConstants.LOOPBACK;
-
-    // TODO - Add Security Constraints.
 
     public static final SimpleAttributeDefinition SSL_PROTOCOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SSL_PROTOCOL, ModelType.STRING, true)
             .setDefaultValue(new ModelNode("TLS"))
@@ -78,11 +80,14 @@ public class SslLoopbackResourceDefinition extends SimpleResourceDefinition {
 
     private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { SSL_PROTOCOCOL, TRUST_MANAGER_ALGORITHM, TRUSTSTORE_TYPE, TRUSTSTORE_PATH, TRUSTSTORE_PASSWORD };
 
+    private final List<AccessConstraintDefinition> sensitivity;
+
     public SslLoopbackResourceDefinition() {
         super(PathElement.pathElement(ModelDescriptionConstants.SSL, ModelDescriptionConstants.LOOPBACK),
                 HostResolver.getResolver(DESCRIPTION_PREFIX, false),
                 new SslLoopbackAddHandler(),
                 new SslLoopbackRemoveHandler());
+        sensitivity = SensitiveTargetAccessConstraintDefinition.SERVER_SSL.wrapAsList();
     }
 
     @Override
@@ -91,6 +96,11 @@ public class SslLoopbackResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition attr : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(attr, null, handler);
         }
+    }
+
+    @Override
+    public List<AccessConstraintDefinition> getAccessConstraints() {
+        return sensitivity;
     }
 
     static class SslLoopbackAddHandler extends AbstractAddStepHandler {
