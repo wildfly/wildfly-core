@@ -63,6 +63,8 @@ if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
   set PRUNSRV="%JBOSS_HOME%\bin\service\wildfly-service"
 )
 
+setlocal DisableDelayedExpansion
+
 if /I "%1" == "install"   goto cmdInstall
 if /I "%1" == "uninstall" goto cmdUninstall
 if /I "%1" == "start"     goto cmdStart
