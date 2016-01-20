@@ -197,9 +197,10 @@ public interface TransformingProxyController extends ProxyController {
             }
 
             @Override
-            public void execute(final ModelNode operation, final OperationMessageHandler handler, final ProxyOperationControl control, final OperationAttachments attachments) {
+            public void execute(final ModelNode operation, final OperationMessageHandler handler, final ProxyOperationControl control,
+                                final OperationAttachments attachments, final BlockingTimeout blockingTimeout) {
                 // Execute untransformed
-                proxy.execute(operation, handler, control, attachments);
+                proxy.execute(operation, handler, control, attachments, blockingTimeout);
             }
 
             @Override

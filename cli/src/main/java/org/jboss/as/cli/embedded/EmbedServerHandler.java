@@ -48,7 +48,6 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.wildfly.core.embedded.EmbeddedServerFactory;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
@@ -56,7 +55,9 @@ import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
 import org.jboss.stdio.StdioContext;
-import org.wildfly.core.embedded.EmbeddedServerReference;
+import org.wildfly.core.embedded.EmbeddedManagedProcess;
+import org.wildfly.core.embedded.EmbeddedProcessFactory;
+import org.wildfly.core.embedded.EmbeddedProcessStartException;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -69,7 +70,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     private static final String ECHO = "echo";
     private static final String DISCARD_STDOUT = "discard";
 
-    private final AtomicReference<EmbeddedServerLaunch> serverReference;
+    private final AtomicReference<EmbeddedProcessLaunch> serverReference;
     private ArgumentWithValue jbossHome;
     private ArgumentWithValue stdOutHandling;
     private ArgumentWithValue adminOnly;
@@ -79,7 +80,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     private ArgumentWithoutValue removeExisting;
     private ArgumentWithValue timeout;
 
-    static EmbedServerHandler create(final AtomicReference<EmbeddedServerLaunch> serverReference, CommandContext ctx, boolean modular) {
+    static EmbedServerHandler create(final AtomicReference<EmbeddedProcessLaunch> serverReference, CommandContext ctx, boolean modular) {
         EmbedServerHandler result = new EmbedServerHandler(serverReference);
         final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
         if (!modular) {
@@ -99,7 +100,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         return result;
     }
 
-    private EmbedServerHandler(final AtomicReference<EmbeddedServerLaunch> serverReference) {
+    private EmbedServerHandler(final AtomicReference<EmbeddedProcessLaunch> serverReference) {
         super("embed-server", false);
         assert serverReference != null;
         this.serverReference = serverReference;
@@ -204,15 +205,15 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
-            EmbeddedServerReference server;
+            EmbeddedManagedProcess server;
             if (this.jbossHome == null) {
                 // Modular environment
-                server = EmbeddedServerFactory.createStandalone(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+                server = EmbeddedProcessFactory.createStandaloneServer(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             } else {
-                server = EmbeddedServerFactory.createStandalone(jbossHome.getAbsolutePath(), null, null, cmds);
+                server = EmbeddedProcessFactory.createStandaloneServer(jbossHome.getAbsolutePath(), null, null, cmds);
             }
             server.start();
-            serverReference.set(new EmbeddedServerLaunch(server, restorer));
+            serverReference.set(new EmbeddedProcessLaunch(server, restorer, false));
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(server.getModelControllerClient(), contextSelector);
             if (bootTimeout == null || bootTimeout > 0) {
                 // Poll for server state. Alternative would be to get ControlledProcessStateService
@@ -268,7 +269,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             });
 
             ok = true;
-        } catch (Exception e) {
+        } catch (RuntimeException | EmbeddedProcessStartException e) {
             throw new CommandLineException("Cannot start embedded server", e);
         } finally {
             if (!ok) {

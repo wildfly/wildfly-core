@@ -126,7 +126,7 @@ public class ManagementResponseHeader extends ManagementProtocolHeader {
         return create(header, header.getRequestId());
     }
 
-    public static ManagementResponseHeader create(final ManagementRequestHeader header, Exception error) {
+    public static ManagementResponseHeader create(final ManagementRequestHeader header, Throwable error) {
         final int workingVersion = Math.min(ManagementProtocol.VERSION, header.getVersion());
         return new ManagementResponseHeader(workingVersion, header.getRequestId(), error != null ? error.getClass().getName() + ':' + error.getMessage() : null);
     }

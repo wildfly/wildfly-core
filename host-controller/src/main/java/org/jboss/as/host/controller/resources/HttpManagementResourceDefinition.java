@@ -76,6 +76,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, INTERFACE, HTTP_PORT, HTTPS_PORT, SECURE_INTERFACE);
 
+
     private HttpManagementResourceDefinition(OperationStepHandler add, OperationStepHandler remove) {
         super(new Parameters(RESOURCE_PATH, HostModelUtil.getResourceDescriptionResolver("core", "management", "http-interface"))
             .setAddHandler(add)

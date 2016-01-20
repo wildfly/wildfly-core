@@ -216,14 +216,20 @@ public interface Console {
                             }
 
                         }
-
-                        try {
+                        Prompt origPrompt = null;
+                        if(!console.getPrompt().getPromptAsString().equals(prompt)) {
+                            origPrompt = console.getPrompt();
                             console.setPrompt(new Prompt(prompt, mask));
+                        }
+                        try {
                             return console.getInputLine();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
+                        } finally {
+                            if(origPrompt != null) {
+                                console.setPrompt(origPrompt);
+                            }
                         }
-
                     } finally {
                         if( PID != -1) {
                             console.putProcessInForeground(PID);
@@ -283,8 +289,8 @@ public interface Console {
                 }
 
                 @Override
-                public boolean running(){
-                    return console != null && console.isRunning();
+                public boolean running() {
+                    return console != null && (console.isRunning() || console.hasRunningProcesses());
                 }
 
                 @Override

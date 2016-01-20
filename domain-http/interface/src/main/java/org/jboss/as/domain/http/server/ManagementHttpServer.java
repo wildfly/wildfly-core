@@ -111,18 +111,20 @@ public class ManagementHttpServer {
     private final HttpOpenListener openListener;
     private final InetSocketAddress httpAddress;
     private final InetSocketAddress secureAddress;
-    private volatile XnioWorker worker;
+    private final XnioWorker worker;
     private volatile AcceptingChannel<StreamConnection> normalServer;
     private volatile AcceptingChannel<SslConnection> secureServer;
     private final SSLContext sslContext;
     private final SslClientAuthMode sslClientAuthMode;
 
-    private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext, SslClientAuthMode sslClientAuthMode) {
+    private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext,
+                                 SslClientAuthMode sslClientAuthMode, XnioWorker worker) {
         this.openListener = openListener;
         this.httpAddress = httpAddress;
         this.secureAddress = secureAddress;
         this.sslContext = sslContext;
         this.sslClientAuthMode = sslClientAuthMode;
+        this.worker = worker;
     }
 
     public void start() {
@@ -134,14 +136,6 @@ public class ManagementHttpServer {
             throw new IllegalStateException(e.getLocalizedMessage());
         }
         try {
-            //TODO make this configurable
-            worker = xnio.createWorker(OptionMap.builder()
-                    .set(Options.WORKER_IO_THREADS, 2)
-                    .set(Options.WORKER_TASK_CORE_THREADS, 5)
-                    .set(Options.WORKER_TASK_MAX_THREADS, 10)
-                    .set(Options.TCP_NODELAY, true)
-                    .set(Options.CORK, true)
-                    .getMap());
 
             OptionMap.Builder serverOptionsBuilder = OptionMap.builder()
                     .set(Options.TCP_NODELAY, true)
@@ -168,7 +162,6 @@ public class ManagementHttpServer {
     public void stop() {
         IoUtils.safeClose(normalServer);
         IoUtils.safeClose(secureServer);
-        worker.shutdown();
     }
 
     private static SSLContext getSSLContext(Builder builder) {
@@ -224,7 +217,7 @@ public class ManagementHttpServer {
         }
 
         setupOpenListener(openListener, secureRedirectPort, builder);
-        return new ManagementHttpServer(openListener, builder.bindAddress, builder.secureBindAddress, sslContext, sslClientAuthMode);
+        return new ManagementHttpServer(openListener, builder.bindAddress, builder.secureBindAddress, sslContext, sslClientAuthMode, builder.worker);
     }
 
     private static void addRedirectRedinessHandler(PathHandler pathHandler, ResourceHandlerDefinition consoleHandler, Builder builder) {
@@ -395,6 +388,7 @@ public class ManagementHttpServer {
         private ChannelUpgradeHandler upgradeHandler;
         private ManagementHttpRequestProcessor managementHttpRequestProcessor;
         private Collection<String> allowedOrigins;
+        private XnioWorker worker;
 
         private Builder() {
         }
@@ -472,6 +466,13 @@ public class ManagementHttpServer {
         public Builder setAllowedOrigins(Collection<String> allowedOrigins) {
             assertNotBuilt();
             this.allowedOrigins = allowedOrigins;
+
+            return this;
+        }
+
+        public Builder setWorker(XnioWorker worker) {
+            assertNotBuilt();
+            this.worker = worker;
 
             return this;
         }

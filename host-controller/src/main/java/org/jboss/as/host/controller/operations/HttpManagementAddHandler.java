@@ -53,6 +53,7 @@ import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.mgmt.HttpManagementRequestsService;
 import org.jboss.as.server.mgmt.HttpShutdownService;
+import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
@@ -61,6 +62,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.xnio.XnioWorker;
 
 /**
  * A handler that activates the HTTP management API.
@@ -106,7 +108,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         ConsoleMode consoleMode = ConsoleMode.CONSOLE;
 
         if (consoleEnabled) {
-            if (runningMode == RunningMode.ADMIN_ONLY) {
+            if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
                 consoleMode = ConsoleMode.ADMIN_ONLY;
             } else if (!hostControllerInfo.isMasterDomainController()) {
                 consoleMode = ConsoleMode.SLAVE_HC;
@@ -114,6 +116,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         } else {
             consoleMode = ConsoleMode.NO_CONSOLE;
         }
+
+        NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
 
         // Track active requests
         final ServiceName requestProcessorName = UndertowHttpManagementService.SERVICE_NAME.append("requests");
@@ -131,6 +135,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.getControlledProcessStateServiceInjector())
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, service.getRequestProcessorValue())
+                .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, service.getWorker())
                 .addInjection(service.getPortInjector(), port)
                 .addInjection(service.getSecurePortInjector(), securePort)
                 .addInjection(service.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());

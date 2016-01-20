@@ -67,9 +67,10 @@ public class ExpressionBaseState extends DefaultParsingState {
             @Override
             public void handle(ParsingContext ctx)
                     throws CommandFormatException {
+                final int originalLength = ctx.getInput().length();
                 ctx.resolveExpression(resolveSystemProperties, exceptionIfNotResolved);
                 final char resolvedCh = ctx.getCharacter();
-                if(resolvedCh == '$') {
+                if(resolvedCh == '$' && originalLength == ctx.getInput().length()) {
                     getDefaultHandler().handle(ctx);
                 } else {
                     getHandler(resolvedCh).handle(ctx);

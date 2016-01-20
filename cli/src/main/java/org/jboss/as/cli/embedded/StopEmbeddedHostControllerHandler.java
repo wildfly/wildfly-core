@@ -35,10 +35,10 @@ import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
  */
 class StopEmbeddedHostControllerHandler extends CommandHandlerWithHelp {
 
-    private final AtomicReference<EmbeddedServerLaunch> hostControllerReference;
+    private final AtomicReference<EmbeddedProcessLaunch> hostControllerReference;
 
 
-    StopEmbeddedHostControllerHandler(final AtomicReference<EmbeddedServerLaunch> hostControllerReference) {
+    StopEmbeddedHostControllerHandler(final AtomicReference<EmbeddedProcessLaunch> hostControllerReference) {
         super("stop-embedded-host-controller", false);
         assert hostControllerReference != null;
         this.hostControllerReference = hostControllerReference;
@@ -51,14 +51,14 @@ class StopEmbeddedHostControllerHandler extends CommandHandlerWithHelp {
 
     @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
-        EmbeddedServerLaunch hostControllerLaunch = hostControllerReference.get();
+        EmbeddedProcessLaunch hostControllerLaunch = hostControllerReference.get();
         if (hostControllerLaunch != null) {
             ctx.disconnectController();
         }
     }
 
-    static void cleanup(final AtomicReference<EmbeddedServerLaunch> hostControllerReference) {
-        EmbeddedServerLaunch hostControllerLaunch = hostControllerReference.get();
+    static void cleanup(final AtomicReference<EmbeddedProcessLaunch> hostControllerReference) {
+        EmbeddedProcessLaunch hostControllerLaunch = hostControllerReference.get();
         if (hostControllerLaunch != null) {
             try {
                 hostControllerLaunch.stop();

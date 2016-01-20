@@ -39,7 +39,8 @@ import org.xnio.XnioWorker;
  */
 public class WorkerService implements Service<XnioWorker> {
     private final OptionMap options;
-    private volatile XnioWorker worker;
+    private XnioWorker worker;
+    private volatile StopContext stopContext;
 
     public WorkerService(OptionMap options) {
         this.options = options;
@@ -48,17 +49,27 @@ public class WorkerService implements Service<XnioWorker> {
     @Override
     public void start(StartContext startContext) throws StartException {
         final Xnio xnio = Xnio.getInstance();
-
         try {
-            worker = xnio.createWorker(options);
+            worker = xnio.createWorker(null, options, this::stopDone);
         } catch (IOException e) {
-            throw new StartException("Could not create worker!", e);
+            throw new StartException(e);
         }
+
     }
 
     @Override
-    public void stop(StopContext stopContext) {
+    public void stop(StopContext context) {
+        this.stopContext = context;
+        context.asynchronous();
         worker.shutdown();
+        worker = null;
+    }
+
+    private void stopDone() {
+        final StopContext stopContext = this.stopContext;
+        this.stopContext = null;
+        assert stopContext != null;
+        stopContext.complete();
     }
 
     @Override

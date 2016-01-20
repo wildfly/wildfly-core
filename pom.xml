@@ -31,7 +31,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>2.0.5.Final-SNAPSHOT</version>
+    <version>2.0.8.Final-SNAPSHOT</version>
 
     <name>WildFly: Core Parent Aggregator</name>
     <description>WildFly: Core Parent Aggregator</description>
@@ -90,16 +90,15 @@
         <version.org.apache.httpcomponents.httpcore>4.4.1</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.maven>3.2.1</version.org.apache.maven>
         <version.org.apache.xerces>2.11.0.SP4</version.org.apache.xerces>
-        <version.org.bouncycastle>1.50</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.0.21</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core-asl>4.4.1</version.org.codehaus.woodstox.woodstox-core-asl>
         <version.org.fusesource.jansi>1.11</version.org.fusesource.jansi>
-        <version.org.jboss.aesh>0.66.1</version.org.jboss.aesh>
+        <version.org.jboss.aesh>0.66.2</version.org.jboss.aesh>
         <version.org.jboss.byteman>2.2.1</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.1.2.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.5.0.Beta1</version.org.jboss.invocation>
-        <version.org.jboss.jandex>2.0.0.Final</version.org.jboss.jandex>
+        <version.org.jboss.jandex>2.0.1.Final</version.org.jboss.jandex>
         <version.org.jboss.jboss-dmr>1.3.0.Final</version.org.jboss.jboss-dmr>
         <version.org.jboss.jboss-vfs>3.2.11.Final</version.org.jboss.jboss-vfs>
         <version.org.jboss.logging.jboss-logging>3.3.0.Final</version.org.jboss.logging.jboss-logging>
@@ -109,9 +108,9 @@
         <version.org.jboss.marshalling.jboss-marshalling>1.4.10.Final</version.org.jboss.marshalling.jboss-marshalling>
         <!-- this is test only dependancy -->
         <version.org.jboss.metadata.jboss-metadata-common>10.0.0.Final</version.org.jboss.metadata.jboss-metadata-common>
-        <version.org.jboss.modules.jboss-modules>1.4.4.Final</version.org.jboss.modules.jboss-modules>
+        <version.org.jboss.modules.jboss-modules>1.5.0.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.2.6.Final</version.org.jboss.msc.jboss-msc>
-        <version.org.jboss.remoting>4.0.15.Final</version.org.jboss.remoting>
+        <version.org.jboss.remoting>4.0.18.Final</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>2.0.1.Final</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.sasl>1.0.5.Final</version.org.jboss.sasl>
         <version.org.jboss.shrinkwrap.shrinkwrap>1.1.2</version.org.jboss.shrinkwrap.shrinkwrap>
@@ -122,7 +121,7 @@
         <version.org.jboss.staxmapper>1.2.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.stdio>1.0.2.GA</version.org.jboss.stdio>
         <version.org.jboss.threads>2.2.1.Final</version.org.jboss.threads>
-        <version.org.jboss.xnio>3.3.3.Final</version.org.jboss.xnio>
+        <version.org.jboss.xnio>3.3.4.Final</version.org.jboss.xnio>
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.mockito>1.9.5</version.org.mockito>
@@ -281,7 +280,7 @@
                                   <value>${test.level}</value>
                               </property>
                           </systemProperties>
-                          <argLine>-Duser.region=US -Duser.language=en</argLine>
+                          <argLine>-Duser.region=US -Duser.language=en -XX:MaxMetaspaceSize=256m</argLine>
                     </configuration>
 
                 </plugin>
@@ -997,13 +996,6 @@
                    </exclusion>
                </exclusions>
            </dependency>
-
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>${version.org.bouncycastle}</version>
-                <scope>test</scope>
-            </dependency>
 
 
             <!-- This dependency needs to be managed due to the dependency convergence enforcer rule -->

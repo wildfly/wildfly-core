@@ -53,6 +53,7 @@ import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.xnio.XnioWorker;
 
 /**
  *
@@ -84,6 +85,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
     private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
     private final InjectedValue<Collection<String>> allowedOriginsValue = new InjectedValue<Collection<String>>();
+    private final InjectedValue<XnioWorker> worker = new InjectedValue<>();
     private final ConsoleMode consoleMode;
     private final String consoleSlot;
     private ManagementHttpServer serverManagement;
@@ -243,6 +245,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setChannelUpgradeHandler(upgradeHandler)
                     .setManagementHttpRequestProcessor(requestProcessor)
                     .setAllowedOrigins(allowedOriginsValue.getOptionalValue())
+                    .setWorker(worker.getValue())
                     .build();
 
             serverManagement.start();
@@ -414,5 +417,9 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
     public InjectedValue<Collection<String>> getAllowedOriginsInjector() {
         return allowedOriginsValue;
+    }
+
+    public InjectedValue<XnioWorker> getWorker() {
+        return worker;
     }
 }

@@ -102,7 +102,7 @@ import org.jboss.as.cli.batch.BatchedCommand;
 import org.jboss.as.cli.batch.impl.DefaultBatchManager;
 import org.jboss.as.cli.batch.impl.DefaultBatchedCommand;
 import org.jboss.as.cli.embedded.EmbeddedControllerHandlerRegistrar;
-import org.jboss.as.cli.embedded.EmbeddedServerLaunch;
+import org.jboss.as.cli.embedded.EmbeddedProcessLaunch;
 import org.jboss.as.cli.handlers.ArchiveHandler;
 import org.jboss.as.cli.handlers.ClearScreenHandler;
 import org.jboss.as.cli.handlers.CommandCommandHandler;
@@ -578,7 +578,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         // supported but hidden from tab-completion until stable implementation
         cmdRegistry.registerHandler(new ArchiveHandler(this), false, "archive");
 
-        final AtomicReference<EmbeddedServerLaunch> embeddedServerLaunch = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
+        final AtomicReference<EmbeddedProcessLaunch> embeddedServerLaunch = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
         cmdRegistry.registerHandler(new ReloadHandler(this, embeddedServerLaunch), "reload");
         cmdRegistry.registerHandler(new ShutdownHandler(this, embeddedServerLaunch), "shutdown");
         registerExtraHandlers();
@@ -983,21 +983,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     @Override
     public void connectController(String controller) throws CommandLineException {
 
-        if(console == null) {
-            initBasicConsole(null, false);
-        }
-        console.controlled();
-        try {
-            if (!console.running()) {
-                console.start();
-            }
-            doConnect(controller);
-        } finally {
-            console.continuous();
-        }
-    }
-
-    protected void doConnect(String controller) throws CommandLineException {
         ControllerAddress address = addressResolver.resolveAddress(controller);
 
         // In case the alias mappings cause us to enter some form of loop or a badly
@@ -1138,20 +1123,19 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             } else {
                 response = readLine("Accept certificate? [N]o, [T]emporarily : ", false);
             }
-
             if (response == null)
                 break;
             else if (response.length() == 1) {
                 switch (response.toLowerCase(Locale.ENGLISH).charAt(0)) {
                     case 'n':
-                        break;
+                        return;
                     case 't':
                         trustManager.storeChainTemporarily(lastChain);
-                        break;
+                        return;
                     case 'p':
                         if (trustManager.isModifyTrustStore()) {
                             trustManager.storeChainPermenantly(lastChain);
-                            break;
+                            return;
                         }
                 }
             }
@@ -1477,7 +1461,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             console.start();
         }
 
-        while(!isTerminated() && console.running()){
+        while(/*!isTerminated() && */console.running()){
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -1640,12 +1624,42 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     @Override
                     public void run() {
 
+                        // TODO in general, this is the wrong place for the logic below blocking the console's reading thread.
+                        // Because the reading thread will be unblocked right after the authentication is done at which point
+                        // not all the necessary initializations will have been performed related to establishing
+                        // the connection to the controller, e.g. reading the commands from the extensions, etc.
+                        // In addition, there is a chance a few commands could be read before we get to this point.
+                        // So, the best place for the logic below would be connectController(...) with unblocking
+                        // the console's reading thread at the end of the method.
+                        // The reason this logic is here is to minimize chances for initializing the console
+                        // during the non-interactive mode for the CLI API clients since multiple console initializations
+                        // (i.e. connect/disconnect) will lead to an out of memory error due to an issue in Aesh.
+                        // This logic here will initialize the console only in case the required authentication input
+                        // has not already been provided by the user.
+                        // Which doesn't fix the problem in general but also doesn't introduce a regression against
+                        // the previous releases (that are also affected by the same general issue).
+                        final boolean controlConsole = username == null || password == null;
                         try {
+                            if (controlConsole) {
+                                if (console == null) {
+                                    initBasicConsole(null, false);
+                                }
+                                console.controlled();
+                                if (!console.running()) {
+                                    console.start();
+                                }
+                            }
                             dohandle(callbacks);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         } catch (UnsupportedCallbackException e) {
                             throw new RuntimeException(e);
+                        } catch (CliInitializationException e) {
+                            throw new RuntimeException(e);
+                        } finally {
+                            if (controlConsole) {
+                                console.continuous();
+                            }
                         }
                     }
                 });

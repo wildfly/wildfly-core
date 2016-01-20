@@ -33,6 +33,7 @@ import org.jboss.as.remoting.EndpointConfigFactory;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
+import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
@@ -86,6 +87,7 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
         final ServiceName endpointName = managementSubsystemEndpoint ? RemotingServices.SUBSYSTEM_ENDPOINT : ManagementRemotingServices.MANAGEMENT_ENDPOINT;
         final EndpointService.EndpointType endpointType = managementSubsystemEndpoint ? EndpointService.EndpointType.SUBSYSTEM : EndpointService.EndpointType.MANAGEMENT;
         try {
+            ManagementWorkerService.installService(serviceTarget);
             // TODO see if we can figure out a way to work in the vault resolver instead of having to use ExpressionResolver.SIMPLE
             @SuppressWarnings("deprecation")
             final OptionMap options = EndpointConfigFactory.create(ExpressionResolver.SIMPLE, endpointConfig, DEFAULTS);

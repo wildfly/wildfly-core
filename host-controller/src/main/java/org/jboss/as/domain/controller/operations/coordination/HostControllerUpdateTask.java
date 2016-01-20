@@ -53,6 +53,7 @@ import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.remote.BlockingQueueOperationListener;
+import org.jboss.as.controller.remote.CompletedFuture;
 import org.jboss.as.controller.remote.TransactionalOperationImpl;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.transform.OperationRejectionPolicy;
@@ -218,6 +219,11 @@ class HostControllerUpdateTask {
 
         public void asyncCancel() {
             futureResult.asyncCancel(true);
+        }
+
+        ExecutedHostRequest toFailedRequest(ModelNode finalResponse) {
+            OperationResponse simpleResponse = OperationResponse.Factory.createSimple(finalResponse);
+            return new ExecutedHostRequest(new CompletedFuture<>(simpleResponse), resultTransformer, rejectPolicy);
         }
     }
 

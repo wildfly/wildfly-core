@@ -39,6 +39,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
+import org.xnio.XnioWorker;
 
 /**
  *
@@ -98,9 +99,10 @@ public class RemotingServices {
 
     public static void installRemotingManagementEndpoint(final ServiceTarget serviceTarget, final ServiceName endpointName,
                                                          final String hostName, final EndpointService.EndpointType type, final OptionMap options) {
-        ManagementEndpointService endpointService = new ManagementEndpointService(hostName, type, options);
-        serviceTarget.addService(endpointName, endpointService)
+        EndpointService service = new EndpointService(hostName, type, options);
+        serviceTarget.addService(endpointName, service)
                 .setInitialMode(ACTIVE)
+                .addDependency(ServiceName.JBOSS.append("serverManagement", "controller", "management", "worker"), XnioWorker.class, service.getWorker())
                 .install();
     }
 

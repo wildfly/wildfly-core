@@ -319,11 +319,11 @@ class ActiveOperationSupport {
             }
 
             @Override
-            public boolean failed(Exception e) {
+            public boolean failed(Throwable t) {
                 try {
-                    boolean failed = ActiveOperationImpl.this.setFailed(e);
+                    boolean failed = ActiveOperationImpl.this.setFailed(t);
                     if(failed) {
-                        ProtocolLogger.ROOT_LOGGER.debugf(e, "active-op (%d) failed %s", operationId, attachment);
+                        ProtocolLogger.ROOT_LOGGER.debugf(t, "active-op (%d) failed %s", operationId, attachment);
                     }
                     return failed;
                 } finally {
