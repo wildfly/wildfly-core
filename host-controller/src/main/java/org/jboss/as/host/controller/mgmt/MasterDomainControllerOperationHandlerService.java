@@ -137,7 +137,6 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
                 domainControllerLockId = null;
             }
 
-            final Integer slaveLockId = operationNode.get(OPERATION_HEADERS, DomainControllerLockIdUtils.SLAVE_CONTROLLER_LOCK_ID).asInt();
             if (domainControllerLockId == null) {
                 synchronized (this) {
                     SlaveRequest slaveRequest = this.activeSlaveRequest;
@@ -146,8 +145,6 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
                         slaveRequest.refCount.incrementAndGet();
                     }
                 }
-                //TODO https://issues.jboss.org/browse/AS7-6809 If there are many slaves calling back many of these threads will be blocked, and I
-                //believe they are a finite resource
             }
 
             try {
