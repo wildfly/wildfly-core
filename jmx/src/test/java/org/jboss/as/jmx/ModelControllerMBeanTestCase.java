@@ -59,6 +59,8 @@ import javax.management.NotificationFilterSupport;
 import javax.management.NotificationListener;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
+import javax.management.Query;
+import javax.management.QueryExp;
 import javax.management.RuntimeOperationsException;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -135,6 +137,9 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
     private static final ObjectName EXPR_SERVER_SOCKET_BINDING_NAME_2 = createObjectName(EXPR_DOMAIN + ":socket-binding=server,socket-binding-group=test-socket-binding-group");
     private static final ObjectName EXPR_SUBSYSTEM_NAME = createObjectName(EXPR_DOMAIN + ":subsystem=jmx");
     private static final ObjectName EXPR_BAD_NAME = createObjectName(LEGACY_DOMAIN + ":type=bad");
+    private static final QueryExp   PORT_QUERY_EXP = Query.eq(Query.attr("port"), Query.value(12345));
+    private static final QueryExp   PORT_STRING_QUERY_EXP = Query.eq(Query.attr("port"), Query.value("12345"));
+    private static final QueryExp   DEFAULT_INTERFACE_QUERY_EXP = Query.eq(Query.attr("defaultInterface"), Query.value("test-interface"));
 
     private JMXConnector jmxConnector;
 
@@ -178,7 +183,58 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
         Assert.assertEquals(2, filteredNames.size());
         checkSameMBeans(filteredInstances, filteredNames);
         assertContainsNames(filteredNames, EXPR_SOCKET_BINDING_GROUP_NAME, EXPR_SERVER_SOCKET_BINDING_NAME);
-        // TODO test with QueryExp
+
+        // WFCORE-1257 -- Test with QueryExp
+
+        // First a numeric query (port) = (12345)
+        filteredInstances = connection.queryMBeans(createObjectName(LEGACY_DOMAIN + ":socket-binding-group=*,*"),
+                PORT_QUERY_EXP);
+        filteredNames = connection.queryNames(createObjectName(LEGACY_DOMAIN + ":socket-binding-group=*,*"), PORT_QUERY_EXP);
+        Assert.assertEquals(1, filteredInstances.size());
+        Assert.assertEquals(1, filteredNames.size());
+        checkSameMBeans(filteredInstances, filteredNames);
+        assertContainsNames(filteredNames, LEGACY_SERVER_SOCKET_BINDING_NAME);
+        // Doesn't match on jboss.as.expr as the value is a string
+        filteredInstances = connection.queryMBeans(createObjectName(EXPR_DOMAIN + ":socket-binding-group=*,*"),
+                PORT_QUERY_EXP);
+        filteredNames = connection.queryNames(createObjectName(EXPR_DOMAIN + ":socket-binding-group=*,*"), PORT_QUERY_EXP);
+        Assert.assertEquals(0, filteredInstances.size());
+        Assert.assertEquals(0, filteredNames.size());
+
+        // Next a port string query (port) = ("12345")
+        // Doesn't match on jboss.as as the value is an int
+        filteredInstances = connection.queryMBeans(createObjectName(LEGACY_DOMAIN + ":socket-binding-group=*,*"),
+                PORT_STRING_QUERY_EXP);
+        filteredNames = connection.queryNames(createObjectName(LEGACY_DOMAIN + ":socket-binding-group=*,*"), PORT_STRING_QUERY_EXP);
+        Assert.assertEquals(0, filteredInstances.size());
+        Assert.assertEquals(0, filteredNames.size());
+        // Does match on jboss.as.expr as the value is a string
+        filteredInstances = connection.queryMBeans(createObjectName(EXPR_DOMAIN + ":socket-binding-group=*,*"),
+                PORT_STRING_QUERY_EXP);
+        filteredNames = connection.queryNames(createObjectName(EXPR_DOMAIN + ":socket-binding-group=*,*"), PORT_STRING_QUERY_EXP);
+        Assert.assertEquals(1, filteredInstances.size());
+        Assert.assertEquals(1, filteredNames.size());
+        checkSameMBeans(filteredInstances, filteredNames);
+        assertContainsNames(filteredNames, EXPR_SERVER_SOCKET_BINDING_NAME);
+
+        // Next a straight string query (defaultInterface) = ("test-interface")
+        // Note this also checks a bit on the default-interface -> defaultInterface camel case handling
+        filteredInstances = connection.queryMBeans(createObjectName(LEGACY_DOMAIN + ":socket-binding-group=*,*"),
+                DEFAULT_INTERFACE_QUERY_EXP);
+        filteredNames = connection.queryNames(createObjectName(LEGACY_DOMAIN + ":socket-binding-group=*,*"),
+                DEFAULT_INTERFACE_QUERY_EXP);
+        Assert.assertEquals(1, filteredInstances.size());
+        Assert.assertEquals(1, filteredNames.size());
+        checkSameMBeans(filteredInstances, filteredNames);
+        assertContainsNames(filteredNames, LEGACY_SOCKET_BINDING_GROUP_NAME);
+
+        filteredInstances = connection.queryMBeans(createObjectName(EXPR_DOMAIN + ":socket-binding-group=*,*"),
+                DEFAULT_INTERFACE_QUERY_EXP);
+        filteredNames = connection.queryNames(createObjectName(EXPR_DOMAIN + ":socket-binding-group=*,*"), DEFAULT_INTERFACE_QUERY_EXP);
+        Assert.assertEquals(1, filteredInstances.size());
+        Assert.assertEquals(1, filteredNames.size());
+        checkSameMBeans(filteredInstances, filteredNames);
+        assertContainsNames(filteredNames, EXPR_SOCKET_BINDING_GROUP_NAME);
     }
 
     private void checkQueryMBeans(MBeanServerConnection connection, int count, ObjectName filter) throws Exception {
