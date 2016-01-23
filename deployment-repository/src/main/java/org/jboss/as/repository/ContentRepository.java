@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -362,7 +363,14 @@ public interface ContentRepository {
                         contentHashReferences.remove(reference.getHexHash());
                     }
                 }
-                Path file = getDeploymentContentFile(reference.getHash(), true);
+
+                Path file;
+                if (!HashUtil.isEachHexHashInTable(reference.getHexHash())) {
+                    String identifier = reference.getContentIdentifier();
+                    file = Paths.get(identifier);
+                } else
+                    file = getDeploymentContentFile(reference.getHash(), true);
+
                 try {
                     Files.deleteIfExists(file);
                 } catch (IOException ex) {
