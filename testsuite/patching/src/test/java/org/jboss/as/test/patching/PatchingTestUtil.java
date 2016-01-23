@@ -21,21 +21,6 @@
 
 package org.jboss.as.test.patching;
 
-import static java.lang.String.format;
-import static org.jboss.as.patching.Constants.BASE;
-import static org.jboss.as.patching.Constants.BUNDLES;
-import static org.jboss.as.patching.Constants.LAYERS;
-import static org.jboss.as.patching.Constants.MODULES;
-import static org.jboss.as.patching.Constants.OVERLAYS;
-import static org.jboss.as.patching.Constants.SYSTEM;
-import static org.jboss.as.patching.IoUtils.mkdir;
-import static org.jboss.as.patching.IoUtils.newFile;
-import static org.jboss.as.patching.IoUtils.safeClose;
-import static org.jboss.as.patching.logging.PatchLogger.ROOT_LOGGER;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -52,9 +37,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.jar.Attributes.Name;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+
+import com.google.common.base.Joiner;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
@@ -79,7 +67,20 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 
-import com.google.common.base.Joiner;
+import static java.lang.String.format;
+import static org.jboss.as.patching.Constants.BASE;
+import static org.jboss.as.patching.Constants.BUNDLES;
+import static org.jboss.as.patching.Constants.LAYERS;
+import static org.jboss.as.patching.Constants.MODULES;
+import static org.jboss.as.patching.Constants.OVERLAYS;
+import static org.jboss.as.patching.Constants.SYSTEM;
+import static org.jboss.as.patching.IoUtils.mkdir;
+import static org.jboss.as.patching.IoUtils.newFile;
+import static org.jboss.as.patching.IoUtils.safeClose;
+import static org.jboss.as.patching.logging.PatchLogger.ROOT_LOGGER;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Jan Martiska, Jeff Mesnil
@@ -93,7 +94,7 @@ public class PatchingTestUtil {
     public static final String CONTAINER = "jboss";
     public static final String AS_DISTRIBUTION = System.getProperty("jbossas.dist");
     public static final String FILE_SEPARATOR = File.separator;
-    private static final String RELATIVE_PATCHES_PATH = Joiner.on(FILE_SEPARATOR).join(new String[]{MODULES, SYSTEM, LAYERS, BASE, OVERLAYS});
+    public static final String RELATIVE_PATCHES_PATH = Joiner.on(FILE_SEPARATOR).join(new String[]{MODULES, SYSTEM, LAYERS, BASE, OVERLAYS});
     public static final String PATCHES_PATH = AS_DISTRIBUTION + FILE_SEPARATOR + RELATIVE_PATCHES_PATH;
     private static final String RELATIVE_MODULES_PATH = Joiner.on(FILE_SEPARATOR).join(new String[]{MODULES, SYSTEM, LAYERS, BASE});
     public static final String MODULES_PATH = AS_DISTRIBUTION + FILE_SEPARATOR + RELATIVE_MODULES_PATH;
@@ -108,6 +109,10 @@ public class PatchingTestUtil {
 
     public static String randomString() {
         return UUID.randomUUID().toString();
+    }
+
+    public static String randomString(String prefix) {
+        return prefix + "-" + ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE);
     }
 
     /**
