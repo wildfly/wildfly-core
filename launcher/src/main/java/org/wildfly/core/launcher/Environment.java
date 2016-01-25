@@ -41,7 +41,6 @@ class Environment {
     private static final Path JAVA_HOME;
     private static final boolean MAC;
     private static final boolean WINDOWS;
-    private static final boolean JAVA_1_8_PLUS;
 
     static final String HOME_DIR = "jboss.home.dir";
     static final String MODULES_JAR_NAME = "jboss-modules.jar";
@@ -60,10 +59,6 @@ class Environment {
             javaHome = System.getProperty("java.home");
         }
         JAVA_HOME = Paths.get(javaHome);
-        final String jvmVersion = System.getProperty("java.specification.version");
-
-        // Versions below 8 should add a MaxPermSize
-        JAVA_1_8_PLUS = VersionComparator.compareVersion(jvmVersion, "1.8") < 0;
     }
 
     private final Path wildflyHome;
@@ -306,7 +301,7 @@ class Environment {
     }
 
     public static boolean supportsMaxPermSize() {
-        return JAVA_1_8_PLUS;
+        return false;
     }
 
     static Path getDefaultJavaHome() {
