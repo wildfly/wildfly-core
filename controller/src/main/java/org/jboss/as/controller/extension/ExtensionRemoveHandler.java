@@ -65,7 +65,11 @@ public class ExtensionRemoveHandler implements OperationStepHandler {
         context.removeResource(PathAddress.EMPTY_ADDRESS);
 
         final ManagementResourceRegistration rootRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
-        extensionRegistry.removeExtension(context.readResourceFromRoot(rootRegistration.getPathAddress()), module, rootRegistration);
+        try {
+            extensionRegistry.removeExtension(context.readResourceFromRoot(rootRegistration.getPathAddress()), module, rootRegistration);
+        } catch(IllegalStateException isex) {
+            throw new OperationFailedException(isex.getMessage());
+        }
 
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override
