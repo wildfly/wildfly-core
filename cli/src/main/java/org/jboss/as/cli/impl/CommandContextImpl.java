@@ -989,7 +989,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         // configured server does the same,
         Set<ControllerAddress> visited = new HashSet<ControllerAddress>();
         visited.add(address);
-        boolean retry;
+        boolean retry = false;
         do {
             try {
                 CallbackHandler cbh = new AuthenticationCallbackHandler(username, password);
@@ -1031,6 +1031,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 }
             } catch (IOException e) {
                 throw new CommandLineException("Failed to resolve host '" + address.getHost() + "'", e);
+            } finally {
+                if(!retry && console != null && console.isControlled()) {
+                    console.continuous();
+                }
             }
         } while (retry);
     }
@@ -1624,24 +1628,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
                     @Override
                     public void run() {
-
-                        // TODO in general, this is the wrong place for the logic below blocking the console's reading thread.
-                        // Because the reading thread will be unblocked right after the authentication is done at which point
-                        // not all the necessary initializations will have been performed related to establishing
-                        // the connection to the controller, e.g. reading the commands from the extensions, etc.
-                        // In addition, there is a chance a few commands could be read before we get to this point.
-                        // So, the best place for the logic below would be connectController(...) with unblocking
-                        // the console's reading thread at the end of the method.
-                        // The reason this logic is here is to minimize chances for initializing the console
-                        // during the non-interactive mode for the CLI API clients since multiple console initializations
-                        // (i.e. connect/disconnect) will lead to an out of memory error due to an issue in Aesh.
-                        // This logic here will initialize the console only in case the required authentication input
-                        // has not already been provided by the user.
-                        // Which doesn't fix the problem in general but also doesn't introduce a regression against
-                        // the previous releases (that are also affected by the same general issue).
-                        final boolean controlConsole = username == null || password == null;
+                        boolean success = false;
                         try {
-                            if (controlConsole) {
+                            if (username == null || password == null) {
                                 if (console == null) {
                                     initBasicConsole(null, false);
                                 }
@@ -1651,6 +1640,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                                 }
                             }
                             dohandle(callbacks);
+                            success = true;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         } catch (UnsupportedCallbackException e) {
@@ -1658,7 +1648,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         } catch (CliInitializationException e) {
                             throw new RuntimeException(e);
                         } finally {
-                            if (controlConsole) {
+                            // in case of success the console will continue after connectController has finished all the initialization required
+                            if (!success && console != null && console.isControlled()) {
                                 console.continuous();
                             }
                         }
