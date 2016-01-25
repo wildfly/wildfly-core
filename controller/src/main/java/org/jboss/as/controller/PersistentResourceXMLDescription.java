@@ -54,6 +54,8 @@ public final class PersistentResourceXMLDescription {
     private final Set<String> attributeGroups;
     private final String forcedName;
     private final boolean marshallDefaultValues;
+    //name of the attribute that is used for wildcard elements
+    private final String nameAttributeName;
 
 
     private PersistentResourceXMLDescription(PersistentResourceXMLBuilder builder) {
@@ -103,6 +105,7 @@ public final class PersistentResourceXMLDescription {
         this.attributeMarshallers = builder.attributeMarshallers;
         this.forcedName = builder.forcedName;
         this.marshallDefaultValues = builder.marshallDefaultValues;
+        this.nameAttributeName = builder.nameAttributeName;
     }
 
     public PathElement getPathElement() {
@@ -182,7 +185,7 @@ public final class PersistentResourceXMLDescription {
         for (int i = 0; i < reader.getAttributeCount(); i++) {
             String attributeName = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
-            if (wildcard && NAME.equals(attributeName)) {
+            if (wildcard && nameAttributeName.equals(attributeName)) {
                 name = value;
             } else if (attributes.containsKey(attributeName)) {
                 AttributeDefinition def = attributes.get(attributeName);
@@ -318,7 +321,7 @@ public final class PersistentResourceXMLDescription {
                     writeStartElement(writer, namespaceURI, name);
                 } else {
                     writeStartElement(writer, namespaceURI, xmlElementName);
-                    writer.writeAttribute(NAME, name);
+                    writer.writeAttribute(nameAttributeName, name);
                 }
                 persistAttributes(writer, subModel);
                 persistChildren(writer, subModel);
@@ -414,6 +417,7 @@ public final class PersistentResourceXMLDescription {
         protected boolean useElementsForGroups = true;
         protected String forcedName;
         private boolean marshallDefaultValues = false;
+        private String nameAttributeName = NAME;
 
         protected PersistentResourceXMLBuilder(final PersistentResourceDefinition resourceDefinition) {
             this.resourceDefinition = resourceDefinition;
@@ -515,6 +519,18 @@ public final class PersistentResourceXMLDescription {
          */
         public PersistentResourceXMLBuilder setMarshallDefaultValues(boolean marshallDefault) {
             this.marshallDefaultValues = marshallDefault;
+            return this;
+        }
+
+        /**
+         * Sets name for "name" attribute that is used for wildcard resources.
+         * It defines name of attribute one resource xml element to be used for such identifier
+         * If not set it defaults to "name"
+         * @param nameAttributeName xml attribute name to be used for resource name
+         * @return builder
+         */
+        public PersistentResourceXMLBuilder setNameAttributeName(String nameAttributeName) {
+            this.nameAttributeName = nameAttributeName;
             return this;
         }
 

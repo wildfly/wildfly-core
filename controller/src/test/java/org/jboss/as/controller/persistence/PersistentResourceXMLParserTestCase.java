@@ -714,6 +714,7 @@ public class PersistentResourceXMLParserTestCase {
             return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
                     .addChild(
                             builder(SESSION_INSTANCE)
+                                    .setNameAttributeName("session-name") //custom name attribute for session resources
                                     .addAttribute(MAX_REGIONS)
                                     .addChild(
                                             builder(CUSTOM_SERVER_INSTANCE)
