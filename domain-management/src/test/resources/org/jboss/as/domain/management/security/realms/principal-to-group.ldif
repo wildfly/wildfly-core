@@ -240,3 +240,38 @@ memberOf: uid=GroupTwo,ou=groups,dc=principal-to-group,dc=wildfly,dc=org
 memberOf: uid=MissingGroup,ou=groups,dc=principal-to-group,dc=wildfly,dc=org
 userPassword: passwordEleven
 
+# Entries for a user referencing two groups, one of which is missing the attribute that holds it's simple name.
+
+dn: uid=TestUserTwelve,ou=users,dc=principal-to-group,dc=wildfly,dc=org
+objectClass: top
+objectClass: groupMember
+objectClass: inetOrgPerson
+objectClass: uidObject
+objectClass: person
+objectClass: organizationalPerson
+cn: Test User Twelve
+sn: Test User Twelve
+uid: TestUserTwelve
+memberOf: uid=GroupTen,ou=groups,dc=principal-to-group,dc=wildfly,dc=org
+memberOf: uid=GroupEleven,ou=groups,dc=principal-to-group,dc=wildfly,dc=org
+userPassword: passwordTwelve
+
+dn: uid=GroupTen,ou=groups,dc=principal-to-group,dc=wildfly,dc=org
+objectClass: top
+objectClass: groupMember
+objectClass: group
+objectClass: uidObject
+objectClass: extensibleObject
+uid: GroupTen
+name: GroupTen
+
+dn: uid=GroupEleven,ou=groups,dc=principal-to-group,dc=wildfly,dc=org
+objectClass: top
+objectClass: groupMember
+objectClass: group
+objectClass: uidObject
+uid: GroupEleven
+
+
+
+

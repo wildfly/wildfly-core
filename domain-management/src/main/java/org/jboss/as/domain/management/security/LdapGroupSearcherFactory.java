@@ -63,8 +63,8 @@ public class LdapGroupSearcherFactory {
     }
 
     static LdapSearcher<LdapEntry[], LdapEntry> createForPrincipalToGroup(final String groupAttribute, final String groupNameAttribute,
-                                                                          final boolean preferOriginalConnection, final boolean skipMissingGroups) {
-        return new PrincipalToGroupSearcher(groupAttribute, groupNameAttribute, preferOriginalConnection, skipMissingGroups);
+                                                                          final boolean preferOriginalConnection, final boolean skipMissingGroups, final boolean usingSimpleNames) {
+        return new PrincipalToGroupSearcher(groupAttribute, groupNameAttribute, preferOriginalConnection, skipMissingGroups, usingSimpleNames);
     }
 
     private static SearchControls createSearchControl(final boolean recursive, final String[] attributes) {
@@ -217,18 +217,22 @@ public class LdapGroupSearcherFactory {
         private final String groupNameAttribute; // The attribute on the group that is it's simple name.
         private final boolean preferOriginalConnection; // After a referral should we still prefer the original connection?
         private final boolean skipMissingGroups;
+        private final boolean usingSimpleNames; // If set to true the groups are going to be mapped using a simple name so essential all entries have one.
 
-        private PrincipalToGroupSearcher(final String groupAttribute, final String groupNameAttribute, final boolean preferOriginalConnection, final boolean skipMissingGroups) {
+        private PrincipalToGroupSearcher(final String groupAttribute, final String groupNameAttribute, final boolean preferOriginalConnection,
+                                         final boolean skipMissingGroups, final boolean usingSimpleName) {
             this.groupAttribute = groupAttribute;
             this.groupNameAttribute = groupNameAttribute;
             this.preferOriginalConnection = preferOriginalConnection;
             this.skipMissingGroups = skipMissingGroups;
+            this.usingSimpleNames = usingSimpleName;
 
             if (SECURITY_LOGGER.isTraceEnabled()) {
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher groupAttribute=%s", groupAttribute);
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher groupNameAttribute=%s", groupNameAttribute);
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher preferOriginalConnection=%b", preferOriginalConnection);
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher skipMissingGroups=%b", skipMissingGroups);
+                SECURITY_LOGGER.tracef("PrincipalToGroupSearcher usingSimpleNames=%b", usingSimpleNames);
             }
         }
 
@@ -298,13 +302,24 @@ public class LdapGroupSearcherFactory {
 
                             if (groupNameAttribute != null) {
                                 Attribute groupNameAttr = groupNameAttrs.get(groupNameAttribute);
-                                simpleName = (String) groupNameAttr.get();
-                                SECURITY_LOGGER.tracef("simpleName %s loaded for group with distinguishedName=%s", simpleName,
-                                        distingushedName);
+                                if (groupNameAttr != null) {
+                                    simpleName = (String) groupNameAttr.get();
+                                    SECURITY_LOGGER.tracef("simpleName %s loaded for group with distinguishedName=%s", simpleName,
+                                            distingushedName);
+                                } else {
+                                    SECURITY_LOGGER.tracef("attribute %s not loaded for group with distinguishedName=%s", groupNameAttr,
+                                            distingushedName);
+                                }
                             } else {
                                 SECURITY_LOGGER.trace("No groupNameAttribute to load simpleName");
                             }
-                            foundEntries.add(new LdapEntry(simpleName, distingushedName, groupReferralAddress));
+                            if (simpleName == null && usingSimpleNames) {
+                                if (skipMissingGroups == false) {
+                                    throw SECURITY_LOGGER.unableToLoadSimpleNameForGroup(distingushedName);
+                                }
+                            } else {
+                                foundEntries.add(new LdapEntry(simpleName, distingushedName, groupReferralAddress));
+                            }
                         } catch (NameNotFoundException e) {
                             SECURITY_LOGGER.tracef("Failed to query roleNameAttrName: %s", e.getMessage());
                             if (skipMissingGroups == false) {
