@@ -565,7 +565,7 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
      * @param context    the task context
      * @return the created task
      */
-    static PatchingTask createTask(final PatchingTasks.ContentTaskDefinition definition, final PatchContentProvider provider, final PatchingTaskContext context) {
+    static PatchingTask createTask(final PatchingTasks.ContentTaskDefinition definition, final PatchContentProvider provider, final IdentityPatchContext.PatchEntry context) {
         final PatchContentLoader contentLoader = provider.getLoader(definition.getTarget().getPatchId());
         final PatchingTaskDescription description = PatchingTaskDescription.create(definition, contentLoader);
         return PatchingTask.Factory.create(description, context);

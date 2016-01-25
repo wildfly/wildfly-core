@@ -124,6 +124,14 @@ public abstract class InstallationManager {
         void rollback(String patchId);
 
         /**
+         * Checks whether the specified patch id was rolled back in the current process.
+         *
+         * @param patchId  patch is to check
+         * @return  true if the patch was rolled back in the current process, otherwise - false
+         */
+        boolean isRolledback(String patchId);
+
+        /**
          * Apply a patch.
          *
          * @param patchId   the patch id
