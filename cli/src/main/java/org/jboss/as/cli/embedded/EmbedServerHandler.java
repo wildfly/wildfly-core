@@ -137,8 +137,22 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
         Long bootTimeout = null;
         String timeoutString = timeout.getValue(parsedCmd);
+        if (timeout.isPresent(parsedCmd) && (timeoutString == null || timeoutString.isEmpty())) {
+            throw new CommandFormatException("The --timeout parameter requires a value.");
+        }
+
         if (timeoutString != null) {
             bootTimeout = TimeUnit.SECONDS.toNanos(Long.parseLong(timeoutString));
+        }
+
+        String stdOutString = stdOutHandling.getValue(parsedCmd);
+        if (stdOutHandling.isPresent(parsedCmd)) {
+            if (stdOutString == null || stdOutString.isEmpty()) {
+                throw new CommandFormatException("The --std-out parameter requires a value { echo, discard }.");
+            }
+            if (! (stdOutString.equals(ECHO) || stdOutString.equals(DISCARD_STDOUT))) {
+                throw new CommandFormatException("The --std-out parameter should be one of { echo, discard }.");
+            }
         }
 
         final EnvironmentRestorer restorer = new EnvironmentRestorer();

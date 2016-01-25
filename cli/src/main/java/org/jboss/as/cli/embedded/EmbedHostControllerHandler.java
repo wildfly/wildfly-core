@@ -117,19 +117,40 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             domainXml = dashC.getValue(parsedCmd);
         }
 
+        if ((domainConfig.isPresent(parsedCmd) || dashC.isPresent(parsedCmd)) && (domainXml == null || domainXml.isEmpty())) {
+            throw new CommandFormatException("The --domain-config (or -c) parameter requires a value.");
+        }
+
         String hostXml = hostConfig.getValue(parsedCmd);
+        if (hostConfig.isPresent(parsedCmd) && (hostXml == null || hostXml.isEmpty())) {
+            throw new CommandFormatException("The --host-config parameter requires a value.");
+        }
+
+        Long bootTimeout = null;
+        String timeoutString = timeout.getValue(parsedCmd);
+        if (timeout.isPresent(parsedCmd) && (timeoutString == null || timeoutString.isEmpty())) {
+            throw new CommandFormatException("The --timeout parameter requires a value.");
+        }
+
+        if (timeoutString != null) {
+            bootTimeout = TimeUnit.SECONDS.toNanos(Long.parseLong(timeoutString));
+        }
+
+        String stdOutString = stdOutHandling.getValue(parsedCmd);
+        if (stdOutHandling.isPresent(parsedCmd)) {
+            if (stdOutString == null || stdOutString.isEmpty()) {
+                throw new CommandFormatException("The --std-out parameter requires a value { echo, discard }.");
+            }
+            if (! (stdOutString.equals(ECHO) || stdOutString.equals(DISCARD_STDOUT))) {
+                throw new CommandFormatException("The --std-out parameter should be one of { echo, discard }.");
+            }
+        }
 
         final List<String> args = parsedCmd.getOtherProperties();
         if (!args.isEmpty()) {
             if (args.size() != 0) {
                 throw new CommandFormatException("The command accepts 0 unnamed argument(s) but received: " + args);
             }
-        }
-
-        Long bootTimeout = null;
-        String timeoutString = timeout.getValue(parsedCmd);
-        if (timeoutString != null) {
-            bootTimeout = TimeUnit.SECONDS.toNanos(Long.parseLong(timeoutString));
         }
 
         final EnvironmentRestorer restorer = new EnvironmentRestorer();
