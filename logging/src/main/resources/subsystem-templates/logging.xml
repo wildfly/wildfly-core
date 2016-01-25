@@ -3,12 +3,7 @@
 <config default-supplement="default">
    <extension-module>org.jboss.as.logging</extension-module>
    <subsystem xmlns="urn:jboss:domain:logging:3.0">
-       <console-handler name="CONSOLE">
-           <level name="INFO"/>
-           <formatter>
-               <named-formatter name="COLOR-PATTERN"/>
-           </formatter>
-       </console-handler>
+       <?HANDLERS?>
        <periodic-rotating-file-handler name="FILE" autoflush="true">
            <formatter>
                <named-formatter name="PATTERN"/>
@@ -21,8 +16,7 @@
        <root-logger>
            <level name="INFO"/>
            <handlers>
-               <handler name="CONSOLE"/>
-               <handler name="FILE"/>
+               <?ROOT-LOGGER-HANDLERS?>
            </handlers>
        </root-logger>
        <formatter name="PATTERN">
@@ -33,21 +27,64 @@
        </formatter>
    </subsystem>
    <supplement name="default">
-      <replacement placeholder="@@append@@" attributeValue="true"/>
-      <replacement placeholder="LOGGERS">
-	      <logger category="com.arjuna">
-	          <level name="WARN"/>
-	      </logger>
-	      <logger category="org.jboss.as.config">
-	          <level name="DEBUG"/>
-	      </logger>
-	      <logger category="sun.rmi">
-	          <level name="WARN"/>
-	      </logger>
-      </replacement>
+       <replacement placeholder="HANDLERS">
+           <console-handler name="CONSOLE">
+               <level name="INFO"/>
+               <formatter>
+                   <named-formatter name="COLOR-PATTERN"/>
+               </formatter>
+           </console-handler>
+       </replacement>
+       <replacement placeholder="ROOT-LOGGER-HANDLERS">
+           <handler name="CONSOLE"/>
+           <handler name="FILE"/>
+       </replacement>
+       <replacement placeholder="@@append@@" attributeValue="true"/>
+       <replacement placeholder="LOGGERS">
+           <logger category="com.arjuna">
+               <level name="WARN"/>
+           </logger>
+           <logger category="org.jboss.as.config">
+               <level name="DEBUG"/>
+           </logger>
+           <logger category="sun.rmi">
+               <level name="WARN"/>
+           </logger>
+       </replacement>
    </supplement>
    <supplement name="minimal">
-      <replacement placeholder="@@append@@" attributeValue="false"/>
-      <replacement placeholder="LOGGERS"/>
+       <replacement placeholder="HANDLERS">
+           <console-handler name="CONSOLE">
+               <level name="INFO"/>
+               <formatter>
+                   <named-formatter name="COLOR-PATTERN"/>
+               </formatter>
+           </console-handler>
+       </replacement>
+       <replacement placeholder="ROOT-LOGGER-HANDLERS">
+           <handler name="CONSOLE"/>
+           <handler name="FILE"/>
+       </replacement>
+       <replacement placeholder="@@append@@" attributeValue="false"/>
+       <replacement placeholder="LOGGERS"/>
+   </supplement>
+   <supplement name="full-ha">
+       <replacement placeholder="HANDLERS"/>
+       <replacement placeholder="ROOT-LOGGER-HANDLERS">
+           <handler name="FILE"/>
+       </replacement>
+       <replacement placeholder="@@append@@" attributeValue="true"/>
+       <replacement placeholder="LOGGERS">
+           <logger category="com.arjuna">
+               <level name="WARN"/>
+           </logger>
+           <logger category="org.jboss.as.config">
+               <level name="DEBUG"/>
+           </logger>
+           <logger category="sun.rmi">
+               <level name="WARN"/>
+           </logger>
+       </replacement>
    </supplement>
 </config>
+
