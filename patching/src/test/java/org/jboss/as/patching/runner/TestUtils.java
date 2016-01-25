@@ -55,7 +55,6 @@ import java.util.jar.Manifest;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
-import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.ZipUtils;
 import org.jboss.as.patching.installation.InstalledImage;
 import org.jboss.as.patching.installation.PatchableTarget;
@@ -75,10 +74,12 @@ public class TestUtils {
     }
 
     public static void tree(File dir) {
+        if (!ROOT_LOGGER.isTraceEnabled()){
+            return;
+        }
         StringBuilder out = new StringBuilder();
-        out.append(dir.getParentFile().getAbsolutePath() + "\n");
+        out.append(dir.getParentFile().getAbsolutePath()).append("\n");
         tree0(out, dir, 1, "  ");
-        System.out.println(out);
         ROOT_LOGGER.trace(out.toString());
     }
 
@@ -108,12 +109,8 @@ public class TestUtils {
     }
 
     public static void dump(File f, String content) throws IOException {
-        final OutputStream os = new FileOutputStream(f);
-        try {
+        try (final OutputStream os = new FileOutputStream(f)){
             os.write(content.getBytes(StandardCharsets.UTF_8));
-            os.close();
-        } finally {
-            IoUtils.safeClose(os);
         }
     }
 
@@ -229,14 +226,10 @@ public class TestUtils {
         }
 
         if(logContent) {
-            java.io.FileInputStream fis = null;
-            try {
-                fis = new java.io.FileInputStream(new java.io.File(dir, "patch.xml"));
+            try (java.io.FileInputStream fis = new java.io.FileInputStream(new java.io.File(dir, "patch.xml"))){
                 final byte[] bytes = new byte[fis.available()];
                 fis.read(bytes);
                 System.out.println(new String(bytes));
-            } finally {
-                StreamUtils.safeClose(fis);
             }
         }
     }

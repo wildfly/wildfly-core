@@ -11,7 +11,6 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.version.ProductConfig;
@@ -126,16 +125,11 @@ public class InstallationManagerImpl extends InstallationManager {
 
     private Properties loadProductConf(File productConf) throws PatchingException {
         final Properties props = new Properties();
-        FileInputStream fis = null;
-        try {
-            fis = new FileInputStream(productConf);
+
+        try (FileInputStream fis = new FileInputStream(productConf)){
             props.load(fis);
         } catch(IOException e) {
             throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(productConf.getAbsolutePath()), e);
-        } finally {
-            if(fis != null) {
-                IoUtils.safeClose(fis);
-            }
         }
         return props;
     }
