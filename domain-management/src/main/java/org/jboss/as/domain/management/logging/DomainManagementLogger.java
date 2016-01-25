@@ -1145,6 +1145,15 @@ public interface DomainManagementLogger extends BasicLogger {
     StartException keyTabFileNotFound(String fileName);
 
     /**
+     * The error to indicate where it has not been possible to load a distinguished name for a group.
+     *
+     * @param distinguishedName the distinguished name of the group that failed to load.
+     * @return The exception for the error.
+     */
+    @Message(id = 110, value = "Unable to load a simple name for group '%s'")
+    NamingException unableToLoadSimpleNameForGroup(String distinguishedName);
+
+    /**
      * Information message saying the username and password must be different.
      *
      * @return an {@link String} for the error.
