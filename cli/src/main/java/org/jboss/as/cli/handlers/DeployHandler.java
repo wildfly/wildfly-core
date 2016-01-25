@@ -322,6 +322,12 @@ public class DeployHandler extends DeploymentHandler {
                     throw new CommandFormatException("Filesystem path, --url or --name is required.");
                 } else {
                     name = deploymentUrl.getPath();
+                    // strip trailing slash if present
+                    if ( name.charAt(name.length() -1) == '/') name = name.substring(0, name.length() - 1);
+                    // take only last element of the path
+                    if ( name.lastIndexOf('/') > -1) {
+                        name = name.substring(name.lastIndexOf('/') + 1);
+                    }
                 }
             } else {
                 name = f.getName();
