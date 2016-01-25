@@ -46,6 +46,7 @@ import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
+import org.jboss.as.cli.impl.ArgumentWithListValue;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.DefaultCompleter;
 import org.jboss.as.cli.impl.DefaultCompleter.CandidatesProvider;
@@ -80,6 +81,18 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         }
     }
 
+    private class AddModuleListArgument extends ArgumentWithListValue {
+        private AddModuleListArgument(String fullname, CommandLineCompleter completer) {
+            super(ASModuleHandler.this, completer, fullname);
+        }
+
+        @Override
+        public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+            final String actionValue = action.getValue(ctx.getParsedCommandLine());
+            return ACTION_ADD.equals(actionValue) && name.isPresent(ctx.getParsedCommandLine()) && super.canAppearNext(ctx);
+        }
+    }
+
     private static final String JBOSS_HOME = "JBOSS_HOME";
     private static final String JBOSS_HOME_PROPERTY = "jboss.home.dir";
 
@@ -98,7 +111,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     private final ArgumentWithValue name;
     private final ArgumentWithValue mainClass;
     private final ArgumentWithValue resources;
-    private final ArgumentWithValue dependencies;
+    private final ArgumentWithListValue dependencies;
     private final ArgumentWithValue props;
     private final ArgumentWithValue moduleArg;
     private final ArgumentWithValue slot;
@@ -183,7 +196,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
 
         resourceDelimiter = new AddModuleArgument("--resource-delimiter");
 
-        dependencies = new AddModuleArgument("--dependencies", new CommandLineCompleter(){
+        dependencies = new AddModuleListArgument("--dependencies", new CommandLineCompleter(){
             @Override
             public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
                 final int lastSeparator = buffer.lastIndexOf(MODULE_SEPARATOR);
