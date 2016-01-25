@@ -316,6 +316,9 @@ public class PatchHandler extends CommandHandlerWithHelp {
     @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
         final ParsedCommandLine parsedLine = ctx.getParsedCommandLine();
+        if(host.isPresent(parsedLine) && !ctx.isDomainMode()) {
+            throw new CommandFormatException("The --host option is not available in the current context. Connection to the controller might be unavailable or not running in domain mode.");
+        }
         final String action = this.action.getValue(parsedLine);
         if(INSPECT.equals(action)) {
             doInspect(ctx);
