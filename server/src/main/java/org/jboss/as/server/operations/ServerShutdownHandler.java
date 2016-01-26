@@ -52,6 +52,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceRegistry;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 
 /**
  * Handler that shuts down the standalone server.
@@ -67,6 +68,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
     protected static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
             .setAllowNull(true)
+            .setMeasurementUnit(MeasurementUnit.SECONDS)
             .build();
 
     public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.SHUTDOWN, ServerDescriptions.getResourceDescriptionResolver())
