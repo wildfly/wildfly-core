@@ -26,6 +26,8 @@ import org.jboss.as.controller.services.path.PathManagerService;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -39,6 +41,9 @@ public class FileAuditLogHandler extends AbstractFileAuditLogHandler {
     //SimpleDateFormat is not good to store among threads, since it stores intermediate results in its fields
     //Methods on this class will only ever be called from one thread (see class javadoc) so although it looks shared here it is not
     private static final SimpleDateFormat OLD_FILE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd_HHmmss");
+    public static final String ROTATE_AT_STARTUP_PROPERTY_NAME = FileAuditLogHandler.class.getName() + ".rotate-at-startup";
+
+    private final boolean rotateAtStartup = getSystemProperty(ROTATE_AT_STARTUP_PROPERTY_NAME, true);
 
     public FileAuditLogHandler(String name, String formatterName, int maxFailureCount, PathManagerService pathManager, String path, String relativeTo) {
         super(name, formatterName, maxFailureCount, pathManager, path, relativeTo);
@@ -47,7 +52,7 @@ public class FileAuditLogHandler extends AbstractFileAuditLogHandler {
     @Override
     protected void initializeAtStartup(final File file) {
         // rotate on every startup
-        if (file.exists()) {
+        if (file.exists() && rotateAtStartup) {
             final File backup = new File(file.getParentFile(), file.getName() + OLD_FILE_FORMATTER.format(new Date()));
             try {
                 rename(file, backup);
@@ -70,5 +75,19 @@ public class FileAuditLogHandler extends AbstractFileAuditLogHandler {
             return true;
         }
         return false;
+    }
+
+    private static boolean getSystemProperty(final String name, boolean defaultValue) {
+        String systemProperty;
+        if(System.getSecurityManager() == null) {
+            systemProperty = System.getProperty(name);
+        } else {
+            systemProperty = AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(name));
+        }
+        if (systemProperty == null) {
+            return defaultValue;
+        } else {
+            return Boolean.parseBoolean(systemProperty);
+        }
     }
 }
