@@ -193,7 +193,13 @@ public class RemotingExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_2_0.getUriString(), RemotingSubsystem20Parser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_3_0.getUriString(), RemotingSubsystem30Parser.INSTANCE);
 
-        context.setProfileParsingCompletionHandler(new IOCompletionHandler());
+        // For servers only as a migration aid we'll install io if it is missing.
+        // It is invalid to do this on an HC as the HC needs to support profiles running legacy
+        // slaves that will not understand the io extension
+        // See also WFCORE-778 and the description of the pull request for it
+        if (context.getProcessType().isServer()) {
+            context.setProfileParsingCompletionHandler(new IOCompletionHandler());
+        }
     }
 
     private static class IOCompletionHandler implements ProfileParsingCompletionHandler {
