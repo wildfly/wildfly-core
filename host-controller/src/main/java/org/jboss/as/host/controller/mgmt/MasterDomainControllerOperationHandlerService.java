@@ -71,15 +71,17 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
     private final ManagementPongRequestHandler pongRequestHandler = new ManagementPongRequestHandler();
     private final File tempDir;
     private final HostRegistrations slaveHostRegistrations;
+    private final DomainHostExcludeRegistry domainHostExcludeRegistry;
 
     public MasterDomainControllerOperationHandlerService(final DomainController domainController, final HostControllerRegistrationHandler.OperationExecutor operationExecutor,
                                                          TransactionalOperationExecutor txOperationExecutor,
-                                                         final File tempDir, final HostRegistrations slaveHostRegistrations) {
+                                                         final File tempDir, final HostRegistrations slaveHostRegistrations, DomainHostExcludeRegistry domainHostExcludeRegistry) {
         this.domainController = domainController;
         this.operationExecutor = operationExecutor;
         this.txOperationExecutor = txOperationExecutor;
         this.tempDir = tempDir;
         this.slaveHostRegistrations = slaveHostRegistrations;
+        this.domainHostExcludeRegistry = domainHostExcludeRegistry;
     }
 
     @Override
@@ -94,7 +96,7 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
         handler.getAttachments().attach(ManagementChannelHandler.TEMP_DIR, tempDir);
         // Assemble the request handlers for the domain channel
         handler.addHandlerFactory(new HostControllerRegistrationHandler(handler, domainController, operationExecutor,
-                getExecutor(), slaveHostRegistrations));
+                getExecutor(), slaveHostRegistrations, domainHostExcludeRegistry));
         handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler, getResponseAttachmentSupport(), getClientRequestExecutor()));
         handler.addHandlerFactory(new MasterDomainControllerOperationHandlerImpl(domainController, getExecutor()));
         handler.addHandlerFactory(pongRequestHandler);

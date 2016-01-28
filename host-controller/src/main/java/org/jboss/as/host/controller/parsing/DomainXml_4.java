@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_ORGANIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_EXCLUDE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
@@ -53,10 +54,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRI
 import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
+import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
 import static org.jboss.as.controller.parsing.ParseUtils.nextElement;
 import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
+import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
@@ -73,6 +76,7 @@ import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.HashUtil;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -90,6 +94,7 @@ import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefini
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
+import org.jboss.as.domain.controller.resources.HostExcludeResourceDefinition;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
@@ -218,6 +223,10 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
             writer.writeEndElement();
             WriteUtils.writeNewLine(writer);
         }
+        if (modelNode.hasDefined(HOST_EXCLUDE)) {
+            writeHostExcludes(writer, modelNode.get(HOST_EXCLUDE));
+            WriteUtils.writeNewLine(writer);
+        }
         if (modelNode.hasDefined(MANAGEMENT_CLIENT_CONTENT)) {
             writeManagementClientContent(writer, modelNode.get(MANAGEMENT_CLIENT_CONTENT));
             WriteUtils.writeNewLine(writer);
@@ -279,6 +288,10 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
         if (element == Element.SERVER_GROUPS) {
             parseServerGroups(reader, address, list);
+            element = nextElement(reader, namespace);
+        }
+        if (element == Element.HOST_EXCLUDES) {
+            parseHostExcludes(reader, list);
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT_CLIENT_CONTENT) {
@@ -891,6 +904,216 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         accessControlXml.writeAccessControl(writer, accessAuthorization);
 
         return true;
+    }
+
+    private void parseHostExcludes(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
+        requireNoAttributes(reader);
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case HOST_EXCLUDE:
+                    parseHostExclude(reader, list);
+                    break;
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+    }
+
+    private void parseHostExclude(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
+
+        ModelNode addOp = Util.createAddOperation(PathAddress.EMPTY_ADDRESS);
+
+        String name = null;
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw ParseUtils.unexpectedAttribute(reader, i);
+            }
+
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            if (attribute == Attribute.NAME) {
+                name = value;
+                addOp.get(OP_ADDR).set(PathAddress.pathAddress(HOST_EXCLUDE, name).toModelNode());
+            } else if (attribute == Attribute.ACTIVE_SERVER_GROUPS) {
+                HostExcludeResourceDefinition.ACTIVE_SERVER_GROUPS.getParser()
+                        .parseAndSetParameter(HostExcludeResourceDefinition.ACTIVE_SERVER_GROUPS, value, addOp, reader);
+            } else if (attribute == Attribute.ACTIVE_SOCKET_BINDING_GROUPS) {
+                HostExcludeResourceDefinition.ACTIVE_SOCKET_BINDING_GROUPS.getParser()
+                        .parseAndSetParameter(HostExcludeResourceDefinition.ACTIVE_SOCKET_BINDING_GROUPS, value, addOp, reader);
+            } else {
+                throw unexpectedAttribute(reader, i);
+            }
+        }
+
+        if (name == null) {
+            throw missingRequired(reader, NAME);
+        }
+
+        boolean sawMapping = false;
+
+        ModelNode extensions = new ModelNode();
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case HOST_RELEASE:
+                    if (sawMapping) {
+                        throw unexpectedElement(reader);
+                    }
+                    sawMapping = true;
+                    parseHostRelease(reader, addOp);
+                    break;
+                case HOST_API_VERSION:
+                    if (sawMapping) {
+                        throw unexpectedElement(reader);
+                    }
+                    sawMapping = true;
+                    parseHostApiVersion(reader, addOp);
+                    break;
+                case EXCLUDED_EXTENSIONS:
+                    requireNoAttributes(reader);
+                    while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+                        requireNamespace(reader, namespace);
+                        final Element element1 = Element.forName(reader.getLocalName());
+                        switch (element1) {
+                            case EXTENSION:
+                                final int attrcount = reader.getAttributeCount();
+                                for (int i = 0; i < attrcount; i++) {
+                                    final String value = reader.getAttributeValue(i);
+                                    if (!isNoNamespaceAttribute(reader, i)) {
+                                        throw ParseUtils.unexpectedAttribute(reader, i);
+                                    }
+
+                                    final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                                    if (attribute == Attribute.MODULE) {
+                                        extensions.add(value);
+                                    } else {
+                                        throw unexpectedAttribute(reader, i);
+                                    }
+                                }
+                                requireNoContent(reader);
+                                break;
+                            default: {
+                                throw unexpectedElement(reader);
+                            }
+                        }
+                    }
+                    break;
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+        if (extensions.isDefined()) {
+            addOp.get(HostExcludeResourceDefinition.EXCLUDED_EXTENSIONS.getName()).set(extensions);
+        }
+
+        if (!sawMapping) {
+            throw missingRequiredElement(reader, EnumSet.of(Element.HOST_RELEASE, Element.HOST_API_VERSION));
+        }
+        list.add(addOp);
+    }
+
+    private void parseHostRelease(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
+
+        boolean sawId = false;
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw ParseUtils.unexpectedAttribute(reader, i);
+            }
+
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            if (attribute == Attribute.ID) {
+                sawId = true;
+                HostExcludeResourceDefinition.HOST_RELEASE.parseAndSetParameter(value, addOp, reader);
+            } else {
+                throw unexpectedAttribute(reader, i);
+            }
+        }
+
+        if (!sawId) {
+            throw missingRequired(reader, Attribute.ID.getLocalName());
+        }
+
+        requireNoContent(reader);
+    }
+
+    private void parseHostApiVersion(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
+
+        Set<Attribute> required = EnumSet.of(Attribute.MAJOR_VERSION, Attribute.MINOR_VERSION);
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw ParseUtils.unexpectedAttribute(reader, i);
+            }
+
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            if (attribute == Attribute.MAJOR_VERSION) {
+                required.remove(attribute);
+                HostExcludeResourceDefinition.MANAGEMENT_MAJOR_VERSION.parseAndSetParameter(value, addOp, reader);
+            } else if (attribute == Attribute.MINOR_VERSION) {
+                required.remove(attribute);
+                HostExcludeResourceDefinition.MANAGEMENT_MINOR_VERSION.parseAndSetParameter(value, addOp, reader);
+            } else if (attribute == Attribute.MICRO_VERSION) {
+                HostExcludeResourceDefinition.MANAGEMENT_MICRO_VERSION.parseAndSetParameter(value, addOp, reader);
+            } else {
+                throw unexpectedAttribute(reader, i);
+            }
+        }
+
+        if (!required.isEmpty()) {
+            throw missingRequired(reader, required);
+        }
+
+        requireNoContent(reader);
+    }
+
+    private void writeHostExcludes(XMLExtendedStreamWriter writer, ModelNode modelNode) throws XMLStreamException {
+        writer.writeStartElement(Element.HOST_EXCLUDES.getLocalName());
+        for (String exclude : modelNode.keys()) {
+            writer.writeStartElement(Element.HOST_EXCLUDE.getLocalName());
+            writer.writeAttribute(Attribute.NAME.getLocalName(), exclude);
+            ModelNode excludeNode = modelNode.get(exclude);
+            HostExcludeResourceDefinition.ACTIVE_SERVER_GROUPS.getAttributeMarshaller()
+                    .marshall(HostExcludeResourceDefinition.ACTIVE_SERVER_GROUPS, excludeNode, false, writer);
+            HostExcludeResourceDefinition.ACTIVE_SOCKET_BINDING_GROUPS.getAttributeMarshaller()
+                    .marshall(HostExcludeResourceDefinition.ACTIVE_SOCKET_BINDING_GROUPS, excludeNode, false, writer);
+            if (HostExcludeResourceDefinition.HOST_RELEASE.isMarshallable(excludeNode)) {
+                writer.writeEmptyElement(Element.HOST_RELEASE.getLocalName());
+                HostExcludeResourceDefinition.HOST_RELEASE.marshallAsAttribute(excludeNode, writer);
+            } else {
+                writer.writeStartElement(Element.HOST_API_VERSION.getLocalName());
+                HostExcludeResourceDefinition.MANAGEMENT_MAJOR_VERSION.marshallAsAttribute(excludeNode, writer);
+                HostExcludeResourceDefinition.MANAGEMENT_MINOR_VERSION.marshallAsAttribute(excludeNode, writer);
+                HostExcludeResourceDefinition.MANAGEMENT_MICRO_VERSION.marshallAsAttribute(excludeNode, writer);
+                writer.writeEndElement();
+            }
+
+            if (HostExcludeResourceDefinition.EXCLUDED_EXTENSIONS.isMarshallable(excludeNode)) {
+                writer.writeStartElement(Element.EXCLUDED_EXTENSIONS.getLocalName());
+                for (ModelNode ext : excludeNode.get(HostExcludeResourceDefinition.EXCLUDED_EXTENSIONS.getName()).asList()) {
+                    if (ext.isDefined()) {
+                        writer.writeEmptyElement(Element.EXTENSION.getLocalName());
+                        writer.writeAttribute(Attribute.MODULE.getLocalName(), ext.asString());
+                    }
+                }
+                writer.writeEndElement();
+            }
+
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
     }
 
 }
