@@ -34,7 +34,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -104,15 +103,15 @@ public class IgnoredNonAffectedServerGroupsUtil {
         model.get(ModelDescriptionConstants.INITIAL_SERVER_GROUPS).set(initialServerGroups);
     }
 
-    public static Map<String, ServerConfigInfo> createConfigsFromModel(final ModelNode model) {
-        final Map<String, ServerConfigInfo> serverConfigs = new HashMap<>();
+    public static Set<ServerConfigInfo> createConfigsFromModel(final ModelNode model) {
+        final Set<ServerConfigInfo> serverConfigs = new HashSet<>();
         ModelNode initialServerGroups = model.get(INITIAL_SERVER_GROUPS);
         for (Property prop : initialServerGroups.asPropertyList()) {
             final List<ModelNode> servers = prop.getValue().asList();
             for (ModelNode server : servers) {
                 final String socketBindingGroupOverride = server.hasDefined(SOCKET_BINDING_GROUP) ? server.get(SOCKET_BINDING_GROUP).asString() : null;
-                final ServerConfigInfo serverConfigInfo = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(prop.getName(), prop.getValue().get(GROUP).asString(), socketBindingGroupOverride);
-                serverConfigs.put(serverConfigInfo.getName(), serverConfigInfo);
+                final ServerConfigInfo serverConfigInfo = IgnoredNonAffectedServerGroupsUtil.createServerConfigInfo(prop.getValue().get(GROUP).asString(), socketBindingGroupOverride);
+                serverConfigs.add(serverConfigInfo);
             }
         }
         return serverConfigs;
@@ -261,7 +260,7 @@ public class IgnoredNonAffectedServerGroupsUtil {
     public Set<ServerConfigInfo> getServerConfigsOnSlave(Resource hostResource){
         Set<ServerConfigInfo> groups = new HashSet<>();
         for (ResourceEntry entry : hostResource.getChildren(SERVER_CONFIG)) {
-            groups.add(new ServerConfigInfoImpl(entry.getName(), entry.getModel()));
+            groups.add(new ServerConfigInfoImpl(entry.getModel()));
         }
         return groups;
     }
@@ -269,25 +268,18 @@ public class IgnoredNonAffectedServerGroupsUtil {
     /**
      * Creates a server config info from its name, its server group and its socket binding group
      *
-     * @param name the name of the server config
      * @param serverGroup the name of the server group
      * @param socketBindingGroup the name of the socket binding override used by the server config. May be {@code null}
      * @return the server config info
      */
-    public static ServerConfigInfo createServerConfigInfo(String name, String serverGroup, String socketBindingGroup) {
-        return new ServerConfigInfoImpl(name, serverGroup, socketBindingGroup);
+    public static ServerConfigInfo createServerConfigInfo(String serverGroup, String socketBindingGroup) {
+        return new ServerConfigInfoImpl(serverGroup, socketBindingGroup);
     }
 
     /**
      * Contains info about a server config
      */
     public interface ServerConfigInfo {
-        /**
-         * Gets the server config name
-         *
-         * @return the name
-         */
-        String getName();
 
         /**
          * Gets the server config's server group name
@@ -302,36 +294,22 @@ public class IgnoredNonAffectedServerGroupsUtil {
          * @return the socket binding group name. May be {@code null}
          */
         String getSocketBindingGroup();
-
-        /**
-         * Serializes the server config to dmr
-         *
-         * @return the dmr representation of this server config
-         */
-        ModelNode toModelNode();
     }
 
 
     private static class ServerConfigInfoImpl implements ServerConfigInfo {
-        private final String name;
+
         private final String serverGroup;
         private final String socketBindingGroup;
 
-        ServerConfigInfoImpl(String name, ModelNode model) {
-            this.name = name;
+        ServerConfigInfoImpl(ModelNode model) {
             this.serverGroup = model.get(GROUP).asString();
             this.socketBindingGroup = model.hasDefined(SOCKET_BINDING_GROUP) ? model.get(SOCKET_BINDING_GROUP).asString() : null;
         }
 
-        ServerConfigInfoImpl(String name, String serverGroup, String socketBindingGroup) {
-            this.name = name;
+        ServerConfigInfoImpl(String serverGroup, String socketBindingGroup) {
             this.serverGroup = serverGroup;
             this.socketBindingGroup = socketBindingGroup;
-        }
-
-        @Override
-        public String getName() {
-            return name;
         }
 
         @Override
@@ -342,16 +320,6 @@ public class IgnoredNonAffectedServerGroupsUtil {
         @Override
         public String getSocketBindingGroup() {
             return socketBindingGroup;
-        }
-
-        @Override
-        public ModelNode toModelNode() {
-            ModelNode model = new ModelNode();
-            model.get(name, GROUP).set(serverGroup);
-            if (socketBindingGroup != null) {
-                model.get(name, SOCKET_BINDING_GROUP).set(socketBindingGroup);
-            }
-            return model;
         }
     }
 }

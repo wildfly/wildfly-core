@@ -36,7 +36,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WILDCARD;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -114,7 +113,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
     private final Long remoteConnectionId;
     private final Transformers.ResourceIgnoredTransformationRegistry ignoredResources;
     private final boolean ignoreUnaffectedConfig;
-    private final Map<String, ServerConfigInfo> serverConfigInfos;
+    private final Set<ServerConfigInfo> serverConfigInfos;
 
     private HostInfo(final ModelNode hostInfo) {
         hostName = hostInfo.require(NAME).asString();
@@ -130,11 +129,11 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
 
         ignoredResources = createIgnoredRegistry(hostInfo);
         ignoreUnaffectedConfig = hostInfo.hasDefined(IGNORE_UNUSED_CONFIG) ? hostInfo.get(IGNORE_UNUSED_CONFIG).asBoolean() : false;
-        final Map<String, ServerConfigInfo> serverConfigInfos;
+        final Set<ServerConfigInfo> serverConfigInfos;
         if (ignoreUnaffectedConfig) {
             serverConfigInfos = IgnoredNonAffectedServerGroupsUtil.createConfigsFromModel(hostInfo);
         } else {
-            serverConfigInfos = Collections.emptyMap();
+            serverConfigInfos = Collections.emptySet();
         }
         this.serverConfigInfos = serverConfigInfos;
     }
@@ -185,8 +184,8 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         return ignoreUnaffectedConfig;
     }
 
-    public Collection<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> getServerConfigInfos() {
-            return serverConfigInfos.values();
+    public Set<IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo> getServerConfigInfos() {
+        return serverConfigInfos;
     }
 
     public String getPrettyProductName() {

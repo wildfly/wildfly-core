@@ -23,7 +23,7 @@
  */
 package org.jboss.as.domain.controller.operations;
 
-import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -61,9 +61,9 @@ public class FetchMissingConfigurationHandler implements OperationStepHandler {
         context.acquireControllerLock();
 
         // Filter the information to only include configuration for the given server-group or socket-binding group
-        final Map<String, ServerConfigInfo> serverConfigs = IgnoredNonAffectedServerGroupsUtil.createConfigsFromModel(operation);
+        final Set<ServerConfigInfo> serverConfigs = IgnoredNonAffectedServerGroupsUtil.createConfigsFromModel(operation);
         final ReadMasterDomainModelUtil.RequiredConfigurationHolder rc = new ReadMasterDomainModelUtil.RequiredConfigurationHolder();
-        for (final ServerConfigInfo serverConfig : serverConfigs.values()) {
+        for (final ServerConfigInfo serverConfig : serverConfigs) {
             ReadMasterDomainModelUtil.processServerConfig(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), rc, serverConfig, extensionRegistry);
         }
         final Transformers.ResourceIgnoredTransformationRegistry manualExcludes = HostInfo.createIgnoredRegistry(operation);
