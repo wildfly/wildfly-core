@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<domain xmlns="urn:jboss:domain:4.1">
+
+    <host-excludes>
+        <host-exclude name="WildFly10" active-server-groups="a b" active-socket-binding-groups="c d e">
+            <host-release id="WildFly10.0"/>
+            <excluded-extensions>
+                <extension module="org.wildfly.foo"/>
+                <extension module="org.wildfly.bar"/>
+            </excluded-extensions>
+        </host-exclude>
+        <host-exclude name="EAP62" active-server-groups="1 2">
+            <host-release id="EAP6.2"/>
+            <excluded-extensions>
+                <extension module="org.wildfly.foo"/>
+            </excluded-extensions>
+        </host-exclude>
+        <host-exclude name="EAP63" active-server-groups="x">
+            <host-api-version major-version="1" minor-version="6"/>
+        </host-exclude>
+        <host-exclude name="EAP63.1">
+            <host-api-version major-version="1" minor-version="6" micro-version="1"/>
+            <excluded-extensions>
+                <extension module="org.wildfly.foo"/>
+                <extension module="org.wildfly.bar"/>
+            </excluded-extensions>
+        </host-exclude>
+    </host-excludes>
+
+</domain>
