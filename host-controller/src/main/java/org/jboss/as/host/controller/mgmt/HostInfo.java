@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller.mgmt;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLONE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
@@ -32,8 +34,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_VERSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_CODENAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_VERSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WILDCARD;
 
 import java.util.Collections;
@@ -44,9 +49,13 @@ import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
+import org.jboss.as.domain.controller.operations.ReadMasterDomainModelUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
 import org.jboss.as.host.controller.RemoteDomainConnectionService;
@@ -56,12 +65,13 @@ import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
+
 /**
  * Registration information provided by a slave Host Controller.
  *
  * @author Brian Stansberry (c) 2012 Red Hat Inc.
  */
-public class HostInfo implements Transformers.ResourceIgnoredTransformationRegistry {
+public class HostInfo implements Transformers.ResourceIgnoredTransformationRegistry, Transformers.OperationExcludedTransformationRegistry {
 
     /**
      * Create the metadata which gets send to the DC when registering.
@@ -99,7 +109,11 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
     }
 
     public static HostInfo fromModelNode(final ModelNode hostInfo) {
-        return new HostInfo(hostInfo);
+        return new HostInfo(hostInfo, null);
+    }
+
+    public static HostInfo fromModelNode(final ModelNode hostInfo, DomainHostExcludeRegistry hostIgnoreRegistry) {
+        return new HostInfo(hostInfo, hostIgnoreRegistry);
     }
 
     private final String hostName;
@@ -114,8 +128,12 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
     private final Transformers.ResourceIgnoredTransformationRegistry ignoredResources;
     private final boolean ignoreUnaffectedConfig;
     private final Set<ServerConfigInfo> serverConfigInfos;
+    private final Set<String> domainIgnoredExtensions;
+    private final boolean hostDeclaredIgnoreUnaffected;
+    // GuardedBy this
+    private ReadMasterDomainModelUtil.RequiredConfigurationHolder requiredConfigurationHolder;
 
-    private HostInfo(final ModelNode hostInfo) {
+    private HostInfo(final ModelNode hostInfo, DomainHostExcludeRegistry hostIgnoreRegistry) {
         hostName = hostInfo.require(NAME).asString();
         releaseVersion = hostInfo.require(RELEASE_VERSION).asString();
         releaseCodeName = hostInfo.require(RELEASE_CODENAME).asString();
@@ -127,11 +145,36 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         remoteConnectionId = hostInfo.hasDefined(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID)
                 ? hostInfo.get(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID).asLong() : null;
 
-        ignoredResources = createIgnoredRegistry(hostInfo);
-        ignoreUnaffectedConfig = hostInfo.hasDefined(IGNORE_UNUSED_CONFIG) ? hostInfo.get(IGNORE_UNUSED_CONFIG).asBoolean() : false;
+        Set<String> domainIgnoredExtensions = null;
+        Set<String> domainActiveServerGroups = null;
+        Set<String> domainActiveSocketBindingGroups = null;
+        if (hostIgnoreRegistry != null) {
+            DomainHostExcludeRegistry.VersionExcludeData domainHostIgnoreData = hostIgnoreRegistry.getVersionIgnoreData(managementMajorVersion, managementMinorVersion, managementMicroVersion);
+            if (domainHostIgnoreData != null) {
+                domainIgnoredExtensions = domainHostIgnoreData.getIgnoredExtensions();
+                domainActiveServerGroups = domainHostIgnoreData.getActiveServerGroups();
+                domainActiveSocketBindingGroups = domainHostIgnoreData.getActiveSocketBindingGroups();
+            } else {
+                DomainControllerLogger.ROOT_LOGGER.tracef("No VersionExcludeData for %d.%d.%d", managementMajorVersion, managementMinorVersion, managementMicroVersion);
+            }
+        } else {
+            DomainControllerLogger.ROOT_LOGGER.trace("DomainHostExcludeRegistry is null");
+        }
+        this.domainIgnoredExtensions = domainIgnoredExtensions;
+
+        ignoredResources = createIgnoredRegistry(hostInfo, domainIgnoredExtensions);
+
+        hostDeclaredIgnoreUnaffected = hostInfo.hasDefined(IGNORE_UNUSED_CONFIG) && hostInfo.get(IGNORE_UNUSED_CONFIG).asBoolean();
+        ignoreUnaffectedConfig = hostDeclaredIgnoreUnaffected || (domainActiveServerGroups != null && !domainActiveServerGroups.isEmpty());
+
         final Set<ServerConfigInfo> serverConfigInfos;
         if (ignoreUnaffectedConfig) {
-            serverConfigInfos = IgnoredNonAffectedServerGroupsUtil.createConfigsFromModel(hostInfo);
+            if (hostDeclaredIgnoreUnaffected) {
+                // Slave provided data takes precedence
+                serverConfigInfos = IgnoredNonAffectedServerGroupsUtil.createConfigsFromModel(hostInfo);
+            } else {
+                serverConfigInfos = IgnoredNonAffectedServerGroupsUtil.createConfigsFromDomainWideData(domainActiveServerGroups, domainActiveSocketBindingGroups);
+            }
         } else {
             serverConfigInfos = Collections.emptySet();
         }
@@ -199,6 +242,44 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         return result;
     }
 
+    @Override
+    public boolean isOperationExcluded(PathAddress address, String operationName) {
+
+        if (address.size() > 0) {
+            final PathElement element = address.getElement(0);
+            final String type = element.getKey();
+            final String name = element.getValue();
+            final boolean domainExcluding = ignoreUnaffectedConfig && !hostDeclaredIgnoreUnaffected && requiredConfigurationHolder != null;
+            switch (type) {
+                case ModelDescriptionConstants.EXTENSION:
+                    return domainIgnoredExtensions != null && domainIgnoredExtensions.contains(element.getValue());
+                case PROFILE:
+                    return domainExcluding
+                            && ((CLONE.equals(operationName) && address.size() == 1)
+                                   || !requiredConfigurationHolder.getProfiles().contains(name));
+                case SERVER_GROUP:
+                    return domainExcluding && !requiredConfigurationHolder.getServerGroups().contains(name);
+                case SOCKET_BINDING_GROUP:
+                    return domainExcluding
+                            && ((CLONE.equals(operationName) && address.size() == 1)
+                            || !requiredConfigurationHolder.getSocketBindings().contains(name));
+            }
+        }
+        return false;
+    }
+
+    public synchronized ReadMasterDomainModelUtil.RequiredConfigurationHolder
+            populateRequiredConfigurationHolder(Resource resource, ExtensionRegistry extensionRegistry) {
+        if (requiredConfigurationHolder != null) {
+            throw new IllegalStateException();
+        }
+        requiredConfigurationHolder = ReadMasterDomainModelUtil.populateHostResolutionContext(this, resource, extensionRegistry);
+        // Keep a ref to this data for future use. Only relevant if we're ignoring stuff based
+        // on a domain-wide host-exclude.active-server-groups setting not overridden by
+        // ignore-unused-configuration sent from the slave.
+        return requiredConfigurationHolder;
+    }
+
     private static class IgnoredType {
         private final boolean wildcard;
         private final Set<String> names;
@@ -220,13 +301,29 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
             }
         }
 
+        private IgnoredType(IgnoredType slaveIgnoredNames, Set<String> domainIgnoredNames) {
+            wildcard = false;
+            names = new HashSet<>();
+            if (slaveIgnoredNames != null && slaveIgnoredNames.names != null) {
+                names.addAll(slaveIgnoredNames.names);
+            }
+            if (domainIgnoredNames != null) {
+                names.addAll(domainIgnoredNames);
+            }
+        }
+
         private boolean hasName(String name) {
             return wildcard || (names != null && names.contains(name));
         }
     }
 
     public static Transformers.ResourceIgnoredTransformationRegistry createIgnoredRegistry(final ModelNode modelNode) {
-        final Map<String, IgnoredType> ignoredResources = processIgnoredResource(modelNode);
+        return createIgnoredRegistry(modelNode, null);
+    }
+
+    private static Transformers.ResourceIgnoredTransformationRegistry createIgnoredRegistry(final ModelNode modelNode,
+                                                                                            Set<String> domainIgnoredExtensions) {
+        final Map<String, IgnoredType> ignoredResources = processIgnoredResource(modelNode, domainIgnoredExtensions);
         return new Transformers.ResourceIgnoredTransformationRegistry() {
             @Override
             public boolean isResourceTransformationIgnored(PathAddress address) {
@@ -244,20 +341,31 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         };
     }
 
-    private static Map<String, IgnoredType> processIgnoredResource(final ModelNode model) {
-
+    private static Map<String, IgnoredType> processIgnoredResource(final ModelNode model, Set<String> domainIgnoredExtensions) {
+        Map<String, IgnoredType> ignoredResources = null;
         if (model.hasDefined(IGNORED_RESOURCES)) {
-            final Map<String, IgnoredType> ignoredResources = new HashMap<>();
+            ignoredResources = new HashMap<>();
             for (Property prop : model.require(IGNORED_RESOURCES).asPropertyList()) {
                 String type = prop.getName();
                 ModelNode ignoredModel = prop.getValue();
                 IgnoredType ignoredType = ignoredModel.get(WILDCARD).asBoolean(false) ? new IgnoredType() : new IgnoredType(ignoredModel.get(NAMES));
                 ignoredResources.put(type, ignoredType);
             }
-            return ignoredResources;
-        } else {
-            return null;
         }
+        if (domainIgnoredExtensions != null && !domainIgnoredExtensions.isEmpty()) {
+            IgnoredType slaveIgnoredExtensions = null;
+            if (ignoredResources == null) {
+                ignoredResources = new HashMap<>();
+            } else {
+                slaveIgnoredExtensions = ignoredResources.get(EXTENSION);
+            }
+            IgnoredType ignoredExtensions = new IgnoredType(slaveIgnoredExtensions, domainIgnoredExtensions);
+            ignoredResources.put(EXTENSION, ignoredExtensions);
+            DomainControllerLogger.ROOT_LOGGER.tracef("Ignoring extensions %s", ignoredExtensions.names);
+        } else {
+            DomainControllerLogger.ROOT_LOGGER.tracef("No domain ignored extensions: %s", domainIgnoredExtensions);
+        }
+        return ignoredResources;
     }
 
 }

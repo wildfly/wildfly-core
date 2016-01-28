@@ -46,6 +46,7 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.SubsystemInformation;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
@@ -276,6 +277,43 @@ public class IgnoredNonAffectedServerGroupsUtil {
         return new ServerConfigInfoImpl(serverGroup, socketBindingGroup);
     }
 
+    public static Set<ServerConfigInfo> createConfigsFromDomainWideData(Set<String> activeServerGroups, Set<String> activeSocketBindingGroups) {
+        final Set<ServerConfigInfo> serverConfigs = new HashSet<>();
+        if (activeSocketBindingGroups == null || activeSocketBindingGroups.isEmpty()) {
+            for (String serverGroup : activeServerGroups) {
+                ServerConfigInfo sci = new ServerConfigInfoImpl(serverGroup, null);
+                serverConfigs.add(sci);
+                DomainControllerLogger.ROOT_LOGGER.tracef("Domain wide host-exclude needs a simple %s", sci);
+            }
+        } else {
+            // Hosts of this API version use socket binding groups beyond the default ones
+            // for the server groups. Generate a set of ServerConfigInfo objects such that
+            // all provided server groups and socket binding groups are named in at least
+            // one. It doesn't matter what combinations are used.
+            String[] sgs = activeServerGroups.toArray(new String[activeServerGroups.size()]);
+            String[] sbgs = activeSocketBindingGroups.toArray(new String[activeSocketBindingGroups.size()]);
+            if (sgs.length >= sbgs.length) {
+                for (int i = 0; i < sgs.length; i++) {
+                    String sbg = i >= sbgs.length ? null : sbgs[i];
+                    ServerConfigInfo sci = new ServerConfigInfoImpl(sgs[i], sbg);
+                    serverConfigs.add(sci);
+                    DomainControllerLogger.ROOT_LOGGER.tracef("Domain wide host-exclude needs a synthetic active combination of %s", sci);
+                }
+            } else {
+                for (int i = 0, j = 0; j < sbgs.length; i++, j++) {
+                    if (i == sgs.length) {
+                        // Start over again with the server groups
+                        i = 0;
+                    }
+                    ServerConfigInfo sci = new ServerConfigInfoImpl(sgs[i], sbgs[j]);
+                    serverConfigs.add(sci);
+                    DomainControllerLogger.ROOT_LOGGER.tracef("Domain wide host-exclude needs a synthetic active combination of %s", sci);
+                }
+            }
+        }
+        return serverConfigs;
+    }
+
     /**
      * Contains info about a server config
      */
@@ -320,6 +358,14 @@ public class IgnoredNonAffectedServerGroupsUtil {
         @Override
         public String getSocketBindingGroup() {
             return socketBindingGroup;
+        }
+
+        @Override
+        public String toString() {
+            return "ServerConfigInfoImpl{" +
+                    "serverGroup='" + serverGroup + '\'' +
+                    ", socketBindingGroup='" + socketBindingGroup + '\'' +
+                    '}';
         }
     }
 }
