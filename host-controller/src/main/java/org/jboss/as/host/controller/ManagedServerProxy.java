@@ -100,7 +100,7 @@ class ManagedServerProxy implements TransactionalProtocolClient {
         return future;
     }
 
-    private synchronized void registerFuture(TransactionalProtocolClient remoteClient, AsyncFuture<OperationResponse> future) {
+    private synchronized void registerFuture(TransactionalProtocolClient remoteClient, final AsyncFuture<OperationResponse> future) {
         if (this.remoteClient != remoteClient) {
             // We were disconnected. Just cancel this future
             future.cancel(true);
@@ -114,19 +114,21 @@ class ManagedServerProxy implements TransactionalProtocolClient {
             futures.add(future);
 
             // Make sure we clean up
+            // ignore the 1st parameter of handle* callbacks, that's the _underlying_ future,
+            // not the one just added to the "futures" set
             future.addListener(new AsyncFuture.Listener<OperationResponse, TransactionalProtocolClient>() {
                 @Override
-                public void handleComplete(AsyncFuture<? extends OperationResponse> future, TransactionalProtocolClient attachment) {
+                public void handleComplete(AsyncFuture<? extends OperationResponse> ignored, TransactionalProtocolClient attachment) {
                     futureDone(attachment, future);
                 }
 
                 @Override
-                public void handleFailed(AsyncFuture<? extends OperationResponse> future, Throwable cause, TransactionalProtocolClient attachment) {
+                public void handleFailed(AsyncFuture<? extends OperationResponse> ignored, Throwable cause, TransactionalProtocolClient attachment) {
                     futureDone(attachment, future);
                 }
 
                 @Override
-                public void handleCancelled(AsyncFuture<? extends OperationResponse> future, TransactionalProtocolClient attachment) {
+                public void handleCancelled(AsyncFuture<? extends OperationResponse> ignored, TransactionalProtocolClient attachment) {
                     futureDone(attachment, future);
                 }
             }, remoteClient);
