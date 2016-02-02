@@ -24,11 +24,16 @@
             <native-interface security-realm="ManagementRealm">
                 <socket interface="management" port="${jboss.management.native.port:9999}"/>
             </native-interface>
+            <http-interface security-realm="ManagementRealm">
+                <socket interface="management" port="${jboss.management.http.port:9990}"/>
+            </http-interface>
         </management-interfaces>
     </management>
 
     <domain-controller>
-       <remote host="${jboss.domain.master.address:127.0.0.1}" port="${jboss.domain.master.port:9999}" security-realm="ManagementRealm" protocol="remote" />
+       <local/>
+       <!-- Alternative remote domain controller configuration with a host and port -->
+       <!-- <remote host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9999}" security-realm="ManagementRealm"/> -->
     </domain-controller>
 
     <interfaces>
@@ -45,15 +50,15 @@
         </interface>
     </interfaces>
 
-	<jvms>
-	   <jvm name="default">
+ 	<jvms>
+ 	   <jvm name="default">
           <heap size="64m" max-size="256m"/>
           <permgen size="256m" max-size="256m"/>
             <jvm-options>
                 <option value="-server"/>
             </jvm-options>
        </jvm>
-	</jvms>
+ 	</jvms>
 
     <servers>
         <server name="server-one" group="main-server-group">
@@ -69,11 +74,13 @@
             <!-- server-two avoids port conflicts by incrementing the ports in
                  the default socket-group declared in the server-group -->
             <socket-bindings port-offset="150"/>
+            <ssl ssl-protocol="Default" />
         </server>
         <server name="server-three" group="other-server-group" auto-start="false">
             <!-- server-three avoids port conflicts by incrementing the ports in
                  the default socket-group declared in the server-group -->
             <socket-bindings port-offset="250"/>
+            <ssl ssl-protocol="SSL" trust-manager-algorithm="SunX509" truststore-type="JKS" truststore-path="/truststore.jks" truststore-password="ts_password" />
         </server>
     </servers>
 </host>
