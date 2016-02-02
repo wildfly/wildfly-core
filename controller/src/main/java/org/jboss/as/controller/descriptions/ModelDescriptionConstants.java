@@ -420,6 +420,7 @@ public class ModelDescriptionConstants {
     public static final String SERVER_GROUP_SCOPED_ROLE = "server-group-scoped-role";
     public static final String SERVER_IDENTITIES = "server-identities";
     public static final String SERVER_IDENTITY = "server-identity";
+    public static final String SERVER_LAUNCH = "server-launch";
     public static final String SERVER_OPERATIONS = "server-operations";
     public static final String SERVICE = "service";
     public static final String SERVICES_MISSING_DEPENDENCIES = "services-missing-dependencies";
