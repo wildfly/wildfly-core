@@ -202,7 +202,7 @@ public interface ContentRepository {
             @Override
             public byte[] addContent(InputStream stream) throws IOException {
                 byte[] sha1Bytes;
-                Path tmp = Files.createTempFile(repoRoot.toPath(), CONTENT, ".tmp");
+                Path tmp = File.createTempFile(CONTENT, ".tmp", repoRoot).toPath();
                 OutputStream fos = Files.newOutputStream(tmp);
                 synchronized (messageDigest) {
                     messageDigest.reset();
