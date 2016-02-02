@@ -28,7 +28,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 
-import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.ModificationType;
@@ -59,11 +58,8 @@ class ModuleRemoveTask extends AbstractModuleTask {
             throw PatchLogger.ROOT_LOGGER.cannotCreateDirectory(targetDir.getAbsolutePath());
         }
         final File moduleXml = new File(targetDir, MODULE_XML);
-        final ByteArrayInputStream is = new ByteArrayInputStream(PatchUtils.getAbsentModuleContent(contentItem));
-        try {
+        try (final ByteArrayInputStream is = new ByteArrayInputStream(PatchUtils.getAbsentModuleContent(contentItem))){
             return copy(is, moduleXml);
-        } finally {
-            IoUtils.safeClose(is);
         }
     }
 

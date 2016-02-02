@@ -29,6 +29,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.zip.ZipFile;
 
 import org.jboss.as.patching.logging.PatchLogger;
@@ -111,9 +113,12 @@ public class IoUtils {
                     throw PatchLogger.ROOT_LOGGER.cannotCreateDirectory(parent.getAbsolutePath());
                 }
             }
-            final InputStream is = new FileInputStream(sourceFile);
-            final OutputStream os = new FileOutputStream(targetFile);
-            copyStreamAndClose(is, os);
+            try {
+                Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw PatchLogger.ROOT_LOGGER.cannotCopyFiles(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(),
+                        e.getMessage(), e);
+            }
         }
     }
 
@@ -138,24 +143,17 @@ public class IoUtils {
         if(! target.getParentFile().exists()) {
             target.getParentFile().mkdirs(); // Hmm
         }
-        final OutputStream os = new FileOutputStream(target);
-        try {
-            byte[] nh = HashUtils.copyAndGetHash(is, os);
-            os.close();
-            return nh;
-        } finally {
-            safeClose(os);
+        try (final OutputStream os = new FileOutputStream(target)){
+            return HashUtils.copyAndGetHash(is, os);
+        } catch (IOException e) {
+            throw PatchLogger.ROOT_LOGGER.cannotCopyFiles(is.toString(), target.getAbsolutePath(),
+                    e.getMessage(), e);
         }
     }
 
     public static byte[] copy(File source, File target) throws IOException {
-        final FileInputStream is = new FileInputStream(source);
-        try {
-            byte[] backupHash = copy(is, target);
-            is.close();
-            return backupHash;
-        } finally {
-            safeClose(is);
+        try (final FileInputStream is = new FileInputStream(source)){
+            return copy(is, target);
         }
     }
 

@@ -22,11 +22,12 @@
 
 package org.jboss.as.patching.runner;
 
-import static org.jboss.as.patching.IoUtils.copy;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 
 import org.jboss.as.patching.HashUtils;
@@ -83,13 +84,10 @@ class ModuleUpdateTask extends AbstractModuleTask {
             if(!targetDir.exists() && ! targetDir.mkdirs()) {
                 throw PatchLogger.ROOT_LOGGER.cannotCreateDirectory(targetDir.getAbsolutePath());
             }
-            final File moduleXml = new File(targetDir, MODULE_XML);
+
+            final Path moduleXml = targetDir.toPath().resolve(MODULE_XML);
             final ByteArrayInputStream is = new ByteArrayInputStream(PatchUtils.getAbsentModuleContent(contentItem));
-            try {
-                return copy(is, moduleXml);
-            } finally {
-                IoUtils.safeClose(is);
-            }
+            Files.copy(is, moduleXml, StandardCopyOption.REPLACE_EXISTING);
         }
         // return contentItem.getContentHash();
         return HashUtils.hashFile(targetDir);

@@ -1001,11 +1001,8 @@ class IdentityPatchContext implements PatchContentProvider {
             }
         }
         try {
-            final OutputStream os = new FileOutputStream(file);
-            try {
+            try (final OutputStream os = new FileOutputStream(file)){
                 PatchXml.marshal(os, rollbackPatch);
-            } finally {
-                IoUtils.safeClose(os);
             }
         } catch (XMLStreamException e) {
             throw new IOException(e);

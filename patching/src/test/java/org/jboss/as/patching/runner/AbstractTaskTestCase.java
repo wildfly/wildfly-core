@@ -149,12 +149,8 @@ public abstract class AbstractTaskTestCase {
                 str.append(layers[i]);
             }
             props.put(Constants.LAYERS, str.toString());
-            //props.put(Constants.EXCLUDE_LAYER_BASE, "true");
-            final FileOutputStream os = new FileOutputStream(layerConf);
-            try {
+            try (final FileOutputStream os = new FileOutputStream(layerConf)){
                 props.store(os, "");
-            } finally {
-                IoUtils.safeClose(os);
             }
         }
     }
