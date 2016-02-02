@@ -40,14 +40,18 @@ public class FileAuditLogHandler extends AbstractFileAuditLogHandler {
     //Methods on this class will only ever be called from one thread (see class javadoc) so although it looks shared here it is not
     private static final SimpleDateFormat OLD_FILE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd_HHmmss");
 
-    public FileAuditLogHandler(String name, String formatterName, int maxFailureCount, PathManagerService pathManager, String path, String relativeTo) {
+    private final boolean rotateAtStartup;
+
+    public FileAuditLogHandler(String name, String formatterName, int maxFailureCount, PathManagerService pathManager,
+                               String path, String relativeTo, boolean rotateAtStartup) {
         super(name, formatterName, maxFailureCount, pathManager, path, relativeTo);
+        this.rotateAtStartup = rotateAtStartup;
     }
 
     @Override
     protected void initializeAtStartup(final File file) {
         // rotate on every startup
-        if (file.exists()) {
+        if (file.exists() && rotateAtStartup) {
             final File backup = new File(file.getParentFile(), file.getName() + OLD_FILE_FORMATTER.format(new Date()));
             try {
                 rename(file, backup);
@@ -63,12 +67,12 @@ public class FileAuditLogHandler extends AbstractFileAuditLogHandler {
     }
 
     boolean isDifferent(AuditLogHandler other){
-        if (other instanceof FileAuditLogHandler == false){
+        if (!(other instanceof FileAuditLogHandler)){
             return true;
         }
-        if (super.isDifferent(other)) {
+        if (rotateAtStartup != ((FileAuditLogHandler) other).rotateAtStartup) {
             return true;
         }
-        return false;
+        return super.isDifferent(other);
     }
 }

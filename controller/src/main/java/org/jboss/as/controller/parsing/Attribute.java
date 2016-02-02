@@ -158,6 +158,7 @@ public enum Attribute {
     REQUIRES_READ("requires-read"),
     REQUIRES_WRITE("requires-write"),
     REVERSE_GROUP("reverse-group"),
+    ROTATE_AT_STARTUP("rotate-at-startup"),
     ROTATE_SIZE("rotate-size"),
     RUNTIME_NAME("runtime-name"),
     SASL_PROTOCOL("sasl-protocol"),

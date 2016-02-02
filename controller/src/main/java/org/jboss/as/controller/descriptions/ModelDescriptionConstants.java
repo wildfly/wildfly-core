@@ -399,6 +399,7 @@ public class ModelDescriptionConstants {
     public static final String ROLLOUT_PLAN = "rollout-plan";
     public static final String ROLLOUT_PLANS = "rollout-plans";
     public static final String ROLES_FILTER = "roles-filter";
+    public static final String ROTATE_AT_STARTUP = "rotate-at-startup";
     public static final String ROTATE_SIZE = "rotate-size";
     public static final String RUNNING_MODE = "running-mode";
     public static final String RUNNING_SERVER = "server";

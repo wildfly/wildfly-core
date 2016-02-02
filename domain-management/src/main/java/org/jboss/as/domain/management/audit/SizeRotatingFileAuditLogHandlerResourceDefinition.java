@@ -48,7 +48,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SIZ
  *
  * @author <a href="mailto:istudens@redhat.com">Ivo Studensky</a>
  */
-public class SizeRotatingFileAuditLogHandlerResourceDefinition extends FileAuditLogHandlerResourceDefinition {
+public class SizeRotatingFileAuditLogHandlerResourceDefinition extends AbstractFileAuditLogHandlerResourceDefinition {
 
     public static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ROTATE_SIZE, ModelType.STRING)
         .setAllowNull(true)
@@ -68,7 +68,7 @@ public class SizeRotatingFileAuditLogHandlerResourceDefinition extends FileAudit
 
     protected static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{ROTATE_SIZE, MAX_BACKUP_INDEX}; //, FORMATTER, PATH, RELATIVE_TO, MAX_FAILURE_COUNT};
 
-    protected static final AttributeDefinition[] FULL_ATTRIBUTES = joinArrays(ATTRIBUTES, FileAuditLogHandlerResourceDefinition.ATTRIBUTES);
+    protected static final AttributeDefinition[] FULL_ATTRIBUTES = joinArrays(ATTRIBUTES, AbstractFileAuditLogHandlerResourceDefinition.ATTRIBUTES);
 
     public SizeRotatingFileAuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
         super(auditLogger, pathManager, PathElement.pathElement(SIZE_ROTATING_FILE_HANDLER), DomainManagementResolver.getResolver("core.management.size-rotating-file-handler"),
@@ -112,7 +112,7 @@ public class SizeRotatingFileAuditLogHandlerResourceDefinition extends FileAudit
         return new SizeRotatingFileAuditLogHandler(name, formatterName, maxFailureCount, pathManager, path, relativeTo, rotateSize, maxBackupIndex);
     }
 
-    protected static class SizeRotatingFileAuditLogHandlerAddHandler extends FileAuditLogHandlerAddHandler {
+    protected static class SizeRotatingFileAuditLogHandlerAddHandler extends AbstractFileAuditLogHandlerAddHandler {
 
         protected SizeRotatingFileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes) {
             super(auditLogger, pathManager, attributes);
@@ -124,7 +124,7 @@ public class SizeRotatingFileAuditLogHandlerResourceDefinition extends FileAudit
         }
     }
 
-    protected static class SizeRotatingHandlerWriteAttributeHandler extends HandlerWriteAttributeHandler {
+    protected static class SizeRotatingHandlerWriteAttributeHandler extends AbstractFileAuditLogHandlerWriteAttributeHandler {
 
         public SizeRotatingHandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
             super(auditLogger, pathManager, attributeDefinitions);
