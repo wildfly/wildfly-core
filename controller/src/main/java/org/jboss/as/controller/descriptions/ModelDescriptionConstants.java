@@ -28,7 +28,7 @@ package org.jboss.as.controller.descriptions;
  */
 public class ModelDescriptionConstants {
 
-    // KEEP THESE IN ALPHABETICAL ORDER!
+    // KEEP THESE IN ALPHABETICAL ORDER! - LOL, like that was ever going to happen!!
 
     public static final String ABSOLUTE_ADDRESS = "absolute-address";
     public static final String ACCESS = "access";
@@ -244,6 +244,7 @@ public class ModelDescriptionConstants {
     public static final String LOGGER = "logger";
     public static final String LOG_BOOT = "log-boot";
     public static final String LOG_READ_ONLY = "log-read-only";
+    public static final String LOOPBACK = "loopback";
     public static final String MANAGEMENT = "management";
     public static final String MANAGEMENT_CLIENT_CONTENT = "management-client-content";
     public static final String MANAGEMENT_INTERFACE = "management-interface";
@@ -427,6 +428,7 @@ public class ModelDescriptionConstants {
     public static final String SINCE = "since";
     public static final String SIZE_ROTATING_FILE_HANDLER = "size-rotating-file-handler";
     public static final String SOURCE_NETWORK = "source-network";
+    public static final String SSL_PROTOCOL = "ssl-protocol";
     public static final String OPERATION_REQUIRES_RELOAD = "operation-requires-reload";
     public static final String OPERATION_REQUIRES_RESTART = "operation-requires-restart";
     public static final String RELOAD_SERVERS = "reload-servers";
@@ -482,7 +484,11 @@ public class ModelDescriptionConstants {
     public static final String TO_PROFILE = "to-profile";
     public static final String TO_REPLACE = "to-replace";
     public static final String TRUNCATE = "truncate";
+    public static final String TRUST_MANAGER_ALGORITHM = "trust-manager-algorithm";
     public static final String TRUSTSTORE = "truststore";
+    public static final String TRUSTSTORE_PASSWORD = "truststore-password";
+    public static final String TRUSTSTORE_PATH = "truststore-path";
+    public static final String TRUSTSTORE_TYPE = "truststore-type";
     public static final String TYPE = "type";
     public static final String UDP = "udp";
     public static final String UNDEFINE_ATTRIBUTE_OPERATION = "undefine-attribute";

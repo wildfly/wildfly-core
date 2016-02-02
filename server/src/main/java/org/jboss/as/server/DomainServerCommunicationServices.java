@@ -25,6 +25,9 @@ package org.jboss.as.server;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
+
+import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ExpressionResolver;
@@ -65,16 +68,18 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
     private final String serverName;
     private final String serverProcessName;
     private final String authKey;
+    private final Supplier<SSLContext> sslContextSupplier;
 
     private final boolean managementSubsystemEndpoint;
 
-    DomainServerCommunicationServices(ModelNode endpointConfig, URI managementURI, String serverName, String serverProcessName, String authKey, boolean managementSubsystemEndpoint) {
+    DomainServerCommunicationServices(ModelNode endpointConfig, URI managementURI, String serverName, String serverProcessName, String authKey, boolean managementSubsystemEndpoint, Supplier<SSLContext> sslContextSupplier) {
         this.endpointConfig = endpointConfig;
         this.managementURI = managementURI;
         this.serverName = serverName;
         this.serverProcessName = serverProcessName;
         this.authKey = authKey;
         this.managementSubsystemEndpoint = managementSubsystemEndpoint;
+        this.sslContextSupplier = sslContextSupplier;
     }
 
     static void updateOperationID(final int operationID) {
@@ -94,7 +99,7 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
             ManagementRemotingServices.installRemotingManagementEndpoint(serviceTarget, endpointName, WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null), endpointType, options);
 
             // Install the communication services
-            HostControllerConnectionService service = new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint);
+            HostControllerConnectionService service = new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint, sslContextSupplier);
             Services.addServerExecutorDependency(serviceTarget.addService(HostControllerConnectionService.SERVICE_NAME, service), service.getExecutorInjector(), false)
                     .addDependency(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR, ScheduledExecutorService.class, service.getScheduledExecutorInjector())
                     .addDependency(endpointName, Endpoint.class, service.getEndpointInjector())
@@ -118,9 +123,9 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
      * @return the service activator
      */
     public static ServiceActivator create(final ModelNode endpointConfig, final URI managementURI, final String serverName, final String serverProcessName,
-                                          final String authKey, final boolean managementSubsystemEndpoint) {
+                                          final String authKey, final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier) {
 
-        return new DomainServerCommunicationServices(endpointConfig, managementURI, serverName, serverProcessName, authKey, managementSubsystemEndpoint);
+        return new DomainServerCommunicationServices(endpointConfig, managementURI, serverName, serverProcessName, authKey, managementSubsystemEndpoint, sslContextSupplier);
     }
 
     public interface OperationIDUpdater {

@@ -24,9 +24,11 @@ package org.jboss.as.host.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BOOT_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOOPBACK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
@@ -40,21 +42,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
+import javax.net.ssl.SSLContext;
+
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.model.jvm.JvmElement;
 import org.jboss.as.host.controller.model.jvm.JvmOptionsBuilderFactory;
+import org.jboss.as.host.controller.resources.SslLoopbackResourceDefinition;
 import org.jboss.as.process.DefaultJvmUtils;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
+import org.jboss.as.server.mgmt.domain.HostControllerConnectionService.SSLContextSupplier;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.wildfly.security.manager.WildFlySecurityManager;
-
 
 /**
  * Combines the relevant parts of the domain-level and host-level models to
@@ -84,6 +91,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     private final ModelNode endpointConfig = new ModelNode();
     private final ExpressionResolver expressionResolver;
     private final DirectoryGrouping directoryGrouping;
+    private final Supplier<SSLContext> sslContextSupplier;
 
     public ManagedServerBootCmdFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel, final HostControllerEnvironment environment, final ExpressionResolver expressionResolver) {
         this.serverName = serverName;
@@ -133,6 +141,8 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 resolveNilableExpressions(hostVM, expressionResolver, false),
                 resolveNilableExpressions(groupVM, expressionResolver, false),
                 resolveNilableExpressions(serverVM, expressionResolver, false));
+
+        this.sslContextSupplier = createSSLContextSupplier(serverModel, expressionResolver);
     }
 
     private static ModelNode resolveNilableExpressions(final ModelNode unresolved, final ExpressionResolver expressionResolver, boolean excludePostBootSystemProps) {
@@ -310,6 +320,41 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     @Override
     public ModelNode getSubsystemEndpointConfiguration() {
         return endpointConfig;
+    }
+
+    private Supplier<SSLContext> createSSLContextSupplier(final ModelNode serverModel, final ExpressionResolver resolver) {
+        if (serverModel.hasDefined(SSL, LOOPBACK) == false) {
+            return null;
+        }
+
+        ModelNode ssl = serverModel.get(SSL, LOOPBACK);
+
+        try {
+            String sslProtocol = SslLoopbackResourceDefinition.SSL_PROTOCOCOL.resolveModelAttribute(resolver, ssl).asString();
+            String trustManagerAlgorithm = asStringIfDefined(ssl, SslLoopbackResourceDefinition.TRUST_MANAGER_ALGORITHM, resolver);
+            String trustStoreType = asStringIfDefined(ssl, SslLoopbackResourceDefinition.TRUSTSTORE_TYPE, resolver);
+            String trustStorePath = asStringIfDefined(ssl, SslLoopbackResourceDefinition.TRUSTSTORE_PATH, resolver);
+            ModelNode trustStorePasswordModel = SslLoopbackResourceDefinition.TRUSTSTORE_PASSWORD.resolveModelAttribute(resolver, ssl);
+            char[] trustStorePassword = trustStorePasswordModel.isDefined() ? trustStorePasswordModel.asString().toCharArray() : null;
+
+            return new SSLContextSupplier(sslProtocol, trustManagerAlgorithm, trustStoreType, trustStorePath, trustStorePassword);
+        } catch (OperationFailedException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private String asStringIfDefined(ModelNode model, AttributeDefinition attribute, ExpressionResolver resolver) throws OperationFailedException {
+        ModelNode value = attribute.resolveModelAttribute(resolver, model);
+        if (value.isDefined()) {
+            return value.asString();
+        }
+
+        return null;
+    }
+
+    @Override
+    public Supplier<SSLContext> getSSLContextSupplier() {
+        return sslContextSupplier;
     }
 
     private String getJavaCommand() {
