@@ -172,11 +172,11 @@ if not "%JBOSSUSER%" == "" (
 if /I "%IS_DOMAIN%" == "true" (
   set STARTPARAM="/c \"set NOPAUSE=Y ^^^&^^^& domain.bat\""
   set STOPPARAM="/c jboss-cli.bat --controller=%CONTROLLER% --connect %CREDENTIALS% --command=/host=!DC_HOST!:shutdown"
-  set LOGPATH=%JBOSS_HOME%\domain\log
+  set LOGPATH="%JBOSS_HOME%\domain\log"
 ) else (
   set STARTPARAM="/c \"set NOPAUSE=Y ^^^&^^^& standalone.bat\""
   set STOPPARAM="/c \"set NOPAUSE=Y ^^^&^^^& jboss-cli.bat --controller=%CONTROLLER% --connect %CREDENTIALS% --command=:shutdown\""
-  set LOGPATH=%JBOSS_HOME%\standalone\log
+  set LOGPATH="%JBOSS_HOME%\standalone\log"
 )
 
 rem echo %STARTPARAM%
@@ -184,7 +184,7 @@ rem echo %STOPPARAM%
 rem echo %LOGLEVEL%
 rem goto endBatch
 
-%PRUNSRV% install %SHORTNAME% --DisplayName=%DISPLAYNAME% --Description %DESCRIPTION% --LogLevel=%LOGLEVEL% --LogPath="%LOGPATH%" --LogPrefix=service --StdOutput=auto --StdError=auto --StartMode=exe --StartImage=cmd.exe --StartPath="%JBOSS_HOME%\bin" ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath="%JBOSS_HOME%\bin"  ++StopParams=%STOPPARAM%
+%PRUNSRV% install %SHORTNAME% --DisplayName=%DISPLAYNAME% --Description %DESCRIPTION% --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=auto --StdError=auto --StartMode=exe --StartImage=cmd.exe --StartPath="%JBOSS_HOME%\bin" ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath="%JBOSS_HOME%\bin" ++StopParams=%STOPPARAM%
 goto cmdEnd
 
 :cmdUninstall
