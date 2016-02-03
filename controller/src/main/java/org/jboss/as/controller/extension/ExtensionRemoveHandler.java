@@ -25,6 +25,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 
@@ -62,7 +63,9 @@ public class ExtensionRemoveHandler implements OperationStepHandler {
 
         final String module = context.getCurrentAddressValue();
 
-        context.removeResource(PathAddress.EMPTY_ADDRESS);
+        if(context.removeResource(PathAddress.EMPTY_ADDRESS) == null)  {
+            throw  ControllerLogger.ROOT_LOGGER.managementResourceNotFound(context.getCurrentAddress());
+        }
 
         final ManagementResourceRegistration rootRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
         extensionRegistry.removeExtension(context.readResourceFromRoot(rootRegistration.getPathAddress()), module, rootRegistration);
