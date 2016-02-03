@@ -22,22 +22,27 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_LAUNCH;
 
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 
 /**
  * Outputs the profile as a series of operations needed to construct the profile
@@ -48,6 +53,11 @@ import org.jboss.dmr.ModelNode;
 public class ProfileDescribeHandler extends GenericModelDescribeOperationHandler {
 
     public static final ProfileDescribeHandler INSTANCE = new ProfileDescribeHandler();
+
+    public static final AttributeDefinition SERVER_LAUNCH = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SERVER_LAUNCH, ModelType.BOOLEAN)
+            .setAllowNull(true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
 
     private static final Set<Action.ActionEffect> DESCRIBE_EFFECTS =
             Collections.unmodifiableSet(EnumSet.of(Action.ActionEffect.ADDRESS, Action.ActionEffect.READ_CONFIG));
@@ -64,6 +74,13 @@ public class ProfileDescribeHandler extends GenericModelDescribeOperationHandler
             final PathAddress address = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR));
             throw ControllerLogger.ACCESS_LOGGER.unauthorized(operationName, address, authResult.getExplanation());
         }
+
+        // WFCORE-1353. If this op is being used as part of a server launch, pass that info
+        // to any subsystem describe handlers.
+        if (SERVER_LAUNCH.resolveModelAttribute(context, operation).asBoolean()) {
+            context.attach(GenericSubsystemDescribeHandler.SERVER_LAUNCH_KEY, Boolean.TRUE);
+        }
+
         super.execute(context, operation);
     }
 

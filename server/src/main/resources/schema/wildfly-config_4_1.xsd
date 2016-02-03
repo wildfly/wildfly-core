@@ -51,6 +51,7 @@
                 <xs:element name="deployments" type="domain-deploymentsType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="deployment-overlays" type="domain-deployment-overlaysType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="server-groups" type="server-groupsType" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="host-excludes" type="host-excludesType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="management-client-content" type="management-client-contentType" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" type="xs:string" use="optional" default="Unnamed Domain">
@@ -487,18 +488,18 @@
                     <xs:annotation>
                         <xs:documentation>
                             Reference to an individual keytab.
-                            
-                            On handling the authentication for an incoming request two pieces of information are known, the protocol and the name of the host 
+
+                            On handling the authentication for an incoming request two pieces of information are known, the protocol and the name of the host
                             this server is acting as.  For HTTP requests the protocol will always be HTTP, for requests over Remoting by default the protocol will
                             be 'remote' although this can be overridden.
-                            
+
                             At the time authentication is going to be handled the keytab will be selected as follows: -
                              1 - Iterate the list of keytabs and identity one where the for-hosts attribute contains an entry matching protocol/hostname.
                              2 - Iterate the list of keytabs and identify one where the name of the principal matches matches protocol/hostname.
                              3 - Iterate the list of keytabs and identity one where the for-hosts attribute contains an entry matching hostname.
                              4 - Iterate the list of keytabs and identify one where the hostname portion of the principal matches the hostname of the request.
                              5 - Use the keytab where for-hosts is set to '*'.
-                              
+
                             If no match is found no keytab will be selected and Kerberos will not be available for communication as that host.
                         </xs:documentation>
                     </xs:annotation>
@@ -530,7 +531,7 @@
                         <xs:annotation>
                             <xs:documentation>
                                 A space separated list of the host names this keytab can be used for.  Can also be set to '*' if applicable for all hosts if a better match is not found.
-                                
+
                                 If multiple keytabs are defined as handling the same host which one is selected is undefined and subject to change,
                                 for predictability you should ensure that no more than one keytab is defined per host.
                             </xs:documentation>
@@ -577,7 +578,7 @@
             <xs:annotation>
                 <xs:documentation>
                     The protocol to use when creating the SSLContext.
-                    
+
                     Note: This is separate from the enabled protocols on the underlying SSLEngine, to configure those add the engine specific configuration.
                 </xs:documentation>
             </xs:annotation>
@@ -872,7 +873,7 @@
                         Configuration to enable Kerberos authentication.
                     </xs:documentation>
                 </xs:annotation>
-            </xs:element> 
+            </xs:element>
             <xs:choice minOccurs="0">
                 <xs:element name="jaas" type="jaasAuthenticationType" minOccurs="0" />
                 <xs:element name="ldap" type="ldapAuthenticationType" minOccurs="0" />
@@ -893,7 +894,7 @@
         <xs:attribute name="remove-realm" type="xs:boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
-                    When a user is authenticated using Kerberos typically their identity will be represented in the form username@REALM, 
+                    When a user is authenticated using Kerberos typically their identity will be represented in the form username@REALM,
                     setting this option to true will strip the @REALM part of the name.
 
                     This may be desired to bring the names in-line with username/password based authentication if used in parallel.
@@ -901,7 +902,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    
+
     <xs:complexType name="jaasAuthenticationType">
         <xs:annotation>
             <xs:documentation>
@@ -1223,7 +1224,7 @@
                             <xs:annotation>
                                 <xs:documentation>
                                     If an entry references non-existent groups then authentication is aborted due to the inability to
-                                    query a users complete set of groups, setting this option to true allows for non-existent groups 
+                                    query a users complete set of groups, setting this option to true allows for non-existent groups
                                     to be silently ignored.
                                 </xs:documentation>
                             </xs:annotation>
@@ -1897,7 +1898,7 @@
                 <xs:attribute name="reconnect-timeout" type="xs:int" default="-1">
                     <xs:annotation>
                         <xs:documentation>
-                            If a connection drop is detected, the number of seconds to wait before reconnecting. A negative number means 
+                            If a connection drop is detected, the number of seconds to wait before reconnecting. A negative number means
                             don't reconnect automatically.
                         </xs:documentation>
                     </xs:annotation>
@@ -2023,7 +2024,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    
+
 
     <xs:complexType name="host-native-management-interfaceType">
         <xs:annotation>
@@ -2274,7 +2275,7 @@
             <xs:annotation>
                 <xs:documentation>
                     Name of a socket-binding configuration declared in the server's socket-binding-group to use for a HTTPS socket.
-                    
+
                     Note: When specified the interface must also be configured to reference a security realm with a configured keystore.
                 </xs:documentation>
             </xs:annotation>
@@ -2612,7 +2613,7 @@
             <xs:annotation>
                 <xs:documentation>
                     The fully qualified path to the truststore.
-                    
+
                     If not specified the no file will be used to initialise the truststore.
                 </xs:documentation>
             </xs:annotation>
@@ -2979,7 +2980,7 @@
             </xs:choice>
         </xs:sequence>
     </xs:complexType>
-    
+
     <!-- general socket definition -->
     <xs:complexType name="socket-binding-groupsType">
         <xs:annotation>
@@ -4529,5 +4530,198 @@
             </xs:documentation>
         </xs:annotation>
         <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="host-excludesType">
+        <xs:sequence>
+            <xs:element name="host-exclude" type="host-excludeType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="host-excludeType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                   Specification of management resources that should be made invisible to Host Controllers
+                   (excluding the master Domain Controller) running a particular software version. This is
+                   used to shield Host Controllers running earlier software versions from resources whose
+                   management API the host cannot understand (e.g. profiles including subsystems unavailable on
+                   that host.)
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:choice>
+                <xs:element name="host-release" type="host-releaseType"/>
+                <xs:element name="host-api-version" type="host-api-versionType"/>
+            </xs:choice>
+            <xs:element name="ignored-extensions" type="ignored-extensionsType"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                       Unique identifier for this particular configuration.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="active-server-groups" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                   A space-delimited list of server-group names specifying all the server groups that have servers
+                   running on the target hosts. These are the groups used by the host's servers. For these groups,
+                   the server-group resource and related profile, socket-binding-group and deployment resources will
+                   not be hidden; all other server-group, profile, socket-binding-group and deployment resources
+                   will be hidden.
+
+                   NOTE: For any host, the Domain Controller only applies this setting if, when the host registers
+                   with the Domain Controller, it does not inform the Domain Controller that it is configured to
+                   "ignore-unused-configuration". The host.xml "ignore-unused-configuration" setting provides similar
+                   functionality and takes precedence over this domain-wide setting.
+
+                   The primary expecuted use case for this setting is for managing hosts running releases prior to the
+                   introduction of the host.xml "ignore-unused-configuration" setting.
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="active-socket-binding-groups" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                   A space-delimited list of socket-binding-group names specifying all the socket binding groups that
+                   are used by servers running on the target hosts. Only used if 'active-server-groups' is set;
+                   otherwise ignored. Only needs to be set if the socket binding groups specified in the configuration
+                   of the server groups listed in 'active-server-groups' isn't the complete set of socket binding
+                   groups used on the servers (i.e. some other socket binding groups are specified in the target
+                   hosts' 'server-config' resources.)
+
+                   NOTE: For any host, the Domain Controller only applies this setting if, when the host registers
+                   with the Domain Controller, it does not inform the Domain Controller that it is configured to
+                   "ignore-unused-configuration". The host.xml "ignore-unused-configuration" setting provides similar
+                   functionality and takes precedence over this domain-wide setting.
+
+                   The primary expecuted use case for this setting is for managing hosts running releases prior to the
+                   introduction of the host.xml "ignore-unused-configuration" setting.
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="host-releaseType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                   A shorthand identifier for a well known EAP or WildFly Core based software distribution that the
+                   Host Controller is running. Used as a simpler alternative to specifying the kernel management API
+                   versions. When a Host Controller running the kernel major + minor management API associated with
+                   this release registers with the master Domain Controller, the settings associated with
+                   the enclosing host-ignore configuration will be used to determine what resources are visible
+                   to the host.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="id">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="EAP6.2">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[
+                                   A shorthand identifier for a kernel management API version 1.5.x
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="EAP6.3">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[
+                                   A shorthand identifier for a kernel management API version 1.6.x
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="EAP6.4">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[
+                                   A shorthand identifier for a kernel management API version 1.7.x
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="WildFly10.0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[
+                                   A shorthand identifier for a kernel management API version 4.0.x
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="host-api-versionType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                   Specification of the kernel (i.e. non-subsystem) management API version that the
+                   Host Controller is running. When a Host Controller running this management API version
+                   registers with the master Domain Controller, the settings associated with
+                   the enclosing host-ignore configuration will be used to determine what resources are visible
+                   to the host.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="major-version" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                       The kernel management API major version used by the host.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="minor-version" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                       The kernel management API minor version used by the host.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="micro-version" type="xs:int" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                       The kernel management API micro version. If unspecified, the enclosing host-ignore
+                       configuration applies to all releases of the given major + minor version, excluding any
+                       for which a different configuration with a micro version also specified is present.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="ignored-extensionsType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                   A list of extension names the resources for which (i.e those administered at the /extension=*
+                   addresses in the CLI) should be hidden from the target hosts.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="extension" type="extensionType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
     </xs:complexType>
 </xs:schema>

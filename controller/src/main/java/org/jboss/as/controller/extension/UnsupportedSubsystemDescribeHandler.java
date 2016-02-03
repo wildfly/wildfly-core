@@ -22,10 +22,10 @@
 
 package org.jboss.as.controller.extension;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -34,7 +34,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
-public class UnsupportedSubsystemDescribeHandler implements OperationStepHandler {
+public class UnsupportedSubsystemDescribeHandler extends GenericSubsystemDescribeHandler {
 
     private final String extensionName;
 
@@ -44,6 +44,11 @@ public class UnsupportedSubsystemDescribeHandler implements OperationStepHandler
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
+
+        if (context.getAttachment(SERVER_LAUNCH_KEY) != null) {
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
+        }
+
+        super.execute(context, operation);
     }
 }
