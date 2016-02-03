@@ -40,15 +40,17 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
     }
 
     public List<String> unwrap(final ExpressionResolver context, final ModelNode model) throws OperationFailedException {
-        if (!model.hasDefined(getName())){
+        ModelNode value = resolveModelAttribute(context, model);
+        if (value.isDefined()) {
+            return unwrapValue(context, value);
+        }else {
             return Collections.emptyList();
         }
-        return unwrapValue(context, model.get(getName()));
     }
 
     public static List<String> unwrapValue(final ExpressionResolver context, final ModelNode model) throws OperationFailedException {
         if (!model.isDefined()) {
-            return null;
+            return Collections.emptyList();
         }
         List<String> result = new LinkedList<>();
         for (ModelNode p : model.asList()) {
