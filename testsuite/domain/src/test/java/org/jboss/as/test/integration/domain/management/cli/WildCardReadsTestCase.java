@@ -22,6 +22,7 @@
 
 package org.jboss.as.test.integration.domain.management.cli;
 
+
 import java.io.IOException;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -113,6 +114,42 @@ public class WildCardReadsTestCase extends AbstractCliTestBase {
             Assert.assertTrue(result.hasDefined(ModelDescriptionConstants.OP_ADDR));
             Assert.assertTrue(result.hasDefined(ModelDescriptionConstants.RESULT));
         }
+    }
+
+    @Test
+    public void testSlaveAllServersReadRootAttribute() throws IOException {
+        cli.sendLine("/host=slave/server=*:read-attribute(name=\"server-state\")");
+        CLIOpResult opResult = cli.readAllAsOpResult();
+        Assert.assertTrue(opResult.isIsOutcomeSuccess());
+        ModelNode generic = opResult.getResponseNode().get(ModelDescriptionConstants.RESULT);
+        Assert.assertEquals(ModelType.LIST, generic.getType());
+        Assert.assertEquals(4, generic.asInt());
+        cli.sendLine("/host=slave/server=*/interface=*:read-resource()");
+        opResult = cli.readAllAsOpResult();
+        Assert.assertTrue(opResult.isIsOutcomeSuccess());
+        generic = opResult.getResponseNode().get(ModelDescriptionConstants.RESULT);
+        Assert.assertEquals(ModelType.LIST, generic.getType());
+        Assert.assertEquals(4, generic.asInt());
+    }
+
+    @Test
+    public void testSlaveAllServersReadResource() throws IOException {
+        cli.sendLine("/host=slave/server=*/interface=*:read-resource()");
+        CLIOpResult opResult = cli.readAllAsOpResult();
+        Assert.assertTrue(opResult.isIsOutcomeSuccess());
+        ModelNode generic = opResult.getResponseNode().get(ModelDescriptionConstants.RESULT);
+        Assert.assertEquals(ModelType.LIST, generic.getType());
+        Assert.assertEquals(4, generic.asInt());
+    }
+
+    @Test
+    public void testSlaveAllServersReadResourceDescription() throws IOException {
+        cli.sendLine("/host=slave/server=*/interface=public:read-resource-description()");
+        CLIOpResult opResult = cli.readAllAsOpResult();
+        Assert.assertTrue(opResult.isIsOutcomeSuccess());
+        ModelNode generic = opResult.getResponseNode().get(ModelDescriptionConstants.RESULT);
+        Assert.assertEquals(ModelType.LIST, generic.getType());
+        Assert.assertEquals(2, generic.asInt());
     }
 
 }
