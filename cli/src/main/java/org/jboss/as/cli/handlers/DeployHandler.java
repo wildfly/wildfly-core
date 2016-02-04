@@ -43,6 +43,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.accesscontrol.AccessRequirement;
 import org.jboss.as.cli.accesscontrol.AccessRequirementBuilder;
 import org.jboss.as.cli.accesscontrol.PerNodeOperationAccess;
+import org.jboss.as.cli.impl.ArgumentWithListValue;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
@@ -70,7 +71,7 @@ public class DeployHandler extends DeploymentHandler {
     private final ArgumentWithoutValue url;
     private final ArgumentWithoutValue name;
     private final ArgumentWithoutValue rtName;
-    private final ArgumentWithValue serverGroups;
+    private final ArgumentWithListValue serverGroups;
     private final ArgumentWithoutValue allServerGroups;
     private final ArgumentWithoutValue disabled;
     private final ArgumentWithoutValue unmanaged;
@@ -182,7 +183,7 @@ public class DeployHandler extends DeploymentHandler {
         force.addCantAppearAfter(allServerGroups);
         allServerGroups.setAccessRequirement(deployPermission);
 
-        serverGroups = new ArgumentWithValue(this, new CommaSeparatedCompleter() {
+        serverGroups = new ArgumentWithListValue(this, new CommaSeparatedCompleter() {
             @Override
             protected Collection<String> getAllCandidates(CommandContext ctx) {
                 return serverGroupAddPermission.getAllowedOn(ctx);

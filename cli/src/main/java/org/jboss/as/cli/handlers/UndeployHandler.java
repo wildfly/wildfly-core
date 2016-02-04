@@ -40,6 +40,7 @@ import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.accesscontrol.AccessRequirement;
 import org.jboss.as.cli.accesscontrol.AccessRequirementBuilder;
+import org.jboss.as.cli.impl.ArgumentWithListValue;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
@@ -63,7 +64,7 @@ public class UndeployHandler extends DeploymentHandler {
     private final ArgumentWithoutValue l;
     private final ArgumentWithoutValue path;
     private final ArgumentWithValue name;
-    private final ArgumentWithValue serverGroups;
+    private final ArgumentWithListValue serverGroups;
     private final ArgumentWithoutValue allRelevantServerGroups;
     private final ArgumentWithoutValue keepContent;
     private final ArgumentWithValue script;
@@ -148,7 +149,7 @@ public class UndeployHandler extends DeploymentHandler {
         allRelevantServerGroups.addRequiredPreceding(name);
         allRelevantServerGroups.setAccessRequirement(undeployPermission);
 
-        serverGroups = new ArgumentWithValue(this, new CommaSeparatedCompleter() {
+        serverGroups = new ArgumentWithListValue(this, new CommaSeparatedCompleter() {
             @Override
             protected Collection<String> getAllCandidates(CommandContext ctx) {
               final String deploymentName = name.getValue(ctx.getParsedCommandLine());
