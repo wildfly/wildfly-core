@@ -111,14 +111,17 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
     private final Executor registrationExecutor;
     private final HostRegistrations slaveHostRegistrations;
     private final String address;
+    private final DomainHostExcludeRegistry domainHostExcludeRegistry;
 
     public HostControllerRegistrationHandler(ManagementChannelHandler handler, DomainController domainController, OperationExecutor operationExecutor,
-                                             Executor registrations, HostRegistrations slaveHostRegistrations) {
+                                             Executor registrations, HostRegistrations slaveHostRegistrations,
+                                             DomainHostExcludeRegistry domainHostExcludeRegistry) {
         this.handler = handler;
         this.operationExecutor = operationExecutor;
         this.domainController = domainController;
         this.registrationExecutor = registrations;
         this.slaveHostRegistrations = slaveHostRegistrations;
+        this.domainHostExcludeRegistry = domainHostExcludeRegistry;
         this.address = HostControllerRegistrationHandler.this.handler.getRemoteAddress().getHostAddress();
     }
 
@@ -132,13 +135,15 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
         switch (operationId) {
             case DomainControllerProtocol.REGISTER_HOST_CONTROLLER_REQUEST: {
                 // Start the registration process
-                final RegistrationContext context = new RegistrationContext(domainController.getExtensionRegistry(), true);
+                final RegistrationContext context = new RegistrationContext(domainController.getExtensionRegistry(),
+                        true, domainHostExcludeRegistry);
                 context.activeOperation = handlers.registerActiveOperation(header.getBatchId(), context, context);
                 return new InitiateRegistrationHandler();
             }
             case DomainControllerProtocol.FETCH_DOMAIN_CONFIGURATION_REQUEST: {
                 // Start the fetch the domain model process
-                final RegistrationContext context = new RegistrationContext(domainController.getExtensionRegistry(), false);
+                final RegistrationContext context = new RegistrationContext(domainController.getExtensionRegistry(),
+                        false, domainHostExcludeRegistry);
                 context.activeOperation = handlers.registerActiveOperation(header.getBatchId(), context, context);
                 return new InitiateRegistrationHandler();
             }
@@ -303,8 +308,8 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 throw failure;
             }
             // Initialize the transformers
-            final TransformationTarget target = TransformationTargetImpl.create(hostInfo.getHostName(), transformerRegistry, ModelVersion.create(major, minor, micro),
-                    Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTarget.TransformationTargetType.HOST, hostInfo.isIgnoreUnaffectedConfig());
+            final TransformationTarget target = TransformationTargetImpl.createForHost(hostInfo.getHostName(), transformerRegistry,
+                    ModelVersion.create(major, minor, micro), Collections.<PathAddress, ModelVersion>emptyMap(), hostInfo);
             final Transformers transformers = Transformers.Factory.create(target);
             try {
                 SlaveChannelAttachments.attachSlaveInfo(handler.getChannel(), registrationContext.hostName, transformers);
@@ -317,7 +322,9 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             final Resource transformed = transformers.transformRootResource(transformationInputs, root);
             final Collection<Resource.ResourceEntry> resources = transformed.getChildren(EXTENSION);
             for(final Resource.ResourceEntry entry : resources) {
-                extensions.add(entry.getName());
+                if (!hostInfo.isResourceTransformationIgnored(PathAddress.pathAddress(entry.getPathElement()))) {
+                    extensions.add(entry.getName());
+                }
             }
             if(! extensions.isDefined()) {
                 // TODO add a real error message
@@ -344,16 +351,19 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
         private volatile Transformers transformers;
         private ActiveOperation<Void, RegistrationContext> activeOperation;
         private final AtomicBoolean completed = new AtomicBoolean();
+        private final DomainHostExcludeRegistry domainHostExcludeRegistry;
 
         private RegistrationContext(ExtensionRegistry extensionRegistry,
-                                    boolean registerProxyController) {
+                                    boolean registerProxyController,
+                                    DomainHostExcludeRegistry domainHostExcludeRegistry) {
             this.extensionRegistry = extensionRegistry;
             this.registerProxyController = registerProxyController;
+            this.domainHostExcludeRegistry = domainHostExcludeRegistry;
         }
 
         private synchronized void initialize(final String hostName, final ModelNode hostInfo, final ManagementRequestContext<RegistrationContext> responseChannel) {
             this.hostName = hostName;
-            this.hostInfo = HostInfo.fromModelNode(hostInfo);
+            this.hostInfo = HostInfo.fromModelNode(hostInfo, domainHostExcludeRegistry);
             this.responseChannel = responseChannel;
         }
 

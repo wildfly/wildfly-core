@@ -38,6 +38,8 @@ public class ModelDescriptionConstants {
     /** The key for {@link org.jboss.as.controller.registry.AttributeAccess.AccessType} fields. */
     public static final String ACCESS_TYPE = "access-type";
     public static final String ACTIVE_OPERATION = "active-operation";
+    public static final String ACTIVE_SERVER_GROUPS = "active-server-groups";
+    public static final String ACTIVE_SOCKET_BINDING_GROUPS = "active-socket-binding-groups";
     public static final String ADD = "add";
     public static final String ADDRESS = "address";
     public static final String ADD_INDEX = "add-index";
@@ -160,6 +162,7 @@ public class ModelDescriptionConstants {
     public static final String EXCLUDE = "exclude";
     public static final String ESCAPE_CONTROL_CHARACTERS = "escape-control-characters";
     public static final String ESCAPE_NEW_LINE = "escape-new-line";
+    public static final String EXCLUDED_EXTENSIONS = "excluded-extensions";
     public static final String EXCLUSIVE_RUNNING_TIME = "exclusive-running-time";
     public static final String EXECUTE_FOR_COORDINATOR = "execute-for-coordinator";
     public static final String EXECUTION_STATUS = "execution-status";
@@ -201,8 +204,10 @@ public class ModelDescriptionConstants {
     public static final String HOST_CONNECTION = "host-connection";
     public static final String HOST_CONTROLLER = "host-controller";
     public static final String HOST_ENVIRONMENT = "host-environment";
+    public static final String HOST_EXCLUDE = "host-exclude";
     public static final String HOST_FAILURE_DESCRIPTION = "host-failure-description";
     public static final String HOST_FAILURE_DESCRIPTIONS = "host-failure-descriptions";
+    public static final String HOST_RELEASE = "host-release";
     public static final String HOST_SCOPED_ROLE = "host-scoped-role";
     public static final String HOST_SCOPED_ROLES = "host-scoped-roles";
     public static final String HOST_STATE = "host-state";
@@ -420,6 +425,7 @@ public class ModelDescriptionConstants {
     public static final String SERVER_GROUP_SCOPED_ROLE = "server-group-scoped-role";
     public static final String SERVER_IDENTITIES = "server-identities";
     public static final String SERVER_IDENTITY = "server-identity";
+    public static final String SERVER_LAUNCH = "server-launch";
     public static final String SERVER_OPERATIONS = "server-operations";
     public static final String SERVICE = "service";
     public static final String SERVICES_MISSING_DEPENDENCIES = "services-missing-dependencies";

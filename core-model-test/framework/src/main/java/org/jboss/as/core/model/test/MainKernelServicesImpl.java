@@ -89,7 +89,7 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
         OperationTransformerRegistry registry = transformerRegistry.resolveHost(modelVersion, subsystemVersions);
 
         TransformationTarget target = TransformationTargetImpl.create(null, extensionRegistry.getTransformerRegistry(), modelVersion,
-                subsystemVersions, TransformationTarget.TransformationTargetType.DOMAIN, false);
+                subsystemVersions, TransformationTarget.TransformationTargetType.DOMAIN);
         TransformationContext transformationContext = createTransformationContext(target, attachment);
 
         OperationTransformer operationTransformer = registry.resolveOperationTransformer(address, operation.get(OP).asString(), null).getTransformer();
@@ -119,7 +119,7 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
         checkIsMainController();
 
         final TransformationTarget target = TransformationTargetImpl.create(null, extensionRegistry.getTransformerRegistry(), modelVersion,
-                Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTarget.TransformationTargetType.DOMAIN, false);
+                Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTarget.TransformationTargetType.DOMAIN);
         final Transformers transformers = Transformers.Factory.create(target);
 
         ModelNode fakeOP = new ModelNode();
