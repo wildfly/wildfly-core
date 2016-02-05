@@ -311,8 +311,6 @@ public class ResourceCompositeOperationHandler extends BaseOperationCommand {
             args = new HashMap<String,ArgumentWithValue>();
             final List<Property> propList = descr.get(Util.REQUEST_PROPERTIES).asPropertyList();
             for (Property prop : propList) {
-                final ModelNode propDescr = prop.getValue();
-                ModelType type = null;
                 CommandLineCompleter valueCompleter = null;
                 ArgumentValueConverter valueConverter = null;
                 if(propConverters != null) {
@@ -323,16 +321,18 @@ public class ResourceCompositeOperationHandler extends BaseOperationCommand {
                 }
                 if(valueConverter == null) {
                     valueConverter = ArgumentValueConverter.DEFAULT;
-                    if(propDescr.has(Util.TYPE)) {
-                        type = propDescr.get(Util.TYPE).asType();
-                        if(ModelType.BOOLEAN == type) {
+                    final ModelType propType = getType(prop.getValue());
+                    if(propType != null) {
+                        if(ModelType.BOOLEAN == propType) {
                             if(valueCompleter == null) {
                                 valueCompleter = SimpleTabCompleter.BOOLEAN;
                             }
+                        } else if(ModelType.STRING == propType) {
+                            valueConverter = ArgumentValueConverter.NON_OBJECT;
                         } else if(prop.getName().endsWith("properties")) { // TODO this is bad but can't rely on proper descriptions
                             valueConverter = ArgumentValueConverter.PROPERTIES;
-                        } else if(ModelType.LIST == type) {
-                            if(propDescr.hasDefined(Util.VALUE_TYPE) && propDescr.get(Util.VALUE_TYPE).asType() == ModelType.PROPERTY) {
+                        } else if(ModelType.LIST == propType) {
+                            if(asType(descr.get(Util.VALUE_TYPE)) == ModelType.PROPERTY) {
                                 valueConverter = ArgumentValueConverter.PROPERTIES;
                             } else {
                                 valueConverter = ArgumentValueConverter.LIST;
@@ -381,5 +381,29 @@ public class ResourceCompositeOperationHandler extends BaseOperationCommand {
         }
         address.add(getRequiredType(), "?");
         return request;
+    }
+
+    protected ModelType getType(ModelNode descr) {
+        if(!descr.has(Util.TYPE)) {
+            return null;
+        }
+        try {
+            return descr.get(Util.TYPE).asType();
+        } catch(IllegalArgumentException e) {
+            // the value type is a structure
+            return null;
+        }
+    }
+
+    protected ModelType asType(ModelNode type) {
+        if(type == null) {
+            return null;
+        }
+        try {
+            return type.asType();
+        } catch(IllegalArgumentException e) {
+            // the value type is a structure
+            return null;
+        }
     }
 }

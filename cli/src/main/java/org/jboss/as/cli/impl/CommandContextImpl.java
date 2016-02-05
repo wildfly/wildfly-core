@@ -141,6 +141,7 @@ import org.jboss.as.cli.handlers.batch.BatchRunHandler;
 import org.jboss.as.cli.handlers.ifelse.ElseHandler;
 import org.jboss.as.cli.handlers.ifelse.EndIfHandler;
 import org.jboss.as.cli.handlers.ifelse.IfHandler;
+import org.jboss.as.cli.handlers.jca.DataSourceAddCompositeHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverInfoHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverNameProvider;
 import org.jboss.as.cli.handlers.jca.XADataSourceAddCompositeHandler;
@@ -410,7 +411,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         terminateSession();
                     else {
                         handleSafe(output.getBuffer().trim());
-                        if (INTERACT && terminate == 0) {
+                        if (INTERACT && terminate == RUNNING) {
                             console.setPrompt(getPrompt());
                         }
                     }
@@ -556,16 +557,20 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new EndIfHandler(), "end-if");
 
         // data-source
-        GenericTypeOperationHandler dsHandler = new GenericTypeOperationHandler(this, "/subsystem=datasources/data-source", null);
         final DefaultCompleter driverNameCompleter = new DefaultCompleter(JDBCDriverNameProvider.INSTANCE);
+        final GenericTypeOperationHandler dsHandler = new GenericTypeOperationHandler(this, "/subsystem=datasources/data-source", null);
         dsHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
+        // override the add operation with the handler that accepts connection props
+        final DataSourceAddCompositeHandler dsAddHandler = new DataSourceAddCompositeHandler(this, "/subsystem=datasources/data-source");
+        dsAddHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
+        dsHandler.addHandler(Util.ADD, dsAddHandler);
         cmdRegistry.registerHandler(dsHandler, "data-source");
-        GenericTypeOperationHandler xaDsHandler = new GenericTypeOperationHandler(this, "/subsystem=datasources/xa-data-source", null);
+        final GenericTypeOperationHandler xaDsHandler = new GenericTypeOperationHandler(this, "/subsystem=datasources/xa-data-source", null);
         xaDsHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
-        // override the add operation with the handler that accepts xa props
+        // override the xa add operation with the handler that accepts xa props
         final XADataSourceAddCompositeHandler xaDsAddHandler = new XADataSourceAddCompositeHandler(this, "/subsystem=datasources/xa-data-source");
         xaDsAddHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
-        xaDsHandler.addHandler("add", xaDsAddHandler);
+        xaDsHandler.addHandler(Util.ADD, xaDsAddHandler);
         cmdRegistry.registerHandler(xaDsHandler, "xa-data-source");
         cmdRegistry.registerHandler(new JDBCDriverInfoHandler(this), "jdbc-driver-info");
 
@@ -821,7 +826,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void terminateSession() {
-        if(terminate == 0) {
+        if(terminate == RUNNING) {
             terminate = TERMINATING;
             disconnectController();
             restoreStdIO();
@@ -1235,7 +1240,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             extLoader.resetHandlers();
         }
         promptConnectPart = null;
-        if(console != null && terminate == 0) {
+        if(console != null && terminate == RUNNING) {
             console.setPrompt(getPrompt());
         }
     }
