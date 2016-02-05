@@ -308,4 +308,39 @@ public interface Transformers {
         }
     };
 
+    /** Provides information on whether a target process is excluded from receiving operations for a particular resource addresses. */
+    interface OperationExcludedTransformationRegistry {
+
+        /**
+         * Gets whether an operation with the given {@code address} should be excluded from normal
+         * {@link TransformationTarget#resolveTransformer(TransformationContext, PathAddress, String)} transformation}
+         * and instead simply {@link OperationTransformer#DISCARD discarded}.
+         *
+         * @param address the operation address. Cannot be {@code null}
+         * @param operationName the name of the operation
+         * @return {@code true} if the operation should be excluded from normal operation transformation
+         */
+        boolean isOperationExcluded(final PathAddress address, String operationName);
+
+
+        /**
+         * A default {@link OperationExcludedTransformationRegistry}
+         * that says that no addresses are being excluded.
+         */
+        OperationExcludedTransformationRegistry DEFAULT = new OperationExcludedTransformationRegistry() {
+
+            /**
+             * Always returns {@code false}
+             *
+             * {@inheritDoc}
+             *
+             * @return {@code false}, always
+             */
+            @Override
+            public boolean isOperationExcluded(PathAddress address, String operationName) {
+                return false;
+            }
+        };
+
+    }
 }

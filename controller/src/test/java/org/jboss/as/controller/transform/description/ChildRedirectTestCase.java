@@ -202,7 +202,7 @@ public class ChildRedirectTestCase {
     }
 
     protected TransformationTarget create(final TransformerRegistry registry, ModelVersion version, TransformationTarget.TransformationTargetType type) {
-        return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), type, false);
+        return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), type);
     }
 
     private OperationTransformer.TransformedOperation transformOperation(final ModelVersion version, final ModelNode operation) throws OperationFailedException {

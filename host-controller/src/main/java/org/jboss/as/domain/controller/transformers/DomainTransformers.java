@@ -42,6 +42,7 @@ import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
+import org.jboss.as.domain.controller.resources.HostExcludeResourceDefinition;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
@@ -68,6 +69,8 @@ public class DomainTransformers {
     static final ModelVersion VERSION_2_1 = ModelVersion.create(2, 1, 0);
     //WF 9.0.0 and 9.0.1
     static final ModelVersion VERSION_3_0 = ModelVersion.create(3, 0, 0);
+    //WF 10.0.0
+    static final ModelVersion VERSION_4_0 = ModelVersion.create(4, 0, 0);
 
     //All versions before WildFly 10/EAP 7, which do not understand /profile=xxx:clone
     private static final ModelVersion[] PRE_PROFILE_CLONE_VERSIONS = new ModelVersion[]{VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_7, VERSION_1_6, VERSION_1_5};
@@ -99,8 +102,19 @@ public class DomainTransformers {
     private static void registerRootTransformers(TransformerRegistry registry) {
         //todo we should use ChainedTransformationDescriptionBuilder but it doesn't work properly with "root" resources
         ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(null);
+
+        // 4.0 and earlier do not understand host-exclude. These are only used by
+        // a DC, which must be running current version, so it's safe to discard them
+        builder.discardChildResource(HostExcludeResourceDefinition.PATH_ELEMENT);
+        ModelVersion[] versions = {VERSION_3_0, VERSION_4_0};
+        for (ModelVersion version : versions){
+            TransformersSubRegistration domain = registry.getDomainRegistration(version);
+            TransformationDescription.Tools.register(builder.build(), domain);
+        }
+
+        // 1.7 and earlier do not understand suspend/resume
         DomainServerLifecycleHandlers.registerServerLifeCycleOperationsTransformers(builder);
-        ModelVersion[] versions = {VERSION_1_5, VERSION_1_6, VERSION_1_7};
+        versions = new ModelVersion[]{VERSION_1_5, VERSION_1_6, VERSION_1_7};
         for (ModelVersion version : versions){
             TransformersSubRegistration domain = registry.getDomainRegistration(version);
             TransformationDescription.Tools.register(builder.build(), domain);

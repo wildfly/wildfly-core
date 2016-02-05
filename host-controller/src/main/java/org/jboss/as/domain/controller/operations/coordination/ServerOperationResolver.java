@@ -113,6 +113,7 @@ public class ServerOperationResolver {
         SOCKET_BINDING_GROUP(ModelDescriptionConstants.SOCKET_BINDING_GROUP),
         DEPLOYMENT(ModelDescriptionConstants.DEPLOYMENT),
         SERVER_GROUP(ModelDescriptionConstants.SERVER_GROUP),
+        HOST_EXCLUDE(ModelDescriptionConstants.HOST_EXCLUDE),
         MANAGMENT_CLIENT_CONTENT(ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT),
         HOST(ModelDescriptionConstants.HOST),
         DEPLOYMENT_OVERLAY(ModelDescriptionConstants.DEPLOYMENT_OVERLAY),
@@ -280,6 +281,9 @@ public class ServerOperationResolver {
                     return getDeploymentOverlayOperations(operation, host);
                 }
                 case HOST_CONNECTION: {
+                    return Collections.emptyMap();
+                }
+                case HOST_EXCLUDE: {
                     return Collections.emptyMap();
                 }
                 default:
