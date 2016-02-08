@@ -31,7 +31,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>2.0.12.Final-redhat-SNAPSHOT</version>
+    <version>2.0.13.Final-redhat-SNAPSHOT</version>
 
     <name>WildFly: Core Parent Aggregator</name>
     <description>WildFly: Core Parent Aggregator</description>
