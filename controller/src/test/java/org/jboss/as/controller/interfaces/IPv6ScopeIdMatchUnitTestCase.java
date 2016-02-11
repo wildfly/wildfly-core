@@ -125,7 +125,7 @@ public class IPv6ScopeIdMatchUnitTestCase {
                 }
 
                 matchCriteriaTest(hostAddress, nif, address, true);
-                if (address.isLinkLocalAddress() || address.isSiteLocalAddress()) {
+                if (!nif.isVirtual() && (address.isLinkLocalAddress() || address.isSiteLocalAddress())) {
                     matchCriteriaTest(hostAddress + "%" + nif.getName(), nif, address, true);
                     matchCriteriaTest(hostAddress + "%" + address.getScopeId(), nif, address, true);
                     matchCriteriaTest(hostAddress + "%" + (address.getScopeId() + 1), nif, address, false);
