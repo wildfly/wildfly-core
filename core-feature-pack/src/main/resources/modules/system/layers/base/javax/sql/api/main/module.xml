@@ -38,5 +38,6 @@
 
     <dependencies>
         <module name="javax.api"/>
+        <module name="javax.transaction.api" optional="true"/>
     </dependencies>
 </module>
