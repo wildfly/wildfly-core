@@ -77,7 +77,6 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
 
         if (!failed.isEmpty() || !problems.isEmpty()) {
             Set<ServiceController<?>> missingTransitive = null;
-            Set<ServiceName> trackedServices = new HashSet<ServiceName>();
             final ModelNode failureDescription = context.getFailureDescription();
             ModelNode failedList = null;
             for (ServiceController<?> controller : failed) {
@@ -85,7 +84,6 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
                     failedList = failureDescription.get(ControllerLogger.ROOT_LOGGER.failedServices());
                 }
                 ServiceName serviceName = controller.getName();
-                trackedServices.add(serviceName);
                 failedList.get(serviceName.getCanonicalName()).set(getServiceFailureDescription(controller.getStartException()));
             }
             ModelNode problemList = null;
@@ -100,7 +98,6 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
                     StringBuilder missing = new StringBuilder();
                     for (Iterator<ServiceName> i = immediatelyUnavailable.iterator(); i.hasNext(); ) {
                         ServiceName missingSvc = i.next();
-                        trackedServices.add(missingSvc);
                         missing.append(missingSvc.getCanonicalName());
                         if (i.hasNext()) {
                             missing.append(", ");
@@ -124,7 +121,7 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
                 // See if any other services are known to the service container as being missing and aren't already
                 // tracked by this SVH as failed or directly missing. If any are found, that is some additional
                 // info to the user, so report that
-                SortedSet<ServiceName> allMissing = findAllMissingServices(missingTransitive, trackedServices);
+                SortedSet<ServiceName> allMissing = findAllMissingServices(missingTransitive);
                 if (!allMissing.isEmpty()) {
                     ModelNode missingTransitiveDesc = failureDescription.get(ControllerLogger.ROOT_LOGGER.missingTransitiveDependencyProblem());
                     ModelNode missingTransitiveDeps = missingTransitiveDesc.get(ControllerLogger.ROOT_LOGGER.missingTransitiveDependents());
@@ -163,7 +160,7 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
         return result;
     }
 
-    private static SortedSet<ServiceName> findAllMissingServices(Set<ServiceController<?>> missingTransitive, Set<ServiceName> alreadyTracked) {
+    private static SortedSet<ServiceName> findAllMissingServices(Set<ServiceController<?>> missingTransitive) {
         // Check all relevant service containers. This is a bit silly since in reality there
         // should only be one that is associated with every SC that is passed in,
         // but I'm being anal and vaguely future-proofing a bit
@@ -174,14 +171,6 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
             if (examined.add(container)) {
                 result.addAll(findAllMissingServices(container));
             }
-        }
-
-        // Only report the missing services if the list includes ones not already tracked
-        // as failed or directly missing
-        Set<ServiceName> retain = new HashSet<ServiceName>(result);
-        retain.removeAll(alreadyTracked);
-        if (retain.size() == 0) {
-            result.clear();
         }
 
         return result;
