@@ -140,7 +140,7 @@ public interface ConfigurationChangesCollector {
         }
 
         private String getDate() {
-            return DATE_FORMAT.format(Instant.now());
+            return DATE_FORMAT.format(date);
         }
 
         public Instant getOperationInstant() {
