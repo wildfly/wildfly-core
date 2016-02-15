@@ -49,6 +49,7 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>18.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.shrinkwrap</groupId>
@@ -87,7 +88,6 @@
                 <version>${version.surefire.plugin}</version>
                 <configuration>
                     <!-- fork for each each test class -->
-                    <reuseForks>false</reuseForks>
                     <systemPropertyVariables>
                         <jbossas.version>${project.parent.version}</jbossas.version>
                         <jboss.home.dir>${jboss.home.dir}</jboss.home.dir>

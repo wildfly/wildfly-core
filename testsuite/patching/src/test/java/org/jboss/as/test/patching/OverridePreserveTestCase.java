@@ -386,7 +386,7 @@ public class OverridePreserveTestCase extends AbstractPatchingTestCase {
         Module module = new Module.Builder(moduleName).build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
-        logger.info("moduleDir = " + moduleDir.getAbsolutePath());
+        logger.trace("moduleDir = " + moduleDir.getAbsolutePath());
 
         // prepare the patch
         String patchID = randomString();
@@ -411,7 +411,7 @@ public class OverridePreserveTestCase extends AbstractPatchingTestCase {
                 .build();
         createPatchXMLFile(patchDir, patch);
         File zippedPatch = createZippedPatchFile(patchDir, patchID);
-        logger.info(zippedPatch.getAbsolutePath());
+        logger.debug(zippedPatch.getAbsolutePath());
 
         // modify module
         File fileModifyModule = newFile(moduleDir, "newFile");
