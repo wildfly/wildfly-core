@@ -44,7 +44,7 @@ class SocketBindingGroupTransformers {
                 TransformationDescriptionBuilder.Factory.createChainedInstance(AbstractSocketBindingGroupResourceDefinition.PATH, currentVersion);
 
         ResourceTransformationDescriptionBuilder builder =
-                chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_7);
+                chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_8);
         builder.getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.DEFINED, SocketBindingGroupResourceDefinition.INCLUDES)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, SocketBindingGroupResourceDefinition.INCLUDES)

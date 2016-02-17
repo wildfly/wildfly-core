@@ -63,6 +63,8 @@ public class DomainTransformers {
     static final ModelVersion VERSION_1_6 = ModelVersion.create(1, 6, 0);
     // EAP 6.4.0
     static final ModelVersion VERSION_1_7 = ModelVersion.create(1, 7, 0);
+ // EAP 6.4.0 CP07
+    static final ModelVersion VERSION_1_8 = ModelVersion.create(1, 8, 0);
     //WF 8.0.0.Final
     static final ModelVersion VERSION_2_0 = ModelVersion.create(2, 0, 0);
     //WF 8.1.0.Final
@@ -73,7 +75,7 @@ public class DomainTransformers {
     static final ModelVersion VERSION_4_0 = ModelVersion.create(4, 0, 0);
 
     //All versions before WildFly 10/EAP 7, which do not understand /profile=xxx:clone
-    private static final ModelVersion[] PRE_PROFILE_CLONE_VERSIONS = new ModelVersion[]{VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_7, VERSION_1_6, VERSION_1_5};
+    private static final ModelVersion[] PRE_PROFILE_CLONE_VERSIONS = new ModelVersion[]{VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5};
 
     //Current
     static final ModelVersion CURRENT = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
@@ -90,7 +92,7 @@ public class DomainTransformers {
 
     private static void initializeChainedDomainRegistry(TransformerRegistry registry) {
         //The chains for transforming will be as follows
-        //For JBoss EAP: 4.0.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
+        //For JBoss EAP: 4.0.0 -> 1.8.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
 
         registerRootTransformers(registry);
         registerChainedManagementTransformers(registry, CURRENT);
@@ -112,9 +114,9 @@ public class DomainTransformers {
             TransformationDescription.Tools.register(builder.build(), domain);
         }
 
-        // 1.7 and earlier do not understand suspend/resume
+        // 1.8 and earlier do not understand suspend/resume
         DomainServerLifecycleHandlers.registerServerLifeCycleOperationsTransformers(builder);
-        versions = new ModelVersion[]{VERSION_1_5, VERSION_1_6, VERSION_1_7};
+        versions = new ModelVersion[]{VERSION_1_5, VERSION_1_6, VERSION_1_7, VERSION_1_8};
         for (ModelVersion version : versions){
             TransformersSubRegistration domain = registry.getDomainRegistration(version);
             TransformationDescription.Tools.register(builder.build(), domain);
@@ -123,12 +125,12 @@ public class DomainTransformers {
 
     private static void registerChainedManagementTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = ManagementTransformers.buildTransformerChain(currentVersion);
-        registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7);
+        registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7, VERSION_1_8);
     }
 
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain(currentVersion);
-        registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7);
+        registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7, VERSION_1_8);
     }
 
     private static void registerProfileTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
@@ -153,7 +155,7 @@ public class DomainTransformers {
 
     private static void registerSocketBindingGroupTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = SocketBindingGroupTransformers.buildTransformerChain(currentVersion);
-        registerChainedTransformer(registry, builder, VERSION_1_7, VERSION_1_6, VERSION_1_5);
+        registerChainedTransformer(registry, builder, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5);
     }
 
     private static void registerChainedTransformer(TransformerRegistry registry, ChainedTransformationDescriptionBuilder builder , ModelVersion...versions) {
