@@ -260,7 +260,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             }
         } catch (Exception e) {
             Throwable cause = e.getCause();
-            if (cause instanceof BindException) {
+            if (e instanceof BindException || cause instanceof BindException) {
                 final StringBuilder sb = new StringBuilder().append(e.getLocalizedMessage());
                 if (bindAddress != null)
                     sb.append(" ").append(bindAddress);
