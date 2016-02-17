@@ -71,7 +71,7 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
      * Base service name for this HTTP Upgrade refist
      */
     public static final ServiceName HTTP_UPGRADE_REGISTRY = ServiceName.JBOSS.append("http-upgrade-registry");
-    public static final ServiceName UPGRADE_SERVICE_NAME = ServiceName.JBOSS.append("remoting ", "remoting-http-upgrade-service");
+    public static final ServiceName UPGRADE_SERVICE_NAME = ServiceName.JBOSS.append("remoting", "remoting-http-upgrade-service");
 
     private final String httpConnectorName;
     private final String endpointName;
