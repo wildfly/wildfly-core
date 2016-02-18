@@ -18,11 +18,9 @@
 * License along with this software; if not, write to the Free
 * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
-*/
+ */
 package org.jboss.as.controller;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 
@@ -30,6 +28,9 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -351,14 +352,14 @@ public class ExpressionResolverUnitTestCase {
 
     @Test
     public void testNonExpression() throws OperationFailedException {
-        ModelNode node =  ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression("abc"));
+        ModelNode node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression("abc"));
         assertEquals("abc", node.asString());
         assertEquals(ModelType.STRING, node.getType());
     }
 
     @Test
     public void testBlankExpression() throws OperationFailedException {
-        ModelNode node =  ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression(""));
+        ModelNode node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression(""));
         assertEquals("", node.asString());
         assertEquals(ModelType.STRING, node.getType());
     }
@@ -393,16 +394,15 @@ public class ExpressionResolverUnitTestCase {
         System.setProperty("test.property1", "test.property1.value");
         try {
             ModelNode resolved = ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression("${test.property1} ${test.property1"));
-            fail("Did not fail with OFE: "+ resolved);
+            fail("Did not fail with OFE: " + resolved);
         } finally {
             System.clearProperty("test.property1");
         }
     }
 
     /**
-     * Test an expression that contains more than one system property name to
-     * see that the second property value is used when the first property
-     * is not defined.
+     * Test an expression that contains more than one system property name to see that the second property value is used
+     * when the first property is not defined.
      */
     @Test
     public void testSystemPropertyRefs() throws OperationFailedException {
@@ -413,6 +413,35 @@ public class ExpressionResolverUnitTestCase {
             System.clearProperty("test.property2");
         }
         assertEquals("default", ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression("${test.property1,test.property2:default}")).asString());
+    }
+
+    @Test
+    public void testExpressionWithDollarEndingDefaultValue() throws OperationFailedException {
+        try {
+            ModelNode node = new ModelNode();
+            node.get("expr").set(new ValueExpression("${test.property.dollar.default:default$}-test"));
+            node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(node);
+            assertEquals("default$-test", node.get("expr").asString());
+            node = new ModelNode();
+            node.get("expr").set(new ValueExpression("${test.property.dollar.default:default$test}-test"));
+            node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(node);
+            assertEquals(1, node.keys().size());
+            assertEquals("default$test-test", node.get("expr").asString());
+
+            System.setProperty("test.property.dollar.default", "system-prop-value");
+            node = new ModelNode();
+            node.get("expr").set(new ValueExpression("${test.property.dollar.default:default$}-test"));
+            node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(node);
+            assertEquals(1, node.keys().size());
+            assertEquals("system-prop-value-test", node.get("expr").asString());
+            node = new ModelNode();
+            node.get("expr").set(new ValueExpression("${test.property.dollar.default:default$test}-test"));
+            node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(node);
+            assertEquals(1, node.keys().size());
+            assertEquals("system-prop-value-test", node.get("expr").asString());
+        } finally {
+            System.clearProperty("test.property.dollar.default");
+        }
     }
 
     private ModelNode expression(String str) {

@@ -213,6 +213,9 @@ public class ExpressionResolverImpl implements ExpressionResolver {
                                 // We're in an outer expression, so just discard the top stack element
                                 // created when we saw the '$' and resume tracking the outer expression
                                 stack.pop();
+                                if (ch == '}') {//this may be the end of the outer expression
+                                    i--;
+                                }
                                 state = GOT_OPEN_BRACE;
                             }
                             continue;
