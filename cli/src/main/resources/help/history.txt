@@ -17,4 +17,4 @@ ARGUMENTS
  --enable     - will re-enable history expansion (starting from the last
                 recorded command before the history expansion was disabled);
 
- --clear      - will clear the in-memory history (but not the file one).
+ --clear      - will clear the history (in-memory and persisted).
