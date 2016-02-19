@@ -68,7 +68,7 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         final String securityRealm = model.hasDefined(SECURITY_REALM) ? model.require(SECURITY_REALM).asString() : null;
         final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
 
-        RemotingServices.installSecurityServices(context, context.getServiceTarget(), connectorName, null, securityRealm, null, tmpDirPath);
+        RemotingServices.installSecurityServices(context, context.getServiceTarget(), connectorName, null, null, securityRealm, null, tmpDirPath);
         launchServices(context, connectorName, fullModel);
     }
 

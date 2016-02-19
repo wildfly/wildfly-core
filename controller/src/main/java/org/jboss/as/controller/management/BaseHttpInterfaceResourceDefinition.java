@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.management.Capabilities.HTTP_MANAGEMENT_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.HTTP_SERVER_AUTHENTICATION_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 
 import java.util.List;
 
@@ -80,6 +81,12 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setNullSignificant(true)
         .build();
 
+    public static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
+        .setMinSize(1)
+        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setCapabilityReference(SSL_CONTEXT_CAPABILITY, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+        .build();
+
     public static final SimpleAttributeDefinition CONSOLE_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONSOLE_ENABLED, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
         .setXmlName(Attribute.CONSOLE_ENABLED.getLocalName())
@@ -125,7 +132,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
-    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_SERVER_AUTHENTICATION, SECURITY_REALM, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_SERVER_AUTHENTICATION, SSL_CONTEXT, SECURITY_REALM, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
                                                                                                      HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
 
     private final List<AccessConstraintDefinition> accessConstraints;

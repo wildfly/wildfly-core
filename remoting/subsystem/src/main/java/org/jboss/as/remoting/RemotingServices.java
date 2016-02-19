@@ -23,8 +23,10 @@ package org.jboss.as.remoting;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.remoting.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.remoting.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 
+import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.controller.OperationContext;
@@ -128,6 +130,7 @@ public class RemotingServices {
                                                ServiceTarget serviceTarget,
                                                final String connectorName,
                                                final String saslServerAuthentication,
+                                               final String sslContextName,
                                                final String realmName,
                                                final ServiceName serverCallbackServiceName,
                                                final ServiceName tmpDirService) {
@@ -141,6 +144,11 @@ public class RemotingServices {
             builder.addDependency(context.getCapabilityServiceName(
                     buildDynamicCapabilityName(SASL_SERVER_AUTHENTICATION_CAPABILITY, saslServerAuthentication),
                     SaslAuthenticationFactory.class), SaslAuthenticationFactory.class, saslAuthenticationFactory);
+        }
+        if (sslContextName != null) {
+            builder.addDependency(context.getCapabilityServiceName(
+                    buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContextName),
+                    SSLContext.class), SSLContext.class, rsps.getSSLContextInjector());
         }
         if (realmName != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, rsps.getSecurityRealmInjectedValue(), realmName, false);

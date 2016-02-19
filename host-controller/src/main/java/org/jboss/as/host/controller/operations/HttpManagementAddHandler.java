@@ -29,6 +29,8 @@ import io.undertow.server.ListenerRegistry;
 
 import java.util.concurrent.Executor;
 
+import javax.net.ssl.SSLContext;
+
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -151,6 +153,12 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         } else {
             ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
+        String sslContext = commonPolicy.getSSLContext();
+        if (sslContext != null) {
+            builder.addDependency(context.getCapabilityServiceName(
+                    buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContext),
+                    SSLContext.class), SSLContext.class, service.getSSLContextInjector());
+        }
 
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE)
             .install();
@@ -169,7 +177,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         if (commonPolicy.isHttpUpgradeEnabled()) {
             ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
-            ManagementRemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, commonPolicy.getSaslServerAuthentication(), securityRealm, serverCallbackService, tmpDirPath);
+            ManagementRemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, commonPolicy.getSaslServerAuthentication(),
+                    commonPolicy.getSSLContext(), securityRealm, serverCallbackService, tmpDirPath);
 
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(true), onDemand);
             final String httpConnectorName;

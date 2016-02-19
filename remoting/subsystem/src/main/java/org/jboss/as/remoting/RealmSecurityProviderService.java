@@ -22,10 +22,13 @@
 package org.jboss.as.remoting;
 
 import java.io.File;
+
+import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.remoting.logging.RemotingLogger;
+import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -40,6 +43,7 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class RealmSecurityProviderService implements Service<RemotingSecurityProvider> {
 
+    private final InjectedValue<SSLContext> sslContextInjectedValue = new InjectedValue<>();
     private final InjectedValue<SecurityRealm> securityRealmInjectedValue = new InjectedValue<SecurityRealm>();
     private final InjectedValue<CallbackHandler> serverCallbackValue = new InjectedValue<CallbackHandler>();
     private final InjectedValue<String> tmpDirValue = new InjectedValue<String>();
@@ -76,7 +80,7 @@ public class RealmSecurityProviderService implements Service<RemotingSecurityPro
             authDir.setExecutable(true, true);
         }
 
-        securityProvider = new RealmSecurityProvider(securityRealmInjectedValue.getOptionalValue(), serverCallbackValue.getOptionalValue(), authDir.getAbsolutePath());
+        securityProvider = new RealmSecurityProvider(sslContextInjectedValue.getOptionalValue(), securityRealmInjectedValue.getOptionalValue(), serverCallbackValue.getOptionalValue(), authDir.getAbsolutePath());
     }
 
     public void stop(StopContext stopContext) {
@@ -85,6 +89,10 @@ public class RealmSecurityProviderService implements Service<RemotingSecurityPro
 
     public RemotingSecurityProvider getValue() throws IllegalStateException, IllegalArgumentException {
         return securityProvider;
+    }
+
+    public Injector<SSLContext> getSSLContextInjector() {
+        return sslContextInjectedValue;
     }
 
     public InjectedValue<SecurityRealm> getSecurityRealmInjectedValue() {

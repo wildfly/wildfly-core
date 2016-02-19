@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.net.ssl.SSLContext;
+
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.domain.http.server.ConsoleMode;
@@ -82,6 +84,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<Integer> securePortValue = new InjectedValue<Integer>();
     private final InjectedValue<HttpAuthenticationFactory> httpServerAuthenticationValue = new InjectedValue<>();
     private final InjectedValue<SecurityRealm> securityRealmValue = new InjectedValue<SecurityRealm>();
+    private final InjectedValue<SSLContext> sslContextValue = new InjectedValue<>();
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
     private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
     private final InjectedValue<Collection<String>> allowedOriginsValue = new InjectedValue<Collection<String>>();
@@ -176,6 +179,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
         final SecurityRealm securityRealm = securityRealmValue.getOptionalValue();
         final HttpAuthenticationFactory httpServerAuthentication = httpServerAuthenticationValue.getOptionalValue();
+        final SSLContext sslContext = sslContextValue.getOptionalValue();
 
         InetSocketAddress bindAddress = null;
         InetSocketAddress secureBindAddress = null;
@@ -238,6 +242,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setSecureBindAddress(secureBindAddress)
                     .setModelController(modelController)
                     .setSecurityRealm(securityRealm)
+                    .setSSLContext(sslContext)
                     .setHttpServerAuthentication(httpServerAuthentication)
                     .setControlledProcessStateService(controlledProcessStateService)
                     .setConsoleMode(consoleMode)
@@ -388,6 +393,16 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     public InjectedValue<SecurityRealm> getSecurityRealmInjector() {
         return securityRealmValue;
     }
+
+    /**
+     * Get the SSLContext injector.
+     *
+     * @return the SSLContext injector.
+     */
+    public Injector<SSLContext> getSSLContextInjector() {
+        return sslContextValue;
+    }
+
 
     /**
      * Get the {@link Injector} for the HTTP server authentication policy.

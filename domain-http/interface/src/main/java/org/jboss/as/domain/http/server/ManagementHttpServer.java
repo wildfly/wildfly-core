@@ -165,17 +165,17 @@ public class ManagementHttpServer {
     }
 
     private static SSLContext getSSLContext(Builder builder) {
-        if (builder.httpAuthenticationFactory != null) {
-            throw new IllegalStateException("Obtaining a SSLContext from a SecurityDomain not currently supported.");
+        if (builder.sslContext != null) {
+            return builder.sslContext;
         } else if (builder.securityRealm != null) {
             return builder.securityRealm.getSSLContext();
         } else {
-            throw ROOT_LOGGER.noRealmOrDomain();
+            throw ROOT_LOGGER.noRealmOrSSLContext();
         }
     }
 
     private static SslClientAuthMode getSslClientAuthMode(Builder builder) {
-        if (builder.httpAuthenticationFactory != null) {
+        if (builder.sslContext != null) {
             return null;
         } else if (builder.securityRealm != null) {
             Set<AuthMechanism> supportedMechanisms = builder.securityRealm.getSupportedAuthenticationMechanisms();
@@ -191,7 +191,7 @@ public class ManagementHttpServer {
 
             return null;
         } else {
-            throw ROOT_LOGGER.noRealmOrDomain();
+            throw ROOT_LOGGER.noRealmOrSSLContext();
         }
     }
 
@@ -381,6 +381,7 @@ public class ManagementHttpServer {
         private InetSocketAddress secureBindAddress;
         private ModelController modelController;
         private SecurityRealm securityRealm;
+        private SSLContext sslContext;
         private HttpAuthenticationFactory httpAuthenticationFactory;
         private ControlledProcessStateService controlledProcessStateService;
         private ConsoleMode consoleMode;
@@ -417,6 +418,13 @@ public class ManagementHttpServer {
         public Builder setSecurityRealm(SecurityRealm securityRealm) {
             assertNotBuilt();
             this.securityRealm = securityRealm;
+
+            return this;
+        }
+
+        public Builder setSSLContext(SSLContext sslContext) {
+            assertNotBuilt();
+            this.sslContext = sslContext;
 
             return this;
         }

@@ -24,6 +24,7 @@ package org.jboss.as.controller.management;
 
 import static org.jboss.as.controller.management.Capabilities.NATIVE_MANAGEMENT_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 
@@ -89,7 +90,13 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setCapabilityReference(SASL_SERVER_AUTHENTICATION_CAPABILITY, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
         .build();
 
-    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL, SASL_SERVER_AUTHENTICATION };
+    public static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
+        .setMinSize(1)
+        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setCapabilityReference(SSL_CONTEXT_CAPABILITY, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
+        .build();
+
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SSL_CONTEXT, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL, SASL_SERVER_AUTHENTICATION };
 
     private final List<AccessConstraintDefinition> accessConstraints;
 

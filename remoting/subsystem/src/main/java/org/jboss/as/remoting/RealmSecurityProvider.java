@@ -101,11 +101,13 @@ class RealmSecurityProvider implements RemotingSecurityProvider {
     static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
     static final String PLAIN = "PLAIN";
 
+    private final SSLContext sslContext;
     private final SecurityRealm realm;
     private final CallbackHandler serverCallbackHandler;
     private final String tokensDir;
 
-    RealmSecurityProvider(final SecurityRealm realm, final CallbackHandler serverCallbackHandler, final String tokensDir) {
+    RealmSecurityProvider(final SSLContext sslContext, final SecurityRealm realm, final CallbackHandler serverCallbackHandler, final String tokensDir) {
+        this.sslContext = sslContext;
         this.realm = realm;
         this.serverCallbackHandler = serverCallbackHandler;
         this.tokensDir = tokensDir;
@@ -163,7 +165,10 @@ class RealmSecurityProvider implements RemotingSecurityProvider {
                 builder.set(SASL_POLICY_NOPLAINTEXT, false);
             }
 
-            if (realm.getSSLContext() == null) {
+            if (sslContext != null) {
+                builder.set(SSL_ENABLED, true);
+                builder.set(SSL_STARTTLS, true);
+            } else if (realm.getSSLContext() == null) {
                 builder.set(SSL_ENABLED, false);
             } else {
                 if (authMechs.contains(AuthMechanism.CLIENT_CERT)) {
@@ -218,7 +223,9 @@ class RealmSecurityProvider implements RemotingSecurityProvider {
     @Override
     public XnioSsl getXnioSsl() {
         final SSLContext sslContext;
-        if (realm == null || (sslContext = realm.getSSLContext()) == null) {
+        if (this.sslContext != null) {
+            sslContext = this.sslContext;
+        } else if (realm == null || (sslContext = realm.getSSLContext()) == null) {
             return null;
         }
 

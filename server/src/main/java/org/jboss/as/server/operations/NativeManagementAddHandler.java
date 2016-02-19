@@ -82,7 +82,8 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         }
 
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-        RemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, saslServerAuthentication, securityRealm, null, tmpDirPath);
+        RemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, saslServerAuthentication,
+                commonPolicy.getSSLContext(), securityRealm, null, tmpDirPath);
 
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,

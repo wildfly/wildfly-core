@@ -451,6 +451,7 @@ public class ModelDescriptionConstants {
     public static final String SOURCE_INTERFACE = "source-interface";
     public static final String SOURCE_PORT = "source-port";
     public static final String SSL = "ssl";
+    public static final String SSL_CONTEXT = "ssl-context";
     public static final String STANDARD_ROLE_NAMES = "standard-role-names";
     public static final String START = "start";
     public static final String START_SERVERS = "start-servers";

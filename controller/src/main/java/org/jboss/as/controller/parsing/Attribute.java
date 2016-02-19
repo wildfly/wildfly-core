@@ -174,6 +174,7 @@ public enum Attribute {
     SOURCE_INTERFACE("source-interface"),
     SOURCE_NETWORK("source-network"),
     SOURCE_PORT("source-port"),
+    SSL_CONTEXT("ssl-context"),
     SUFFIX("suffix"),
     SYSLOG_FORMAT ("syslog-format"),
     TRUNCATE("truncate"),

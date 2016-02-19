@@ -30,6 +30,8 @@ import io.undertow.server.ListenerRegistry;
 
 import java.util.concurrent.Executor;
 
+import javax.net.ssl.SSLContext;
+
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -160,6 +162,12 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         } else {
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
+        String sslContext = commonPolicy.getSSLContext();
+        if (sslContext != null) {
+            undertowBuilder.addDependency(context.getCapabilityServiceName(
+                    buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContext),
+                    SSLContext.class), SSLContext.class, undertowService.getSSLContextInjector());
+        }
 
         undertowBuilder.install();
 
@@ -178,7 +186,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);
 
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-            RemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, commonPolicy.getSaslServerAuthentication(), securityRealm, null, tmpDirPath);
+            RemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, commonPolicy.getSaslServerAuthentication(),
+                    commonPolicy.getSSLContext(), securityRealm, null, tmpDirPath);
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, context.getServiceRegistry(false));
             final String httpConnectorName;
             if (socketBindingServiceName != null || (secureSocketBindingServiceName == null)) {

@@ -98,7 +98,7 @@ public interface HttpServerLogger extends BasicLogger {
     @Message(id = 14, value = "The ManagementHttpServer has already been built using this Builder.")
     IllegalStateException managementHttpServerAlreadyBuild();
 
-    @Message(id = 15, value = "No SecurityRealm or SecurityDomain has been provided.")
-    IllegalStateException noRealmOrDomain();
+    @Message(id = 15, value = "No SecurityRealm or SSLContext has been provided.")
+    IllegalStateException noRealmOrSSLContext();
 
 }

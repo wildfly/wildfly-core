@@ -44,6 +44,8 @@ import org.xnio.OptionMap.Builder;
  */
 public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHandler {
 
+    protected static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
+
     protected BaseHttpInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
         super(HTTP_MANAGEMENT_RUNTIME_CAPABILITY, attributeDefinitions);
     }
@@ -69,6 +71,7 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
     @Override
     public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final String httpServerAuthentication = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.HTTP_SERVER_AUTHENTICATION, model);
+        final String sslContext = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SSL_CONTEXT, model);
         final String securityRealm = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SECURITY_REALM, model);
         final boolean consoleEnabled = BaseHttpInterfaceResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
         final boolean httpUpgradeEnabled;
@@ -96,6 +99,11 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
             @Override
             public String getHttpServerAuthentication() {
                 return httpServerAuthentication;
+            }
+
+            @Override
+            public String getSSLContext() {
+                return sslContext;
             }
 
             @Override

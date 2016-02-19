@@ -47,6 +47,7 @@ public abstract class BaseNativeInterfaceAddStepHandler extends AbstractAddStepH
     @Override
     public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final String saslServerAuthentication = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SASL_SERVER_AUTHENTICATION, model);
+        final String sslContext = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SSL_CONTEXT, model);
         final String securityRealm = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SECURITY_REALM, model);
 
         String serverName = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SERVER_NAME, model);
@@ -62,6 +63,11 @@ public abstract class BaseNativeInterfaceAddStepHandler extends AbstractAddStepH
             @Override
             public String getSaslServerAuthentication() {
                 return saslServerAuthentication;
+            }
+
+            @Override
+            public String getSSLContext() {
+                return sslContext;
             }
 
             @Override

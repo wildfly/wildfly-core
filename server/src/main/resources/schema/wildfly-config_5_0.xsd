@@ -1995,6 +1995,15 @@
     </xs:complexType>
 
     <xs:complexType name="management-interfaceType">
+        <xs:attribute name="ssl-context" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to the SSLContext to use for this management interface.
+                    
+                    If this is not set then the SSLContext will be obtained from any referenced security-realm.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="security-realm" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>

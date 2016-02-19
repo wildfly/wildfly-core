@@ -81,7 +81,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
 
         NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
         ManagementRemotingServices.installDomainConnectorServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), saslServerAuthentication, securityRealm, options);
+                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), saslServerAuthentication, commonPolicy.getSSLContext(), securityRealm, options);
     }
 
     static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {

@@ -41,6 +41,13 @@ public interface HttpInterfaceCommonPolicy {
     String getHttpServerAuthentication();
 
     /**
+     * Get the name of the SSLContext to use to enable SSL for this management interface.
+     *
+     * @return the name of the SSLContext to use to enable SSL for this management interface.
+     */
+    String getSSLContext();
+
+    /**
      * Get the name of the SASL server authentication policy to use to secure the interface where HTTP upgrade is used.
      *
      * @return The name of the SASL server authentication policy to use to secure the interface where HTTP upgrade is used.
