@@ -1031,10 +1031,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 }
             } catch (IOException e) {
                 throw new CommandLineException("Failed to resolve host '" + address.getHost() + "'", e);
-            } finally {
-                if(!retry && console != null && console.isControlled()) {
-                    console.continuous();
-                }
             }
         } while (retry);
     }
@@ -1464,6 +1460,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         if(!console.running()) {
             console.start();
         }
+        if(console.isControlled()) {
+            console.continuous();
+        }
 
         while(/*!isTerminated() && */console.running()){
             try {
@@ -1628,6 +1627,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     @Override
                     public void run() {
                         boolean success = false;
+                        boolean callContinuous = false;
                         try {
                             if (username == null || password == null) {
                                 if (console == null) {
@@ -1636,19 +1636,17 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                                 console.controlled();
                                 if (!console.running()) {
                                     console.start();
+                                } else {
+                                    callContinuous = true;
                                 }
                             }
                             dohandle(callbacks);
                             success = true;
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        } catch (UnsupportedCallbackException e) {
-                            throw new RuntimeException(e);
-                        } catch (CliInitializationException e) {
+                        } catch (IOException | UnsupportedCallbackException | CliInitializationException e) {
                             throw new RuntimeException(e);
                         } finally {
                             // in case of success the console will continue after connectController has finished all the initialization required
-                            if (!success && console != null && console.isControlled()) {
+                            if (!success || callContinuous) {
                                 console.continuous();
                             }
                         }
@@ -1662,7 +1660,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 }
                 throw e;
             }
-
         }
 
         private void dohandle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
