@@ -415,6 +415,35 @@ public class ExpressionResolverUnitTestCase {
         assertEquals("default", ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression("${test.property1,test.property2:default}")).asString());
     }
 
+    @Test
+    public void testExpressionWithDollarEndingDefaultValue() throws OperationFailedException {
+        try {
+            ModelNode node = new ModelNode();
+            node.get("expr").set(new ValueExpression("${test.property.dollar.default:default$}-test"));
+            node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(node);
+            assertEquals("default$-test", node.get("expr").asString());
+            node = new ModelNode();
+            node.get("expr").set(new ValueExpression("${test.property.dollar.default:default$test}-test"));
+            node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(node);
+            assertEquals(1, node.keys().size());
+            assertEquals("default$test-test", node.get("expr").asString());
+
+            System.setProperty("test.property.dollar.default", "system-prop-value");
+            node = new ModelNode();
+            node.get("expr").set(new ValueExpression("${test.property.dollar.default:default$}-test"));
+            node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(node);
+            assertEquals(1, node.keys().size());
+            assertEquals("system-prop-value-test", node.get("expr").asString());
+            node = new ModelNode();
+            node.get("expr").set(new ValueExpression("${test.property.dollar.default:default$test}-test"));
+            node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(node);
+            assertEquals(1, node.keys().size());
+            assertEquals("system-prop-value-test", node.get("expr").asString());
+        } finally {
+            System.clearProperty("test.property.dollar.default");
+        }
+    }
+
     private ModelNode expression(String str) {
         return new ModelNode(new ValueExpression(str));
     }
