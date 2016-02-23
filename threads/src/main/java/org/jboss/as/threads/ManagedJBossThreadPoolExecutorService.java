@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.threads.BlockingExecutor;
 import org.jboss.threads.EventListener;
 import org.jboss.threads.JBossExecutors;
-import org.jboss.threads.JBossThreadPoolExecutor;
+import org.jboss.threads.JBossThreadPoolExecutorReuseIdleThreads;
 
 /**
  *
@@ -36,9 +36,9 @@ import org.jboss.threads.JBossThreadPoolExecutor;
  */
 public class ManagedJBossThreadPoolExecutorService extends ManagedExecutorService implements BlockingExecutor {
 
-    private final JBossThreadPoolExecutor executor;
+    private final JBossThreadPoolExecutorReuseIdleThreads executor;
 
-    public ManagedJBossThreadPoolExecutorService(JBossThreadPoolExecutor executor) {
+    public ManagedJBossThreadPoolExecutorService(JBossThreadPoolExecutorReuseIdleThreads executor) {
         super(executor);
         this.executor = executor;
     }

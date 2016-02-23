@@ -39,7 +39,8 @@ import org.jboss.msc.service.ServiceName;
 public class UnboundedQueueThreadPoolAdd extends AbstractAddStepHandler {
 
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {PoolAttributeDefinitions.KEEPALIVE_TIME,
-        PoolAttributeDefinitions.MAX_THREADS, PoolAttributeDefinitions.THREAD_FACTORY};
+         PoolAttributeDefinitions.MAX_THREADS, PoolAttributeDefinitions.CORE_THREADS,
+         PoolAttributeDefinitions.THREAD_FACTORY};
 
     static final AttributeDefinition[] RW_ATTRIBUTES = new AttributeDefinition[] {PoolAttributeDefinitions.KEEPALIVE_TIME,
         PoolAttributeDefinitions.MAX_THREADS};
@@ -58,7 +59,7 @@ public class UnboundedQueueThreadPoolAdd extends AbstractAddStepHandler {
 
         final BaseThreadPoolParameters params = ThreadPoolManagementUtils.parseUnboundedQueueThreadPoolParameters(context, operation, model);
 
-        final UnboundedQueueThreadPoolService service = new UnboundedQueueThreadPoolService(params.getMaxThreads(), params.getKeepAliveTime());
+        final UnboundedQueueThreadPoolService service = new UnboundedQueueThreadPoolService(params.getCoreThreads(), params.getMaxThreads(), params.getKeepAliveTime());
 
         ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), serviceNameBase,
                 params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),

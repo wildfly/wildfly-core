@@ -37,12 +37,13 @@ public enum Namespace {
     THREADS_1_0("urn:jboss:domain:threads:1.0"),
     THREADS_1_1("urn:jboss:domain:threads:1.1"),
     THREADS_2_0("urn:jboss:domain:threads:2.0"),
+    THREADS_2_1("urn:jboss:domain:threads:2.1"),
     ;
 
     /**
      * The current namespace version.
      */
-    public static final Namespace CURRENT = THREADS_2_0;
+    public static final Namespace CURRENT = THREADS_2_1;
 
     private final String name;
 

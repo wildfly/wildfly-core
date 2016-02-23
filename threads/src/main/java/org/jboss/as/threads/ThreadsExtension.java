@@ -49,7 +49,7 @@ public class ThreadsExtension extends AbstractLegacyExtension {
     static final String RESOURCE_NAME = ThreadsExtension.class.getPackage().getName() + ".LocalDescriptions";
 
     private static final int MANAGEMENT_API_MAJOR_VERSION = 2;
-    private static final int MANAGEMENT_API_MINOR_VERSION = 0;
+    private static final int MANAGEMENT_API_MINOR_VERSION = 1;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
     static final ModelVersion DEPRECATED_SINCE = ModelVersion.create(1, 1, 0);
 
@@ -66,7 +66,7 @@ public class ThreadsExtension extends AbstractLegacyExtension {
 
         // Register the threads subsystem
         final SubsystemRegistration registration = context.registerSubsystem(THREADS, CURRENT_VERSION);
-        registration.registerXMLElementWriter(ThreadsParser2_0.INSTANCE);
+        registration.registerXMLElementWriter(ThreadsParser2_1.INSTANCE);
 
         // Remoting threads description and operation handlers
         @SuppressWarnings("deprecation")
@@ -77,7 +77,8 @@ public class ThreadsExtension extends AbstractLegacyExtension {
 
     @Override
     protected void initializeLegacyParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.CURRENT.getUriString(), ThreadsParser2_0.INSTANCE);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.CURRENT.getUriString(), ThreadsParser2_1.INSTANCE);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_2_0.getUriString(), ThreadsParser2_0.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_1.getUriString(), ThreadsParser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_0.getUriString(), ThreadsParser.INSTANCE);
     }
