@@ -23,8 +23,6 @@
 package org.jboss.as.cli.embedded;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,10 +45,8 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
 import org.jboss.stdio.StdioContext;
@@ -167,10 +163,8 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                 discardStdoutContext = StdioContext.create(currentContext.getIn(), nullStream, currentContext.getErr());
             }
 
-            // Create our own LogContext
-            final LogContext embeddedLogContext = LogContext.create();
-            // Set up logging from standalone/configuration/logging.properties
-            configureLogContext(embeddedLogContext, jbossHome, ctx);
+            // Configure and get the log context
+            final LogContext embeddedLogContext = EmbeddedLogContext.configureLogContext(new File(jbossHome, "domain"), "host-controller.log", ctx);
 
             Contexts localContexts = new Contexts(embeddedLogContext, discardStdoutContext);
             contextSelector = new ThreadLocalContextSelector(localContexts, defaultContexts);
@@ -275,28 +269,6 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                 restorer.restoreEnvironment();
             } else if (contextSelector != null) {
                 contextSelector.restore(null);
-            }
-        }
-    }
-
-    private void configureLogContext(LogContext embeddedLogContext, File jbossHome, CommandContext ctx) {
-        File standaloneDir =  new File(jbossHome, "domain");
-        File configDir =  new File(standaloneDir, "configuration");
-        File logDir =  new File(standaloneDir, "log");
-        File bootLog = new File(logDir, "server.log");
-        File loggingProperties = new File(configDir, "logging.properties");
-        if (loggingProperties.exists()) {
-
-            WildFlySecurityManager.setPropertyPrivileged("org.jboss.boot.log.file", bootLog.getAbsolutePath());
-
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream(loggingProperties);
-                new PropertyConfigurator(embeddedLogContext).configure(fis);
-            } catch (IOException e) {
-                ctx.printLine("Unable to configure embedded host controller logging from " + loggingProperties);
-            } finally {
-                StreamUtils.safeClose(fis);
             }
         }
     }
