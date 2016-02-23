@@ -57,6 +57,7 @@ class EnvironmentRestorer {
                     }
                 });
             }
+            EmbeddedLogContext.clearLogContext();
             logContextSelectorRestored = true;
         }
     }
