@@ -107,6 +107,7 @@ import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition.Location;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayDefinition;
 import org.jboss.as.server.operations.ServerVersionOperations.DefaultEmptyListAttributeHandler;
+import org.jboss.as.server.operations.WriteConfigHandler;
 import org.jboss.as.server.services.net.InterfaceAddHandler;
 import org.jboss.as.server.services.net.InterfaceRemoveHandler;
 import org.jboss.as.server.services.net.InterfaceResourceDefinition;
@@ -267,6 +268,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerOperationHandler(NamespaceRemoveHandler.DEFINITION, NamespaceRemoveHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(SchemaLocationAddHandler.DEFINITION, SchemaLocationAddHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(SchemaLocationRemoveHandler.DEFINITION, SchemaLocationRemoveHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(WriteConfigHandler.DEFINITION, WriteConfigHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(GlobalInstallationReportHandler.DEFINITION,
                 GlobalInstallationReportHandler.createDomainOperation(), false);
 
