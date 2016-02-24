@@ -46,6 +46,7 @@
                 <path name="com/ibm/security/auth/module"/>
                 <path name="com/ibm/security/bootstrap"/>
                 <path name="com/ibm/security/util"/>
+                <path name="com/sun/org/apache/xerces/internal/dom"/>
             </paths>
         </system>
     </dependencies>
