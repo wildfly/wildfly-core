@@ -34,9 +34,13 @@ import javax.net.ssl.SSLContext;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import io.undertow.protocols.ssl.UndertowXnioSsl;
@@ -64,6 +68,7 @@ import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
 import io.undertow.server.protocol.http.HttpOpenListener;
 import java.util.Collection;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -113,6 +118,7 @@ public class ManagementHttpServer {
     private volatile AcceptingChannel<SslConnection> secureServer;
     private final SSLContext sslContext;
     private final SslClientAuthMode sslClientAuthMode;
+    private static Map<Pattern, Charset> userAgentCharsetMap = generateCharsetMap();
 
 
     private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext,
@@ -285,7 +291,7 @@ public class ManagementHttpServer {
                                 securityRealm.getName(), "/management", new SimpleNonceManager()), current));
                         break;
                     case PLAIN:
-                        undertowMechanisms.add(wrap(new BasicAuthenticationMechanism(securityRealm.getName()), current));
+                        undertowMechanisms.add(wrap(new BasicAuthenticationMechanism(securityRealm.getName(), "BASIC", false, null, StandardCharsets.UTF_8, userAgentCharsetMap), current));
                         break;
                     case LOCAL:
                         break;
@@ -304,6 +310,15 @@ public class ManagementHttpServer {
         current = new AuthenticationMechanismsHandler(current, undertowMechanisms);
 
         return new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, rim, current);
+    }
+
+    private static Map<Pattern, Charset> generateCharsetMap() {
+        final Map<Pattern, Charset> charsetMap = new HashMap<>();
+        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.*\\) Gecko/.* Firefox/.*"), StandardCharsets.ISO_8859_1);
+        charsetMap.put(Pattern.compile("(?!.*OPR)(?!.*Chrome)Mozilla/5\\.0 \\(.*\\).* Safari/.*"), StandardCharsets.ISO_8859_1);
+        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.*; Trident/.*; rv:.*\\).*"), StandardCharsets.ISO_8859_1);
+        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.* MSIE.* Trident/.*\\)"), StandardCharsets.ISO_8859_1);
+        return Collections.unmodifiableMap(charsetMap);
     }
 
     private static AuthenticationMechanism wrap(final AuthenticationMechanism toWrap, final AuthMechanism mechanism) {
