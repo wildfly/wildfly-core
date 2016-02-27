@@ -21,15 +21,19 @@ class NativeManagementServices {
 
     private static final OptionMap OPTIONS = OptionMap.EMPTY;
 
+
+    static synchronized void installManagementWorkerService(final ServiceTarget serviceTarget, final ServiceRegistry serviceContainer) {
+        //install xnio mgmt worker
+        if (serviceContainer.getService(ManagementWorkerService.SERVICE_NAME) == null) {
+            ManagementWorkerService.installService(serviceTarget);
+        }
+    }
+
     static synchronized void installRemotingServicesIfNotInstalled(final ServiceTarget serviceTarget,
                                                                    final String hostName,
                                                                    final ServiceRegistry serviceContainer) {
 
         if (serviceContainer.getService(ManagementRemotingServices.MANAGEMENT_ENDPOINT) == null) {
-
-            //install xnio mgmt worker
-            ManagementWorkerService.installService(serviceTarget);
-
 
             ManagementChannelRegistryService.addService(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT);
 

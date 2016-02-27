@@ -75,6 +75,8 @@ public class NativeManagementAddHandler extends AbstractAddStepHandler {
 
         final ServiceName endpointName = ManagementRemotingServices.MANAGEMENT_ENDPOINT;
         final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);
+
+        NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
         NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, context.getServiceRegistry(false));
         installNativeManagementConnector(context, model, endpointName, serviceTarget);
     }

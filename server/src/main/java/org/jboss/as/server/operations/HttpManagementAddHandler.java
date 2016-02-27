@@ -158,6 +158,8 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         final ServiceName requestProcessorName = UndertowHttpManagementService.SERVICE_NAME.append("requests");
         HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
 
+        NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
+
         ServerEnvironment environment = (ServerEnvironment) context.getServiceRegistry(false).getRequiredService(ServerEnvironmentService.SERVICE_NAME).getValue();
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
         ServiceBuilder<HttpManagement> undertowBuilder = serviceTarget.addService(UndertowHttpManagementService.SERVICE_NAME, undertowService)
