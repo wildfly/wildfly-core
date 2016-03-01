@@ -64,6 +64,7 @@ import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
 import io.undertow.server.protocol.http.HttpOpenListener;
 import java.util.Collection;
+import java.util.concurrent.Executor;
 
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -77,8 +78,6 @@ import org.jboss.as.domain.http.server.security.RedirectReadinessHandler;
 import org.jboss.as.domain.http.server.security.ServerSubjectFactory;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
-import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.StartException;
 import org.xnio.BufferAllocator;
@@ -91,7 +90,6 @@ import org.xnio.OptionMap.Builder;
 import org.xnio.Options;
 import org.xnio.SslClientAuthMode;
 import org.xnio.StreamConnection;
-import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 import org.xnio.channels.AcceptingChannel;
 import org.xnio.conduits.StreamSinkConduit;
@@ -127,13 +125,6 @@ public class ManagementHttpServer {
 
 
     public void start() {
-        final Xnio xnio;
-        try {
-            //Do what org.jboss.as.remoting.XnioUtil does
-            xnio = Xnio.getInstance(null, Module.getModuleFromCallerModuleLoader(ModuleIdentifier.fromString("org.jboss.xnio.nio")).getClassLoader());
-        } catch (Exception e) {
-            throw new IllegalStateException(e.getLocalizedMessage());
-        }
         try {
 
             Builder serverOptionsBuilder = OptionMap.builder()
@@ -166,7 +157,7 @@ public class ManagementHttpServer {
     public static ManagementHttpServer create(InetSocketAddress bindAddress, InetSocketAddress secureBindAddress, int backlog,
                                               ModelController modelController, SecurityRealm securityRealm, ControlledProcessStateService controlledProcessStateService,
                                               ConsoleMode consoleMode, String consoleSlot, final ChannelUpgradeHandler upgradeHandler,
-                                              ManagementHttpRequestProcessor managementHttpRequestProcessor, Collection<String> allowedOrigins, XnioWorker worker) throws IOException, StartException {
+                                              ManagementHttpRequestProcessor managementHttpRequestProcessor, Collection<String> allowedOrigins, XnioWorker worker, Executor managementExecutor) throws IOException, StartException {
 
         SSLContext sslContext = null;
         SslClientAuthMode sslClientAuthMode = null;
@@ -198,7 +189,7 @@ public class ManagementHttpServer {
         }
 
         setupOpenListener(openListener, modelController, consoleMode, consoleSlot, controlledProcessStateService,
-                secureRedirectPort, securityRealm, upgradeHandler, managementHttpRequestProcessor, allowedOrigins);
+                secureRedirectPort, securityRealm, upgradeHandler, managementHttpRequestProcessor, allowedOrigins, managementExecutor);
         return new ManagementHttpServer(openListener, bindAddress, secureBindAddress, sslContext, sslClientAuthMode, worker);
     }
 
@@ -207,7 +198,7 @@ public class ManagementHttpServer {
                                           String consoleSlot, ControlledProcessStateService controlledProcessStateService,
                                           int secureRedirectPort, SecurityRealm securityRealm,
                                           final ChannelUpgradeHandler upgradeHandler, final ManagementHttpRequestProcessor managementHttpRequestProcessor,
-                                          final Collection<String> allowedOrigins) {
+                                          final Collection<String> allowedOrigins, Executor managementExecutor) {
 
         CanonicalPathHandler canonicalPathHandler = new CanonicalPathHandler();
         ManagementHttpRequestHandler managementHttpRequestHandler = new ManagementHttpRequestHandler(managementHttpRequestProcessor, canonicalPathHandler);
@@ -245,7 +236,10 @@ public class ManagementHttpServer {
         }
 
         ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(consoleHandler);
-        DomainApiCheckHandler domainApiHandler = new DomainApiCheckHandler(modelController, controlledProcessStateService, allowedOrigins);
+        HttpHandler domainApiHandler = InExecutorHandler.wrap(
+                managementExecutor,
+                new DomainApiCheckHandler(modelController, controlledProcessStateService, allowedOrigins)
+        );
         pathHandler.addPrefixPath("/", rootConsoleRedirectHandler);
         if (consoleHandler != null) {
             HttpHandler readinessHandler = new RedirectReadinessHandler(securityRealm, consoleHandler.getHandler(),
