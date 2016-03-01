@@ -231,7 +231,7 @@ public class Operations {
      * @return the operation
      */
     public static ModelNode createReadResourceOperation(final ModelNode address) {
-        return createReadResourceOperation(address, false);
+        return createOperation(READ_RESOURCE_OPERATION, address);
     }
 
     /**
