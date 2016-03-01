@@ -217,7 +217,7 @@ class DomainApiHandler implements HttpHandler {
                 ETag etag = new ETag(false, HexConverter.convertToHexString(md.digest()));
                 operationParameterBuilder.etag(etag);
                 if (!ETagUtils.handleIfNoneMatch(exchange, etag, false)) {
-                    exchange.setResponseCode(304);
+                    exchange.setStatusCode(304);
                     DomainUtil.writeCacheHeaders(exchange, 304, operationParameterBuilder.build());
                     exchange.endExchange();
                     return;
