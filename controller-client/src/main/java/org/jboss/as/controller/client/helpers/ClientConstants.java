@@ -30,7 +30,6 @@ public class ClientConstants {
     public static final String ADD = "add";
     public static final String ADDRESS = "address";
     public static final String ATTACHED_STREAMS = "attached-streams";
-    @Deprecated
     public static final String AUTO_START = "auto-start";
     public static final String CHILD_TYPE = "child-type";
     public static final String COMPOSITE = "composite";
