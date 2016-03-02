@@ -170,6 +170,7 @@ public class Util {
     public static final String SUBSYSTEM = "subsystem";
     public static final String SUCCESS = "success";
     public static final String TAIL_COMMENT_ALLOWED = "tail-comment-allowed";
+    public static final String TIMEOUT = "timeout";
     public static final String TRIM_DESCRIPTIONS = "trim-descriptions";
     public static final String TRUE = "true";
     public static final String TYPE = "type";

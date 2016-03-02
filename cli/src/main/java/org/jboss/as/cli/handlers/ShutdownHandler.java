@@ -50,6 +50,7 @@ public class ShutdownHandler extends BaseOperationCommand {
 
     private final ArgumentWithValue restart;
     private final ArgumentWithValue host;
+    private final ArgumentWithValue timeout;
     private final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef;
     private PerNodeOperationAccess hostShutdownPermission;
 
@@ -59,6 +60,8 @@ public class ShutdownHandler extends BaseOperationCommand {
         this.embeddedServerRef = embeddedServerRef;
 
         restart = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--restart");
+
+        timeout = new ArgumentWithValue(this, "--timeout");
 
         host = new ArgumentWithValue(this, new CommaSeparatedCompleter() {
             @Override
@@ -171,6 +174,7 @@ public class ShutdownHandler extends BaseOperationCommand {
         }
         op.get(Util.OPERATION).set(Util.SHUTDOWN);
         setBooleanArgument(args, op, restart, Util.RESTART);
+        setIntArgument(args, op, timeout, Util.TIMEOUT);
         return op;
     }
 
@@ -211,6 +215,23 @@ public class ShutdownHandler extends BaseOperationCommand {
         } else if(value.equalsIgnoreCase(Util.FALSE)) {
             op.get(paramName).set(false);
         } else {
+            throw new CommandFormatException("Invalid value for " + arg.getFullName() + ": '" + value + "'");
+        }
+    }
+
+    private void setIntArgument(final ParsedCommandLine args, final ModelNode op, ArgumentWithValue arg, String paramName)
+            throws CommandFormatException {
+        if(!arg.isPresent(args)) {
+            return;
+        }
+        final String value = arg.getValue(args);
+        if(value == null) {
+            throw new CommandFormatException(arg.getFullName() + " is missing value.");
+        }
+        try {
+            Integer i = Integer.parseInt(value);
+            op.get(paramName).set(i);
+        } catch (NumberFormatException nfe) {
             throw new CommandFormatException("Invalid value for " + arg.getFullName() + ": '" + value + "'");
         }
     }
