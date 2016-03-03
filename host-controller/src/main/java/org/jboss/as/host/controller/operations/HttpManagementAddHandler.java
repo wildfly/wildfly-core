@@ -168,6 +168,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, service.getRequestProcessorValue())
                 .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, service.getWorker())
+                .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, Executor.class, service.getManagementExecutor())
                 .addInjection(service.getPortInjector(), port)
                 .addInjection(service.getSecurePortInjector(), securePort)
                 .addInjection(service.getAllowedOriginsInjector(), allowedOrigins);

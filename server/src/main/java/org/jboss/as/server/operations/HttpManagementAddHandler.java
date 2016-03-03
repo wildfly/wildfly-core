@@ -167,6 +167,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, undertowService.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue())
                 .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, undertowService.getWorker())
+                .addDependency(Services.JBOSS_SERVER_EXECUTOR, Executor.class, undertowService.getManagementExecutor())
                 .addInjection(undertowService.getAllowedOriginsInjector(), allowedOrigins);
 
             if (socketBindingServiceName != null) {
