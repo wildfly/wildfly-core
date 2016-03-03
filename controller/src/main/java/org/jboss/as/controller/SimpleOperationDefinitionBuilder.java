@@ -53,7 +53,6 @@ public class SimpleOperationDefinitionBuilder {
     protected AttributeDefinition[] replyParameters = new AttributeDefinition[0];
     protected AccessConstraintDefinition[] accessConstraints;
     DescriptionProvider descriptionProvider;
-    boolean forceDefaultDescriptionProvider = false;
 
     public SimpleOperationDefinitionBuilder(String name, ResourceDescriptionResolver resolver) {
         this.name = name;
@@ -197,11 +196,6 @@ public class SimpleOperationDefinitionBuilder {
 
     SimpleOperationDefinitionBuilder setDescriptionProvider(DescriptionProvider provider){
         this.descriptionProvider = provider;
-        return this;
-    }
-
-    SimpleOperationDefinitionBuilder setForceDefaultDescriptionProvider(){
-        this.forceDefaultDescriptionProvider = true;
         return this;
     }
 
