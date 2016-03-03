@@ -233,7 +233,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
     private volatile ScheduledExecutorService pingScheduler;
     private volatile ManagementResourceRegistration hostModelRegistration;
 
-
     static ServiceController<ModelController> addService(final ServiceTarget serviceTarget,
                                                             final HostControllerEnvironment environment,
                                                             final HostRunningModeControl runningModeControl,
@@ -1283,6 +1282,24 @@ public class DomainModelControllerService extends AbstractControllerService impl
         public ModelNode executeReadOnly(ModelNode operation, Resource model, OperationStepHandler handler, OperationTransactionControl control) {
             return executeReadOnlyOperation(operation, model, control, handler);
         }
+
+        @Override
+        public void acquireReadlock(final Integer operationID) throws IllegalArgumentException, InterruptedException {
+            if (operationID == null) {
+                throw HostControllerLogger.DOMAIN_LOGGER.nullVar("operationID");
+            }
+            // acquire a read (shared mode) lock for this registration, released in releaseReadlock
+            acquireReadLock(operationID);
+        }
+
+        @Override
+        public void releaseReadlock(final Integer operationID) throws IllegalArgumentException {
+            if (operationID == null) {
+                throw HostControllerLogger.DOMAIN_LOGGER.nullVar("operationID");
+            }
+            releaseReadLock(operationID);
+        }
+
     }
 
     private static final class DomainHostControllerInfoAccessor implements RuntimeHostControllerInfoAccessor {

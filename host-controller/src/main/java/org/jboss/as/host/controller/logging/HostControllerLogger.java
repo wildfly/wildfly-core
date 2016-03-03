@@ -1254,4 +1254,6 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 169, value = "Reload into running mode is not supported with embedded host controller, admin-only=true must be specified.")
     OperationFailedException embeddedHostControllerRestartMustProvideAdminOnlyTrue();
 
+    @Message(id = 170, value = "Error releasing shared lock after host registration for operationID: %s")
+    String hostRegistrationCannotReleaseSharedLock(int operationID);
 }

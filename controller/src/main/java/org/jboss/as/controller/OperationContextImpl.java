@@ -749,7 +749,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 // let op 3 block for the time needed for both 1 and 2
 //                int timeout = blockingTimeout.getBlockingTimeout();
 //                if (timeout < 1) {
-                    modelController.acquireLock(operationId, respectInterruption);
+                modelController.acquireWriteLock(operationId, respectInterruption);
 //                } else {
 //                    // Wait longer than the standard amount to get a chance to execute
 //                    // after whatever was holding the lock times out
@@ -1171,7 +1171,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     private void releaseModelControllerLock() {
-        modelController.releaseLock(operationId);
+        modelController.releaseWriteLock(operationId);
         exclusiveStartTime = -1;
         lockStep = null;
     }
