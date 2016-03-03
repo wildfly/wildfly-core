@@ -957,6 +957,9 @@ public class GlobalOperationHandlers {
                 continue;
             }
             final ImmutableManagementResourceRegistration childRegistration = registry.getSubModel(PathAddress.pathAddress(element));
+            if (childRegistration == null) {
+                continue;
+            }
             final AliasEntry aliasEntry = childRegistration.getAliasEntry();
 
             Set<String> set = result.get(childType);
