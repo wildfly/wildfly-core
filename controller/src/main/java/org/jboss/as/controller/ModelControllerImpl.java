@@ -804,7 +804,7 @@ class ModelControllerImpl implements ModelController {
         model.discard();
     }
 
-    void acquireLock(Integer permit, final boolean interruptibly) throws InterruptedException {
+    void acquireWriteLock(Integer permit, final boolean interruptibly) throws InterruptedException {
         if (interruptibly) {
             //noinspection LockAcquiredButNotSafelyReleased
             controllerLock.lockInterruptibly(permit);
@@ -814,7 +814,17 @@ class ModelControllerImpl implements ModelController {
         }
     }
 
-    boolean acquireLock(Integer permit, final boolean interruptibly, long timeout) throws InterruptedException {
+    void acquireReadLock(Integer permit, final boolean interruptibly) throws InterruptedException {
+        if (interruptibly) {
+            //noinspection LockAcquiredButNotSafelyReleased
+            controllerLock.lockSharedInterruptibly(permit);
+        } else {
+            //noinspection LockAcquiredButNotSafelyReleased
+            controllerLock.lockShared(permit);
+        }
+    }
+
+    boolean acquireWriteLock(Integer permit, final boolean interruptibly, long timeout) throws InterruptedException {
         if (interruptibly) {
             //noinspection LockAcquiredButNotSafelyReleased
             return controllerLock.lockInterruptibly(permit, timeout, TimeUnit.SECONDS);
@@ -824,10 +834,13 @@ class ModelControllerImpl implements ModelController {
         }
     }
 
-    void releaseLock(Integer permit) {
+    void releaseWriteLock(Integer permit) {
         controllerLock.unlock(permit);
     }
 
+    void releaseReadLock(Integer permit) {
+        controllerLock.unlockShared(permit);
+    }
     /**
      * Log a report of any problematic container state changes and reset container state change history
      * so another run of this method or of {@link #awaitContainerStateChangeReport(long, java.util.concurrent.TimeUnit)}

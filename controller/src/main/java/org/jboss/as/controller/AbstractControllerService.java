@@ -550,6 +550,24 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return null;
     }
 
+    /*
+     * This attempts to obtain a shared mode ModelControllerLock, which will allow
+     * multiple acquisition for concurrent reads while blocking acquisition of the exclusive
+     * lock. Acquisition of the the exclusive lock will block read locks, until released.
+     */
+    protected void acquireReadLock(int operationId) throws InterruptedException {
+        // block until a read lock is available
+        controller.acquireReadLock(operationId, true);
+    }
+
+    /*
+     * Release the shared mode read lock. The exclusive lock may not be aquired
+     * while there are existing shared mode locks active.
+     */
+    protected void releaseReadLock(int operationId) {
+        controller.releaseReadLock(operationId);
+    }
+
     /**
      * Used to add the operation used to initialise the ModelControllerServiceInitialization instances.
      * The operation will only be registered, and called if the implementing class overrides and returns
