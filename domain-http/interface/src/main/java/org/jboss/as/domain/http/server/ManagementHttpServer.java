@@ -110,6 +110,8 @@ import org.xnio.ssl.XnioSsl;
  */
 public class ManagementHttpServer {
 
+    private static final Map<Pattern, Charset> USER_AGENT_CHARSET_MAP = generateCharsetMap();
+
     private final HttpOpenListener openListener;
     private final InetSocketAddress httpAddress;
     private final InetSocketAddress secureAddress;
@@ -118,8 +120,6 @@ public class ManagementHttpServer {
     private volatile AcceptingChannel<SslConnection> secureServer;
     private final SSLContext sslContext;
     private final SslClientAuthMode sslClientAuthMode;
-    private static Map<Pattern, Charset> userAgentCharsetMap = generateCharsetMap();
-
 
     private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext,
                                  SslClientAuthMode sslClientAuthMode, XnioWorker worker) {
@@ -291,7 +291,7 @@ public class ManagementHttpServer {
                                 securityRealm.getName(), "/management", new SimpleNonceManager()), current));
                         break;
                     case PLAIN:
-                        undertowMechanisms.add(wrap(new BasicAuthenticationMechanism(securityRealm.getName(), "BASIC", false, null, StandardCharsets.UTF_8, userAgentCharsetMap), current));
+                        undertowMechanisms.add(wrap(new BasicAuthenticationMechanism(securityRealm.getName(), "BASIC", false, null, StandardCharsets.UTF_8, USER_AGENT_CHARSET_MAP), current));
                         break;
                     case LOCAL:
                         break;
