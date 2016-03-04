@@ -63,6 +63,7 @@ import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.NativeLibraryResourceLoader;
 import org.jboss.modules.ResourceLoader;
 import org.jboss.modules.ResourceLoaderSpec;
+import org.jboss.modules.ModuleNotFoundException;
 
 /**
  * Definition of the core-service=module-loading resource.
@@ -138,7 +139,13 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
                     }
                 });
             } catch (PrivilegedActionException e) {
-                throw new IllegalStateException(e.getCause());
+
+                if ( e.getCause() instanceof OperationFailedException
+                        || e.getCause() instanceof ModuleNotFoundException){
+                    throw new OperationFailedException(e.getCause());
+                }
+
+                throw new RuntimeException(e.getCause());
             }
         }
 
@@ -198,7 +205,13 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
                         }
 
                     } catch (PrivilegedActionException e) {
-                        throw new OperationFailedException(e.getCause());
+
+                        if ( e.getCause() instanceof OperationFailedException
+                                || e.getCause() instanceof ModuleNotFoundException ){
+                            throw new OperationFailedException(e.getCause());
+                        }
+
+                        throw new RuntimeException(e.getCause());
                     }
                 }
             }, OperationContext.Stage.RUNTIME);
