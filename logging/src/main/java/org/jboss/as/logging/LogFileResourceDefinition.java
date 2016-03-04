@@ -87,7 +87,7 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(false)
             .build();
 
-    static final SimpleAttributeDefinition STREAM = SimpleAttributeDefinitionBuilder.create("stream", ModelType.LONG)
+    static final SimpleAttributeDefinition STREAM = SimpleAttributeDefinitionBuilder.create("stream", ModelType.STRING)
             .setStorageRuntime()
             .setAllowNull(true)
             .build();
