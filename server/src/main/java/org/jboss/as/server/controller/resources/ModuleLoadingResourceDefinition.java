@@ -27,13 +27,16 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MOD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODULE_LOADING;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.JarURLConnection;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -55,14 +58,12 @@ import org.jboss.dmr.ModelType;
 import org.jboss.modules.LocalModuleFinder;
 import org.jboss.modules.LocalModuleLoader;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
-import org.jboss.modules.NativeLibraryResourceLoader;
-import org.jboss.modules.ResourceLoader;
-import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.ModuleNotFoundException;
+import org.jboss.modules.management.ModuleLoaderMXBean;
+import org.jboss.modules.management.ResourceLoaderInfo;
 
 /**
  * Definition of the core-service=module-loading resource.
@@ -210,81 +211,32 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static List<String> findResourcePaths(String moduleName) throws ModuleLoadException, NoSuchFieldException, IllegalAccessException {
 
-        // TODO get a formal API from jboss-modules to replace this reflection
+    private static List<String> findResourcePaths(String moduleName) throws ModuleLoadException, ReflectiveOperationException, IOException, URISyntaxException {
+        ModuleLoader moduleLoader = Module.getCallerModuleLoader();
+        ModuleLoaderMXBean loader = ModuleInfoHandler.INSTANCE.getMxBean(moduleLoader);
+        moduleLoader.loadModule(ModuleIdentifier.fromString(moduleName));
 
-        List<String> result = new ArrayList<String>();
-        Module module = Module.getModuleFromCallerModuleLoader(ModuleIdentifier.fromString(moduleName));
-        ModuleClassLoader mcl = module.getClassLoader();
-        Field pathsField = ModuleClassLoader.class.getDeclaredField("paths");
-        Field sourceListField = null;
-        Field resourceLoaderField = null;
-        pathsField.setAccessible(true);
-        try {
-            Object pathsReference = pathsField.get(mcl);
-            Object paths = ((AtomicReference) pathsReference).get();
-            sourceListField = paths.getClass().getDeclaredField("sourceList");
-            sourceListField.setAccessible(true);
-            Object[] resourceLoaderSpecs = (Object[]) sourceListField.get(paths);
-            resourceLoaderField = ResourceLoaderSpec.class.getDeclaredField("resourceLoader");
-            resourceLoaderField.setAccessible(true);
-            for (Object resourceLoaderSpec : resourceLoaderSpecs) {
-                ResourceLoader resourceLoader = (ResourceLoader) resourceLoaderField.get(resourceLoaderSpec);
-                String path = getResourceLoaderPath(resourceLoader);
-                if (path != null) {
-                    result.add(path);
+        List<String> result = new LinkedList<>();
+        for (ResourceLoaderInfo rl : loader.getResourceLoaders(moduleName)){
+            if (rl.getLocation() != null) {
+                URL url = new URL(rl.getLocation());
+
+                switch (url.getProtocol()){
+
+                    case "jar": {
+                        JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
+                        result.add(jarConnection.getJarFile().getName());
+
+                        break;
+                    }
+                    default: {
+                        result.add(new File(url.getFile() ).toString());
+                    }
                 }
             }
-            return result;
-        } finally {
-            pathsField.setAccessible(false);
-            if (sourceListField != null) {
-                sourceListField.setAccessible(false);
-            }
-            if (resourceLoaderField != null) {
-                resourceLoaderField.setAccessible(false);
-            }
         }
 
-    }
-
-    private static String getResourceLoaderPath(ResourceLoader resourceLoader) throws NoSuchFieldException, IllegalAccessException {
-
-        if (resourceLoader instanceof NativeLibraryResourceLoader) {
-            return ((NativeLibraryResourceLoader) resourceLoader).getRoot().getAbsolutePath();
-        } else if (isInstanceOf(resourceLoader, "org.jboss.modules.JarFileResourceLoader")) {
-            Field fileOfJarField = resourceLoader.getClass().getDeclaredField("fileOfJar");
-            fileOfJarField.setAccessible(true);
-            try {
-                File fileOfJar = (File) fileOfJarField.get(resourceLoader);
-                return fileOfJar.getAbsolutePath();
-            } finally {
-                fileOfJarField.setAccessible(false);
-            }
-
-        } else if (isInstanceOf(resourceLoader, "org.jboss.modules.FilteredResourceLoader")) {
-            Field loaderField = resourceLoader.getClass().getDeclaredField("loader");
-            loaderField.setAccessible(true);
-            try {
-                ResourceLoader loader = (ResourceLoader) loaderField.get(resourceLoader);
-                return getResourceLoaderPath(loader);
-            } finally {
-                loaderField.setAccessible(false);
-            }
-        }
-
-        return null;
-    }
-
-    private static boolean isInstanceOf(Object obj, String className) {
-        Class clazz = obj.getClass();
-        while (clazz != null) {
-            if (clazz.getCanonicalName().equals(className)) {
-                return true;
-            }
-            clazz = clazz.getSuperclass();
-        }
-        return false;
+        return result;
     }
 }
