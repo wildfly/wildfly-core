@@ -296,6 +296,8 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                             }
                         }
                     } else if (ControlledProcessState.State.STOPPING == evt.getNewValue()) {
+                        //let's prevent the starting of a new scan
+                        scanEnabled = false;
                         if(undeployScanTask != null) {
                             undeployScanTask.cancel(true);
                             undeployScanTask = null;
@@ -565,7 +567,16 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         if (scanEnabled || oneOffScan) { // confirm the scan is still wanted
             ROOT_LOGGER.tracef("Scanning directory %s for deployment content changes", deploymentDir.getAbsolutePath());
 
-            ScanContext scanContext = new ScanContext(deploymentOperations);
+            ScanContext scanContext = null;
+            try {
+                scanContext = new ScanContext(deploymentOperations);
+            } catch (RuntimeException ex) {
+                //scanner has stoppped in the meanwhile so we don't need to pursue
+                if (!scanEnabled) {
+                    return scanResult;
+                }
+                throw ex;
+            }
 
             scanDirectory(deploymentDir, relativePath, scanContext);
 
