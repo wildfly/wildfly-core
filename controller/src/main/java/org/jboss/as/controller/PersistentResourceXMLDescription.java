@@ -370,7 +370,7 @@ public final class PersistentResourceXMLDescription {
         //we sort attributes to make sure that attributes that marshall to elements are last
         for (AttributeDefinition ad : attributes.stream().sorted((o1, o2) -> o1.getParser().isParseAsElement() ? 1 : -1).collect(Collectors.toList())) {
             AttributeMarshaller marshaller = attributeMarshallers.getOrDefault(ad.getName(), ad.getAttributeMarshaller());
-            if (marshaller.isMarshallable(ad, model, false)) {
+            if (marshaller.isMarshallable(ad, model, marshallDefaultValues)) {
                 if (!started && group != null) {
                     if (possibleElements) {
                         writer.writeStartElement(group);
