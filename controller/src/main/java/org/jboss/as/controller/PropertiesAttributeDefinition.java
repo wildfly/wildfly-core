@@ -82,11 +82,12 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
     }
 
     public Map<String, String> unwrap(final ExpressionResolver context, final ModelNode model) throws OperationFailedException {
-        if (!model.hasDefined(getName())){
+        ModelNode value = resolveModelAttribute(context, model);
+        if (value.isDefined()) {
+            return unwrapModel(context, value);
+        } else {
             return Collections.emptyMap();
         }
-        ModelNode modelProps = model.get(getName());
-        return unwrapModel(context, modelProps);
     }
 
     public static Map<String, String> unwrapModel(final ExpressionResolver context, final ModelNode model) throws OperationFailedException {

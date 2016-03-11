@@ -34,25 +34,39 @@ import org.junit.Test;
  * @author Brian Stansberry (c) 2012 Red Hat Inc.
  */
 public class StringListAttributeDefinitionUnitTestCase {
+    static final StringListAttributeDefinition LIST_DEFINITION = new StringListAttributeDefinition.Builder("test")
+            .setAllowExpression(true)
+            .setElementValidator(new StringLengthValidator(1, false, true))
+            .setDefaultValue(new ModelNode().add("element1").add("element2"))
+            .build();
+
 
     @Test
     public void testExpressions() throws OperationFailedException {
-        ListAttributeDefinition ld = new StringListAttributeDefinition.Builder("test")
-                .setAllowExpression(true)
-                .setElementValidator(new StringLengthValidator(1, false, true))
-                .build();
 
         ModelNode op = new ModelNode();
         op.get("test").add("abc").add("${test:1}");
 
-        ModelNode validated = ld.validateOperation(op);
+        ModelNode validated = LIST_DEFINITION.validateOperation(op);
         Assert.assertEquals(op.get("test").get(0), validated.get(0));
         Assert.assertEquals(new ModelNode().set(new ValueExpression(op.get("test").get(1).asString())), validated.get(1));
 
         ModelNode model = new ModelNode();
-        ld.validateAndSet(op, model);
+        LIST_DEFINITION.validateAndSet(op, model);
         Assert.assertEquals(op.get("test").get(0), model.get("test").get(0));
         Assert.assertEquals(new ModelNode().set(new ValueExpression(op.get("test").get(1).asString())), model.get("test").get(1));
 
+
     }
+
+    @Test
+    public void testDefaultValue() throws OperationFailedException {
+        //it should include default value here
+        Assert.assertEquals("Expected size is wrong", 2, LIST_DEFINITION.unwrap(ExpressionResolver.SIMPLE, new ModelNode()).size());
+        ModelNode value = new ModelNode();
+        value.get(LIST_DEFINITION.getName()).add("one");
+        Assert.assertEquals("Expected size is wrong", 1, LIST_DEFINITION.unwrap(ExpressionResolver.SIMPLE, value).size());
+    }
+
+
 }
