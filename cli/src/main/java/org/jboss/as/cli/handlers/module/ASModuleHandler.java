@@ -82,6 +82,10 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     }
 
     private class AddModuleListArgument extends ArgumentWithListValue {
+        private AddModuleListArgument(String fullname) {
+            super(ASModuleHandler.this, fullname);
+        }
+
         private AddModuleListArgument(String fullname, CommandLineCompleter completer) {
             super(ASModuleHandler.this, completer, fullname);
         }
@@ -112,7 +116,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     private final ArgumentWithValue mainClass;
     private final ArgumentWithValue resources;
     private final ArgumentWithListValue dependencies;
-    private final ArgumentWithValue props;
+    private final ArgumentWithListValue props;
     private final ArgumentWithValue moduleArg;
     private final ArgumentWithValue slot;
     private final ArgumentWithValue resourceDelimiter;
@@ -205,7 +209,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
                 }
                 return moduleNameCompleter.complete(ctx, buffer, cursor, candidates);
             }});
-        props = new AddModuleArgument("--properties");
+        props = new AddModuleListArgument("--properties");
 
         moduleArg = new FileSystemPathArgument(this, pathCompleter, "--module-xml") {
             @Override
