@@ -143,6 +143,11 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
+    public void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities) {
+        throw alreadyRegistered();
+    }
+
+    @Override
     public void unregisterSubModel(final PathElement address) throws IllegalArgumentException {
         throw alreadyRegistered();
     }
@@ -265,6 +270,11 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
 
     @Override
     Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator) {
+        return Collections.emptySet();
+    }
+
+    @Override
+    Set<RuntimeCapability> getIncorporatingCapabilities(ListIterator<PathElement> iterator) {
         return Collections.emptySet();
     }
 
@@ -407,6 +417,16 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
         public OperationEntry getOperationEntry(PathAddress address, String operationName) {
             checkPermission();
             return ProxyControllerRegistration.this.operationEntry;
+        }
+
+        @Override
+        public ImmutableManagementResourceRegistration getParent() {
+            PathAddress parentAddress = ProxyControllerRegistration.this.getPathAddress();
+            if (pathAddress.size() == parentAddress.size() + 1) {
+                return ProxyControllerRegistration.this;
+            } else {
+                return new ChildRegistration(pathAddress.getParent());
+            }
         }
 
         @Override

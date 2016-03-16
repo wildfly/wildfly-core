@@ -1090,7 +1090,8 @@ abstract class AbstractOperationContext implements OperationContext {
         if (processState.isReloadSupported()) {
             activeStep.restartStamp = processState.setReloadRequired();
             activeStep.response.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RELOAD).set(true);
-            getManagementModel().getCapabilityRegistry().capabilityReloadRequired(activeStep.address);
+            getManagementModel().getCapabilityRegistry().capabilityReloadRequired(activeStep.address,
+                    activeStep.getManagementResourceRegistration(getManagementModel()));
         } else {
             restartRequired();
         }
@@ -1100,7 +1101,8 @@ abstract class AbstractOperationContext implements OperationContext {
     public final void restartRequired() {
         activeStep.restartStamp = processState.setRestartRequired();
         activeStep.response.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RESTART).set(true);
-        getManagementModel().getCapabilityRegistry().capabilityRestartRequired(activeStep.address);
+        getManagementModel().getCapabilityRegistry().capabilityRestartRequired(activeStep.address,
+                activeStep.getManagementResourceRegistration(getManagementModel()));
     }
 
     @Override

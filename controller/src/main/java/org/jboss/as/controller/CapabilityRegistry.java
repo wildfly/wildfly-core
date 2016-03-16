@@ -50,6 +50,7 @@ import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RuntimeRequirementRegistration;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.msc.service.ServiceName;
 
@@ -315,11 +316,11 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     }
 
     @Override
-    public Map<CapabilityId, RuntimeStatus> getRuntimeStatus(PathAddress address) {
+    public Map<CapabilityId, RuntimeStatus> getRuntimeStatus(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration) {
         readLock.lock();
         try {
             Map<CapabilityId, RuntimeStatus> result;
-            Set<CapabilityId> ids = getCapabilitiesForAddress(address);
+            Set<CapabilityId> ids = getCapabilitiesForAddress(address, resourceRegistration);
             int size = ids.size();
             if (size == 0) {
                 result = Collections.emptyMap();
@@ -384,33 +385,71 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     }
 
     @Override
-    public void capabilityReloadRequired(PathAddress address) {
+    public void capabilityReloadRequired(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration) {
         writeLock.lock();
         try {
-            reloadCapabilities.addAll(getCapabilitiesForAddress(address));
+            reloadCapabilities.addAll(getCapabilitiesForAddress(address, resourceRegistration));
         } finally {
             writeLock.unlock();
         }
     }
 
     @Override
-    public void capabilityRestartRequired(PathAddress address) {
+    public void capabilityRestartRequired(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration) {
         writeLock.lock();
         try {
-            restartCapabilities.addAll(getCapabilitiesForAddress(address));
+            restartCapabilities.addAll(getCapabilitiesForAddress(address, resourceRegistration));
         } finally {
             writeLock.unlock();
         }
     }
 
-    private Set<CapabilityId> getCapabilitiesForAddress(PathAddress address) {
+    private Set<CapabilityId> getCapabilitiesForAddress(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration) {
         Set<CapabilityId> result = null;
         PathAddress curAddress = address;
+        ImmutableManagementResourceRegistration curReg = resourceRegistration;
         while (result == null) {
-            // TODO this is inefficient. But it's only called post-boot when the process is already reload-required
+
+            // Track the names of any incorporating capabilities associated with this address
+            Set<RuntimeCapability> incorporating = curReg.getIncorporatingCapabilities();
+            Set<String> incorporatingDynamic = null;
+            Set<String> incorporatingFull = null;
+            if (incorporating != null && !incorporating.isEmpty()) {
+                for (RuntimeCapability rc : incorporating) {
+                    if (rc.isDynamicallyNamed()) {
+                        if (incorporatingDynamic == null) {
+                            incorporatingDynamic = new HashSet<>();
+                        }
+                        incorporatingDynamic.add(rc.getName());
+                    } else {
+                        if (incorporatingFull == null) {
+                            incorporatingFull = new HashSet<>();
+                        }
+                        incorporatingFull.add(rc.getName());
+                    }
+                }
+            }
+
+            // TODO this is inefficient. But it's only called for post-boot write ops
+            // when the process is already reload-required
             for (Map.Entry<CapabilityId, RuntimeCapabilityRegistration> entry : capabilities.entrySet()) {
+                boolean checkIncorporating = false;
+                if (incorporatingFull != null) {
+                    checkIncorporating = incorporatingFull.contains(entry.getKey().getName());
+                }
+                if (!checkIncorporating && incorporatingDynamic != null) {
+                    String name = entry.getKey().getName();
+                    int lastDot = name.lastIndexOf('.');
+                    if (lastDot > 0) {
+                        String baseName = name.substring(0, lastDot);
+                        checkIncorporating = incorporatingDynamic.contains(baseName);
+                    }
+                }
                 for (RegistrationPoint point : entry.getValue().getRegistrationPoints()) {
-                    if (curAddress.equals(point.getAddress())) {
+                    PathAddress pointAddress = point.getAddress();
+                    if (curAddress.equals(pointAddress)
+                            || (checkIncorporating && curAddress.size() > pointAddress.size()
+                                && pointAddress.equals(curAddress.subAddress(0, pointAddress.size())))) {
                         if (result == null) {
                             result = new HashSet<>();
                         }
@@ -419,6 +458,12 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                     }
                 }
             }
+
+            if (result == null && incorporating != null) {
+                // No match, but incorporating != null means the MRR doesn't want us to keep looking higher
+                result = Collections.emptySet();
+            }
+
             if (result == null) {
                 // This address exposed no capability, but it may represent a config chunk for
                 // a capability exposed by a parent resource, so we need to check parents.
@@ -435,6 +480,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                 if (addrSize > 1 && !SUBSYSTEM.equals(curAddress.getLastElement().getKey())
                         && !(addrSize == 2 && HOST.equals(curAddress.getElement(0).getKey()))) {
                     curAddress = curAddress.getParent();
+                    curReg = curReg.getParent();
                     // loop continues
                 } else {
                     result = Collections.emptySet();

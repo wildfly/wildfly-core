@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -60,6 +61,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private volatile DeprecationData deprecationData;
     private final boolean orderedChild;
     private final RuntimeCapability[] capabilities;
+    private final Set<RuntimeCapability> incorporatingCapabilities;
     private final List<AccessConstraintDefinition> accessConstraints;
     private final int minOccurs;
     private final int maxOccurs;
@@ -89,6 +91,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.runtime = false;
         this.orderedChild = false;
         this.capabilities = new RuntimeCapability[0];
+        this.incorporatingCapabilities = null;
         this.accessConstraints = Collections.emptyList();
         this.minOccurs = 0;
         this.maxOccurs = Integer.MAX_VALUE;
@@ -281,6 +284,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.runtime = runtime;
         this.orderedChild = false;
         this.capabilities = new RuntimeCapability[0];
+        this.incorporatingCapabilities = null;
         this.accessConstraints = Collections.emptyList();
         this.minOccurs = 0;
         this.maxOccurs = Integer.MAX_VALUE;
@@ -304,6 +308,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.orderedChild = parameters.orderedChildResource;
         this.descriptionProvider = null;
         this.capabilities = parameters.capabilities;
+        this.incorporatingCapabilities = parameters.incorporatingCapabilities;
         if (parameters.accessConstraints != null) {
             this.accessConstraints = Arrays.asList(parameters.accessConstraints);
         } else {
@@ -362,6 +367,9 @@ public class SimpleResourceDefinition implements ResourceDefinition {
             for (RuntimeCapability c : capabilities) {
                 resourceRegistration.registerCapability(c);
             }
+        }
+        if (incorporatingCapabilities != null) {
+            resourceRegistration.registerIncorporatingCapabilities(incorporatingCapabilities);
         }
     }
 
@@ -529,6 +537,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         private DeprecationData deprecationData;
         private boolean orderedChildResource;
         private RuntimeCapability[] capabilities;
+        private Set<RuntimeCapability> incorporatingCapabilities;
         private AccessConstraintDefinition[] accessConstraints;
         private int minOccurs = 0;
         private int maxOccurs = Integer.MAX_VALUE;
@@ -710,6 +719,9 @@ public class SimpleResourceDefinition implements ResourceDefinition {
             return this;
         }
 
-
+        public Parameters setIncorporatingCapabilities(Set<RuntimeCapability> incorporatingCapabilities) {
+            this.incorporatingCapabilities = incorporatingCapabilities;
+            return this;
+        }
     }
 }
