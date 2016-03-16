@@ -25,6 +25,7 @@ package org.jboss.as.controller.capability.registry;
 import java.util.Map;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 
 /**
  * Registry of {@link org.jboss.as.controller.capability.RuntimeCapability capabilities} available in the runtime.
@@ -99,25 +100,28 @@ public interface RuntimeCapabilityRegistry extends ImmutableCapabilityRegistry {
     /**
      * Gets the status of any capabilities associated with the given resource address.
      *
-     * @param  address the address. Cannot be {@code null}
+     * @param address the address. Cannot be {@code null}
+     * @param resourceRegistration the registration for the resource at {@code address}. Cannot be {@code null}
      * @return a map of capability ids to their runtime status. Will not return {@code null} but may return
      *         an empty map if no capabilities are associated with the address.
      */
-    Map<CapabilityId, RuntimeStatus> getRuntimeStatus(PathAddress address);
+    Map<CapabilityId, RuntimeStatus> getRuntimeStatus(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration);
 
     /**
      * Notification that any capabilities associated with the given address require reload in order to bring their
      * runtime services into sync with their persistent configuration.
      *
      * @param address the address. Cannot be {@code null}
+     * @param resourceRegistration the registration for the resource at {@code address}. Cannot be {@code null}
      */
-    void capabilityReloadRequired(PathAddress address);
+    void capabilityReloadRequired(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration);
 
     /**
      * Notification that any capabilities associated with the given address require restart in order to bring their
      * runtime services into sync with their persistent configuration.
      *
      * @param address the address. Cannot be {@code null}
+     * @param resourceRegistration the registration for the resource at {@code address}. Cannot be {@code null}
      */
-    void capabilityRestartRequired(PathAddress address);
+    void capabilityRestartRequired(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration);
 }

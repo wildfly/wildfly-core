@@ -25,8 +25,10 @@
 package org.jboss.as.controller;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -51,6 +53,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
     private final List<ResourceBuilderRoot> children = new LinkedList<ResourceBuilderRoot>();
     private final ResourceBuilderRoot parent;
     private boolean isRuntime = false;
+    private Set<RuntimeCapability> incorporatingCapabilities;
 
 
     /** Normal constructor */
@@ -74,6 +77,9 @@ class ResourceBuilderRoot implements ResourceBuilder {
         this.operations.addAll(toCopy.operations);
         this.capabilities.addAll(toCopy.capabilities);
         this.children.addAll(toCopy.children);
+        if (toCopy.incorporatingCapabilities != null) {
+            this.incorporatingCapabilities = new HashSet<>(toCopy.incorporatingCapabilities);
+        }
         this.addHandler = toCopy.addHandler;
         this.removeHandler = toCopy.removeHandler;
         this.deprecationData = toCopy.deprecationData;
@@ -193,6 +199,12 @@ class ResourceBuilderRoot implements ResourceBuilder {
         return this;
     }
 
+    @Override
+    public ResourceBuilder setIncorporatingCapabilities(Set<RuntimeCapability> incorporating) {
+        this.incorporatingCapabilities = incorporating;
+        return this;
+    }
+
     public ResourceBuilder pushChild(final PathElement pathElement) {
         return pushChild(pathElement, resourceResolver.getChildResolver(pathElement.getKey()));
     }
@@ -260,7 +272,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
                     .setDeprecationData(builder.deprecationData)
                     .setRuntime(builder.isRuntime)
                     .setCapabilities(builder.capabilities.toArray(new RuntimeCapability[builder.capabilities.size()]))
-
+                    .setIncorporatingCapabilities(builder.incorporatingCapabilities)
             );
             this.builder = builder;
         }

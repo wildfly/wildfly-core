@@ -24,6 +24,7 @@ package org.jboss.as.controller.registry;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.NotificationDefinition;
@@ -305,6 +306,26 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * @param capability a capability to register
      */
     void registerCapability(RuntimeCapability capability);
+
+    /**
+     * Registers a set of capabilities that this resource does not directly provide but to which it contributes. This
+     * will only include capabilities for which this resource <strong>does not</strong> control the
+     * {@link #registerCapability(RuntimeCapability) registration of the capability}. Any capabilities registered by
+     * this resource will instead be included in the return value for {@link #getCapabilities()}.
+     * <p>
+     * Use of this method is only necessary if the caller wishes to specifically record capability incorporation,
+     * instead of relying on the default resolution mechanism detailed in {@link #getIncorporatingCapabilities()}, or
+     * if it wishes disable the default resolution mechanism and specifically declare that this resource does not
+     * contribute to parent capabilities. It does the latter by passing an empty set as the {@code capabilities}
+     * parameter. Passing an empty set is not necessary if this resource itself directly
+     * {@link #registerCapability(RuntimeCapability) provides a capability}, as it is the contract of
+     * {@link #getIncorporatingCapabilities()} that in that case it must return an empty set.
+     *
+     * @param  capabilities set of capabilities, or {@code null} if default resolution of capabilities to which this
+     *                      resource contributes should be used; an empty set can be used to indicate this resource
+     *                      does not contribute to capabilities provided by its parent
+     */
+    void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities);
 
     /**
      * A factory for creating a new, root model node registration.

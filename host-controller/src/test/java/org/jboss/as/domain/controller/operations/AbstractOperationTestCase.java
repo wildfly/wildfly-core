@@ -889,6 +889,11 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities) {
+
+        }
+
+        @Override
         public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler) {
 
         }
@@ -968,6 +973,11 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public ImmutableManagementResourceRegistration getParent() {
+            return null;
+        }
+
+        @Override
         public boolean isRuntimeOnly() {
             return false;
         }
@@ -980,6 +990,11 @@ public abstract class AbstractOperationTestCase {
         @Override
         public Set<RuntimeCapability> getCapabilities() {
             return Collections.emptySet();
+        }
+
+        @Override
+        public Set<RuntimeCapability> getIncorporatingCapabilities() {
+            return null;
         }
 
         @Override

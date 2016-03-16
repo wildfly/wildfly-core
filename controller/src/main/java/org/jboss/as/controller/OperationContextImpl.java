@@ -1629,7 +1629,8 @@ final class OperationContextImpl extends AbstractOperationContext {
     CapabilityRegistry.RuntimeStatus getStepCapabilityStatus(Step step){
 
         RuntimeCapabilityRegistry.RuntimeStatus result = RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
-        Map<CapabilityId, RuntimeCapabilityRegistry.RuntimeStatus> statuses = managementModel.getCapabilityRegistry().getRuntimeStatus(step.address);
+        Map<CapabilityId, RuntimeCapabilityRegistry.RuntimeStatus> statuses =
+                managementModel.getCapabilityRegistry().getRuntimeStatus(step.address, step.getManagementResourceRegistration(managementModel));
         if (statuses.isEmpty()) {
             // TODO. If there are no capabilities but the process is reload/restart required, then what?
             // Should we interpret this as meaning the step depends on all capabilities and something must be

@@ -204,6 +204,11 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
+    public void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities) {
+        throw alreadyRegistered();
+    }
+
+    @Override
     void getOperationDescriptions(final ListIterator<PathElement> iterator, final Map<String, OperationEntry> providers, final boolean inherited) {
         Map<String, OperationEntry> temp = new HashMap<String, OperationEntry>();
         target.getOperationDescriptions(iterator, temp, inherited);
@@ -314,5 +319,10 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     @Override
     Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator) {
         return target.getCapabilities(iterator);
+    }
+
+    @Override
+    Set<RuntimeCapability> getIncorporatingCapabilities(ListIterator<PathElement> iterator) {
+        return target.getIncorporatingCapabilities(iterator);
     }
 }
