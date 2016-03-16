@@ -153,6 +153,7 @@ public class ConfigurationChangeResourceDefinition extends SimpleResourceDefinit
                 .build();
         private static final ConfigurationChangesHandler INSTANCE = new ConfigurationChangesHandler(ConfigurationChangesCollector.INSTANCE);
         private static final Set<Action.ActionEffect> ADDRESS_EFFECT = EnumSet.of(Action.ActionEffect.ADDRESS);
+        private static final Set<Action.ActionEffect> READ_EFFECT = EnumSet.of(Action.ActionEffect.READ_CONFIG, Action.ActionEffect.READ_RUNTIME);
 
         private final ConfigurationChangesCollector collector;
 
@@ -167,7 +168,7 @@ public class ConfigurationChangeResourceDefinition extends SimpleResourceDefinit
                 for (ModelNode change : collector.getChanges()) {
                     ModelNode configurationChange = change.clone();
                     secureHistory(context, configurationChange);
-                        result.add(configurationChange);
+                    result.add(configurationChange);
                 }
             }
         }
@@ -177,7 +178,7 @@ public class ConfigurationChangeResourceDefinition extends SimpleResourceDefinit
          *
          * @param context
          * @param configurationChange
-         * @throws OperationFailedException.
+         * @throws OperationFailedException
          */
         private void secureHistory(OperationContext context, ModelNode configurationChange) throws OperationFailedException {
             if (configurationChange.has(OPERATIONS)) {
@@ -190,42 +191,60 @@ public class ConfigurationChangeResourceDefinition extends SimpleResourceDefinit
         }
 
         /**
-         * Secure the operation :
-         *  - if the caller can address the resource we check if he can see the operation parameters.
-         *  - otherwise we return the operation without its address and parameters.
+         * Secure the operation : - if the caller can address the resource we check if he can see the operation
+         * parameters. - otherwise we return the operation without its address and parameters.
+         *
          * @param context the operation context.
          * @param operation the operation we are securing.
          * @return the secured opreation aka trimmed of all sensitive data.
-         * @throws OperationFailedException.
+         * @throws OperationFailedException
          */
         private ModelNode secureOperation(OperationContext context, ModelNode operation) throws OperationFailedException {
-            ModelNode address = operation.get(OP_ADDR);
+            PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+            for (int i = 0; i < address.size(); i++) {
+                if (!isAccessPermitted(context, address.subAddress(0, i).toModelNode())) {
+                    return accessDenied(operation);
+                }
+            }
             ModelNode fakeOperation = new ModelNode();
             fakeOperation.get(OP).set(READ_RESOURCE_OPERATION);
-            fakeOperation.get(OP_ADDR).set(address);
+            fakeOperation.get(OP_ADDR).set(address.toModelNode());
             AuthorizationResult authResult = context.authorize(fakeOperation, ADDRESS_EFFECT);
-            if(authResult.getDecision() == AuthorizationResult.Decision.PERMIT) {
+            if (authResult.getDecision() == AuthorizationResult.Decision.PERMIT) {
                 return secureOperationParameters(context, operation);
             }
+            return accessDenied(operation);
+        }
+
+        private ModelNode accessDenied(ModelNode operation) {
             ModelNode securedOperation = new ModelNode();
             securedOperation.get(OP).set(operation.get(OP));
             securedOperation.get(OP_ADDR).set(ControllerLogger.MGMT_OP_LOGGER.permissionDenied());
             return securedOperation;
         }
+        private boolean isAccessPermitted(OperationContext context, ModelNode address) {
+            ModelNode fakeOperation = new ModelNode();
+            fakeOperation.get(OP).set(READ_RESOURCE_OPERATION);
+            fakeOperation.get(OP_ADDR).set(address);
+            AuthorizationResult authResult = context.authorize(fakeOperation, READ_EFFECT);
+            return (authResult.getDecision() == AuthorizationResult.Decision.PERMIT);
+        }
 
         /**
-         * Checks if the calling user may execute the operation. If he may then he can see it te full operation parameters.
+         * Checks if the calling user may execute the operation. If he may then he can see it te full operation
+         * parameters.
+         *
          * @param context the operation context.
          * @param op the operation we are securing.
          * @return the secured operation.
-         * @throws OperationFailedException.
+         * @throws OperationFailedException
          */
         private ModelNode secureOperationParameters(OperationContext context, ModelNode op) throws OperationFailedException {
             ModelNode operation = op.clone();
             OperationEntry operationEntry = context.getRootResourceRegistration().getOperationEntry(
                     PathAddress.pathAddress(operation.get(OP_ADDR)), operation.get(OP).asString());
             Set<Action.ActionEffect> effects = getEffects(operationEntry);
-            if(context.authorize(operation, effects).getDecision() == AuthorizationResult.Decision.PERMIT) {
+            if (context.authorize(operation, effects).getDecision() == AuthorizationResult.Decision.PERMIT) {
                 return operation;
             } else {
                 ModelNode securedOperation = new ModelNode();
