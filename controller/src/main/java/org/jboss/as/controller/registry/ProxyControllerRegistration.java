@@ -391,6 +391,11 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
         }
 
         @Override
+        public PathAddress getPathAddress() {
+            return pathAddress;
+        }
+
+        @Override
         public OperationEntry getOperationEntry(PathAddress address, String operationName) {
             checkPermission();
             return ProxyControllerRegistration.this.operationEntry;
