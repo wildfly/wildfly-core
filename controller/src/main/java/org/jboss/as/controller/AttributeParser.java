@@ -194,6 +194,10 @@ public abstract class AttributeParser {
                 }
                 ParseUtils.requireNoContent(reader);
             }
+            // the object list element was specified but it is empty, so initialize it with an empty list.
+            if (!operation.get(attribute.getName()).isDefined()) {
+                operation.get(attribute.getName()).setEmptyList();
+            }
         }
     };
 
