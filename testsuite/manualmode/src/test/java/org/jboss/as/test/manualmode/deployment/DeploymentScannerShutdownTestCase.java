@@ -86,7 +86,8 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-@Ignore
+@Ignore("this test relies too much on hacking internals (see the byteman script) so it's only here to allow " +
+        "custom use if there is a need to diagnose a problem in this area")
 public class DeploymentScannerShutdownTestCase {
 
     // Max time to wait for some action to complete, in ms
