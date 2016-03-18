@@ -16,9 +16,11 @@
 [ -r /etc/java/java.conf ] && . /etc/java/java.conf
 export JAVA_HOME
 
+WILDFLY_NAME=$(basename ${0})
+
 # Load JBoss AS init.d configuration.
 if [ -z "$JBOSS_CONF" ]; then
-	JBOSS_CONF="/etc/default/wildfly.conf"
+	JBOSS_CONF="/etc/default/${WILDFLY_NAME}.conf"
 fi
 
 [ -r "$JBOSS_CONF" ] && . "${JBOSS_CONF}"
@@ -26,17 +28,17 @@ fi
 # Set defaults.
 
 if [ -z "$JBOSS_HOME" ]; then
-	JBOSS_HOME=/opt/wildfly
+	JBOSS_HOME=/opt/${WILDFLY_NAME}
 fi
 export JBOSS_HOME
 
 if [ -z "$JBOSS_PIDFILE" ]; then
-	JBOSS_PIDFILE=/var/run/wildfly/wildfly.pid
+	JBOSS_PIDFILE=/var/run/${WILDFLY_NAME}/wildfly.pid
 fi
 export JBOSS_PIDFILE
 
 if [ -z "$JBOSS_CONSOLE_LOG" ]; then
-	JBOSS_CONSOLE_LOG=/var/log/wildfly/console.log
+	JBOSS_CONSOLE_LOG=/var/log/${WILDFLY_NAME}/console.log
 fi
 
 if [ -z "$STARTUP_WAIT" ]; then
@@ -48,7 +50,7 @@ if [ -z "$SHUTDOWN_WAIT" ]; then
 fi
 
 if [ -z "$JBOSS_LOCKFILE" ]; then
-	JBOSS_LOCKFILE=/var/lock/subsys/wildfly
+	JBOSS_LOCKFILE=/var/lock/subsys/${WILDFLY_NAME}
 fi
 
 # Startup mode of wildfly
@@ -74,7 +76,7 @@ else
 	JBOSS_MARKERFILE=$JBOSS_HOME/domain/tmp/startup-marker
 fi
 
-prog='wildfly'
+prog=${WILDFLY_NAME}
 currenttime=$(date +%s%N | cut -b1-13)
 
 start() {
