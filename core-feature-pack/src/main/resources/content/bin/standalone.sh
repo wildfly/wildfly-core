@@ -4,7 +4,7 @@
 # Usage : standalone.sh --debug
 #         standalone.sh --debug 9797
 
-# By default debug mode is disable.
+# By default debug mode is disabled.
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 SERVER_OPTS=""
