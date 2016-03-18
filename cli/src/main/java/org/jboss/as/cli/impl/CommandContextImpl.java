@@ -1124,7 +1124,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         for (;;) {
             String response;
             if (trustManager.isModifyTrustStore()) {
-                response = readLine("Accept certificate? [N]o, [T]emporarily, [P]ermenantly : ", false);
+                response = readLine("Accept certificate? [N]o, [T]emporarily, [P]ermanently : ", false);
             } else {
                 response = readLine("Accept certificate? [N]o, [T]emporarily : ", false);
             }
