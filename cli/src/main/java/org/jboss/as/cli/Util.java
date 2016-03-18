@@ -102,6 +102,7 @@ public class Util {
     public static final String IN_SERIES = "in-series";
     public static final String INCLUDE_DEFAULTS = "include-defaults";
     public static final String INCLUDE_RUNTIME = "include-runtime";
+    public static final String INCLUDE_SINGLETONS = "include-singletons";
     public static final String INPUT_STREAM_INDEX = "input-stream-index";
     public static final String INSTALLED_DRIVERS_LIST = "installed-drivers-list";
     public static final String LOCAL_HOST_NAME = "local-host-name";
