@@ -250,6 +250,11 @@ public class OldVersionTestRunner extends Suite {
                             " home from either -D" + prop);
                 }
                 System.setProperty("legacy.java.home", jdkHome);
+
+                //Server has this
+                //    private final String jvmArgs = System.getProperty("jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
+                //-XX:MaxMetaspaceSize is not available < JDK 8, so remove it:
+                System.setProperty("jvm.args", "-Xmx512m");
             }
         }
 
