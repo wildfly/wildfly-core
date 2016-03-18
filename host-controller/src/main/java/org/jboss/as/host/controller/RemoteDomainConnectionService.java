@@ -50,7 +50,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.net.ssl.SSLHandshakeException;
 import javax.security.sasl.SaslException;
 
-import org.jboss.as.controller.CurrentOperationIdHolder;
 import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -401,7 +400,6 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                 if (domainControllerLock != null) {
                     fetchContentOp.get(OPERATION_HEADERS, DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID).set(domainControllerLock);
                 }
-                fetchContentOp.get(OPERATION_HEADERS, DomainControllerLockIdUtils.SLAVE_CONTROLLER_LOCK_ID).set(CurrentOperationIdHolder.getCurrentOperationID());
 
                 // execute the operation blocking
                 final TransactionalProtocolClient.PreparedOperation<TransactionalProtocolClient.Operation> preparedOperation;
