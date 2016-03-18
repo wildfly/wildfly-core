@@ -128,7 +128,7 @@ public class ModuleInfoHandler implements OperationStepHandler {
     }
 
 
-    private ModuleLoaderMXBean getMxBean(ModuleLoader loader) throws ReflectiveOperationException {
+    protected ModuleLoaderMXBean getMxBean(ModuleLoader loader) throws ReflectiveOperationException {
         Field mxBeanField = ModuleLoader.class.getDeclaredField("mxBean");
         mxBeanField.setAccessible(true);
         return (ModuleLoaderMXBean) mxBeanField.get(loader);
