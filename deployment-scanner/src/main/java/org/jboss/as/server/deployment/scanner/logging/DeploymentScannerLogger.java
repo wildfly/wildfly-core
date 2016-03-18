@@ -392,10 +392,10 @@ public interface DeploymentScannerLogger extends BasicLogger {
      * @param name the name of the file.
      * @param lineNumber
      * @param columnNumber
+     * @return the message
      */
-    @LogMessage(level = INFO)
     @Message(id = 35, value = "Scan found %s which is not well-formed at lineNumber: %s, columnNumber: %s. Either the file was incompletely copied at the time of the scanning or it is just wrong.")
-    void invalidXmlFileFound(String name, int lineNumber, int columnNumber);
+    String invalidXmlFileFound(String name, int lineNumber, int columnNumber);
 
 
     /**
