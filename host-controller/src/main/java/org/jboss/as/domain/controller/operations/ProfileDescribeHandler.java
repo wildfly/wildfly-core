@@ -22,7 +22,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_LAUNCH;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -38,7 +37,6 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -69,11 +67,7 @@ public class ProfileDescribeHandler extends GenericModelDescribeOperationHandler
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         final AuthorizationResult authResult = context.authorize(operation, DESCRIBE_EFFECTS);
-        if (authResult.getDecision() != AuthorizationResult.Decision.PERMIT) {
-            final String operationName = operation.get(ModelDescriptionConstants.OP).asString();
-            final PathAddress address = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR));
-            throw ControllerLogger.ACCESS_LOGGER.unauthorized(operationName, address, authResult.getExplanation());
-        }
+        authResult.failIfDenied(operation, context.getCurrentAddress());
 
         // WFCORE-1353. If this op is being used as part of a server launch, pass that info
         // to any subsystem describe handlers.
