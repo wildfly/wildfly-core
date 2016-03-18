@@ -296,6 +296,8 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                             }
                         }
                     } else if (ControlledProcessState.State.STOPPING == evt.getNewValue()) {
+                        //let's prevent the starting of a new scan
+                        scanEnabled = false;
                         if(undeployScanTask != null) {
                             undeployScanTask.cancel(true);
                             undeployScanTask = null;
@@ -484,12 +486,12 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     /** Perform a normal scan */
     void scan() {
         if (acquireScanLock()) {
-            ScanResult scanResult = null;
+            boolean scheduleRescan = false;
             try {
-                scanResult = scan(false, deploymentOperations);
+                scheduleRescan = scan(false, deploymentOperations);
             } finally {
                 try {
-                    if (scanResult != null && scanResult.scheduleRescan) {
+                    if (scheduleRescan) {
                         synchronized (this) {
                             if (scanEnabled) {
                                 rescanIncompleteTask = scheduledExecutor.schedule(scanRunnable, 200, TimeUnit.MILLISECONDS);
@@ -530,7 +532,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                     scannerTasks.add(new UndeployTask(toUndeploy, deploymentDir, scanContext.scanStartTime, true));
                 }
                 try {
-                    executeScannerTasks(scannerTasks, deploymentOperations, true, new ScanResult());
+                    executeScannerTasks(scannerTasks, deploymentOperations, true);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -558,14 +560,23 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         scanLock.unlock();
     }
 
-    private ScanResult scan(boolean oneOffScan, final DeploymentOperations deploymentOperations) {
+    private boolean scan(boolean oneOffScan, final DeploymentOperations deploymentOperations) {
 
-        ScanResult scanResult = new ScanResult();
+        boolean scheduleRescan = false;
 
         if (scanEnabled || oneOffScan) { // confirm the scan is still wanted
             ROOT_LOGGER.tracef("Scanning directory %s for deployment content changes", deploymentDir.getAbsolutePath());
 
-            ScanContext scanContext = new ScanContext(deploymentOperations);
+            ScanContext scanContext = null;
+            try {
+                scanContext = new ScanContext(deploymentOperations);
+            } catch (RuntimeException ex) {
+                //scanner has stoppped in the meanwhile so we don't need to pursue
+                if (!scanEnabled) {
+                    return scheduleRescan;
+                }
+                throw ex;
+            }
 
             scanDirectory(deploymentDir, relativePath, scanContext);
 
@@ -607,7 +618,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             if (status != ScanStatus.PROCEED) {
                 if (status == ScanStatus.RETRY && scanInterval > 1000) {
                     // schedule a non-repeating task to try again more quickly
-                    scanResult.scheduleRescan = true;
+                    scheduleRescan = true;
                 }
             } else {
 
@@ -619,8 +630,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                     scannerTasks.add(new UndeployTask(missing.getKey(), missing.getValue().parentFolder, scanContext.scanStartTime, false));
                 }
                 try {
-                    scanResult.tasks = scannerTasks;
-                    executeScannerTasks(scannerTasks, deploymentOperations, oneOffScan, scanResult);
+                    executeScannerTasks(scannerTasks, deploymentOperations, oneOffScan);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -629,11 +639,11 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             }
         }
 
-        return scanResult;
+        return scheduleRescan;
     }
 
     private void executeScannerTasks(List<ScannerTask> scannerTasks, DeploymentOperations deploymentOperations,
-                                     boolean oneOffScan, ScanResult scanResult) throws InterruptedException {
+                                     boolean oneOffScan) throws InterruptedException {
         // Process the tasks
         if (scannerTasks.size() > 0) {
             List<ModelNode> updates = new ArrayList<ModelNode>(scannerTasks.size());
@@ -688,7 +698,6 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 final List<ScannerTask> retryTasks = new ArrayList<ScannerTask>();
                 if (results.hasDefined(RESULT)) {
                     final List<Property> resultList = results.get(RESULT).asPropertyList();
-                    scanResult.requireUndeploy = false;
                     for (int i = 0; i < resultList.size(); i++) {
                         final ModelNode result = resultList.get(i).getValue();
                         final ScannerTask task = scannerTasks.get(i);
@@ -702,7 +711,6 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                         } else {
                             if (failureDesc.length() > 0) {
                                 result.get(FAILURE_DESCRIPTION).set(failureDesc.toString());
-                                scanResult.requireUndeploy = true;
                             }
                             task.handleFailureResult(result);
                         }
@@ -1635,12 +1643,6 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             this.exception = exception;
             this.timestamp = timestamp;
         }
-    }
-
-    private static class ScanResult {
-        private boolean scheduleRescan;
-        private boolean requireUndeploy;
-        private List<ScannerTask> tasks;
     }
 
     /**
