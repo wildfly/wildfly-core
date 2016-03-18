@@ -515,8 +515,8 @@ public class ResponseStreamTestCase {
         boolean readExpected = false;
         String read;
         while ((read = reader.readLine()) != null) {
-            readRegisteredServer = readRegisteredServer || read.contains("Registering server");
-            readRegisteredSlave = readRegisteredSlave || read.contains("Registered remote slave host");
+            readRegisteredServer = readRegisteredServer || read.contains("WFLYHC0020");
+            readRegisteredSlave = readRegisteredSlave || read.contains("WFLYHC0019");
             readExpected = readExpected || read.contains(expected);
         }
 

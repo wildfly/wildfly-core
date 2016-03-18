@@ -20,6 +20,7 @@
  */
 package org.jboss.as.test.integration.mgmt.access;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.REMOTE_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
@@ -72,7 +73,6 @@ import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
 import org.jboss.as.test.integration.management.interfaces.CliManagementInterface;
@@ -240,7 +240,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
         if (auditAuthorized) {
             assertThat(PathAddress.pathAddress(currentChangeOp.get(OP_ADDR)).toString(), is(IN_MEMORY_HANDLER_ADDRESS.toString()));
         } else {
-            assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ControllerLogger.MGMT_OP_LOGGER.permissionDenied()));
+            assertThat(currentChangeOp.get(OP_ADDR).asString(), containsString("WFLYCTL0332"));
         }
         currentChange = changes.get(1);
         assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
@@ -250,7 +250,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
             assertThat(PathAddress.pathAddress(currentChangeOp.get(OP_ADDR)).toString(), is(IN_MEMORY_HANDLER_ADDRESS.toString()));
             assertThat(currentChangeOp.get(VALUE).asInt(), is(50));
         } else {
-            assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ControllerLogger.MGMT_OP_LOGGER.permissionDenied()));
+            assertThat(currentChangeOp.get(OP_ADDR).asString(), containsString("WFLYCTL0332"));
         }
         currentChange = changes.get(2);
         assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
@@ -259,7 +259,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
         if (auditAuthorized) {
             assertThat(PathAddress.pathAddress(currentChangeOp.get(OP_ADDR)).toString(), is(IN_MEMORY_HANDLER_ADDRESS.toString()));
         } else {
-            assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ControllerLogger.MGMT_OP_LOGGER.permissionDenied()));
+            assertThat(currentChangeOp.get(OP_ADDR).asString(), containsString("WFLYCTL0332"));
         }
         currentChange = changes.get(3);
         assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
@@ -268,7 +268,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
         if (authorized || auditAuthorized) {
             assertThat(currentChangeOp.get(OP_ADDR).asString(), is(SYSTEM_PROPERTY_ADDRESS.toString()));
         } else {
-            assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ControllerLogger.MGMT_OP_LOGGER.permissionDenied()));
+            assertThat(currentChangeOp.get(OP_ADDR).asString(), containsString("WFLYCTL0332"));
         }
         currentChange = changes.get(4);
         assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
@@ -278,7 +278,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
             assertThat(currentChangeOp.get(OP_ADDR).asString(), is(AUDIT_LOG_ADDRESS.toModelNode().asString()));
             assertThat(currentChangeOp.get(VALUE).asBoolean(), is(true));
         } else {
-            assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ControllerLogger.MGMT_OP_LOGGER.permissionDenied()));
+            assertThat(currentChangeOp.get(OP_ADDR).asString(), containsString("WFLYCTL0332"));
         }
         currentChange = changes.get(5);
         assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
@@ -303,7 +303,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
                 assertThat(currentChangeOp.hasDefined(VALUE), is(false));
             }
         } else {
-            assertThat(currentChangeOp.get(OP_ADDR).asString(), is(ControllerLogger.MGMT_OP_LOGGER.permissionDenied()));
+            assertThat(currentChangeOp.get(OP_ADDR).asString(), containsString("WFLYCTL0332"));
             assertThat(currentChangeOp.asString(), currentChangeOp.hasDefined(NAME), is(false));
         }
         currentChange = changes.get(7);
