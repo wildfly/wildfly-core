@@ -24,8 +24,6 @@ package org.jboss.as.domain.management.security;
 
 import static org.jboss.as.domain.management.ModelDescriptionConstants.SECURITY_REALM;
 
-import java.util.List;
-
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathElement;
@@ -33,7 +31,6 @@ import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
@@ -61,17 +58,14 @@ public class SecurityRealmResourceDefinition extends SimpleResourceDefinition {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    private final List<AccessConstraintDefinition> sensitivity;
-
     private SecurityRealmResourceDefinition() {
-        super(PathElement.pathElement(SECURITY_REALM),
-                ControllerResolver.getResolver(DEPRECATED_PARENT_CATEGORY),
-                SecurityRealmAddHandler.INSTANCE,
-                SecurityRealmRemoveHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        sensitivity = SensitiveTargetAccessConstraintDefinition.SECURITY_REALM.wrapAsList();
-        setDeprecated(ModelVersion.create(1, 7));
+        super(new Parameters(PathElement.pathElement(SECURITY_REALM), ControllerResolver.getResolver(DEPRECATED_PARENT_CATEGORY))
+                .setAddHandler(SecurityRealmAddHandler.INSTANCE)
+                .setRemoveHandler(SecurityRealmRemoveHandler.INSTANCE)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override
@@ -102,10 +96,5 @@ public class SecurityRealmResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new PropertiesAuthorizationResourceDefinition());
         resourceRegistration.registerSubModel(new PlugInAuthorizationResourceDefinition());
         resourceRegistration.registerSubModel(new LdapAuthorizationResourceDefinition());
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return sensitivity;
     }
 }

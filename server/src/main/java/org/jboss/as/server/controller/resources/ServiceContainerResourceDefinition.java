@@ -25,11 +25,8 @@ package org.jboss.as.server.controller.resources;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE_CONTAINER;
 
-import java.util.List;
-
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
@@ -43,22 +40,15 @@ import org.jboss.as.server.operations.DumpServicesHandler;
 
 class ServiceContainerResourceDefinition extends SimpleResourceDefinition {
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     ServiceContainerResourceDefinition() {
-        super(PathElement.pathElement(CORE_SERVICE, SERVICE_CONTAINER),
-                ServerDescriptions.getResourceDescriptionResolver("core", SERVICE_CONTAINER));
-        this.accessConstraints = SensitiveTargetAccessConstraintDefinition.SERVICE_CONTAINER.wrapAsList();
+        super(new Parameters(PathElement.pathElement(CORE_SERVICE, SERVICE_CONTAINER),
+                ServerDescriptions.getResourceDescriptionResolver("core", SERVICE_CONTAINER))
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SERVICE_CONTAINER));
     }
 
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(DumpServicesHandler.DEFINITION, DumpServicesHandler.INSTANCE);
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 }

@@ -24,7 +24,6 @@ package org.jboss.as.controller.access.rbac;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -206,18 +205,11 @@ public class RemoveResourceTestCase extends AbstractControllerTestBase {
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
     }
 
-    private static class TestResourceDefinition extends SimpleResourceDefinition {
-        TestResourceDefinition(PathElement pathElement) {
-            super(pathElement,
-                    new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
-                    new AbstractRemoveStepHandler() {});
-        }
-    }
-
-    private static class RootResourceDefinition extends TestResourceDefinition {
+    private static class RootResourceDefinition extends SimpleResourceDefinition {
         RootResourceDefinition() {
-            super(PathElement.pathElement("root"));
+            super(new Parameters(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {}));
         }
 
         @Override
@@ -227,13 +219,14 @@ public class RemoveResourceTestCase extends AbstractControllerTestBase {
         }
     }
 
-    private static class ChildResourceDefinition extends TestResourceDefinition implements ResourceDefinition {
-        private final List<AccessConstraintDefinition> constraints;
+    private static class ChildResourceDefinition extends SimpleResourceDefinition implements ResourceDefinition {
         private final List<AttributeDefinition> attributes = Collections.synchronizedList(new ArrayList<AttributeDefinition>());
 
         ChildResourceDefinition(PathElement element, AccessConstraintDefinition...constraints){
-            super(element);
-            this.constraints = Collections.unmodifiableList(Arrays.asList(constraints));
+            super(new Parameters(element, new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(constraints));
         }
 
         void addAttribute(String name, AccessConstraintDefinition...constraints) {
@@ -250,11 +243,6 @@ public class RemoveResourceTestCase extends AbstractControllerTestBase {
             for (AttributeDefinition attribute : attributes) {
                 resourceRegistration.registerReadWriteAttribute(attribute, null, new ModelOnlyWriteAttributeHandler(attribute));
             }
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return constraints;
         }
     }
 

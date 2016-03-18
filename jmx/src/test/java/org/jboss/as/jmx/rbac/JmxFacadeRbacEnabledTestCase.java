@@ -23,7 +23,6 @@ package org.jboss.as.jmx.rbac;
 
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -819,23 +818,21 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
     }
 
     private static class TestResourceDefinition extends SimpleResourceDefinition {
-        TestResourceDefinition(PathElement pathElement) {
-            super(pathElement,
-                    new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
-                    new AbstractRemoveStepHandler() {});
+        TestResourceDefinition(PathElement pathElement, AccessConstraintDefinition...constraints) {
+            super(new Parameters(pathElement, new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(constraints));
         }
     }
 
     private static class ChildResourceDefinition extends TestResourceDefinition implements ResourceDefinition {
-        private final List<AccessConstraintDefinition> constraints;
         private final List<AttributeDefinition> attributes = Collections.synchronizedList(new ArrayList<AttributeDefinition>());
         private final List<AttributeDefinition> readOnlyAttributes = Collections.synchronizedList(new ArrayList<AttributeDefinition>());
         private final List<OperationDefinition> operations = Collections.synchronizedList(new ArrayList<OperationDefinition>());
 
         ChildResourceDefinition(PathElement element, AccessConstraintDefinition...constraints){
-            super(element);
-            this.constraints = Collections.unmodifiableList(Arrays.asList(constraints));
+            super(element, constraints);
         }
 
         void addAttribute(String name, AccessConstraintDefinition...constraints) {
@@ -887,11 +884,6 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
                 }
 
             }
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return constraints;
         }
     }
 

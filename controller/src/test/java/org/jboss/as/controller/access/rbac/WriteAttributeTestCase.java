@@ -32,10 +32,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -313,16 +309,12 @@ public class WriteAttributeTestCase extends AbstractRbacTestBase {
     }
 
     private static final class TestResourceDefinition extends SimpleResourceDefinition {
-        private final List<AccessConstraintDefinition> constraintDefinitions;
 
         TestResourceDefinition(String path, AccessConstraintDefinition... constraintDefinitions) {
-            super(pathElement(path),
-                    new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
-                    new AbstractRemoveStepHandler() {}
-            );
-
-            this.constraintDefinitions = Collections.unmodifiableList(Arrays.asList(constraintDefinitions));
+            super(new Parameters(pathElement(path), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(constraintDefinitions));
         }
 
         @Override
@@ -351,11 +343,6 @@ public class WriteAttributeTestCase extends AbstractRbacTestBase {
                     .build();
             resourceRegistration.registerReadWriteAttribute(attributeDefinition, null,
                     new ModelOnlyWriteAttributeHandler(attributeDefinition));
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return constraintDefinitions;
         }
     }
 }

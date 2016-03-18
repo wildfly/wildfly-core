@@ -21,9 +21,7 @@
 */
 package org.jboss.as.server.controller.resources;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 
-import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.NotificationDefinition;
@@ -31,8 +29,8 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.deployment.DeploymentStatusHandler;
@@ -47,10 +45,10 @@ public abstract class DeploymentResourceDefinition extends SimpleResourceDefinit
     private DeploymentResourceParent parent;
 
     protected DeploymentResourceDefinition(DeploymentResourceParent parent, OperationStepHandler addHandler, OperationStepHandler removeHandler) {
-        super(PathElement.pathElement(DEPLOYMENT),
-                DeploymentAttributes.DEPLOYMENT_RESOLVER,
-                addHandler,
-                removeHandler);
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT), DeploymentAttributes.DEPLOYMENT_RESOLVER)
+                .setAddHandler(addHandler)
+                .setRemoveHandler(removeHandler)
+                .setAccessConstraints(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
         this.parent = parent;
     }
 
@@ -66,11 +64,6 @@ public abstract class DeploymentResourceDefinition extends SimpleResourceDefinit
                 resourceRegistration.registerReadOnlyAttribute(attr, null);
             }
         }
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return ApplicationTypeAccessConstraintDefinition.DEPLOYMENT_AS_LIST;
     }
 
     @Override
