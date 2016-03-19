@@ -1,6 +1,6 @@
 SYNOPSIS
 
-  To add a module
+  To add a module locally
 
     module add --name=module_name [--slot=slot_name]
                --resources=list_of_jars [--resource-delimiter=delimiter]
@@ -10,17 +10,17 @@ SYNOPSIS
                  [--main-class=fully_qualified_class_name]])
                )
 
-  To remove a module
+  To remove a module locally
 
     module remove --name=module_name [--slot=slot_name]
 
 
 DESCRIPTION
 
-  The command is used to add and remove modules.
+  The command is used to add and remove modules locally.
 
   When a module is added, the corresponding to the module name directory
-  structure will be created in the AS7 module repository. The JAR files
+  structure will be created in the module repository. The JAR files
   specified as resources will be copied to the module's directory. Unless
   module.xml file was specified as an argument, it will be automatically
   generated.
