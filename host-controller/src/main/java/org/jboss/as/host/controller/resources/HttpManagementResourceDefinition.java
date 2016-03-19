@@ -135,12 +135,14 @@ public class HttpManagementResourceDefinition extends SimpleResourceDefinition {
 
     public HttpManagementResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo,
                                              final HostControllerEnvironment environment) {
-        super(new Parameters(RESOURCE_PATH, HostModelUtil.getResourceDescriptionResolver("core", "management", "http-interface"))
+        super(new Parameters(RESOURCE_PATH,
+                HostModelUtil.getResourceDescriptionResolver("core", "management", "http-interface"))
                 .setAddHandler(new HttpManagementAddHandler(hostControllerInfo, environment))
                 .setRemoveHandler(HttpManagementRemoveHandler.INSTANCE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
+                .setCapabilities(HTTP_MANAGEMENT_CAPABILITY)
                 .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
