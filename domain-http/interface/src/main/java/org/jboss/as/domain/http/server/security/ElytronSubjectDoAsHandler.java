@@ -27,7 +27,7 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.security.Principal;
 import java.util.Set;
-
+import java.util.stream.StreamSupport;
 
 import javax.security.auth.Subject;
 
@@ -71,10 +71,9 @@ public class ElytronSubjectDoAsHandler extends SubjectDoAsHandler {
             Set<Principal> principals = subject.getPrincipals();
             principals.add(new RealmUser(securityIdentity.getPrincipal().getName()));
 
-            Set<String> roles = securityIdentity.getRoles();
-            roles.forEach((String s) -> {
-                principals.add(new RealmGroup(s));
-                principals.add(new RealmRole(s));
+            StreamSupport.stream(securityIdentity.getRoles().spliterator(), true).forEach((String role) -> {
+                principals.add(new RealmGroup(role));
+                principals.add(new RealmRole(role));
             });
         }
 
