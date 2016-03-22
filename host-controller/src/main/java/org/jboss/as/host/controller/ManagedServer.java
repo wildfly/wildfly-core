@@ -454,8 +454,13 @@ class ManagedServer {
         if(required == InternalState.STOPPED && state == InternalState.PROCESS_STOPPING) {
             finishTransition(InternalState.PROCESS_STOPPING, InternalState.PROCESS_STOPPED);
         } else {
-            this.requiredState = InternalState.FAILED;
-            internalSetState(null, state, InternalState.PROCESS_STOPPED);
+            this.requiredState = InternalState.STOPPED;
+            if ( !(internalSetState(getTransitionTask(InternalState.PROCESS_STOPPING), internalState, InternalState.PROCESS_STOPPING)
+                    && internalSetState(getTransitionTask(InternalState.PROCESS_REMOVING), internalState, InternalState.PROCESS_REMOVING)
+                    && internalSetState(getTransitionTask(InternalState.STOPPED), internalState, InternalState.STOPPED)) ){
+                this.requiredState = InternalState.FAILED;
+                internalSetState(null, internalState, InternalState.PROCESS_STOPPED);
+            }
         }
     }
 
