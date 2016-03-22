@@ -150,7 +150,7 @@ public class PatchingTestUtil {
         StringBuilder out = new StringBuilder();
         out.append(dir.getParentFile().getAbsolutePath() + "\n");
         tree0(out, dir, 1, "  ");
-        logger.info(out);
+        logger.trace(out);
         ROOT_LOGGER.trace(out.toString());
     }
 

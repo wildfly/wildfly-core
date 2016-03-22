@@ -26,7 +26,7 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>19</version>
+      <version>20</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
@@ -64,10 +64,10 @@
             For example: <version.surefire.plugin>2.11</version.surefire.plugin>
           -->
         <maven.min.version>3.2.1</maven.min.version>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
+        <version.surefire.plugin>2.18.1</version.surefire.plugin>
 
-        <version.surefire.plugin>2.17</version.surefire.plugin>
+        <!-- use older version of checkstyle as otherwise lots of checks fail -->
+        <version.checkstyle>6.8</version.checkstyle>
         <!--
             Dependency versions. Please keep alphabetical.
 
@@ -95,7 +95,7 @@
         <version.org.codehaus.woodstox.woodstox-core-asl>4.4.1</version.org.codehaus.woodstox.woodstox-core-asl>
         <version.org.fusesource.jansi>1.11</version.org.fusesource.jansi>
         <version.org.jboss.aesh>0.66.4</version.org.jboss.aesh>
-        <version.org.jboss.byteman>2.2.1</version.org.jboss.byteman>
+        <version.org.jboss.byteman>3.0.3</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.1.2.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.4.1.Final</version.org.jboss.invocation>
         <version.org.jboss.jandex>2.0.1.Final</version.org.jboss.jandex>
@@ -292,6 +292,7 @@
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>true</failsOnError>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <excludes>**/*$logger.java,**/*$bundle.java</excludes>
                         <useFile/>
                     </configuration>
                     <dependencies>
