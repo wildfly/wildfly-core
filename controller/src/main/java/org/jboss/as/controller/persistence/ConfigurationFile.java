@@ -445,21 +445,28 @@ public class ConfigurationFile {
         return mainFile;
     }
 
+    File getConfigurationDir(){
+        return configurationDir;
+    }
+
+
     /** Notification that boot has completed successfully and the configuration history should be updated */
     void successfulBoot() throws ConfigurationPersistenceException {
         synchronized (this) {
             if (doneBootup.get()) {
                 return;
             }
-
             final File copySource;
             if (!interactionPolicy.isReadOnly()) {
                 copySource = mainFile;
             } else {
-                // TODO WFCORE-515 in the !persistOriginal case, mainFile may not be in the
-                // configuration dir and writing to its dir may not be legal.
-                // Why not use the configuration dir?
-                copySource = new File(mainFile.getParentFile(), mainFile.getName() + ".boot");
+
+                if ( FilePersistenceUtils.isParentFolderWritable(mainFile) ) {
+                    copySource = new File(mainFile.getParentFile(), mainFile.getName() + ".boot");
+                } else{
+                    copySource = new File(configurationDir, mainFile.getName() + ".boot");
+                }
+
                 FilePersistenceUtils.deleteFile(copySource);
             }
 

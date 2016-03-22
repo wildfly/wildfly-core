@@ -49,7 +49,14 @@ public class ConfigurationFilePersistenceResource extends AbstractFilePersistenc
 
     @Override
     public void doCommit(ExposedByteArrayOutputStream marshalled) {
-        final File tempFileName = FilePersistenceUtils.createTempFile(fileName);
+        final File tempFileName;
+
+        if ( FilePersistenceUtils.isParentFolderWritable(fileName) ){
+            tempFileName = FilePersistenceUtils.createTempFile(fileName);
+        }else{
+            tempFileName = FilePersistenceUtils.createTempFile(configurationFile.getConfigurationDir(), fileName.getName());
+        }
+
         try {
             try {
                 FilePersistenceUtils.writeToTempFile(marshalled, tempFileName, fileName);
