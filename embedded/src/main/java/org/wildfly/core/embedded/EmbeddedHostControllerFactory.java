@@ -26,17 +26,15 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -48,18 +46,15 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
 import org.jboss.as.host.controller.DomainModelControllerService;
 import org.jboss.as.host.controller.HostControllerEnvironment;
-import org.jboss.as.process.CommandLineConstants;
+import org.jboss.as.host.controller.Main;
 import org.jboss.as.process.ProcessController;
 import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.version.ProductConfig;
-import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
@@ -93,6 +88,9 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 public class EmbeddedHostControllerFactory {
 
     public static final String JBOSS_EMBEDDED_ROOT = "jboss.embedded.root";
+    private static final String MODULE_PATH = "-mp";
+    private static final String PC_ADDRESS = "--pc-address";
+    private static final String PC_PORT = "--pc-port";
 
     private EmbeddedHostControllerFactory() {
     }
@@ -274,13 +272,13 @@ public class EmbeddedHostControllerFactory {
                     // already installed
                 }
 
+                // Determine the ServerEnvironment
+                HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, startTime);
+
+                FutureServiceContainer futureContainer = new FutureServiceContainer();
                 final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
                 new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
                 final String authCode = Base64.getEncoder().encodeToString(authBytes);
-
-                // Determine the ServerEnvironment
-                HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, authCode, startTime);
-                FutureServiceContainer futureContainer = new FutureServiceContainer();
                 hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, authCode);
                 hostControllerBootstrap.bootstrap();
                 serviceContainer = futureContainer.get();
@@ -401,95 +399,28 @@ public class EmbeddedHostControllerFactory {
             SystemExiter.initialize(SystemExiter.Exiter.DEFAULT);
         }
 
-        private static Map<String, String> getHostSystemProperties() {
-            final Map<String, String> hostSystemProperties = new HashMap<String, String>();
-            try {
-                RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-                for (String arg : runtime.getInputArguments()) {
-                    if (arg != null && arg.length() > 2 && arg.startsWith("-D")) {
-                        arg = arg.substring(2);
-                        String[] split = arg.split("=");
-                        if (!hostSystemProperties.containsKey(split[0])) {
-                            String val;
-                            if (split.length == 1) {
-                                val = null;
-                            } else if (split.length == 2) {
-                                val = split[1];
-                            } else {
-                                //Things like -Djava.security.policy==/Users/kabir/tmp/permit.policy will end up here, and the extra '=' needs to be part of the value,
-                                //see http://docs.oracle.com/javase/6/docs/technotes/guides/security/PolicyFiles.html
-                                StringBuilder sb = new StringBuilder();
-                                for (int i = 2 ; i < split.length ; i++) {
-                                    sb.append("=");
-                                }
-                                sb.append(split[split.length - 1]);
-                                val = sb.toString();
-                            }
-                            hostSystemProperties.put(split[0], val);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
+        private static HostControllerEnvironment createHostControllerEnvironment(File jbossHome, String[] cmdargs, long startTime) {
+            WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());
+
+            List<String> cmds = new ArrayList<String>(Arrays.asList(cmdargs));
+
+            // these are for compatibility with Main.determineEnvironment / HostControllerEnvironment
+            // Once WFCORE-938 is resolved, --admin-only will allow a connection back to the DC for slaves,
+            // and support a method for setting the domain master address outside of -Djboss.domain.master.address
+            // so we'll probably need a command line argument for this if its not specified as a system prop
+            if (WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, null) == null) {
+                WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, "127.0.0.1");
             }
-            return hostSystemProperties;
-        }
+            cmds.add(MODULE_PATH);
+            cmds.add(WildFlySecurityManager.getPropertyPrivileged("module.path", ""));
+            cmds.add(PC_ADDRESS);
+            cmds.add("0");
+            cmds.add(PC_PORT);
+            cmds.add("0");
+            // this used to be set in the embedded-hc specific env setup, WFCORE-938 will add support for --admin-only=false
+            cmds.add("--admin-only");
 
-        private static HostControllerEnvironment createHostControllerEnvironment(File jbossHome, String[] cmdargs, String hostName, long startTime) {
-            try {
-                WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());
-
-                Map<String, String> props = new HashMap<String, String>();
-                props.put(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());
-
-                File domain = new File(jbossHome, "domain");
-                props.put(HostControllerEnvironment.DOMAIN_BASE_DIR, domain.getAbsolutePath());
-
-                File configuration = new File(domain, "configuration");
-                props.put(HostControllerEnvironment.DOMAIN_CONFIG_DIR, configuration.getAbsolutePath());
-
-                props.put(HostControllerEnvironment.HOST_NAME, hostName);
-
-                String domainConfig = null;
-                String hostConfig = null;
-                for(int i=0; i<cmdargs.length; i++) {
-                    try {
-                        final String arg = cmdargs[i];
-                        if (CommandLineConstants.DOMAIN_CONFIG.equals(arg) || CommandLineConstants.SHORT_DOMAIN_CONFIG.equals(arg)) {
-                            domainConfig = cmdargs[++i];
-                        } else if (CommandLineConstants.HOST_CONFIG.equals(arg)) {
-                            hostConfig = cmdargs[++i];
-                        }
-                    } catch (ArrayIndexOutOfBoundsException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                boolean isRestart = false;
-                String modulePath = "";
-
-                // these are set, but ignored.
-                InetAddress processControllerAddress = InetAddress.getLocalHost();
-                Integer processControllerPort = 9999;
-                InetAddress hostControllerAddress = InetAddress.getLocalHost();
-                Integer hostControllerPort = 9990;
-                String defaultJVM = null;
-                String initialDomainConfig = null;
-                String initialHostConfig = null;
-                Map<String, String> hostSystemProperties = getHostSystemProperties();
-
-                // WFCORE-938
-                // see also {@link org.jboss.as.cli.handlers.ReloadHandler} for ADMIN_ONLY being forced
-                RunningMode initialRunningMode = RunningMode.ADMIN_ONLY;
-                boolean backupDomainFiles = false;
-                boolean useCachedDc = false;
-                ProductConfig productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath()), hostSystemProperties);
-                return new HostControllerEnvironment(props, isRestart, modulePath, processControllerAddress, processControllerPort,
-                        hostControllerAddress, hostControllerPort, defaultJVM, domainConfig, initialDomainConfig, hostConfig, initialHostConfig,
-                        initialRunningMode, backupDomainFiles, useCachedDc, productConfig, false, startTime, ProcessType.EMBEDDED_HOST_CONTROLLER);
-            } catch (UnknownHostException e) {
-                throw new RuntimeException(e);
-            }
+            return Main.determineEnvironment(cmds.toArray(new String[cmds.size()]), startTime, ProcessType.EMBEDDED_HOST_CONTROLLER);
         }
     }
 }
