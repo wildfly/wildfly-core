@@ -25,6 +25,7 @@ package org.jboss.as.controller.persistence;
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 import static org.jboss.as.controller.SimpleAttributeDefinitionBuilder.create;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -47,9 +49,8 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
-import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParser;
-import org.jboss.as.controller.AttributeParsers;
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathAddress;
@@ -89,7 +90,7 @@ import org.w3c.dom.ls.LSSerializer;
 public class PersistentResourceXMLParserTestCase {
 
 
-    static String readResource(final String name) throws IOException {
+    private static String readResource(final String name) throws IOException {
 
         URL configURL = PersistentResourceXMLParserTestCase.class.getResource(name);
         Assert.assertNotNull(name + " url is null", configURL);
@@ -104,7 +105,7 @@ public class PersistentResourceXMLParserTestCase {
         return writer.toString();
     }
 
-    public static XMLExtendedStreamWriter createXMLStreamWriter(XMLStreamWriter writer) throws Exception {
+    private static XMLExtendedStreamWriter createXMLStreamWriter(XMLStreamWriter writer) throws Exception {
         return new FormattingXMLStreamWriter(writer);
     }
 
@@ -288,6 +289,12 @@ public class PersistentResourceXMLParserTestCase {
         Assert.assertEquals(4, operations.size());
         ModelNode subsystem = opsToModel(operations);
 
+
+        ModelNode propsModel = subsystem.get("mail-session", "custom");
+        assertTrue("Model should be defined", propsModel.has(MyParser.WRAPPED_PROPERTIES.getName()));
+        Map<String,String> props = MyParser.WRAPPED_PROPERTIES.unwrap(ExpressionResolver.TEST_RESOLVER, propsModel);
+        Assert.assertEquals(0, props.size());
+
         StringWriter stringWriter = new StringWriter();
         XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter));
         SubsystemMarshallingContext context = new SubsystemMarshallingContext(subsystem, xmlStreamWriter);
@@ -313,6 +320,22 @@ public class PersistentResourceXMLParserTestCase {
 
         Assert.assertEquals(4, operations.size());
         ModelNode subsystem = opsToModel(operations);
+
+        ModelNode server = subsystem.get("server", "default");
+        ModelNode interceptors = MyParser.INTERCEPTORS.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, server);
+        Assert.assertEquals("Model type should be list", ModelType.LIST, interceptors.getType());
+        Assert.assertEquals("List should have 0 elements", 0, interceptors.asList().size());
+
+        ModelNode complexList = MyParser.COMPLEX_LIST.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, server); //this one should be undefined
+        Assert.assertTrue("Should be empty", !complexList.isDefined());
+
+        ModelNode complexListWithDefault = MyParser.COMPLEX_LIST_WITH_DEFAULT.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, server); //this one should be undefined
+        Assert.assertEquals("Model type should be list", ModelType.LIST, complexListWithDefault.getType());
+        Assert.assertEquals("List should have 1 elements", 1, complexListWithDefault.asList().size());
+
+        /*List<ModelNode> unwrapped = MyParser.COMPLEX_LIST_WITH_DEFAULT.unwrap(ExpressionResolver.TEST_RESOLVER, server); //this one should be undefined
+        Assert.assertEquals("it should contain one element", 1, unwrapped.size());*/
+
 
         StringWriter stringWriter = new StringWriter();
         XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter));
@@ -396,7 +419,7 @@ public class PersistentResourceXMLParserTestCase {
         return res;
     }
 
-    public static String normalizeXML(String xml) throws Exception {
+    private static String normalizeXML(String xml) throws Exception {
         // Remove all white space adjoining tags ("trim all elements")
         xml = xml.replaceAll("\\s*<", "<");
         xml = xml.replaceAll(">\\s*", ">");
@@ -450,22 +473,17 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
         static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder("props", true)
-                .setWrapXmlElement(false)
-                /*.setAttributeParser(new AttributeParsers.PropertiesParser(null, "prop", false))
-                .setAttributeMarshaller(new AttributeMarshallers.PropertiesAttributeMarshaller(null, "prop", false))*/
+                .setAttributeMarshaller(AttributeMarshaller.PROPERTIES_MARSHALLER_UNWRAPPED)
+                .setAttributeParser(AttributeParser.PROPERTIES_PARSER_UNWRAPPED)
                 .setAllowExpression(true)
                 .build();
 
         static final PropertiesAttributeDefinition WRAPPED_PROPERTIES_GROUP = new PropertiesAttributeDefinition.Builder("wrapped-properties", true)
                 .setAttributeGroup("mygroup")
-                .setAttributeParser(new AttributeParsers.PropertiesParser())
-                .setAttributeMarshaller(new AttributeMarshallers.PropertiesAttributeMarshaller())
                 .setAllowExpression(true)
                 .build();
 
         static final PropertiesAttributeDefinition WRAPPED_PROPERTIES = new PropertiesAttributeDefinition.Builder("properties", true)
-                .setAttributeParser(new AttributeParsers.PropertiesParser())
-                .setAttributeMarshaller(new AttributeMarshallers.PropertiesAttributeMarshaller())
                 .setAllowExpression(true)
                 .build();
 
@@ -485,14 +503,14 @@ public class PersistentResourceXMLParserTestCase {
                 .setDefaultValue(new ModelNode(10))
                 .build();
 
-        public static final SimpleAttributeDefinition STATISTICS_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.STATISTICS_ENABLED, ModelType.BOOLEAN)
+        static final SimpleAttributeDefinition STATISTICS_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.STATISTICS_ENABLED, ModelType.BOOLEAN)
                 .setAttributeGroup("statistics")
                 .setXmlName("enabled")
                 .setDefaultValue(new ModelNode(false))
                 .setAllowNull(true)
                 .setAllowExpression(true)
                 .build();
-        public static final SimpleAttributeDefinition SECURITY_ENABLED = new SimpleAttributeDefinitionBuilder("security-enabled", ModelType.BOOLEAN)
+        static final SimpleAttributeDefinition SECURITY_ENABLED = new SimpleAttributeDefinitionBuilder("security-enabled", ModelType.BOOLEAN)
                 .setAttributeGroup("security")
                 .setXmlName("enabled")
                 .setDefaultValue(new ModelNode(true))
@@ -502,24 +520,44 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
 
-        public static final ObjectTypeAttributeDefinition CLASS = ObjectTypeAttributeDefinition.Builder.of("class", create("name", ModelType.STRING, false)
+        static final ObjectTypeAttributeDefinition CLASS = ObjectTypeAttributeDefinition.Builder.of("class", create("name", ModelType.STRING, false)
                         .setAllowExpression(false)
                         .build(),
                 create("module", ModelType.STRING, false)
                         .setAllowExpression(false)
                         .build())
                 .build();
+        static final ModelNode COMPLEX_LIST_DEFAULT_VALUE = new ModelNode();
+        static{
+
+            ModelNode clazz = COMPLEX_LIST_DEFAULT_VALUE.add();
+            clazz.get("name").set("some.class");
+            clazz.get("module").set("some.module");
+
+        }
 
 
-        public static final ObjectListAttributeDefinition INTERCEPTORS = ObjectListAttributeDefinition.Builder.of("interceptors", CLASS)
+        static final ObjectListAttributeDefinition INTERCEPTORS = ObjectListAttributeDefinition.Builder.of("interceptors", CLASS)
                 .setAllowNull(true)
                 .setAllowExpression(false)
-                .setMinSize(1)
+                .setMinSize(0)
                 .setMaxSize(Integer.MAX_VALUE)
+                .setDefaultValue(COMPLEX_LIST_DEFAULT_VALUE)
+                .build();
+
+        static final ObjectListAttributeDefinition COMPLEX_LIST = ObjectListAttributeDefinition.Builder.of("complex-list", CLASS)
+                .setAllowNull(true)
+                .setAllowExpression(false)
+                .build();
+
+        static final ObjectListAttributeDefinition COMPLEX_LIST_WITH_DEFAULT = ObjectListAttributeDefinition.Builder.of("complex-list-with-default", CLASS)
+                .setAllowNull(true)
+                .setAllowExpression(false)
+                .setDefaultValue(COMPLEX_LIST_DEFAULT_VALUE)
                 .build();
 
 
-        protected static final PersistentResourceDefinition RESOURCE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("resource"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition RESOURCE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("resource"), new NonResolvingResourceDescriptionResolver()) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -536,7 +574,7 @@ public class PersistentResourceXMLParserTestCase {
             }
         };
 
-        protected static final PersistentResourceDefinition BUFFER_CACHE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("buffer-cache"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition BUFFER_CACHE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("buffer-cache"), new NonResolvingResourceDescriptionResolver()) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -549,13 +587,15 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        protected static final PersistentResourceDefinition SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("server"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("server"), new NonResolvingResourceDescriptionResolver()) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
                 attributes.add(STATISTICS_ENABLED);
                 attributes.add(SECURITY_ENABLED);
                 attributes.add(INTERCEPTORS);
+                attributes.add(COMPLEX_LIST);
+                attributes.add(COMPLEX_LIST_WITH_DEFAULT);
                 return attributes;
             }
 
@@ -566,7 +606,7 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        protected static final PersistentResourceDefinition CUSTOM_SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("custom"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition CUSTOM_SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("custom"), new NonResolvingResourceDescriptionResolver()) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -583,11 +623,12 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        protected static final PersistentResourceDefinition SESSION_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("mail-session"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition SESSION_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("mail-session"), new NonResolvingResourceDescriptionResolver()) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
                 attributes.add(MAX_REGIONS);
+                attributes.add(WRAPPED_PROPERTIES);
                 return attributes;
             }
 
@@ -645,7 +686,7 @@ public class PersistentResourceXMLParserTestCase {
         }
     }
 
-    static class AttributeGroupParser extends MyParser {
+    private static class AttributeGroupParser extends MyParser {
 
 
         @Override
@@ -676,7 +717,7 @@ public class PersistentResourceXMLParserTestCase {
         }
     }
 
-    static class ServerParser extends MyParser {
+    private static class ServerParser extends MyParser {
 
 
         @Override
@@ -686,6 +727,8 @@ public class PersistentResourceXMLParserTestCase {
                             builder(SERVER_INSTANCE)
                                     .addAttributes(SECURITY_ENABLED, STATISTICS_ENABLED)
                                     .addAttribute(INTERCEPTORS)
+                                    .addAttribute(COMPLEX_LIST)
+                                    .addAttribute(COMPLEX_LIST_WITH_DEFAULT)
                                     .addAttribute(PROPERTIES)
                                     .addChild(
                                             builder(BUFFER_CACHE_INSTANCE)
@@ -697,7 +740,7 @@ public class PersistentResourceXMLParserTestCase {
         }
     }
 
-    static class ChildlessParser extends MyParser {
+    private static class ChildlessParser extends MyParser {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
@@ -707,7 +750,7 @@ public class PersistentResourceXMLParserTestCase {
         }
     }
 
-    static class MailParser extends MyParser {
+    private static class MailParser extends MyParser {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
@@ -715,7 +758,7 @@ public class PersistentResourceXMLParserTestCase {
                     .addChild(
                             builder(SESSION_INSTANCE)
                                     .setNameAttributeName("session-name") //custom name attribute for session resources
-                                    .addAttribute(MAX_REGIONS)
+                                    .addAttributes(MAX_REGIONS, WRAPPED_PROPERTIES)
                                     .addChild(
                                             builder(CUSTOM_SERVER_INSTANCE)
                                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, PROPERTIES)
@@ -726,7 +769,7 @@ public class PersistentResourceXMLParserTestCase {
         }
     }
 
-    static class IIOPSubsystemParser extends PersistentResourceXMLParser {
+    private static class IIOPSubsystemParser extends PersistentResourceXMLParser {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
@@ -736,18 +779,18 @@ public class PersistentResourceXMLParserTestCase {
         }
     }
 
-    static class IIOPRootDefinition extends PersistentResourceDefinition {
+    private static class IIOPRootDefinition extends PersistentResourceDefinition {
 
         static final ModelNode NONE = new ModelNode("none");
 
 
         //ORB attributes
 
-        protected static final AttributeDefinition PERSISTENT_SERVER_ID = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition PERSISTENT_SERVER_ID = new SimpleAttributeDefinitionBuilder(
                 Constants.ORB_PERSISTENT_SERVER_ID, ModelType.STRING, true).setAttributeGroup(Constants.ORB)
                 .setDefaultValue(new ModelNode().set("1")).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
-        protected static final AttributeDefinition GIOP_VERSION = new SimpleAttributeDefinitionBuilder(Constants.ORB_GIOP_VERSION,
+        static final AttributeDefinition GIOP_VERSION = new SimpleAttributeDefinitionBuilder(Constants.ORB_GIOP_VERSION,
                 ModelType.STRING, true).setAttributeGroup(Constants.ORB).setDefaultValue(new ModelNode().set("1.2"))
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).setAllowExpression(true).build();
 
@@ -756,31 +799,31 @@ public class PersistentResourceXMLParserTestCase {
                 .setDefaultValue(new ModelNode().set("iiop")).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                 .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF).build();
 
-        protected static final AttributeDefinition SSL_SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition SSL_SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(
                 Constants.ORB_SSL_SOCKET_BINDING, ModelType.STRING, true).setAttributeGroup(Constants.ORB)
                 .setDefaultValue(new ModelNode().set("iiop-ssl")).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                 .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF).build();
 
         //TCP attributes
-        protected static final AttributeDefinition HIGH_WATER_MARK = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition HIGH_WATER_MARK = new SimpleAttributeDefinitionBuilder(
                 Constants.TCP_HIGH_WATER_MARK, ModelType.INT, true).setAttributeGroup(Constants.ORB_TCP)
                 .setValidator(new IntRangeValidator(0, Integer.MAX_VALUE, true, false))
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).setAllowExpression(true).build();
 
-        protected static final AttributeDefinition NUMBER_TO_RECLAIM = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition NUMBER_TO_RECLAIM = new SimpleAttributeDefinitionBuilder(
                 Constants.TCP_NUMBER_TO_RECLAIM, ModelType.INT, true).setAttributeGroup(Constants.ORB_TCP)
                 .setValidator(new IntRangeValidator(0, Integer.MAX_VALUE, true, false))
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).setAllowExpression(true).build();
 
         //initializer attributes
-        protected static final AttributeDefinition SECURITY = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition SECURITY = new SimpleAttributeDefinitionBuilder(
                 Constants.ORB_INIT_SECURITY, ModelType.STRING, true)
                 .setAttributeGroup(Constants.ORB_INIT)
                 .setDefaultValue(NONE)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).setAllowExpression(true)
                 .build();
 
-        protected static final AttributeDefinition TRANSACTIONS = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition TRANSACTIONS = new SimpleAttributeDefinitionBuilder(
                 Constants.ORB_INIT_TRANSACTIONS, ModelType.STRING, true)
                 .setAttributeGroup(Constants.ORB_INIT)
                 .setDefaultValue(NONE)
@@ -788,7 +831,7 @@ public class PersistentResourceXMLParserTestCase {
 
         //Naming attributes
 
-        protected static final AttributeDefinition ROOT_CONTEXT = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition ROOT_CONTEXT = new SimpleAttributeDefinitionBuilder(
                 Constants.NAMING_ROOT_CONTEXT, ModelType.STRING, true)
                 .setAttributeGroup(Constants.NAMING)
                 .setDefaultValue(new ModelNode(Constants.ROOT_CONTEXT_INIT_REF))
@@ -796,7 +839,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        protected static final AttributeDefinition EXPORT_CORBALOC = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition EXPORT_CORBALOC = new SimpleAttributeDefinitionBuilder(
                 Constants.NAMING_EXPORT_CORBALOC, ModelType.BOOLEAN, true)
                 .setAttributeGroup(Constants.NAMING)
                 .setDefaultValue(new ModelNode(true))
@@ -806,7 +849,7 @@ public class PersistentResourceXMLParserTestCase {
 
         //Security attributes
 
-        public static final AttributeDefinition SUPPORT_SSL = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition SUPPORT_SSL = new SimpleAttributeDefinitionBuilder(
                 Constants.SECURITY_SUPPORT_SSL, ModelType.BOOLEAN, true)
                 .setAttributeGroup(Constants.SECURITY)
                 .setDefaultValue(new ModelNode(false))
@@ -814,14 +857,14 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        public static final AttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(
                 Constants.SECURITY_SECURITY_DOMAIN, ModelType.STRING, true)
                 .setAttributeGroup(Constants.SECURITY)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                 .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
                 .build();
 
-        public static final AttributeDefinition ADD_COMPONENT_INTERCEPTOR = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition ADD_COMPONENT_INTERCEPTOR = new SimpleAttributeDefinitionBuilder(
                 Constants.SECURITY_ADD_COMP_VIA_INTERCEPTOR, ModelType.BOOLEAN, true)
                 .setAttributeGroup(Constants.SECURITY)
                 .setDefaultValue(new ModelNode(true))
@@ -829,7 +872,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        public static final AttributeDefinition CLIENT_SUPPORTS = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition CLIENT_SUPPORTS = new SimpleAttributeDefinitionBuilder(
                 Constants.SECURITY_CLIENT_SUPPORTS, ModelType.STRING, true)
                 .setAttributeGroup(Constants.SECURITY)
                 .setDefaultValue(new ModelNode().set("MutualAuth"))
@@ -837,7 +880,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        public static final AttributeDefinition CLIENT_REQUIRES = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition CLIENT_REQUIRES = new SimpleAttributeDefinitionBuilder(
                 Constants.SECURITY_CLIENT_REQUIRES, ModelType.STRING, true)
                 .setAttributeGroup(Constants.SECURITY)
                 .setDefaultValue(new ModelNode("None"))
@@ -845,7 +888,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        public static final AttributeDefinition SERVER_SUPPORTS = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition SERVER_SUPPORTS = new SimpleAttributeDefinitionBuilder(
                 Constants.SECURITY_SERVER_SUPPORTS, ModelType.STRING, true)
                 .setAttributeGroup(Constants.SECURITY)
                 .setDefaultValue(new ModelNode("MutualAuth"))
@@ -853,7 +896,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        public static final AttributeDefinition SERVER_REQUIRES = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition SERVER_REQUIRES = new SimpleAttributeDefinitionBuilder(
                 Constants.SECURITY_SERVER_REQUIRES, ModelType.STRING, true)
                 .setAttributeGroup(Constants.SECURITY)
                 .setDefaultValue(new ModelNode("None"))
@@ -861,7 +904,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        protected static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(
+        static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(
                 Constants.PROPERTIES, true)
                 .setWrapXmlElement(true)
                 .setWrapperElement(Constants.PROPERTIES)
@@ -870,7 +913,7 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
         //ior transport config attributes
-        protected static final AttributeDefinition REALM = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition REALM = new SimpleAttributeDefinitionBuilder(
                 Constants.IOR_AS_CONTEXT_REALM, ModelType.STRING, true)
                 .setAttributeGroup(Constants.IOR_AS_CONTEXT)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -878,7 +921,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        protected static final AttributeDefinition REQUIRED = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition REQUIRED = new SimpleAttributeDefinitionBuilder(
                 Constants.IOR_AS_CONTEXT_REQUIRED, ModelType.BOOLEAN, true)
                 .setAttributeGroup(Constants.IOR_AS_CONTEXT)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -886,7 +929,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        protected static final AttributeDefinition INTEGRITY = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition INTEGRITY = new SimpleAttributeDefinitionBuilder(
                 Constants.IOR_TRANSPORT_INTEGRITY, ModelType.STRING, true)
                 .setAttributeGroup(Constants.IOR_TRANSPORT_CONFIG)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -894,7 +937,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        protected static final AttributeDefinition CONFIDENTIALITY = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition CONFIDENTIALITY = new SimpleAttributeDefinitionBuilder(
                 Constants.IOR_TRANSPORT_CONFIDENTIALITY, ModelType.STRING, true)
                 .setAttributeGroup(Constants.IOR_TRANSPORT_CONFIG)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -902,7 +945,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        protected static final AttributeDefinition TRUST_IN_TARGET = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition TRUST_IN_TARGET = new SimpleAttributeDefinitionBuilder(
                 Constants.IOR_TRANSPORT_TRUST_IN_TARGET, ModelType.STRING, true)
                 .setAttributeGroup(Constants.IOR_TRANSPORT_CONFIG)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -910,7 +953,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        protected static final AttributeDefinition TRUST_IN_CLIENT = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition TRUST_IN_CLIENT = new SimpleAttributeDefinitionBuilder(
                 Constants.IOR_TRANSPORT_TRUST_IN_CLIENT, ModelType.STRING, true)
                 .setAttributeGroup(Constants.IOR_TRANSPORT_CONFIG)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -918,7 +961,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        protected static final AttributeDefinition DETECT_REPLAY = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition DETECT_REPLAY = new SimpleAttributeDefinitionBuilder(
                 Constants.IOR_TRANSPORT_DETECT_REPLAY, ModelType.STRING, true)
                 .setAttributeGroup(Constants.IOR_TRANSPORT_CONFIG)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -926,7 +969,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setAllowExpression(true)
                 .build();
 
-        protected static final AttributeDefinition DETECT_MISORDERING = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition DETECT_MISORDERING = new SimpleAttributeDefinitionBuilder(
                 Constants.IOR_TRANSPORT_DETECT_MISORDERING, ModelType.STRING, true)
                 .setAttributeGroup(Constants.IOR_TRANSPORT_CONFIG)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -935,7 +978,7 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
         //ior as context attributes
-        protected static final AttributeDefinition AUTH_METHOD = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition AUTH_METHOD = new SimpleAttributeDefinitionBuilder(
                 Constants.IOR_AS_CONTEXT_AUTH_METHOD, ModelType.STRING, true)
                 .setAttributeGroup(Constants.IOR_AS_CONTEXT)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -944,7 +987,7 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
         //ior sas context attributes
-        protected static final AttributeDefinition CALLER_PROPAGATION = new SimpleAttributeDefinitionBuilder(
+        static final AttributeDefinition CALLER_PROPAGATION = new SimpleAttributeDefinitionBuilder(
                 Constants.IOR_SAS_CONTEXT_CALLER_PROPAGATION, ModelType.STRING, true)
                 .setAttributeGroup(Constants.IOR_SAS_CONTEXT)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -967,7 +1010,7 @@ public class PersistentResourceXMLParserTestCase {
                 ADD_COMPONENT_INTERCEPTOR, CLIENT_SUPPORTS, CLIENT_REQUIRES, SERVER_SUPPORTS, SERVER_REQUIRES);
 
         //list that contains tcp attributes definitions
-        protected static final List<AttributeDefinition> TCP_ATTRIBUTES = Arrays.asList(HIGH_WATER_MARK,
+        static final List<AttributeDefinition> TCP_ATTRIBUTES = Arrays.asList(HIGH_WATER_MARK,
                 NUMBER_TO_RECLAIM);
 
         //list that contains ior sas attributes definitions
@@ -1000,7 +1043,7 @@ public class PersistentResourceXMLParserTestCase {
             ALL_ATTRIBUTES.addAll(IOR_ATTRIBUTES);
         }
 
-        public static final IIOPRootDefinition INSTANCE = new IIOPRootDefinition();
+        static final IIOPRootDefinition INSTANCE = new IIOPRootDefinition();
 
         private IIOPRootDefinition() {
             super(PathElement.pathElement("subsystem", "orb"), new NonResolvingResourceDescriptionResolver());
@@ -1015,47 +1058,45 @@ public class PersistentResourceXMLParserTestCase {
 
     static class Constants {
 
-        public static final String ORB = "orb";
-        public static final String ORB_GIOP_VERSION = "giop-version";
-        public static final String ORB_TCP = "tcp";
-        public static final String TCP_HIGH_WATER_MARK = "high-water-mark";
-        public static final String TCP_NUMBER_TO_RECLAIM = "number-to-reclaim";
-        public static final String ORB_SOCKET_BINDING = "socket-binding";
-        public static final String ORB_SSL_SOCKET_BINDING = "ssl-socket-binding";
-        public static final String ORB_PERSISTENT_SERVER_ID = "persistent-server-id";
-        public static final String ORB_INIT = "initializers";
-        public static final String ORB_INIT_SECURITY = "security";
-        public static final String ORB_INIT_TRANSACTIONS = "transactions";
-        public static final String NAMING = "naming";
-        public static final String NAMING_EXPORT_CORBALOC = "export-corbaloc";
-        public static final String NAMING_ROOT_CONTEXT = "root-context";
+        static final String ORB = "orb";
+        static final String ORB_GIOP_VERSION = "giop-version";
+        static final String ORB_TCP = "tcp";
+        static final String TCP_HIGH_WATER_MARK = "high-water-mark";
+        static final String TCP_NUMBER_TO_RECLAIM = "number-to-reclaim";
+        static final String ORB_SOCKET_BINDING = "socket-binding";
+        static final String ORB_SSL_SOCKET_BINDING = "ssl-socket-binding";
+        static final String ORB_PERSISTENT_SERVER_ID = "persistent-server-id";
+        static final String ORB_INIT = "initializers";
+        static final String ORB_INIT_SECURITY = "security";
+        static final String ORB_INIT_TRANSACTIONS = "transactions";
+        static final String NAMING = "naming";
+        static final String NAMING_EXPORT_CORBALOC = "export-corbaloc";
+        static final String NAMING_ROOT_CONTEXT = "root-context";
         public static final String NONE = "none";
-        public static final String SECURITY = "security";
-        public static final String SECURITY_SUPPORT_SSL = "support-ssl";
-        public static final String SECURITY_SECURITY_DOMAIN = "security-domain";
-        public static final String SECURITY_ADD_COMP_VIA_INTERCEPTOR = "add-component-via-interceptor";
-        public static final String SECURITY_CLIENT_SUPPORTS = "client-supports";
-        public static final String SECURITY_CLIENT_REQUIRES = "client-requires";
-        public static final String SECURITY_SERVER_SUPPORTS = "server-supports";
-        public static final String SECURITY_SERVER_REQUIRES = "server-requires";
-
-        public static final String IOR_TRANSPORT_CONFIG = "transport-config";
-        public static final String IOR_TRANSPORT_INTEGRITY = "integrity";
-        public static final String IOR_TRANSPORT_CONFIDENTIALITY = "confidentiality";
-        public static final String IOR_TRANSPORT_TRUST_IN_TARGET = "trust-in-target";
-        public static final String IOR_TRANSPORT_TRUST_IN_CLIENT = "trust-in-client";
-        public static final String IOR_TRANSPORT_DETECT_REPLAY = "detect-replay";
-        public static final String IOR_TRANSPORT_DETECT_MISORDERING = "detect-misordering";
-        public static final String IOR_AS_CONTEXT = "as-context";
-        public static final String IOR_AS_CONTEXT_AUTH_METHOD = "auth-method";
-        public static final String IOR_AS_CONTEXT_REALM = "realm";
-        public static final String IOR_AS_CONTEXT_REQUIRED = "required";
-        public static final String IOR_SAS_CONTEXT = "sas-context";
-        public static final String IOR_SAS_CONTEXT_CALLER_PROPAGATION = "caller-propagation";
-
-        public static final String PROPERTIES = "properties";
-        public static final String PROPERTY = "property";
-        public static final String ROOT_CONTEXT_INIT_REF = "JBoss/Naming/root";
+        static final String SECURITY = "security";
+        static final String SECURITY_SUPPORT_SSL = "support-ssl";
+        static final String SECURITY_SECURITY_DOMAIN = "security-domain";
+        static final String SECURITY_ADD_COMP_VIA_INTERCEPTOR = "add-component-via-interceptor";
+        static final String SECURITY_CLIENT_SUPPORTS = "client-supports";
+        static final String SECURITY_CLIENT_REQUIRES = "client-requires";
+        static final String SECURITY_SERVER_SUPPORTS = "server-supports";
+        static final String SECURITY_SERVER_REQUIRES = "server-requires";
+        static final String IOR_TRANSPORT_CONFIG = "transport-config";
+        static final String IOR_TRANSPORT_INTEGRITY = "integrity";
+        static final String IOR_TRANSPORT_CONFIDENTIALITY = "confidentiality";
+        static final String IOR_TRANSPORT_TRUST_IN_TARGET = "trust-in-target";
+        static final String IOR_TRANSPORT_TRUST_IN_CLIENT = "trust-in-client";
+        static final String IOR_TRANSPORT_DETECT_REPLAY = "detect-replay";
+        static final String IOR_TRANSPORT_DETECT_MISORDERING = "detect-misordering";
+        static final String IOR_AS_CONTEXT = "as-context";
+        static final String IOR_AS_CONTEXT_AUTH_METHOD = "auth-method";
+        static final String IOR_AS_CONTEXT_REALM = "realm";
+        static final String IOR_AS_CONTEXT_REQUIRED = "required";
+        static final String IOR_SAS_CONTEXT = "sas-context";
+        static final String IOR_SAS_CONTEXT_CALLER_PROPAGATION = "caller-propagation";
+        static final String PROPERTIES = "properties";
+        static final String PROPERTY = "property";
+        static final String ROOT_CONTEXT_INIT_REF = "JBoss/Naming/root";
 
     }
 

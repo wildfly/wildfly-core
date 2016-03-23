@@ -55,12 +55,15 @@ public interface AttributeMarshallers {
 
         @Override
         public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-            if (!resourceModel.hasDefined(attribute.getName())) {
+            String wrapper =  wrapperElement == null ? attribute.getName() : wrapperElement;
+            resourceModel = resourceModel.get(attribute.getName());
+            if (!resourceModel.isDefined()){//this is scenario to handle WFCORE-1448 cases
+                writer.writeEmptyElement(wrapper);
                 return;
             }
-            resourceModel = resourceModel.get(attribute.getName());
+
             if (wrapElement) {
-                writer.writeStartElement(wrapperElement == null ? attribute.getName() : wrapperElement);
+                writer.writeStartElement(wrapper);
             }
             for (ModelNode property : resourceModel.asList()) {
                 writer.writeEmptyElement(elementName);
