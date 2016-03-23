@@ -302,6 +302,10 @@ public class PatchToolImpl implements PatchTool {
     protected PatchingResult apply(final PatchMetadataResolver patchResolver, final PatchContentProvider contentProvider, final ContentVerificationPolicy contentPolicy) throws PatchingException {
         // Apply the patch
         final org.jboss.as.patching.metadata.Identity identity = patchResolver.resolvePatch(null, null).getIdentity();
+        final String name = manager.getDefaultIdentity().getIdentity().getName();
+        if( !name.equals(identity.getName()) ){
+            throw PatchLogger.ROOT_LOGGER.unableToPatchWrongProduct(name);
+        }
         final InstallationManager.InstallationModification modification = ((InstallationManagerImpl)manager).
                 getInstalledIdentity(identity.getName(), identity.getVersion()).modifyInstallation(callback);
         try {

@@ -31,11 +31,12 @@ import java.io.File;
 import java.util.Arrays;
 
 import org.junit.Test;
-
+import org.junit.Ignore;
 /**
  *
  * @author Alexey Loubyansky
  */
+@Ignore("WFCORE-1447")
 public class MultipleStreamsPatchingTestCase extends AbstractPatchingTest {
 
     static final String[] FILE_ONE = {"bin", "standalone.sh"};
