@@ -238,4 +238,7 @@ public interface PatchLogger extends BasicLogger {
 
     @Message(id = 47, value = "Cannot copy files from %s to %s: %s")
     IOException cannotCopyFiles(String from, String to, String reason, @Cause Throwable cause);
+
+    @Message(id = 48, value = "Patch can not be applied to '%s'")
+    PatchingException unableToPatchWrongProduct(String productName);
 }
