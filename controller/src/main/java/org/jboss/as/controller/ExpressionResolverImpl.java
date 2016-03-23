@@ -90,6 +90,7 @@ public class ExpressionResolverImpl implements ExpressionResolver {
         } else if (type == ModelType.LIST) {
             resolved = node.clone();
             ModelNode list = new ModelNode();
+            list.setEmptyList();
             for (ModelNode current : resolved.asList()) {
                 list.add(resolveExpressionsRecursively(current));
             }

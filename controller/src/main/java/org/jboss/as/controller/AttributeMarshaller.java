@@ -205,4 +205,8 @@ public abstract class AttributeMarshaller {
 
 
     public static final AttributeMarshaller OBJECT_LIST_MARSHALLER = new ObjectListMarshaller();
+
+    public static final AttributeMarshaller PROPERTIES_MARSHALLER = new AttributeMarshallers.PropertiesAttributeMarshaller();
+
+    public static final AttributeMarshaller PROPERTIES_MARSHALLER_UNWRAPPED = new AttributeMarshallers.PropertiesAttributeMarshaller(null, false);
 }
