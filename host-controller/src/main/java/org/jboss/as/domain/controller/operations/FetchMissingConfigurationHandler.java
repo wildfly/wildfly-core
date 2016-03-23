@@ -69,7 +69,7 @@ public class FetchMissingConfigurationHandler implements OperationStepHandler {
         final Transformers.ResourceIgnoredTransformationRegistry manualExcludes = HostInfo.createIgnoredRegistry(operation);
         final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, manualExcludes);
 
-        final ReadDomainModelHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers);
+        final ReadDomainModelHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers, true);
         context.addStep(handler, OperationContext.Stage.MODEL);
     }
 

@@ -124,7 +124,7 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
 
         ModelNode fakeOP = new ModelNode();
         fakeOP.get(OP).set("fake");
-        ModelNode result = internalExecute(fakeOP, new ReadMasterDomainModelHandler(null, transformers, extensionRegistry));
+        ModelNode result = internalExecute(fakeOP, new ReadMasterDomainModelHandler(null, transformers, extensionRegistry, true));
 
         if (FAILED.equals(result.get(OUTCOME).asString())) {
             throw new RuntimeException(result.get(FAILURE_DESCRIPTION).asString());

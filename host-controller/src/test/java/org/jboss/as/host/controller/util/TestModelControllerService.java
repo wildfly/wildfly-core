@@ -143,5 +143,23 @@ public abstract class TestModelControllerService extends AbstractControllerServi
         public ModelNode executeReadOnly(ModelNode operation, Resource model, OperationStepHandler handler, OperationTransactionControl control) {
             return executeReadOnlyOperation(operation, model, control, handler);
         }
+
+
+        @Override
+        public void acquireReadlock(final Integer operationID) throws IllegalArgumentException, InterruptedException {
+            if (operationID == null) {
+                throw new IllegalArgumentException("operationID may not be null");
+            }
+            TestModelControllerService.this.acquireReadLock(operationID);
+        }
+
+        @Override
+        public void releaseReadlock(final Integer operationID) throws IllegalArgumentException {
+            if (operationID == null) {
+                throw new IllegalArgumentException("operationID may not be null");
+            }
+            TestModelControllerService.this.releaseReadLock(operationID);
+        }
+
     }
 }

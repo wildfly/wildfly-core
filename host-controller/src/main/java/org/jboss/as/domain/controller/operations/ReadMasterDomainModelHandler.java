@@ -48,16 +48,21 @@ public class ReadMasterDomainModelHandler implements OperationStepHandler {
     private final HostInfo hostInfo;
     private final Transformers transformers;
     private final ExtensionRegistry extensionRegistry;
+    private final boolean lock;
 
-    public ReadMasterDomainModelHandler(HostInfo hostInfo, Transformers transformers, ExtensionRegistry extensionRegistry) {
+    public ReadMasterDomainModelHandler(final HostInfo hostInfo, final Transformers transformers, final ExtensionRegistry extensionRegistry, boolean lock) {
         this.hostInfo = hostInfo;
         this.transformers = transformers;
         this.extensionRegistry = extensionRegistry;
+        this.lock = lock;
     }
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        context.acquireControllerLock();
+        // if the calling process has already acquired a lock, don't relock.
+        if (lock) {
+            context.acquireControllerLock();
+        }
 
         final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry;
         final Resource resource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
@@ -69,7 +74,7 @@ public class ReadMasterDomainModelHandler implements OperationStepHandler {
             ignoredTransformationRegistry = ReadMasterDomainModelUtil.createHostIgnoredRegistry(hostInfo, rc);
         }
 
-        final OperationStepHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers);
+        final OperationStepHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers, lock);
         context.addStep(handler, OperationContext.Stage.MODEL);
     }
 
