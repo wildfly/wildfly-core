@@ -289,47 +289,47 @@ class ResourceBuilderRoot implements ResourceBuilder {
             }
         }
     }
-}
 
-final class AttributeBinding {
-    private final AttributeDefinition attribute;
-    private final OperationStepHandler readOp;
-    private final OperationStepHandler writeOp;
-    private final AttributeAccess.AccessType accessType;
+    private static final class AttributeBinding {
+        private final AttributeDefinition attribute;
+        private final OperationStepHandler readOp;
+        private final OperationStepHandler writeOp;
+        private final AttributeAccess.AccessType accessType;
 
-    AttributeBinding(AttributeDefinition attribute, OperationStepHandler readOp, OperationStepHandler writeOp, AttributeAccess.AccessType accessType) {
-        this.attribute = attribute;
-        this.readOp = readOp;
-        this.writeOp = writeOp;
-        this.accessType = accessType;
+        AttributeBinding(AttributeDefinition attribute, OperationStepHandler readOp, OperationStepHandler writeOp, AttributeAccess.AccessType accessType) {
+            this.attribute = attribute;
+            this.readOp = readOp;
+            this.writeOp = writeOp;
+            this.accessType = accessType;
+        }
+
+        void register(ManagementResourceRegistration registration) {
+            if (accessType == AttributeAccess.AccessType.READ_ONLY) {
+                registration.registerReadOnlyAttribute(attribute, readOp);
+            } else if (accessType == AttributeAccess.AccessType.READ_WRITE) {
+                registration.registerReadWriteAttribute(attribute, readOp, writeOp);
+            } else if (accessType == AttributeAccess.AccessType.METRIC) {
+                registration.registerMetric(attribute, readOp);
+            }
+        }
+
     }
 
-    void register(ManagementResourceRegistration registration) {
-        if (accessType == AttributeAccess.AccessType.READ_ONLY) {
-            registration.registerReadOnlyAttribute(attribute, readOp);
-        } else if (accessType == AttributeAccess.AccessType.READ_WRITE) {
-            registration.registerReadWriteAttribute(attribute, readOp, writeOp);
-        } else if (accessType == AttributeAccess.AccessType.METRIC) {
-            registration.registerMetric(attribute, readOp);
+    private static final class OperationBinding {
+        private OperationDefinition definition;
+        private OperationStepHandler handler;
+        private boolean inherited;
+
+        OperationBinding(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
+            this.definition = definition;
+            this.handler = handler;
+            this.inherited = inherited;
+        }
+
+        public void register(ManagementResourceRegistration registration) {
+            registration.registerOperationHandler(definition, handler, inherited);
         }
     }
 
 }
-
-final class OperationBinding {
-    private OperationDefinition definition;
-    private OperationStepHandler handler;
-    private boolean inherited;
-
-    OperationBinding(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
-        this.definition = definition;
-        this.handler = handler;
-        this.inherited = inherited;
-    }
-
-    public void register(ManagementResourceRegistration registration) {
-        registration.registerOperationHandler(definition, handler, inherited);
-    }
-}
-
 
