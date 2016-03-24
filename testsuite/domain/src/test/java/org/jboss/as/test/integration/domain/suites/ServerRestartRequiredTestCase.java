@@ -385,7 +385,7 @@ public class ServerRestartRequiredTestCase {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
         operation.get(OP_ADDR).set(address);
-        operation.get(NAME).set("server-state");
+        operation.get(NAME).set("runtime-configuration-state");
 
         return executeOperation(operation, client);
     }

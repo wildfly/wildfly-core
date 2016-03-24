@@ -133,8 +133,8 @@ public class HostControllerConnectionService implements Service<HostControllerCl
                     final ControlledProcessState.State current = (ControlledProcessState.State) evt.getNewValue();
                     if (old == ControlledProcessState.State.STARTING) {
                         // After starting reload has to be cleared, may still require a restart
-                        if(current == ControlledProcessState.State.RUNNING
-                                || current == ControlledProcessState.State.RESTART_REQUIRED) {
+                        if(current == ControlledProcessState.State.OK
+                                || current == ControlledProcessState.State.RESTART_REQUIRED || current == ControlledProcessState.State.RUNNING) {
                             connection.started();
                         } else {
                             IoUtils.safeClose(connection);

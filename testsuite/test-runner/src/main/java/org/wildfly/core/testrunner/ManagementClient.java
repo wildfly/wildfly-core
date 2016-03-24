@@ -53,8 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_PROCESS_STATE_STARTING;
-import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_PROCESS_STATE_STOPPING;
+import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_PROCESS_STATE_OK;
 import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
@@ -154,12 +153,11 @@ public class ManagementClient implements AutoCloseable, Closeable {
             ModelNode op = new ModelNode();
             op.get(OP).set(READ_ATTRIBUTE_OPERATION);
             op.get(OP_ADDR).setEmptyList();
-            op.get(NAME).set("server-state");
+            op.get(NAME).set("runtime-configuration-state");
 
             ModelNode rsp = client.execute(op);
             return SUCCESS.equals(rsp.get(OUTCOME).asString())
-                    && !CONTROLLER_PROCESS_STATE_STARTING.equals(rsp.get(RESULT).asString())
-                    && !CONTROLLER_PROCESS_STATE_STOPPING.equals(rsp.get(RESULT).asString());
+                    && CONTROLLER_PROCESS_STATE_OK.equals(rsp.get(RESULT).asString());
         } catch (RuntimeException rte) {
             throw rte;
         } catch (IOException ex) {

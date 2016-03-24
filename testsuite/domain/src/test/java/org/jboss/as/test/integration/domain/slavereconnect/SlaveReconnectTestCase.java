@@ -26,9 +26,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
@@ -197,10 +199,13 @@ public class SlaveReconnectTestCase {
             for (ModelNode entry : list) {
                 String server = entry.asString();
                 op = Util.createEmptyOperation(READ_ATTRIBUTE_OPERATION, PathAddress.pathAddress(HOST, host).append(SERVER, server));
-                op.get(NAME).set("server-state");
-                DomainTestUtils.executeForResult(op, masterClient); // success is enaught
+                op.get(NAME).set("runtime-configuration-state");
+                ModelNode state = DomainTestUtils.executeForResult(op, masterClient);
+                if (SUCCESS.equals(state.get(OUTCOME).asString())) {
+                    return "ok".equals(result.get(RESULT).asString());
+                }
             }
-            return true;
+            return false;
         } catch (Exception e) {
             return false;
         }

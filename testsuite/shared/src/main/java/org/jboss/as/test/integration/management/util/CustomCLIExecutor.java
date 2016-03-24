@@ -196,7 +196,7 @@ public class CustomCLIExecutor {
     }
 
     /**
-     * Waits for server to reload until server-state is running
+     * Waits for server to reload until runtime-configuration-state is ok
      *
      * @param timeout
      * @param controller
@@ -209,8 +209,8 @@ public class CustomCLIExecutor {
         long now;
         do {
             try {
-                String result = CustomCLIExecutor.execute(null, READ_ATTRIBUTE_OPERATION + " server-state", controller);
-                boolean normal = result.contains("running");
+                String result = CustomCLIExecutor.execute(null, READ_ATTRIBUTE_OPERATION + " runtime-configuation-state", controller);
+                boolean normal = result.contains("ok");
                 if (normal) {
                     return;
                 }

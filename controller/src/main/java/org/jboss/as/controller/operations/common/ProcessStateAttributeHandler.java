@@ -31,12 +31,17 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+
 /**
  * Reads the server state.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class ProcessStateAttributeHandler implements OperationStepHandler {
+
+    private static final String SERVER_STATE = "server-state";
+    private static final String HOST_STATE = "host-state";
 
     private final ControlledProcessState processState;
 
@@ -46,7 +51,15 @@ public class ProcessStateAttributeHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-
+        // compatibility with host-state / running-state mapping the OK to RUNNING
+        String name = operation.get(NAME).asString();
+        // compatibility with old server-state / host-state, replaced with state.
+        if (SERVER_STATE.equals(name) || HOST_STATE.equals(name)) {
+            if (processState.getState() == ControlledProcessState.State.OK) {
+                context.getResult().set(ControlledProcessState.State.RUNNING.toString());
+                return;
+            }
+        }
         context.getResult().set(processState.getState().toString());
     }
 

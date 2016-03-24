@@ -23,6 +23,7 @@
 package org.jboss.as.host.controller.resources;
 
 import org.jboss.as.controller.CompositeOperationHandler;
+import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -62,10 +63,17 @@ public class StoppedServerResource extends SimpleResourceDefinition {
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
 
         resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.LAUNCH_TYPE, new LaunchTypeHandler(ServerEnvironment.LaunchType.DOMAIN));
+        resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.RUNTIME_CONFIGURATION_STATE, new OperationStepHandler() {
+            @Override
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                context.getResult().set(ControlledProcessState.State.STOPPED.toString());
+            }
+        });
+        // compatibility with pre host-configuration-state
         resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SERVER_STATE, new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                context.getResult().set("STOPPED");
+                context.getResult().set(ControlledProcessState.State.STOPPED.toString());
             }
         });
     }

@@ -21,7 +21,7 @@
  */
 package org.jboss.as.test.manualmode.deployment;
 
-import static org.jboss.as.controller.ControlledProcessState.State.RUNNING;
+import static org.jboss.as.controller.ControlledProcessState.State.OK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -309,7 +309,7 @@ public class DeploymentScannerShutdownTestCase {
         // FIXME use the CLI high-level reload operation that blocks instead of
         // fiddling with timeouts...
         // leave some time to have the server starts its reload process and change
-        // its server-starte from running.
+        // its runtime-configuration-state from ok.
         Thread.sleep(TimeoutUtil.adjust(500));
         ModelControllerClient liveClient = null;
         long start = System.currentTimeMillis();
@@ -322,10 +322,10 @@ public class DeploymentScannerShutdownTestCase {
             ModelNode operation = new ModelNode();
             operation.get(OP_ADDR).setEmptyList();
             operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
-            operation.get(NAME).set("server-state");
+            operation.get(NAME).set("runtime-configuration-state");
             try {
                 ModelNode result = liveClient.execute(operation);
-                boolean normal = RUNNING.toString().equals(result.get(RESULT).asString());
+                boolean normal = OK.toString().equals(result.get(RESULT).asString());
                 if (normal) {
                     client = liveClient;
                     return;

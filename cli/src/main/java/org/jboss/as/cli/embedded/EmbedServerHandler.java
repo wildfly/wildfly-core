@@ -230,7 +230,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                 String status = "starting";
                 final ModelNode getStateOp = new ModelNode();
                 getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-                getStateOp.get(ClientConstants.NAME).set("server-state");
+                getStateOp.get(ClientConstants.NAME).set(ClientConstants.RUNTIME_CONFIGURATION_STATE);
                 do {
                     try {
                         final ModelNode response = mcc.execute(getStateOp);

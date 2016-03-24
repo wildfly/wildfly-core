@@ -430,7 +430,7 @@ public class DomainLifecycleUtil {
         return DomainClient.Factory.create(internalGetOrCreateClient());
     }
 
-    /** Wait for all auto-start servers for the host to reach {@link ControlledProcessState.State#RUNNING} */
+    /** Wait for all auto-start servers for the host to reach {@link ControlledProcessState.State#OK} */
     public void awaitServers(long start) throws InterruptedException, TimeoutException {
 
         boolean serversAvailable = false;
@@ -491,7 +491,7 @@ public class DomainLifecycleUtil {
             Map<ServerIdentity, ControlledProcessState.State> statuses = getServerStatuses();
             for (Map.Entry<ServerIdentity, ControlledProcessState.State> entry : statuses.entrySet()) {
                 switch (entry.getValue()) {
-                    case RUNNING:
+                    case OK:
                         continue;
                     default:
                         log.log(Level.INFO, entry.getKey() + " status is " + entry.getValue());
@@ -511,8 +511,8 @@ public class DomainLifecycleUtil {
             ModelNode address = new ModelNode();
             address.add("host", configuration.getHostName());
 
-            ControlledProcessState.State status = Enum.valueOf(ControlledProcessState.State.class, readAttribute("host-state", address).asString().toUpperCase(Locale.ENGLISH));
-            return status == ControlledProcessState.State.RUNNING;
+            ControlledProcessState.State status = Enum.valueOf(ControlledProcessState.State.class, readAttribute("runtime-configuration-state", address).asString().toUpperCase(Locale.ENGLISH));
+            return status == ControlledProcessState.State.OK;
         } catch (Exception ignored) {
             //
         }
@@ -561,7 +561,7 @@ public class DomainLifecycleUtil {
             address.add("host", configuration.getHostName());
             address.add("server", server);
 
-            ControlledProcessState.State status = Enum.valueOf(ControlledProcessState.State.class, readAttribute("server-state", address).asString().toUpperCase(Locale.ENGLISH));
+            ControlledProcessState.State status = Enum.valueOf(ControlledProcessState.State.class, readAttribute("runtime-configuration-state", address).asString().toUpperCase(Locale.ENGLISH));
             result.put(id, status);
         }
 

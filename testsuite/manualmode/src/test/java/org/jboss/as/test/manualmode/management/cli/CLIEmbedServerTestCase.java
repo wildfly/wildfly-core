@@ -222,7 +222,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         } else {
             checkNoLogging("WFLYSRV0025");
         }
-        assertState("running", TimeoutUtil.adjust(30000));
+        assertState("ok", TimeoutUtil.adjust(30000));
 
         // The app embedding the server should still be able to log
         checkClientSideLogging();
@@ -269,12 +269,12 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         assertState("reload-required", 0);
         // Low level
         cli.sendLine(":reload");
-        assertState("running", TimeoutUtil.adjust(30000));
+        assertState("ok", TimeoutUtil.adjust(30000));
         cli.sendLine("/subsystem=request-controller:add");
         assertState("reload-required", 0);
         // High level
         cli.sendLine("reload");
-        assertState("running", TimeoutUtil.adjust(30000));
+        assertState("ok", TimeoutUtil.adjust(30000));
     }
 
     /** Confirms that the low and high level shutdown commands are not available */
@@ -284,11 +284,12 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         String line = "embed-server --server-config=standalone-cli.xml " + JBOSS_HOME;
         cli.sendLine(line);
         assertTrue(cli.isConnected());
-        assertState("running", 0);
+        assertState("ok", 0);
         cli.sendLine(":shutdown", true);
-        assertState("running", 0);
+        assertState("ok", 0);
         cli.sendLine("shutdown", true);
-        assertState("running", 0);
+        assertState("ok", 0);
+        assertState("ok", 0);
     }
 
     /** Tests the standard cli 'deploy' command */
@@ -402,7 +403,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         assertState("reload-required", 0);
 
         cli.sendLine("reload --admin-only=false");
-        assertState("running", TimeoutUtil.adjust(30000));
+        assertState("ok", TimeoutUtil.adjust(30000));
 
         // We could use the CLI to do this, but since the code using MCC already exists, re-use it
         ModelControllerClient mcc = cli.getCommandContext().getModelControllerClient();
@@ -543,7 +544,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         String state = null;
         do {
             try {
-                cli.sendLine(":read-attribute(name=server-state)", true);
+                cli.sendLine(":read-attribute(name=runtime-configuration-state)", true);
                 CLIOpResult result = cli.readAllAsOpResult();
                 ModelNode resp = result.getResponseNode();
                 ModelNode stateNode = result.isIsOutcomeSuccess() ? resp.get(RESULT) : resp.get(FAILURE_DESCRIPTION);

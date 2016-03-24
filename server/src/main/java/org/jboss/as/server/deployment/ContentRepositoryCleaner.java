@@ -116,7 +116,7 @@ class ContentRepositoryCleaner {
     }
 
     void cleanObsoleteContent() {
-        if (controlledProcessStateService.getCurrentState() == ControlledProcessState.State.RUNNING) {
+        if (controlledProcessStateService.getCurrentState() == ControlledProcessState.State.OK) {
             try {
                 PathAddress address = PathAddress.EMPTY_ADDRESS;
                 if (!server) {

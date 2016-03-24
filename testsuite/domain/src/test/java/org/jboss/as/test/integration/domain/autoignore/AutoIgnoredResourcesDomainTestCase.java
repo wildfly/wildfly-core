@@ -562,7 +562,7 @@ public class AutoIgnoredResourcesDomainTestCase {
     }
 
     private String getSlaveServerStatus(String serverName) throws Exception {
-        ModelNode op = Util.getReadAttributeOperation(PathAddress.pathAddress(getSlaveRunningServerAddress(serverName)), "server-state");
+        ModelNode op = Util.getReadAttributeOperation(PathAddress.pathAddress(getSlaveRunningServerAddress(serverName)), "server-status");
         ModelNode result = slaveClient.execute(op);
         return validateResponse(result).asString();
     }

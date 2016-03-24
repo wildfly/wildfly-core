@@ -213,7 +213,7 @@ public class OperationTimeoutUnitTestCase {
         assertTrue(response.toString(), response.get(FAILURE_DESCRIPTION).asString().contains("failfailfail"));
 
         // We should be in RUNNING state because stability could be obtained before the op completed
-        assertEquals(ControlledProcessState.State.RUNNING, controllerService.getCurrentProcessState());
+        assertEquals(ControlledProcessState.State.OK, controllerService.getCurrentProcessState());
     }
 
 

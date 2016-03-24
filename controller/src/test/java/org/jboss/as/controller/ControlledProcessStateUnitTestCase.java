@@ -38,23 +38,23 @@ public class ControlledProcessStateUnitTestCase {
 
         ControlledProcessState state = new ControlledProcessState(true);
         state.setRunning();
-        Assert.assertEquals(ControlledProcessState.State.RUNNING, state.getState());
+        Assert.assertEquals(ControlledProcessState.State.OK, state.getState());
         Object stamp = state.setRestartRequired();
         Assert.assertEquals(ControlledProcessState.State.RESTART_REQUIRED, state.getState());
         state.setRunning(); // in AS7-1103 bug, another thread did this
         Assert.assertEquals(ControlledProcessState.State.RESTART_REQUIRED, state.getState());
         state.revertRestartRequired(stamp);
-        Assert.assertEquals(ControlledProcessState.State.RUNNING, state.getState());
+        Assert.assertEquals(ControlledProcessState.State.OK, state.getState());
 
         state = new ControlledProcessState(true);
         state.setRunning();
-        Assert.assertEquals(ControlledProcessState.State.RUNNING, state.getState());
+        Assert.assertEquals(ControlledProcessState.State.OK, state.getState());
         stamp = state.setReloadRequired();
         Assert.assertEquals(ControlledProcessState.State.RELOAD_REQUIRED, state.getState());
         state.setRunning();
         Assert.assertEquals(ControlledProcessState.State.RELOAD_REQUIRED, state.getState());
         state.revertReloadRequired(stamp);
-        Assert.assertEquals(ControlledProcessState.State.RUNNING, state.getState());
+        Assert.assertEquals(ControlledProcessState.State.OK, state.getState());
     }
 
     /** Test the AS7-5929 scenario -- a reload should not clear RESTART_REQUIRED state */
@@ -63,7 +63,7 @@ public class ControlledProcessStateUnitTestCase {
 
         ControlledProcessState state = new ControlledProcessState(true);
         state.setRunning();
-        Assert.assertEquals(ControlledProcessState.State.RUNNING, state.getState());
+        Assert.assertEquals(ControlledProcessState.State.OK, state.getState());
         state.setRestartRequired();
         Assert.assertEquals(ControlledProcessState.State.RESTART_REQUIRED, state.getState());
 

@@ -71,7 +71,7 @@ public class ServerConfigResource extends DelegatingResource {
         ModelNode model = super.getModel();
         if (processState.getState() == ControlledProcessState.State.STARTING) {
             getAutoStart(serverName, model);
-        } else if (processState.getState() == ControlledProcessState.State.RUNNING) {
+        } else if (processState.getState() == ControlledProcessState.State.OK) {
             persistAutoStart(serverName, model);
         }
         return model;
