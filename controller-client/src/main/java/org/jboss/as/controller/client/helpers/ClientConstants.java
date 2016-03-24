@@ -66,6 +66,7 @@ public class ClientConstants {
     public static final String RESULT = "result";
     public static final String ROLLBACK_ON_RUNTIME_FAILURE = "rollback-on-runtime-failure";
     public static final String ROLLOUT_PLAN = "rollout-plan";
+    public static final String RUNTIME_CONFIGURATION_STATE = "runtime-configuration-state";
     public static final String RUNTIME_NAME = "runtime-name";
     public static final String SERVER = "server";
     public static final String SERVER_CONFIG = "server-config";
@@ -83,8 +84,10 @@ public class ClientConstants {
     public static final String WRITE_ATTRIBUTE_OPERATION = "write-attribute";
 
     public static final String CONTROLLER_PROCESS_STATE_STARTING = "starting";
+    public static final String CONTROLLER_PROCESS_STATE_OK = "ok";
     public static final String CONTROLLER_PROCESS_STATE_RUNNING = "running";
     public static final String CONTROLLER_PROCESS_STATE_RELOAD_REQUIRED = "reload-required";
     public static final String CONTROLLER_PROCESS_STATE_RESTART_REQUIRED = "restart-required";
     public static final String CONTROLLER_PROCESS_STATE_STOPPING = "stopping";
+    public static final String CONTROLLER_PROCESS_STATE_STOPPED = "stopped";
 }

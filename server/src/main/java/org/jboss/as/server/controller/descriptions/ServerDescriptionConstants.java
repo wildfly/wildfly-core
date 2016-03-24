@@ -32,6 +32,12 @@ public final class ServerDescriptionConstants {
 
     public static final String SERVER_ENVIRONMENT = "server-environment";
 
+    // replaces server-state
+    public static final String RUNTIME_CONFIGURATION_STATE = "runtime-configuration-state";
+
+    /**
+     * @deprecated see {@link #RUNTIME_CONFIGURATION_STATE}
+     */
     public static final String PROCESS_STATE = "server-state";
 
     public static final String PROCESS_TYPE = "process-type";

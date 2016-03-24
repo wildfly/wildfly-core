@@ -134,11 +134,11 @@ public abstract class AbstractDeploymentUnitTestCase {
 
     protected boolean isRunning() throws IOException {
         final ModelNode operation = Util.createEmptyOperation(READ_ATTRIBUTE_OPERATION, PathAddress.EMPTY_ADDRESS);
-        operation.get(NAME).set("server-state");
+        operation.get(NAME).set("runtime-configuration-state");
 
         final ModelNode result = executeOperation(operation);
         if (SUCCESS.equals(result.get(OUTCOME).asString())) {
-            return "running".equals(result.get(RESULT).asString());
+            return "ok".equals(result.get(RESULT).asString());
         }
         return false;
     }

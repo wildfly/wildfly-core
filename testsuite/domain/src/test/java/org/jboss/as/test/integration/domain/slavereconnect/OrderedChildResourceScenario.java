@@ -175,9 +175,10 @@ public class OrderedChildResourceScenario extends ReconnectTestScenario {
             //A reconnect with a changed model does not propagate the model changes to the servers, but puts them in reload-required
             Assert.assertEquals(domain, DomainTestUtils.executeForResult(getRecursiveReadResourceOperation(SLAVE_SERVER_SUBSYSTEM_ADDRESS), masterClient));
         }
-        String status = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_SERVER_ADDRESS, "server-state"), masterClient).asString();
-        Assert.assertEquals(serverReload ? RELOAD_REQUIRED : "running", status);
-
+        String runtimeConfigurationState = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_SERVER_ADDRESS, "runtime-configuration-state"), masterClient).asString();
+        Assert.assertEquals(serverReload ? RELOAD_REQUIRED : "ok", runtimeConfigurationState);
+        String serverState = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_SERVER_ADDRESS, "server-state"), masterClient).asString();
+        Assert.assertEquals(serverReload ? RELOAD_REQUIRED : "running", serverState);
         return domain;
     }
 

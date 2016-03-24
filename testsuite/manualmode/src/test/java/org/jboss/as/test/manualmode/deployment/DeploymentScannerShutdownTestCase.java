@@ -309,7 +309,7 @@ public class DeploymentScannerShutdownTestCase {
         // FIXME use the CLI high-level reload operation that blocks instead of
         // fiddling with timeouts...
         // leave some time to have the server starts its reload process and change
-        // its server-starte from running.
+        // its server-state from running.
         Thread.sleep(TimeoutUtil.adjust(500));
         ModelControllerClient liveClient = null;
         long start = System.currentTimeMillis();
