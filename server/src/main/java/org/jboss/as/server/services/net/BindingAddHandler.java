@@ -33,7 +33,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.MaskedAddressValidator;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.as.network.ClientMapping;
 import org.jboss.as.network.NetworkInterfaceBinding;
@@ -64,18 +63,6 @@ public class BindingAddHandler extends SocketBindingAddHandler {
     }
 
     private BindingAddHandler() {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
-
-        super.populateModel(context, operation, resource);
-        ModelNode model = resource.getModel();
-
-        SocketBindingResourceDefinition.validateInterfaceReference(context, model);
     }
 
     @Override
