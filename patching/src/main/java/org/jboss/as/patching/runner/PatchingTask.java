@@ -83,7 +83,7 @@ public interface PatchingTask {
                 case MISC:
                     return createMiscTask(description, (MiscContentItem) item, context);
                 case MODULE:
-                    return createModuleTask(description, context.getCurrentMode() == Mode.ROLLBACK || context.isRolledback(description.getPatchId()));
+                    return createModuleTask(description, context.getCurrentMode() == Mode.ROLLBACK || description.isRolledback());
                 default:
                     throw new IllegalStateException();
             }
