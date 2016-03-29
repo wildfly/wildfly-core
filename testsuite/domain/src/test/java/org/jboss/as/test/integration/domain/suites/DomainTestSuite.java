@@ -38,6 +38,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses ({
         AuditLogTestCase.class,
         IgnoredResourcesProfileCloneTestCase.class,
+        CapabilityReloadRequiredUnitTestCase.class,
         CompositeOperationTestCase.class,
         CoreResourceManagementTestCase.class,
         DeploymentRolloutFailureTestCase.class,
