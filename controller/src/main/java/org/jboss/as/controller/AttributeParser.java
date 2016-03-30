@@ -174,9 +174,11 @@ public abstract class AttributeParser {
             Map<String, AttributeDefinition> attributes = Arrays.asList(valueTypes).stream()
                     .collect(Collectors.toMap(AttributeDefinition::getXmlName,
                             Function.identity()));
+            ModelNode listValue = new ModelNode();
+            listValue.setEmptyList();
             while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
                 if (objectType.getXmlName().equals(reader.getLocalName())){
-                    ModelNode op = operation.get(attribute.getName()).add();
+                    ModelNode op = listValue.add();
                     for (int i = 0; i < reader.getAttributeCount(); i++) {
                         String attributeName = reader.getAttributeLocalName(i);
                         String value = reader.getAttributeValue(i);
@@ -194,6 +196,7 @@ public abstract class AttributeParser {
                 }
                 ParseUtils.requireNoContent(reader);
             }
+            operation.get(attribute.getName()).set(listValue);
         }
     };
 
@@ -252,5 +255,9 @@ public abstract class AttributeParser {
             return new ModelNode();
         }
     }
+
+    public static final AttributeParser PROPERTIES_PARSER = new AttributeParsers.PropertiesParser();
+
+    public static final AttributeParser PROPERTIES_PARSER_UNWRAPPED = new AttributeParsers.PropertiesParser(false);
 
 }
