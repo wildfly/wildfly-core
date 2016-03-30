@@ -23,6 +23,8 @@
 package org.jboss.as.controller;
 
 import java.util.Iterator;
+import java.util.List;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -164,15 +166,20 @@ public abstract class AttributeMarshaller {
             ObjectTypeAttributeDefinition objectType = list.getValueType();
             AttributeDefinition[] valueTypes = objectType.getValueTypes();
             if (resourceModel.hasDefined(attribute.getName())) {
-                writer.writeStartElement(attribute.getXmlName());
-                for (ModelNode element: resourceModel.get(attribute.getName()).asList()) {
-                    writer.writeStartElement(objectType.getXmlName());
-                    for (AttributeDefinition valueType : valueTypes) {
-                        valueType.getAttributeMarshaller().marshall(valueType, element, false, writer);
+                List<ModelNode> elements = resourceModel.get(attribute.getName()).asList();
+                if (elements.isEmpty()) {
+                    writer.writeEmptyElement(attribute.getXmlName());
+                } else {
+                    writer.writeStartElement(attribute.getXmlName());
+                    for (ModelNode element : elements) {
+                        writer.writeStartElement(objectType.getXmlName());
+                        for (AttributeDefinition valueType : valueTypes) {
+                            valueType.getAttributeMarshaller().marshall(valueType, element, false, writer);
+                        }
+                        writer.writeEndElement();
                     }
                     writer.writeEndElement();
                 }
-                writer.writeEndElement();
             }
         }
     }

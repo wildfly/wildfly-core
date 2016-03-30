@@ -1,5 +1,9 @@
 package org.jboss.as.controller;
 
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
@@ -22,11 +27,6 @@ import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
-
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 
 /**
  * A representation of a resource as needed by the XML parser.
@@ -169,13 +169,15 @@ public final class PersistentResourceXMLDescription {
     }
 
     private void parseGroup(XMLExtendedStreamReader reader, ModelNode op, boolean wildcard) throws XMLStreamException {
-        parseAttributes(reader, op, attributesByGroup.get(reader.getLocalName()), wildcard);
-        if (reader.hasNext()) {//this checks if there are also element attributes inside a group
-            if (reader.nextTag() == START_ELEMENT && attributeElements.containsKey(reader.getLocalName())) {
+        Map<String, AttributeDefinition> groupAttrs = attributesByGroup.get(reader.getLocalName());
+        parseAttributes(reader, op, groupAttrs, wildcard);
+        // Check if there are also element attributes inside a group
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            String attrName = reader.getLocalName();
+            if (attributeElements.containsKey(attrName) && groupAttrs.containsKey(attrName)) {
                 AttributeDefinition ad = attributeElements.get(reader.getLocalName());
                 ad.getParser().parseElement(ad, reader, op);
-                ParseUtils.requireNoContent(reader);
-            } else if (reader.getEventType() != END_ELEMENT) {
+            } else {
                 throw ParseUtils.unexpectedElement(reader);
             }
         }
