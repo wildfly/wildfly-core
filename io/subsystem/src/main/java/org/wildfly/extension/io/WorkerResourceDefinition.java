@@ -87,6 +87,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
         );
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Collection<AttributeDefinition> getAttributes() {
         return (Collection) ATTRIBUTES_BY_XMLNAME.values();

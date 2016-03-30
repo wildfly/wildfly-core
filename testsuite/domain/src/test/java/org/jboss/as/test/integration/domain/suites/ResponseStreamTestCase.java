@@ -50,11 +50,15 @@ import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -133,7 +137,7 @@ public class ResponseStreamTestCase {
     }
 
     private String logMessageContent;
-    private HttpClient httpClient;
+    private CloseableHttpClient httpClient;
 
     @Before
     public void before() throws IOException {
@@ -160,7 +164,7 @@ public class ResponseStreamTestCase {
             try {
                 // shut down the connection manager to ensure
                 // immediate deallocation of all system resources
-                httpClient.getConnectionManager().shutdown();
+                httpClient.close();
             } catch (Exception e) {
                 log.error(e);
             } finally {
@@ -406,15 +410,17 @@ public class ResponseStreamTestCase {
     }
 
     private HttpClient getHttpClient(URL url) {
+           shutdownHttpClient();
+           CredentialsProvider credsProvider = new BasicCredentialsProvider();
+           credsProvider.setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm", AuthSchemes.DIGEST),
+                   new UsernamePasswordCredentials(DomainLifecycleUtil.SLAVE_HOST_USERNAME, DomainLifecycleUtil.SLAVE_HOST_PASSWORD));
 
-        shutdownHttpClient();
-        DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
-        // To save setup hassles, have the client use the same credentials as the slave HC
-        UsernamePasswordCredentials creds = new UsernamePasswordCredentials(DomainLifecycleUtil.SLAVE_HOST_USERNAME, DomainLifecycleUtil.SLAVE_HOST_PASSWORD);
-        defaultHttpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm"), creds);
-        httpClient = defaultHttpClient;
-        return httpClient;
-    }
+           httpClient = HttpClientBuilder.create()
+                   .setDefaultCredentialsProvider(credsProvider)
+                   .build();
+
+           return httpClient;
+       }
 
     private URL buildURL(boolean forGet, boolean useHeader, Integer streamIndex) throws MalformedURLException {
         String filePart;
