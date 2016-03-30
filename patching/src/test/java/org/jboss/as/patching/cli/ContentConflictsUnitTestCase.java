@@ -27,7 +27,6 @@ import static org.jboss.as.patching.Constants.LAYERS;
 import static org.jboss.as.patching.Constants.SYSTEM;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.newFile;
-import static org.jboss.as.patching.runner.TestUtils.createBundle0;
 import static org.jboss.as.patching.runner.TestUtils.createInstalledImage;
 import static org.jboss.as.patching.runner.TestUtils.createModule0;
 import static org.jboss.as.patching.runner.TestUtils.createPatchXMLFile;
@@ -106,19 +105,6 @@ public class ContentConflictsUnitTestCase extends AbstractTaskTestCase {
         // patch the file
         ContentModification fileNoConflictModified = ContentModificationUtils.modifyMisc(patchDir, patchID, "updated script", noConflictFile, "bin", fileNoConflictName);
 
-        // create a bundle for the conflict
-        File baseBundleDir = newFile(env.getInstalledImage().getBundlesDir(), SYSTEM, LAYERS, BASE);
-        String bundleConflictName = "bundle-conflict";
-        File bundleConflictDir = createBundle0(baseBundleDir, bundleConflictName, "bundle content");
-        // patch the bundle
-        ContentModification bundleConflictModified = ContentModificationUtils.modifyBundle(patchDir, patchID, bundleConflictDir, "updated bundle content");
-
-        // create a bundle to be updated w/o a conflict
-        String bundleNoConflictName = "bundle-no-conflict";
-        File bundleNoConflictDir = createBundle0(baseBundleDir, bundleNoConflictName, "bundle content");
-        // patch the bundle
-        ContentModification bundleNoConflictModified = ContentModificationUtils.modifyBundle(patchDir, patchID, bundleNoConflictDir, "updated bundle content");
-
         //TestUtils.tree(env.getInstalledImage().getJbossHome());
 
         Patch patch = PatchBuilder.create()
@@ -131,8 +117,6 @@ public class ContentConflictsUnitTestCase extends AbstractTaskTestCase {
                 .oneOffPatchElement(patchID, "base", false)
                 .addContentModification(moduleConflictModified)
                 .addContentModification(moduleNoConflictModified)
-                .addContentModification(bundleConflictModified)
-                .addContentModification(bundleNoConflictModified)
                 .getParent()
                 .build();
 
@@ -145,8 +129,6 @@ public class ContentConflictsUnitTestCase extends AbstractTaskTestCase {
         dump(conflictFile, "conflicting change");
         // create a conflict for the module
         createModule0(baseModuleDir, moduleConflictName, "oops");
-        // create a conflict for bundle
-        createBundle0(baseBundleDir, bundleConflictName, "oops");
 
         // apply the patch using the cli
         CommandContext ctx = CommandContextFactory.getInstance().newCommandContext();
@@ -156,7 +138,7 @@ public class ContentConflictsUnitTestCase extends AbstractTaskTestCase {
         } catch(CommandLineException e) {
             //e.printStackTrace();
             final int relativeIndex = env.getInstalledImage().getJbossHome().getAbsolutePath().length() + 1;
-            assertConflicts(e, bundleConflictName + ":main", moduleConflictName + ":main", conflictFile.getAbsolutePath().substring(relativeIndex));
+            assertConflicts(e, moduleConflictName + ":main", conflictFile.getAbsolutePath().substring(relativeIndex));
         } finally {
             ctx.terminateSession();
         }
@@ -211,19 +193,6 @@ public class ContentConflictsUnitTestCase extends AbstractTaskTestCase {
         // patch the file
         ContentModification fileNoConflictModified = ContentModificationUtils.modifyMisc(patchDir, patchID, "updated script", noConflictFile, "bin", fileNoConflictName);
 
-        // create a bundle for the conflict
-        File baseBundleDir = newFile(env.getInstalledImage().getBundlesDir(), SYSTEM, LAYERS, BASE);
-        String bundleConflictName = "bundle-conflict";
-        File bundleConflictDir = createBundle0(baseBundleDir, bundleConflictName, "bundle content");
-        // patch the bundle
-        ContentModification bundleConflictModified = ContentModificationUtils.modifyBundle(patchDir, patchElementId, bundleConflictDir, "updated bundle content");
-
-        // create a bundle to be updated w/o a conflict
-        String bundleNoConflictName = "bundle-no-conflict";
-        File bundleNoConflictDir = createBundle0(baseBundleDir, bundleNoConflictName, "bundle content");
-        // patch the bundle
-        ContentModification bundleNoConflictModified = ContentModificationUtils.modifyBundle(patchDir, patchElementId, bundleNoConflictDir, "updated bundle content");
-
         //TestUtils.tree(env.getInstalledImage().getJbossHome());
 
         Patch patch = PatchBuilder.create()
@@ -236,8 +205,6 @@ public class ContentConflictsUnitTestCase extends AbstractTaskTestCase {
                 .oneOffPatchElement(patchElementId, "base", false)
                 .addContentModification(moduleConflictModified)
                 .addContentModification(moduleNoConflictModified)
-                .addContentModification(bundleConflictModified)
-                .addContentModification(bundleNoConflictModified)
                 .getParent()
                 .build();
 
@@ -259,8 +226,6 @@ public class ContentConflictsUnitTestCase extends AbstractTaskTestCase {
         dump(conflictFile, "conflicting change");
         // create a conflict for the module
         createModule0(baseModuleDir, moduleConflictName, "oops");
-        // create a conflict for bundle
-        createBundle0(baseBundleDir, bundleConflictName, "oops");
 
         try {
             ctx.handle("patch rollback --patch-id=" + patchID + " --distribution=" + env.getInstalledImage().getJbossHome() + " --reset-configuration=false");
@@ -268,7 +233,7 @@ public class ContentConflictsUnitTestCase extends AbstractTaskTestCase {
         } catch(CommandLineException e) {
             final int relativeIndex = env.getInstalledImage().getJbossHome().getAbsolutePath().length() + 1;
             // TODO modules and bundles are not checked at the moment
-            assertConflicts(e, bundleConflictName + ":main", moduleConflictName + ":main", conflictFile.getAbsolutePath().substring(relativeIndex));
+            assertConflicts(e, moduleConflictName + ":main", conflictFile.getAbsolutePath().substring(relativeIndex));
             //assertConflicts(e, conflictFile.getAbsolutePath().substring(relativeIndex));
         } finally {
             ctx.terminateSession();
