@@ -21,8 +21,8 @@
  */
 package org.jboss.as.server.deployment.scanner;
 
-import java.io.File;
-import java.io.FileFilter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,7 +39,7 @@ import java.util.List;
  * @author Scott.Stark@jboss.org
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-class ExtensibleFilter implements FileFilter {
+class ExtensibleFilter implements DirectoryStream.Filter<Path> {
 
     /**
      * Compare the strings backwards.  This assists in suffix comparisons.
@@ -104,18 +104,21 @@ class ExtensibleFilter implements FileFilter {
      * @param suffixes the suffixes
      */
     public ExtensibleFilter(String[] matches, String[] prefixes, String[] suffixes) {
-        if (matches == null)
+        if (matches == null) {
             matches = DEFAULT_MATCHES;
+        }
         Arrays.sort(matches);
-        this.matches = new ArrayList<String>(Arrays.asList(matches));
-        if (prefixes == null)
+        this.matches = new ArrayList<>(Arrays.asList(matches));
+        if (prefixes == null) {
             prefixes = DEFAULT_PREFIXES;
+        }
         Arrays.sort(prefixes);
-        this.prefixes = new ArrayList<String>(Arrays.asList(prefixes));
-        if (suffixes == null)
+        this.prefixes = new ArrayList<>(Arrays.asList(prefixes));
+        if (suffixes == null) {
             suffixes = DEFAULT_SUFFIXES;
+        }
         Arrays.sort(suffixes, reverseComparator);
-        this.suffixes = new ArrayList<String>(Arrays.asList(suffixes));
+        this.suffixes = new ArrayList<>(Arrays.asList(suffixes));
     }
 
     public void addPrefix(String prefix) {
@@ -201,35 +204,40 @@ class ExtensibleFilter implements FileFilter {
      * @return <code>false</code> if the filename matches any of the prefixes, suffixes, or matches.
      */
     @Override
-    public boolean accept(File file) {
-        String name = file.getName();
+    public boolean accept(Path file) {
+        String name = file.getFileName().toString();
         // check exact match
         int index = Collections.binarySearch(matches, name);
-        if (index >= 0)
+        if (index >= 0) {
             return false;
+        }
         // check prefix
         index = Collections.binarySearch(prefixes, name);
-        if (index >= 0)
+        if (index >= 0) {
             return false;
+        }
         if (index < -1) {
             // The < 0 index gives the first index greater than name
             int firstLessIndex = -2 - index;
             String prefix = prefixes.get(firstLessIndex);
             // If name starts with an ignored prefix ignore name
-            if (name.startsWith(prefix))
+            if (name.startsWith(prefix)) {
                 return false;
+            }
         }
         // check suffix
         index = Collections.binarySearch(suffixes, name, reverseComparator);
-        if (index >= 0)
+        if (index >= 0) {
             return false;
+        }
         if (index < -1) {
             // The < 0 index gives the first index greater than name
             int firstLessIndex = -2 - index;
             String suffix = suffixes.get(firstLessIndex);
             // If name ends with an ignored suffix ignore name
-            if (name.endsWith(suffix))
+            if (name.endsWith(suffix)) {
                 return false;
+            }
         }
         // everything checks out.
         return true;

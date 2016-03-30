@@ -1196,8 +1196,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
     }
 
     /**
-     * Tests that an incomplete zipped deployment does not
-     * auto-deploy.
+     * Tests that an incomplete zipped deployment does not auto-deploy.
      */
     @Test
     public void testIncompleteZipped() throws Exception {
@@ -1746,17 +1745,17 @@ public class FileSystemDeploymentServiceUnitTestCase {
         sc.addCompositeSuccessResponse(1);
         testSupport.createZip(deployment, 0, false, false, true, true);
         Future<Boolean> lockDone = Executors.newSingleThreadExecutor().submit(new Callable<Boolean>() {
-             @Override
+            @Override
             public Boolean call() throws Exception {
-                 try {
-                     while (!ops.ready) {//Waiting for deployment to start.
-                         Thread.sleep(100);
-                     }
-                     ts.testee.stopScanner();
-                     return true;
-                 } catch (InterruptedException ex) {
-                     throw new RuntimeException(ex);
-                 }
+                try {
+                    while (!ops.ready) {//Waiting for deployment to start.
+                        Thread.sleep(100);
+                    }
+                    ts.testee.stopScanner();
+                    return true;
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
         ts.testee.setScanInterval(10000);
@@ -1766,11 +1765,14 @@ public class FileSystemDeploymentServiceUnitTestCase {
     /**
     * WFCORE-210
     */
-    @BMRule(name = "Test renaming failure",
-            targetClass = "java.io.File",
-            targetMethod = "listFiles(FileFilter)",
-            condition = "$1 != null",
-            action = "return null"
+    @BMRule(name = "Test IO failure",
+            targetClass = "FileSystemProvider",
+            targetMethod = "newDirectoryStream",
+            targetLocation = "AT ENTRY",
+            helper = "org.jboss.as.server.deployment.scanner.ListFileHelper",
+            condition = "shouldThrowIOException($1)",
+            isOverriding = true,
+            action = "throw new java.io.IOException(\"Thanks Byteman\")"
     )
     @Test
     public void testNoUndeployment() throws Exception {
@@ -1784,7 +1786,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
             fail("RuntimeException expected");
         } catch (Exception ex) {
             assertThat(ex.getClass().isAssignableFrom(RuntimeException.class), is(true));
-            assertThat(ex.getLocalizedMessage(), is(DeploymentScannerLogger.ROOT_LOGGER.cannotListDirectoryFiles(tmpDir).getLocalizedMessage()));
+            assertThat(ex.getLocalizedMessage(), is(DeploymentScannerLogger.ROOT_LOGGER.cannotListDirectoryFiles(ex.getCause(), tmpDir).getLocalizedMessage()));
         }
         assertThat(ts.controller.deployed.size(), is(2)); //Only non persistent deployments should be undeployed.
         assertThat(ts.controller.deployed.keySet(), hasItems("foo.war", "failure.ear"));
@@ -1909,8 +1911,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
             PrintWriter writer = new PrintWriter(fos);
             writer.write(fileName);
             writer.close();
-        }
-        finally {
+        } finally {
             fos.close();
         }
         assertTrue(f.exists());
@@ -1926,8 +1927,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
             PrintWriter writer = new PrintWriter(fos);
             writer.write(contents);
             writer.close();
-        }
-        finally {
+        } finally {
             fos.close();
         }
         assertTrue(f.exists());
@@ -1943,7 +1943,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         final File directory = new File(dir, name);
         directory.mkdirs();
 
-        for(final String child : children) {
+        for (final String child : children) {
             createFile(directory, child);
         }
 
@@ -2073,13 +2073,11 @@ public class FileSystemDeploymentServiceUnitTestCase {
                     result.get(step, OUTCOME).set(FAILED);
                     result.get(step, RESULT);
                     result.get(step, ROLLED_BACK).set(true);
-                }
-                else if (i == failureStep){
+                } else if (i == failureStep) {
                     result.get(step, OUTCOME).set(FAILED);
                     result.get(step, FAILURE_DESCRIPTION).set(new ModelNode().set("badness happened"));
                     result.get(step, ROLLED_BACK).set(true);
-                }
-                else {
+                } else {
                     result.get(step, OUTCOME).set(CANCELLED);
                 }
             }
@@ -2107,13 +2105,11 @@ public class FileSystemDeploymentServiceUnitTestCase {
                     stepResult.get(step, OUTCOME).set(SUCCESS);
                     stepResult.get(step, RESULT);
                     stepResult.get(step, ROLLED_BACK).set(true);
-                }
-                else if (i == failureStep){
+                } else if (i == failureStep) {
                     stepResult.get(step, OUTCOME).set(FAILED);
                     stepResult.get(step, FAILURE_DESCRIPTION).set(new ModelNode().set("true failed step"));
                     stepResult.get(step, ROLLED_BACK).set(true);
-                }
-                else {
+                } else {
                     stepResult.get(step, OUTCOME).set(CANCELLED);
                 }
             }
@@ -2141,16 +2137,14 @@ public class FileSystemDeploymentServiceUnitTestCase {
                     result.get(step, RESULT, "step-1", RESULT);
                     result.get(step, RESULT, "step-2", OUTCOME).set(SUCCESS);
                     result.get(step, RESULT, "step-2", RESULT);
-                }
-                else if (i == failureStep){
+                } else if (i == failureStep) {
                     result.get(step, OUTCOME).set(SUCCESS);
                     result.get(step, RESULT);
                     result.get(step, RESULT, "step-1", OUTCOME).set(SUCCESS);
                     result.get(step, RESULT, "step-1", RESULT);
                     result.get(step, RESULT, "step-2", OUTCOME).set(FAILED);
                     result.get(step, RESULT, "step-2", FAILURE_DESCRIPTION).set(new ModelNode().set("badness happened"));
-                }
-                else {
+                } else {
                     result.get(step, OUTCOME).set(CANCELLED);
                 }
             }
@@ -2193,8 +2187,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
             String opName = op.require(OP).asString();
             if (READ_CHILDREN_RESOURCES_OPERATION.equals(opName)) {
                 return getDeploymentNamesResponse();
-            }
-            else if (COMPOSITE.equals(opName)) {
+            } else if (COMPOSITE.equals(opName)) {
                 for (ModelNode child : op.require(STEPS).asList()) {
                     opName = child.require(OP).asString();
                     if (COMPOSITE.equals(opName)) {
@@ -2216,32 +2209,26 @@ public class FileSystemDeploymentServiceUnitTestCase {
                         // Since AS7-431 the content is no longer managed
                         //added.put(address.getLastElement().getValue(), child.require(CONTENT).require(0).require(HASH).asBytes());
                         added.put(address.getLastElement().getValue(), randomHash());
-                    }
-                    else if (REMOVE.equals(opName)) {
+                    } else if (REMOVE.equals(opName)) {
                         added.remove(address.getLastElement().getValue());
-                    }
-                    else if (DEPLOY.equals(opName)) {
+                    } else if (DEPLOY.equals(opName)) {
                         String name = address.getLastElement().getValue();
                         deployed.put(name, added.get(name));
-                    }
-                    else if (UNDEPLOY.equals(opName)) {
+                    } else if (UNDEPLOY.equals(opName)) {
                         deployed.remove(address.getLastElement().getValue());
-                    }
-                    else if (FULL_REPLACE_DEPLOYMENT.equals(opName)) {
+                    } else if (FULL_REPLACE_DEPLOYMENT.equals(opName)) {
                         String name = child.require(NAME).asString();
                         // Since AS7-431 the content is no longer managed
                         //byte[] hash = child.require(CONTENT).require(0).require(HASH).asBytes();
                         final byte[] hash = randomHash();
                         added.put(name, hash);
                         deployed.put(name, hash);
-                    }
-                    else {
+                    } else {
                         throw new IllegalArgumentException("unexpected step " + opName);
                     }
                 }
                 return responses.remove(0).rsp;
-            }
-            else {
+            } else {
                 throw new IllegalArgumentException("unexpected operation " + opName);
             }
         }
@@ -2256,7 +2243,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
             this(false);
         }
 
-        private DiscardTaskExecutor(boolean mayShutdown ) {
+        private DiscardTaskExecutor(boolean mayShutdown) {
             super(0);
             this.allowRejection = mayShutdown;
         }
@@ -2372,7 +2359,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
 
         @Override
         public T get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
-            assertEquals( "Should use the configured timeout", expectedTimeout, l);
+            assertEquals("Should use the configured timeout", expectedTimeout, l);
             throw new TimeoutException();
         }
     }

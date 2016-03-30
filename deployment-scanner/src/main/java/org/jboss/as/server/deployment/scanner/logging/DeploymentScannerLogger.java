@@ -36,6 +36,7 @@ import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
+
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -375,7 +376,7 @@ public interface DeploymentScannerLogger extends BasicLogger {
     IllegalStateException deploymentScannerNotForDomainMode();
 
     @Message(id = 32, value = "Failed to list files in directory %s. Check that the contents of the directory are readable.")
-    RuntimeException cannotListDirectoryFiles(File directory);
+    RuntimeException cannotListDirectoryFiles(@Cause Throwable ioex, File directory);
 
     @LogMessage(level = INFO)
     @Message(id = 33, value = "Deployment %s was previously undeployed by this scanner but has been redeployed by another "
