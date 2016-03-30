@@ -21,23 +21,26 @@
  */
 package org.jboss.as.domain.http.server;
 
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.Headers;
-import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
-
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 import static org.xnio.Options.SSL_CLIENT_AUTH_MODE;
 import static org.xnio.SslClientAuthMode.REQUESTED;
 import static org.xnio.SslClientAuthMode.REQUIRED;
 
-import javax.net.ssl.SSLContext;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.regex.Pattern;
+
+import javax.net.ssl.SSLContext;
 
 import io.undertow.protocols.ssl.UndertowXnioSsl;
 import io.undertow.security.api.AuthenticationMechanism;
@@ -56,6 +59,7 @@ import io.undertow.security.impl.DigestQop;
 import io.undertow.security.impl.GSSAPIAuthenticationMechanism;
 import io.undertow.security.impl.SimpleNonceManager;
 import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.CanonicalPathHandler;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
 import io.undertow.server.handlers.PathHandler;
@@ -63,11 +67,10 @@ import io.undertow.server.handlers.cache.CacheHandler;
 import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
 import io.undertow.server.protocol.http.HttpOpenListener;
-import java.util.Collection;
-import java.util.concurrent.Executor;
-
+import io.undertow.util.Headers;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
 import org.jboss.as.domain.http.server.security.AnonymousMechanism;
 import org.jboss.as.domain.http.server.security.AuthenticationMechanismWrapper;
@@ -103,6 +106,8 @@ import org.xnio.ssl.XnioSsl;
  */
 public class ManagementHttpServer {
 
+    private static final Map<Pattern, Charset> USER_AGENT_CHARSET_MAP = generateCharsetMap();
+
     private final HttpOpenListener openListener;
     private final InetSocketAddress httpAddress;
     private final InetSocketAddress secureAddress;
@@ -111,7 +116,6 @@ public class ManagementHttpServer {
     private volatile AcceptingChannel<SslConnection> secureServer;
     private final SSLContext sslContext;
     private final SslClientAuthMode sslClientAuthMode;
-
 
     private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext,
                                  SslClientAuthMode sslClientAuthMode, XnioWorker worker) {
@@ -279,7 +283,7 @@ public class ManagementHttpServer {
                                 securityRealm.getName(), "/management", new SimpleNonceManager()), current));
                         break;
                     case PLAIN:
-                        undertowMechanisms.add(wrap(new BasicAuthenticationMechanism(securityRealm.getName()), current));
+                        undertowMechanisms.add(wrap(new BasicAuthenticationMechanism(securityRealm.getName(), "BASIC", false, null, StandardCharsets.UTF_8, USER_AGENT_CHARSET_MAP), current));
                         break;
                     case LOCAL:
                         break;
@@ -298,6 +302,15 @@ public class ManagementHttpServer {
         current = new AuthenticationMechanismsHandler(current, undertowMechanisms);
 
         return new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, rim, current);
+    }
+
+    private static Map<Pattern, Charset> generateCharsetMap() {
+        final Map<Pattern, Charset> charsetMap = new HashMap<>();
+        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.*\\) Gecko/.* Firefox/.*"), StandardCharsets.ISO_8859_1);
+        charsetMap.put(Pattern.compile("(?!.*OPR)(?!.*Chrome)Mozilla/5\\.0 \\(.*\\).* Safari/.*"), StandardCharsets.ISO_8859_1);
+        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.*; Trident/.*; rv:.*\\).*"), StandardCharsets.ISO_8859_1);
+        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.* MSIE.* Trident/.*\\)"), StandardCharsets.ISO_8859_1);
+        return Collections.unmodifiableMap(charsetMap);
     }
 
     private static AuthenticationMechanism wrap(final AuthenticationMechanism toWrap, final AuthMechanism mechanism) {
