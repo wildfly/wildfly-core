@@ -21,25 +21,22 @@
  */
 package org.jboss.as.test.integration.management.http;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
-import org.jboss.as.test.integration.common.HttpRequest;
 import org.jboss.as.test.integration.management.util.HttpMgmtProxy;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -223,47 +220,52 @@ public class HttpPostMgmtOpsTestCase {
     }
 
     @Test
-    @Ignore("WFCORE-1123 -- needs to test add/remove of resources that are available in core")
     public void testAddRemoveOperation() throws Exception {
-
-        // add new connector
-
-        ModelNode op = httpMgmt.getOpNode("socket-binding-group=standard-sockets/socket-binding=test", "add");
-        op.get("port").set(8181);
-        ModelNode ret = httpMgmt.sendPostCommand(op);
-        assertTrue("success".equals(ret.get("outcome").asString()));
-
-        op = httpMgmt.getOpNode("subsystem=undertow/server=default-server/http-listener=test-listener", "add");
-        op.get("socket-binding").set("test");
-        op.get("enabled").set(true);
-
-        ret = httpMgmt.sendPostCommand(op);
-        assertTrue("success".equals(ret.get("outcome").asString()));
-
-        // check that the connector is live
-        String cURL = "http://localhost:8181";
-
-        String response = HttpRequest.get(cURL, 10, TimeUnit.SECONDS);
-        assertTrue("Invalid response: " + response, response.indexOf("JBoss") >= 0);
-
-
-        // remove connector
-        ModelNode operation = HttpMgmtProxy.getOpNode("subsystem=undertow/server=default-server/http-listener=test-listener", "remove");
-        operation.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set(true);
-        ret = httpMgmt.sendPostCommand(operation);
-        assertTrue("success".equals(ret.get("outcome").asString()));
-
-        ret = httpMgmt.sendPostCommand("socket-binding-group=standard-sockets/socket-binding=test", "remove");
-        assertTrue("success".equals(ret.get("outcome").asString()));
-
-        // check that the connector is no longer live
-        Thread.sleep(5000);
-        boolean failed = false;
         try {
-            response = HttpRequest.get(cURL, 10, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            failed = true;
+            // add new handler
+            ModelNode op = HttpMgmtProxy.getOpNode("subsystem=logging/file-handler=test_add_remove", "add");
+            op.get("file").setEmptyObject();
+            op.get("file").get("path").set("test_add_remove.log");
+            op.get("file").get("relative-to").set("jboss.server.log.dir");
+            op.get("encoding").set("UTF-8");
+            op.get("level").set("TRACE");
+            op.get("append").set(true);
+            op.get("enabled").set(true);
+            ModelNode ret = httpMgmt.sendPostCommand(op);
+            assertTrue("success".equals(ret.get("outcome").asString()));
+
+            op = HttpMgmtProxy.getOpNode("subsystem=logging/logger=org.jboss.as.controller", "add");
+            op.get("handlers").setEmptyList();
+            op.get("handlers").add("test_add_remove");
+            op.get("level").set("TRACE");
+            ret = httpMgmt.sendPostCommand(op);
+            assertTrue("success".equals(ret.get("outcome").asString()));
+
+            op = HttpMgmtProxy.getOpNode("subsystem=logging/file-handler=test_add_remove", "resolve-path");
+
+            ret = httpMgmt.sendPostCommand(op);
+            assertTrue("success".equals(ret.get("outcome").asString()));
+            String path = ret.get("result").asString();
+            // check that the handler is active
+            assertTrue("Log file should have been created", Files.exists(new File(path).toPath()));
+
+            // remove handler should fail
+            op = HttpMgmtProxy.getOpNode("subsystem=logging/file-handler=test_add_remove", "remove");
+            ret = httpMgmt.sendPostCommand(op, true);
+            assertTrue("failed".equals(ret.get("outcome").asString()));
+
+            op = HttpMgmtProxy.getOpNode("subsystem=logging/logger=org.jboss.as.controller", "remove");
+            ret = httpMgmt.sendPostCommand(op);
+            assertTrue("success".equals(ret.get("outcome").asString()));
+            // remove handler
+            op = HttpMgmtProxy.getOpNode("subsystem=logging/file-handler=test_add_remove", "remove");
+            ret = httpMgmt.sendPostCommand(op);
+            assertTrue("success".equals(ret.get("outcome").asString()));
+        } finally {
+            ModelNode operation = HttpMgmtProxy.getOpNode("subsystem=logging/logger=org.jboss.as.controller", "remove");
+            httpMgmt.sendPostCommand(operation, true);
+            operation = HttpMgmtProxy.getOpNode("subsystem=logging/file-handler=test_add_remove", "remove");
+            httpMgmt.sendPostCommand(operation, true);
         }
-        assertTrue("Connector still live: " + response, failed);
     }
 }

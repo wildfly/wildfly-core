@@ -21,6 +21,7 @@
  */
 package org.jboss.as.test.integration.management.util;
 
+import io.undertow.util.StatusCodes;
 import java.net.URL;
 
 import org.apache.http.HttpResponse;
@@ -72,7 +73,10 @@ public class HttpMgmtProxy {
     }
 
     public ModelNode sendPostCommand(ModelNode cmd) throws Exception {
+        return sendPostCommand(cmd, false);
+    }
 
+    public ModelNode sendPostCommand(ModelNode cmd, boolean ignoreFailure) throws Exception {
         String cmdStr = cmd.toJSONString(true);
         HttpPost post = new HttpPost(url.toURI());
         StringEntity entity = new StringEntity(cmdStr);
@@ -81,11 +85,10 @@ public class HttpMgmtProxy {
 
         HttpResponse response = httpClient.execute(post, httpContext);
         String str = EntityUtils.toString(response.getEntity());
-        if (response.getStatusLine().getStatusCode()==200){
+        if (response.getStatusLine().getStatusCode() == StatusCodes.OK || ignoreFailure) {
             return ModelNode.fromJSONString(str);
-        }else{
-            throw new Exception("Could not execute command: "+str);
         }
+        throw new Exception("Could not execute command: " + str);
     }
 
     public static ModelNode getOpNode(String address, String operation) {
