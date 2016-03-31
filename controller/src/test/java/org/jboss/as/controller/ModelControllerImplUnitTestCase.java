@@ -114,7 +114,7 @@ public class ModelControllerImplUnitTestCase {
         ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
         controller.execute(setup, null, null, null);
 
-        assertEquals(ControlledProcessState.State.RUNNING, svc.getCurrentProcessState());
+        assertEquals(ControlledProcessState.State.OK, svc.getCurrentProcessState());
     }
 
     @After

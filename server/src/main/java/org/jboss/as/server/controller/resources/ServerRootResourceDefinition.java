@@ -179,10 +179,17 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             .build();
     public static final SimpleAttributeDefinition NULL_PROFILE_NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PROFILE_NAME, ModelType.STRING, true)
             .build();
+
+    // replaces SERVER_STATE below, aliased in #ProcessStateAttributeHandler
+    public static final SimpleAttributeDefinition RUNTIME_CONFIGURATION_STATE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.RUNTIME_CONFIGURATION_STATE, ModelType.STRING)
+            .setStorageRuntime()
+            .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
+            .build();
     public static final SimpleAttributeDefinition SERVER_STATE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.PROCESS_STATE, ModelType.STRING)
             .setStorageRuntime()
             .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
             .build();
+
     public static final SimpleAttributeDefinition PROCESS_TYPE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.PROCESS_TYPE, ModelType.STRING)
             .setStorageRuntime()
             .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
@@ -365,6 +372,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerReadOnlyAttribute(LAUNCH_TYPE, new LaunchTypeHandler(serverEnvironment.getLaunchType()));
         }
 
+        resourceRegistration.registerReadOnlyAttribute(RUNTIME_CONFIGURATION_STATE, new ProcessStateAttributeHandler(processState));
         resourceRegistration.registerReadOnlyAttribute(SERVER_STATE, new ProcessStateAttributeHandler(processState));
         resourceRegistration.registerReadOnlyAttribute(PROCESS_TYPE, ProcessTypeHandler.INSTANCE);
         resourceRegistration.registerReadOnlyAttribute(RUNNING_MODE, new RunningModeReadHandler(runningModeControl));

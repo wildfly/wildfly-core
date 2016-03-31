@@ -179,7 +179,7 @@ public class IgnoredResourcesProfileCloneTestCase {
                 } finally {
                     DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(PROFILE, CLONED_PROFILE)), masterClient);
                 }
-                Assert.assertEquals("running", getSlaveState(slaveClient));
+                Assert.assertEquals("ok", getSlaveState(slaveClient));
 
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -230,7 +230,7 @@ public class IgnoredResourcesProfileCloneTestCase {
                 } finally {
                     DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(PROFILE, CLONED_PROFILE)), masterClient);
                 }
-                Assert.assertEquals("running", getSlaveState(slaveClient));
+                Assert.assertEquals("ok", getSlaveState(slaveClient));
 
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -253,7 +253,7 @@ public class IgnoredResourcesProfileCloneTestCase {
                 } finally {
                     DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(PROFILE, IGNORE_TO_PROFILE)), masterClient);
                 }
-                Assert.assertEquals("running", getSlaveState(slaveClient));
+                Assert.assertEquals("ok", getSlaveState(slaveClient));
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////
                 //Clone profile where both the original and the to profiles are cloned.
@@ -275,7 +275,7 @@ public class IgnoredResourcesProfileCloneTestCase {
                 } finally {
                     DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(PROFILE, IGNORE_TO_PROFILE)), masterClient);
                 }
-                Assert.assertEquals("running", getSlaveState(slaveClient));
+                Assert.assertEquals("ok", getSlaveState(slaveClient));
             } finally {
                 writeSlaveDomainController(slaveClient, originalSlaveDc);
                 DomainTestUtils.executeForResult(Util.getWriteAttributeOperation(profileIgnoreAddress, NAMES, originalIgnores), slaveClient);
@@ -321,6 +321,6 @@ public class IgnoredResourcesProfileCloneTestCase {
     }
 
     private String getSlaveState(DomainClient slaveClient) throws Exception {
-        return DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_ADDR, "host-state"), slaveClient).asString();
+        return DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_ADDR, "runtime-configuration-state"), slaveClient).asString();
     }
 }

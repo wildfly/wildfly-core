@@ -129,12 +129,12 @@ public class ReloadOpsTestCase extends AbstractCliTestBase {
         ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).setEmptyList();
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        operation.get(NAME).set("server-state");
+        operation.get(NAME).set("runtime-configuration-state");
         ModelControllerClient liveClient = container.getClient().getControllerClient();
         while (System.currentTimeMillis() - start < timeout) {
             try {
                 ModelNode result = liveClient.execute(operation);
-                if ("running".equals(result.get(RESULT).asString())) {
+                if ("ok".equals(result.get(RESULT).asString())) {
                     return;
                 }
             } catch (IOException e) {

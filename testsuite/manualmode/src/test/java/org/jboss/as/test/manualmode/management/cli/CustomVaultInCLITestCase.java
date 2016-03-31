@@ -105,10 +105,10 @@ public class CustomVaultInCLITestCase {
     @Test
     public void testRightVaultPassword() throws Exception {
 
-        String cliOutput = CustomCLIExecutor.execute(RIGHT_VAULT_PASSWORD_FILE, READ_ATTRIBUTE_OPERATION + " server-state");
+        String cliOutput = CustomCLIExecutor.execute(RIGHT_VAULT_PASSWORD_FILE, READ_ATTRIBUTE_OPERATION + " runtime-configuration-state");
 
         assertThat("Password should be right", cliOutput, containsString("Password is: " + RIGHT_PASSWORD));
-        assertThat("CLI should successfully initialize ", cliOutput, containsString("running"));
+        assertThat("CLI should successfully initialize ", cliOutput, containsString("ok"));
 
     }
 
@@ -119,7 +119,7 @@ public class CustomVaultInCLITestCase {
     @Test
     public void testWrongVaultPassword() throws Exception {
 
-        String cliOutput = CustomCLIExecutor.execute(WRONG_VAULT_PASSWORD_FILE, READ_ATTRIBUTE_OPERATION + " server-state");
+        String cliOutput = CustomCLIExecutor.execute(WRONG_VAULT_PASSWORD_FILE, READ_ATTRIBUTE_OPERATION + " runtime-configuration-state");
 
         assertThat("Password should be wrong", cliOutput, containsString("Password is: " + WRONG_PASSWORD));
         assertThat("CLI shouldn't successfully initialize ", cliOutput, containsString("Keystore was tampered with, or password was incorrect"));
@@ -133,7 +133,7 @@ public class CustomVaultInCLITestCase {
     @Test
     public void testNonExistingVaultPassword() throws Exception {
 
-        String cliOutput = CustomCLIExecutor.execute(NON_EXISTING_VAULT_PASSWORD_FILE, READ_ATTRIBUTE_OPERATION + " server-state");
+        String cliOutput = CustomCLIExecutor.execute(NON_EXISTING_VAULT_PASSWORD_FILE, READ_ATTRIBUTE_OPERATION + " runtime-configuration-state");
 
         assertThat("Password should not exists", cliOutput, containsString("NullPointerException"));
 

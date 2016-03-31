@@ -212,7 +212,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                 getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
                 ModelNode address = getStateOp.get(ClientConstants.ADDRESS);
                 address.add(ClientConstants.HOST, localName);
-                getStateOp.get(ClientConstants.NAME).set(ClientConstants.HOST_STATE);
+                getStateOp.get(ClientConstants.NAME).set(ClientConstants.RUNTIME_CONFIGURATION_STATE);
                 do {
                     try {
                         final ModelNode nameResponse = mcc.execute(getNameOp);

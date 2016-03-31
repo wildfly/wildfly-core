@@ -38,9 +38,17 @@ public class ControlledProcessState {
          */
         STARTING("starting"),
         /**
+         * @deprecated see {@link #OK}
+         * @see {@link org.jboss.as.controller.operations.common.ProcessStateAttributeHandler}
+         * for how the new values are mapped to the old attributes for compatibility.
          * The process is started, is running normally and has a runtime state consistent with its persistent configuration.
          */
         RUNNING("running"),
+        /**
+         * replaces #RUNNING
+         * The process is started, is operating normally and has a runtime state consistent with its persistent configuration.
+         */
+        OK("ok"),
         /**
          * The process requires a stop and re-start of its root service (but not a full process restart) in order to
          * ensure stable operation and/or to bring its running state in line with its persistent configuration. A
@@ -56,7 +64,9 @@ public class ControlledProcessState {
          */
         RESTART_REQUIRED("restart-required"),
         /** The process is stopping. */
-        STOPPING("stopping");
+        STOPPING("stopping"),
+        /** The process is stopped */
+        STOPPED("stopped");
 
         private final String stringForm;
 
@@ -110,7 +120,7 @@ public class ControlledProcessState {
                 break;
             }
             synchronized (service) {
-                State newState = restartRequiredFlag ? State.RESTART_REQUIRED : State.RUNNING;
+                State newState = restartRequiredFlag ? State.RESTART_REQUIRED : State.OK;
                 if (state.compareAndSet(was, newState, receiver[0], newStamp)) {
                     service.stateChanged(newState);
                     break;
@@ -178,8 +188,8 @@ public class ControlledProcessState {
         // If 'state' still has the state we last set in restartRequired(), change to RUNNING
         Integer theirStamp = Integer.class.cast(stamp);
         synchronized (service) {
-            if (state.compareAndSet(State.RELOAD_REQUIRED, State.RUNNING, theirStamp, this.stamp.incrementAndGet())) {
-                service.stateChanged(State.RUNNING);
+            if (state.compareAndSet(State.RELOAD_REQUIRED, State.OK, theirStamp, this.stamp.incrementAndGet())) {
+                service.stateChanged(State.OK);
             }
         }
     }
@@ -188,9 +198,9 @@ public class ControlledProcessState {
         // If 'state' still has the state we last set in restartRequired(), change to RUNNING
         Integer theirStamp = Integer.class.cast(stamp);
         synchronized (service) {
-            if (state.compareAndSet(State.RESTART_REQUIRED, State.RUNNING, theirStamp, this.stamp.incrementAndGet())) {
+            if (state.compareAndSet(State.RESTART_REQUIRED, State.OK, theirStamp, this.stamp.incrementAndGet())) {
                 restartRequiredFlag = false;
-                service.stateChanged(State.RUNNING);
+                service.stateChanged(State.OK);
             }
         }
     }

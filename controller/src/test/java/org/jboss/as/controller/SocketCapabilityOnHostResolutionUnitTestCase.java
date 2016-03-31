@@ -89,7 +89,7 @@ public class SocketCapabilityOnHostResolutionUnitTestCase {
         svc.awaitStartup(30, TimeUnit.SECONDS);
         controller = svc.getValue();
 
-        assertEquals(ControlledProcessState.State.RUNNING, svc.getCurrentProcessState());
+        assertEquals(ControlledProcessState.State.OK, svc.getCurrentProcessState());
     }
 
     @After
