@@ -23,6 +23,7 @@
 package org.jboss.as.patching.runner;
 
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,6 +35,7 @@ import java.util.Map;
 import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.ModificationType;
+import org.jboss.as.patching.runner.IdentityPatchContext.PatchEntry;
 
 /**
  * Utility class to auto resolve conflicts when rolling back/invalidating patches.
@@ -66,11 +68,11 @@ class PatchingTasks {
      * @param mode          the current patching mode
      */
     static void rollback(final String patchId, final Collection<ContentModification> originalPatch, final Collection<ContentModification> rollbackPatch,
-                         final Map<Location, ContentTaskDefinition> modifications, final ContentItemFilter filter,
+                         final ContentTaskDefinitions modifications, final ContentItemFilter filter,
                          final PatchingTaskContext.Mode mode) {
 
         // Process the original patch information
-        final Map<Location, ContentModification> originalModifications = new HashMap<Location, ContentModification>();
+        final Map<Location, ContentModification> originalModifications = new HashMap<Location, ContentModification>(originalPatch.size());
         for (final ContentModification modification : originalPatch) {
             originalModifications.put(new Location(modification.getItem()), modification);
         }
@@ -87,7 +89,7 @@ class PatchingTasks {
             final ContentEntry contentEntry = new ContentEntry(patchId, modification);
             ContentTaskDefinition definition = modifications.get(location);
             if (definition == null) {
-                definition = new ContentTaskDefinition(location, contentEntry);
+                definition = new ContentTaskDefinition(location, contentEntry, true);
                 modifications.put(location, definition);
             } else {
                 // TODO perhaps we don't need check that
@@ -127,7 +129,8 @@ class PatchingTasks {
         }
     }
 
-    static void addMissingModifications(final String patchId, Collection<ContentModification> modifications, final Map<Location, ContentTaskDefinition> definitions, final ContentItemFilter filter) {
+    static void addMissingModifications(IdentityPatchContext.PatchEntry target, Collection<ContentModification> modifications, final ContentItemFilter filter) throws IOException {
+        final String cpId = target.getCumulativePatchID();
         for (final ContentModification modification : modifications) {
 
             final ContentItem item = modification.getItem();
@@ -137,17 +140,18 @@ class PatchingTasks {
             }
 
             final Location location = new Location(item);
-            final ContentEntry contentEntry = new ContentEntry(patchId, modification);
-            ContentTaskDefinition definition = definitions.get(location);
+            final ContentTaskDefinition definition = target.get(location);
             if (definition == null) {
-                definition = new ContentTaskDefinition(location, contentEntry);
-                definitions.put(location, definition);
+                target.put(location, new ContentTaskDefinition(location, new ContentEntry(cpId, modification), false));
+            } else if(definition.isRollback()) {
+                target.prepareForPortForward(item, cpId);
+                definition.setTarget(new ContentEntry(cpId, modification));
             }
         }
     }
 
-    static void apply(final String patchId, final Collection<ContentModification> modifications, final Map<Location, ContentTaskDefinition> definitions) {
-        apply(patchId, modifications, definitions, ContentItemFilter.ALL);
+    static void apply(final String patchId, final Collection<ContentModification> modifications, final PatchEntry patchEntry) {
+        apply(patchId, modifications, patchEntry, ContentItemFilter.ALL);
     }
 
     /**
@@ -158,7 +162,7 @@ class PatchingTasks {
      * @param definitions   the task definitions
      * @param filter        the content item filter
      */
-    static void apply(final String patchId, final Collection<ContentModification> modifications, final Map<Location, ContentTaskDefinition> definitions, final ContentItemFilter filter) {
+    static void apply(final String patchId, final Collection<ContentModification> modifications, final PatchEntry patchEntry, final ContentItemFilter filter) {
         for (final ContentModification modification : modifications) {
 
             final ContentItem item = modification.getItem();
@@ -169,12 +173,13 @@ class PatchingTasks {
 
             final Location location = new Location(item);
             final ContentEntry contentEntry = new ContentEntry(patchId, modification);
-            ContentTaskDefinition definition = definitions.get(location);
+            ContentTaskDefinition definition = patchEntry.get(location);
             if (definition == null) {
-                definition = new ContentTaskDefinition(location, contentEntry);
-                definitions.put(location, definition);
+                definition = new ContentTaskDefinition(location, contentEntry, false);
+                patchEntry.put(location, definition);
+            } else {
+                definition.setTarget(contentEntry);
             }
-            definition.setTarget(contentEntry);
         }
     }
 
@@ -183,12 +188,18 @@ class PatchingTasks {
         private final Location location;
         private final ContentEntry latest;
         private ContentEntry target;
+        private boolean rollback;
         private final List<ContentEntry> conflicts = new ArrayList<ContentEntry>();
 
-        ContentTaskDefinition(Location location, ContentEntry latest) {
+        ContentTaskDefinition(Location location, ContentEntry latest, boolean rollback) {
             this.location = location;
             this.latest = latest;
             this.target = latest;
+            this.rollback = rollback;
+        }
+
+        public boolean isRollback() {
+            return rollback;
         }
 
         public Location getLocation() {
@@ -213,6 +224,7 @@ class PatchingTasks {
 
         void setTarget(final ContentEntry entry) {
             target = entry;
+            rollback = false;
         }
 
         void addConflict(ContentEntry entry) {

@@ -24,8 +24,6 @@ package org.jboss.as.patching.runner;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.MiscContentItem;
@@ -58,7 +56,7 @@ public class PatchMergeUnitTestCase {
         final RollbackInfo patch02 = createRollbackInfo("patch02", three, two);
 
         // [patch-two, patch-one]
-        final Map<Location, PatchingTasks.ContentTaskDefinition> defs = process(patch02, patch01);
+        final ContentTaskDefinitions defs = process(patch02, patch01);
 
         Assert.assertEquals(1, defs.size());
         final PatchingTasks.ContentTaskDefinition def = defs.get(new Location(new MiscContentItem(name, path, one)));
@@ -88,7 +86,7 @@ public class PatchMergeUnitTestCase {
         final RollbackInfo patch02 = createRollbackInfo("patch02", three, two);
 
         // [patch-two, patch-one]
-        final Map<Location, PatchingTasks.ContentTaskDefinition> defs = process(patch02, patch01);
+        final ContentTaskDefinitions defs = process(patch02, patch01);
 
         Assert.assertEquals(1, defs.size());
         final PatchingTasks.ContentTaskDefinition def = defs.get(new Location(new MiscContentItem(name, path, one)));
@@ -119,7 +117,7 @@ public class PatchMergeUnitTestCase {
         final RollbackInfo patch02 = createRollbackInfo("patch02", three, four);
 
         // [patch-two, patch-one]
-        final Map<Location, PatchingTasks.ContentTaskDefinition> defs = process(patch02, patch01);
+        final ContentTaskDefinitions defs = process(patch02, patch01);
 
         Assert.assertEquals(1, defs.size());
         final PatchingTasks.ContentTaskDefinition def = defs.get(new Location(new MiscContentItem(name, path, one)));
@@ -142,8 +140,8 @@ public class PatchMergeUnitTestCase {
 
     }
 
-    static Map<Location, PatchingTasks.ContentTaskDefinition> process(final RollbackInfo... rollbackInfos) {
-        final Map<Location, PatchingTasks.ContentTaskDefinition> foo = new HashMap<Location, PatchingTasks.ContentTaskDefinition>();
+    static ContentTaskDefinitions process(final RollbackInfo... rollbackInfos) {
+        final ContentTaskDefinitions foo = new ContentTaskDefinitions();
         for(final RollbackInfo info : rollbackInfos) {
             PatchingTasks.rollback(info.original.getPatchId(), info.original.getModifications(), info.rollback.getModifications(), foo, ContentItemFilter.MISC_ONLY, PatchingTaskContext.Mode.APPLY);
         }
