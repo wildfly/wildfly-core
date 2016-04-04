@@ -30,6 +30,7 @@ import io.undertow.predicate.Predicates;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.PredicateHandler;
 import io.undertow.server.handlers.RedirectHandler;
+import io.undertow.server.handlers.SetHeaderHandler;
 import io.undertow.server.handlers.resource.ClassPathResourceManager;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
 import org.jboss.modules.Module;
@@ -148,8 +149,10 @@ public enum ConsoleMode {
                     .setDirectoryListingEnabled(false)
                     .setCachable(not(suffixes(NOCACHE_JS, APP_HTML, INDEX_HTML)));
 
-            //we also need to setup the default resource redirect
-            PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(CONTEXT + DEFAULT_RESOURCE), handler);
+            // avoid clickjacking attacks: console must not be included in (i)frames
+            SetHeaderHandler frameHandler = new SetHeaderHandler(handler, "X-Frame-Options", "SAMEORIGIN");
+            // we also need to setup the default resource redirect
+            PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(CONTEXT + DEFAULT_RESOURCE), frameHandler);
             return new ResourceHandlerDefinition(CONTEXT, DEFAULT_RESOURCE, predicateHandler);
 
         }
