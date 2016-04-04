@@ -759,7 +759,7 @@ public interface ServerLogger extends BasicLogger {
     OperationFailedException systemPropertyCannotOverrideServerName(String propertyName);
 
     @Message(id = 117, value = "Unable to initialise a basic SSLContext '%s'")
-    IOException unableToInitialiseSSLContext(String message);
+    IllegalStateException unableToInitialiseSSLContext(String message);
 
     @Message(id = 118, value = "Determined modules directory does not exist: %s")
     IllegalStateException modulesDirectoryDoesNotExist(File f);

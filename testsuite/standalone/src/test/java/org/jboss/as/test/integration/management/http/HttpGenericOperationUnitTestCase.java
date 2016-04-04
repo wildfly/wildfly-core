@@ -43,13 +43,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import javax.inject.Inject;
+import javax.net.ssl.SSLContext;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -62,9 +61,8 @@ import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MIME;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -77,6 +75,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.jboss.as.test.http.Authentication;
 import org.jboss.dmr.ModelNode;
@@ -281,16 +280,11 @@ public class HttpGenericOperationUnitTestCase {
     }
 
     private static CloseableHttpClient createHttpClient(String host, int port, String username, String password) {
-
         try {
-            ConnectionSocketFactory sslConnectionFactory = new SSLSocketFactory(new TrustStrategy() {
-                @Override
-                public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-                    return true;
-                }
-            }, new AllowAllHostnameVerifier());
+            SSLContext sslContext = SSLContexts.createDefault();
+            SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
             Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
-                    .register("https", sslConnectionFactory)
+                    .register("https", sslConnectionSocketFactory)
                     .register("http", PlainConnectionSocketFactory.getSocketFactory())
                     .build();
             CredentialsProvider credsProvider = new BasicCredentialsProvider();
@@ -298,11 +292,10 @@ public class HttpGenericOperationUnitTestCase {
                     new UsernamePasswordCredentials(username, password));
             PoolingHttpClientConnectionManager connectionPool = new PoolingHttpClientConnectionManager(registry);
             HttpClientBuilder.create().setConnectionManager(connectionPool).build();
-            CloseableHttpClient httpClient = HttpClientBuilder.create()
+            return HttpClientBuilder.create()
                     .setConnectionManager(connectionPool)
                     .setRetryHandler(new StandardHttpRequestRetryHandler(5, true))
                     .setDefaultCredentialsProvider(credsProvider).build();
-            return httpClient;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -337,7 +330,7 @@ public class HttpGenericOperationUnitTestCase {
         private final ModelNode model;
 
         DMRContentEncodedBody(ModelNode model) {
-            super(DMR_ENCODED);
+            super(ContentType.create(DMR_ENCODED));
             this.model = model;
         }
 

@@ -21,8 +21,10 @@
  */
 package org.jboss.as.controller.test;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_SINGLETONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_TYPES_OPERATION;
 
 import java.util.Enumeration;
@@ -41,6 +43,7 @@ import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
@@ -87,6 +90,32 @@ public class SingletonResourceTestCase extends AbstractControllerTestBase {
         Assert.assertTrue(list.contains(new ModelNode(SERVICE + '=' + REMOTE)));
     }
 
+    @Test
+    public void readChildrenNames() throws Exception {
+        ModelNode op = createOperation(READ_CHILDREN_NAMES_OPERATION);
+        op.get(CHILD_TYPE).set(CORE);
+        ModelNode result = executeForResult(op);
+        List<ModelNode> list = result.asList();
+        Assert.assertEquals(1, list.size());
+        Assert.assertTrue(list.contains(new ModelNode(MODEL)));
+
+        op.get(OP_ADDR).setEmptyList().add(CORE, MODEL);
+        op.get(CHILD_TYPE).set(SERVICE);
+        result = executeForResult(op);
+        list = result.asList();
+        Assert.assertEquals(0, list.size());
+
+        op.get(OP_ADDR).setEmptyList().add(CORE, MODEL);
+        op.get(CHILD_TYPE).set(SERVICE);
+        op.get(INCLUDE_SINGLETONS).set(true);
+        result = executeForResult(op);
+        list = result.asList();
+        Assert.assertEquals(2, list.size());
+
+        Assert.assertTrue(list.contains(new ModelNode(ASYNC)));
+        Assert.assertTrue(list.contains(new ModelNode(REMOTE)));
+    }
+
     @Override
     protected void initModel(ManagementModel managementModel) {
         ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
@@ -102,6 +131,10 @@ public class SingletonResourceTestCase extends AbstractControllerTestBase {
         coreResourceRegistration.registerSubModel(new SingletonResourceDefinition(SERVICE, REMOTE));
         coreResourceRegistration.registerSubModel(new ChildResourceDefinition(DATASOURCE));
         coreResourceRegistration.registerSubModel(new SingletonResourceDefinition(DATASOURCE, DS));
+        Resource model = Resource.Factory.create();
+        Resource rootResource = managementModel.getRootResource();
+        rootResource.registerChild(PathElement.pathElement(CORE, MODEL), model);
+        model.registerChild(PathElement.pathElement(CHILD, "myChild"), Resource.Factory.create());
     }
 
     private PathElement getCoreModelElement() {

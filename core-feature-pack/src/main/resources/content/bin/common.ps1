@@ -22,8 +22,15 @@ Function Get-Env {
   }
   return $args[1]
 }
+Function Get-Env-Boolean{
+  $key = $args[0]
+  if( Test-Path env:$key ) {
+    return (Get-ChildItem env:$key).Value -eq 'true'
+  }
+  return $args[1]
+}
 
-$global:SECMGR = Get-Env SECMGR $false
+$global:SECMGR = Get-Env-Boolean SECMGR $false
 $global:DEBUG_MODE=Get-Env DEBUG $false
 $global:DEBUG_PORT=Get-Env DEBUG_PORT 8787
 $global:RUN_IN_BACKGROUND=$false

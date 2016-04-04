@@ -168,6 +168,7 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         try {
             builder.setOperationName(Util.READ_CHILDREN_NAMES);
             builder.addProperty(Util.CHILD_TYPE, prefix.getNodeType());
+            builder.addProperty(Util.INCLUDE_SINGLETONS, "true");
             request = builder.buildRequest();
         } catch (OperationFormatException e1) {
             throw new IllegalStateException("Failed to build operation", e1);

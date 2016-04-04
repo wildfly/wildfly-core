@@ -41,10 +41,11 @@ public class PatchBundleXmlUnitTestCase {
     @Test
     public void testBasic() throws Exception {
 
-        final InputStream is = getResource("multi-patch-01.xml");
-        final BundledPatch bundledPatch = PatchBundleXml.parse(is);
-        Assert.assertNotNull(bundledPatch);
-        Assert.assertFalse(bundledPatch.getPatches().isEmpty());
+        try (final InputStream is = getResource("multi-patch-01.xml")) {
+            final BundledPatch bundledPatch = PatchBundleXml.parse(is);
+            Assert.assertNotNull(bundledPatch);
+            Assert.assertFalse(bundledPatch.getPatches().isEmpty());
+        }
 
     }
 
@@ -56,17 +57,15 @@ public class PatchBundleXmlUnitTestCase {
     static void doMarshall(final String fileName) throws Exception {
         final String original = toString(fileName);
 
-        final InputStream is = getResource(fileName);
-        final BundledPatch patch = PatchBundleXml.parse(is);
+        try (final InputStream is = getResource(fileName)) {
+            final BundledPatch patch = PatchBundleXml.parse(is);
 
-        final StringWriter writer = new StringWriter();
-        PatchBundleXml.marshal(writer, patch);
-        final String marshalled = writer.toString();
+            final StringWriter writer = new StringWriter();
+            PatchBundleXml.marshal(writer, patch);
+            final String marshalled = writer.toString();
 
-        System.out.println(original);
-        System.out.println(marshalled);
-
-        XMLUtils.compareXml(original, marshalled, false);
+            XMLUtils.compareXml(original, marshalled, false);
+        }
     }
 
     static InputStream getResource(final String name) throws IOException {
@@ -76,9 +75,8 @@ public class PatchBundleXmlUnitTestCase {
     }
 
     static String toString(final String fileName) throws Exception {
-        final InputStream is = getResource(fileName);
-        assertNotNull(is);
-        try {
+        try (final InputStream is = getResource(fileName)){
+            assertNotNull(is);
             is.mark(0);
             String out = new Scanner(is).useDelimiter("\\A").next();
             is.reset();

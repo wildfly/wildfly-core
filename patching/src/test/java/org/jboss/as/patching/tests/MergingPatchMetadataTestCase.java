@@ -76,16 +76,6 @@ public class MergingPatchMetadataTestCase {
         final Patch cp2 = generateCP("cp1", "cp2", ModificationType.MODIFY);
         final Patch merged = PatchMerger.merge(cp1, cp2);
 
-//        StringWriter writer = new StringWriter();
-//        PatchXml.marshal(writer, cp1);
-//        System.out.println(writer.getBuffer().toString());
-//        writer = new StringWriter();
-//        PatchXml.marshal(writer, cp2);
-//        System.out.println(writer.getBuffer().toString());
-//        writer = new StringWriter();
-//        PatchXml.marshal(writer, merged);
-//        System.out.println(writer.getBuffer().toString());
-
         assertEquals("cp2", merged.getPatchId());
         assertEquals("cp2" + " description", merged.getDescription());
 
@@ -127,16 +117,6 @@ public class MergingPatchMetadataTestCase {
         final Patch cp2 = generateCP("cp1", "cp2", ModificationType.REMOVE);
         final Patch merged = PatchMerger.merge(cp1, cp2);
 
-//        StringWriter writer = new StringWriter();
-//        PatchXml.marshal(writer, cp1);
-//        System.out.println(writer.getBuffer().toString());
-//        writer = new StringWriter();
-//        PatchXml.marshal(writer, cp2);
-//        System.out.println(writer.getBuffer().toString());
-//        writer = new StringWriter();
-//        PatchXml.marshal(writer, merged);
-//        System.out.println(writer.getBuffer().toString());
-
         assertEquals("cp2", merged.getPatchId());
         assertEquals("cp2" + " description", merged.getDescription());
 
@@ -170,16 +150,6 @@ public class MergingPatchMetadataTestCase {
         final Patch cp1 = generateCP("base", "cp1", ModificationType.MODIFY);
         final Patch cp2 = generateCP("cp1", "cp2", ModificationType.REMOVE);
         final Patch merged = PatchMerger.merge(cp1, cp2);
-
-//        StringWriter writer = new StringWriter();
-//        PatchXml.marshal(writer, cp1);
-//        System.out.println(writer.getBuffer().toString());
-//        writer = new StringWriter();
-//        PatchXml.marshal(writer, cp2);
-//        System.out.println(writer.getBuffer().toString());
-//        writer = new StringWriter();
-//        PatchXml.marshal(writer, merged);
-//        System.out.println(writer.getBuffer().toString());
 
         assertEquals("cp2", merged.getPatchId());
         assertEquals("cp2" + " description", merged.getDescription());
@@ -221,16 +191,6 @@ public class MergingPatchMetadataTestCase {
         final Patch cp1 = generateCP("base", "cp1", ModificationType.REMOVE);
         final Patch cp2 = generateCP("cp1", "cp2", ModificationType.ADD);
         final Patch merged = PatchMerger.merge(cp1, cp2);
-
-//        StringWriter writer = new StringWriter();
-//        PatchXml.marshal(writer, cp1);
-//        System.out.println(writer.getBuffer().toString());
-//        writer = new StringWriter();
-//        PatchXml.marshal(writer, cp2);
-//        System.out.println(writer.getBuffer().toString());
-//        writer = new StringWriter();
-//        PatchXml.marshal(writer, merged);
-//        System.out.println(writer.getBuffer().toString());
 
         assertEquals("cp2", merged.getPatchId());
         assertEquals("cp2" + " description", merged.getDescription());
@@ -274,16 +234,6 @@ public class MergingPatchMetadataTestCase {
         final Patch cp1 = generateCP("base", "cp1", ModificationType.MODIFY);
         final Patch cp2 = generateCP("cp1", "cp2", ModificationType.MODIFY);
         final Patch merged = PatchMerger.merge(cp1, cp2);
-
-//        StringWriter writer = new StringWriter();
-//        PatchXml.marshal(writer, cp1);
-//        System.out.println(writer.getBuffer().toString());
-//        writer = new StringWriter();
-//        PatchXml.marshal(writer, cp2);
-//        System.out.println(writer.getBuffer().toString());
-//        writer = new StringWriter();
-//        PatchXml.marshal(writer, merged);
-//        System.out.println(writer.getBuffer().toString());
 
         assertEquals("cp2", merged.getPatchId());
         assertEquals("cp2" + " description", merged.getDescription());

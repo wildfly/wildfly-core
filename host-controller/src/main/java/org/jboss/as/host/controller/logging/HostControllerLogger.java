@@ -1256,11 +1256,14 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 169, value = "Reload into running mode is not supported with embedded host controller, admin-only=true must be specified.")
     OperationFailedException embeddedHostControllerRestartMustProvideAdminOnlyTrue();
 
-    //@Message(id = 170, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
-    //OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+    @Message(id = 170, value = "Error releasing shared lock after host registration for operationID: %s")
+    String hostRegistrationCannotReleaseSharedLock(int operationID);
+
+    @Message(id = 171, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
 
     @LogMessage(level = WARN)
-    @Message(id = 171, value = "No security realm defined for native management service; all access will be unrestricted.")
+    @Message(id = 172, value = "No security realm defined for native management service; all access will be unrestricted.")
     void nativeManagementInterfaceIsUnsecured();
 
 }

@@ -22,7 +22,10 @@
 
 package org.jboss.as.controller;
 
+import java.util.Set;
+
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 
 /**
  * Records information about capability reference information encoded in an attribute's value.
@@ -49,7 +52,10 @@ public interface CapabilityReferenceRecorder {
 
     /**
      * @return base name of dependant, usually name of the attribute that provides reference to capability
+     *
+     * @deprecated No longer required and may throw {@link java.lang.UnsupportedOperationException}
      */
+    @Deprecated
     String getBaseDependentName();
 
     /**
@@ -60,8 +66,12 @@ public interface CapabilityReferenceRecorder {
 
     /**
      *
-     * @return tells is reference is dynamic or static, in case where it is dynamic it uses base name + name of dependant attribute to construct name of capability
+     * @return tells is reference is dynamic or static, in case where it is dynamic it uses base name + name of
+     *         dependent attribute to construct name of capability
+     *
+     * @deprecated No longer required and may throw {@link java.lang.UnsupportedOperationException}
      */
+    @Deprecated
     boolean isDynamicDependent();
 
     /**
@@ -70,7 +80,7 @@ public interface CapabilityReferenceRecorder {
      * the attribute value. Derives the dependent capability name from the {@code baseDependentName} provided to the
      * constructor, and, if the dependent name is dynamic, from the address of the resource currently being processed.
      */
-    public static class DefaultCapabilityReferenceRecorder implements CapabilityReferenceRecorder {
+    class DefaultCapabilityReferenceRecorder implements CapabilityReferenceRecorder {
 
         private final String baseRequirementName;
         private final String baseDependentName;
@@ -137,6 +147,90 @@ public interface CapabilityReferenceRecorder {
         @Override
         public boolean isDynamicDependent() {
             return dynamicDependent;
+        }
+
+    }
+
+    /**
+     * {@link CapabilityReferenceRecorder} that determines the dependent capability from
+     * the {@link OperationContext}. This assumes that the
+     * {@link OperationContext#getResourceRegistration() resource registration associated with currently executing step}
+     * will expose a {@link ImmutableManagementResourceRegistration#getCapabilities() capability set} including
+     * one and only one capability. <strong>This recorder cannot be used with attributes associated with resources
+     * that do not meet this requirement.</strong>
+     */
+    class ContextDependencyRecorder implements CapabilityReferenceRecorder {
+
+        private final String baseRequirementName;
+
+        public ContextDependencyRecorder(String baseRequirementName) {
+            this.baseRequirementName = baseRequirementName;
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @throws AssertionError if the requirements discussed in the class javadoc are not fulfilled
+         */
+        @Override
+        public final void addCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues) {
+            processCapabilityRequirement(context, attributeName, false, attributeValues);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @throws AssertionError if the requirements discussed in the class javadoc are not fulfilled
+         */
+        @Override
+        public final void removeCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues) {
+            processCapabilityRequirement(context, attributeName, true, attributeValues);
+        }
+
+        private void processCapabilityRequirement(OperationContext context, String attributeName, boolean remove, String... attributeValues) {
+            String dependentName = getDependentName(context);
+
+            for (String attributeValue : attributeValues) {
+                String requirementName = RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, attributeValue);
+                if (remove) {
+                    context.deregisterCapabilityRequirement(requirementName, dependentName);
+                } else {
+                    context.registerAdditionalCapabilityRequirement(requirementName, dependentName, attributeName);
+                }
+            }
+        }
+
+        private String getDependentName(OperationContext context) {
+            ImmutableManagementResourceRegistration mrr = context.getResourceRegistration();
+            Set<RuntimeCapability> capabilities = mrr.getCapabilities();
+            assert capabilities != null && capabilities.size() == 1;
+            RuntimeCapability cap = capabilities.iterator().next();
+            if (cap.isDynamicallyNamed()) {
+                return cap.getDynamicName(context.getCurrentAddressValue());
+            } else {
+                return cap.getName();
+            }
+        }
+
+        /**
+         * Throws {@link UnsupportedOperationException}
+         */
+        @Override
+        public String getBaseDependentName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getBaseRequirementName() {
+            return baseRequirementName;
+        }
+
+        /**
+         * Throws {@link UnsupportedOperationException}
+         */
+        @Override
+        public boolean isDynamicDependent() {
+            throw new UnsupportedOperationException();
         }
 
     }

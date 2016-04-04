@@ -43,7 +43,10 @@ abstract class AbstractOutboundConnectionResourceDefinition extends SimpleResour
 
     protected AbstractOutboundConnectionResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                                            final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
-        super(pathElement, descriptionResolver, addHandler, removeHandler);
+        super(new Parameters(pathElement, descriptionResolver)
+                .setAddHandler(addHandler)
+                .setRemoveHandler(removeHandler)
+                .setCapabilities(OUTBOUND_CONNECTION_CAPABILITY));
     }
 
 

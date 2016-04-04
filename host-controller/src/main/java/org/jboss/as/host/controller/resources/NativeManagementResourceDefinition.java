@@ -25,6 +25,7 @@ package org.jboss.as.host.controller.resources;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition;
@@ -61,7 +62,6 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, INTERFACE, NATIVE_PORT);
 
     public NativeManagementResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo) {
-
         super(new Parameters(RESOURCE_PATH, HostModelUtil.getResourceDescriptionResolver("core","management","native-interface"))
             .setAddHandler(new NativeManagementAddHandler(hostControllerInfo))
             .setRemoveHandler(NativeManagementRemoveHandler.INSTANCE)

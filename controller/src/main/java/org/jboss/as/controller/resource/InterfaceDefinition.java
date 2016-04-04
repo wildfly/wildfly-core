@@ -28,7 +28,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -46,7 +45,6 @@ import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -178,17 +176,15 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
             MULTICAST, POINT_TO_POINT, PUBLIC_ADDRESS, SITE_LOCAL_ADDRESS, UP, VIRTUAL};*/
 
     private final boolean updateRuntime;
-    private final List<AccessConstraintDefinition> sensitivity;
     private final boolean resolvable;
 
     public InterfaceDefinition(InterfaceAddHandler addHandler, InterfaceRemoveHandler removeHandler, boolean updateRuntime, boolean resolvable) {
-        super(PathElement.pathElement(INTERFACE),
-                ControllerResolver.getResolver(INTERFACE),
-                addHandler,
-                removeHandler);
+        super(new Parameters(PathElement.pathElement(INTERFACE), ControllerResolver.getResolver(INTERFACE))
+                .setAddHandler(addHandler)
+                .setRemoveHandler(removeHandler)
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG));
         this.updateRuntime = updateRuntime;
         this.resolvable = resolvable;
-        this.sensitivity = SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG.wrapAsList();
     }
 
     public static String localName(final Element element) {
@@ -231,11 +227,6 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
             registration.registerReadWriteAttribute(def, null, handler);
         }
         registration.registerReadOnlyAttribute(InterfaceDefinition.NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return sensitivity;
     }
 
     @Deprecated

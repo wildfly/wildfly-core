@@ -1197,7 +1197,7 @@ public class BasicOneOffPatchingScenariosTestCase extends AbstractPatchingTestCa
         Module module = new Module.Builder(moduleName).build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
-        logger.info("moduleDir = " + moduleDir.getAbsolutePath());
+        logger.tracef("moduleDir = %s", moduleDir.getAbsolutePath());
 
         // prepare the patch
         String patchID = randomString();

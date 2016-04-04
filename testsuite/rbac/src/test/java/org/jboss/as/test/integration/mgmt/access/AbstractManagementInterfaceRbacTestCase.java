@@ -21,6 +21,7 @@
  */
 package org.jboss.as.test.integration.mgmt.access;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
@@ -34,7 +35,7 @@ import org.wildfly.core.testrunner.ManagementClient;
  */
 public abstract class AbstractManagementInterfaceRbacTestCase {
 
-    private static final Map<String, ManagementInterface> clients = new HashMap<String, ManagementInterface>();
+    private static final Map<String, ManagementInterface> clients = new HashMap<>();
     @Inject
     protected static ManagementClient managementClient;
 
@@ -61,14 +62,14 @@ public abstract class AbstractManagementInterfaceRbacTestCase {
 
     protected abstract ManagementInterface createClient(String userName);
 
-    public static void removeClientForUser(String userName) {
+    public static void removeClientForUser(String userName) throws IOException {
         ManagementInterface client = clients.remove(userName);
         if (client != null) {
             client.close();
         }
     }
 
-    protected static final ManagementClient getManagementClient() {
+    protected static ManagementClient getManagementClient() {
         return managementClient;
     }
 }

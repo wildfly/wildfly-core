@@ -207,6 +207,8 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(SystemPropertyResourceDefinition.createForDomainOrHost(Location.SERVER_CONFIG));
         // Server jvm
         resourceRegistration.registerSubModel(JvmResourceDefinition.SERVER);
+        // ssl=loopback
+        resourceRegistration.registerSubModel(new SslLoopbackResourceDefinition());
     }
 
     @Override

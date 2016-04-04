@@ -23,12 +23,10 @@ package org.jboss.as.test.patching;
 
 import static java.lang.String.format;
 import static org.jboss.as.patching.Constants.BASE;
-import static org.jboss.as.patching.Constants.BUNDLES;
 import static org.jboss.as.patching.Constants.LAYERS;
 import static org.jboss.as.patching.Constants.MODULES;
 import static org.jboss.as.patching.Constants.OVERLAYS;
 import static org.jboss.as.patching.Constants.SYSTEM;
-import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.newFile;
 import static org.jboss.as.patching.IoUtils.safeClose;
 import static org.jboss.as.patching.logging.PatchLogger.ROOT_LOGGER;
@@ -42,22 +40,17 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 import java.util.Scanner;
 import java.util.UUID;
-import java.util.jar.Attributes.Name;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.DirectoryStructure;
 import org.jboss.as.patching.HashUtils;
 import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.ZipUtils;
@@ -68,7 +61,6 @@ import org.jboss.as.patching.metadata.ModificationType;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchBundleXml;
 import org.jboss.as.patching.metadata.PatchXml;
-import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.test.patching.util.module.Module;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -93,14 +85,13 @@ public class PatchingTestUtil {
     public static final String CONTAINER = "jboss";
     public static final String AS_DISTRIBUTION = System.getProperty("jbossas.dist");
     public static final String FILE_SEPARATOR = File.separator;
-    private static final String RELATIVE_PATCHES_PATH = Joiner.on(FILE_SEPARATOR).join(new String[]{MODULES, SYSTEM, LAYERS, BASE, OVERLAYS});
+    public static final String RELATIVE_PATCHES_PATH = Joiner.on(FILE_SEPARATOR).join(new String[]{MODULES, SYSTEM, LAYERS, BASE, OVERLAYS});
     public static final String PATCHES_PATH = AS_DISTRIBUTION + FILE_SEPARATOR + RELATIVE_PATCHES_PATH;
     private static final String RELATIVE_MODULES_PATH = Joiner.on(FILE_SEPARATOR).join(new String[]{MODULES, SYSTEM, LAYERS, BASE});
     public static final String MODULES_PATH = AS_DISTRIBUTION + FILE_SEPARATOR + RELATIVE_MODULES_PATH;
     public static final File MODULES_DIRECTORY = newFile(new File(AS_DISTRIBUTION), MODULES);
     public static final File LAYERS_DIRECTORY = newFile(MODULES_DIRECTORY, SYSTEM, LAYERS);
     public static final File BASE_MODULE_DIRECTORY = newFile(LAYERS_DIRECTORY, BASE);
-    public static final File BASE_BUNDLE_DIRECTORY = newFile(new File(PatchingTestUtil.AS_DISTRIBUTION), BUNDLES, SYSTEM, LAYERS, BASE);
     public static final boolean DO_CLEANUP = Boolean.getBoolean("cleanup.tmp");
 
     public static final String AS_VERSION = ProductInfo.PRODUCT_VERSION;
@@ -108,6 +99,10 @@ public class PatchingTestUtil {
 
     public static String randomString() {
         return UUID.randomUUID().toString();
+    }
+
+    public static String randomString(String prefix) {
+        return prefix + "-" + ThreadLocalRandom.current().nextInt(0, Integer.MAX_VALUE);
     }
 
     /**
@@ -145,7 +140,7 @@ public class PatchingTestUtil {
         StringBuilder out = new StringBuilder();
         out.append(dir.getParentFile().getAbsolutePath() + "\n");
         tree0(out, dir, 1, "  ");
-        logger.info(out);
+        logger.trace(out);
         ROOT_LOGGER.trace(out.toString());
     }
 
@@ -212,73 +207,6 @@ public class PatchingTestUtil {
         return moduleXMLFile;
     }
 
-    public static File createModule(File baseDir, String moduleName, String... resourcesContents)
-            throws IOException {
-        File moduleDir = IoUtils.mkdir(baseDir, "modules", moduleName);
-        File mainDir = IoUtils.mkdir(moduleDir, "main");
-        String resourceFilePrefix = randomString();
-        String[] resourceFileNames = new String[resourcesContents.length];
-        for (int i = 0; i < resourcesContents.length; i++) {
-            String content = resourcesContents[i];
-            String fileName = resourceFilePrefix + "-" + i;
-            resourceFileNames[i] = fileName;
-            File f = touch(mainDir, fileName);
-            dump(f, content);
-        }
-        createModuleXmlFile(mainDir, moduleName, resourceFileNames);
-        return moduleDir;
-    }
-
-    public static File createModule0(File baseDir, String moduleName, ResourceItem... resourcesItems)
-            throws IOException {
-        File mainDir = createModuleRoot(baseDir, moduleName);
-        String[] resourceFileNames = new String[resourcesItems.length];
-        for (int i = 0; i < resourcesItems.length; i++) {
-            ResourceItem item = resourcesItems[i];
-            resourceFileNames[i] = item.getItemName();
-            File f = touch(mainDir, item.getItemName());
-            dump(f, item.getContent());
-        }
-        createModuleXmlFile(mainDir, moduleName, resourceFileNames);
-        return mainDir.getParentFile();
-    }
-
-    public static File createModule1(File baseDir, String moduleName, String... resourceFileNames) throws IOException {
-        File mainDir = createModuleRoot(baseDir, moduleName);
-        createModuleXmlFile(mainDir, moduleName, resourceFileNames);
-        return mainDir.getParentFile();
-    }
-
-    public static File createModuleRoot(File baseDir, String moduleSpec) throws IOException {
-        final int c1 = moduleSpec.lastIndexOf(':');
-        final String name;
-        final String slot;
-        if (c1 != -1) {
-            name = moduleSpec.substring(0, c1);
-            slot = moduleSpec.substring(c1 + 1);
-        } else {
-            name = moduleSpec;
-            slot = "main";
-        }
-        final String[] segments = name.split("\\.");
-        File dir = baseDir;
-        for (String segment : segments) {
-            dir = new File(dir, segment);
-        }
-        dir = new File(dir, slot);
-        dir.mkdirs();
-        return dir;
-    }
-
-    public static File createBundle0(File baseDir, String bundleName, String content) throws IOException {
-        File mainDir = createModuleRoot(baseDir, bundleName);
-        if (content != null) {
-            File f = touch(mainDir, "content");
-            dump(f, content);
-        }
-        return mainDir.getParentFile();
-    }
-
     public static void createPatchXMLFile(File dir, Patch patch) throws Exception {
         File patchXMLfile = new File(dir, "patch.xml");
         FileOutputStream fos = new FileOutputStream(patchXMLfile);
@@ -316,57 +244,6 @@ public class PatchingTestUtil {
         File zipFile = new File(targetDir, zipFileName + ".zip");
         ZipUtils.zip(sourceDir, zipFile);
         return zipFile;
-    }
-
-    /**
-     * Creates (a part of) the distribution on the filesystem necessary to the run the tests.
-     *
-     * @param env            the directory structure to be created
-     * @param identity       the identity name
-     * @param productName    release name
-     * @param productVersion release version
-     * @return the bin directory
-     * @throws Exception if anything goes wrong
-     */
-    public static File createInstalledImage(DirectoryStructure env, String identity, String productName, String productVersion) throws Exception {
-        // start from a base installation
-        // with a file in it
-        File binDir = mkdir(env.getInstalledImage().getJbossHome(), "bin");
-
-        // create product.conf
-        File productConf = new File(binDir, "product.conf");
-        assertTrue("Failed to create product.conf", productConf.createNewFile());
-        Properties props = new Properties();
-        props.setProperty("slot", identity);
-        FileWriter writer = null;
-        try {
-            writer = new FileWriter(productConf);
-            props.store(writer, null);
-        } finally {
-            StreamUtils.safeClose(writer);
-        }
-
-        // create the product module
-        final File modulesDir = newFile(env.getInstalledImage().getModulesDir(), SYSTEM, LAYERS, BASE);
-        if (!modulesDir.exists()) {
-            modulesDir.mkdirs();
-        }
-        final File moduleDir = createModule1(modulesDir, "org.jboss.as.product:" + identity, "product.jar");
-
-        final Manifest manifest = new Manifest();
-        manifest.getMainAttributes().putValue(Name.MANIFEST_VERSION.toString(), "xxx");
-        manifest.getMainAttributes().putValue("JBoss-Product-Release-Name", productName);
-        manifest.getMainAttributes().putValue("JBoss-Product-Release-Version", productVersion);
-
-        final File moduleJar = new File(new File(moduleDir, identity), "product.jar");
-        JarOutputStream jar = null;
-        try {
-            jar = new JarOutputStream(new FileOutputStream(moduleJar), manifest);
-            jar.flush();
-        } finally {
-            StreamUtils.safeClose(jar);
-        }
-        return binDir;
     }
 
     public static void assertPatchElements(File baseModuleDir, String[] expectedPatchElements) {

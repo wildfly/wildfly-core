@@ -80,8 +80,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
     private RemoteOutboundConnectionResourceDefinition() {
         super(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.REMOTE_OUTBOUND_CONNECTION),
                 RemoteOutboundConnectionAdd.INSTANCE,
-                new ServiceRemoveStepHandler(AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME, RemoteOutboundConnectionAdd.INSTANCE,
-                        AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY));
+                new ServiceRemoveStepHandler(AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME, RemoteOutboundConnectionAdd.INSTANCE));
     }
 
     @Override

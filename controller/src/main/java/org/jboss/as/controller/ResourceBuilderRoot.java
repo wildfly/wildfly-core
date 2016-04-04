@@ -44,7 +44,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
     private final List<AttributeBinding> attributes = new LinkedList<>();
     private final List<OperationBinding> operations = new LinkedList<>();
     private final List<Capability> capabilities = new LinkedList<>();
-    private ResourceDescriptionResolver attributeResolver = null;
+    private ResourceDescriptionResolver attributeResolver = null; // TODO field is never read except in copy c'tor
     private OperationStepHandler addHandler;
     private OperationStepHandler removeHandler;
     private DeprecationData deprecationData;
@@ -53,6 +53,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
     private boolean isRuntime = false;
 
 
+    /** Normal constructor */
     private ResourceBuilderRoot(PathElement pathElement, StandardResourceDescriptionResolver resourceResolver,
                                 OperationStepHandler addHandler,
                                 OperationStepHandler removeHandler,
@@ -62,6 +63,22 @@ class ResourceBuilderRoot implements ResourceBuilder {
         this.parent = parent;
         this.addHandler = addHandler;
         this.removeHandler = removeHandler;
+    }
+
+    /**
+     * Copy constructor for {@link #pushChild(ResourceBuilder)} to use when integrating a child built externally.
+     */
+    private ResourceBuilderRoot(final ResourceBuilderRoot toCopy, final ResourceBuilderRoot parent) {
+        this(toCopy.pathElement, toCopy.resourceResolver, toCopy.addHandler, toCopy.removeHandler, parent);
+        this.attributes.addAll(toCopy.attributes);
+        this.operations.addAll(toCopy.operations);
+        this.capabilities.addAll(toCopy.capabilities);
+        this.children.addAll(toCopy.children);
+        this.addHandler = toCopy.addHandler;
+        this.removeHandler = toCopy.removeHandler;
+        this.deprecationData = toCopy.deprecationData;
+        this.isRuntime = parent.isRuntime;
+        this.attributeResolver = toCopy.attributeResolver; // TODO Remove if this field is unneeded
     }
 
     static ResourceBuilder create(PathElement pathElement, StandardResourceDescriptionResolver resourceDescriptionResolver) {
@@ -198,7 +215,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
 
     @Override
     public ResourceBuilder pushChild(final ResourceBuilder child) {
-        ResourceBuilderRoot childDelegate = new ChildBuilderDelegate((ResourceBuilderRoot) child, this);
+        ResourceBuilderRoot childDelegate = new ResourceBuilderRoot((ResourceBuilderRoot) child, this);
         children.add(childDelegate);
         return childDelegate;
     }
@@ -273,55 +290,46 @@ class ResourceBuilderRoot implements ResourceBuilder {
         }
     }
 
-    static final class ChildBuilderDelegate extends ResourceBuilderRoot {
-        ChildBuilderDelegate(final ResourceBuilderRoot child, final ResourceBuilderRoot parent) {
-            super(child.pathElement, child.resourceResolver, child.addHandler, child.removeHandler, parent);
-            getChildren().addAll(child.children);
-            getAttributes().addAll(child.attributes);
-            getOperations().addAll(child.operations);
+    private static final class AttributeBinding {
+        private final AttributeDefinition attribute;
+        private final OperationStepHandler readOp;
+        private final OperationStepHandler writeOp;
+        private final AttributeAccess.AccessType accessType;
+
+        AttributeBinding(AttributeDefinition attribute, OperationStepHandler readOp, OperationStepHandler writeOp, AttributeAccess.AccessType accessType) {
+            this.attribute = attribute;
+            this.readOp = readOp;
+            this.writeOp = writeOp;
+            this.accessType = accessType;
+        }
+
+        void register(ManagementResourceRegistration registration) {
+            if (accessType == AttributeAccess.AccessType.READ_ONLY) {
+                registration.registerReadOnlyAttribute(attribute, readOp);
+            } else if (accessType == AttributeAccess.AccessType.READ_WRITE) {
+                registration.registerReadWriteAttribute(attribute, readOp, writeOp);
+            } else if (accessType == AttributeAccess.AccessType.METRIC) {
+                registration.registerMetric(attribute, readOp);
+            }
+        }
+
+    }
+
+    private static final class OperationBinding {
+        private OperationDefinition definition;
+        private OperationStepHandler handler;
+        private boolean inherited;
+
+        OperationBinding(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
+            this.definition = definition;
+            this.handler = handler;
+            this.inherited = inherited;
+        }
+
+        public void register(ManagementResourceRegistration registration) {
+            registration.registerOperationHandler(definition, handler, inherited);
         }
     }
-}
-
-final class AttributeBinding {
-    private final AttributeDefinition attribute;
-    private final OperationStepHandler readOp;
-    private final OperationStepHandler writeOp;
-    private final AttributeAccess.AccessType accessType;
-
-    AttributeBinding(AttributeDefinition attribute, OperationStepHandler readOp, OperationStepHandler writeOp, AttributeAccess.AccessType accessType) {
-        this.attribute = attribute;
-        this.readOp = readOp;
-        this.writeOp = writeOp;
-        this.accessType = accessType;
-    }
-
-    void register(ManagementResourceRegistration registration) {
-        if (accessType == AttributeAccess.AccessType.READ_ONLY) {
-            registration.registerReadOnlyAttribute(attribute, readOp);
-        } else if (accessType == AttributeAccess.AccessType.READ_WRITE) {
-            registration.registerReadWriteAttribute(attribute, readOp, writeOp);
-        } else if (accessType == AttributeAccess.AccessType.METRIC) {
-            registration.registerMetric(attribute, readOp);
-        }
-    }
 
 }
-
-final class OperationBinding {
-    private OperationDefinition definition;
-    private OperationStepHandler handler;
-    private boolean inherited;
-
-    OperationBinding(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
-        this.definition = definition;
-        this.handler = handler;
-        this.inherited = inherited;
-    }
-
-    public void register(ManagementResourceRegistration registration) {
-        registration.registerOperationHandler(definition, handler, inherited);
-    }
-}
-
 

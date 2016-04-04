@@ -74,6 +74,7 @@ public class ServerReloadHelper extends Helper {
 
     }
 
+    @SuppressWarnings("unchecked")
     private void executeOperation(Object deploymentOperations, String operation) throws Exception {
         Class defaultBootModuleLoaderHolder = this.getClass().getClassLoader().loadClass("org.jboss.modules.DefaultBootModuleLoaderHolder");
         Field instance = defaultBootModuleLoaderHolder.getDeclaredField("INSTANCE");

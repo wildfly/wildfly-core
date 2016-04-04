@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.CHILD_TYPE;
+import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_SINGLETONS;
 
 import java.util.EnumSet;
 import java.util.Map;
@@ -59,7 +60,7 @@ import org.jboss.dmr.ModelType;
 public class ReadChildrenNamesHandler implements OperationStepHandler {
 
     static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_CHILDREN_NAMES_OPERATION, ControllerResolver.getResolver("global"))
-            .setParameters(CHILD_TYPE)
+            .setParameters(CHILD_TYPE, INCLUDE_SINGLETONS)
             .setReadOnly()
             .setRuntimeOnly()
             .setReplyType(ModelType.LIST)
@@ -79,6 +80,15 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
         Set<String> childNames = childAddresses.get(childType);
         if (childNames == null) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownChildType(childType));
+        }
+        final boolean singletons = INCLUDE_SINGLETONS.resolveModelAttribute(context, operation).asBoolean(false);
+        if (singletons && isSingletonResource(registry, childType)) {
+            Set<PathElement> childTypes = registry.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+            for (PathElement child : childTypes) {
+                if (childType.equals(child.getKey())) {
+                    childNames.add(child.getValue());
+                }
+            }
         }
         // Sort the result
         childNames = new TreeSet<String>(childNames);
@@ -106,5 +116,9 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
         if (fd != null) {
             context.getResponseHeaders().get(ACCESS_CONTROL).set(fd.toModelNode());
         }
+    }
+
+    private boolean isSingletonResource(final ImmutableManagementResourceRegistration registry, final String key) {
+        return registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(key))) == null;
     }
 }

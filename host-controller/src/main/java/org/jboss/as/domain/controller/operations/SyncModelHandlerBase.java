@@ -73,7 +73,7 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
         final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = createRegistry(context, remote, remoteExtensions);
 
         // Describe the local model
-        final ReadDomainModelHandler readModelHandler = new ReadDomainModelHandler(ignoredTransformationRegistry, TRANSFORMERS);
+        final ReadDomainModelHandler readModelHandler = new ReadDomainModelHandler(ignoredTransformationRegistry, TRANSFORMERS, true);
         final HostControllerRegistrationHandler.OperationExecutor operationExecutor = parameters.getOperationExecutor();
         final ModelNode localModel = operationExecutor.executeReadOnly(OPERATION, readModelHandler, ModelController.OperationTransactionControl.COMMIT);
         if (localModel.hasDefined(FAILURE_DESCRIPTION)) {

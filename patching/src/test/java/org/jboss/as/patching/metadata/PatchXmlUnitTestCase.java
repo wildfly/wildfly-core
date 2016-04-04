@@ -143,9 +143,8 @@ public class PatchXmlUnitTestCase {
     }
 
     private String toString(String fileName) throws Exception {
-        final InputStream is = getResource(fileName);
-        assertNotNull(is);
-        try {
+        try (final InputStream is = getResource(fileName)){
+            assertNotNull(is);
             is.mark(0);
             String out = new Scanner(is).useDelimiter("\\A").next();
             is.reset();

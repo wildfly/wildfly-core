@@ -68,6 +68,21 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
 
     /** {@inheritDoc} */
     @Override
+    public DatagramSocket createDatagramSocket(String name) throws SocketException {
+        if (name == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("name");
+        }
+        return new ManagedDatagramSocketBinding(name, this.namedRegistry, null);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public DatagramSocket createDatagramSocket() throws SocketException {
+        return new ManagedDatagramSocketBinding(null, this.unnamedRegistry, null);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public DatagramSocket createDatagramSocket(String name, SocketAddress address) throws SocketException {
         if (name == null) {
             throw NetworkMessages.MESSAGES.nullOrEmptyVar("name");
@@ -85,6 +100,21 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
             throw NetworkMessages.MESSAGES.nullOrEmptyVar("address");
         }
         return new ManagedDatagramSocketBinding(null, this.unnamedRegistry, address);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public MulticastSocket createMulticastSocket(String name) throws IOException {
+        if (name == null) {
+            throw NetworkMessages.MESSAGES.nullOrEmptyVar("name");
+        }
+        return ManagedMulticastSocketBinding.create(name, this.namedRegistry, null);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public MulticastSocket createMulticastSocket() throws IOException {
+        return ManagedMulticastSocketBinding.create(null, this.unnamedRegistry, null);
     }
 
     /** {@inheritDoc} */
@@ -120,7 +150,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         return unnamedRegistry;
     }
 
-    class ManagedSocketFactoryImpl extends ManagedSocketFactory {
+    private class ManagedSocketFactoryImpl extends ManagedSocketFactory {
 
         @Override
         public Socket createSocket() {
@@ -184,7 +214,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
 
     }
 
-    class ManagedServerSocketFactoryImpl extends ManagedServerSocketFactory {
+    private class ManagedServerSocketFactoryImpl extends ManagedServerSocketFactory {
 
         @Override
         public ServerSocket createServerSocket(String name) throws IOException {
@@ -232,16 +262,57 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
 
     }
 
-    static class CloseableManagedBinding implements ManagedBinding {
+    /**
+     * Base class for internal ManagedBinding implementations that
+     * 'wrap' some other object in order to provide the ManagedBinding contract.
+     * Implementations of this interface can be used as keys in a hash map or
+     * values in a hash set and other instances of the same subclass that have
+     * the same name or wrap the same object will be treated as equivalent by the map/set.
+     *
+     * The equals and hashCode implementations of this class are based either on the binding
+     * name *or* on the wrapped object, but not on the combination. If a binding has a name,
+     * that will be used; otherwise the wrapped object will be used. Both getSocketBindingName()
+     * and getWrappedObject() must always provide the same object.
+     */
+    private abstract static class WrapperBinding implements ManagedBinding {
+
+        /** Gets the wrapped object that provide identity for this binding. */
+        abstract Object getWrappedObject();
+
+        @Override
+        public final int hashCode() {
+            String name = getSocketBindingName();
+            return name != null ? name.hashCode() : System.identityHashCode(getWrappedObject());
+        }
+
+        @Override
+        public final boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            WrapperBinding that = (WrapperBinding) o;
+            String name = getSocketBindingName();
+            if (name != null) {
+                return name.equals(that.getSocketBindingName());
+            }
+
+            return getWrappedObject() == that.getWrappedObject();
+        }
+    }
+
+    private static class CloseableManagedBinding extends WrapperBinding {
         private final String name;
         private final InetSocketAddress address;
         private final Closeable closeable;
         private final ManagedBindingRegistry registry;
+
         CloseableManagedBinding(final InetSocketAddress address, final Closeable closeable, final ManagedBindingRegistry registry) {
             this(null, address, closeable, registry);
         }
+
         CloseableManagedBinding(final String name, final InetSocketAddress address,
                 final Closeable closeable, final ManagedBindingRegistry registry) {
+            assert closeable != null;
             this.name = name;
             this.address = address;
             this.closeable = closeable;
@@ -257,17 +328,20 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
-            // First unregister, then close. This allows UnnamedRegistryImpl
-            // to get the bind address before it's gone
             try {
                 registry.unregisterBinding(this);
             } finally {
                 closeable.close();
             }
         }
+
+        @Override
+        Object getWrappedObject() {
+            return closeable;
+        }
     }
 
-    static class WrappedManagedDatagramSocket implements ManagedBinding {
+    private static class WrappedManagedDatagramSocket extends WrapperBinding {
         private final String name;
         private final DatagramSocket socket;
         private final ManagedBindingRegistry registry;
@@ -275,6 +349,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
             this(null, socket, registry);
         }
         public WrappedManagedDatagramSocket(final String name, final DatagramSocket socket, final ManagedBindingRegistry registry) {
+            assert socket != null;
             this.name = name;
             this.socket = socket;
             this.registry = registry;
@@ -290,20 +365,24 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
-            // First unregister, then close. This allows UnnamedRegistryImpl
-            // to get the bind address before it's gone
             try {
                 registry.unregisterBinding(this);
             } finally {
                 socket.close();
             }
         }
+
+        @Override
+        Object getWrappedObject() {
+            return socket;
+        }
     }
 
-    static class WrappedManagedBinding implements ManagedBinding {
+    private static class WrappedManagedBinding extends WrapperBinding {
         private final ManagedBinding wrapped;
         private final ManagedBindingRegistry registry;
         public WrappedManagedBinding(final ManagedBinding wrapped, final ManagedBindingRegistry registry) {
+            assert wrapped != null;
             this.wrapped = wrapped;
             this.registry = registry;
         }
@@ -317,17 +396,20 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
-            // First unregister, then close. This allows UnnamedRegistryImpl
-            // to get the bind address before it's gone
             try {
                 registry.unregisterBinding(this);
             } finally {
                 wrapped.close();
             }
         }
+
+        @Override
+        Object getWrappedObject() {
+            return wrapped;
+        }
     }
 
-    static class WrappedManagedSocket implements ManagedBinding {
+    private static class WrappedManagedSocket extends WrapperBinding {
         private final String name;
         private final Socket socket;
         private final ManagedBindingRegistry registry;
@@ -335,6 +417,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
             this(null, socket, registry);
         }
         public WrappedManagedSocket(final String name, final Socket socket, final ManagedBindingRegistry registry) {
+            assert socket != null;
             this.name = name;
             this.socket = socket;
             this.registry = registry;
@@ -349,17 +432,20 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
-            // First unregister, then close. This allows UnnamedRegistryImpl
-            // to get the bind address before it's gone
             try {
                 registry.unregisterBinding(this);
             } finally {
                 socket.close();
             }
         }
+
+        @Override
+        Object getWrappedObject() {
+            return socket;
+        }
     }
 
-    static class WrappedManagedServerSocket implements ManagedBinding {
+    private static class WrappedManagedServerSocket extends WrapperBinding {
         private final String name;
         private final ServerSocket socket;
         private final ManagedBindingRegistry registry;
@@ -367,6 +453,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
             this(null, socket, registry);
         }
         public WrappedManagedServerSocket(final String name, final ServerSocket socket, final ManagedBindingRegistry registry) {
+            assert socket != null;
             this.name = name;
             this.socket = socket;
             this.registry = registry;
@@ -381,17 +468,20 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
         @Override
         public void close() throws IOException {
-            // First unregister, then close. This allows UnnamedRegistryImpl
-            // to get the bind address before it's gone
             try {
                 registry.unregisterBinding(this);
             } finally {
                 socket.close();
             }
         }
+
+        @Override
+        Object getWrappedObject() {
+            return socket;
+        }
     }
 
-    static final class NamedRegistryImpl implements NamedManagedBindingRegistry {
+    private static final class NamedRegistryImpl implements NamedManagedBindingRegistry {
         private final Map<String, ManagedBinding> bindings = new ConcurrentHashMap<String, ManagedBinding>();
 
         /** {@inheritDoc} */
@@ -490,36 +580,33 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
     }
 
-    static final class UnnamedRegistryImpl implements UnnamedBindingRegistry {
-        private final Map<InetSocketAddress, ManagedBinding> bindings = new ConcurrentHashMap<InetSocketAddress, ManagedBinding>();
+    private static final class UnnamedRegistryImpl implements UnnamedBindingRegistry {
+        // Can't put null in ConcurrentHashMap and I'm too lazy to drop CHM
+        private static final Object VALUE = new Object();
+
+        private final Map<WrapperBinding, Object> bindings = new ConcurrentHashMap<>();
 
         /** {@inheritDoc} */
         @Override
         public void registerBinding(ManagedBinding binding) {
-            final InetSocketAddress address = binding.getBindAddress();
-            if(address == null) {
-                throw new IllegalStateException();
-            }
-            bindings.put(address, new WrappedManagedBinding(binding, this));
+            bindings.put(new WrappedManagedBinding(binding, this), VALUE);
         }
 
         /** {@inheritDoc} */
         @Override
         public void unregisterBinding(ManagedBinding binding) {
-            final InetSocketAddress address = binding.getBindAddress();
-            // WFCORE-1127 - we don't care if there is no address.
-            // This allows us to handle cases where a ManagedSocketBinding
-            // is closed before being bound.
-            //if(address == null) {
-            //    throw new IllegalStateException();
-            //}
-            unregisterBinding(address);
+            if (binding != null) {
+                final WrapperBinding toRemove = binding instanceof WrapperBinding
+                        ? (WrapperBinding) binding
+                        : new WrappedManagedBinding(binding, this);
+                bindings.remove(toRemove);
+            }
         }
 
         /** {@inheritDoc} */
         @Override
         public Collection<ManagedBinding> listActiveBindings() {
-            return new HashSet<ManagedBinding>(bindings.values());
+            return new HashSet<ManagedBinding>(bindings.keySet());
         }
 
         /** {@inheritDoc} */
@@ -573,43 +660,40 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         /** {@inheritDoc} */
         @Override
         public void unregisterSocket(Socket socket) {
-            unregisterBinding((InetSocketAddress) socket.getLocalSocketAddress());
+            bindings.remove(new WrappedManagedSocket(socket, this));
         }
 
         /** {@inheritDoc} */
         @Override
         public void unregisterSocket(ServerSocket socket) {
-            unregisterBinding((InetSocketAddress) socket.getLocalSocketAddress());
+            bindings.remove(new WrappedManagedServerSocket(socket, this));
         }
 
         /** {@inheritDoc} */
         @Override
         public void unregisterSocket(DatagramSocket socket) {
-            unregisterBinding((InetSocketAddress) socket.getLocalSocketAddress());
+            bindings.remove(new WrappedManagedDatagramSocket(socket, this));
         }
 
         /** {@inheritDoc} */
         @Override
         public void unregisterChannel(SocketChannel channel) {
-            unregisterBinding((InetSocketAddress) channel.socket().getLocalSocketAddress());
+            WrapperBinding wrapper = new CloseableManagedBinding((InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            bindings.remove(wrapper);
         }
 
         /** {@inheritDoc} */
         @Override
         public void unregisterChannel(ServerSocketChannel channel) {
-            unregisterBinding((InetSocketAddress) channel.socket().getLocalSocketAddress());
+            WrapperBinding wrapper = new CloseableManagedBinding((InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            bindings.remove(wrapper);
         }
 
         /** {@inheritDoc} */
         @Override
         public void unregisterChannel(DatagramChannel channel) {
-            unregisterBinding((InetSocketAddress) channel.socket().getLocalSocketAddress());
-        }
-
-        public void unregisterBinding(final InetSocketAddress address) {
-            if(address != null) {
-                bindings.remove(address);
-            }
+            WrapperBinding wrapper = new CloseableManagedBinding((InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            bindings.remove(wrapper);
         }
     }
 

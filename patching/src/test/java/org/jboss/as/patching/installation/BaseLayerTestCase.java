@@ -22,6 +22,7 @@
 
 package org.jboss.as.patching.installation;
 
+import static org.jboss.as.patching.logging.PatchLogger.ROOT_LOGGER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.jboss.as.patching.Constants.LAYERS;
@@ -97,7 +98,6 @@ public class BaseLayerTestCase extends AbstractTaskTestCase {
                 .build();
 
         createPatchXMLFile(patchDir, patch);
-        System.out.println("patch =>>");
         File zippedPatch = createZippedPatchFile(patchDir, patchID);
 
         // apply patch
@@ -107,8 +107,10 @@ public class BaseLayerTestCase extends AbstractTaskTestCase {
         assertInstallationIsPatched(patch, patchedInstalledIdentity.getIdentity().loadTargetInfo());
         assertFileExists(env.getInstalledImage().getJbossHome(), "bin", fileAdded.getItem().getName());
 
-        System.out.println("installation =>>");
-        tree(env.getInstalledImage().getJbossHome());
+        if (ROOT_LOGGER.isDebugEnabled()) {
+            System.out.println("installation =>>");
+            tree(env.getInstalledImage().getJbossHome());
+        }
 
         DirectoryStructure layerDirStructure = installedIdentity.getLayers().get(0).loadTargetInfo().getDirectoryStructure();
         File modulesPatchDir = layerDirStructure.getModulePatchDirectory(layerPatchId);

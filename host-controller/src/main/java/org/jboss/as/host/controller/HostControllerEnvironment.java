@@ -341,12 +341,20 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         }
         this.hostName = hostName;
 
-
         File home = getFileFromProperty(HOME_DIR);
-        this.homeDir = home;
-        if (homeDir == null) {
-            throw HostControllerLogger.ROOT_LOGGER.missingHomeDirConfiguration(HOME_DIR);
+        if (home == null) {
+            if (processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
+                throw HostControllerLogger.ROOT_LOGGER.missingHomeDirConfiguration(HOME_DIR);
+            } else {
+                // only for embedded HC
+                String homeStr = WildFlySecurityManager.getPropertyPrivileged(HOME_DIR, null);
+                if (homeStr == null)
+                    throw HostControllerLogger.ROOT_LOGGER.missingHomeDirConfiguration(HOME_DIR);
+                home = new File(homeStr);
+            }
         }
+        this.homeDir = home;
+
         if (!homeDir.exists() || !homeDir.isDirectory()) {
             throw HostControllerLogger.ROOT_LOGGER.homeDirectoryDoesNotExist(homeDir);
         }

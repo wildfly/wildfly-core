@@ -21,10 +21,8 @@
  */
 package org.jboss.as.host.controller.operations;
 
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
-import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -44,10 +42,6 @@ public class HttpManagementRemoveHandler extends ReloadRequiredRemoveStepHandler
 
 
     public static final HttpManagementRemoveHandler INSTANCE = new HttpManagementRemoveHandler();
-
-    public HttpManagementRemoveHandler() {
-        super(HTTP_MANAGEMENT_CAPABILITY);
-    }
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {

@@ -90,6 +90,7 @@ public class ExpressionResolverImpl implements ExpressionResolver {
         } else if (type == ModelType.LIST) {
             resolved = node.clone();
             ModelNode list = new ModelNode();
+            list.setEmptyList();
             for (ModelNode current : resolved.asList()) {
                 list.add(resolveExpressionsRecursively(current));
             }
@@ -213,6 +214,11 @@ public class ExpressionResolverImpl implements ExpressionResolver {
                                 // We're in an outer expression, so just discard the top stack element
                                 // created when we saw the '$' and resume tracking the outer expression
                                 stack.pop();
+                                if(ch == '$') {
+                                    modified = true; // since we discarded the '$'
+                                } else if (ch == '}') {//this may be the end of the outer expression
+                                    i--;
+                                }
                                 state = GOT_OPEN_BRACE;
                             }
                             continue;

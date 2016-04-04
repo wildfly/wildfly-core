@@ -23,7 +23,6 @@
 package org.jboss.as.test.patching;
 
 import static org.jboss.as.patching.Constants.BASE;
-import static org.jboss.as.patching.Constants.BUNDLES;
 import static org.jboss.as.patching.Constants.LAYERS;
 import static org.jboss.as.patching.Constants.MODULES;
 import static org.jboss.as.patching.Constants.SYSTEM;
@@ -31,7 +30,6 @@ import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.newFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.MODULES_PATH;
 import static org.jboss.as.test.patching.PatchingTestUtil.assertPatchElements;
-import static org.jboss.as.test.patching.PatchingTestUtil.createBundle0;
 import static org.jboss.as.test.patching.PatchingTestUtil.createPatchXMLFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.createZippedPatchFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.dump;
@@ -99,13 +97,6 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
         // patch the file
         ContentModification fileModified = ContentModificationUtils.modifyMisc(patchDir, patchID, "updated script", miscFile, "bin", fileName);
 
-        // create a bundle to be updated w/o a conflict
-        File baseBundleDir = newFile(new File(PatchingTestUtil.AS_DISTRIBUTION), BUNDLES, SYSTEM, LAYERS, BASE);
-        String bundleName = "bundle-test";
-        File bundleDir = createBundle0(baseBundleDir, bundleName, "bundle content");
-        // patch the bundle
-        ContentModification bundleModified = ContentModificationUtils.modifyBundle(patchDir, patchElementId, bundleDir, "updated bundle content");
-
         Patch patch = PatchBuilder.create()
                 .setPatchId(patchID)
                 .setDescription(randomString())
@@ -114,7 +105,6 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
                 .addContentModification(fileModified)
                 .upgradeElement(patchElementId, "base", false)
                 .addContentModification(moduleModified)
-                .addContentModification(bundleModified)
                 .getParent()
                 .build();
 
@@ -125,7 +115,6 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
 
         // no patches applied
         assertPatchElements(baseModuleDir, null);
-        assertPatchElements(baseBundleDir, null);
 
         controller.start();
 
@@ -143,7 +132,6 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
 
         // first patch applied
         assertPatchElements(baseModuleDir, new String[]{patchElementId}, false);
-        assertPatchElements(baseBundleDir, new String[]{patchElementId}, false);
 
         byte[] patch1FileHash = HashUtils.hashFile(miscFile);
         assertNotEqual(originalFileHash, patch1FileHash);
@@ -153,7 +141,6 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
         final String patchElementId2 = randomString();
 
         final File patchedModule = newFile(baseModuleDir, ".overlays", patchElementId, moduleName);
-        final File patchedBundle = newFile(baseBundleDir, ".overlays", patchElementId, bundleName);
 
         Module modifiedModule = new Module.Builder(moduleName)
                 .miscFile(new ResourceItem("resource-test", "another module update".getBytes()))
@@ -161,7 +148,6 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
 
         ContentModification fileModified2 = ContentModificationUtils.modifyMisc(patchDir, patchID2, "another file update", miscFile, "bin", fileName);
         ContentModification moduleModified2 = ContentModificationUtils.modifyModule(patchDir, patchElementId2, HashUtils.hashFile(patchedModule), modifiedModule);
-        ContentModification bundleModified2 = ContentModificationUtils.modifyBundle(patchDir, patchElementId2, patchedBundle, "another bundle update");
 
         Patch patch2 = PatchBuilder.create()
                 .setPatchId(patchID2)
@@ -171,7 +157,6 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
                 .addContentModification(fileModified2)
                 .upgradeElement(patchElementId2, "base", false)
                 .addContentModification(moduleModified2)
-                .addContentModification(bundleModified2)
                 .getParent()
                 .build();
 
@@ -191,7 +176,6 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
 
         // both patches applied
         assertPatchElements(baseModuleDir, new String[]{patchElementId, patchElementId2}, false);
-        assertPatchElements(baseBundleDir, new String[]{patchElementId, patchElementId2}, false);
 
         byte[] patch2FileHash = HashUtils.hashFile(miscFile);
         assertNotEqual(patch1FileHash, patch2FileHash);
@@ -216,7 +200,6 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
         try {
             // only the first patch is present
             assertPatchElements(baseModuleDir, new String[]{patchElementId}, false);
-            assertPatchElements(baseBundleDir, new String[]{patchElementId}, false);
 
             ctx.handle("patch rollback --reset-configuration=false");
         } catch (Exception e) {
@@ -232,7 +215,6 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
 
             // no patches present
             assertPatchElements(baseModuleDir, null, false);
-            assertPatchElements(baseBundleDir, null, false);
         } finally {
             controller.stop();
         }

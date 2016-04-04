@@ -24,10 +24,10 @@ package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
-import io.undertow.server.ListenerRegistry;
 
 import java.util.concurrent.Executor;
 
+import io.undertow.server.ListenerRegistry;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -130,6 +130,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, service.getRequestProcessorValue())
                 .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, service.getWorker())
+                .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, Executor.class, service.getManagementExecutor())
                 .addInjection(service.getPortInjector(), port)
                 .addInjection(service.getSecurePortInjector(), securePort)
                 .addInjection(service.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());

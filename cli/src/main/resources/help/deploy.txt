@@ -80,6 +80,9 @@ ARGUMENTS
                     all-server-groups is required in the domain mode. This
                     argument is not applicable in the standalone mode.
 
+                    NOTE: In non-interactive mode, the list must be surrounded
+                    by square brackets e.g. [group1, group2].
+
  --all-server-groups  - indicates that deploy should apply to all the available
                         server groups. Either server-groups or all-server-groups
                         is required in domain mode. This argument is not

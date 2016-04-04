@@ -45,8 +45,7 @@ class LocalOutboundConnectionAdd extends AbstractAddStepHandler {
     static final LocalOutboundConnectionAdd INSTANCE = new LocalOutboundConnectionAdd();
 
     private LocalOutboundConnectionAdd() {
-        super(AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY,
-                LocalOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_REF);
+        super(LocalOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_REF);
     }
 
     @Override

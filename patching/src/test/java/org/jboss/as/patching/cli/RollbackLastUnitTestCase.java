@@ -27,7 +27,6 @@ import static org.jboss.as.patching.Constants.LAYERS;
 import static org.jboss.as.patching.Constants.SYSTEM;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.newFile;
-import static org.jboss.as.patching.runner.TestUtils.createBundle0;
 import static org.jboss.as.patching.runner.TestUtils.createInstalledImage;
 import static org.jboss.as.patching.runner.TestUtils.createModule0;
 import static org.jboss.as.patching.runner.TestUtils.createPatchXMLFile;
@@ -89,13 +88,6 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
         // patch the file
         ContentModification fileModified = ContentModificationUtils.modifyMisc(patchDir, patchID, "updated script", miscFile, "bin", fileName);
 
-        // create a bundle to be updated w/o a conflict
-        File baseBundleDir = newFile(env.getInstalledImage().getBundlesDir(), SYSTEM, LAYERS, BASE);
-        String bundleName = "bundle-test";
-        File bundleDir = createBundle0(baseBundleDir, bundleName, "bundle content");
-        // patch the bundle
-        ContentModification bundleModified = ContentModificationUtils.modifyBundle(patchDir, patchElementId, bundleDir, "updated bundle content");
-
         //TestUtils.tree(env.getInstalledImage().getJbossHome());
 
         Patch patch = PatchBuilder.create()
@@ -106,7 +98,6 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
                 .addContentModification(fileModified)
                 .upgradeElement(patchElementId, "base", false)
                 .addContentModification(moduleModified)
-                .addContentModification(bundleModified)
                 .getParent()
                 .build();
 
@@ -117,7 +108,6 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
 
         // no patches applied
         assertPatchElements(baseModuleDir, null);
-        assertPatchElements(baseBundleDir, null);
 
         // apply the patch using the cli
         CommandContext ctx = CommandContextFactory.getInstance().newCommandContext();
@@ -130,7 +120,6 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
 
         // first patch applied
         assertPatchElements(baseModuleDir, new String[]{patchElementId});
-        assertPatchElements(baseBundleDir, new String[]{patchElementId});
 
         byte[] patch1FileHash = HashUtils.hashFile(miscFile);
         assertNotEqual(originalFileHash, patch1FileHash);
@@ -140,11 +129,9 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
         final String patchElementId2 = randomString();
 
         final File patchedModule = newFile(baseModuleDir, ".overlays", patchElementId, moduleName);
-        final File patchedBundle = newFile(baseBundleDir, ".overlays", patchElementId, bundleName);
 
         ContentModification fileModified2 = ContentModificationUtils.modifyMisc(patchDir, patchID2, "another file update", miscFile, "bin", fileName);
         ContentModification moduleModified2 = ContentModificationUtils.modifyModule(patchDir, patchElementId2, patchedModule, "another module update");
-        ContentModification bundleModified2 = ContentModificationUtils.modifyBundle(patchDir, patchElementId2, patchedBundle, "another bundle update");
 
         Patch patch2 = PatchBuilder.create()
                 .setPatchId(patchID2)
@@ -154,7 +141,6 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
                 .addContentModification(fileModified2)
                 .upgradeElement(patchElementId2, "base", false)
                 .addContentModification(moduleModified2)
-                .addContentModification(bundleModified2)
                 .getParent()
                 .build();
 
@@ -170,7 +156,6 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
 
         // both patches applied
         assertPatchElements(baseModuleDir, new String[]{patchElementId, patchElementId2});
-        assertPatchElements(baseBundleDir, new String[]{patchElementId, patchElementId2});
 
         byte[] patch2FileHash = HashUtils.hashFile(miscFile);
         assertNotEqual(patch1FileHash, patch2FileHash);
@@ -187,7 +172,6 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
 
         // only the first patch is present
         assertPatchElements(baseModuleDir, new String[]{patchElementId});
-        assertPatchElements(baseBundleDir, new String[]{patchElementId});
 
         byte[] curFileHash = HashUtils.hashFile(miscFile);
         assertNotEqual(curFileHash, patch2FileHash);
@@ -205,7 +189,6 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
 
         // no patches present
         assertPatchElements(baseModuleDir, null);
-        assertPatchElements(baseBundleDir, null);
 
         curFileHash = HashUtils.hashFile(miscFile);
         assertNotEqual(curFileHash, patch2FileHash);

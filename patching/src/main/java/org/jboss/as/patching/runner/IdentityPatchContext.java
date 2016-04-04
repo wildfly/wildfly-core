@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -77,7 +78,8 @@ class IdentityPatchContext implements PatchContentProvider {
     private static final AtomicReferenceFieldUpdater<IdentityPatchContext, State> stateUpdater = AtomicReferenceFieldUpdater.newUpdater(IdentityPatchContext.class, State.class, "state");
     // The modules we need to invalidate
     private final List<File> moduleInvalidations = new ArrayList<File>();
-
+    private List<File> modulesToReenable = Collections.emptyList();
+    private List<File> modulesToDisable = Collections.emptyList();
     private final Map<String, FailedFileRenaming> renames = new LinkedHashMap<String, FailedFileRenaming>();
 
     static enum State {
@@ -349,16 +351,35 @@ class IdentityPatchContext implements PatchContentProvider {
      */
     private void complete(final InstallationManager.InstallationModification modification, final FinalizeCallback callback) {
         final List<File> processed = new ArrayList<File>();
+        List<File> reenabled = Collections.emptyList();
+        List<File> disabled = Collections.emptyList();
         try {
             try {
                 // Update the state to invalidate and process module resources
-                if (stateUpdater.compareAndSet(this, State.PREPARED, State.INVALIDATE)
-                        && mode == PatchingTaskContext.Mode.APPLY) {
-                    // Only invalidate modules when applying patches; on rollback files are immediately restored
-                    for (final File invalidation : moduleInvalidations) {
-                        processed.add(invalidation);
-                        PatchModuleInvalidationUtils.processFile(this, invalidation, mode);
+                if (stateUpdater.compareAndSet(this, State.PREPARED, State.INVALIDATE)) {
+                    if (mode == PatchingTaskContext.Mode.APPLY) {
+                        // Only invalidate modules when applying patches; on rollback files are immediately restored
+                        for (final File invalidation : moduleInvalidations) {
+                            processed.add(invalidation);
+                            PatchModuleInvalidationUtils.processFile(this, invalidation, mode);
+                        }
+                        if (!modulesToReenable.isEmpty()) {
+                            reenabled = new ArrayList<File>(modulesToReenable.size());
+                            for (final File path : modulesToReenable) {
+                                reenabled.add(path);
+                                PatchModuleInvalidationUtils.processFile(this, path, PatchingTaskContext.Mode.ROLLBACK);
+                            }
+                        }
+                    } else if(mode == PatchingTaskContext.Mode.ROLLBACK) {
+                        if (!modulesToDisable.isEmpty()) {
+                            disabled = new ArrayList<File>(modulesToDisable.size());
+                            for (final File path : modulesToDisable) {
+                                disabled.add(path);
+                                PatchModuleInvalidationUtils.processFile(this, path, PatchingTaskContext.Mode.APPLY);
+                            }
+                        }
                     }
+
                 }
                 modification.complete();
                 callback.completed(this);
@@ -366,6 +387,10 @@ class IdentityPatchContext implements PatchContentProvider {
             } catch (Exception e) {
                 this.moduleInvalidations.clear();
                 this.moduleInvalidations.addAll(processed);
+                this.modulesToReenable.clear();
+                this.modulesToReenable.addAll(reenabled);
+                this.modulesToDisable.clear();
+                this.moduleInvalidations.addAll(disabled);
                 throw new RuntimeException(e);
             }
         } finally {
@@ -432,6 +457,24 @@ class IdentityPatchContext implements PatchContentProvider {
                     PatchLogger.ROOT_LOGGER.debugf(e, "failed to restore state for %s", file);
                 }
             }
+            if(!modulesToReenable.isEmpty()) {
+                for (final File file : modulesToReenable) {
+                    try {
+                        PatchModuleInvalidationUtils.processFile(this, file, PatchingTaskContext.Mode.APPLY);
+                    } catch (Exception e) {
+                        PatchLogger.ROOT_LOGGER.debugf(e, "failed to restore state for %s", file);
+                    }
+                }
+            }
+            if(!modulesToDisable.isEmpty()) {
+                for (final File file : modulesToDisable) {
+                    try {
+                        PatchModuleInvalidationUtils.processFile(this, file, PatchingTaskContext.Mode.ROLLBACK);
+                    } catch (Exception e) {
+                        PatchLogger.ROOT_LOGGER.debugf(e, "failed to restore state for %s", file);
+                    }
+                }
+            }
         }
         return true;
     }
@@ -450,7 +493,7 @@ class IdentityPatchContext implements PatchContentProvider {
                 // Skip modules and bundles they should be removed as part of the {@link FinalizeCallback}
                 continue;
             }
-            final PatchingTaskDescription description = new PatchingTaskDescription(entry.applyPatchId, modification, loader, false, false);
+            final PatchingTaskDescription description = new PatchingTaskDescription(entry.applyPatchId, modification, loader, false, false, false);
             try {
                 final PatchingTask task = PatchingTask.Factory.create(description, entry);
                 task.execute(entry);
@@ -621,14 +664,13 @@ class IdentityPatchContext implements PatchContentProvider {
     /**
      * Modification information for a patchable target.
      */
-    class PatchEntry implements InstallationManager.MutablePatchingTarget, PatchingTaskContext {
+    class PatchEntry extends ContentTaskDefinitions implements InstallationManager.MutablePatchingTarget, PatchingTaskContext {
 
         private String applyPatchId;
         private PatchElement element;
         private final InstallationManager.MutablePatchingTarget delegate;
         private final List<ContentModification> modifications = new ArrayList<ContentModification>();
         private final List<ContentModification> rollbackActions = new ArrayList<ContentModification>();
-        private final Map<Location, PatchingTasks.ContentTaskDefinition> definitions = new LinkedHashMap<Location, PatchingTasks.ContentTaskDefinition>();
         private final Set<String> rollbacks = new HashSet<String>();
 
         PatchEntry(final InstallationManager.MutablePatchingTarget delegate, final PatchElement element) {
@@ -664,6 +706,11 @@ class IdentityPatchContext implements PatchContentProvider {
         }
 
         @Override
+        public boolean isRolledback(String patchId) {
+            return rollbacks.contains(patchId);
+        }
+
+        @Override
         public void apply(String patchId, Patch.PatchType patchType) {
             delegate.apply(patchId, patchType);
             applyPatchId = patchId;
@@ -687,10 +734,6 @@ class IdentityPatchContext implements PatchContentProvider {
         @Override
         public DirectoryStructure getDirectoryStructure() {
             return delegate.getDirectoryStructure();
-        }
-
-        public Map<Location, PatchingTasks.ContentTaskDefinition> getDefinitions() {
-            return definitions;
         }
 
         @Override
@@ -779,6 +822,45 @@ class IdentityPatchContext implements PatchContentProvider {
                         // For rollback we need to restore the file before calculating the hash
                         PatchModuleInvalidationUtils.processFile(null, file, mode);
                     }
+                }
+            }
+        }
+
+        void prepareForPortForward(ContentItem item, String patchId) throws IOException {
+            if (item.getContentType() == ContentType.MODULE) {
+                final File targetFile = delegate.getDirectoryStructure().getModulePatchDirectory(patchId);
+                final List<File> files = listFiles(targetFile);
+                if (files != null && files.size() > 0) {
+                    for (final File file : files) {
+                        moduleInvalidations.add(file);
+                        PatchModuleInvalidationUtils.processFile(IdentityPatchContext.this, file, PatchingTaskContext.Mode.ROLLBACK);
+                    }
+                }
+            }
+        }
+
+        void reenableBaseModule(final ModuleItem item) throws IOException {
+            if(modulesToReenable.isEmpty()) {
+                modulesToReenable = new ArrayList<File>();
+            }
+            final File modulePath = PatchContentLoader.getModulePath(getDirectoryStructure().getModuleRoot(), item.getName(), ((ModuleItem)item).getSlot());
+            final List<File> files = listFiles(modulePath);
+            if (files != null && files.size() > 0) {
+                for (final File file : files) {
+                    modulesToReenable.add(file);
+                }
+            }
+        }
+
+        void disableBaseModule(final ModuleItem item) throws IOException {
+            if(modulesToDisable.isEmpty()) {
+                modulesToDisable = new ArrayList<File>();
+            }
+            final File modulePath = PatchContentLoader.getModulePath(getDirectoryStructure().getModuleRoot(), item.getName(), ((ModuleItem)item).getSlot());
+            final List<File> files = listFiles(modulePath);
+            if (files != null && files.size() > 0) {
+                for (final File file : files) {
+                    modulesToDisable.add(file);
                 }
             }
         }
@@ -996,11 +1078,8 @@ class IdentityPatchContext implements PatchContentProvider {
             }
         }
         try {
-            final OutputStream os = new FileOutputStream(file);
-            try {
+            try (final OutputStream os = new FileOutputStream(file)){
                 PatchXml.marshal(os, rollbackPatch);
-            } finally {
-                IoUtils.safeClose(os);
             }
         } catch (XMLStreamException e) {
             throw new IOException(e);

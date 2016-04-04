@@ -17,11 +17,12 @@
   -->
 
 <subsystem xmlns="urn:jboss:domain:test:1.0">
-    <server name="default" >
-            <security enabled="${security.enabled:false}" />
-            <statistics enabled="${statistics.enabled:true}" />
-            <buffer-cache name="default" buffer-size="1025" buffers-per-region="1054" max-regions="15" alias="entry1 entry2 entry3" />
-      </server>
-  <server name="bar"> <!-- we are testing if parsing empty tags works properly -->
-  </server>
+    <server name="default">
+        <interceptors />
+        <security enabled="${security.enabled:false}"/>
+        <statistics enabled="${statistics.enabled:true}"/>
+        <buffer-cache name="default" buffer-size="1025" buffers-per-region="1054" max-regions="15" alias="entry1 entry2 entry3"/>
+    </server>
+    <server name="bar"> <!-- we are testing if parsing empty tags works properly -->
+    </server>
 </subsystem>

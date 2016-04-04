@@ -4,7 +4,7 @@
 # Usage : standalone.sh --debug
 #         standalone.sh --debug 9797
 
-# By default debug mode is disable.
+# By default debug mode is disabled.
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 SERVER_OPTS=""
@@ -233,8 +233,13 @@ if $darwin || $freebsd || $other ; then
               JBOSS_BASE_DIR=`cd ${p#*=} ; pwd -P`
               ;;
          -Djboss.server.log.dir=*)
-              JBOSS_LOG_DIR=`cd ${p#*=} ; pwd -P`
-              ;;
+              if [ -d "${p#*=}" ]; then
+                JBOSS_LOG_DIR=`cd ${p#*=} ; pwd -P`
+             else
+                #since the specified directory doesn't exist we don't validate it
+                JBOSS_LOG_DIR=${p#*=}
+             fi
+             ;;
          -Djboss.server.config.dir=*)
               JBOSS_CONFIG_DIR=`cd ${p#*=} ; pwd -P`
               ;;

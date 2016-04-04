@@ -39,6 +39,7 @@ import javax.management.InvalidAttributeValueException;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
+import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
 import javax.management.MBeanServerNotification;
 import javax.management.NotificationBroadcaster;
@@ -69,16 +70,19 @@ import org.jboss.dmr.ModelNode;
  */
 public class ModelControllerMBeanServerPlugin extends BaseMBeanServerPlugin {
 
+    private final MBeanServer mbeanServer;
     private final ConfiguredDomains configuredDomains;
     private final ModelControllerMBeanHelper legacyHelper;
     private final ModelControllerMBeanHelper exprHelper;
     private final NotificationHandlerRegistration notificationRegistry;
     private final AtomicLong notificationSequenceNumber = new AtomicLong(0);
 
-    public ModelControllerMBeanServerPlugin(final ConfiguredDomains configuredDomains, ModelController controller, final MBeanServerDelegate delegate,
+    public ModelControllerMBeanServerPlugin(final MBeanServer mbeanServer,
+                                            final ConfiguredDomains configuredDomains, ModelController controller, final MBeanServerDelegate delegate,
                                             boolean legacyWithProperPropertyFormat, ProcessType processType,
                                             ManagementModelIntegration.ManagementModelProvider managementModelProvider, boolean isMasterHc) {
         assert configuredDomains != null;
+        this.mbeanServer = mbeanServer;
         this.configuredDomains = configuredDomains;
         this.notificationRegistry = controller.getNotificationRegistry();
 
@@ -190,14 +194,14 @@ public class ModelControllerMBeanServerPlugin extends BaseMBeanServerPlugin {
 
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query) {
         if (name != null && !name.isDomainPattern()) {
-            return getHelper(name).queryMBeans(name, query);
+            return getHelper(name).queryMBeans(mbeanServer, name, query);
         } else {
             Set<ObjectInstance> instances = new HashSet<ObjectInstance>();
             if (legacyHelper != null) {
-                instances.addAll(legacyHelper.queryMBeans(name, query));
+                instances.addAll(legacyHelper.queryMBeans(mbeanServer, name, query));
             }
             if (exprHelper != null) {
-                instances.addAll(exprHelper.queryMBeans(name, query));
+                instances.addAll(exprHelper.queryMBeans(mbeanServer, name, query));
             }
             return instances;
         }
@@ -205,14 +209,14 @@ public class ModelControllerMBeanServerPlugin extends BaseMBeanServerPlugin {
 
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query) {
         if (name != null && !name.isDomainPattern()) {
-            return getHelper(name).queryNames(name, query);
+            return getHelper(name).queryNames(mbeanServer, name, query);
         } else {
             Set<ObjectName> instances = new HashSet<ObjectName>();
             if (legacyHelper != null) {
-                instances.addAll(legacyHelper.queryNames(name, query));
+                instances.addAll(legacyHelper.queryNames(mbeanServer, name, query));
             }
             if (exprHelper != null) {
-                instances.addAll(exprHelper.queryNames(name, query));
+                instances.addAll(exprHelper.queryNames(mbeanServer, name, query));
             }
             return instances;
         }

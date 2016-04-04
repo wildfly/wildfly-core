@@ -3396,7 +3396,10 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 411, value = "Failed to parse element '%s', ingoring ...")
     void failedToParseElementLenient(@Cause XMLStreamException e, String elementName);
 
-    @Message(id = 412, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    @Message(id = 412, value = "Required services that are not installed:")
+    String missingRequiredServices();
+
+    @Message(id = 413, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
     OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
 
 }

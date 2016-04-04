@@ -141,6 +141,7 @@ import org.jboss.as.cli.handlers.batch.BatchRunHandler;
 import org.jboss.as.cli.handlers.ifelse.ElseHandler;
 import org.jboss.as.cli.handlers.ifelse.EndIfHandler;
 import org.jboss.as.cli.handlers.ifelse.IfHandler;
+import org.jboss.as.cli.handlers.jca.DataSourceAddCompositeHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverInfoHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverNameProvider;
 import org.jboss.as.cli.handlers.jca.XADataSourceAddCompositeHandler;
@@ -410,7 +411,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         terminateSession();
                     else {
                         handleSafe(output.getBuffer().trim());
-                        if (INTERACT && terminate == 0) {
+                        if (INTERACT && terminate == RUNNING) {
                             console.setPrompt(getPrompt());
                         }
                     }
@@ -556,16 +557,20 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new EndIfHandler(), "end-if");
 
         // data-source
-        GenericTypeOperationHandler dsHandler = new GenericTypeOperationHandler(this, "/subsystem=datasources/data-source", null);
         final DefaultCompleter driverNameCompleter = new DefaultCompleter(JDBCDriverNameProvider.INSTANCE);
+        final GenericTypeOperationHandler dsHandler = new GenericTypeOperationHandler(this, "/subsystem=datasources/data-source", null);
         dsHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
+        // override the add operation with the handler that accepts connection props
+        final DataSourceAddCompositeHandler dsAddHandler = new DataSourceAddCompositeHandler(this, "/subsystem=datasources/data-source");
+        dsAddHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
+        dsHandler.addHandler(Util.ADD, dsAddHandler);
         cmdRegistry.registerHandler(dsHandler, "data-source");
-        GenericTypeOperationHandler xaDsHandler = new GenericTypeOperationHandler(this, "/subsystem=datasources/xa-data-source", null);
+        final GenericTypeOperationHandler xaDsHandler = new GenericTypeOperationHandler(this, "/subsystem=datasources/xa-data-source", null);
         xaDsHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
-        // override the add operation with the handler that accepts xa props
+        // override the xa add operation with the handler that accepts xa props
         final XADataSourceAddCompositeHandler xaDsAddHandler = new XADataSourceAddCompositeHandler(this, "/subsystem=datasources/xa-data-source");
         xaDsAddHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
-        xaDsHandler.addHandler("add", xaDsAddHandler);
+        xaDsHandler.addHandler(Util.ADD, xaDsAddHandler);
         cmdRegistry.registerHandler(xaDsHandler, "xa-data-source");
         cmdRegistry.registerHandler(new JDBCDriverInfoHandler(this), "jdbc-driver-info");
 
@@ -821,7 +826,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void terminateSession() {
-        if(terminate == 0) {
+        if(terminate == RUNNING) {
             terminate = TERMINATING;
             disconnectController();
             restoreStdIO();
@@ -989,7 +994,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         // configured server does the same,
         Set<ControllerAddress> visited = new HashSet<ControllerAddress>();
         visited.add(address);
-        boolean retry;
+        boolean retry = false;
         do {
             try {
                 CallbackHandler cbh = new AuthenticationCallbackHandler(username, password);
@@ -1119,7 +1124,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         for (;;) {
             String response;
             if (trustManager.isModifyTrustStore()) {
-                response = readLine("Accept certificate? [N]o, [T]emporarily, [P]ermenantly : ", false);
+                response = readLine("Accept certificate? [N]o, [T]emporarily, [P]ermanently : ", false);
             } else {
                 response = readLine("Accept certificate? [N]o, [T]emporarily : ", false);
             }
@@ -1231,7 +1236,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             extLoader.resetHandlers();
         }
         promptConnectPart = null;
-        if(console != null && terminate == 0) {
+        if(console != null && terminate == RUNNING) {
             console.setPrompt(getPrompt());
         }
     }
@@ -1460,6 +1465,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         if(!console.running()) {
             console.start();
         }
+        if(console.isControlled()) {
+            console.continuous();
+        }
 
         while(/*!isTerminated() && */console.running()){
             try {
@@ -1623,41 +1631,27 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
                     @Override
                     public void run() {
-
-                        // TODO in general, this is the wrong place for the logic below blocking the console's reading thread.
-                        // Because the reading thread will be unblocked right after the authentication is done at which point
-                        // not all the necessary initializations will have been performed related to establishing
-                        // the connection to the controller, e.g. reading the commands from the extensions, etc.
-                        // In addition, there is a chance a few commands could be read before we get to this point.
-                        // So, the best place for the logic below would be connectController(...) with unblocking
-                        // the console's reading thread at the end of the method.
-                        // The reason this logic is here is to minimize chances for initializing the console
-                        // during the non-interactive mode for the CLI API clients since multiple console initializations
-                        // (i.e. connect/disconnect) will lead to an out of memory error due to an issue in Aesh.
-                        // This logic here will initialize the console only in case the required authentication input
-                        // has not already been provided by the user.
-                        // Which doesn't fix the problem in general but also doesn't introduce a regression against
-                        // the previous releases (that are also affected by the same general issue).
-                        final boolean controlConsole = username == null || password == null;
+                        boolean success = false;
+                        boolean callContinuous = false;
                         try {
-                            if (controlConsole) {
+                            if (username == null || password == null) {
                                 if (console == null) {
                                     initBasicConsole(null, false);
                                 }
                                 console.controlled();
                                 if (!console.running()) {
                                     console.start();
+                                } else {
+                                    callContinuous = true;
                                 }
                             }
                             dohandle(callbacks);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        } catch (UnsupportedCallbackException e) {
-                            throw new RuntimeException(e);
-                        } catch (CliInitializationException e) {
+                            success = true;
+                        } catch (IOException | UnsupportedCallbackException | CliInitializationException e) {
                             throw new RuntimeException(e);
                         } finally {
-                            if (controlConsole) {
+                            // in case of success the console will continue after connectController has finished all the initialization required
+                            if (!success || callContinuous) {
                                 console.continuous();
                             }
                         }
@@ -1671,7 +1665,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 }
                 throw e;
             }
-
         }
 
         private void dohandle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {

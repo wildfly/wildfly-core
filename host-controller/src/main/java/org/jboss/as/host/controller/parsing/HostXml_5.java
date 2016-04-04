@@ -38,6 +38,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOOPBACK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -50,6 +51,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
@@ -112,6 +114,7 @@ import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
+import org.jboss.as.host.controller.resources.SslLoopbackResourceDefinition;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.server.parsing.CommonXml;
 import org.jboss.as.server.parsing.SocketBindingsXml;
@@ -1137,6 +1140,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         boolean sawJvm = false;
         boolean sawSystemProperties = false;
         boolean sawSocketBinding = false;
+        boolean sawSSL = false;
         final Set<String> interfaceNames = new HashSet<String>();
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, namespace);
@@ -1165,6 +1169,14 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
                     }
                     parseServerSocketBindings(reader, serverAddOperation);
                     sawSocketBinding = true;
+                    break;
+                }
+                case SSL: {
+                    if (sawSSL) {
+                        throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
+                    }
+                    parseServerSsl(serverAddress, reader, list);
+                    sawSSL = true;
                     break;
                 }
                 case SYSTEM_PROPERTIES: {
@@ -1265,6 +1277,52 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
 
     }
 
+    private void parseServerSsl(final ModelNode parentAddress, final XMLExtendedStreamReader reader, final List<ModelNode> operations) throws XMLStreamException {
+
+        ModelNode addOp = new ModelNode();
+        addOp.get(OP).set(ADD);
+        final ModelNode address = parentAddress.clone();
+        address.add(SSL, LOOPBACK);
+        addOp.get(OP_ADDR).set(address);
+        operations.add(addOp);
+
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw ParseUtils.unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case SSL_PROTOCOL: {
+                        SslLoopbackResourceDefinition.SSL_PROTOCOCOL.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case TRUST_MANAGER_ALGORITHM: {
+                        SslLoopbackResourceDefinition.TRUST_MANAGER_ALGORITHM.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case TRUSTSTORE_TYPE: {
+                        SslLoopbackResourceDefinition.TRUSTSTORE_TYPE.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case TRUSTSTORE_PATH: {
+                        SslLoopbackResourceDefinition.TRUSTSTORE_PATH.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case TRUSTSTORE_PASSWORD: {
+                        SslLoopbackResourceDefinition.TRUSTSTORE_PASSWORD.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    default:
+                        throw unexpectedAttribute(reader, i);
+                }
+            }
+        }
+
+        requireNoContent(reader);
+
+    }
     private void parseHostProfile(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
         // Attributes
         requireNoAttributes(reader);
@@ -1518,6 +1576,16 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
                 ServerConfigResourceDefinition.SOCKET_BINDING_GROUP.marshallAsAttribute(server, writer);
                 ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET.marshallAsAttribute(server, writer);
                 ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE.marshallAsAttribute(server, writer);
+                writer.writeEndElement();
+            }
+            if (server.hasDefined(SSL, LOOPBACK)) {
+                ModelNode ssl = server.get(SSL, LOOPBACK);
+                writer.writeStartElement(Element.SSL.getLocalName());
+                SslLoopbackResourceDefinition.SSL_PROTOCOCOL.marshallAsAttribute(ssl, writer);
+                SslLoopbackResourceDefinition.TRUST_MANAGER_ALGORITHM.marshallAsAttribute(ssl, writer);
+                SslLoopbackResourceDefinition.TRUSTSTORE_TYPE.marshallAsAttribute(ssl, writer);
+                SslLoopbackResourceDefinition.TRUSTSTORE_PATH.marshallAsAttribute(ssl, writer);
+                SslLoopbackResourceDefinition.TRUSTSTORE_PASSWORD.marshallAsAttribute(ssl, writer);
                 writer.writeEndElement();
             }
 

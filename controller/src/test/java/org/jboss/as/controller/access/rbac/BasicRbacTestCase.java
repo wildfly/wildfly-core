@@ -29,9 +29,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -488,20 +485,16 @@ public class BasicRbacTestCase extends AbstractRbacTestBase {
     }
 
     private static final class TestResourceDefinition extends SimpleResourceDefinition {
-        private final List<AccessConstraintDefinition> constraintDefinitions;
 
         TestResourceDefinition(String path, AccessConstraintDefinition... constraintDefinitions) {
             this(pathElement(path), constraintDefinitions);
         }
 
         TestResourceDefinition(PathElement element, AccessConstraintDefinition... constraintDefinitions) {
-            super(element,
-                    new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
-                    new AbstractRemoveStepHandler() {}
-            );
-
-            this.constraintDefinitions = Collections.unmodifiableList(Arrays.asList(constraintDefinitions));
+            super(new Parameters(element, new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(constraintDefinitions));
         }
 
         @Override
@@ -512,11 +505,6 @@ public class BasicRbacTestCase extends AbstractRbacTestBase {
                     new TestOperationStepHandler(false));
             resourceRegistration.registerOperationHandler(TestOperationStepHandler.RW_DEFINITION,
                     new TestOperationStepHandler(true));
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return constraintDefinitions;
         }
     }
 

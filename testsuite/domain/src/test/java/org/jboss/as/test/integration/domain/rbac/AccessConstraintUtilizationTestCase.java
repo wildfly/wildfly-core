@@ -73,6 +73,20 @@ public class AccessConstraintUtilizationTestCase extends AbstractRbacTestCase {
         private final boolean expectAttributes;
         private final boolean expectOps;
 
+        /**
+         * The test case works by reading the child resources of type 'applies-to' from the classifications representation in
+         * the model, this class is used to indicate what we expect the specified constraint to actually apply to.
+         *
+         * i.e. Is this constraint used as resource level, against specific attributes or operations or a combination of this?
+         *
+         * Note: Although when a constraint is applied at resource level it does apply to all attributes, operations and
+         * children of that resource 'applies-to' only shows where it is actually applied.
+         *
+         * @param key the {@link AccessConstraintKey} key that is to be tested.
+         * @param expectResource is it expected that this access constraint is applied to at least one resource?
+         * @param expectAttributes is it expected that this access constraint is applied to at least one attribute?
+         * @param expectOps is it expected that this access constrains is applied to at least one operation.
+         */
         private ExpectedDef(AccessConstraintKey key, boolean expectResource, boolean expectAttributes, boolean expectOps) {
             this.key = key;
             this.expectResource = expectResource;
@@ -96,6 +110,7 @@ public class AccessConstraintUtilizationTestCase extends AbstractRbacTestCase {
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM.getKey(), true, false, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF.getKey(), false, true, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.SECURITY_VAULT.getKey(), true, false, false),
+        new ExpectedDef(SensitiveTargetAccessConstraintDefinition.SERVER_SSL.getKey(), true, false, false),
         /* N/A in domain
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.SERVICE_CONTAINER.getKey(), true, false, false),
         */

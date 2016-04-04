@@ -48,7 +48,7 @@ public class ConnectorAdd extends AbstractAddStepHandler {
     static final ConnectorAdd INSTANCE = new ConnectorAdd();
 
     private ConnectorAdd() {
-        super(ConnectorResource.CONNECTOR_CAPABILITY); // TODO pass in the ADs and remove populateModel
+        // TODO pass in the ADs and remove populateModel
     }
 
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException{
