@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -799,12 +799,13 @@ class CliConfigImpl implements CliConfig {
 
         public void readSSLElement_2_0(XMLExtendedStreamReader reader, Namespace expectedNs, SslConfig config) throws XMLStreamException {
 
-            final CLIVaultReader vaultReader = new CLIVaultReader();
+            CLIVaultReader vaultReader = null;
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
                 assertExpectedNamespace(reader, expectedNs);
                 final String localName = reader.getLocalName();
 
                 if("vault".equals(localName)) {
+                    vaultReader = new CLIVaultReader();
                     final String vaultXml = reader.getAttributeValue(null, "file");
                     final String relativeTo = reader.getAttributeValue(null, "relative-to");
                     requireNoContent(reader);
@@ -865,12 +866,13 @@ class CliConfigImpl implements CliConfig {
 
         public void readSSLElement_3_0(XMLExtendedStreamReader reader, Namespace expectedNs, SslConfig config) throws XMLStreamException {
 
-            final CLIVaultReader vaultReader = new CLIVaultReader();
+            CLIVaultReader vaultReader = null;
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
                 assertExpectedNamespace(reader, expectedNs);
                 final String localName = reader.getLocalName();
 
                 if("vault".equals(localName)) {
+                    vaultReader = new CLIVaultReader();
                     assertExpectedNamespace(reader, expectedNs);
                     final VaultConfig vaultConfig = VaultConfig.readVaultElement_3_0(reader, expectedNs);
                     try {
@@ -899,7 +901,7 @@ class CliConfigImpl implements CliConfig {
         }
 
         private String getPassword(CLIVaultReader vaultReader, String str) throws XMLStreamException {
-            if(vaultReader.isVaultFormat(str)) {
+            if(vaultReader != null && vaultReader.isVaultFormat(str)) {
                 try {
                     return vaultReader.retrieve(str);
                 } catch (GeneralSecurityException e) {
