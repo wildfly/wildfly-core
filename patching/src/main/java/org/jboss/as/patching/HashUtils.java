@@ -87,17 +87,14 @@ public class HashUtils {
             if (file.getName().endsWith(".jar.index")) {
                 return;
             }
-            FileInputStream fis = new FileInputStream(file);
-            try {
+            try (FileInputStream fis = new FileInputStream(file);
+                 BufferedInputStream bis = new BufferedInputStream(fis)){
 
-                BufferedInputStream bis = new BufferedInputStream(fis);
                 byte[] bytes = new byte[8192];
                 int read;
                 while ((read = bis.read(bytes)) > -1) {
                     digest.update(bytes, 0, read);
                 }
-            } finally {
-                IoUtils.safeClose(fis);
             }
 
         }
@@ -107,9 +104,10 @@ public class HashUtils {
         byte[] sha1Bytes;
         synchronized (DIGEST) {
             DIGEST.reset();
-            BufferedInputStream bis = new BufferedInputStream(is);
-            DigestOutputStream dos = new DigestOutputStream(os, DIGEST);
-            IoUtils.copyStream(bis, dos);
+            try (BufferedInputStream bis = new BufferedInputStream(is);
+                 DigestOutputStream dos = new DigestOutputStream(os, DIGEST)) {
+                IoUtils.copyStream(bis, dos);
+            }
             sha1Bytes = DIGEST.digest();
         }
         return sha1Bytes;

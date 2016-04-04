@@ -18,10 +18,13 @@
 
 package org.jboss.as.controller;
 
+import java.util.List;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -55,14 +58,38 @@ public interface AttributeMarshallers {
 
         @Override
         public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-            if (!resourceModel.hasDefined(attribute.getName())) {
+
+            resourceModel = resourceModel.get(attribute.getName());
+            if (!resourceModel.isDefined()) {
+                // nothing to do
                 return;
             }
-            resourceModel = resourceModel.get(attribute.getName());
-            if (wrapElement) {
-                writer.writeStartElement(wrapperElement == null ? attribute.getName() : wrapperElement);
+
+            String wrapper =  wrapperElement == null ? attribute.getName() : wrapperElement;
+            List<ModelNode> elementList = resourceModel.asList();
+            if (elementList.isEmpty()) {
+                if (wrapElement) {
+                    writer.writeEmptyElement(wrapper);
+                } else {
+                    // This is a subtle programming error, where the xml schema doesn't
+                    // prevent ambiguity between the 'null' and 'empty collection' cases,
+                    // or a defined but empty ModelNode isn't valid but there's no
+                    // AttributeDefinition validation preventing that being accepted.
+                    // TODO We can look into possibly throwing an exception here, but
+                    // for now to be conservative and avoid regressions I'm just sticking
+                    // with existing behavior and marshalling nothing. I'll log a DEBUG
+                    // though in the off chance it's helpful if this happens.
+                    ControllerLogger.MGMT_OP_LOGGER.debugf("%s found ambigous empty value for unwrapped property %s",
+                            getClass().getSimpleName(), attribute.getName());
+                }
+                // No elements to marshal, so we're done
+                return;
             }
-            for (ModelNode property : resourceModel.asList()) {
+
+            if (wrapElement) {
+                writer.writeStartElement(wrapper);
+            }
+            for (ModelNode property : elementList) {
                 writer.writeEmptyElement(elementName);
                 writer.writeAttribute(org.jboss.as.controller.parsing.Attribute.NAME.getLocalName(), property.asProperty().getName());
                 writer.writeAttribute(org.jboss.as.controller.parsing.Attribute.VALUE.getLocalName(), property.asProperty().getValue().asString());

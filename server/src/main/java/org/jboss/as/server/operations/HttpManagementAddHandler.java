@@ -158,6 +158,8 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         final ServiceName requestProcessorName = UndertowHttpManagementService.SERVICE_NAME.append("requests");
         HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
 
+        NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
+
         ServerEnvironment environment = (ServerEnvironment) context.getServiceRegistry(false).getRequiredService(ServerEnvironmentService.SERVICE_NAME).getValue();
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
         ServiceBuilder<HttpManagement> undertowBuilder = serviceTarget.addService(UndertowHttpManagementService.SERVICE_NAME, undertowService)
@@ -167,6 +169,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, undertowService.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue())
                 .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, undertowService.getWorker())
+                .addDependency(Services.JBOSS_SERVER_EXECUTOR, Executor.class, undertowService.getManagementExecutor())
                 .addInjection(undertowService.getAllowedOriginsInjector(), allowedOrigins);
 
             if (socketBindingServiceName != null) {

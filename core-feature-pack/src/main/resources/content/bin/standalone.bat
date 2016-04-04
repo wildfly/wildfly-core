@@ -16,6 +16,10 @@ set DEBUG_PORT=8787
 rem Set to all parameters by default
 set "SERVER_OPTS=%*"
 
+if NOT "x%DEBUG%" == "x" (
+  set "DEBUG_MODE=%DEBUG%
+)
+
 rem Get the program name before using shift as the command modify the variable ~nx0
 if "%OS%" == "Windows_NT" (
   set "PROGNAME=%~nx0%"

@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOOPBACK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
@@ -41,6 +42,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.POR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME;
 import static org.jboss.as.controller.parsing.Namespace.DOMAIN_1_0;
@@ -94,6 +96,7 @@ import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
+import org.jboss.as.host.controller.resources.SslLoopbackResourceDefinition;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.server.parsing.CommonXml;
 import org.jboss.dmr.ModelNode;
@@ -1878,12 +1881,29 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         list.add(addUpdate);
 
         // Handle elements
-        switch (namespace) {
-            case DOMAIN_1_0:
-                parseServerContent1_0(reader, addUpdate, address, list);
+        switch (namespace.getMajorVersion()) {
+            case 1:
+                switch (namespace) {
+                    case DOMAIN_1_0:
+                        parseServerContent1_0(reader, addUpdate, address, list);
+                        break;
+                    case DOMAIN_1_1:
+                    case DOMAIN_1_2:
+                    case DOMAIN_1_3:
+                    case DOMAIN_1_4:
+                    case DOMAIN_1_5:
+                    case DOMAIN_1_6:
+                    case DOMAIN_1_7:
+                        parseServerContent1_1(reader, addUpdate, address, list);
+                        break;
+                    default:
+                        parseServerContent1_8(reader, addUpdate, address, list);
+                }
                 break;
             default:
+                // Versions 2 and 3 don't contain the additional element added in version 1.8
                 parseServerContent1_1(reader, addUpdate, address, list);
+                break;
         }
 
     }
@@ -1990,6 +2010,65 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
     }
 
+    private void parseServerContent1_8(final XMLExtendedStreamReader reader, final ModelNode serverAddOperation,
+            final ModelNode serverAddress, final List<ModelNode> list) throws XMLStreamException {
+        boolean sawJvm = false;
+        boolean sawSystemProperties = false;
+        boolean sawSocketBinding = false;
+        boolean sawSSL = false;
+        final Set<String> interfaceNames = new HashSet<String>();
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case INTERFACES: { // THIS IS DIFFERENT FROM 1.0
+                    parseInterfaces(reader, interfaceNames, serverAddress, namespace, list, true);
+                    break;
+                }
+                case JVM: {
+                    if (sawJvm) {
+                        throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
+                    }
+
+                    JvmXml.parseJvm(reader, serverAddress, namespace, list, new HashSet<String>(), true);
+                    sawJvm = true;
+                    break;
+                }
+                case PATHS: {
+                    parsePaths(reader, serverAddress, namespace, list, true);
+                    break;
+                }
+                case SOCKET_BINDINGS: {
+                    if (sawSocketBinding) {
+                        throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
+                    }
+                    parseServerSocketBindings(reader, serverAddOperation);
+                    sawSocketBinding = true;
+                    break;
+                }
+                case SSL: {
+                    if (sawSSL) {
+                        throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
+                    }
+                    parseServerSsl(serverAddress, reader, list);
+                    sawSSL = true;
+                    break;
+                }
+                case SYSTEM_PROPERTIES: {
+                    if (sawSystemProperties) {
+                        throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
+                    }
+                    parseSystemProperties(reader, serverAddress, namespace, list, false);
+                    sawSystemProperties = true;
+                    break;
+                }
+                default:
+                    throw unexpectedElement(reader);
+            }
+        }
+
+    }
+
     private ModelNode parseServerAttributes(final XMLExtendedStreamReader reader, final ModelNode parentAddress,
             final Set<String> serverNames) throws XMLStreamException {
 
@@ -2069,6 +2148,53 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
 
         // Handle elements
+        requireNoContent(reader);
+
+    }
+
+    private void parseServerSsl(final ModelNode parentAddress, final XMLExtendedStreamReader reader, final List<ModelNode> operations) throws XMLStreamException {
+
+        ModelNode addOp = new ModelNode();
+        addOp.get(OP).set(ADD);
+        final ModelNode address = parentAddress.clone();
+        address.add(SSL, LOOPBACK);
+        addOp.get(OP_ADDR).set(address);
+        operations.add(addOp);
+
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw ParseUtils.unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case SSL_PROTOCOL: {
+                        SslLoopbackResourceDefinition.SSL_PROTOCOCOL.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case TRUST_MANAGER_ALGORITHM: {
+                        SslLoopbackResourceDefinition.TRUST_MANAGER_ALGORITHM.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case TRUSTSTORE_TYPE: {
+                        SslLoopbackResourceDefinition.TRUSTSTORE_TYPE.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case TRUSTSTORE_PATH: {
+                        SslLoopbackResourceDefinition.TRUSTSTORE_PATH.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case TRUSTSTORE_PASSWORD: {
+                        SslLoopbackResourceDefinition.TRUSTSTORE_PASSWORD.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    default:
+                        throw unexpectedAttribute(reader, i);
+                }
+            }
+        }
+
         requireNoContent(reader);
 
     }

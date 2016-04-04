@@ -28,7 +28,7 @@ package org.jboss.as.controller.descriptions;
  */
 public class ModelDescriptionConstants {
 
-    // KEEP THESE IN ALPHABETICAL ORDER!
+    // KEEP THESE IN ALPHABETICAL ORDER! - LOL, like that was ever going to happen!!
 
     public static final String ABSOLUTE_ADDRESS = "absolute-address";
     public static final String ACCESS = "access";
@@ -38,6 +38,8 @@ public class ModelDescriptionConstants {
     /** The key for {@link org.jboss.as.controller.registry.AttributeAccess.AccessType} fields. */
     public static final String ACCESS_TYPE = "access-type";
     public static final String ACTIVE_OPERATION = "active-operation";
+    public static final String ACTIVE_SERVER_GROUPS = "active-server-groups";
+    public static final String ACTIVE_SOCKET_BINDING_GROUPS = "active-socket-binding-groups";
     public static final String ADD = "add";
     public static final String ADDRESS = "address";
     public static final String ADD_INDEX = "add-index";
@@ -160,6 +162,7 @@ public class ModelDescriptionConstants {
     public static final String EXCLUDE = "exclude";
     public static final String ESCAPE_CONTROL_CHARACTERS = "escape-control-characters";
     public static final String ESCAPE_NEW_LINE = "escape-new-line";
+    public static final String EXCLUDED_EXTENSIONS = "excluded-extensions";
     public static final String EXCLUSIVE_RUNNING_TIME = "exclusive-running-time";
     public static final String EXECUTE_FOR_COORDINATOR = "execute-for-coordinator";
     public static final String EXECUTION_STATUS = "execution-status";
@@ -201,8 +204,10 @@ public class ModelDescriptionConstants {
     public static final String HOST_CONNECTION = "host-connection";
     public static final String HOST_CONTROLLER = "host-controller";
     public static final String HOST_ENVIRONMENT = "host-environment";
+    public static final String HOST_EXCLUDE = "host-exclude";
     public static final String HOST_FAILURE_DESCRIPTION = "host-failure-description";
     public static final String HOST_FAILURE_DESCRIPTIONS = "host-failure-descriptions";
+    public static final String HOST_RELEASE = "host-release";
     public static final String HOST_SCOPED_ROLE = "host-scoped-role";
     public static final String HOST_SCOPED_ROLES = "host-scoped-roles";
     public static final String HOST_STATE = "host-state";
@@ -244,6 +249,7 @@ public class ModelDescriptionConstants {
     public static final String LOGGER = "logger";
     public static final String LOG_BOOT = "log-boot";
     public static final String LOG_READ_ONLY = "log-read-only";
+    public static final String LOOPBACK = "loopback";
     public static final String MANAGEMENT = "management";
     public static final String MANAGEMENT_CLIENT_CONTENT = "management-client-content";
     public static final String MANAGEMENT_INTERFACE = "management-interface";
@@ -419,6 +425,7 @@ public class ModelDescriptionConstants {
     public static final String SERVER_GROUP_SCOPED_ROLE = "server-group-scoped-role";
     public static final String SERVER_IDENTITIES = "server-identities";
     public static final String SERVER_IDENTITY = "server-identity";
+    public static final String SERVER_LAUNCH = "server-launch";
     public static final String SERVER_OPERATIONS = "server-operations";
     public static final String SERVICE = "service";
     public static final String SERVICES_MISSING_DEPENDENCIES = "services-missing-dependencies";
@@ -427,6 +434,7 @@ public class ModelDescriptionConstants {
     public static final String SINCE = "since";
     public static final String SIZE_ROTATING_FILE_HANDLER = "size-rotating-file-handler";
     public static final String SOURCE_NETWORK = "source-network";
+    public static final String SSL_PROTOCOL = "ssl-protocol";
     public static final String OPERATION_REQUIRES_RELOAD = "operation-requires-reload";
     public static final String OPERATION_REQUIRES_RESTART = "operation-requires-restart";
     public static final String RELOAD_SERVERS = "reload-servers";
@@ -482,7 +490,11 @@ public class ModelDescriptionConstants {
     public static final String TO_PROFILE = "to-profile";
     public static final String TO_REPLACE = "to-replace";
     public static final String TRUNCATE = "truncate";
+    public static final String TRUST_MANAGER_ALGORITHM = "trust-manager-algorithm";
     public static final String TRUSTSTORE = "truststore";
+    public static final String TRUSTSTORE_PASSWORD = "truststore-password";
+    public static final String TRUSTSTORE_PATH = "truststore-path";
+    public static final String TRUSTSTORE_TYPE = "truststore-type";
     public static final String TYPE = "type";
     public static final String UDP = "udp";
     public static final String UNDEFINE_ATTRIBUTE_OPERATION = "undefine-attribute";

@@ -3395,4 +3395,7 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 411, value = "Failed to parse element '%s', ingoring ...")
     void failedToParseElementLenient(@Cause XMLStreamException e, String elementName);
+
+    @Message(id = 412, value = "Required services that are not installed:")
+    String missingRequiredServices();
 }

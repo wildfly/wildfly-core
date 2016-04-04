@@ -27,7 +27,6 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -78,10 +77,7 @@ public class XmlCompletionScannerTest {
         assertThat(handler.messages, is(not(nullValue())));
         assertThat(handler.messages.size(), is(1));
         String infoMessage = handler.messages.get(0);
-        assertThat(infoMessage, containsString("WFLYDS0035"));
-        assertThat(infoMessage, containsString("loop-vdb-error.xml"));
-        assertThat(infoMessage, containsString("lineNumber: 18"));
-        assertThat(infoMessage, containsString("columnNumber: 7"));
+        assertThat(infoMessage, is(DeploymentScannerLogger.ROOT_LOGGER.invalidXmlFileFound("loop-vdb-error.xml", 18, 7)));
         handler.messages.clear();
     }
 

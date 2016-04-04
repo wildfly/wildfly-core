@@ -46,6 +46,7 @@ public class SensitivityClassification extends AbstractSensitivity {
     public static final SensitivityClassification SECURITY_DOMAIN = new SensitivityClassification("security-domain", true, true, true);
     public static final SensitivityClassification SECURITY_DOMAIN_REF = new SensitivityClassification("security-domain-ref", true, true, true);
     public static final SensitivityClassification SECURITY_VAULT = new SensitivityClassification("security-vault", false, true, true);
+    public static final SensitivityClassification SERVER_SSL = new SensitivityClassification("server-ssl", true, true, true);
     public static final SensitivityClassification SERVICE_CONTAINER = new SensitivityClassification("service-container", false, false, true);
     public static final SensitivityClassification SOCKET_BINDING_REF = new SensitivityClassification("socket-binding-ref", false, false, false);
     public static final SensitivityClassification SOCKET_CONFIG = new SensitivityClassification("socket-config", false, false, true);

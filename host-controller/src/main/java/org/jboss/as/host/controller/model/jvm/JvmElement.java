@@ -73,7 +73,6 @@ public class JvmElement {
         if(name == null) {
             heapSize = "64m";
             maxHeap = "256m";
-            maxPermgen = "128m";
         }
         for(final ModelNode node : toCombine) {
             if(node == null) {

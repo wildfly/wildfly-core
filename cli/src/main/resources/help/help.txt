@@ -1,8 +1,10 @@
 Usage:
 
-  jboss-cli.sh/jboss-cli.bat [--help] [--version] [--controller=host:port]
+  jboss-cli.sh/jboss-cli.bat [--help] [--version]
+                     [--bind=client_bind_address]
+                     [--controller=(controller_alias | [protocol://][host][:port])]
                      [--connect] [--file=file_path]
-                     [--commands=command_or_operation1,command_or_operation2...]
+                     [--commands=command_or_operation(,command_or_operation)*]
                      [--command=command_or_operation]
                      [--user=username --password=password]
                      [--no-local-auth]
@@ -14,10 +16,13 @@ Usage:
  --version       - prints the version info of the JBoss AS release, JVM and
                    system environment.
 
- --controller    - the default controller host and port to connect to when
-                   --connect option (described below) is specified or when the
-                   connect command is issued w/o the arguments. The default
-                   controller host is localhost and the port is 9990.
+ --controller    - the default controller (including protocol, host and port)
+                   to connect to when the --connect option (described below) is
+                   specified or when the connect command is issued w/o
+                   the arguments.
+                   The default controller host is localhost and the port is 9990.
+                   For more details on specifying the target controller
+                   please execute 'help connect'.
 
  --connect (-c)  - instructs the CLI to connect to the controller on start-up
                    (to avoid issuing a separate connect command later).
@@ -61,23 +66,22 @@ Usage:
                    authentication is required the user will be prompted to enter
                    the user name when the connect command is issued.  Local 
                    authentication is automatically disabled if a user is specified.
-                   
 
  --password (-p) - specifies the password for authentication while connecting to
                    the controller as a command line argument. If the argument
                    isn't specified and the authentication is required the user
                    will be prompted to enter the password when the connect
                    command is issued.
-                   
+
  --no-local-auth - disable the local authentication mechanism which allows the CLI
                    to demonstrate that it is being executed locally to the server 
-                   being managed through an exchange of tokens using the filesystem.                   
+                   being managed through an exchange of tokens using the filesystem.
 
  --timeout       - specifies how many milliseconds to wait for a given command
                    to return. The value provided must be a positive integer.
                    Defaults to 5000 milliseconds when not provided.
 
-  --bind         - specifies to which address the CLI is going to be bound to.
+ --bind          - specifies to which address the CLI is going to be bound.
                    If none is provided then the CLI will choose one automatically as needed.
 
 

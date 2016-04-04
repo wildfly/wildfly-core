@@ -69,6 +69,7 @@ public enum Element {
     ENGINE("engine"),
     ENVIRONMENT_VARIABLES("environment-variables"),
     EXCLUDE("exclude"),
+    EXCLUDED_EXTENSIONS("excluded-extensions"),
     EXTENSION("extension"),
     EXTENSIONS("extensions"),
 
@@ -89,6 +90,10 @@ public enum Element {
     HEAP("heap"),
     HOST("host"),
     HOSTS("hosts"),
+    HOST_API_VERSION("host-api-version"),
+    HOST_EXCLUDE("host-exclude"),
+    HOST_EXCLUDES("host-excludes"),
+    HOST_RELEASE("host-release"),
     HOST_SCOPED_ROLES("host-scoped-roles"),
     HTTP_INTERFACE("http-interface"),
 

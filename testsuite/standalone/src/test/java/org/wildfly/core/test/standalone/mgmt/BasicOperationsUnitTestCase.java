@@ -80,7 +80,6 @@ import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -328,13 +327,11 @@ public class BasicOperationsUnitTestCase {
     }
 
     @Test
-    @Ignore //TODO UNDERTOW reneable when we expose metrics from undertow
     public void testMetricReadAttribute() throws IOException {
         final ModelNode address = new ModelNode();
-        address.add("subsystem", "undertow");
-        address.add("connector", "http");
+        address.add("subsystem", "request-controller");
 
-        final ModelNode operation = createReadAttributeOperation(address, "bytesReceived");
+        final ModelNode operation = createReadAttributeOperation(address, "active-requests");
         final ModelNode result = managementClient.getControllerClient().execute(operation);
         assertSuccessful(result);
         assertTrue(result.asInt() >= 0);

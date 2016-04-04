@@ -96,6 +96,7 @@ import org.jboss.as.domain.controller.transformers.DomainTransformers;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
+import org.jboss.as.host.controller.mgmt.DomainHostExcludeRegistry;
 import org.jboss.as.management.client.content.ManagedDMRContentTypeResourceDefinition;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
@@ -188,6 +189,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
     private final PathManagerService pathManager;
     private final DelegatingConfigurableAuthorizer authorizer;
     private final HostRegistrations hostRegistrations;
+    private final DomainHostExcludeRegistry domainHostExcludeRegistry;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
 
     public DomainRootDefinition(
@@ -200,6 +202,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
             final PathManagerService pathManager,
             final DelegatingConfigurableAuthorizer authorizer,
             final HostRegistrations hostRegistrations,
+            final DomainHostExcludeRegistry domainHostExcludeRegistry,
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         super(null, DomainResolver.getResolver(DOMAIN, false));
         this.domainController = domainController;
@@ -214,6 +217,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         this.pathManager = pathManager;
         this.authorizer = authorizer;
         this.hostRegistrations = hostRegistrations;
+        this.domainHostExcludeRegistry = domainHostExcludeRegistry;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
@@ -340,6 +344,8 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         ExtensionRegistryType registryType = isMaster ? ExtensionRegistryType.MASTER : ExtensionRegistryType.SLAVE;
         resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, true, registryType, rootResourceRegistrationProvider));
 
+        // Domain configured host-ignored resources
+        resourceRegistration.registerSubModel(new HostExcludeResourceDefinition(domainHostExcludeRegistry));
 
         // Initialize the domain transformers
         DomainTransformers.initializeDomainRegistry(extensionRegistry.getTransformerRegistry());

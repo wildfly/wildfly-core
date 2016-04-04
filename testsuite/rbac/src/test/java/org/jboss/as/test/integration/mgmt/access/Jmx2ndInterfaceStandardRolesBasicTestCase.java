@@ -22,8 +22,8 @@
 
 package org.jboss.as.test.integration.mgmt.access;
 
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -31,8 +31,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Ladislav Thon <lthon@redhat.com>
  */
 @RunWith(WildflyTestRunner.class)
-@Ignore
-@org.wildfly.core.testrunner.ServerSetup({StandardExtensionSetupTask.class, StandardUsersSetupTask.class})
+@ServerSetup({StandardExtensionSetupTask.class, StandardUsersSetupTask.class})
 public class Jmx2ndInterfaceStandardRolesBasicTestCase extends JmxInterfaceStandardRolesBasicTestCase {
     @Override
     protected String getJmxDomain() {

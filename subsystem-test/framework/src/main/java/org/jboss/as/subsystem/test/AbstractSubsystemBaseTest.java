@@ -247,7 +247,7 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
     protected void validateDescribeOperation(KernelServices hc, AdditionalInitialization serverInit, ModelNode expectedModel) throws Exception {
         final ModelNode operation = createDescribeOperation();
         final ModelNode result = hc.executeOperation(operation);
-        Assert.assertTrue("the subsystem describe operation has to generate a list of operations to recreate the subsystem",
+        Assert.assertTrue("the subsystem describe operation has to generate a list of operations to recreate the subsystem: " + result.asString(),
                 !result.hasDefined(ModelDescriptionConstants.FAILURE_DESCRIPTION));
         final List<ModelNode> operations = result.get(ModelDescriptionConstants.RESULT).asList();
 

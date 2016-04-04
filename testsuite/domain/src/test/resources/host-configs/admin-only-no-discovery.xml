@@ -22,7 +22,7 @@
   ~  */
   -->
 
-<host xmlns="urn:jboss:domain:2.1"
+<host xmlns="urn:jboss:domain:5.0"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="urn:jboss:domain:5.0 wildfly-config_5_0.xsd">
 

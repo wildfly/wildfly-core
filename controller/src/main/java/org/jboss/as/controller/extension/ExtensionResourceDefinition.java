@@ -24,13 +24,10 @@ package org.jboss.as.controller.extension;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 
-import java.util.List;
-
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
@@ -49,16 +46,14 @@ public class ExtensionResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MODULE, ModelType.STRING, false)
             .setValidator(new StringLengthValidator(1)).build();
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     public ExtensionResourceDefinition(final ExtensionRegistry extensionRegistry, final boolean parallelBoot,
                                        final ExtensionRegistryType extensionRegistryType, final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         super(new Parameters(PathElement.pathElement(EXTENSION), ControllerResolver.getResolver(EXTENSION))
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.EXTENSIONS)
                 .setAddHandler(new ExtensionAddHandler(extensionRegistry, parallelBoot, extensionRegistryType, rootResourceRegistrationProvider))
                 .setRemoveHandler(new ExtensionRemoveHandler(extensionRegistry, extensionRegistryType, rootResourceRegistrationProvider))
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE));
-        this.accessConstraints = SensitiveTargetAccessConstraintDefinition.EXTENSIONS.wrapAsList();
     }
 
     @Override
@@ -69,10 +64,5 @@ public class ExtensionResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerSubModel(new ExtensionSubsystemResourceDefinition());
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 }

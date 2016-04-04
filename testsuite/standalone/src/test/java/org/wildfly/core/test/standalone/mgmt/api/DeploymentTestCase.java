@@ -21,6 +21,8 @@
  */
 package org.wildfly.core.test.standalone.mgmt.api;
 
+import static org.jboss.as.controller.PathAddress.pathAddress;
+import static org.jboss.as.controller.PathElement.pathElement;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -34,6 +36,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,6 +51,7 @@ import javax.inject.Inject;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.deployment.DeploymentScannerSetupTask;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
@@ -201,6 +206,45 @@ public class DeploymentTestCase {
     }
 
     @Test
+    public void testUniqueRuntimeName() throws Exception {
+        final JavaArchive archive1 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment1.jar", properties);
+        final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment2.jar", properties2);
+        archive2.addAsManifestResource(DeploymentTestCase.class.getPackage(), "marker.txt", "marker.txt");
+
+        final ModelControllerClient client = managementClient.getControllerClient();
+        final ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(client);
+        try (InputStream is1 = archive1.as(ZipExporter.class).exportAsInputStream();
+                InputStream is2 = archive2.as(ZipExporter.class).exportAsInputStream();) {
+            Future<?> future = manager.execute(manager.newDeploymentPlan()
+                    .add("test-deployment1.jar", "test-deployment.jar", is1)
+                    .add("test-deployment2.jar", "test-deployment.jar", is2)
+                    .build());
+            awaitDeploymentExecution(future);
+            checkDeploymentStatus(client, "test-deployment1.jar", "STOPPED");
+            checkDeploymentStatus(client, "test-deployment2.jar", "STOPPED");
+            future = manager.execute(manager.newDeploymentPlan().deploy("test-deployment1.jar").build());
+            awaitDeploymentExecution(future);
+            future = manager.execute(manager.newDeploymentPlan().deploy("test-deployment2.jar").build());
+            awaitDeploymentExecution(future);
+            checkDeploymentStatus(client, "test-deployment1.jar", "OK");
+            checkDeploymentStatus(client, "test-deployment2.jar", "STOPPED");
+            future = manager.execute(manager.newDeploymentPlan()
+                    .undeploy("test-deployment1.jar")
+                    .remove("test-deployment1.jar")
+                    .undeploy("test-deployment2.jar")
+                    .remove("test-deployment2.jar")
+                    .build());
+            awaitDeploymentExecution(future);
+        }
+    }
+
+    private void checkDeploymentStatus(ModelControllerClient client, String deploymentName, String status) throws IOException {
+        ModelNode response = client.execute(Util.getReadAttributeOperation(pathAddress(pathElement("deployment", deploymentName)), "status"));
+        Assert.assertEquals("success", response.get("outcome").asString());
+        Assert.assertEquals(status, response.get("result").asString());
+    }
+
+    @Test
     public void testFilesystemDeployment_Marker() throws Exception {
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
         final File dir = new File("target/archives");
@@ -222,28 +266,19 @@ public class DeploymentTestCase {
                 @Override
                 public void initialDeploy() throws IOException {
                     // Copy file to deploy directory
-                    final InputStream in = new BufferedInputStream(new FileInputStream(file));
-                    try {
-                        final OutputStream out = new BufferedOutputStream(new FileOutputStream(target));
-                        try {
+                    try (final InputStream in = new BufferedInputStream(new FileInputStream(file))) {
+                        try (final OutputStream out = new BufferedOutputStream(new FileOutputStream(target))){
                             int i = in.read();
                             while (i != -1) {
                                 out.write(i);
                                 i = in.read();
                             }
-                        } finally {
-                            StreamUtils.safeClose(out);
                         }
-                    } finally {
-                        StreamUtils.safeClose(in);
                     }
                     // Create the .dodeploy file
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
-                    final OutputStream out = new BufferedOutputStream(new FileOutputStream(dodeploy));
-                    try {
+                    try (final OutputStream out = new BufferedOutputStream(new FileOutputStream(dodeploy))){
                         out.write("test-deployment.jar".getBytes());
-                    } finally {
-                        StreamUtils.safeClose(out);
                     }
                     Assert.assertTrue(dodeploy.exists());
                     for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
@@ -470,6 +505,46 @@ public class DeploymentTestCase {
     }
 
     @Test
+    public void testAddingDeploymentScannerWillLaunchScan() throws Exception {
+        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
+        final Path dir = new File("target/archives").toPath();
+        Files.createDirectories(dir);
+        final Path file = dir.resolve("test-deployment.jar");
+        archive.as(ZipExporter.class).exportTo(file.toFile(), true);
+
+        final Path deployDir = createDeploymentDir("first-scan").toPath();
+
+        ModelControllerClient client = managementClient.getControllerClient();
+        final String scannerName = "first-scan";
+        final Path target = deployDir.resolve("test-deployment.jar");
+        final Path deployed = deployDir.resolve("test-deployment.jar.deployed");
+        Files.copy(file, target);
+        Assert.assertFalse(Files.exists(deployed));
+        Assert.assertTrue(Files.exists(target));
+        addDeploymentScanner(deployDir.toFile(), client, scannerName, true, -1);
+        try {
+            for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                if (Files.exists(deployed)) {
+                    break;
+                }
+                try {
+                    Thread.sleep(BACKOFF);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
+                }
+            }
+            Assert.assertTrue(Files.exists(deployed));
+            ServiceActivatorDeploymentUtil.validateProperties(managementClient.getControllerClient(), properties);
+        } finally {
+            removeDeploymentScanner(client, scannerName);
+            Files.delete(target);
+            Files.delete(deployed);
+            Files.delete(deployDir);
+        }
+    }
+
+    @Test
     public void testExplodedFilesystemDeployment() throws Exception {
 
         final File deployDir = createDeploymentDir("exploded-deployments");
@@ -594,6 +669,11 @@ public class DeploymentTestCase {
 
     private ModelNode addDeploymentScanner(final File deployDir, final ModelControllerClient client, final String scannerName, final boolean autoDeployZipped)
             throws IOException {
+        return addDeploymentScanner(deployDir, client, scannerName, autoDeployZipped, 1000);
+    }
+
+    private ModelNode addDeploymentScanner(final File deployDir, final ModelControllerClient client, final String scannerName, final boolean autoDeployZipped, int scanInterval)
+            throws IOException {
         ModelNode add = new ModelNode();
         add.get(OP).set(ADD);
         ModelNode addr = new ModelNode();
@@ -602,9 +682,9 @@ public class DeploymentTestCase {
         add.get(OP_ADDR).set(addr);
         add.get("path").set(deployDir.getAbsolutePath());
         add.get("scan-enabled").set(true);
-        add.get("scan-interval").set(1000);
-        if (autoDeployZipped == false) {
-            add.get("auto-deploy-zipped").set(false);
+        add.get("scan-interval").set(scanInterval);
+        if (!autoDeployZipped) {
+            add.get("auto-deploy-zipped").set(autoDeployZipped);
         }
         ModelNode result = client.execute(add);
         Assert.assertEquals(result.toString(), ModelDescriptionConstants.SUCCESS, result.require(ModelDescriptionConstants.OUTCOME).asString());
@@ -650,7 +730,7 @@ public class DeploymentTestCase {
             initialDeploymentHash = currentHashes.iterator().next();
         }
 
-            // Full replace
+        // Full replace
         // listener.reset(2);
         deploymentExecutor.fullReplace();
 

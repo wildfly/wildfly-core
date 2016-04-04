@@ -392,35 +392,4 @@ public class MergingPatchContentTestCase extends AbstractTaskTestCase {
         createPatchXMLFile(cp1Dir, cp1);
         cp1Zip = createZippedPatchFile(cp1Dir, cp1ID);
     }
-
-/*    private static void ls(final File f) {
-        System.out.println(f.getAbsolutePath());
-        for(File c : f.listFiles()) {
-            ls(c, "  ");
-        }
-    }
-
-    private static void ls(final File f, String offset) {
-        System.out.println(offset + f.getName());
-        if(f.isDirectory()) {
-            for(File c : f.listFiles()) {
-                ls(c, offset + "  ");
-            }
-        }
-    }
-
-    private static void less(File f) throws Exception {
-
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new FileReader(f));
-            String line = reader.readLine();
-            while(line != null) {
-                System.out.println(line);
-                line = reader.readLine();
-            }
-        } finally {
-            IoUtils.safeClose(reader);
-        }
-    }
-*/}
+}

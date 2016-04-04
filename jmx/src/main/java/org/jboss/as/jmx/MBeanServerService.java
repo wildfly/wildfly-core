@@ -124,7 +124,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
         if (resolvedDomainName != null || expressionsDomainName != null) {
             //TODO make these configurable
             ConfiguredDomains configuredDomains = new ConfiguredDomains(resolvedDomainName, expressionsDomainName);
-            showModelPlugin = new ModelControllerMBeanServerPlugin(configuredDomains, modelControllerValue.getValue(),
+            showModelPlugin = new ModelControllerMBeanServerPlugin(pluggable, configuredDomains, modelControllerValue.getValue(),
                     delegate, legacyWithProperPropertyFormat, processType, managementModelProviderValue.getValue(), isMasterHc);
             pluggable.addPlugin(showModelPlugin);
         }

@@ -54,6 +54,7 @@ public class SensitiveTargetAccessConstraintDefinition implements AccessConstrai
     public static final SensitiveTargetAccessConstraintDefinition SECURITY_REALM = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SECURITY_REALM);
     public static final SensitiveTargetAccessConstraintDefinition SECURITY_REALM_REF = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SECURITY_REALM_REF);
     public static final SensitiveTargetAccessConstraintDefinition SECURITY_VAULT = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SECURITY_VAULT);
+    public static final SensitiveTargetAccessConstraintDefinition SERVER_SSL = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SERVER_SSL);
     public static final SensitiveTargetAccessConstraintDefinition SERVICE_CONTAINER = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SERVICE_CONTAINER);
     public static final SensitiveTargetAccessConstraintDefinition SOCKET_BINDING_REF = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_BINDING_REF);
     public static final SensitiveTargetAccessConstraintDefinition SOCKET_CONFIG = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG);

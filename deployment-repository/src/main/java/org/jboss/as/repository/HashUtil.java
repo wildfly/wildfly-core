@@ -18,6 +18,8 @@
  */
 package org.jboss.as.repository;
 
+import java.util.Arrays;
+
 /**
  * Utilities related to deployment content hashes.
  *
@@ -66,4 +68,13 @@ class HashUtil {
         return data;
     }
 
+    public static boolean isEachHexHashInTable(String s) {
+        // WFLY-6018, check each char is in table, otherwise, there will be StringIndexOutOfBoundsException due to illegal char
+        char[] array = s.toCharArray();
+        for (char c : array) {
+            if (Arrays.binarySearch(table, c) < 0)
+                return false;
+        }
+        return true;
+    }
 }

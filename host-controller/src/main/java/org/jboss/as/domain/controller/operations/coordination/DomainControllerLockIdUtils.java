@@ -43,12 +43,6 @@ public final class DomainControllerLockIdUtils {
      */
     public static final AttachmentKey<Integer> DOMAIN_CONTROLLER_LOCK_ID_ATTACHMENT = AttachmentKey.create(Integer.class);
 
-    /**
-     * The slave controller lock id header sent by the slaves to the DC. This is used to group several
-     * slave requuests onto one DC request.
-     */
-    public static final String SLAVE_CONTROLLER_LOCK_ID = "slave-controller-lock-id";
-
     private DomainControllerLockIdUtils() {
     }
 }

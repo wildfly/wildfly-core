@@ -57,6 +57,7 @@ import org.junit.runners.Suite;
     LdapAuthenticationSuiteTest.class,
     GroupToPrincipalLdapSuiteTest.class,
     PrincipalToGroupLdapSuiteTest.class,
+    PrincipalToGroupMissingNameLdapSuiteTest.class,
     LdapAuthenticationFollowSuiteTest.class,
     LdapAuthenticationThrowSuiteTest.class,
     GroupLoadingReferralsSuiteTest.class

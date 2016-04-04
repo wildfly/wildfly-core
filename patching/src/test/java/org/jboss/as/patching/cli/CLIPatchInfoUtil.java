@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.as.patching.IoUtils;
 import org.junit.Assert;
 
 /**
@@ -50,13 +49,12 @@ public class CLIPatchInfoUtil {
 
     public static void assertPatchInfo(byte[] info, String patchId, String link, boolean oneOff, String targetName, String targetVersion,
             String description) {
-        final ByteArrayInputStream bis = new ByteArrayInputStream(info);
-        final InputStreamReader reader = new InputStreamReader(bis);
-        final BufferedReader buf = new BufferedReader(reader);
-        try {
+        try (final ByteArrayInputStream bis = new ByteArrayInputStream(info);
+                final InputStreamReader reader = new InputStreamReader(bis);
+                final BufferedReader buf = new BufferedReader(reader)){
             assertPatchInfo(buf, patchId, link, oneOff, targetName, targetVersion, description);
         } catch (IOException e) {
-            IoUtils.safeClose(buf);
+            //
         }
     }
 
@@ -79,11 +77,9 @@ public class CLIPatchInfoUtil {
     public static void assertPatchInfo(byte[] info, String patchId, String link, boolean oneOff, String targetName, String targetVersion,
             String description, List<Map<String,String>> elements) {
 
-        final ByteArrayInputStream bis = new ByteArrayInputStream(info);
-        final InputStreamReader reader = new InputStreamReader(bis);
-        final BufferedReader buf = new BufferedReader(reader);
-
-        try {
+        try (final ByteArrayInputStream bis = new ByteArrayInputStream(info);
+                final InputStreamReader reader = new InputStreamReader(bis);
+                final BufferedReader buf = new BufferedReader(reader)){
             assertPatchInfo(buf, patchId, link, oneOff, targetName, targetVersion, description, elements);
             if (buf.ready()) {
                 final StringBuilder str = new StringBuilder();
@@ -95,8 +91,6 @@ public class CLIPatchInfoUtil {
             }
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read the input", e);
-        } finally {
-            IoUtils.safeClose(buf);
         }
     }
 
@@ -138,13 +132,10 @@ public class CLIPatchInfoUtil {
     }
 
     public static Map<String, String> parseTable(byte[] table) throws IOException {
-        final ByteArrayInputStream bis = new ByteArrayInputStream(table);
-        final InputStreamReader reader = new InputStreamReader(bis);
-        final BufferedReader buf = new BufferedReader(reader);
-        try {
+        try (final ByteArrayInputStream bis = new ByteArrayInputStream(table);
+             final InputStreamReader reader = new InputStreamReader(bis);
+             final BufferedReader buf = new BufferedReader(reader)) {
             return parseTable(buf);
-        } finally {
-            IoUtils.safeClose(buf);
         }
     }
 

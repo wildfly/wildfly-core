@@ -23,7 +23,6 @@
 package org.jboss.as.patching.management;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
@@ -36,7 +35,6 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -167,11 +165,9 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
 
     static final ResourceDefinition INSTANCE = new PatchResourceDefinition();
 
-    private final List<AccessConstraintDefinition> sensitivity;
-
     private PatchResourceDefinition() {
-        super(PATH, getResourceDescriptionResolver(NAME));
-        sensitivity = SensitiveTargetAccessConstraintDefinition.PATCHING.wrapAsList();
+        super(new Parameters(PATH, getResourceDescriptionResolver(NAME))
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING));
     }
 
     @Override
@@ -181,7 +177,8 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
         registerPatchingAttributes(registry);
 
         final StandardResourceDescriptionResolver resolver = new StandardResourceDescriptionResolver("patching.patch-stream", RESOURCE_NAME, PatchResourceDefinition.class.getClassLoader());
-        registry.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement("patch-stream"), resolver) {
+        registry.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("patch-stream"), resolver)
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)) {
 
             @Override
             public void registerAttributes(final ManagementResourceRegistration resource) {
@@ -193,11 +190,6 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             public void registerOperations(ManagementResourceRegistration registry) {
                 PatchResourceDefinition.this.registerPatchingOperations(registry, false);
             }
-
-            @Override
-            public List<AccessConstraintDefinition> getAccessConstraints() {
-                return sensitivity;
-            }
         });
     }
 
@@ -205,11 +197,6 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
     public void registerOperations(ManagementResourceRegistration registry) {
         super.registerOperations(registry);
         registerPatchingOperations(registry, true);
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return sensitivity;
     }
 
     protected void registerPatchingOperations(ManagementResourceRegistration registry, boolean patchOp) {
@@ -248,7 +235,8 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
         });
 
         StandardResourceDescriptionResolver resolver = new StandardResourceDescriptionResolver("patching.layer", "org.jboss.as.patching.management.LocalDescriptions", PatchResourceDefinition.class.getClassLoader());
-        registry.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement("layer"), resolver) {
+        registry.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("layer"), resolver)
+            .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)){
 
             @Override
             public void registerAttributes(final ManagementResourceRegistration resource) {
@@ -276,15 +264,11 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                     }
                 });
             }
-
-            @Override
-            public List<AccessConstraintDefinition> getAccessConstraints() {
-                return sensitivity;
-            }
         });
 
         resolver = new StandardResourceDescriptionResolver("patching.addon", "org.jboss.as.patching.management.LocalDescriptions", PatchResourceDefinition.class.getClassLoader());
-        registry.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement("addon"), resolver) {
+        registry.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("addon"), resolver)
+            .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)) {
             @Override
             public void registerAttributes(final ManagementResourceRegistration resource) {
                 resource.registerReadOnlyAttribute(CUMULATIVE_PATCH_ID, new ElementProviderAttributeReadHandler.AddOnAttributeReadHandler() {
@@ -310,11 +294,6 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                         }
                     }
                 });
-            }
-
-            @Override
-            public List<AccessConstraintDefinition> getAccessConstraints() {
-                return sensitivity;
             }
         });
     }

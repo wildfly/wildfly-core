@@ -46,11 +46,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLHandshakeException;
 import javax.security.sasl.SaslException;
 
-import org.jboss.as.controller.CurrentOperationIdHolder;
 import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -183,6 +183,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     private final InjectedValue<ServerInventory> serverInventoryInjector = new InjectedValue<ServerInventory>();
     private final InjectedValue<ScheduledExecutorService> scheduledExecutorInjector = new InjectedValue<>();
     private final ExecutorService executor;
+    private final AtomicBoolean domainModelComplete;
 
     private ManagementChannelHandler handler;
     private volatile ResponseAttachmentInputStreamSupport responseAttachmentSupport;
@@ -199,7 +200,8 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                                           final HostControllerEnvironment hostControllerEnvironment,
                                           final ExecutorService executor,
                                           final RunningMode runningMode,
-                                          final Map<String, ProxyController> serverProxies){
+                                          final Map<String, ProxyController> serverProxies,
+                                          final AtomicBoolean domainModelComplete){
         this.controller = controller;
         this.extensionRegistry = extensionRegistry;
         this.productConfig = hostControllerEnvironment.getProductConfig();
@@ -215,6 +217,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         this.runningMode = runningMode;
         this.tempDir = hostControllerEnvironment.getDomainTempDir();
         this.serverProxies = serverProxies;
+        this.domainModelComplete = domainModelComplete;
     }
 
     static Future<MasterDomainControllerClient> install(final ServiceTarget serviceTarget,
@@ -230,11 +233,12 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                                                         final HostControllerEnvironment hostControllerEnvironment,
                                                         final ExecutorService executor,
                                                         final RunningMode currentRunningMode,
-                                                        final Map<String, ProxyController> serverProxies) {
+                                                        final Map<String, ProxyController> serverProxies,
+                                                        final AtomicBoolean domainModelComplete) {
         RemoteDomainConnectionService service = new RemoteDomainConnectionService(controller, extensionRegistry, localHostControllerInfo,
                 remoteFileRepository, contentRepository,
                 ignoredDomainResourceRegistry, operationExecutor, domainController,
-                hostControllerEnvironment, executor, currentRunningMode, serverProxies);
+                hostControllerEnvironment, executor, currentRunningMode, serverProxies, domainModelComplete);
         ServiceBuilder<MasterDomainControllerClient> builder = serviceTarget.addService(MasterDomainControllerClient.SERVICE_NAME, service)
                 .addDependency(ManagementRemotingServices.MANAGEMENT_ENDPOINT, Endpoint.class, service.endpointInjector)
                 .addDependency(ServerInventoryService.SERVICE_NAME, ServerInventory.class, service.serverInventoryInjector)
@@ -401,7 +405,6 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                 if (domainControllerLock != null) {
                     fetchContentOp.get(OPERATION_HEADERS, DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID).set(domainControllerLock);
                 }
-                fetchContentOp.get(OPERATION_HEADERS, DomainControllerLockIdUtils.SLAVE_CONTROLLER_LOCK_ID).set(CurrentOperationIdHolder.getCurrentOperationID());
 
                 // execute the operation blocking
                 final TransactionalProtocolClient.PreparedOperation<TransactionalProtocolClient.Operation> preparedOperation;
@@ -517,7 +520,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
 
                 @Override
                 public void registrationComplete(ManagementChannelHandler handler) {
-                    //
+                    RemoteDomainConnectionService.this.domainModelComplete.set(true);
                 }
             }, runningMode);
             // Setup the management channel handler

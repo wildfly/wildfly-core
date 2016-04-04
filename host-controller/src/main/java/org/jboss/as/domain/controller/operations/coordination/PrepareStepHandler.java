@@ -126,10 +126,12 @@ public class PrepareStepHandler  implements OperationStepHandler {
             context.addStep(stepHandler, OperationContext.Stage.MODEL);
         } else {
             PathAddress pathAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
-            if (registration == null) {
-                context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noSuchResourceType(pathAddress));
-            } else {
-                context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, pathAddress));
+            if (! context.isBooting()) {
+                if (registration == null) {
+                    context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noSuchResourceType(pathAddress));
+                } else {
+                    context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, pathAddress));
+                }
             }
         }
     }

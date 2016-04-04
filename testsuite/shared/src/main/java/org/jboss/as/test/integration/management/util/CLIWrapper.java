@@ -44,7 +44,7 @@ import org.junit.Assert;
  * @author Dominik Pospisil <dpospisi@redhat.com>
  * @author Alexey Loubyansky <olubyans@redhat.com>
  */
-public class CLIWrapper {
+public class CLIWrapper implements AutoCloseable {
 
     private final CommandContext ctx;
 
@@ -244,5 +244,11 @@ public class CLIWrapper {
 
     protected String getPassword() {
         return Authentication.PASSWORD;
+    }
+
+    @Override
+    public void close() throws Exception {
+        if(!hasQuit())
+            quit();
     }
 }

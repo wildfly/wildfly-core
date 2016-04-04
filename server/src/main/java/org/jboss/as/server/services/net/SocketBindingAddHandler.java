@@ -75,7 +75,13 @@ public class SocketBindingAddHandler extends AbstractAddStepHandler {
      * Create the SocketBindingAddHandler
      */
     protected SocketBindingAddHandler() {
-        super(SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY);
+        super(SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY,
+                AbstractSocketBindingResourceDefinition.INTERFACE,
+                AbstractSocketBindingResourceDefinition.PORT,
+                AbstractSocketBindingResourceDefinition.FIXED_PORT,
+                AbstractSocketBindingResourceDefinition.MULTICAST_ADDRESS,
+                AbstractSocketBindingResourceDefinition.MULTICAST_PORT,
+                AbstractSocketBindingResourceDefinition.CLIENT_MAPPINGS);
     }
 
     @Override
@@ -84,11 +90,6 @@ public class SocketBindingAddHandler extends AbstractAddStepHandler {
         ModelNode model = resource.getModel();
         model.get(NAME).set(context.getCurrentAddressValue());
 
-        AbstractSocketBindingResourceDefinition.INTERFACE.validateAndSet(operation, model);
-        AbstractSocketBindingResourceDefinition.PORT.validateAndSet(operation, model);
-        AbstractSocketBindingResourceDefinition.FIXED_PORT.validateAndSet(operation, model);
-        AbstractSocketBindingResourceDefinition.MULTICAST_ADDRESS.validateAndSet(operation, model);
-        AbstractSocketBindingResourceDefinition.MULTICAST_PORT.validateAndSet(operation, model);
-        AbstractSocketBindingResourceDefinition.CLIENT_MAPPINGS.validateAndSet(operation, model);
+        super.populateModel(context, operation, resource);
     }
 }

@@ -102,17 +102,23 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
         @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
             FormatterConfiguration configuration = logContextConfiguration.getFormatterConfiguration(name);
-            if (configuration == null) {
+            final String className = CLASS.resolveModelAttribute(context, model).asString();
+            final ModelNode moduleNameNode = MODULE.resolveModelAttribute(context, model);
+            final String moduleName = moduleNameNode.isDefined() ? moduleNameNode.asString() : null;
+            final ModelNode properties = PROPERTIES.resolveModelAttribute(context, model);
+            if (configuration != null) {
+                if (!className.equals(configuration.getClassName()) || (moduleName == null ? configuration.getModuleName() != null : !moduleName.equals(configuration.getModuleName()))) {
+                    LoggingLogger.ROOT_LOGGER.tracef("Replacing formatter '%s' at '%s'", name, LoggingOperations.getAddress(operation));
+                    logContextConfiguration.removeFormatterConfiguration(name);
+                    configuration = logContextConfiguration.addFormatterConfiguration(moduleName, className, name);
+                }
+            } else {
                 LoggingLogger.ROOT_LOGGER.tracef("Adding formatter '%s' at '%s'", name, LoggingOperations.getAddress(operation));
-                final String className = CLASS.resolveModelAttribute(context, model).asString();
-                final ModelNode moduleNameNode = MODULE.resolveModelAttribute(context, model);
-                final String moduleName = moduleNameNode.isDefined() ? moduleNameNode.asString() : null;
                 configuration = logContextConfiguration.addFormatterConfiguration(moduleName, className, name);
-                final ModelNode properties = PROPERTIES.resolveModelAttribute(context, model);
-                if (properties.isDefined()) {
-                    for (Property property : properties.asPropertyList()) {
-                        configuration.setPropertyValueString(property.getName(), property.getValue().asString());
-                    }
+            }
+            if (properties.isDefined()) {
+                for (Property property : properties.asPropertyList()) {
+                    configuration.setPropertyValueString(property.getName(), property.getValue().asString());
                 }
             }
         }
@@ -123,7 +129,8 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
         @Override
         protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName, final ModelNode value, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
             final FormatterConfiguration configuration = logContextConfiguration.getFormatterConfiguration(addressName);
-            if (PROPERTIES.getName().equals(attributeName)) {
+            String modelClass = CLASS.resolveModelAttribute(context, context.readResource(PathAddress.EMPTY_ADDRESS).getModel()).asString();
+            if (PROPERTIES.getName().equals(attributeName) && configuration.getClassName().equals(modelClass)) {
                 if (value.isDefined()) {
                     for (Property property : value.asPropertyList()) {
                         configuration.setPropertyValueString(property.getName(), property.getValue().asString());

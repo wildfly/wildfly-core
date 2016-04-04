@@ -41,6 +41,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
@@ -241,8 +242,9 @@ public class ReadMasterDomainModelUtil {
         final Set<String> serverGroups = requiredConfigurationHolder.serverGroups;
         final Set<String> socketBindings = requiredConfigurationHolder.socketBindings;
 
-        if (serverConfig.getSocketBindingGroup() != null && !socketBindings.contains(serverConfig.getSocketBindingGroup())) {
-            socketBindings.add(serverConfig.getSocketBindingGroup());
+        String sbg = serverConfig.getSocketBindingGroup();
+        if (sbg != null && !socketBindings.contains(sbg)) {
+            processSocketBindingGroup(root, sbg, requiredConfigurationHolder);
         }
 
         final String groupName = serverConfig.getServerGroup();
@@ -357,6 +359,7 @@ public class ReadMasterDomainModelUtil {
                 }
             }
         }
+        ControllerLogger.ROOT_LOGGER.tracef("Recorded need for socket-binding-group %s", socketBindingGroup);
     }
 
     /**
@@ -462,7 +465,7 @@ public class ReadMasterDomainModelUtil {
         };
     }
 
-    static class RequiredConfigurationHolder {
+    public static class RequiredConfigurationHolder {
 
         private final Set<String> extensions = new HashSet<>();
         private final Set<String> profiles = new HashSet<>();
@@ -488,7 +491,7 @@ public class ReadMasterDomainModelUtil {
         @Override
         public String toString() {
             final StringBuilder builder = new StringBuilder();
-            builder.append("ResolutionContext{");
+            builder.append("RequiredConfigurationHolder{");
             builder.append("extensions=").append(extensions);
             builder.append("profiles=").append(profiles).append(", ");
             builder.append("server-groups=").append(serverGroups).append(", ");
@@ -496,5 +499,4 @@ public class ReadMasterDomainModelUtil {
             return builder.toString();
         }
     }
-
 }

@@ -26,14 +26,14 @@ import static org.jboss.as.patching.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.patching.Constants;
@@ -142,15 +142,9 @@ public class PatchToolImpl implements PatchTool {
                     return execute(file, contentPolicy);
                 }
             }
-            final InputStream is = new FileInputStream(file);
-            try {
+
+            try (final InputStream is = new FileInputStream(file)) {
                 return applyPatch(is, contentPolicy);
-            } finally {
-                if(is != null) try {
-                    is.close();
-                } catch (IOException e) {
-                    PatchLogger.ROOT_LOGGER.debugf(e, "failed to close input stream");
-                }
             }
         } catch (Exception e) {
             throw rethrowException(e);
@@ -186,11 +180,15 @@ public class PatchToolImpl implements PatchTool {
             // Create a working dir
             workDir = parentWorkDir == null ? IdentityPatchRunner.createTempDir() : IdentityPatchRunner.createTempDir(parentWorkDir);
 
-            // Save the content
-            final File cachedContent = new File(workDir, "content");
-            IoUtils.copy(is, cachedContent);
-            // Unpack to the work dir
-            ZipUtils.unzip(cachedContent, workDir);
+            try {
+                // Save the content
+                Path cachedContent = workDir.toPath().resolve("content");
+                Files.copy(is, cachedContent);
+                // Unpack to the work dir
+                ZipUtils.unzip(cachedContent.toFile(), workDir);
+            } catch (IOException e) {
+                throw PatchLogger.ROOT_LOGGER.cannotCopyFilesToTempDir(workDir.getAbsolutePath(), e.getMessage(), e); // add info that temp dir is involved
+            }
 
             // Execute
             return execute(workDir, contentPolicy);
@@ -291,8 +289,7 @@ public class PatchToolImpl implements PatchTool {
         }
     }
 
-    private PatchMetadataResolver parsePatchXml(final File patchXml)
-            throws FileNotFoundException, XMLStreamException, IOException {
+    private PatchMetadataResolver parsePatchXml(final File patchXml) throws XMLStreamException, IOException {
         InputStream patchIS = null;
         try {
             patchIS = new FileInputStream(patchXml);

@@ -75,8 +75,10 @@ public class ConnectorResource extends SimpleResourceDefinition {
     static final ConnectorResource INSTANCE = new ConnectorResource();
 
     private ConnectorResource() {
-        super(PATH, RemotingExtension.getResourceDescriptionResolver(CONNECTOR),
-                ConnectorAdd.INSTANCE, ConnectorRemove.INSTANCE);
+        super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(CONNECTOR))
+                .setAddHandler(ConnectorAdd.INSTANCE)
+                .setRemoveHandler(ConnectorRemove.INSTANCE)
+                .setCapabilities(CONNECTOR_CAPABILITY));
     }
 
     @Override

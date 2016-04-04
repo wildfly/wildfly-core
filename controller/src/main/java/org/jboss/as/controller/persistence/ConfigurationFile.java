@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -444,21 +445,28 @@ public class ConfigurationFile {
         return mainFile;
     }
 
+    File getConfigurationDir(){
+        return configurationDir;
+    }
+
+
     /** Notification that boot has completed successfully and the configuration history should be updated */
     void successfulBoot() throws ConfigurationPersistenceException {
         synchronized (this) {
             if (doneBootup.get()) {
                 return;
             }
-
             final File copySource;
             if (!interactionPolicy.isReadOnly()) {
                 copySource = mainFile;
             } else {
-                // TODO WFCORE-515 in the !persistOriginal case, mainFile may not be in the
-                // configuration dir and writing to its dir may not be legal.
-                // Why not use the configuration dir?
-                copySource = new File(mainFile.getParentFile(), mainFile.getName() + ".boot");
+
+                if ( FilePersistenceUtils.isParentFolderWritable(mainFile) ) {
+                    copySource = new File(mainFile.getParentFile(), mainFile.getName() + ".boot");
+                } else{
+                    copySource = new File(configurationDir, mainFile.getName() + ".boot");
+                }
+
                 FilePersistenceUtils.deleteFile(copySource);
             }
 
@@ -695,17 +703,18 @@ public class ConfigurationFile {
     }
 
     private File addSuffixToFile(final File file, final String suffix) {
-        final String path = file.getAbsolutePath();
-        int index = path.lastIndexOf(".");
+        Path path = file.toPath();
+        final String fileName = path.getFileName().toString();
+        int index = fileName.lastIndexOf('.');
         if (index == -1) {
-            return new File(file.getAbsolutePath() + "." + suffix);
+            return path.resolveSibling(fileName + '.' + suffix).toFile();
         }
         StringBuilder sb = new StringBuilder();
-        sb.append(path.substring(0, index));
-        sb.append(".");
+        sb.append(fileName.substring(0, index));
+        sb.append('.');
         sb.append(suffix);
-        sb.append(path.substring(index));
-        return new File(sb.toString());
+        sb.append(fileName.substring(index));
+        return path.resolveSibling(sb.toString()).toFile();
     }
 
     private Date subtractDays(final Date date, final int days) {

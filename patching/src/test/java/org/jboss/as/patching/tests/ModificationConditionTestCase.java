@@ -132,21 +132,4 @@ public class ModificationConditionTestCase extends AbstractPatchingTest {
         Assert.assertFalse(builder.hasFile(OTHER, MANUAL));
         Assert.assertFalse(builder.hasFile(DOCS, NOT_INSTALLED, MANUAL));
     }
-
-/*    private void printPatch(PatchingTestStepBuilder cp2) throws Exception {
-        writePatch(cp2.getPatchDir(), cp2.build());
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new FileReader(new File(cp2.getPatchDir(), "patch.xml")));
-            String line = reader.readLine();
-            while(line != null) {
-                System.out.println(line);
-                line = reader.readLine();
-            }
-        } finally {
-            if(reader != null) {
-                reader.close();
-            }
-        }
-    }
-*/}
+}

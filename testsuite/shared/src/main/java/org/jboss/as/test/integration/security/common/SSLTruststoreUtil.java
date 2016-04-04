@@ -22,29 +22,21 @@
 package org.jboss.as.test.integration.security.common;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import javax.net.ssl.SSLContext;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLContextBuilder;
-import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.SSLContexts;
 import org.jboss.logging.Logger;
 
 public class SSLTruststoreUtil {
@@ -64,20 +56,17 @@ public class SSLTruststoreUtil {
         return getHttpClientWithSSL(null, null, trustStoreFile, password);
     }
 
-    public static HttpClient getHttpClientWithSSL(File keyStoreFile, String keyStorePassword, File trustStoreFile,
-                                                  String trustStorePassword) {
+    public static HttpClient getHttpClientWithSSL(File keyStoreFile, String keyStorePassword, File trustStoreFile, String trustStorePassword) {
 
         try {
-            final KeyStore truststore = loadKeyStore(trustStoreFile, trustStorePassword.toCharArray());
-            final KeyStore keystore = keyStoreFile != null ? loadKeyStore(keyStoreFile, keyStorePassword.toCharArray()) : null;
             SSLContextBuilder sslContextBuilder = SSLContexts.custom()
-                    .useTLS()
-                    .loadTrustMaterial(truststore);
-            if (keyStoreFile!=null){
-                sslContextBuilder.loadKeyMaterial(keystore, keyStorePassword.toCharArray());
+                    .useProtocol("TLS")
+                    .loadTrustMaterial(trustStoreFile, trustStorePassword.toCharArray());
+            if (keyStoreFile != null) {
+                sslContextBuilder.loadKeyMaterial(keyStoreFile, keyStorePassword.toCharArray(), keyStorePassword.toCharArray());
             }
             SSLContext sslContext = sslContextBuilder.build();
-            SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext,new AllowAllHostnameVerifier());
+            SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
 
             Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
                     .register("http", PlainConnectionSocketFactory.getSocketFactory())
@@ -86,7 +75,8 @@ public class SSLTruststoreUtil {
 
             return HttpClientBuilder.create()
                     .setSSLSocketFactory(socketFactory)
-                    .setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
+                            //.setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
+                    .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                     .setConnectionManager(new PoolingHttpClientConnectionManager(registry))
                     .setSchemePortResolver(new DefaultSchemePortResolver())
                     .build();
@@ -97,27 +87,5 @@ public class SSLTruststoreUtil {
         }
     }
 
-    /**
-     * Loads a JKS keystore with given path and password.
-     *
-     * @param keystoreFile path to keystore file
-     * @param keystorePwd  keystore password
-     * @return
-     * @throws KeyStoreException
-     * @throws NoSuchAlgorithmException
-     * @throws CertificateException
-     * @throws IOException
-     */
-    private static KeyStore loadKeyStore(final File keystoreFile, final char[] keystorePwd) throws KeyStoreException,
-            NoSuchAlgorithmException, CertificateException, IOException {
-        final KeyStore keystore = KeyStore.getInstance("JKS");
-        InputStream is = null;
-        try {
-            is = new FileInputStream(keystoreFile);
-            keystore.load(is, keystorePwd);
-        } finally {
-            IOUtils.closeQuietly(is);
-        }
-        return keystore;
-    }
+
 }

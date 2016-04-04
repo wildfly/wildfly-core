@@ -76,7 +76,7 @@ public interface AttributeParsers {
             assert attribute instanceof PropertiesAttributeDefinition;
             PropertiesAttributeDefinition property = (PropertiesAttributeDefinition) attribute;
             String wrapper = wrapperElement == null ? property.getName() : wrapperElement;
-
+            operation.get(attribute.getName()).setEmptyObject();//create empty attribute to address WFCORE-1448
             if (wrapElement) {
                 if (!reader.getLocalName().equals(wrapper)) {
                     throw ParseUtils.unexpectedElement(reader, Collections.singleton(wrapper));
@@ -98,8 +98,10 @@ public interface AttributeParsers {
             } while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT && reader.getLocalName().equals(elementName));
 
             if (wrapElement) {
-                if (!reader.getLocalName().equals(wrapperElement)) {
-                    ParseUtils.requireNoContent(reader);
+                // To exit the do loop either we hit an END_ELEMENT or a START_ELEMENT not for 'elementName'
+                // The latter means a bad document
+                if (reader.getEventType() != XMLStreamConstants.END_ELEMENT) {
+                    throw ParseUtils.unexpectedElement(reader, Collections.singleton(elementName));
                 }
             }
         }

@@ -24,10 +24,10 @@ package org.jboss.as.patching.runner;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
 import static org.jboss.as.patching.HashUtils.bytesToHexString;
 import static org.jboss.as.patching.HashUtils.hashFile;
 import static org.jboss.as.patching.metadata.Patch.PatchType.CUMULATIVE;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -38,8 +38,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
-import org.junit.Assert;
-
 import org.jboss.as.patching.ContentConflictsException;
 import org.jboss.as.patching.DirectoryStructure;
 import org.jboss.as.patching.IoUtils;
@@ -49,6 +47,7 @@ import org.jboss.as.patching.installation.PatchableTarget;
 import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.tool.PatchingResult;
+import org.junit.Assert;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2012, Red Hat Inc
@@ -205,8 +204,10 @@ public class PatchingAssert {
     }
 
     private static void assertFileContains(File f, String string) throws Exception {
-        String content = new Scanner(f, "UTF-8").useDelimiter("\\Z").next();
-        assertTrue(string + " not found in " + f + " with content=" + content, content.contains(string));
+        try (Scanner scanner = new Scanner(f, "UTF-8").useDelimiter("\\Z")) {
+            String content = scanner.next();
+            assertTrue(string + " not found in " + f + " with content=" + content, content.contains(string));
+        }
     }
 
     public static void assertPatchHasBeenApplied(PatchingResult result, Patch patch) {
