@@ -70,7 +70,7 @@ public class NativeApiPatchingTestCase extends AbstractPatchingTestCase {
      */
     @Test
     public void testApplyOneoff() throws Exception {
-        logger.info("APPLYING ONEOFF:)");
+        logger.trace("APPLYING ONEOFF:)");
         ModelControllerClient client = getControllerClient();
 
         final String fileContent = "Hello World!";
@@ -94,9 +94,9 @@ public class NativeApiPatchingTestCase extends AbstractPatchingTestCase {
         controller.start();
         Operation o = NativeApiUtilsForPatching.createPatchOperation(zippedPatch);
 
-        logger.info(o.getOperation().toJSONString(false));
+        logger.trace(o.getOperation().toJSONString(false));
         ModelNode ret = client.execute(o);
-        logger.info(ret.toJSONString(false));
+        logger.trace(ret.toJSONString(false));
         Assert.assertTrue(ret.get("outcome").asString().equalsIgnoreCase("success"));
 
         controller.stop();
@@ -115,9 +115,9 @@ public class NativeApiPatchingTestCase extends AbstractPatchingTestCase {
         Assert.assertEquals("Unexpected contents of misc file", fileContent, readFile(path));
 
         o = NativeApiUtilsForPatching.createRollbackOperation(patchID);
-        logger.info(o.getOperation().toJSONString(false));
+        logger.trace(o.getOperation().toJSONString(false));
         ret = client.execute(o);
-        logger.info(ret.toJSONString(false));
+        logger.trace(ret.toJSONString(false));
         //
         Assert.assertEquals(ret.get("outcome").asString(), "success");
 

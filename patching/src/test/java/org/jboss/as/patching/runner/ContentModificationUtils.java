@@ -22,7 +22,6 @@
 
 package org.jboss.as.patching.runner;
 
-import static org.jboss.as.patching.Constants.BUNDLES;
 import static org.jboss.as.patching.Constants.MISC;
 import static org.jboss.as.patching.Constants.MODULES;
 import static org.jboss.as.patching.HashUtils.hashFile;
@@ -31,16 +30,13 @@ import static org.jboss.as.patching.IoUtils.newFile;
 import static org.jboss.as.patching.metadata.ModificationType.ADD;
 import static org.jboss.as.patching.metadata.ModificationType.MODIFY;
 import static org.jboss.as.patching.metadata.ModificationType.REMOVE;
-import static org.jboss.as.patching.runner.TestUtils.createBundle0;
 import static org.jboss.as.patching.runner.TestUtils.createModule0;
 import static org.jboss.as.patching.runner.TestUtils.dump;
-import static org.jboss.as.patching.runner.TestUtils.randomString;
 import static org.jboss.as.patching.runner.TestUtils.touch;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.jboss.as.patching.metadata.BundleItem;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.MiscContentItem;
 import org.jboss.as.patching.metadata.ModificationCondition;
@@ -93,28 +89,6 @@ public class ContentModificationUtils {
         File modifiedModule = createModule0(modulesDir, moduleName, task);
         byte[] updatedHash = hashFile(modifiedModule);
         ContentModification moduleUpdated = new ContentModification(new ModuleItem(moduleName, ModuleItem.MAIN_SLOT, updatedHash), existingHash, MODIFY);
-        return moduleUpdated;
-    }
-
-    public static ContentModification addBundle(File patchDir, String patchElementID, String bundleName) throws IOException {
-        File bundlesDir = newFile(patchDir, patchElementID, BUNDLES);
-        File bundleDir = createBundle0(bundlesDir, bundleName, randomString());
-        byte[] newHash = hashFile(bundleDir);
-        ContentModification bundleAdded = new ContentModification(new BundleItem(bundleName, null, newHash), NO_CONTENT, ADD);
-        return bundleAdded;
-    }
-
-    public static ContentModification removeBundle(File existingBundle) throws IOException {
-        byte[] existingHash = hashFile(existingBundle);
-        return new ContentModification(new BundleItem(existingBundle.getName(), null, NO_CONTENT), existingHash, REMOVE);
-    }
-
-    public static ContentModification modifyBundle(File patchDir, String patchElementID, File existingBundle, String newContent) throws IOException {
-        File bundlesDir = newFile(patchDir, patchElementID, BUNDLES);
-        File modifiedBundle = createBundle0(bundlesDir, existingBundle.getName(), newContent);
-        byte[] existingHash = hashFile(existingBundle);
-        byte[] updatedHash = hashFile(modifiedBundle);
-        ContentModification moduleUpdated = new ContentModification(new BundleItem(existingBundle.getName(), null, updatedHash), existingHash, MODIFY);
         return moduleUpdated;
     }
 

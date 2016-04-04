@@ -85,8 +85,32 @@ public class ResolveExpressionHandler implements OperationStepHandler {
                 } catch (SecurityException e) {
                     throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noPermissionToResolveExpression(toResolve, e));
                 } catch (IllegalStateException e) {
-                    throw ControllerLogger.ROOT_LOGGER.cannotResolveExpression(toResolve.asString());
+                    final ModelNode failureDescription = ControllerLogger.ROOT_LOGGER.cannotResolveExpression(toResolve.asString()).getFailureDescription();
+                    deferFailureReporting(context, failureDescription);
+                } catch (OperationFailedException e) {
+                    deferFailureReporting(context, e.getFailureDescription());
                 }
+            }
+
+            /**
+             * Defer the failure reporting to avoid noise in the server log.
+             * @param context
+             * @param failureDescription
+             */
+            private void deferFailureReporting(OperationContext context, final ModelNode failureDescription) {
+                // WFCORE-149 We are going to defer reporting this failure until the result handler runs
+                // so we don't put noise in the server log.
+                // But, we don't want that deferred reporting to disrupt the normal rollback behavior when
+                // a failure occurs, so set rollback only
+                if(context.isRollbackOnRuntimeFailure()) {
+                    context.setRollbackOnly();
+                }
+                context.completeStep(new OperationContext.ResultHandler() {
+                    @Override
+                    public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                        context.getFailureDescription().set(failureDescription);
+                    }
+                });
             }
         }, OperationContext.Stage.RUNTIME);
     }

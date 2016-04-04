@@ -76,12 +76,12 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
     private volatile int reconnectTimeout = -1;
     private volatile long lastErrorTime = -1;
     // This should be guarded by the config lock in the ManagedAuditLoggerImpl
-    private boolean initialized;
+    private boolean connected;
 
     public SyslogAuditLogHandler(String name, String formatterName, int maxFailureCount, PathManagerService pathManager) {
         super(name, formatterName, maxFailureCount);
         this.pathManager = pathManager;
-        initialized = false;
+        connected = false;
     }
 
     public void setHostName(String hostName) {
@@ -187,10 +187,15 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
     void initialize() {
         // Only attempt initialization if this if the first invocation, the server has been stopped or a previous
         // initialization invocation has failed
-        if (initialized) {
+        if (connected) {
             return;
         }
         SyslogHandler handler = this.handler;
+        // If the handler is not null, we should clean it up before initializing a new handler
+        if (handler != null) {
+            ControllerLogger.MGMT_OP_LOGGER.debug("Stopping a previously initialized syslog handler.");
+            stop();
+        }
         try {
             final Protocol protocol;
             switch (transport) {
@@ -217,7 +222,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
             //Common for all protocols
             handler.setSyslogType(syslogType);
 
-            errorManager = new TransportErrorManager();
+            final TransportErrorManager errorManager = new TransportErrorManager();
             handler.setErrorManager(errorManager);
 
             if (transport != Transport.UDP){
@@ -268,10 +273,11 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
                 }
             }
             this.handler = handler;
-            initialized = true;
+            this.errorManager = errorManager;
+            connected = true;
         } catch (Exception e) {
             // Failed to initialize the handler, clean up the resources
-            initialized = false;
+            connected = false;
             if (handler != null) {
                 try {
                     handler.close();
@@ -283,7 +289,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
 
     @Override
     void stop() {
-        initialized = false;
+        connected = false;
         SyslogHandler handler = this.handler;
         this.handler = null;
         if (handler != null) {
@@ -309,8 +315,9 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
         } else {
             ControllerLogger.MGMT_OP_LOGGER.attemptingReconnectToSyslog(name, reconnectTimeout);
             try {
-                //Reinitialise the delegating syslog handler if required
-                if (!initialized) {
+                // Reinitialise the delegating syslog handler if required, if we're already connected we don't need to
+                // establish a new connection
+                if (!connected) {
                     stop();
                     initialize();
                 }
@@ -319,7 +326,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
                 lastErrorTime = -1;
             } catch (Exception e) {
                 // A failure has occurred and initialization should be reattempted
-                initialized = false;
+                connected = false;
                 lastErrorTime = System.currentTimeMillis();
                 errorManager.throwAsIoOrRuntimeException(e);
             }
@@ -487,6 +494,9 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
             this.error = null;
 
             if (error != null) {
+                // This method is only invoked by writeLog() which is guarded by the config lock in ManagedAuditLoggerImpl
+                // If we've received an error we're going to assume we're not connected to force a reconnect
+                connected = false;
                 throwAsIoOrRuntimeException(error);
             }
         }

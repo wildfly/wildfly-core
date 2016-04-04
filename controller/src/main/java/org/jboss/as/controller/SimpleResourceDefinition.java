@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -59,6 +60,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private volatile DeprecationData deprecationData;
     private final boolean orderedChild;
     private final RuntimeCapability[] capabilities;
+    private final List<AccessConstraintDefinition> accessConstraints;
 
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionProvider} to describe the resource.
@@ -85,6 +87,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.runtime = false;
         this.orderedChild = false;
         this.capabilities = new RuntimeCapability[0];
+        this.accessConstraints = Collections.emptyList();
     }
 
     /**
@@ -274,6 +277,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.runtime = runtime;
         this.orderedChild = false;
         this.capabilities = new RuntimeCapability[0];
+        this.accessConstraints = Collections.emptyList();
     }
 
     /**
@@ -294,6 +298,11 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.orderedChild = parameters.orderedChildResource;
         this.descriptionProvider = null;
         this.capabilities = parameters.capabilities;
+        if (parameters.accessConstraints != null) {
+            this.accessConstraints = Arrays.asList(parameters.accessConstraints);
+        } else {
+            this.accessConstraints = Collections.emptyList();
+        }
     }
 
 
@@ -448,7 +457,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      */
     @Override
     public List<AccessConstraintDefinition> getAccessConstraints() {
-        return Collections.emptyList();
+        return this.accessConstraints;
     }
 
     protected void setDeprecated(ModelVersion since) {
@@ -490,6 +499,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         private DeprecationData deprecationData;
         private boolean orderedChildResource;
         private RuntimeCapability[] capabilities;
+        private AccessConstraintDefinition[] accessConstraints;
 
         /**
          * Creates a Parameters object
@@ -639,5 +649,14 @@ public class SimpleResourceDefinition implements ResourceDefinition {
             return this;
         }
 
+        /**
+         * set access constraint definitions for this resource
+         * @param accessConstraints access constraint definitions for this resource
+         * @return Parameters object
+         */
+        public Parameters setAccessConstraints(AccessConstraintDefinition ... accessConstraints){
+            this.accessConstraints = accessConstraints;
+            return this;
+        }
     }
 }

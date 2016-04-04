@@ -349,9 +349,6 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
         ignoredRegistry.registerResources(hostRegistration);
 
-
-        // Platform MBeans
-        PlatformMBeanResourceRegistrar.registerPlatformMBeanResources(hostRegistration);
     }
 
 
@@ -413,6 +410,9 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         //host-environment
         hostRegistration.registerSubModel(HostEnvironmentResourceDefinition.of(environment));
         hostRegistration.registerSubModel(ModuleLoadingResourceDefinition.INSTANCE);
+
+        // Platform MBeans
+        PlatformMBeanResourceRegistrar.registerPlatformMBeanResources(hostRegistration);
 
         // TODO enable once we have consensus on the API with the HAL team
         //hostRegistration.registerSubModel(new CapabilityRegistryResourceDefinition(domainController.getCapabilityRegistry()));

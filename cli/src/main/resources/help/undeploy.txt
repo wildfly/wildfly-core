@@ -20,6 +20,9 @@ ARGUMENTS
                     all-relevant-server-groups is required in the domain mode.
                     This argument is not applicable in the standalone mode.
 
+                    NOTE: In non-interactive mode, the list must be surrounded
+                    by square brackets e.g. [group1, group2].
+
  --all-relevant-server-groups   - indicates that undeploy should apply to all
                                   the server groups in which the deployment is
                     enabled. Either server-groups or all-relevant-server-groups

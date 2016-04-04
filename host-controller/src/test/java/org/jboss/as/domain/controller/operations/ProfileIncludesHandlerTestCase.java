@@ -75,6 +75,7 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
     }
 
 
+    @Test
     public void testBadProfileIncludesAdd() throws Exception {
         PathAddress addr = getProfileAddress("test");
         ModelNode op = Util.createAddOperation(addr);

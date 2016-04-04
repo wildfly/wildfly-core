@@ -454,8 +454,13 @@ class ManagedServer {
         if(required == InternalState.STOPPED && state == InternalState.PROCESS_STOPPING) {
             finishTransition(InternalState.PROCESS_STOPPING, InternalState.PROCESS_STOPPED);
         } else {
-            this.requiredState = InternalState.FAILED;
-            internalSetState(null, state, InternalState.PROCESS_STOPPED);
+            this.requiredState = InternalState.STOPPED;
+            if ( !(internalSetState(getTransitionTask(InternalState.PROCESS_STOPPING), internalState, InternalState.PROCESS_STOPPING)
+                    && internalSetState(getTransitionTask(InternalState.PROCESS_REMOVING), internalState, InternalState.PROCESS_REMOVING)
+                    && internalSetState(getTransitionTask(InternalState.STOPPED), internalState, InternalState.STOPPED)) ){
+                this.requiredState = InternalState.FAILED;
+                internalSetState(null, internalState, InternalState.PROCESS_STOPPED);
+            }
         }
     }
 
@@ -818,7 +823,7 @@ class ManagedServer {
             final boolean useSubsystemEndpoint = bootConfiguration.isManagementSubsystemEndpoint();
             final ModelNode endpointConfig = bootConfiguration.getSubsystemEndpointConfiguration();
             // Send std.in
-            final ServiceActivator hostControllerCommActivator = DomainServerCommunicationServices.create(endpointConfig, managementURI, serverName, serverProcessName, authKey, useSubsystemEndpoint);
+            final ServiceActivator hostControllerCommActivator = DomainServerCommunicationServices.create(endpointConfig, managementURI, serverName, serverProcessName, authKey, useSubsystemEndpoint, bootConfiguration.getSSLContextSupplier());
             final ServerStartTask startTask = new ServerStartTask(hostControllerName, serverName, 0, operationID, Collections.<ServiceActivator>singletonList(hostControllerCommActivator), bootUpdates, launchProperties);
             final Marshaller marshaller = MARSHALLER_FACTORY.createMarshaller(CONFIG);
             final OutputStream os = processControllerClient.sendStdin(serverProcessName);

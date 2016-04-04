@@ -1,6 +1,6 @@
 SYNOPSIS
 
-   connect [host][:port]
+   connect [controller_alias | [protocol://][host][:port]]
 
 DESCRIPTION
 
@@ -34,7 +34,8 @@ DESCRIPTION
   - an IPv4 address, e.g. 127.0.0.1
   - an IPv6 address, e.g. [::1]
 
-
+  Controller addresses can be aliased and stored in the jboss-cli.xml config
+  file. Aliases can later be used as arguments for the connect command.
 
 
 ARGUMENTS

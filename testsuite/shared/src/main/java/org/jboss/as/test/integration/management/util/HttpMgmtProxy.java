@@ -21,16 +21,19 @@
  */
 package org.jboss.as.test.integration.management.util;
 
+import io.undertow.util.StatusCodes;
 import java.net.URL;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
@@ -50,10 +53,12 @@ public class HttpMgmtProxy {
 
     public HttpMgmtProxy(URL mgmtURL) {
         this.url = mgmtURL;
-        DefaultHttpClient httpClient = new DefaultHttpClient();
-        UsernamePasswordCredentials creds = new UsernamePasswordCredentials(Authentication.USERNAME, Authentication.PASSWORD);
-        httpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm"), creds);
-        this.httpClient = httpClient;
+        CredentialsProvider credsProvider = new BasicCredentialsProvider();
+                credsProvider.setCredentials(new AuthScope(url.getHost(), url.getPort()), new UsernamePasswordCredentials(Authentication.USERNAME, Authentication.PASSWORD));
+
+        this.httpClient = HttpClients.custom()
+                .setDefaultCredentialsProvider(credsProvider)
+                .build();
     }
 
     public ModelNode sendGetCommand(String cmd) throws Exception {
@@ -72,7 +77,10 @@ public class HttpMgmtProxy {
     }
 
     public ModelNode sendPostCommand(ModelNode cmd) throws Exception {
+        return sendPostCommand(cmd, false);
+    }
 
+    public ModelNode sendPostCommand(ModelNode cmd, boolean ignoreFailure) throws Exception {
         String cmdStr = cmd.toJSONString(true);
         HttpPost post = new HttpPost(url.toURI());
         StringEntity entity = new StringEntity(cmdStr);
@@ -81,11 +89,10 @@ public class HttpMgmtProxy {
 
         HttpResponse response = httpClient.execute(post, httpContext);
         String str = EntityUtils.toString(response.getEntity());
-        if (response.getStatusLine().getStatusCode()==200){
+        if (response.getStatusLine().getStatusCode() == StatusCodes.OK || ignoreFailure) {
             return ModelNode.fromJSONString(str);
-        }else{
-            throw new Exception("Could not execute command: "+str);
         }
+        throw new Exception("Could not execute command: " + str);
     }
 
     public static ModelNode getOpNode(String address, String operation) {

@@ -23,8 +23,6 @@ package org.jboss.as.server.controller.resources;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -35,7 +33,6 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
@@ -78,17 +75,13 @@ public class SystemPropertyResourceDefinition extends SimpleResourceDefinition {
     final ProcessEnvironmentSystemPropertyUpdater systemPropertyUpdater;
     final boolean useBoottime;
 
-    private final List<AccessConstraintDefinition> sensitivity;
-
     private SystemPropertyResourceDefinition(Location location, ProcessEnvironmentSystemPropertyUpdater systemPropertyUpdater, boolean useBoottime) {
-        super(PATH,
-                new ReplaceResourceNameResourceDescriptionResolver(location, SYSTEM_PROPERTY),
-                new SystemPropertyAddHandler(systemPropertyUpdater, useBoottime ? ALL_ATTRIBUTES : SERVER_ATTRIBUTES),
-                new SystemPropertyRemoveHandler(systemPropertyUpdater));
+        super(new Parameters(PATH, new ReplaceResourceNameResourceDescriptionResolver(location, SYSTEM_PROPERTY))
+                .setAddHandler(new SystemPropertyAddHandler(systemPropertyUpdater, useBoottime ? ALL_ATTRIBUTES : SERVER_ATTRIBUTES))
+                .setRemoveHandler(new SystemPropertyRemoveHandler(systemPropertyUpdater))
+                .setAccessConstraints(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SYSTEM_PROPERTY)));
         this.systemPropertyUpdater = systemPropertyUpdater;
         this.useBoottime = useBoottime;
-        AccessConstraintDefinition acd = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SYSTEM_PROPERTY);
-        sensitivity = Collections.singletonList(acd);
     }
 
     public static SystemPropertyResourceDefinition createForStandaloneServer(ServerEnvironment processEnvironment) {
@@ -137,10 +130,4 @@ public class SystemPropertyResourceDefinition extends SimpleResourceDefinition {
             return suffix;
         }
     }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return sensitivity;
-    }
-
 }

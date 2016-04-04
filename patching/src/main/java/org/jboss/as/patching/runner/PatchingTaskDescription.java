@@ -40,18 +40,24 @@ class PatchingTaskDescription {
 
     private final boolean conflicts;
     private final boolean skipIfTheSame;
+    private final boolean rollback;
 
     PatchingTaskDescription(String patchId, ContentModification modification, PatchContentLoader loader,
-                            boolean conflicts, boolean skipIfExists) {
+                            boolean conflicts, boolean skipIfExists, boolean rollback) {
         this.patchId = patchId;
         this.modification = modification;
         this.loader = loader;
         this.conflicts = conflicts;
         this.skipIfTheSame = skipIfExists;
+        this.rollback = rollback;
     }
 
     public String getPatchId() {
         return patchId;
+    }
+
+    public boolean isRolledback() {
+        return rollback;
     }
 
     public ContentModification getModification() {
@@ -95,7 +101,7 @@ class PatchingTaskDescription {
         final byte[] newContentHash = item.getContentHash();
         boolean skipIfExists = Arrays.equals(currentHash, newContentHash);
 
-        return new PatchingTaskDescription(definition.getTarget().getPatchId(), modification, loader, definition.hasConflicts(), skipIfExists);
+        return new PatchingTaskDescription(definition.getTarget().getPatchId(), modification, loader, definition.hasConflicts(), skipIfExists, definition.isRollback());
 
     }
 

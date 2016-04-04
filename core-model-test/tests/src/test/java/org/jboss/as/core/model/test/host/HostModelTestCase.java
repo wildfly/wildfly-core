@@ -44,6 +44,11 @@ public class HostModelTestCase extends AbstractCoreModelTest {
         doRemoteHostXml("host-http-remoting-domain-manager.xml");
     }
 
+    @Test
+    public void testHostXmlWithServerSSL() throws Exception {
+        doHostXml("host-with-server-ssl.xml");
+    }
+
     private void doHostXml(String hostXmlFile) throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder(TestModelType.HOST)
                 .setXmlResource(hostXmlFile)

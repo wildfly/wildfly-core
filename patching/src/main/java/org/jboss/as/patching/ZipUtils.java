@@ -22,9 +22,7 @@
 
 package org.jboss.as.patching;
 
-import static org.jboss.as.patching.IoUtils.copy;
 import static org.jboss.as.patching.IoUtils.copyStream;
-import static org.jboss.as.patching.IoUtils.safeClose;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -33,6 +31,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -44,29 +43,20 @@ import java.util.zip.ZipOutputStream;
 public class ZipUtils {
 
     public static void zip(File sourceDir, File zipFile) {
-        try {
-            final FileOutputStream os = new FileOutputStream(zipFile);
-            try {
-                final ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(os));
-                try {
-                    for (final File file : sourceDir.listFiles()) {
-                        if (file.isDirectory()) {
-                            addDirectoryToZip(file, file.getName(), zos);
-                        } else {
-                            addFileToZip(file, null, zos);
-                        }
-                    }
-                } finally {
-                    IoUtils.safeClose(zos);
+        try (final FileOutputStream os = new FileOutputStream(zipFile);
+             final ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(os))
+        ) {
+            for (final File file : sourceDir.listFiles()) {
+                if (file.isDirectory()) {
+                    addDirectoryToZip(file, file.getName(), zos);
+                } else {
+                    addFileToZip(file, null, zos);
                 }
-            } finally {
-                IoUtils.safeClose(os);
             }
+
         } catch (IOException e) {
             throw new RuntimeException("Failed creating patch file " + zipFile, e); // Only used for generation and tests
         }
-
-        //System.out.println("\nPrepared " + zipFile.getName() + " at " + zipFile.getAbsolutePath());
     }
 
     private static void addDirectoryToZip(File dir, String dirName, ZipOutputStream zos) throws IOException {
@@ -88,21 +78,15 @@ public class ZipUtils {
     }
 
     private static void addFileToZip(File file, String parent, ZipOutputStream zos) throws IOException {
-        final FileInputStream is = new FileInputStream(file);
-        try {
+        try (final FileInputStream is = new FileInputStream(file)){
             final String entryName = parent == null ? file.getName() : parent + "/" + file.getName();
             zos.putNextEntry(new ZipEntry(entryName));
 
-            final BufferedInputStream bis = new BufferedInputStream(is);
-            try {
+            try (final BufferedInputStream bis = new BufferedInputStream(is)){
                 copyStream(bis, zos);
-            } finally {
-                safeClose(bis);
             }
 
             zos.closeEntry();
-        } finally {
-            safeClose(is);
         }
     }
 
@@ -114,12 +98,9 @@ public class ZipUtils {
      * @throws IOException
      */
     public static void unzip(final File zip, final File patchDir) throws IOException {
-        final ZipFile zipFile = new ZipFile(zip);
-        try {
+        try (final ZipFile zipFile = new ZipFile(zip)){
             unzip(zipFile, patchDir);
             zipFile.close();
-        } finally {
-            safeClose(zipFile);
         }
     }
 
@@ -142,11 +123,9 @@ public class ZipUtils {
                 if(! current.getParentFile().exists()) {
                     current.getParentFile().mkdirs();
                 }
-                final InputStream eis = zip.getInputStream(entry);
-                try {
-                    copy(eis, current);
-                } finally {
-                    safeClose(eis);
+                try (final InputStream eis = zip.getInputStream(entry)){
+                    Files.copy(eis, current.toPath());
+                    //copy(eis, current);
                 }
             }
         }

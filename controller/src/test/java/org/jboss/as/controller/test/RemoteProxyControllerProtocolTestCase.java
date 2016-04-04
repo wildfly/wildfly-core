@@ -93,7 +93,7 @@ public class RemoteProxyControllerProtocolTestCase {
         responseAttachmentSupport = null;
     }
 
-    @Test @Ignore("OperationMessageHandlerProxy turned off temporarily")
+    @Test @Ignore("WFCORE-1125")
     public void testOperationMessageHandler() throws Exception {
         final MockModelController controller = new MockModelController() {
             @Override

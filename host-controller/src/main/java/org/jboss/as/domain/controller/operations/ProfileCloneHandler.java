@@ -27,7 +27,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_PROFILE;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -44,6 +44,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.resources.DomainResolver;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
@@ -55,9 +56,11 @@ import org.jboss.dmr.ModelType;
  */
 public class ProfileCloneHandler implements OperationStepHandler {
 
+    private static final AttributeDefinition TO_PROFILE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TO_PROFILE, ModelType.STRING).build();
+
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(CLONE, DomainResolver.getResolver(PROFILE, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)
-            .addParameter(SimpleAttributeDefinitionBuilder.create(TO_PROFILE, ModelType.STRING).build())
+            .addParameter(TO_PROFILE)
             // .setPrivateEntry()
             .build();
 
@@ -71,8 +74,8 @@ public class ProfileCloneHandler implements OperationStepHandler {
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-        final String profileName = PathAddress.pathAddress(operation.require(OP_ADDR)).getLastElement().getValue();
-        final String newProfile = operation.require(TO_PROFILE).asString();
+        final String profileName = context.getCurrentAddressValue();
+        final String newProfile = TO_PROFILE.resolveModelAttribute(context, operation).asString();
         final String operationName = GenericModelDescribeOperationHandler.DEFINITION.getName();
         final PathAddress address = PathAddress.pathAddress(PathElement.pathElement(PROFILE, profileName));
         final PathAddress newPA = PathAddress.pathAddress(PROFILE, newProfile);
@@ -99,7 +102,6 @@ public class ProfileCloneHandler implements OperationStepHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-
                 final PathAddress newPA = PathAddress.pathAddress(PROFILE, newProfile);
                 final List<ModelNode> operations = new ArrayList<>(result.get(RESULT).asList());
 

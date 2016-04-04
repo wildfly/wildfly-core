@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
@@ -69,7 +70,7 @@ public class ExtensionRemoveTestCase {
     }
 
     @After
-    public void  removeExtensionModule() {
+    public void removeExtensionModule() {
         ExtensionUtils.deleteExtensionModule(MODULE_NAME);
     }
 
@@ -116,6 +117,22 @@ public class ExtensionRemoveTestCase {
 
     }
 
+    @Test
+    public void testRemoveUnexistingExtension() throws Exception {
+        ModelControllerClient client = managementClient.getControllerClient();
+
+        //Check extension and subsystem is not there
+        Assert.assertFalse(readResource(client).get(EXTENSION, MODULE_NAME).isDefined());
+        Assert.assertFalse(readResourceDescription(client).get(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME).isDefined());
+        Assert.assertFalse(readResource(client).get(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME).isDefined());
+        //Remove extension
+        executeOperation(client, REMOVE, PathAddress.pathAddress(PathElement.pathElement(EXTENSION, MODULE_NAME)), true);
+        Assert.assertFalse(readResource(client).get(EXTENSION, MODULE_NAME).isDefined());
+        Assert.assertFalse(readResourceDescription(client).get(CHILDREN, SUBSYSTEM, MODEL_DESCRIPTION, TestExtension.SUBSYSTEM_NAME).isDefined());
+        Assert.assertFalse(readResource(client).get(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME).isDefined());
+
+    }
+
     private ModelNode executeOperation(ModelControllerClient client, String name, PathAddress address, boolean fail) throws IOException {
         ModelNode op = new ModelNode();
         op.get(OP).set(name);
@@ -123,8 +140,10 @@ public class ExtensionRemoveTestCase {
 
         ModelNode result = client.execute(op);
         if (!fail) {
+            Assert.assertEquals("success", result.get(OUTCOME).asString());
             Assert.assertFalse(result.get(FAILURE_DESCRIPTION).toString(), result.get(FAILURE_DESCRIPTION).isDefined());
         } else {
+            Assert.assertEquals("failed", result.get(OUTCOME).asString());
             Assert.assertTrue(result.get(FAILURE_DESCRIPTION).isDefined());
         }
 

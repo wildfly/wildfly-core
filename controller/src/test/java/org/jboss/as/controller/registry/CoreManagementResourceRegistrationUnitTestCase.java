@@ -28,7 +28,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -41,6 +40,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.SimpleResourceDefinition.Parameters;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
@@ -334,15 +334,8 @@ public class CoreManagementResourceRegistrationUnitTestCase {
     @Test
     public void testInheritedAccessConstraints() {
 
-        ResourceDefinition rootRd = new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()) {
-            @Override
-            public List<AccessConstraintDefinition> getAccessConstraints() {
-                return Arrays.asList(
-                        SensitiveTargetAccessConstraintDefinition.EXTENSIONS,
-                        ApplicationTypeAccessConstraintDefinition.DEPLOYMENT
-                );
-            }
-        };
+        ResourceDefinition rootRd = new SimpleResourceDefinition(new Parameters(null, new NonResolvingResourceDescriptionResolver())
+            .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.EXTENSIONS, ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
         ManagementResourceRegistration root = ManagementResourceRegistration.Factory.create(rootRd);
 
         List<AccessConstraintDefinition> acds = root.getAccessConstraints();
@@ -350,15 +343,9 @@ public class CoreManagementResourceRegistrationUnitTestCase {
         assertTrue(acds.contains(SensitiveTargetAccessConstraintDefinition.EXTENSIONS));
         assertTrue(acds.contains(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
 
-        ResourceDefinition childRd = new SimpleResourceDefinition(PathElement.pathElement("child"), new NonResolvingResourceDescriptionResolver()) {
-            @Override
-            public List<AccessConstraintDefinition> getAccessConstraints() {
-                return Arrays.asList(
-                        SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN,
-                        ApplicationTypeAccessConstraintDefinition.DEPLOYMENT
-                );
-            }
-        };
+        ResourceDefinition childRd = new SimpleResourceDefinition(
+                new Parameters(PathElement.pathElement("child"), new NonResolvingResourceDescriptionResolver())
+                    .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN, ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
         ManagementResourceRegistration child = root.registerSubModel(childRd);
         acds = child.getAccessConstraints();
         assertEquals(4, acds.size());

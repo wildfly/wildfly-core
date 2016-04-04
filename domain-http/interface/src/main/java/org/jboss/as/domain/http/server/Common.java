@@ -79,7 +79,7 @@ public class Common {
 
                 exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, APPLICATION_DMR_ENCODED+ "; charset=" + UTF_8);
                 exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, String.valueOf(bytes.length));
-                exchange.setResponseCode(errorCode);
+                exchange.setStatusCode(errorCode);
 
                 exchange.getResponseSender().send(new String(bytes), IoCallback.END_EXCHANGE);
 
@@ -104,7 +104,7 @@ public class Common {
             byte[] bytes = msgString.getBytes();
             exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, APPLICATION_JSON + "; charset=" + UTF_8);
             exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, String.valueOf(bytes.length));
-            exchange.setResponseCode(errorCode);
+            exchange.setStatusCode(errorCode);
 
             exchange.getResponseSender().send(msgString, IoCallback.END_EXCHANGE);
         }

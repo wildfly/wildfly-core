@@ -34,7 +34,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SENSITIVE;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -232,18 +231,11 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
     protected void initModel(ManagementModel managementModel) {
     }
 
-    private static class TestResourceDefinition extends SimpleResourceDefinition {
-        TestResourceDefinition(PathElement pathElement) {
-            super(pathElement,
-                    new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler() {},
-                    new AbstractRemoveStepHandler() {});
-        }
-    }
-
-    private static class RootResourceDefinition extends TestResourceDefinition {
+    private static class RootResourceDefinition extends SimpleResourceDefinition {
         RootResourceDefinition() {
-            super(PathElement.pathElement("root"));
+            super(new Parameters(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {}));
         }
 
         @Override
@@ -265,9 +257,12 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
         }
     }
 
-    private static class ConstrainedChildResourceDefinition extends TestResourceDefinition implements ResourceDefinition {
+    private static class ConstrainedChildResourceDefinition extends SimpleResourceDefinition implements ResourceDefinition {
         ConstrainedChildResourceDefinition(){
-            super(PathElement.pathElement("constrained-resource"));
+            super(new Parameters(PathElement.pathElement("constrained-resource"), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(SOCKET_CONFIG_SENSITIVE_CONSTRAINT));
         }
 
         @Override
@@ -286,16 +281,13 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
                 }
             });
         }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return Collections.singletonList(SOCKET_CONFIG_SENSITIVE_CONSTRAINT);
-        }
     }
 
-    private static class NonConstrainedChildResourceDefinition extends TestResourceDefinition {
+    private static class NonConstrainedChildResourceDefinition extends SimpleResourceDefinition {
         NonConstrainedChildResourceDefinition(){
-            super(PathElement.pathElement("nonconstrained-resource"));
+            super(new Parameters(PathElement.pathElement("nonconstrained-resource"), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {}));
         }
 
         @Override
@@ -304,21 +296,18 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
         }
     }
 
-    private static class ApplicationChildResourceDefinition extends TestResourceDefinition implements ResourceDefinition {
+    private static class ApplicationChildResourceDefinition extends SimpleResourceDefinition implements ResourceDefinition {
         ApplicationChildResourceDefinition(){
-            super(PathElement.pathElement("application-resource"));
+            super(new Parameters(PathElement.pathElement("application-resource"), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setAccessConstraints(DEPLOYMENT_APPLICATION_CONSTRAINT));
         }
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             resourceRegistration.registerReadWriteAttribute(STANDARD_ATTR, null, new TestWriteAttributeHandler(STANDARD_ATTR));
             resourceRegistration.registerReadWriteAttribute(APPLICATION_ATTR, null, new TestWriteAttributeHandler(APPLICATION_ATTR));
-        }
-
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return Collections.singletonList(DEPLOYMENT_APPLICATION_CONSTRAINT);
         }
 
     }

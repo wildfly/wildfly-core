@@ -31,6 +31,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -62,7 +63,7 @@ public class TestAliasReadResourceDescriptionAddressExtension implements Extensi
 
     @Override
     public void initialize(ExtensionContext context) {
-        SubsystemRegistration reg = context.registerSubsystem(SUBSYSTEM_NAME, 1, 1, 1);
+        SubsystemRegistration reg = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1, 1, 1));
         reg.registerXMLElementWriter(PARSER);
         reg.registerSubsystemModel(new SubsystemResourceDefinition());
     }

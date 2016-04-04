@@ -56,7 +56,7 @@ class ManagementHttpRequestHandler implements HttpHandler {
             if (proceed) {
                 next.handleRequest(exchange);
             } else {
-                exchange.setResponseCode(503);
+                exchange.setStatusCode(503);
                 exchange.endExchange();
             }
         } finally {

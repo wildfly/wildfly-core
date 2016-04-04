@@ -77,7 +77,7 @@ public class TestUndertowService implements Service<TestUndertowService> {
                                 @Override
                                 public void run() {
                                     System.out.println("Rejected " + count + " " + exchange);
-                                    exchange.setResponseCode(503);
+                                    exchange.setStatusCode(503);
                                     exchange.endExchange();
                                 }
                             }, true);

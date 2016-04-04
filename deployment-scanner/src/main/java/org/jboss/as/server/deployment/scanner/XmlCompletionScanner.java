@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deployment.scanner;
 
+import static org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger.ROOT_LOGGER;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -80,7 +82,7 @@ public class XmlCompletionScanner {
 
         private void traceError(SAXParseException e) {
             error = true;
-            DeploymentScannerLogger.ROOT_LOGGER.invalidXmlFileFound(fileName, e.getLineNumber(), e.getColumnNumber());
+            ROOT_LOGGER.info(ROOT_LOGGER.invalidXmlFileFound(fileName, e.getLineNumber(), e.getColumnNumber()));
         }
     }
 }

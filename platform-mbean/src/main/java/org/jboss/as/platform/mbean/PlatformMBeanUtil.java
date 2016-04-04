@@ -27,7 +27,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.management.JMException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -51,9 +52,14 @@ public class PlatformMBeanUtil {
         int vmVersion;
         try {
             String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
-            vmVersion = Integer.valueOf(vmVersionStr.substring(2));
+            Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(vmVersionStr); //match 1.<number> or <number>
+            if (matcher.find()) {
+                vmVersion = Integer.valueOf(matcher.group(1));
+            } else {
+                throw new RuntimeException("Unknown version of jvm " + vmVersionStr);
+            }
         } catch (Exception e) {
-            vmVersion = 7;
+            vmVersion = 8;
         }
         JVM_MAJOR_VERSION = vmVersion;
     }

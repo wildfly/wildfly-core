@@ -25,12 +25,9 @@ package org.jboss.as.server.mgmt;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_REMOTING_INTERFACE;
 
-import java.util.List;
-
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
@@ -49,19 +46,13 @@ public class NativeRemotingManagementResourceDefinition extends SimpleResourceDe
 
     public static final NativeRemotingManagementResourceDefinition INSTANCE = new NativeRemotingManagementResourceDefinition();
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     private NativeRemotingManagementResourceDefinition() {
-        super(RESOURCE_PATH,
-                ServerDescriptions.getResourceDescriptionResolver("core.management.native-remoting-interface"),
-                NativeRemotingManagementAddHandler.INSTANCE, NativeRemotingManagementRemoveHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
-        this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
-        setDeprecated(ModelVersion.create(1, 7));
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
+        super(new Parameters(RESOURCE_PATH, ServerDescriptions.getResourceDescriptionResolver("core.management.native-remoting-interface"))
+                .setAddHandler(NativeRemotingManagementAddHandler.INSTANCE)
+                .setRemoveHandler(NativeRemotingManagementRemoveHandler.INSTANCE)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 }

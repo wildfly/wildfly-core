@@ -122,7 +122,7 @@ public class ModelControllerClientTestCase {
         return ExistingChannelModelControllerClient.createReceiving(clientChannel, channels.getExecutorService());
     }
 
-    @Test @Ignore("OperationMessageHandlerProxy turned off temporarily")
+    @Test @Ignore("WFCORE-1125")
     public void testSynchronousOperationMessageHandler() throws Exception {
 
         final CountDownLatch executeLatch = new CountDownLatch(1);
@@ -233,7 +233,7 @@ public class ModelControllerClientTestCase {
         }
     }
 
-    @Test @Ignore("OperationMessageHandlerProxy turned off temporarily")
+    @Test @Ignore("WFCORE-1125")
     public void testAsynchronousOperationWithMessageHandler() throws Exception {
         final CountDownLatch executeLatch = new CountDownLatch(1);
         MockModelController controller = new MockModelController() {

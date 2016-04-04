@@ -30,6 +30,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -85,6 +86,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
     private final InjectedValue<Collection<String>> allowedOriginsValue = new InjectedValue<Collection<String>>();
     private final InjectedValue<XnioWorker> worker = new InjectedValue<>();
+    private final InjectedValue<Executor> managementExecutor = new InjectedValue<>();
     private final ConsoleMode consoleMode;
     private final String consoleSlot;
     private ManagementHttpServer serverManagement;
@@ -232,7 +234,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
             serverManagement = ManagementHttpServer.create(bindAddress, secureBindAddress, 50, modelController,
                     securityRealmService, controlledProcessStateService, consoleMode, consoleSlot, upgradeHandler,
-                    requestProcessor, allowedOriginsValue.getOptionalValue(), worker.getValue());
+                    requestProcessor, allowedOriginsValue.getOptionalValue(), worker.getValue(), managementExecutor.getValue());
 
             serverManagement.start();
 
@@ -403,5 +405,9 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
     public InjectedValue<XnioWorker> getWorker() {
         return worker;
+    }
+
+    public InjectedValue<Executor> getManagementExecutor() {
+        return managementExecutor;
     }
 }

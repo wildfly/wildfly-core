@@ -92,6 +92,8 @@ public interface Console {
 
     void controlled();
 
+    boolean isControlled();
+
     void continuous();
 
     void setCallback(ConsoleCallback consoleCallback);
@@ -128,6 +130,7 @@ public interface Console {
                 private CommandContext cmdCtx = ctx;
                 private org.jboss.aesh.console.Console console = finalAeshConsole;
                 private CommandHistory history = new HistoryImpl();
+                private boolean controlled;
 
                 @Override
                 public void addCompleter(final CommandLineCompleter completer) {
@@ -262,11 +265,18 @@ public interface Console {
                 @Override
                 public void controlled() {
                     console.controlled();
+                    controlled = true;
                 }
 
                 @Override
                 public void continuous() {
                     console.continuous();
+                    controlled = false;
+                }
+
+                @Override
+                public boolean isControlled() {
+                    return controlled;
                 }
 
                 @Override

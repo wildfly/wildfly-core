@@ -232,4 +232,10 @@ public interface PatchLogger extends BasicLogger {
 
     @Message(id = 45, value = "Unrecognized condition format '%s'")
     PatchingException unrecognizedConditionFormat(String condition);
+
+    @Message(id = 46, value = "Cannot copy files to temporary directory %s: %s. Note that '-Djava.io.tmpdir' switch can be used to set different temporary directory.")
+    PatchingException cannotCopyFilesToTempDir(String tempDir, String reason, @Cause Throwable cause);
+
+    @Message(id = 47, value = "Cannot copy files from %s to %s: %s")
+    IOException cannotCopyFiles(String from, String to, String reason, @Cause Throwable cause);
 }

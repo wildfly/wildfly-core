@@ -71,6 +71,9 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
     public static final Set<Action.ActionEffect> DESCRIBE_EFFECTS =
             Collections.unmodifiableSet(EnumSet.of(Action.ActionEffect.ADDRESS, Action.ActionEffect.READ_CONFIG));
 
+    /** Operation attachment key used when the describe operation is being invoked in order to create the operations to launch a server */
+    public static final OperationContext.AttachmentKey<Boolean> SERVER_LAUNCH_KEY = OperationContext.AttachmentKey.create(Boolean.class);
+
     private final Comparator<PathElement> comparator;
 
     protected GenericSubsystemDescribeHandler() {

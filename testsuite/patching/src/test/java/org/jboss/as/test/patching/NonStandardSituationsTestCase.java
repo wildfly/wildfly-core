@@ -94,7 +94,7 @@ public class NonStandardSituationsTestCase extends AbstractPatchingTestCase {
                 .build();
         createPatchXMLFile(oneOffPatchDir, oneOffPatch);
         File zippedPatch = createZippedPatchFile(oneOffPatchDir, patchID);
-        logger.info(zippedPatch.getAbsolutePath());
+        logger.debug(zippedPatch.getAbsolutePath());
 
         if (!new File(testFilePath2).setWritable(false)) {
             logger.warn("Unable to revoke write permissions on file " + testFilePath2);

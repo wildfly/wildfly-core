@@ -30,7 +30,6 @@ import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -40,8 +39,10 @@ import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
+import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.services.security.AbstractVaultReader;
@@ -93,7 +94,18 @@ public class DeploymentHandlerUtil {
         assert contents != null : "contents is null";
 
         if (context.isNormalServer()) {
-            //
+            //Checking for duplicate runtime name
+            PathAddress deploymentsAddress = context.getCurrentAddress().getParent();
+            Resource deploymentsParentResource = context.readResourceFromRoot(deploymentsAddress);
+            for(ResourceEntry deployment : deploymentsParentResource.getChildren(DEPLOYMENT)) {
+                if(!managementName.equals(deployment.getName())) {
+                    ModelNode deploymentModel = deployment.getModel();
+                    if(deploymentUnitName.equals(DeploymentAttributes.RUNTIME_NAME.resolveModelAttribute(context, deploymentModel).asString())
+                            && DeploymentAttributes.ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean()) {
+                        throw ServerLogger.ROOT_LOGGER.runtimeNameMustBeUnique(managementName, deploymentUnitName);
+                    }
+                }
+            }
             final Resource deployment = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
             final ManagementResourceRegistration mutableRegistration = context.getResourceRegistrationForUpdate();

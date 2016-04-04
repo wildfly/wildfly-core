@@ -51,6 +51,7 @@ import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
 import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
+import org.jboss.as.cli.impl.ArgumentWithListValue;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.DefaultCompleter;
@@ -99,8 +100,8 @@ public class PatchHandler extends CommandHandlerWithHelp {
 
     private final ArgumentWithoutValue overrideModules;
     private final ArgumentWithoutValue overrideAll;
-    private final ArgumentWithValue override;
-    private final ArgumentWithValue preserve;
+    private final ArgumentWithListValue override;
+    private final ArgumentWithListValue preserve;
 
     private final ArgumentWithoutValue distribution;
     private final ArgumentWithoutValue modulePath;
@@ -152,7 +153,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
         };
         overrideAll.addRequiredPreceding(action);
 
-        override = new ArgumentWithValue(this, "--override") {
+        override = new ArgumentWithListValue(this, "--override") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
                 if (canOnlyAppearAfterActions(ctx, APPLY, ROLLBACK)) {
@@ -163,7 +164,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
         };
         override.addRequiredPreceding(action);
 
-        preserve = new ArgumentWithValue(this, "--preserve") {
+        preserve = new ArgumentWithListValue(this, "--preserve") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
                 if (canOnlyAppearAfterActions(ctx, APPLY, ROLLBACK)) {
@@ -316,6 +317,9 @@ public class PatchHandler extends CommandHandlerWithHelp {
     @Override
     protected void doHandle(CommandContext ctx) throws CommandLineException {
         final ParsedCommandLine parsedLine = ctx.getParsedCommandLine();
+        if(host.isPresent(parsedLine) && !ctx.isDomainMode()) {
+            throw new CommandFormatException("The --host option is not available in the current context. Connection to the controller might be unavailable or not running in domain mode.");
+        }
         final String action = this.action.getValue(parsedLine);
         if(INSPECT.equals(action)) {
             doInspect(ctx);
