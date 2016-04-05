@@ -89,6 +89,7 @@ public final class StandaloneXml extends CommonXml {
         this.parsingOptions = options;
     }
 
+    @Override
     public void readElement(final XMLExtendedStreamReader reader, final List<ModelNode> operationList)
             throws XMLStreamException {
         Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
@@ -99,16 +100,20 @@ public final class StandaloneXml extends CommonXml {
                 new StandaloneXml_Legacy(extensionHandler, readerNS, parsingOptions)
                         .readElement(reader, operationList);
                 break;
-            default:
+            case 4:
                 new StandaloneXml_4(extensionHandler, readerNS, parsingOptions).readElement(reader, operationList);
+                break;
+            default:
+                new StandaloneXml_5(extensionHandler, readerNS, parsingOptions).readElement(reader, operationList);
                 break;
         }
 
     }
 
+    @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new StandaloneXml_4(extensionHandler, CURRENT, parsingOptions).writeContent(writer, context);
+        new StandaloneXml_5(extensionHandler, CURRENT, parsingOptions).writeContent(writer, context);
     }
 
     class DefaultExtensionHandler implements ExtensionHandler {
