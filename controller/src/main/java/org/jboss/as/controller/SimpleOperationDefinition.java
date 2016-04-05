@@ -32,7 +32,6 @@ import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.OperationEntry.EntryType;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -47,7 +46,6 @@ public class SimpleOperationDefinition extends OperationDefinition {
 
     final ResourceDescriptionResolver resolver;
     final ResourceDescriptionResolver attributeResolver;
-    private final boolean forceDefaultDescriptionProvider;
 
     @SuppressWarnings("deprecation")
     public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver) {
@@ -62,6 +60,7 @@ public class SimpleOperationDefinition extends OperationDefinition {
 
     /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
     @Deprecated
+    @SuppressWarnings("deprecation")
     public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver, final EnumSet<OperationEntry.Flag> flags) {
         this(name, resolver, OperationEntry.EntryType.PUBLIC, flags, new AttributeDefinition[0]);
     }
@@ -97,7 +96,6 @@ public class SimpleOperationDefinition extends OperationDefinition {
         super(name, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters);
         this.resolver = resolver;
         this.attributeResolver = attributeResolver;
-        this.forceDefaultDescriptionProvider = false;
     }
 
     /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
@@ -118,19 +116,17 @@ public class SimpleOperationDefinition extends OperationDefinition {
         super(name, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints);
         this.resolver = resolver;
         this.attributeResolver = attributeResolver;
-        this.forceDefaultDescriptionProvider = false;
     }
 
     protected SimpleOperationDefinition(SimpleOperationDefinitionBuilder builder) {
         super(builder);
         this.resolver = builder.resolver;
         this.attributeResolver = builder.attributeResolver;
-        this.forceDefaultDescriptionProvider = builder.forceDefaultDescriptionProvider;
     }
 
     @Override
     public DescriptionProvider getDescriptionProvider() {
-        if (entryType == EntryType.PRIVATE && !forceDefaultDescriptionProvider) {
+        if (entryType == OperationEntry.EntryType.PRIVATE) {
             return PRIVATE_PROVIDER;
         }
         if (descriptionProvider !=null) {
