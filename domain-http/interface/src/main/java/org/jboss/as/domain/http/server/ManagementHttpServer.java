@@ -22,6 +22,7 @@
 package org.jboss.as.domain.http.server;
 
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.handlers.SetHeaderHandler;
 import io.undertow.util.Headers;
 import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
 
@@ -236,10 +237,6 @@ public class ManagementHttpServer {
         }
 
         ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(consoleHandler);
-        HttpHandler domainApiHandler = InExecutorHandler.wrap(
-                managementExecutor,
-                new DomainApiCheckHandler(modelController, controlledProcessStateService, allowedOrigins)
-        );
         pathHandler.addPrefixPath("/", rootConsoleRedirectHandler);
         if (consoleHandler != null) {
             HttpHandler readinessHandler = new RedirectReadinessHandler(securityRealm, consoleHandler.getHandler(),
@@ -247,12 +244,17 @@ public class ManagementHttpServer {
             pathHandler.addPrefixPath(consoleHandler.getContext(), readinessHandler);
         }
 
-        HttpHandler readinessHandler = new DmrFailureReadinessHandler(securityRealm, secureDomainAccess(domainApiHandler, securityRealm), ErrorContextHandler.ERROR_CONTEXT);
+        HttpHandler domainApiHandler = InExecutorHandler.wrap(
+                managementExecutor,
+                new DomainApiCheckHandler(modelController, controlledProcessStateService, allowedOrigins)
+        );
+        HttpHandler readinessHandler = wrapXFrameOptions(new DmrFailureReadinessHandler(securityRealm,
+                secureDomainAccess(domainApiHandler, securityRealm), ErrorContextHandler.ERROR_CONTEXT));
         pathHandler.addPrefixPath(DomainApiCheckHandler.PATH, readinessHandler);
         pathHandler.addExactPath("management-upload", readinessHandler);
 
         if (securityRealm != null) {
-            pathHandler.addPrefixPath(LogoutHandler.PATH, new LogoutHandler(securityRealm.getName()));
+            pathHandler.addPrefixPath(LogoutHandler.PATH, wrapXFrameOptions(new LogoutHandler(securityRealm.getName())));
         }
     }
 
@@ -304,6 +306,10 @@ public class ManagementHttpServer {
         return new AuthenticationMechanismWrapper(toWrap, mechanism);
     }
 
+    private static HttpHandler wrapXFrameOptions(final HttpHandler toWrap) {
+        return new SetHeaderHandler(toWrap, "X-Frame-Options", "SAMEORIGIN");
+    }
+
     /**
      * Handler to work around a bug with old XNIO versions that did not handle
      * content-length for HTTP upgrade. This should be removed when it is no longer
@@ -331,4 +337,5 @@ public class ManagementHttpServer {
             next.handleRequest(exchange);
         }
     }
+
 }
