@@ -123,7 +123,7 @@ final class FileKeystore {
             if (alias == null) {
                 this.setKeyStore(loadedKeystore);
             } else {
-                KeyStore newKeystore = KeyStore.getInstance("JKS");
+                KeyStore newKeystore = KeyStore.getInstance(provider);
                 newKeystore.load(null);
 
                 KeyStore.ProtectionParameter passParam = new KeyStore.PasswordProtection(keyPassword == null ? keystorePassword
