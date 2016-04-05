@@ -33,6 +33,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.DomainServerCommunicationServices;
@@ -57,6 +58,7 @@ public class ServerDomainProcessShutdownHandler implements OperationStepHandler 
     protected static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
             .setAllowNull(true)
+            .setMeasurementUnit(MeasurementUnit.SECONDS)
             .build();
 
     public static final SimpleOperationDefinition DOMAIN_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.SHUTDOWN, ServerDescriptions.getResourceDescriptionResolver())

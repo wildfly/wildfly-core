@@ -30,6 +30,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
@@ -61,6 +62,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
     protected static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
             .setAllowNull(true)
+            .setMeasurementUnit(MeasurementUnit.SECONDS)
             .build();
 
     public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.SUSPEND, ServerDescriptions.getResourceDescriptionResolver())
