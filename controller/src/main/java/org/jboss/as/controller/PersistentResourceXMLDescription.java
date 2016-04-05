@@ -1,16 +1,9 @@
 package org.jboss.as.controller;
 
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.ParseUtils;
-import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,10 +16,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.parsing.Element;
+import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.dmr.ModelNode;
+import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * A representation of a resource as needed by the XML parser.
@@ -41,7 +41,7 @@ public final class PersistentResourceXMLDescription {
     protected final String xmlWrapperElement;
     protected final LinkedHashMap<String, LinkedHashMap<String, AttributeDefinition>> attributesByGroup;
     protected final List<PersistentResourceXMLDescription> children;
-    protected final Map<String,AttributeDefinition> attributeElements =  new HashMap<>();
+    protected final Map<String, AttributeDefinition> attributeElements = new HashMap<>();
     protected final boolean useValueAsElementName;
     protected final boolean noAddOperation;
     protected final AdditionalOperationsGenerator additionalOperationsGenerator;
@@ -80,15 +80,15 @@ public final class PersistentResourceXMLDescription {
                 }
                 forGroup.put(ad.getXmlName(), ad);
 
-                if (ad.getParser()!=null&&ad.getParser().isParseAsElement()){
+                if (ad.getParser() != null && ad.getParser().isParseAsElement()) {
                     attributeElements.put(ad.getParser().getXmlName(ad), ad);
                 }
 
             }
         } else {
-            LinkedHashMap<String,AttributeDefinition> attrs = new LinkedHashMap<>();
+            LinkedHashMap<String, AttributeDefinition> attrs = new LinkedHashMap<>();
             for (AttributeDefinition ad : builder.attributeList) {
-                    attrs.put(ad.getXmlName(), ad);
+                attrs.put(ad.getXmlName(), ad);
             }
             // Ignore attribute-group, treat all as if they are in the default group
             this.attributesByGroup.put(null, attrs);
@@ -139,17 +139,17 @@ public final class PersistentResourceXMLDescription {
 
     private String parseAttributeGroups(final XMLExtendedStreamReader reader, ModelNode op, boolean wildcard) throws XMLStreamException {
         String name = parseAttributes(reader, op, attributesByGroup.get(null), wildcard); //parse attributes not belonging to a group
-        if (!attributeGroups.isEmpty()){
+        if (!attributeGroups.isEmpty()) {
             while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
                 boolean element = attributeElements.containsKey(reader.getLocalName());
                 //it can be a group or element attribute
-                if (attributeGroups.contains(reader.getLocalName()) ||element) {
+                if (attributeGroups.contains(reader.getLocalName()) || element) {
                     if (element) {
                         AttributeDefinition ad = attributeElements.get(reader.getLocalName());
                         ad.getParser().parseElement(ad, reader, op);
-                        if (attributeGroups.contains(reader.getLocalName()) ){
+                        if (attributeGroups.contains(reader.getLocalName())) {
                             parseGroup(reader, op, wildcard);
-                        }else if (reader.isEndElement() && !attributeGroups.contains(reader.getLocalName())&& !attributeElements.containsKey(reader.getLocalName())){
+                        } else if (reader.isEndElement() && !attributeGroups.contains(reader.getLocalName()) && !attributeElements.containsKey(reader.getLocalName())) {
                             childAlreadyRead = true;
                             break;
                         }
@@ -169,12 +169,15 @@ public final class PersistentResourceXMLDescription {
     }
 
     private void parseGroup(XMLExtendedStreamReader reader, ModelNode op, boolean wildcard) throws XMLStreamException {
-        parseAttributes(reader, op, attributesByGroup.get(reader.getLocalName()), wildcard);
-        if (reader.hasNext()) {//this checks if there are also element attributes inside a group
-            if (reader.nextTag() == START_ELEMENT && attributeElements.containsKey(reader.getLocalName())) {
+        Map<String, AttributeDefinition> groupAttrs = attributesByGroup.get(reader.getLocalName());
+        parseAttributes(reader, op, groupAttrs, wildcard);
+        // Check if there are also element attributes inside a group
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            String attrName = reader.getLocalName();
+            if (attributeElements.containsKey(attrName) && groupAttrs.containsKey(attrName)) {
                 AttributeDefinition ad = attributeElements.get(reader.getLocalName());
                 ad.getParser().parseElement(ad, reader, op);
-            } else if (reader.getEventType() != END_ELEMENT) {
+            } else {
                 throw ParseUtils.unexpectedElement(reader);
             }
         }
@@ -197,7 +200,7 @@ public final class PersistentResourceXMLDescription {
             }
         }
         //only pare attribute elements here if there are no attribute groups defined
-        if (attributeGroups.isEmpty()&&!attributeElements.isEmpty()&&reader.isStartElement()) {
+        if (attributeGroups.isEmpty() && !attributeElements.isEmpty() && reader.isStartElement()) {
             String originalStartElement = reader.getLocalName();
             if (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
                 do {
@@ -205,13 +208,12 @@ public final class PersistentResourceXMLDescription {
                         AttributeDefinition ad = attributeElements.get(reader.getLocalName());
                         ad.getParser().parseElement(ad, reader, op);
                     } else {
-                        throw ParseUtils.unexpectedElement(reader, attributeElements.keySet());
+                        return name;  //this means we only have children left, return so child handling logic can take over
                     }
                     childAlreadyRead = true;
                 } while (!reader.getLocalName().equals(originalStartElement) && reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT);
             }
         }
-
 
 
         return name;
@@ -257,7 +259,7 @@ public final class PersistentResourceXMLDescription {
                             child.parse(reader, parentAddress, list);
                         }
 
-                    } else if (attributeElements.containsKey(reader.getLocalName())){
+                    } else if (attributeElements.containsKey(reader.getLocalName())) {
                         AttributeDefinition ad = attributeElements.get(reader.getLocalName());
                         ad.getParser().parseElement(ad, reader, op);
                     } else {
@@ -352,13 +354,13 @@ public final class PersistentResourceXMLDescription {
     }
 
     private void persistAttributes(XMLExtendedStreamWriter writer, ModelNode model) throws XMLStreamException {
-        marshallAttributes(writer,model,attributesByGroup.get(null).values(), null);
+        marshallAttributes(writer, model, attributesByGroup.get(null).values(), null);
         if (useElementsForGroups) {
             for (Map.Entry<String, LinkedHashMap<String, AttributeDefinition>> entry : attributesByGroup.entrySet()) {
                 if (entry.getKey() == null) {
                     continue;
                 }
-                marshallAttributes(writer,model,entry.getValue().values(), entry.getKey());
+                marshallAttributes(writer, model, entry.getValue().values(), entry.getKey());
             }
         }
     }
@@ -370,7 +372,7 @@ public final class PersistentResourceXMLDescription {
         //we sort attributes to make sure that attributes that marshall to elements are last
         for (AttributeDefinition ad : attributes.stream().sorted((o1, o2) -> o1.getParser().isParseAsElement() ? 1 : -1).collect(Collectors.toList())) {
             AttributeMarshaller marshaller = attributeMarshallers.getOrDefault(ad.getName(), ad.getAttributeMarshaller());
-            if (marshaller.isMarshallable(ad, model, false)) {
+            if (marshaller.isMarshallable(ad, model, marshallDefaultValues)) {
                 if (!started && group != null) {
                     if (possibleElements) {
                         writer.writeStartElement(group);
@@ -514,6 +516,7 @@ public final class PersistentResourceXMLDescription {
 
         /**
          * If set to false, default attribute values won't be persisted
+         *
          * @param marshallDefault weather default values should be persisted or not.
          * @return builder
          */
@@ -526,6 +529,7 @@ public final class PersistentResourceXMLDescription {
          * Sets name for "name" attribute that is used for wildcard resources.
          * It defines name of attribute one resource xml element to be used for such identifier
          * If not set it defaults to "name"
+         *
          * @param nameAttributeName xml attribute name to be used for resource name
          * @return builder
          */

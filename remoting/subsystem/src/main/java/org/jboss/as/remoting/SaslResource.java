@@ -43,7 +43,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -94,14 +93,11 @@ class SaslResource extends ConnectorChildResource {
     static final SaslResource INSTANCE_CONNECTOR = new SaslResource(CONNECTOR);
     static final SaslResource INSTANCE_HTTP_CONNECTOR = new SaslResource(HTTP_CONNECTOR);
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     private SaslResource(final String parent) {
-        super(SASL_CONFIG_PATH,
-                RemotingExtension.getResourceDescriptionResolver(SASL),
-                new AddResourceConnectorRestartHandler(parent, ATTRIBUTES),
-                new RemoveResourceConnectorRestartHandler(parent));
-        this.accessConstraints = RemotingExtension.REMOTING_SECURITY_DEF.wrapAsList();
+        super(new Parameters(SASL_CONFIG_PATH, RemotingExtension.getResourceDescriptionResolver(SASL))
+                .setAddHandler(new AddResourceConnectorRestartHandler(parent, ATTRIBUTES))
+                .setRemoveHandler(new RemoveResourceConnectorRestartHandler(parent))
+                .setAccessConstraints(RemotingExtension.REMOTING_SECURITY_DEF));
         this.parent = parent;
     }
 
@@ -114,11 +110,6 @@ class SaslResource extends ConnectorChildResource {
         resourceRegistration.registerReadWriteAttribute(STRENGTH_ATTRIBUTE, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(REUSE_SESSION_ATTRIBUTE, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SERVER_AUTH_ATTRIBUTE, null, writeHandler);
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 
     private static class SaslAttributeMarshaller extends AttributeMarshaller {

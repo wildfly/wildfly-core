@@ -188,7 +188,7 @@ class ReadOnlyContext extends AbstractOperationContext {
     public void acquireControllerLock() {
         if (lockStep == null) {
             try {
-                controller.acquireLock(operationId, true);
+                controller.acquireWriteLock(operationId, true);
                 lockStep = activeStep;
             } catch (InterruptedException e) {
                 cancelled = true;
@@ -202,7 +202,7 @@ class ReadOnlyContext extends AbstractOperationContext {
     void releaseStepLocks(Step step) {
         if (step == lockStep) {
             lockStep = null;
-            controller.releaseLock(operationId);
+            controller.releaseWriteLock(operationId);
         }
     }
 

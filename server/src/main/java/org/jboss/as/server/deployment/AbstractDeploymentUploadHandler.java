@@ -24,14 +24,11 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
@@ -64,9 +61,7 @@ public abstract class AbstractDeploymentUploadHandler implements OperationStepHa
             attribute.validateOperation(operation);
             // Trigger authz
             AuthorizationResult authorizationResult = context.authorize(operation, ACTION_EFFECT_SET);
-            if (authorizationResult.getDecision() == AuthorizationResult.Decision.DENY) {
-                throw ControllerLogger.ROOT_LOGGER.unauthorized(operation.get(ModelDescriptionConstants.OP).asString(), PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR)), authorizationResult.getExplanation());
-            }
+            authorizationResult.failIfDenied(operation, context.getCurrentAddress());
 
             InputStream is = getContentInputStream(context, operation);
             try {

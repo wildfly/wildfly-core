@@ -43,12 +43,6 @@ public class MultipleStreamsPatchingTestCase extends AbstractPatchingTest {
     static final String[] FILE_EXISTING = {"bin", "test"};
 
 
-/*    @After
-    public void tearDown() {
-        System.out.println("finished " + tempDir.getAbsolutePath());
-        //super.tearDown();
-    }
-*/
     @Test
     public void testOne() throws Exception {
 

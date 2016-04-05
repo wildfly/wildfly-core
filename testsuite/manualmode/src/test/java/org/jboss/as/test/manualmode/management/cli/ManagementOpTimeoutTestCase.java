@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
 import org.jboss.as.test.integration.management.extension.ExtensionUtils;
@@ -119,7 +118,7 @@ public class ManagementOpTimeoutTestCase extends AbstractCliTestBase {
             assertFalse(result.isIsOutcomeSuccess());
             checkResponseHeadersForProcessState(result, "restart-required");
             ModelNode response = result.getResponseNode();
-            assertTrue(response.toString(), response.get(FAILURE_DESCRIPTION).asString().contains(ControllerLogger.ROOT_LOGGER.timeoutExecutingOperation()));
+            assertTrue(response.toString(), response.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0344"));
         } catch (Throwable t) {
             holder[0] = t;
         }

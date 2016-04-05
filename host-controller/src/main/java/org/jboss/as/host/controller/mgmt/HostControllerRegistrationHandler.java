@@ -53,6 +53,7 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.transform.TransformationTarget;
@@ -111,14 +112,17 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
     private final Executor registrationExecutor;
     private final HostRegistrations slaveHostRegistrations;
     private final String address;
+    private final DomainHostExcludeRegistry domainHostExcludeRegistry;
 
     public HostControllerRegistrationHandler(ManagementChannelHandler handler, DomainController domainController, OperationExecutor operationExecutor,
-                                             Executor registrations, HostRegistrations slaveHostRegistrations) {
+                                             Executor registrations, HostRegistrations slaveHostRegistrations,
+                                             DomainHostExcludeRegistry domainHostExcludeRegistry) {
         this.handler = handler;
         this.operationExecutor = operationExecutor;
         this.domainController = domainController;
         this.registrationExecutor = registrations;
         this.slaveHostRegistrations = slaveHostRegistrations;
+        this.domainHostExcludeRegistry = domainHostExcludeRegistry;
         this.address = HostControllerRegistrationHandler.this.handler.getRemoteAddress().getHostAddress();
     }
 
@@ -132,13 +136,15 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
         switch (operationId) {
             case DomainControllerProtocol.REGISTER_HOST_CONTROLLER_REQUEST: {
                 // Start the registration process
-                final RegistrationContext context = new RegistrationContext(domainController.getExtensionRegistry(), true);
+                final RegistrationContext context = new RegistrationContext(domainController.getExtensionRegistry(),
+                        true, domainHostExcludeRegistry);
                 context.activeOperation = handlers.registerActiveOperation(header.getBatchId(), context, context);
                 return new InitiateRegistrationHandler();
             }
             case DomainControllerProtocol.FETCH_DOMAIN_CONFIGURATION_REQUEST: {
                 // Start the fetch the domain model process
-                final RegistrationContext context = new RegistrationContext(domainController.getExtensionRegistry(), false);
+                final RegistrationContext context = new RegistrationContext(domainController.getExtensionRegistry(),
+                        false, domainHostExcludeRegistry);
                 context.activeOperation = handlers.registerActiveOperation(header.getBatchId(), context, context);
                 return new InitiateRegistrationHandler();
             }
@@ -199,6 +205,23 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
          */
         ModelNode executeReadOnly(ModelNode operation, Resource model, OperationStepHandler handler, ModelController.OperationTransactionControl control);
 
+        /**
+         * Attempts to acquire a non-exclusive read lock. After any operations requiring this lock have completed, #releaseReadlock
+         * must be called to release the lock.
+         * @param operationID - the operationID for this registration. Cannot be {@code null}.
+         * @throws IllegalArgumentException - if operationID is null.
+         * @throws InterruptedException - if the lock is not acquired.
+         */
+        void acquireReadlock(final Integer operationID) throws IllegalArgumentException, InterruptedException;
+
+        /**
+         * Release the non-exclusive read lock obtained from #acquireReadlock. This method must be called after any locked
+         * operations have completed or aborted to release the shared lock.
+         * @param operationID - the operationID for this registration. Cannot be {@code null}.
+         * @throws IllegalArgumentException - if if the operationId is null.
+         * @throws IllegalStateException - if the shared lock was not held.
+         */
+        void releaseReadlock(final Integer operationID) throws IllegalArgumentException;
     }
 
     class InitiateRegistrationHandler implements ManagementRequestHandler<Void, RegistrationContext> {
@@ -230,7 +253,6 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                     registration.processRegistration();
                 }
             }, registrationExecutor);
-
         }
 
     }
@@ -263,7 +285,6 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             final byte status = input.readByte();
             final String message = input.readUTF(); // Perhaps use message when the host failed
             final RegistrationContext registration = context.getAttachment();
-            // Complete the registration
             registration.completeRegistration(context, status == DomainControllerProtocol.PARAM_OK);
         }
 
@@ -280,54 +301,94 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
 
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            // First lock the domain controller
-            context.acquireControllerLock();
-            // Check with the controller lock held
-            if(domainController.isHostRegistered(registrationContext.hostName)) {
-                final String failureDescription = DomainControllerLogger.ROOT_LOGGER.slaveAlreadyRegistered(registrationContext.hostName);
-                registrationContext.failed(SlaveRegistrationException.ErrorCode.HOST_ALREADY_EXISTS, failureDescription);
-                context.getFailureDescription().set(failureDescription);
-                return;
+
+            assert registrationContext != null;
+            assert registrationContext.activeOperation != null;
+
+            // acquires the shared-mode read lock.
+            boolean locked = false;
+            Integer operationID = registrationContext.activeOperation.getOperationId();
+
+            if (operationID == null) {
+                throw HostControllerLogger.DOMAIN_LOGGER.nullVar("operationID");
             }
-            // Read the extensions (with recursive true, otherwise the entries are runtime=true - which are going to be ignored for transformation)
-            final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(EXTENSION)), true);
-            // Check the mgmt version
-            final HostInfo hostInfo = registrationContext.hostInfo;
-            final int major = hostInfo.getManagementMajorVersion();
-            final int minor = hostInfo.getManagementMinorVersion();
-            final int micro = hostInfo.getManagementMicroVersion();
-            boolean as711 = (major == 1 && minor == 1);
-            if(as711) {
-                final OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.unsupportedManagementVersionForHost(major, minor, 1, 2);
-                registrationContext.failed(SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
-                throw failure;
-            }
-            // Initialize the transformers
-            final TransformationTarget target = TransformationTargetImpl.create(hostInfo.getHostName(), transformerRegistry, ModelVersion.create(major, minor, micro),
-                    Collections.<PathAddress, ModelVersion>emptyMap(), TransformationTarget.TransformationTargetType.HOST, hostInfo.isIgnoreUnaffectedConfig());
-            final Transformers transformers = Transformers.Factory.create(target);
+
             try {
-                SlaveChannelAttachments.attachSlaveInfo(handler.getChannel(), registrationContext.hostName, transformers);
-            } catch (IOException e) {
-                throw new OperationFailedException(e.getLocalizedMessage());
+                try {
+                    operationExecutor.acquireReadlock(operationID);
+                } catch (IllegalArgumentException e) {
+                    throw new OperationFailedException(e);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw ControllerLogger.ROOT_LOGGER.operationCancelledAsynchronously();
+                }
+                locked = true;
+
+                if (domainController.isHostRegistered(registrationContext.hostName)) {
+                    final String failureDescription = DomainControllerLogger.ROOT_LOGGER.slaveAlreadyRegistered(registrationContext.hostName);
+                    registrationContext.failed(SlaveRegistrationException.ErrorCode.HOST_ALREADY_EXISTS, failureDescription);
+                    context.getFailureDescription().set(failureDescription);
+                    return;
+                }
+
+                // Read the extensions (with recursive true, otherwise the entries are runtime=true - which are going to be ignored for transformation)
+                final Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(EXTENSION)), true);
+                // Check the mgmt version
+                final HostInfo hostInfo = registrationContext.hostInfo;
+                final int major = hostInfo.getManagementMajorVersion();
+                final int minor = hostInfo.getManagementMinorVersion();
+                final int micro = hostInfo.getManagementMicroVersion();
+                boolean as711 = (major == 1 && minor == 1);
+                if (as711) {
+                    final OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.unsupportedManagementVersionForHost(major, minor, 1, 2);
+                    registrationContext.failed(SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
+                    throw failure;
+                }
+                // Initialize the transformers
+                final TransformationTarget target = TransformationTargetImpl.createForHost(hostInfo.getHostName(), transformerRegistry,
+                        ModelVersion.create(major, minor, micro), Collections.<PathAddress, ModelVersion>emptyMap(), hostInfo);
+                final Transformers transformers = Transformers.Factory.create(target);
+                try {
+                    SlaveChannelAttachments.attachSlaveInfo(handler.getChannel(), registrationContext.hostName, transformers);
+                } catch (IOException e) {
+                    throw new OperationFailedException(e.getLocalizedMessage());
+                }
+                // Build the extensions list
+                final ModelNode extensions = new ModelNode();
+                final Transformers.TransformationInputs transformationInputs = Transformers.TransformationInputs.getOrCreate(context);
+                final Resource transformed = transformers.transformRootResource(transformationInputs, root);
+                final Collection<Resource.ResourceEntry> resources = transformed.getChildren(EXTENSION);
+                for (final Resource.ResourceEntry entry : resources) {
+                    if (!hostInfo.isResourceTransformationIgnored(PathAddress.pathAddress(entry.getPathElement()))) {
+                        extensions.add(entry.getName());
+                    }
+                }
+                if (!extensions.isDefined()) {
+                    // TODO add a real error message
+                    throw new OperationFailedException(extensions.toString(), extensions);
+                }
+                // Remotely resolve the subsystem versions and create the transformation
+                registrationContext.processSubsystems(transformers, extensions);
+                // Now run the read-domain model operation
+                final ReadMasterDomainModelHandler handler = new ReadMasterDomainModelHandler(hostInfo, transformers, domainController.getExtensionRegistry(), false);
+                context.addStep(READ_DOMAIN_MODEL.getOperation(), handler, OperationContext.Stage.MODEL);
+
+                context.completeStep(new OperationContext.ResultHandler() {
+                    @Override
+                    public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                        try {
+                            operationExecutor.releaseReadlock(operationID);
+                        } catch (IllegalArgumentException e) {
+                            HostControllerLogger.ROOT_LOGGER.hostRegistrationCannotReleaseSharedLock(operationID);
+                        }
+                    }
+                });
+                locked = false;
+            } finally {
+                if (locked) {
+                    operationExecutor.releaseReadlock(operationID);
+                }
             }
-            // Build the extensions list
-            final ModelNode extensions = new ModelNode();
-            final Transformers.TransformationInputs transformationInputs = Transformers.TransformationInputs.getOrCreate(context);
-            final Resource transformed = transformers.transformRootResource(transformationInputs, root);
-            final Collection<Resource.ResourceEntry> resources = transformed.getChildren(EXTENSION);
-            for(final Resource.ResourceEntry entry : resources) {
-                extensions.add(entry.getName());
-            }
-            if(! extensions.isDefined()) {
-                // TODO add a real error message
-                throw new OperationFailedException(extensions.toString(), extensions);
-            }
-            // Remotely resolve the subsystem versions and create the transformation
-            registrationContext.processSubsystems(transformers, extensions);
-            // Now run the read-domain model operation
-            final ReadMasterDomainModelHandler handler = new ReadMasterDomainModelHandler(hostInfo, transformers, domainController.getExtensionRegistry());
-            context.addStep(READ_DOMAIN_MODEL.getOperation(), handler, OperationContext.Stage.MODEL);
         }
     }
 
@@ -344,16 +405,19 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
         private volatile Transformers transformers;
         private ActiveOperation<Void, RegistrationContext> activeOperation;
         private final AtomicBoolean completed = new AtomicBoolean();
+        private final DomainHostExcludeRegistry domainHostExcludeRegistry;
 
         private RegistrationContext(ExtensionRegistry extensionRegistry,
-                                    boolean registerProxyController) {
+                                    boolean registerProxyController,
+                                    DomainHostExcludeRegistry domainHostExcludeRegistry) {
             this.extensionRegistry = extensionRegistry;
             this.registerProxyController = registerProxyController;
+            this.domainHostExcludeRegistry = domainHostExcludeRegistry;
         }
 
         private synchronized void initialize(final String hostName, final ModelNode hostInfo, final ManagementRequestContext<RegistrationContext> responseChannel) {
             this.hostName = hostName;
-            this.hostInfo = HostInfo.fromModelNode(hostInfo);
+            this.hostInfo = HostInfo.fromModelNode(hostInfo, domainHostExcludeRegistry);
             this.responseChannel = responseChannel;
         }
 

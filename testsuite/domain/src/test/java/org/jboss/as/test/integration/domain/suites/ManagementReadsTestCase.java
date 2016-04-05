@@ -39,7 +39,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
 
 import java.io.IOException;
@@ -52,7 +51,6 @@ import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -222,25 +220,6 @@ public class ManagementReadsTestCase {
         final ModelNode result = response.get(RESULT);
         Assert.assertEquals("/tmp", result.get(PATH).asString());
         Assert.assertFalse(result.get(RELATIVE_TO).isDefined());
-    }
-
-    @Test
-    @Ignore("AS7-376")
-    public void testReadResourceWildcards() throws IOException {
-        DomainClient domainClient = domainMasterLifecycleUtil.getDomainClient();
-        final ModelNode request = new ModelNode();
-        request.get(OP).set(READ_RESOURCE_OPERATION);
-        ModelNode address = request.get(OP_ADDR);
-        address.add(HOST, "*");
-        address.add(RUNNING_SERVER, "*");
-        address.add(SUBSYSTEM, "*");
-        request.get(RECURSIVE).set(true);
-        request.get(PROXIES).set(false);
-
-        ModelNode response = domainClient.execute(request);
-        validateResponse(response);
-        // TODO make some more assertions about result content
-
     }
 
     @Test

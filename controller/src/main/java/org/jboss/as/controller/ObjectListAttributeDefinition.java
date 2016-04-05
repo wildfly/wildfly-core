@@ -134,11 +134,11 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
         if (superResult.getType() != ModelType.LIST) {
             return superResult;
         }
-
         // Resolve each element.
         // Don't mess with the original value
         ModelNode clone = superResult == value ? value.clone() : superResult;
         ModelNode result = new ModelNode();
+        result.setEmptyList();
         for (ModelNode element : clone.asList()) {
             result.add(valueType.resolveValue(resolver, element));
         }
@@ -228,6 +228,7 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
     ObjectTypeAttributeDefinition getValueType() {
         return valueType;
     }
+
 
     public static final class Builder extends ListAttributeDefinition.Builder<Builder, ObjectListAttributeDefinition> {
         private final ObjectTypeAttributeDefinition valueType;

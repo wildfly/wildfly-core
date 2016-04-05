@@ -226,6 +226,30 @@ public class ContentRepositoryTest {
     }
 
     /**
+     * Test that an empty dir with a system metadata file .DS_Store will be removed during cleaning.
+     */
+    @Test
+    public void testCleanEmptyParentDirWithSystemMetaDataFile() throws Exception {
+        File emptyGrandParent = new File(rootDir, "ae");
+        emptyGrandParent.mkdir();
+        File metaDataFile = new File(emptyGrandParent, ".DS_Store");
+        metaDataFile.createNewFile();
+        assertThat(emptyGrandParent.exists(), is(true));
+        assertThat(metaDataFile.exists(), is(true));
+        Map<String, Set<String>> result = repository.cleanObsoleteContent(); // To mark content for deletion
+        assertThat(result.get(ContentRepository.MARKED_CONTENT).size(), is(1));
+        assertThat(result.get(ContentRepository.DELETED_CONTENT).size(), is(0));
+        assertThat(result.get(ContentRepository.MARKED_CONTENT).contains(metaDataFile.getAbsolutePath()), is(true));
+        Thread.sleep(10);
+        result = repository.cleanObsoleteContent();
+        assertThat(emptyGrandParent.exists(), is(false));
+        assertThat(metaDataFile.exists(), is(false));
+        assertThat(result.get(ContentRepository.MARKED_CONTENT).size(), is(0));
+        assertThat(result.get(ContentRepository.DELETED_CONTENT).size(), is(1));
+        assertThat(result.get(ContentRepository.DELETED_CONTENT).contains(metaDataFile.getAbsolutePath()), is(true));
+    }
+
+    /**
      * Test that an empty dir will be removed during cleaning.
      */
     @Test

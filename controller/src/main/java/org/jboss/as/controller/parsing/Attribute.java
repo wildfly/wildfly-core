@@ -32,7 +32,6 @@ import java.util.Map;
  */
 public enum Attribute {
     // always first
-// always first
     UNKNOWN(null),
 
     // xsi attributes in alpha order
@@ -40,6 +39,8 @@ public enum Attribute {
     SCHEMA_LOCATION("schemaLocation"),
 
     // domain attributes in alpha order
+    ACTIVE_SERVER_GROUPS("active-server-groups"),
+    ACTIVE_SOCKET_BINDING_GROUPS("active-socket-binding-groups"),
     ADMIN_ONLY_POLICY("admin-only-policy"),
     ALIAS("alias"),
     ALLOW_EMPTY_PASSWORDS("allow-empty-passwords"),
@@ -98,6 +99,7 @@ public enum Attribute {
     HTTP_SERVER_AUTHENTICATION("http-server-authentication"),
     HTTP_UPGRADE_ENABLED("http-upgrade-enabled"),
     HTTPS("https"),
+    ID("id"),
     INCLUDES("includes"),
     IGNORE_UNUSED_CONFIG("ignore-unused-configuration"),
     INCLUDE_ALL("include-all"),
@@ -110,6 +112,7 @@ public enum Attribute {
     KEYSTORE_PASSWORD("keystore-password"),
     LOG_BOOT("log-boot"),
     LOG_READ_ONLY("log-read-only"),
+    MAJOR_VERSION("major-version"),
     MANAGEMENT_SUBSYSTEM_ENDPOINT("management-subsystem-endpoint"),
     MAP_GROUPS_TO_ROLES("map-groups-to-roles"),
     MAX_HISTORY("max-history"),
@@ -121,6 +124,8 @@ public enum Attribute {
     MAX_THREADS("max-threads"),
     MECHANISM("mechanism"),
     MESSAGE_TRANSFER("message-transfer"),
+    MICRO_VERSION("micro-version"),
+    MINOR_VERSION("minor-version"),
     MODULE("module"),
     MULTICAST_ADDRESS("multicast-address"),
     MULTICAST_PORT("multicast-port"),
@@ -175,9 +180,14 @@ public enum Attribute {
     SOURCE_NETWORK("source-network"),
     SOURCE_PORT("source-port"),
     SSL_CONTEXT("ssl-context"),
+    SSL_PROTOCOL("ssl-protocol"),
     SUFFIX("suffix"),
     SYSLOG_FORMAT ("syslog-format"),
     TRUNCATE("truncate"),
+    TRUST_MANAGER_ALGORITHM("trust-manager-algorithm"),
+    TRUSTSTORE_PASSWORD("truststore-password"),
+    TRUSTSTORE_PATH("truststore-path"),
+    TRUSTSTORE_TYPE("truststore-type"),
     TYPE("type"),
     UPDATE_AUTO_START_WITH_SERVER_STATUS("update-auto-start-with-server-status"),
     URL("url"),

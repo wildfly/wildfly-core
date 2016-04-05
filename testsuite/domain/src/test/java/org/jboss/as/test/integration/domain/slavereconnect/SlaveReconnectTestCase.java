@@ -40,6 +40,9 @@ import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
@@ -148,6 +151,14 @@ public class SlaveReconnectTestCase {
                 slaveReconnected = checkSlaveReconnected(masterClient);
             } while (!slaveReconnected && System.currentTimeMillis() < end);
 
+            //Wait for master servers to come up
+            end = System.currentTimeMillis() + 60 * ADJUSTED_SECOND;
+            boolean serversUp = false;
+            do {
+                Thread.sleep(1 * ADJUSTED_SECOND);
+                serversUp = checkHostServersStarted(masterClient, "master");
+            } while (!serversUp && System.currentTimeMillis() < end);
+
             for (ReconnectTestScenario scenario : scenarios) {
                 scenario.testAfterReconnect(masterClient, slaveClient);
             }
@@ -175,6 +186,24 @@ public class SlaveReconnectTestCase {
         } catch (Exception e) {
         }
         return false;
+    }
+
+    private boolean checkHostServersStarted(DomainClient masterClient, String host) {
+        try {
+            ModelNode op = Util.createEmptyOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.pathAddress(HOST, host));
+            op.get(CHILD_TYPE).set(SERVER);
+            ModelNode ret = DomainTestUtils.executeForResult(op, masterClient);
+            List<ModelNode> list = ret.asList();
+            for (ModelNode entry : list) {
+                String server = entry.asString();
+                op = Util.createEmptyOperation(READ_ATTRIBUTE_OPERATION, PathAddress.pathAddress(HOST, host).append(SERVER, server));
+                op.get(NAME).set("server-state");
+                DomainTestUtils.executeForResult(op, masterClient); // success is enaught
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     static void cloneProfile(DomainClient masterClient, String source, String target) throws Exception {

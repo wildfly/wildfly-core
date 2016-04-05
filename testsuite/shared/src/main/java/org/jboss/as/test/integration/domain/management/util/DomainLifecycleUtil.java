@@ -157,7 +157,7 @@ public class DomainLifecycleUtil {
             }
 
             final String jbossArgs = System.getProperty("jboss.domain.server.args");
-            if (jbossArgs != null) {
+            if (jbossArgs != null && !jbossArgs.isEmpty()) {
                 commandBuilder.addServerArguments(jbossArgs.split("\\s+"));
             }
 

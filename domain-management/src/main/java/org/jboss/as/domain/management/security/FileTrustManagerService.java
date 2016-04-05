@@ -44,6 +44,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * An extension to {@link AbstractTrustManagerService} so that a TrustManager[] can be provided based on a JKS file based key
@@ -154,8 +155,11 @@ class FileTrustManagerService extends AbstractTrustManagerService {
 
         TrustManager[] tmpTrustManagers = trustManagerFactory.getTrustManagers();
         TrustManager[] trustManagers = new TrustManager[tmpTrustManagers.length];
+        boolean disableDynamic = isDisableDynamicTrustManager();
         for (int i = 0; i < tmpTrustManagers.length; i++) {
-            trustManagers[i] = new DelegatingTrustManager((X509TrustManager) tmpTrustManagers[i], keyStore);
+            trustManagers[i] = disableDynamic
+                    ? tmpTrustManagers[i]
+                    : new DelegatingTrustManager((X509TrustManager) tmpTrustManagers[i], keyStore);
         }
 
         return trustManagers;
@@ -164,6 +168,11 @@ class FileTrustManagerService extends AbstractTrustManagerService {
     @Override
     protected KeyStore loadTrustStore() {
         return keyStore.getKeyStore();
+    }
+
+    private boolean isDisableDynamicTrustManager() {
+        String prop = WildFlySecurityManager.getPropertyPrivileged("jboss.as.management.security.disable-dynamic-trust-manager", "false");
+        return "true".equalsIgnoreCase(prop);
     }
 
     private class DelegatingTrustManager implements X509TrustManager {

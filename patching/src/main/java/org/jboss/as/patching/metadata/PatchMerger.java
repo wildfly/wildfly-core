@@ -84,14 +84,10 @@ public class PatchMerger {
 
             patch = merge(patch, patch2Metadata);
 
-            FileWriter writer = null;
-            try {
-                writer = new FileWriter(new File(mergedDir, f.getName()));
+            try (FileWriter writer = new FileWriter(new File(mergedDir, f.getName()))){
                 PatchXml.marshal(writer, patch);
             } catch (Exception e) {
                 throw new PatchingException("Failed to marshal merged metadata into " + f.getName(), e);
-            } finally {
-                IoUtils.safeClose(writer);
             }
 
         }
@@ -100,14 +96,10 @@ public class PatchMerger {
         copyFile(new File(patch2Dir, PatchXml.PATCH_XML), new File(mergedDir, patch2Metadata.getIdentity().getVersion() +  PATCH_XML_SUFFIX));
 
         // merged patch.xml is the metadata from the earliest version to the latest
-        FileWriter writer = null;
-        try {
-            writer = new FileWriter(new File(mergedDir, PatchXml.PATCH_XML));
+        try (FileWriter writer = new FileWriter(new File(mergedDir, PatchXml.PATCH_XML))){
             PatchXml.marshal(writer, mergedMetadata);
         } catch (Exception e) {
             throw new PatchingException("Failed to marshal merged metadata into " + PatchXml.PATCH_XML, e);
-        } finally {
-            IoUtils.safeClose(writer);
         }
 
         try {

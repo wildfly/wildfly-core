@@ -50,7 +50,7 @@ public class PropertyResource extends ConnectorChildResource {
 
     private final String parent;
 
-    protected PropertyResource(String parent) {
+     protected PropertyResource(String parent) {
         super(PATH,
                 RemotingExtension.getResourceDescriptionResolver(PROPERTY),
                 new AddResourceConnectorRestartHandler(parent, PropertyResource.VALUE),

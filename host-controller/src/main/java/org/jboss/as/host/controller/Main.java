@@ -189,6 +189,10 @@ public final class Main {
     }
 
     public static HostControllerEnvironment determineEnvironment(String[] args, long startTime) {
+        return determineEnvironment(args, startTime, ProcessType.HOST_CONTROLLER);
+    }
+
+    public static HostControllerEnvironment determineEnvironment(String[] args, long startTime, ProcessType processType) {
         Integer pmPort = null;
         InetAddress pmAddress = null;
         final PCSocketConfig pcSocketConfig = new PCSocketConfig();
@@ -445,10 +449,11 @@ public final class Main {
             }
         }
         productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.HOME_DIR, null), hostSystemProperties);
+
         return new HostControllerEnvironment(hostSystemProperties, isRestart, modulePath, pmAddress, pmPort,
                 pcSocketConfig.getBindAddress(), pcSocketConfig.getBindPort(), defaultJVM,
                 domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles,
-                cachedDc, productConfig, securityManagerEnabled, startTime, ProcessType.HOST_CONTROLLER);
+                cachedDc, productConfig, securityManagerEnabled, startTime, processType);
     }
 
     private static String parseValue(final String arg, final String key) {

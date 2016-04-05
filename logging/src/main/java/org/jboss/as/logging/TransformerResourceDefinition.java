@@ -15,17 +15,24 @@ import org.jboss.as.controller.transform.description.ResourceTransformationDescr
 abstract class TransformerResourceDefinition extends SimpleResourceDefinition {
 
     protected TransformerResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver) {
-        super(pathElement, descriptionResolver);
+        super(new Parameters(pathElement, descriptionResolver));
     }
 
     protected TransformerResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver, final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
-        super(pathElement, descriptionResolver, addHandler, removeHandler);
+        super(new Parameters(pathElement, descriptionResolver).setAddHandler(addHandler).setRemoveHandler(removeHandler));
     }
 
     protected TransformerResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver, final OperationStepHandler addHandler, final OperationStepHandler removeHandler, final Flag addRestartLevel, final Flag removeRestartLevel) {
-        super(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel);
+        super(new Parameters(pathElement, descriptionResolver)
+                .setAddHandler(addHandler)
+                .setRemoveHandler(removeHandler)
+                .setAddRestartLevel(addRestartLevel)
+                .setRemoveRestartLevel(removeRestartLevel));
     }
 
+    protected TransformerResourceDefinition(final Parameters parameters) {
+        super(parameters);
+    }
     /**
      * Register the transformers for the resource.
      *

@@ -50,9 +50,11 @@ import javax.management.InvalidAttributeValueException;
 import javax.management.JMRuntimeException;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
+import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
+import javax.management.QueryEval;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
 
@@ -64,6 +66,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.as.jmx.model.ChildAddOperationFinder.ChildAddOperationEntry;
@@ -122,8 +125,8 @@ public class ModelControllerMBeanHelper {
         }).iterate();
     }
 
-    Set<ObjectInstance> queryMBeans(final ObjectName name, final QueryExp query) {
-        return new RootResourceIterator<Set<ObjectInstance>>(accessControlUtil, getRootResourceAndRegistration().getResource(),
+    Set<ObjectInstance> queryMBeans(final MBeanServer mbeanServer, final ObjectName name, final QueryExp query) {
+        Set<ObjectInstance> basic = new RootResourceIterator<Set<ObjectInstance>>(accessControlUtil, getRootResourceAndRegistration().getResource(),
                 new ObjectNameMatchResourceAction<Set<ObjectInstance>>(name) {
 
             Set<ObjectInstance> set = new HashSet<ObjectInstance>();
@@ -131,7 +134,6 @@ public class ModelControllerMBeanHelper {
             @Override
             public boolean onResource(ObjectName resourceName) {
                 if (name == null || name.apply(resourceName)) {
-                    //TODO check query
                     set.add(new ObjectInstance(resourceName, CLASS_NAME));
                 }
                 return true;
@@ -139,16 +141,39 @@ public class ModelControllerMBeanHelper {
 
             @Override
             public Set<ObjectInstance> getResult() {
-                if (set.size() == 1 && set.contains(ModelControllerMBeanHelper.createRootObjectName(domain))) {
+                if (set.size() == 1 && set.contains(ModelControllerMBeanHelper.createRootObjectInstance(domain))) {
                     return Collections.emptySet();
                 }
                 return set;
             }
         }).iterate();
+
+        // Handle any 'query' outside the RootResourceIterator so if the query calls back
+        // into us it's not a recursive kind of thing in the ModelController
+        Set<ObjectInstance> result;
+        if (query == null || basic.isEmpty()) {
+            result = basic;
+        } else {
+            result = new HashSet<>(basic.size());
+            for (ObjectInstance oi : basic) {
+
+                MBeanServer oldServer = setQueryExpServer(query, mbeanServer);
+                try {
+                    if (query.apply(oi.getObjectName())) {
+                        result.add(oi);
+                    }
+                } catch (Exception ignored) {
+                    // we just don't add it
+                } finally {
+                    setQueryExpServer(query, oldServer);
+                }
+            }
+        }
+        return result;
     }
 
-    Set<ObjectName> queryNames(final ObjectName name, final QueryExp query) {
-        return new RootResourceIterator<Set<ObjectName>>(accessControlUtil, getRootResourceAndRegistration().getResource(),
+    Set<ObjectName> queryNames(MBeanServer mbeanServer, final ObjectName name, final QueryExp query) {
+        Set<ObjectName> basic = new RootResourceIterator<Set<ObjectName>>(accessControlUtil, getRootResourceAndRegistration().getResource(),
                 new ObjectNameMatchResourceAction<Set<ObjectName>>(name) {
 
             Set<ObjectName> set = new HashSet<ObjectName>();
@@ -156,7 +181,6 @@ public class ModelControllerMBeanHelper {
             @Override
             public boolean onResource(ObjectName resourceName) {
                 if (name == null || name.apply(resourceName)) {
-                    //TODO check query
                     set.add(resourceName);
                 }
                 return true;
@@ -170,6 +194,38 @@ public class ModelControllerMBeanHelper {
                 return set;
             }
         }).iterate();
+
+        // Handle any 'query' outside the RootResourceIterator so if the query calls back
+        // into us it's not a recursive kind of thing in the ModelController
+        Set<ObjectName> result;
+        if (query == null || basic.isEmpty()) {
+            result = basic;
+        } else {
+            result = new HashSet<>(basic.size());
+            for (ObjectName on : basic) {
+                MBeanServer oldServer = setQueryExpServer(query, mbeanServer);
+                try {
+                    if (query.apply(on)) {
+                        result.add(on);
+                    }
+                } catch (Exception ignored) {
+                    // we just don't add it
+                } finally {
+                    setQueryExpServer(query, oldServer);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**  Set the mbean server on the QueryExp and try and pass back any previously set one */
+    private static MBeanServer setQueryExpServer(QueryExp query, MBeanServer toSet) {
+        // We assume the QueryExp is a QueryEval subclass or uses the QueryEval thread local
+        // mechanism to store any existing MBeanServer. If that's not the case we have no
+        // way to access the old mbeanserver to let us restore it
+        MBeanServer result = QueryEval.getMBeanServer();
+        query.setMBeanServer(toSet);
+        return result;
     }
 
 
@@ -407,7 +463,7 @@ public class ModelControllerMBeanHelper {
     }
 
     private Object invoke(final OperationEntry entry, final String operationName, PathAddress address, Object[] params)  throws InstanceNotFoundException, MBeanException, ReflectionException {
-        if (!mutabilityChecker.mutable(address) && !entry.getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
+        if (!mutabilityChecker.mutable(address) && !(entry.getFlags().contains(Flag.READ_ONLY) || entry.getFlags().contains(Flag.RUNTIME_ONLY))) {
             throw JmxLogger.ROOT_LOGGER.noOperationCalled(operationName);
         }
 
@@ -523,6 +579,10 @@ public class ModelControllerMBeanHelper {
         } catch (MalformedObjectNameException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static ObjectInstance createRootObjectInstance(String domain) {
+        return new ObjectInstance(createRootObjectName(domain), CLASS_NAME);
     }
 
     String getDomain() {

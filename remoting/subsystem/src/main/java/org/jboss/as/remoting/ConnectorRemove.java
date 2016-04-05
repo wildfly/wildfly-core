@@ -40,7 +40,6 @@ public class ConnectorRemove extends AbstractRemoveStepHandler {
     static final ConnectorRemove INSTANCE = new ConnectorRemove();
 
     private ConnectorRemove() {
-        super(ConnectorResource.CONNECTOR_CAPABILITY);
     }
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {

@@ -51,7 +51,7 @@ public class DomainUtil {
     public static void writeResponse(final HttpServerExchange exchange, final int status, ModelNode response,
             OperationParameter operationParameter) {
 
-        exchange.setResponseCode(status);
+        exchange.setStatusCode(status);
 
         final HeaderMap responseHeaders = exchange.getResponseHeaders();
         final String contentType = operationParameter.isEncode() ? Common.APPLICATION_DMR_ENCODED : Common.APPLICATION_JSON;
@@ -79,7 +79,7 @@ public class DomainUtil {
                                      final int streamIndex,
                                      OperationParameter operationParameter) {
 
-        exchange.setResponseCode(status);
+        exchange.setStatusCode(status);
 
         final HeaderMap responseHeaders = exchange.getResponseHeaders();
         final OperationResponse.StreamEntry entry = operationResponse.getInputStreams().get(streamIndex);
@@ -120,7 +120,7 @@ public class DomainUtil {
             public void onException(HttpServerExchange exchange, Sender sender, IOException exception) {
                 IoUtils.safeClose(operationResponse);
                 if (!exchange.isResponseStarted()) {
-                    exchange.setResponseCode(500);
+                    exchange.setStatusCode(500);
                 }
             }
         }

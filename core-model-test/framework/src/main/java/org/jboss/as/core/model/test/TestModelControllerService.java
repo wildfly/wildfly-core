@@ -81,6 +81,7 @@ import org.jboss.as.host.controller.HostModelUtil.HostModelRegistrar;
 import org.jboss.as.host.controller.HostPathManagerService;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
+import org.jboss.as.host.controller.mgmt.DomainHostExcludeRegistry;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.operations.HostModelRegistrationHandler;
 import org.jboss.as.host.controller.operations.LocalDomainControllerAddHandler;
@@ -584,6 +585,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
             final HostControllerEnvironment env = createHostControllerEnvironment();
             final LocalHostControllerInfoImpl info = createLocalHostControllerInfo(env);
             final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(info);
+            final DomainHostExcludeRegistry domainHostExcludeRegistry = new DomainHostExcludeRegistry();
             final ExtensibleConfigurationPersister persister = new NullConfigurationPersister();
             final HostFileRepository hostFileRepository = createHostFileRepository();
             final DomainController domainController = new MockDomainController();
@@ -606,7 +608,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
             domainDefinition = new DomainRootDefinition(domainController, env, persister, injectedContentRepository.getValue(),
                     hostFileRepository, true, info, extensionRegistry, null, pathManagerService, authorizer, null,
-                    getMutableRootResourceRegistrationProvider());
+                    domainHostExcludeRegistry, getMutableRootResourceRegistrationProvider());
             }
             domainDefinition.initialize(rootRegistration);
             rootResourceDefinition.setDelegate(domainDefinition);

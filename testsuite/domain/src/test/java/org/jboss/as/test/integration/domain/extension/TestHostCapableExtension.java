@@ -31,6 +31,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -80,7 +81,7 @@ public class TestHostCapableExtension implements Extension {
 
     @Override
     public void initialize(ExtensionContext context) {
-        SubsystemRegistration reg = context.registerSubsystem(SUBSYSTEM_NAME, 1, 1, 1);
+        SubsystemRegistration reg = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1, 1, 1));
         reg.setHostCapable();
         reg.registerXMLElementWriter(parser);
         reg.registerSubsystemModel(new RootResourceDefinition(SUBSYSTEM_NAME));
@@ -96,7 +97,7 @@ public class TestHostCapableExtension implements Extension {
         private static final String TEST_CAPABILITY_NAME = "org.wildfly.test.hc.capability";
         static final RuntimeCapability<Void> TEST_CAPABILITY =
                 RuntimeCapability.Builder.of(TEST_CAPABILITY_NAME, true)
-                        .addDynamicRequirements(SOCKET_CAPABILITY_NAME)
+                        //.addDynamicRequirements(SOCKET_CAPABILITY_NAME)
                         .build();
 
 
@@ -129,7 +130,6 @@ public class TestHostCapableExtension implements Extension {
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                     ServiceController<?> sc = context.getServiceRegistry(false).getService(createServiceName(context.getCurrentAddress()));
                     context.getResult().set(sc != null);
-                    context.stepCompleted();
                 }
             });
         }

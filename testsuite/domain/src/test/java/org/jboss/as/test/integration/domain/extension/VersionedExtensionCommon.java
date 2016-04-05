@@ -23,21 +23,16 @@
 package org.jboss.as.test.integration.domain.extension;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
-import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
-import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -54,23 +49,10 @@ public abstract class VersionedExtensionCommon implements Extension {
     static AttributeDefinition TEST_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create("test-attribute", ModelType.STRING, true).build();
 
     protected static ResourceDefinition createResourceDefinition(final PathElement element) {
-        return new SimpleResourceDefinition(element, new NonResolvingResourceDescriptionResolver(),
-                NOOP_ADD_HANDLER, NOOP_REMOVE_HANDLER, OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
+        return new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(element, new NonResolvingResourceDescriptionResolver())
+        .setAddHandler(new AbstractAddStepHandler())
+        .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
     }
-
-    static OperationStepHandler NOOP_ADD_HANDLER = new AbstractAddStepHandler() {
-        @Override
-        protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-            //
-        }
-    };
-
-    static OperationStepHandler NOOP_REMOVE_HANDLER = new AbstractRemoveStepHandler() {
-        @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-            super.performRuntime(context, operation, model);
-        }
-    };
 
     static OperationDefinition getOperationDefinition(String name) {
         return new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver())

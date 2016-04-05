@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 import javax.net.ssl.SSLContext;
 
@@ -89,6 +90,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
     private final InjectedValue<Collection<String>> allowedOriginsValue = new InjectedValue<Collection<String>>();
     private final InjectedValue<XnioWorker> worker = new InjectedValue<>();
+    private final InjectedValue<Executor> managementExecutor = new InjectedValue<>();
     private final ConsoleMode consoleMode;
     private final String consoleSlot;
     private ManagementHttpServer serverManagement;
@@ -251,6 +253,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setManagementHttpRequestProcessor(requestProcessor)
                     .setAllowedOrigins(allowedOriginsValue.getOptionalValue())
                     .setWorker(worker.getValue())
+                    .setExecutor(managementExecutor.getValue())
                     .build();
 
             serverManagement.start();
@@ -436,5 +439,9 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
     public InjectedValue<XnioWorker> getWorker() {
         return worker;
+    }
+
+    public InjectedValue<Executor> getManagementExecutor() {
+        return managementExecutor;
     }
 }

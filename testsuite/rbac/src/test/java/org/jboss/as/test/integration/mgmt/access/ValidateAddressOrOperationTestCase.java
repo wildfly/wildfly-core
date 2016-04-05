@@ -352,7 +352,7 @@ public class ValidateAddressOrOperationTestCase extends AbstractRbacTestCase {
         assertEquals(result.toString(), expectedOutcome, result.get(RESULT, VALID).asBoolean());
         assertEquals(result.toString(), !expectedOutcome, result.get(RESULT).hasDefined(PROBLEM));
         if (!expectedOutcome) {
-            assertTrue(result.get(RESULT, PROBLEM).asString().contains("not found"));
+            assertTrue(result.get(RESULT, PROBLEM).asString().contains("WFLYCTL0335"));
         }
     }
 
@@ -366,7 +366,7 @@ public class ValidateAddressOrOperationTestCase extends AbstractRbacTestCase {
             assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
         } else {
             assertEquals(FAILED, result.get(OUTCOME).asString());
-            assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().contains("not found"));
+            assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0335"));
         }
     }
 

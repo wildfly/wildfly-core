@@ -132,12 +132,10 @@ public class GlobalOperationHandlers {
             }
         }, true);
 
-        if (processType != ProcessType.DOMAIN_SERVER) {
-            root.registerOperationHandler(org.jboss.as.controller.operations.global.WriteAttributeHandler.DEFINITION,
-                    org.jboss.as.controller.operations.global.WriteAttributeHandler.INSTANCE, true);
-            root.registerOperationHandler(org.jboss.as.controller.operations.global.UndefineAttributeHandler.DEFINITION,
-                    org.jboss.as.controller.operations.global.UndefineAttributeHandler.INSTANCE, true);
-        }
+        root.registerOperationHandler(org.jboss.as.controller.operations.global.WriteAttributeHandler.DEFINITION,
+                org.jboss.as.controller.operations.global.WriteAttributeHandler.INSTANCE, true);
+        root.registerOperationHandler(org.jboss.as.controller.operations.global.UndefineAttributeHandler.DEFINITION,
+                org.jboss.as.controller.operations.global.UndefineAttributeHandler.INSTANCE, true);
     }
 
     public static final String CHECK_DEFAULT_RESOURCE_ACCESS = "check-default-resource-access";
@@ -957,6 +955,9 @@ public class GlobalOperationHandlers {
                 continue;
             }
             final ImmutableManagementResourceRegistration childRegistration = registry.getSubModel(PathAddress.pathAddress(element));
+            if (childRegistration == null) {
+                continue;
+            }
             final AliasEntry aliasEntry = childRegistration.getAliasEntry();
 
             Set<String> set = result.get(childType);

@@ -193,7 +193,12 @@ if $darwin || $other ; then
              JBOSS_BASE_DIR=`cd ${p#*=} ; pwd -P`
              ;;
         -Djboss.domain.log.dir=*)
-             JBOSS_LOG_DIR=`cd ${p#*=} ; pwd -P`
+             if [ -d "${p#*=}" ]; then
+                JBOSS_LOG_DIR=`cd ${p#*=} ; pwd -P`
+             else
+                #since the specified directory doesn't exist we don't validate it
+                JBOSS_LOG_DIR=${p#*=}
+             fi
              ;;
         -Djboss.domain.config.dir=*)
              JBOSS_CONFIG_DIR=`cd ${p#*=} ; pwd -P`

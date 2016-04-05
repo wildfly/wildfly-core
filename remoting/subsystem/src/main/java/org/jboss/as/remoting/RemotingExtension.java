@@ -35,6 +35,7 @@ import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
@@ -42,10 +43,13 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
+import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.ResourceTransformer;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
@@ -99,7 +103,7 @@ public class RemotingExtension implements Extension {
         registration.registerXMLElementWriter(RemotingSubsystemXMLPersister.INSTANCE);
 
         final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(new RemotingSubsystemRootResource());
-        subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
+        subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, new DescribeHandler());
 
         subsystem.registerSubModel(RemotingEndpointResource.INSTANCE);
 
@@ -194,7 +198,13 @@ public class RemotingExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_3_0.getUriString(), RemotingSubsystem30Parser.INSTANCE);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_4_0.getUriString(), RemotingSubsystem40Parser.INSTANCE);
 
-        context.setProfileParsingCompletionHandler(new IOCompletionHandler());
+        // For servers only as a migration aid we'll install io if it is missing.
+        // It is invalid to do this on an HC as the HC needs to support profiles running legacy
+        // slaves that will not understand the io extension
+        // See also WFCORE-778 and the description of the pull request for it
+        if (context.getProcessType().isServer()) {
+            context.setProfileParsingCompletionHandler(new IOCompletionHandler());
+        }
     }
 
     private static class IOCompletionHandler implements ProfileParsingCompletionHandler {
@@ -258,4 +268,35 @@ public class RemotingExtension implements Extension {
         }
     }
 
+    private static class DescribeHandler extends GenericSubsystemDescribeHandler {
+
+        @Override
+        protected void describe(OrderedChildTypesAttachment orderedChildTypesAttachment, Resource resource,
+                                ModelNode address, ModelNode result, ImmutableManagementResourceRegistration registration) {
+            // WFCORE-1354 only describe the configuration=endpoint resource if it has configuration;
+            // otherwise the equivalent config will be added by default. Doing this allows avoiding
+            // creation of a spurious requirement for the org.wildfly.io.worker.default capability during a
+            // profile clone op on an HC.
+
+            boolean describe = true;
+            PathElement pe = registration.getPathAddress().getLastElement();
+            if (pe.equals(RemotingEndpointResource.ENDPOINT_PATH))  {
+                describe = false;
+                if (resource != null) {
+                    ModelNode model = resource.getModel();
+                    if (model.isDefined()) {
+                        for (AttributeDefinition ad : RemotingEndpointResource.INSTANCE.getAttributes()) {
+                            if (model.hasDefined(ad.getName())) {
+                                describe = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (describe) {
+                super.describe(orderedChildTypesAttachment, resource, address, result, registration); //TODO implement describe
+            }
+        }
+    }
 }

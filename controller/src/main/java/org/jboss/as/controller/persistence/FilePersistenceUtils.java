@@ -49,7 +49,11 @@ import org.xnio.IoUtils;
 class FilePersistenceUtils {
 
     static File createTempFile(File fileName) {
-        return new File(fileName.getParentFile(), fileName.getName() + ".tmp");
+        return createTempFile(fileName.getParentFile(), fileName.getName());
+    }
+
+    static File createTempFile(File fileFolder, String fileName) {
+        return new File(fileFolder, fileName + ".tmp");
     }
 
     static ExposedByteArrayOutputStream marshalXml(final AbstractConfigurationPersister persister, final ModelNode model) throws ConfigurationPersistenceException {
@@ -156,5 +160,12 @@ class FilePersistenceUtils {
             }
         }
         return Collections.emptyList();
+    }
+
+    static boolean isParentFolderWritable(File file){
+        if ( !file.exists() || file.getParentFile() == null ){
+            return false;
+        }
+        return  file.getParentFile().canWrite();
     }
 }

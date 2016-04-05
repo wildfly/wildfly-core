@@ -3,8 +3,11 @@ package org.jboss.as.patching.installation;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
@@ -27,6 +30,8 @@ class MutableTargetImpl implements InstallationManager.MutablePatchingTarget {
 
     // this attribute will be null for layers and add-ons in their current implementation
     private String version;
+
+    private Set<String> rolledback = Collections.emptySet();
 
     MutableTargetImpl(PatchableTarget.TargetInfo current) {
         this(current, null);
@@ -57,8 +62,23 @@ class MutableTargetImpl implements InstallationManager.MutablePatchingTarget {
             } else {
                 throw new IllegalStateException("cannot rollback not-applied patch " + patchId); // internal wrong usage, no i18n
             }
+        } else {
+            switch(rolledback.size()) {
+                case 0:
+                    rolledback = Collections.singleton(patchId);
+                    break;
+                case 1:
+                    rolledback = new HashSet<String>(rolledback);
+                default:
+                    rolledback.add(patchId);
+            }
         }
         modified = true;
+    }
+
+    @Override
+    public boolean isRolledback(final String patchId) {
+        return rolledback.contains(patchId);
     }
 
     @Override

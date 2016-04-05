@@ -25,7 +25,6 @@ package org.jboss.as.host.controller.operations;
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
-import io.undertow.server.ListenerRegistry;
 
 import java.util.concurrent.Executor;
 
@@ -65,6 +64,8 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.xnio.XnioWorker;
+
+import io.undertow.server.ListenerRegistry;
 
 /**
  * A handler that activates the HTTP management API.
@@ -138,6 +139,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, service.getRequestProcessorValue())
                 .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, service.getWorker())
+                .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, Executor.class, service.getManagementExecutor())
                 .addInjection(service.getPortInjector(), port)
                 .addInjection(service.getSecurePortInjector(), securePort)
                 .addInjection(service.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());

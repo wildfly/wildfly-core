@@ -23,6 +23,60 @@ package org.jboss.as.domain.http.server;
 
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 import static org.xnio.Options.SSL_CLIENT_AUTH_MODE;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javax.net.ssl.SSLContext;
+
+import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.controller.ModelController;
+import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
+import org.jboss.as.domain.http.server.logging.HttpServerLogger;
+import org.jboss.as.domain.http.server.security.AnonymousMechanism;
+import org.jboss.as.domain.http.server.security.AuthenticationMechanismWrapper;
+import org.jboss.as.domain.http.server.security.DmrFailureReadinessHandler;
+import org.jboss.as.domain.http.server.security.ElytronSubjectDoAsHandler;
+import org.jboss.as.domain.http.server.security.LogoutHandler;
+import org.jboss.as.domain.http.server.security.RealmIdentityManager;
+import org.jboss.as.domain.http.server.security.RedirectReadinessHandler;
+import org.jboss.as.domain.http.server.security.ServerSubjectFactory;
+import org.jboss.as.domain.http.server.security.SubjectDoAsHandler;
+import org.jboss.as.domain.management.AuthMechanism;
+import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.modules.ModuleLoadException;
+import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
+import org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.http.HttpServerAuthenticationMechanism;
+import org.xnio.BufferAllocator;
+import org.xnio.ByteBufferSlicePool;
+import org.xnio.ChannelListener;
+import org.xnio.ChannelListeners;
+import org.xnio.IoUtils;
+import org.xnio.OptionMap;
+import org.xnio.Options;
+import org.xnio.SslClientAuthMode;
+import org.xnio.StreamConnection;
+import org.xnio.XnioWorker;
+import org.xnio.channels.AcceptingChannel;
+import org.xnio.conduits.StreamSinkConduit;
+import org.xnio.ssl.SslConnection;
+import org.xnio.ssl.XnioSsl;
+
 import io.undertow.protocols.ssl.UndertowXnioSsl;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -51,62 +105,14 @@ import io.undertow.server.handlers.error.SimpleErrorPageHandler;
 import io.undertow.server.protocol.http.HttpOpenListener;
 import io.undertow.util.Headers;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import javax.net.ssl.SSLContext;
-
-import org.jboss.as.controller.ControlledProcessStateService;
-import org.jboss.as.controller.ModelController;
-import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
-import org.jboss.as.domain.http.server.logging.HttpServerLogger;
-import org.jboss.as.domain.http.server.security.AnonymousMechanism;
-import org.jboss.as.domain.http.server.security.AuthenticationMechanismWrapper;
-import org.jboss.as.domain.http.server.security.DmrFailureReadinessHandler;
-import org.jboss.as.domain.http.server.security.ElytronSubjectDoAsHandler;
-import org.jboss.as.domain.http.server.security.LogoutHandler;
-import org.jboss.as.domain.http.server.security.RealmIdentityManager;
-import org.jboss.as.domain.http.server.security.RedirectReadinessHandler;
-import org.jboss.as.domain.http.server.security.ServerSubjectFactory;
-import org.jboss.as.domain.http.server.security.SubjectDoAsHandler;
-import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.SecurityRealm;
-import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoadException;
-import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
-import org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler;
-import org.wildfly.security.auth.server.HttpAuthenticationFactory;
-import org.wildfly.security.http.HttpServerAuthenticationMechanism;
-import org.xnio.BufferAllocator;
-import org.xnio.ByteBufferSlicePool;
-import org.xnio.ChannelListener;
-import org.xnio.ChannelListeners;
-import org.xnio.IoUtils;
-import org.xnio.OptionMap;
-import org.xnio.Options;
-import org.xnio.SslClientAuthMode;
-import org.xnio.StreamConnection;
-import org.xnio.Xnio;
-import org.xnio.XnioWorker;
-import org.xnio.channels.AcceptingChannel;
-import org.xnio.conduits.StreamSinkConduit;
-import org.xnio.ssl.SslConnection;
-import org.xnio.ssl.XnioSsl;
-
 /**
  * The general HTTP server for handling management API requests.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class ManagementHttpServer {
+
+    private static final Map<Pattern, Charset> USER_AGENT_CHARSET_MAP = generateCharsetMap();
 
     private final HttpOpenListener openListener;
     private final InetSocketAddress httpAddress;
@@ -128,13 +134,6 @@ public class ManagementHttpServer {
     }
 
     public void start() {
-        final Xnio xnio;
-        try {
-            //Do what org.jboss.as.remoting.XnioUtil does
-            xnio = Xnio.getInstance(null, Module.getModuleFromCallerModuleLoader(ModuleIdentifier.fromString("org.jboss.xnio.nio")).getClassLoader());
-        } catch (Exception e) {
-            throw new IllegalStateException(e.getLocalizedMessage());
-        }
         try {
 
             OptionMap.Builder serverOptionsBuilder = OptionMap.builder()
@@ -275,9 +274,11 @@ public class ManagementHttpServer {
             ROOT_LOGGER.errorContextModuleNotFound(builder.consoleSlot == null ? "main" : builder.consoleSlot);
         }
 
-        ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(
-                consoleHandler);
-        HttpHandler domainApiHandler = new DomainApiCheckHandler(builder.modelController, builder.controlledProcessStateService, builder.allowedOrigins);
+        ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(consoleHandler);
+        HttpHandler domainApiHandler = InExecutorHandler.wrap(
+                builder.executor,
+                new DomainApiCheckHandler(builder.modelController, builder.controlledProcessStateService, builder.allowedOrigins)
+        );
         pathHandler.addPrefixPath("/", rootConsoleRedirectHandler);
         if (consoleHandler != null) {
             addRedirectRedinessHandler(pathHandler, consoleHandler, builder);
@@ -326,7 +327,7 @@ public class ManagementHttpServer {
                                 securityRealm.getName(), "/management", new SimpleNonceManager()), current));
                         break;
                     case PLAIN:
-                        undertowMechanisms.add(wrap(new BasicAuthenticationMechanism(securityRealm.getName()), current));
+                        undertowMechanisms.add(wrap(new BasicAuthenticationMechanism(securityRealm.getName(), "BASIC", false, null, StandardCharsets.UTF_8, USER_AGENT_CHARSET_MAP), current));
                         break;
                     case LOCAL:
                         break;
@@ -345,6 +346,15 @@ public class ManagementHttpServer {
         current = new AuthenticationMechanismsHandler(current, undertowMechanisms);
 
         return new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, rim, current);
+    }
+
+    private static Map<Pattern, Charset> generateCharsetMap() {
+        final Map<Pattern, Charset> charsetMap = new HashMap<>();
+        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.*\\) Gecko/.* Firefox/.*"), StandardCharsets.ISO_8859_1);
+        charsetMap.put(Pattern.compile("(?!.*OPR)(?!.*Chrome)Mozilla/5\\.0 \\(.*\\).* Safari/.*"), StandardCharsets.ISO_8859_1);
+        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.*; Trident/.*; rv:.*\\).*"), StandardCharsets.ISO_8859_1);
+        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.* MSIE.* Trident/.*\\)"), StandardCharsets.ISO_8859_1);
+        return Collections.unmodifiableMap(charsetMap);
     }
 
     private static AuthenticationMechanism wrap(final AuthenticationMechanism toWrap, final AuthMechanism mechanism) {
@@ -390,6 +400,7 @@ public class ManagementHttpServer {
         private ManagementHttpRequestProcessor managementHttpRequestProcessor;
         private Collection<String> allowedOrigins;
         private XnioWorker worker;
+        private Executor executor;
 
         private Builder() {
         }
@@ -481,6 +492,13 @@ public class ManagementHttpServer {
         public Builder setWorker(XnioWorker worker) {
             assertNotBuilt();
             this.worker = worker;
+
+            return this;
+        }
+
+        public Builder setExecutor(Executor executor) {
+            assertNotBuilt();
+            this.executor = executor;
 
             return this;
         }

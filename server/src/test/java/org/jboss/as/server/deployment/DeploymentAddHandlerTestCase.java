@@ -28,15 +28,10 @@ import java.util.Set;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.RunningMode;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
 import org.jboss.vfs.VirtualFile;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -44,39 +39,6 @@ import org.mockito.Mockito;
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
 public class DeploymentAddHandlerTestCase {
-    /**
-        {
-            "operation" => "add",
-            "address" => [("deployment" => "test.war")],
-            "content" => [{
-                "archive" => true,
-                "path" => "${jboss.home}/content/welcome.jar"
-            }],
-            "runtime-name" => "test-run.war",
-            "enabled" => true
-        }
-     * @throws OperationFailedException
-     */
-    @Ignore("TODO: JBAS-9020: Archive deployments are not yet implemented")
-    @Test
-    public void testContent() throws OperationFailedException {
-        final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository, null);
-        final OperationContext context = Mockito.mock(OperationContext.class);
-        Mockito.when(context.getResult()).thenReturn(new ModelNode());
-        Mockito.when(context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel()).thenReturn(new ModelNode());
-        Mockito.when(context.getProcessType()).thenReturn(ProcessType.STANDALONE_SERVER);
-        Mockito.when(context.getRunningMode()).thenReturn(RunningMode.NORMAL);
-        Mockito.when(context.isNormalServer()).thenReturn(true);
-        final ModelNode operation = new ModelNode();
-        //operation.get("address").setEmptyList().get(0).get("deployment").set("test.war");
-        operation.get("address").get(0).setExpression("deployment", "test.war");
-        operation.get("content").get(0).get("archive").set(true);
-        operation.get("content").get(0).get("path").set("test.war");
-        handler.execute(context, operation);
-        Mockito.verify(context).addStep(Mockito.any(OperationStepHandler.class), OperationContext.Stage.RUNTIME);
-        //Mockito.verify(context).stepCompleted();
-
-    }
 
     @Test (expected = OperationFailedException.class)
     public void testTooMuchContent() throws OperationFailedException {
