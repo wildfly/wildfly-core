@@ -58,6 +58,7 @@ import org.jboss.as.controller.operations.common.SnapshotListHandler;
 import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.controller.operations.common.ValidateOperationHandler;
+import org.jboss.as.server.operations.WriteConfigHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -290,6 +291,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerOperationHandler(SnapshotListHandler.DEFINITION, snapshotList);
             SnapshotTakeHandler snapshotTake = new SnapshotTakeHandler(extensibleConfigurationPersister);
             resourceRegistration.registerOperationHandler(SnapshotTakeHandler.DEFINITION, snapshotTake);
+            resourceRegistration.registerOperationHandler(WriteConfigHandler.DEFINITION, WriteConfigHandler.INSTANCE);
         }
 
         if (isDomain) {

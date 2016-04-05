@@ -107,6 +107,7 @@ import org.jboss.as.server.operations.CleanObsoleteContentHandler;
 import org.jboss.as.server.operations.InstanceUuidReadHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.SuspendStateReadHandler;
+import org.jboss.as.server.operations.WriteConfigHandler;
 import org.jboss.as.server.services.net.InterfaceResourceDefinition;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
@@ -317,6 +318,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerOperationHandler(ResolveExpressionOnHostHandler.DEFINITION, ResolveExpressionOnHostHandler.INSTANCE);
         hostRegistration.registerOperationHandler(SpecifiedInterfaceResolveHandler.DEFINITION, SpecifiedInterfaceResolveHandler.INSTANCE);
         hostRegistration.registerOperationHandler(CleanObsoleteContentHandler.DEFINITION, CleanObsoleteContentHandler.createOperation(contentRepository));
+        hostRegistration.registerOperationHandler(WriteConfigHandler.DEFINITION, WriteConfigHandler.INSTANCE);
 
         XmlMarshallingHandler xmh = new HostXmlMarshallingHandler(configurationPersister.getHostPersister(), hostControllerInfo);
         hostRegistration.registerOperationHandler(XmlMarshallingHandler.DEFINITION, xmh);
