@@ -46,11 +46,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.rbac.Outcome;
 import org.jboss.as.test.integration.management.rbac.RbacUtil;
-import org.jboss.as.test.integration.management.util.MgmtOperationException;
-import org.jboss.as.test.integration.mgmt.access.extension.ExtensionSetup;
 import org.jboss.dmr.ModelNode;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
@@ -60,17 +56,8 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Ladislav Thon <lthon@redhat.com>
  */
 @RunWith(WildflyTestRunner.class)
-@ServerSetup({StandardUsersSetupTask.class, BasicExtensionSetupTask.class})
+@ServerSetup({StandardUsersSetupTask.class, StandardExtensionSetupTask.class})
 public class ApplicationTypeTestCase extends AbstractRbacTestCase {
-    @BeforeClass
-    public static void createResource() throws IOException, MgmtOperationException {
-        ExtensionSetup.addResources(managementClient);
-    }
-
-    @AfterClass
-    public static void removeResources() throws IOException, MgmtOperationException {
-        ExtensionSetup.removeResources(managementClient);
-    }
 
     @Test
     public void testMonitor() throws Exception {
