@@ -346,16 +346,19 @@ public class DomainServerLifecycleHandlers {
                     context.getServiceRegistry(true);
                     Map<String, ProcessInfo> processes = serverInventory.determineRunningProcesses(true);
                     final Set<String> serversInGroup = getServersForGroup(model, group);
-                    final Set<String> waitForServers = new HashSet<String>();
+                    final Set<String> waitForServers = new HashSet<>();
                     for (String serverName : processes.keySet()) {
                         final String serverModelName = serverInventory.getProcessServerName(serverName);
                         if (group == null || serversInGroup.contains(serverModelName)) {
-                            serverInventory.suspendServer(serverModelName);
                             waitForServers.add(serverModelName);
                         }
                     }
                     if (timeout != 0) {
                         serverInventory.awaitServerSuspend(waitForServers, timeout > 0 ? timeout * 1000 : timeout);
+                    } else {
+                        for (String serverModelName : waitForServers){
+                            serverInventory.suspendServer(serverModelName);
+                        }
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }
