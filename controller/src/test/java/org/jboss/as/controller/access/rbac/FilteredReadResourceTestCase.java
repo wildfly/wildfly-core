@@ -87,7 +87,7 @@ public class FilteredReadResourceTestCase extends AbstractRbacTestBase {
         operation = Util.createOperation(ADD, pathAddress(SENSITIVE_CONSTRAINED_RESOURCE, BAR));
         executeWithRoles(operation, StandardRole.SUPERUSER);
 
-        MY_SENSITIVITY.setConfiguredRequiresAccessPermission(true);
+        MY_SENSITIVE_CONSTRAINT.getSensitivity().setConfiguredRequiresAccessPermission(true);
     }
 
     @Test
@@ -153,7 +153,7 @@ public class FilteredReadResourceTestCase extends AbstractRbacTestBase {
         assertEquals(1, filteredTypes.asInt());
         assertEquals(SENSITIVE_CONSTRAINED_RESOURCE, filteredTypes.get(0).asString());
 
-        MY_SENSITIVITY.setConfiguredRequiresAccessPermission(false);
+        MY_SENSITIVE_CONSTRAINT.getSensitivity().setConfiguredRequiresAccessPermission(false);
         result = executeWithRole(operation, StandardRole.MONITOR);
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
         assertEquals(ModelType.LIST, result.get(RESULT).getType());
@@ -193,10 +193,8 @@ public class FilteredReadResourceTestCase extends AbstractRbacTestBase {
 
     // model definition
 
-    private static final SensitivityClassification MY_SENSITIVITY
-            = new SensitivityClassification("test", "my-sensitivity", true, true, true);
-    private static final AccessConstraintDefinition MY_SENSITIVE_CONSTRAINT
-            = new SensitiveTargetAccessConstraintDefinition(MY_SENSITIVITY);
+    private static final SensitiveTargetAccessConstraintDefinition MY_SENSITIVE_CONSTRAINT
+            = new SensitiveTargetAccessConstraintDefinition(new SensitivityClassification("test", "my-sensitivity", true, true, true));
 
     @Override
     protected void initModel(ManagementModel managementModel) {

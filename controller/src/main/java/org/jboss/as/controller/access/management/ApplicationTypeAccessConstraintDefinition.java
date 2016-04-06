@@ -47,10 +47,11 @@ public class ApplicationTypeAccessConstraintDefinition implements AccessConstrai
     private final AccessConstraintKey key;
 
     public ApplicationTypeAccessConstraintDefinition(ApplicationTypeConfig applicationTypeConfig) {
-        this.applicationTypeConfig = applicationTypeConfig;
-        this.key = new AccessConstraintKey(ModelDescriptionConstants.APPLICATION_CLASSIFICATION, applicationTypeConfig.isCore(),
-                applicationTypeConfig.getSubsystem(), applicationTypeConfig.getName());
-        ApplicationTypeConstraint.FACTORY.addApplicationTypeConfig(applicationTypeConfig);
+        // Register this applicationTypeConfig, and if a compatible one is already registered, use that instead
+        ApplicationTypeConfig toUse = ApplicationTypeConstraint.FACTORY.addApplicationTypeConfig(applicationTypeConfig);
+        this.applicationTypeConfig = toUse;
+        this.key = new AccessConstraintKey(ModelDescriptionConstants.APPLICATION_CLASSIFICATION, toUse.isCore(),
+                toUse.getSubsystem(), toUse.getName());
     }
 
     @Override
