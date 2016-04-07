@@ -32,6 +32,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.callback.Callback;
@@ -57,6 +59,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.remote.BlockingQueueOperationListener;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformationTargetImpl;
@@ -399,26 +402,39 @@ public class ServerInventoryImpl implements ServerInventory {
     }
 
     @Override
-    public boolean awaitServerSuspend(Set<String> waitForServers, int timeout) {
-        long end = System.currentTimeMillis() + timeout;
-        for (String serverName : waitForServers) {
+    public boolean awaitServerSuspend(Set<String> waitForServers, int timeoutInSeconds) {
+        long end = System.currentTimeMillis() + timeoutInSeconds * 1000;
 
+        Set<BlockingQueueOperationListener<?>> listeners= new HashSet<>();
+        //Do one pass initiating the shutdown
+        for (String serverName : waitForServers) {
             final ManagedServer server = servers.get(serverName);
             if (server != null) {
-                if (timeout == -1) {
-                    server.awaitSuspended(-1);
-                } else {
-                    long time = end - System.currentTimeMillis();
-                    if (time > 0) {
-                        server.awaitSuspended(time);
-                    } else {
-                        return false;
-                    }
+                try {
+                    BlockingQueueOperationListener<?> listener = server.suspend(timeoutInSeconds);
+                    listeners.add(listener);
+                } catch (IOException ignore) {
                 }
             }
         }
-        long time = end - System.currentTimeMillis();
-        return time > 0;
+
+        for (BlockingQueueOperationListener<?> listener : listeners) {
+            try {
+                final TransactionalProtocolClient.PreparedOperation<?> prepared = listener.retrievePreparedOperation();
+                if (prepared.isFailed()) {
+                    continue;
+                }
+                prepared.commit();
+                prepared.getFinalResult().get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                continue;
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return System.currentTimeMillis() < end;
     }
 
     void shutdown(final boolean shutdownServers, final int gracefulTimeout, final boolean blockUntilStopped) {
