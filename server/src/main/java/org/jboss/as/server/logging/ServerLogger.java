@@ -1060,7 +1060,7 @@ public interface ServerLogger extends BasicLogger {
     IllegalStateException serverAlreadyPaused();
 
     @LogMessage(level = INFO)
-    @Message(id = 211, value = "Suspending server with %dms timeout.")
+    @Message(id = 211, value = "Suspending server with %d ms timeout.")
     void suspendingServer(long timeoutMillis);
 
     @LogMessage(level = INFO)
@@ -1173,4 +1173,7 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 235, value = "Security Manager is enabled")
     void securityManagerEnabled();
 
+    @LogMessage(level = INFO)
+    @Message(id = 236, value = "Suspending server with no timeout.")
+    void suspendingServerWithNoTimeout();
 }
