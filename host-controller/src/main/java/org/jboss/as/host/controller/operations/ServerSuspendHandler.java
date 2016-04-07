@@ -82,9 +82,10 @@ public class ServerSuspendHandler implements OperationStepHandler {
                 // WFLY-2189 trigger a write-runtime authz check
                 context.getServiceRegistry(true);
 
-                serverInventory.suspendServer(serverName);
-                if(timeout!= 0) {
-                    serverInventory.awaitServerSuspend(Collections.singleton(serverName), timeout > 0 ? timeout * 1000 : timeout);
+                if (timeout != 0) {
+                    serverInventory.awaitServerSuspend(Collections.singleton(serverName), timeout);
+                } else {
+                    serverInventory.suspendServer(serverName);
                 }
             }
         }, OperationContext.Stage.RUNTIME);
