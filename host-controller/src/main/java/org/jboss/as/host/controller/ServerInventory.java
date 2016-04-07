@@ -315,11 +315,11 @@ public interface ServerInventory {
     void resumeServer(String serverName);
 
     /**
-     * Waits for the given set of servers to suspend
+     * Suspends and waits for the given set of servers to suspend up to the timeout
      * @param waitForServers The servers to wait for
-     * @param timeout The maximum amount of time to wait in milliseconds, with -1 meaning indefinitly
+     * @param timeoutInSeconds The maximum amount of time to wait in seconds, with -1 meaning indefinitly
      * @return <code>true</code> if all the servers suspended in time
      */
-    boolean awaitServerSuspend(Set<String> waitForServers, int timeout);
+    boolean awaitServerSuspend(Set<String> waitForServers, int timeoutInSeconds);
 
 }

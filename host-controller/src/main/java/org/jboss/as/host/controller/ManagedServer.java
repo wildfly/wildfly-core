@@ -25,7 +25,9 @@ package org.jboss.as.host.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESUME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIMEOUT;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
@@ -42,7 +44,10 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyOperationAddressTranslator;
 import org.jboss.as.controller.TransformingProxyController;
+import org.jboss.as.controller.client.OperationAttachments;
+import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
+import org.jboss.as.controller.remote.BlockingQueueOperationListener;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.remote.TransactionalProtocolHandlers;
 import org.jboss.as.controller.transform.TransformationTarget;
@@ -672,7 +677,7 @@ class ManagedServer {
     boolean suspend() {
 
         final ModelNode operation = new ModelNode();
-        operation.get(OP).set("suspend");
+        operation.get(OP).set(SUSPEND);
         operation.get(OP_ADDR).setEmptyList();
 
         try {
@@ -692,7 +697,7 @@ class ManagedServer {
     boolean resume() {
 
         final ModelNode operation = new ModelNode();
-        operation.get(OP).set("resume");
+        operation.get(OP).set(RESUME);
         operation.get(OP_ADDR).setEmptyList();
 
         try {
@@ -708,25 +713,15 @@ class ManagedServer {
         return true;
     }
 
-    void awaitSuspended(long timeout) {
-
-        //we just re-suspend, but this time give a timeout
+    BlockingQueueOperationListener<?> suspend(int timeoutInSeconds) throws IOException {
         final ModelNode operation = new ModelNode();
-        operation.get(OP).set("suspend");
+        operation.get(OP).set(SUSPEND);
         operation.get(OP_ADDR).setEmptyList();
-        operation.get(TIMEOUT).set(timeout);
+        operation.get(TIMEOUT).set(timeoutInSeconds);
 
-        try {
-            final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
-            if (prepared.isFailed()) {
-                return;
-            }
-            prepared.commit();
-            prepared.getFinalResult().get();
-        } catch (Exception ignore) {
-            return;
-        }
-        return;
+        BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener = new BlockingQueueOperationListener<>();
+        protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
+        return listener;
     }
 
     static enum InternalState {
