@@ -32,7 +32,6 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -405,22 +404,24 @@ public class ServerInventoryImpl implements ServerInventory {
     public boolean awaitServerSuspend(Set<String> waitForServers, int timeoutInSeconds) {
         long end = System.currentTimeMillis() + timeoutInSeconds * 1000;
 
-        Set<BlockingQueueOperationListener<?>> listeners= new HashSet<>();
+        Map<String, BlockingQueueOperationListener<?>> listeners = new HashMap<>();
         //Do one pass initiating the shutdown
         for (String serverName : waitForServers) {
             final ManagedServer server = servers.get(serverName);
             if (server != null) {
                 try {
                     BlockingQueueOperationListener<?> listener = server.suspend(timeoutInSeconds);
-                    listeners.add(listener);
-                } catch (IOException ignore) {
+                    listeners.put(serverName, listener);
+                } catch (IOException e) {
+                    HostControllerLogger.ROOT_LOGGER.suspendExecutionFailed(e, serverName);
                 }
             }
         }
 
-        for (BlockingQueueOperationListener<?> listener : listeners) {
+        for (Map.Entry<String, BlockingQueueOperationListener<?>> listenerEntry : listeners.entrySet()) {
             try {
-                final TransactionalProtocolClient.PreparedOperation<?> prepared = listener.retrievePreparedOperation();
+                final TransactionalProtocolClient.PreparedOperation<?> prepared =
+                        listenerEntry.getValue().retrievePreparedOperation();
                 if (prepared.isFailed()) {
                     continue;
                 }
@@ -430,7 +431,7 @@ public class ServerInventoryImpl implements ServerInventory {
                 Thread.currentThread().interrupt();
                 continue;
             } catch (ExecutionException e) {
-                e.printStackTrace();
+                HostControllerLogger.ROOT_LOGGER.suspendListenerFailed(e, listenerEntry.getKey());
             }
         }
 
