@@ -354,7 +354,7 @@ public class DomainServerLifecycleHandlers {
                         }
                     }
                     if (timeout != 0) {
-                        serverInventory.awaitServerSuspend(waitForServers, timeout > 0 ? timeout * 1000 : timeout);
+                        serverInventory.awaitServerSuspend(waitForServers, timeout);
                     } else {
                         for (String serverModelName : waitForServers){
                             serverInventory.suspendServer(serverModelName);
