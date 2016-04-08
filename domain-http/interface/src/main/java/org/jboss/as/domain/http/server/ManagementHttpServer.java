@@ -374,7 +374,10 @@ public class ManagementHttpServer {
                     }
                 })
             .collect(Collectors.toList());
-        domainHandler = new ElytronContextAssociationHandler(domainHandler, mechanismSupplier);
+        domainHandler = ElytronContextAssociationHandler.builder()
+                .setNext(domainHandler)
+                .setMechanismSupplier(mechanismSupplier)
+                .build();
 
         return domainHandler;
     }
