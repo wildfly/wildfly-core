@@ -51,6 +51,24 @@ public class BasicIfElseTestCase extends CLISystemPropertyTestBase {
             cliOut.reset();
         }
     }
+
+    @Test
+    public void testIfMatchComparison() throws Exception {
+
+        final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        try {
+            ctx.connectController();
+            ctx.handle(this.getAddPropertyReq("match-test-values", "\"AAA BBB\""));
+            assertEquals("true", runIfWithMatchComparison("match-test-values", "AAA", ctx));
+            assertEquals("true", runIfWithMatchComparison("match-test-values", "BBB", ctx));
+            assertEquals("false", runIfWithMatchComparison("match-test-values", "CCC", ctx));
+        } finally {
+            ctx.handleSafe(this.getRemovePropertyReq("match-test-values"));
+            ctx.terminateSession();
+            cliOut.reset();
+        }
+    }
+
     protected String runIf(CommandContext ctx) throws Exception {
         ctx.handle("if result.value==\"true\" of " + this.getReadPropertyReq());
         ctx.handle(this.getWritePropertyReq("\"false\""));
@@ -60,5 +78,21 @@ public class BasicIfElseTestCase extends CLISystemPropertyTestBase {
         cliOut.reset();
         ctx.handle(getReadPropertyReq());
         return getValue();
+    }
+
+    protected String runIfWithMatchComparison(String propertyName, String lookupValue, CommandContext ctx) throws Exception {
+
+        ctx.handle("set match=false");
+
+        ctx.handle("if result.value~=\".*" + lookupValue + ".*\" of " + this.getReadPropertyReq(propertyName));
+        ctx.handle("set match=true");
+        ctx.handle("else");
+        ctx.handle("set match=false");
+        ctx.handle("end-if");
+        cliOut.reset();
+
+        ctx.handle("echo $match");
+
+        return cliOut.toString().trim();
     }
 }

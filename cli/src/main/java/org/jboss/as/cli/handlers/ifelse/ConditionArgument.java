@@ -94,6 +94,12 @@ public class ConditionArgument extends ArgumentWithValue {
             return new NotLesserThanOperation();
         }
     };
+    private static final ParsingState MCH = new OperationParsingState(MatchOperation.SYMBOL) {
+        @Override
+        BaseOperation createOperation() {
+            return new MatchOperation();
+        }
+    };
 
     private DefaultParsingState parenthesisState;
     private ExpressionBaseState exprState;
@@ -115,6 +121,8 @@ public class ConditionArgument extends ArgumentWithValue {
                     signalState(ctx, OR, true);
                 } else if(c == '=' && isFollowingChar(ctx, '=')) {
                     signalState(ctx, EQ, true);
+                } else if(c == '~' && isFollowingChar(ctx, '=')) {
+                    signalState(ctx, MCH, true);
                 } else if(c == '!' && isFollowingChar(ctx, '=')) {
                     signalState(ctx, NEQ, true);
                 } else if(c == '>' && isFollowingChar(ctx, '=')) {
