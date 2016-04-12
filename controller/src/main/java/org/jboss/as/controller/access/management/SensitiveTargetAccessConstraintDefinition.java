@@ -65,10 +65,11 @@ public class SensitiveTargetAccessConstraintDefinition implements AccessConstrai
     private final AccessConstraintKey key;
 
     public SensitiveTargetAccessConstraintDefinition(SensitivityClassification sensitivity) {
-        this.sensitivity = sensitivity;
-        this.key = new AccessConstraintKey(ModelDescriptionConstants.SENSITIVITY_CLASSIFICATION, sensitivity.isCore(),
-                sensitivity.getSubsystem(), sensitivity.getName());
-        SensitiveTargetConstraint.FACTORY.addSensitivity(sensitivity);
+        // Register this sensitivity, and if a compatible one is already registered, use that instead
+        final SensitivityClassification toUse = SensitiveTargetConstraint.FACTORY.addSensitivity(sensitivity);
+        this.sensitivity = toUse;
+        this.key = new AccessConstraintKey(ModelDescriptionConstants.SENSITIVITY_CLASSIFICATION, toUse.isCore(),
+                toUse.getSubsystem(), toUse.getName());
     }
 
     public SensitivityClassification getSensitivity() {
