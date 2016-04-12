@@ -47,7 +47,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PER
  *
  * @author <a href="mailto:istudens@redhat.com">Ivo Studensky</a>
  */
-public class PeriodicRotatingFileAuditLogHandlerResourceDefinition extends FileAuditLogHandlerResourceDefinition {
+public class PeriodicRotatingFileAuditLogHandlerResourceDefinition extends AbstractFileAuditLogHandlerResourceDefinition {
 
     public static final SimpleAttributeDefinition SUFFIX = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SUFFIX, ModelType.STRING)
         .setAllowNull(false)
@@ -58,7 +58,7 @@ public class PeriodicRotatingFileAuditLogHandlerResourceDefinition extends FileA
 
     protected static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{SUFFIX};
 
-    protected static final AttributeDefinition[] FULL_ATTRIBUTES = joinArrays(ATTRIBUTES, FileAuditLogHandlerResourceDefinition.ATTRIBUTES);
+    protected static final AttributeDefinition[] FULL_ATTRIBUTES = joinArrays(ATTRIBUTES, AbstractFileAuditLogHandlerResourceDefinition.ATTRIBUTES);
 
     public PeriodicRotatingFileAuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
         super(auditLogger, pathManager, PathElement.pathElement(PERIODIC_ROTATING_FILE_HANDLER), DomainManagementResolver.getResolver("core.management.periodic-rotating-file-handler"),
@@ -101,7 +101,7 @@ public class PeriodicRotatingFileAuditLogHandlerResourceDefinition extends FileA
         return new PeriodicRotatingFileAuditLogHandler(name, formatterName, maxFailureCount, pathManager, path, relativeTo, suffix, /*default timeZone*/null);
     }
 
-    protected static class PeriodicRotatingFileAuditLogHandlerAddHandler extends FileAuditLogHandlerAddHandler {
+    protected static class PeriodicRotatingFileAuditLogHandlerAddHandler extends AbstractFileAuditLogHandlerAddHandler {
 
         protected PeriodicRotatingFileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes) {
             super(auditLogger, pathManager, attributes);
@@ -120,7 +120,7 @@ public class PeriodicRotatingFileAuditLogHandlerResourceDefinition extends FileA
 
     }
 
-    protected static class PeriodicRotatingHandlerWriteAttributeHandler extends HandlerWriteAttributeHandler {
+    protected static class PeriodicRotatingHandlerWriteAttributeHandler extends AbstractFileAuditLogHandlerWriteAttributeHandler {
 
         public PeriodicRotatingHandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
             super(auditLogger, pathManager, attributeDefinitions);
