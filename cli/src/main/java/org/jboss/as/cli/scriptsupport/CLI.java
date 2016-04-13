@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2015 Red Hat Inc. and/or its affiliates and other contributors
+ * Copyright 2016 Red Hat Inc. and/or its affiliates and other contributors
  * as indicated by the @author tags. All rights reserved.
  * See the copyright.txt in the distribution for a
  * full listing of individual contributors.
@@ -21,6 +21,7 @@ package org.jboss.as.cli.scriptsupport;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.Callable;
 
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
@@ -31,9 +32,10 @@ import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.dmr.ModelNode;
 
 /**
- * This class is intended to be used with JVM-based scripting languages.  It acts as a facade to the CLI public API,
- * providing a single class that can be used to connect, run CLI commands, and disconnect.  It also removes the need
- * to catch checked exceptions.
+ * This class is intended to be used with JVM-based scripting languages. It acts
+ * as a facade to the CLI public API, providing a single class that can be used
+ * to connect, run CLI commands, and disconnect. It also removes the need to
+ * catch checked exceptions.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2012 Red Hat Inc.
  */
@@ -41,7 +43,9 @@ public class CLI {
 
     private CommandContext ctx;
 
-    private CLI() {} // only allow new instances from newInstance() method.
+    private CLI() { // only allow new instances from newInstance() method.
+        initOfflineContext();
+    }
 
     /**
      * Create a new CLI instance.
@@ -52,38 +56,26 @@ public class CLI {
         return new CLI();
     }
 
-    private void checkAlreadyConnected() {
-        if (ctx != null) throw new IllegalStateException("Already connected to server.");
-    }
-
-    private void checkNotConnected() {
-        if (ctx == null) throw new IllegalStateException("Not connected to server.");
-        if (ctx.isTerminated()) throw new IllegalStateException("Session is terminated.");
-    }
-
     /**
-     * Return the CLI CommandContext that was created when connected to the server.  This allows a script developer full
-     * access to CLI facilities if needed.
+     * Return the CLI CommandContext. This allows a script developer full access
+     * to CLI facilities if needed. CommandContext can mute during CLI lifetime.
+     * An unconnected CLI instance has a context that handles offline commands.
+     * When connected to a server, the original context is replaced with a
+     * context allowing to interact with the remote server.
      *
-     * @return The CommandContext, or <code>null</code> if not connected.
+     * @return The CommandContext.
      */
     public CommandContext getCommandContext() {
-        return this.ctx;
+        return ctx;
     }
 
     /**
      * Connect to the server using the default host and port.
      */
     public void connect() {
-        checkAlreadyConnected();
-        try {
-            ctx = CommandContextFactory.getInstance().newCommandContext();
-            ctx.connectController();
-        } catch (CliInitializationException e) {
-            throw new IllegalStateException("Unable to initialize command context.", e);
-        } catch (CommandLineException e) {
-            throw new IllegalStateException("Unable to connect to controller.", e);
-        }
+        doConnect(() -> {
+            return CommandContextFactory.getInstance().newCommandContext();
+        });
     }
 
     /**
@@ -93,15 +85,10 @@ public class CLI {
      * @param password The password for logging in.
      */
     public void connect(String username, char[] password) {
-        checkAlreadyConnected();
-        try {
-            ctx = CommandContextFactory.getInstance().newCommandContext(username, password);
-            ctx.connectController();
-        } catch (CliInitializationException e) {
-            throw new IllegalStateException("Unable to initialize command context.", e);
-        } catch (CommandLineException e) {
-            throw new IllegalStateException("Unable to connect to controller.", e);
-        }
+        doConnect(() -> {
+            return CommandContextFactory.getInstance().
+                    newCommandContext(username, password);
+        });
     }
 
     /**
@@ -124,21 +111,17 @@ public class CLI {
      * @param clientBindAddress
      * @param password The password for logging in.
      */
-    public void connect(String controller, String username, char[] password, String clientBindAddress) {
-        checkAlreadyConnected();
-        try {
-            ctx = CommandContextFactory.getInstance().newCommandContext(new CommandContextConfiguration.Builder()
-                    .setController(controller)
+    public void connect(String controller, String username, char[] password,
+            String clientBindAddress) {
+        doConnect(() -> {
+            return CommandContextFactory.getInstance().
+                    newCommandContext(new CommandContextConfiguration.Builder()
+                            .setController(controller)
                     .setUsername(username)
                     .setPassword(password)
                     .setClientBindAddress(clientBindAddress)
                     .build());
-            ctx.connectController();
-        } catch (CliInitializationException e) {
-            throw new IllegalStateException("Unable to initialize command context.", e);
-        } catch (CommandLineException e) {
-            throw new IllegalStateException("Unable to connect to controller.", e);
-        }
+        });
     }
 
     /**
@@ -149,8 +132,10 @@ public class CLI {
      * @param username The user name for logging in.
      * @param password The password for logging in.
      */
-    public void connect(String controllerHost, int controllerPort, String username, char[] password) {
-        connect("http-remoting", controllerHost, controllerPort, username, password, null);
+    public void connect(String controllerHost, int controllerPort,
+            String username, char[] password) {
+        connect("http-remoting", controllerHost, controllerPort,
+                username, password, null);
     }
 
     /**
@@ -162,8 +147,10 @@ public class CLI {
      * @param password The password for logging in.
      * @param clientBindAddress the client bind address.
      */
-    public void connect(String controllerHost, int controllerPort, String username, char[] password, String clientBindAddress) {
-        connect("http-remoting", controllerHost, controllerPort, username, password, clientBindAddress);
+    public void connect(String controllerHost, int controllerPort,
+            String username, char[] password, String clientBindAddress) {
+        connect("http-remoting", controllerHost, controllerPort,
+                username, password, clientBindAddress);
     }
 
     /**
@@ -174,7 +161,8 @@ public class CLI {
      * @param username The user name for logging in.
      * @param password The password for logging in.
      */
-    public void connect(String protocol, String controllerHost, int controllerPort, String username, char[] password) {
+    public void connect(String protocol, String controllerHost,
+            int controllerPort, String username, char[] password) {
         connect(protocol, controllerHost, controllerPort, username, password, null);
     }
 
@@ -186,21 +174,19 @@ public class CLI {
      * @param username The user name for logging in.
      * @param password The password for logging in.
      */
-    public void connect(String protocol, String controllerHost, int controllerPort, String username, char[] password, String clientBindAddress) {
-        checkAlreadyConnected();
-        try {
-            ctx = CommandContextFactory.getInstance().newCommandContext(
-                    new CommandContextConfiguration.Builder().setController(constructUri(protocol, controllerHost, controllerPort))
+    public void connect(String protocol, String controllerHost, int controllerPort,
+            String username, char[] password, String clientBindAddress) {
+        doConnect(() -> {
+            return CommandContextFactory.getInstance().newCommandContext(
+                    new CommandContextConfiguration.Builder().
+                    setController(constructUri(protocol,
+                            controllerHost,
+                            controllerPort))
                     .setUsername(username)
                     .setPassword(password)
                     .setClientBindAddress(clientBindAddress)
                     .build());
-            ctx.connectController();
-        } catch (CliInitializationException e) {
-            throw new IllegalStateException("Unable to initialize command context.", e);
-        } catch (CommandLineException e) {
-            throw new IllegalStateException("Unable to connect to controller.", e);
-        }
+        });
     }
 
     /**
@@ -208,40 +194,48 @@ public class CLI {
      */
     public void disconnect() {
         try {
-            checkNotConnected();
+            if (!isConnected()) {
+                throw new IllegalStateException("Not connected to server.");
+            }
             ctx.terminateSession();
         } finally {
-            ctx = null;
+            // Back to offline context
+            initOfflineContext();
         }
     }
 
     /**
-     * Execute a CLI command.  This can be any command that you might execute on the CLI command line, including both
-     * server-side operations and local commands such as 'cd' or 'cn'.
+     * Execute a CLI command. This can be any command that you might execute on
+     * the CLI command line, including both server-side operations and local
+     * commands such as 'cd' or 'cn'.
      *
      * @param cliCommand A CLI command.
-     * @return A result object that provides all information about the execution of the command.
+     * @return A result object that provides all information about the execution
+     * of the command.
      */
     public Result cmd(String cliCommand) {
-        checkNotConnected();
         try {
             ModelNode request = ctx.buildRequest(cliCommand);
             ModelNode response = ctx.getModelControllerClient().execute(request);
             return new Result(cliCommand, request, response);
         } catch (CommandFormatException cfe) {
-            // if the command can not be converted to a ModelNode, it might be a local command
+            // if the command can not be converted to a ModelNode,
+            // it might be a local command
             try {
                 ctx.handle(cliCommand);
                 return new Result(cliCommand, ctx.getExitCode());
             } catch (CommandLineException cle) {
-                throw new IllegalArgumentException("Error handling command: " + cliCommand, cle);
+                throw new IllegalArgumentException("Error handling command: "
+                        + cliCommand, cle);
             }
         } catch (IOException ioe) {
-            throw new IllegalStateException("Unable to send command " + cliCommand + " to server.", ioe);
+            throw new IllegalStateException("Unable to send command "
+                    + cliCommand + " to server.", ioe);
         }
     }
 
-    private String constructUri(final String protocol, final String host, final int port) {
+    private String constructUri(final String protocol, final String host,
+            final int port) {
         try {
             URI uri = new URI(protocol, null, host, port, null, null, null);
             // String the leading '//' if there is no protocol.
@@ -251,11 +245,49 @@ public class CLI {
         }
     }
 
+    private void initOfflineContext() {
+        try {
+            ctx = CommandContextFactory.getInstance().newCommandContext();
+        } catch (CliInitializationException e) {
+            throw new IllegalStateException("Unable to initialize "
+                    + "command context.", e);
+        }
+    }
+
+    private boolean isConnected() {
+        return ctx.getConnectionInfo() != null;
+    }
+
+    private void doConnect(Callable<CommandContext> callable) {
+        if (isConnected()) {
+            throw new IllegalStateException("Already connected to server.");
+        }
+        CommandContext newContext = null;
+        try {
+            newContext = callable.call();
+            newContext.connectController();
+        } catch (Exception ex) {
+            if (newContext != null) {
+                newContext.terminateSession();
+            }
+            if (ex instanceof CliInitializationException) {
+                throw new IllegalStateException("Unable to initialize "
+                        + "command context.", ex);
+            }
+            if (ex instanceof CommandLineException) {
+                throw new IllegalStateException("Unable to connect "
+                        + "to controller.", ex);
+            }
+            throw new IllegalStateException(ex);
+        }
+        ctx = newContext;
+    }
+
     /**
      * The Result class provides all information about an executed CLI command.
      */
     public class Result {
-        private String cliCommand;
+        private final String cliCommand;
         private ModelNode request;
         private ModelNode response;
 
@@ -284,37 +316,45 @@ public class CLI {
         }
 
         /**
-         * If the command resulted in a server-side operation, return the ModelNode representation of the operation.
+         * If the command resulted in a server-side operation, return the
+         * ModelNode representation of the operation.
          *
-         * @return The request as a ModelNode, or <code>null</code> if this was a local command.
+         * @return The request as a ModelNode, or <code>null</code> if this was
+         * a local command.
          */
         public ModelNode getRequest() {
             return this.request;
         }
 
         /**
-         * If the command resulted in a server-side operation, return the ModelNode representation of the response.
+         * If the command resulted in a server-side operation, return the
+         * ModelNode representation of the response.
          *
-         * @return The server response as a ModelNode, or <code>null</code> if this was a local command.
+         * @return The server response as a ModelNode, or <code>null</code> if
+         * this was a local command.
          */
         public ModelNode getResponse() {
             return this.response;
         }
 
         /**
-         * Return true if the command was successful.  For a server-side operation, this is determined by the outcome of the
-         * operation on the server side.
+         * Return true if the command was successful. For a server-side
+         * operation, this is determined by the outcome of the operation on the
+         * server side.
          *
-         * @return <code>true</code> if the command was successful, <code>false</code> otherwise.
+         * @return <code>true</code> if the command was successful,
+         * <code>false</code> otherwise.
          */
         public boolean isSuccess() {
             return this.isSuccess;
         }
 
         /**
-         * Return true if the command was only executed locally and did not result in a server-side operation.
+         * Return true if the command was only executed locally and did not
+         * result in a server-side operation.
          *
-         * @return <code>true</code> if the command was only executed locally, <code>false</code> otherwise.
+         * @return <code>true</code> if the command was only executed locally,
+         * <code>false</code> otherwise.
          */
         public boolean isLocalCommand() {
             return this.isLocalCommand;
