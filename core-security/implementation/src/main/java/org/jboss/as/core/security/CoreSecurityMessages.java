@@ -38,7 +38,7 @@ import org.jboss.logging.annotations.MessageBundle;
  *
  * @author <a href="mailto:jperkins@redhat.com">Kabir Khan</a>
  */
-@MessageBundle(projectCode = "N/A")
+@MessageBundle(projectCode = "")
 public interface CoreSecurityMessages {
 
     /**

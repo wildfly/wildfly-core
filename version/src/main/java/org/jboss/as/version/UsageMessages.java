@@ -32,7 +32,7 @@ import org.jboss.logging.annotations.MessageBundle;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-@MessageBundle(projectCode = "<<none>>")
+@MessageBundle(projectCode = "")
 interface UsageMessages {
     /**
      * The default messages.
