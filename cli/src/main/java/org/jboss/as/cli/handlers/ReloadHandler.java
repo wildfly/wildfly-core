@@ -52,15 +52,12 @@ public class ReloadHandler extends BaseOperationCommand {
     private final ArgumentWithValue adminOnly;
     // standalone only arguments
     private final ArgumentWithValue useCurrentServerConfig;
-    private final ArgumentWithValue serverConfig;
     // domain only arguments
     private final ArgumentWithValue host;
     private final ArgumentWithValue restartServers;
     private final ArgumentWithValue useCurrentDomainConfig;
     private final ArgumentWithValue useCurrentHostConfig;
     private final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef;
-    private final ArgumentWithValue domainConfig;
-    private final ArgumentWithValue hostConfig;
 
     private PerNodeOperationAccess hostReloadPermission;
 
@@ -78,15 +75,6 @@ public class ReloadHandler extends BaseOperationCommand {
                 return false;
             }
             return super.canAppearNext(ctx);
-        }};
-
-        serverConfig = new ArgumentWithValue(this, "--server-config") {
-            @Override
-            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-                if(ctx.isDomainMode()) {
-                    return false;
-                }
-                return super.canAppearNext(ctx);
         }};
 
         restartServers = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--restart-servers"){
@@ -108,24 +96,6 @@ public class ReloadHandler extends BaseOperationCommand {
         }};
 
         useCurrentHostConfig = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--use-current-host-config"){
-            @Override
-            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-            if(!ctx.isDomainMode()) {
-                return false;
-            }
-            return super.canAppearNext(ctx);
-        }};
-
-        hostConfig = new ArgumentWithValue(this, "--host-config") {
-            @Override
-            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-            if(!ctx.isDomainMode()) {
-                return false;
-            }
-            return super.canAppearNext(ctx);
-        }};
-
-        domainConfig = new ArgumentWithValue(this, "--domain-config") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
             if(!ctx.isDomainMode()) {
@@ -286,9 +256,6 @@ public class ReloadHandler extends BaseOperationCommand {
             if(useCurrentServerConfig.isPresent(args)) {
                 throw new CommandFormatException(useCurrentServerConfig.getFullName() + " is not allowed in the domain mode.");
             }
-            if (serverConfig.isPresent(args)) {
-                throw new CommandFormatException(serverConfig.getFullName() + " is not allowed in the domain mode.");
-            }
 
             final String hostName = host.getValue(args);
             if(hostName == null) {
@@ -299,8 +266,6 @@ public class ReloadHandler extends BaseOperationCommand {
             setBooleanArgument(args, op, restartServers, "restart-servers");
             setBooleanArgument(args, op, this.useCurrentDomainConfig, "use-current-domain-config");
             setBooleanArgument(args, op, this.useCurrentHostConfig, "use-current-host-config");
-            setStringValue(args, op, hostConfig, "host-config");
-            setStringValue(args, op, domainConfig, "domain-config");
         } else {
             if(host.isPresent(args)) {
                 throw new CommandFormatException(host.getFullName() + " is not allowed in the standalone mode.");
@@ -314,17 +279,9 @@ public class ReloadHandler extends BaseOperationCommand {
             if(restartServers.isPresent(args)) {
                 throw new CommandFormatException(restartServers.getFullName() + " is not allowed in the standalone mode.");
             }
-            if (hostConfig.isPresent(args)) {
-                throw new CommandFormatException(hostConfig.getFullName() + " is not allowed in the standalone mode.");
-            }
-            if (domainConfig.isPresent(args)) {
-                throw new CommandFormatException(domainConfig.getFullName() + " is not allowed in the standalone mode.");
-            }
 
             op.get(Util.ADDRESS).setEmptyList();
             setBooleanArgument(args, op, this.useCurrentServerConfig, "use-current-server-config");
-            setStringValue(args, op, serverConfig, "server-config");
-
         }
         op.get(Util.OPERATION).set(Util.RELOAD);
 
@@ -348,17 +305,5 @@ public class ReloadHandler extends BaseOperationCommand {
         } else {
             throw new CommandFormatException("Invalid value for " + arg.getFullName() + ": '" + value + "'");
         }
-    }
-
-    private void setStringValue(final ParsedCommandLine args, final ModelNode op, ArgumentWithValue arg, String paramName)
-            throws CommandFormatException {
-        if(!arg.isPresent(args)) {
-            return;
-        }
-        final String value = arg.getValue(args);
-        if (value == null) {
-            throw new CommandFormatException(arg.getFullName() + " is missing value.");
-        }
-        op.get(paramName).set(value);
     }
 }

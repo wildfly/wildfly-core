@@ -32,9 +32,6 @@ public class HostRunningModeControl extends RunningModeControl {
 
     private volatile RestartMode restartMode;
     private boolean useCurrentDomainConfig;
-    private String newDomainBootFileName;
-
-
 
     public HostRunningModeControl(RunningMode runningMode, RestartMode restartMode) {
         super(runningMode);
@@ -65,24 +62,4 @@ public class HostRunningModeControl extends RunningModeControl {
         return useCurrentDomainConfig;
     }
 
-    /**
-     * Get the new file name for the domain.xml equivalent. Once called this method
-     * will clear the new boot file name.
-     *
-     * @return the new boot file name.
-     */
-    public String getAndClearNewDomainBootFileName() {
-        String newDomainBootFileName = this.newDomainBootFileName;
-        this.newDomainBootFileName = null;
-        return newDomainBootFileName;
-    }
-
-    /**
-     * Set the new file name for the domain.xml equivalent.
-     *
-     * @param newDomainBootFileName the name of the new domain configuration file.
-     */
-    public void setNewDomainBootFileName(String newDomainBootFileName) {
-        this.newDomainBootFileName = newDomainBootFileName;
-    }
 }

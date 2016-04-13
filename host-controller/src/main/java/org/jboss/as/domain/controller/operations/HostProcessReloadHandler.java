@@ -40,7 +40,6 @@ import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.ProcessReloadHandler;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.RestartMode;
@@ -59,31 +58,15 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
     .setDefaultValue(new ModelNode(true)).build();
 
     private static final AttributeDefinition USE_CURRENT_DOMAIN_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USE_CURRENT_DOMAIN_CONFIG, ModelType.BOOLEAN, true)
-            .setAlternatives(ModelDescriptionConstants.DOMAIN_CONFIG)
-            .setDefaultValue(new ModelNode(true))
-            .build();
+    .setDefaultValue(new ModelNode(true)).build();
 
     private static final AttributeDefinition USE_CURRENT_HOST_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USE_CURRENT_HOST_CONFIG, ModelType.BOOLEAN, true)
-            .setAlternatives(ModelDescriptionConstants.HOST_CONFIG)
-            .setDefaultValue(new ModelNode(true))
-            .build();
-
-    private static final AttributeDefinition HOST_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST_CONFIG, ModelType.STRING, true)
-            .setAlternatives(ModelDescriptionConstants.USE_CURRENT_HOST_CONFIG)
-            .build();
-
-    private static final AttributeDefinition DOMAIN_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DOMAIN_CONFIG, ModelType.STRING, true)
-            .setAlternatives(ModelDescriptionConstants.USE_CURRENT_DOMAIN_CONFIG)
-            .build();
+    .setDefaultValue(new ModelNode(true)).build();
 
 
-    private static final AttributeDefinition[] MASTER_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG};
+    private static final AttributeDefinition[] MASTER_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG};
 
-    private static final AttributeDefinition[] SLAVE_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG};
-
-    private final HostControllerEnvironment environment;
-    private final LocalHostControllerInfo hostControllerInfo;
-    private final ProcessType processType;
+    private static final AttributeDefinition[] SLAVE_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG};
 
     public static OperationDefinition getDefinition(final LocalHostControllerInfo hostControllerInfo) {
         return new DeferredParametersOperationDefinitionBuilder(hostControllerInfo, OPERATION_NAME, HostModelUtil.getResourceDescriptionResolver())
@@ -93,14 +76,11 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
             .build();
     }
 
+    private final ProcessType processType;
 
-    public HostProcessReloadHandler(final ServiceName rootService, final HostRunningModeControl runningModeControl,
-                                    final ControlledProcessState processState, final HostControllerEnvironment environment,
-                                    final LocalHostControllerInfo hostControllerInfo) {
+    public HostProcessReloadHandler(final ServiceName rootService, final HostRunningModeControl runningModeControl, final ControlledProcessState processState, final ProcessType processType) {
         super(rootService, runningModeControl, processState);
-        this.processType = environment.getProcessType();
-        this.environment = environment;
-        this.hostControllerInfo = hostControllerInfo;
+        this.processType = processType;
     }
 
     /** {@inheritDoc} */
@@ -122,21 +102,7 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
         final boolean adminOnly = ADMIN_ONLY.resolveModelAttribute(context, operation).asBoolean(false);
         final boolean restartServers = RESTART_SERVERS.resolveModelAttribute(context, operation).asBoolean(true);
         final boolean useCurrentHostConfig = USE_CURRENT_HOST_CONFIG.resolveModelAttribute(context, operation).asBoolean(true);
-        final boolean useCurrentDomainConfig = hostControllerInfo.isMasterDomainController() && USE_CURRENT_DOMAIN_CONFIG.resolveModelAttribute(context, operation).asBoolean(true);
-        final String domainConfig = hostControllerInfo.isMasterDomainController() && operation.hasDefined(DOMAIN_CONFIG.getName()) ? DOMAIN_CONFIG.resolveModelAttribute(context, operation).asString() : null;
-        final String hostConfig = operation.hasDefined(HOST_CONFIG.getName()) ? HOST_CONFIG.resolveModelAttribute(context, operation).asString() : null;
-        if (operation.hasDefined(USE_CURRENT_DOMAIN_CONFIG.getName()) && domainConfig != null) {
-            throw HostControllerLogger.ROOT_LOGGER.cannotBothHaveFalseUseCurrentDomainConfigAndDomainConfig();
-        }
-        if (operation.hasDefined(USE_CURRENT_HOST_CONFIG.getName()) && hostConfig != null) {
-            throw HostControllerLogger.ROOT_LOGGER.cannotBothHaveFalseUseCurrentHostConfigAndHostConfig();
-        }
-        if (domainConfig != null && !environment.getDomainConfigurationFile().checkCanFindNewBootFile(domainConfig)) {
-            throw HostControllerLogger.ROOT_LOGGER.domainConfigForReloadNotFound(domainConfig);
-        }
-        if (hostConfig != null && !environment.getHostConfigurationFile().checkCanFindNewBootFile(hostConfig)) {
-            throw HostControllerLogger.ROOT_LOGGER.domainConfigForReloadNotFound(hostConfig);
-        }
+        final boolean useCurrentDomainConfig = USE_CURRENT_DOMAIN_CONFIG.resolveModelAttribute(context, operation).asBoolean(true);
 
         return new ReloadContext<HostRunningModeControl>() {
 
@@ -151,8 +117,6 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
                 runningModeControl.setReloaded();
                 runningModeControl.setUseCurrentConfig(useCurrentHostConfig);
                 runningModeControl.setUseCurrentDomainConfig(useCurrentDomainConfig);
-                runningModeControl.setNewDomainBootFileName(domainConfig);
-                runningModeControl.setNewBootFileName(hostConfig);
             }
         };
     }
