@@ -33,7 +33,9 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.ProcessReloadHandler;
+import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceName;
@@ -45,18 +47,26 @@ import org.jboss.msc.service.ServiceName;
 public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningModeControl> {
 
     private static final AttributeDefinition USE_CURRENT_SERVER_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USE_CURRENT_SERVER_CONFIG, ModelType.BOOLEAN, true)
-                    .setDefaultValue(new ModelNode(true)).build();
+            .setAlternatives(ModelDescriptionConstants.SERVER_CONFIG)
+            .setDefaultValue(new ModelNode(true))
+            .build();
 
-    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_SERVER_CONFIG};
+    private static final AttributeDefinition SERVER_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_CONFIG, ModelType.STRING, true)
+            .setAlternatives(ModelDescriptionConstants.USE_CURRENT_SERVER_CONFIG)
+            .build();
+
+    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_SERVER_CONFIG, SERVER_CONFIG};
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, ServerDescriptions.getResourceDescriptionResolver("server"))
                                                                 .setParameters(ATTRIBUTES)
                                                                 .setRuntimeOnly()
                                                                 .build();
 
+    private final ServerEnvironment environment;
     public ServerProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl,
-            ControlledProcessState processState) {
+            ControlledProcessState processState, ServerEnvironment environment) {
         super(rootService, runningModeControl, processState);
+        this.environment = environment;
     }
 
     @Override
@@ -64,6 +74,14 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
         final boolean unmanaged = context.getProcessType() != ProcessType.DOMAIN_SERVER; // make sure that the params are ignored for managed servers
         final boolean adminOnly = unmanaged && ADMIN_ONLY.resolveModelAttribute(context, operation).asBoolean(false);
         final boolean useCurrentConfig = unmanaged && USE_CURRENT_SERVER_CONFIG.resolveModelAttribute(context, operation).asBoolean(true);
+        final String serverConfig = unmanaged && operation.hasDefined(SERVER_CONFIG.getName()) ? SERVER_CONFIG.resolveModelAttribute(context, operation).asString() : null;
+
+        if (operation.hasDefined(USE_CURRENT_SERVER_CONFIG.getName()) && serverConfig != null) {
+            throw ServerLogger.ROOT_LOGGER.cannotBothHaveFalseUseCurrentConfigAndServerConfig();
+        }
+        if (serverConfig != null && !environment.getServerConfigurationFile().checkCanFindNewBootFile(serverConfig)) {
+            throw ServerLogger.ROOT_LOGGER.serverConfigForReloadNotFound(serverConfig);
+        }
         return new ReloadContext<RunningModeControl>() {
 
             @Override
@@ -75,6 +93,7 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
                 runningModeControl.setRunningMode(adminOnly ? RunningMode.ADMIN_ONLY : RunningMode.NORMAL);
                 runningModeControl.setReloaded();
                 runningModeControl.setUseCurrentConfig(useCurrentConfig);
+                runningModeControl.setNewBootFileName(serverConfig);
             }
         };
     }

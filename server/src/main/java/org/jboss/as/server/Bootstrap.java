@@ -190,7 +190,7 @@ public interface Bootstrap {
                     public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
                         ConfigurationFile configurationFile = serverEnvironment.getServerConfigurationFile();
                         if (runningModeControl.isReloaded()) {
-                            configurationFile.resetBootFile(runningModeControl.isUseCurrentConfig());
+                            configurationFile.resetBootFile(runningModeControl.isUseCurrentConfig(), runningModeControl.getAndClearNewBootFileName());
                         }
                         QName rootElement = new QName(Namespace.CURRENT.getUriString(), "server");
                         StandaloneXml parser = new StandaloneXml(Module.getBootModuleLoader(), executorService, extensionRegistry);

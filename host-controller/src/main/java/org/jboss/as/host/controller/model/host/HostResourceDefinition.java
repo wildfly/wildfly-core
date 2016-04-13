@@ -332,7 +332,8 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             hostRegistration.registerOperationHandler(HostShutdownHandler.DEFINITION, hsh);
         }
 
-        HostProcessReloadHandler reloadHandler = new HostProcessReloadHandler(HostControllerService.HC_SERVICE_NAME, runningModeControl, processState, environment.getProcessType());
+        HostProcessReloadHandler reloadHandler = new HostProcessReloadHandler(HostControllerService.HC_SERVICE_NAME,
+                runningModeControl, processState, environment, hostControllerInfo);
         hostRegistration.registerOperationHandler(HostProcessReloadHandler.getDefinition(hostControllerInfo), reloadHandler);
 
 
