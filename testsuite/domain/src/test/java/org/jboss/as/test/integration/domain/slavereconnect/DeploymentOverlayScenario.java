@@ -196,9 +196,15 @@ public class DeploymentOverlayScenario extends ReconnectTestScenario {
         Assert.assertEquals("initial", getOverrideProperty(slaveClient));
 
         //https://issues.jboss.org/browse/WFCORE-710 - even non-affected servers get the overlays
-        Assert.assertEquals(/*"running"*/ "reload-required",
+        Assert.assertEquals(/* "ok" */ "reload-required",
+                DomainTestUtils.executeForResult(
+                        Util.getReadAttributeOperation(SLAVE_ADDR.append(UnaffectedScenario.SERVER), "runtime-configuration-state"), slaveClient).asString());
+        Assert.assertEquals(/* "running" */ "reload-required",
                 DomainTestUtils.executeForResult(
                         Util.getReadAttributeOperation(SLAVE_ADDR.append(UnaffectedScenario.SERVER), "server-state"), slaveClient).asString());
+        Assert.assertEquals("reload-required",
+                DomainTestUtils.executeForResult(
+                        Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, "server-affected"), "runtime-configuration-state"), slaveClient).asString());
         Assert.assertEquals("reload-required",
                 DomainTestUtils.executeForResult(
                         Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, "server-affected"), "server-state"), slaveClient).asString());

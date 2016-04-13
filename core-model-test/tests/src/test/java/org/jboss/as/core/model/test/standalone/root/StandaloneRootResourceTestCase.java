@@ -31,6 +31,7 @@ import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.NamespaceRemoveHandler;
@@ -71,6 +72,7 @@ public class StandaloneRootResourceTestCase extends AbstractCoreModelTest {
         assertAttribute(model, ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION, new ModelNode(Version.MANAGEMENT_MINOR_VERSION));
         assertAttribute(model, ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION, new ModelNode(Version.MANAGEMENT_MICRO_VERSION));
         assertAttribute(model, ServerDescriptionConstants.PROCESS_STATE, new ModelNode("running"));
+        assertAttribute(model, ServerDescriptionConstants.RUNTIME_CONFIGURATION_STATE, new ModelNode(ClientConstants.CONTROLLER_PROCESS_STATE_OK));
         assertAttribute(model, ServerDescriptionConstants.PROCESS_TYPE, new ModelNode("Server"));
         assertAttribute(model, ServerDescriptionConstants.LAUNCH_TYPE, new ModelNode("STANDALONE"));
 

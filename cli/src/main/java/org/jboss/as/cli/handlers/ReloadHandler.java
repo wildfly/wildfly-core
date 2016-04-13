@@ -206,6 +206,7 @@ public class ReloadHandler extends BaseOperationCommand {
 
         getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
 
+        // this is left for compatibility with older hosts, it could use runtime-configuration-state on newer hosts.
         if(ctx.isDomainMode()){
             getStateOp.get(ClientConstants.NAME).set("host-state");
         }else {
@@ -226,7 +227,7 @@ public class ReloadHandler extends BaseOperationCommand {
             } catch (IOException|IllegalStateException e) {
                 // ignore and try again
                 // IllegalStateException is because the embedded server ModelControllerClient will
-                // throw that when the server-state is "stopping"
+                // throw that when the server-state / host-state is "stopping"
             }
 
             if (System.currentTimeMillis() - start > timeoutMillis) {

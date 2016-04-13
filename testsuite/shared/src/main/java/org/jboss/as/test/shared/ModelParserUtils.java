@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
+import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.test.integration.management.util.CLIOpResult;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
@@ -68,12 +69,12 @@ public class ModelParserUtils {
 
             String line = "embed-server --admin-only=true --server-config=" + originalConfig.getName() + " --std-out=echo --jboss-home=" + jbossHome.getCanonicalPath();
             cli.sendLine(line);
-            assertProcessState(cli, "running", TimeoutUtil.adjust(30000), false);
+            assertProcessState(cli, ControlledProcessState.State.RUNNING.toString(), TimeoutUtil.adjust(30000), false);
             ModelNode firstResult = readResourceTree(cli);
             cli.sendLine("/system-property=model-parser-util:add(value=true)");
             cli.sendLine("/system-property=model-parser-util:remove");
             cli.sendLine("reload --admin-only=true");
-            assertProcessState(cli, "running", TimeoutUtil.adjust(30000), false);
+            assertProcessState(cli, ControlledProcessState.State.RUNNING.toString(), TimeoutUtil.adjust(30000), false);
             ModelNode secondResult = readResourceTree(cli);
             compare(firstResult, secondResult);
             return secondResult;
@@ -112,13 +113,13 @@ public class ModelParserUtils {
             String configType = hostXml ? "--host-config=" : "--domain-config=";
             String line = "embed-host-controller " + configType + originalConfig.getName() + " --std-out=echo --jboss-home=" + target.getCanonicalPath();
             cli.sendLine(line);
-            assertProcessState(cli, "running", TimeoutUtil.adjust(30000), true);
+            assertProcessState(cli, ControlledProcessState.State.RUNNING.toString(), TimeoutUtil.adjust(30000), true);
             ModelNode firstResult = readResourceTree(cli);
             String hostName = firstResult.get(HOST).asProperty().getName();
             cli.sendLine("/system-property=model-parser-util:add(value=true)");
             cli.sendLine("/system-property=model-parser-util:remove");
             cli.sendLine("reload --host=" + hostName + " --admin-only=true");
-            assertProcessState(cli, "running", TimeoutUtil.adjust(30000), true);
+            assertProcessState(cli, ControlledProcessState.State.RUNNING.toString(), TimeoutUtil.adjust(30000), true);
             ModelNode secondResult = readResourceTree(cli);
             compare(pruneDomainModel(firstResult, hostXml), pruneDomainModel(secondResult, hostXml));
             return secondResult;

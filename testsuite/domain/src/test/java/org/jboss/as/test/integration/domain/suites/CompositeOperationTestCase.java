@@ -498,10 +498,12 @@ public class CompositeOperationTestCase {
             Set<String> keys = stepResult.get(ATTRIBUTES).keys();
             assertTrue(responseString, keys.contains("launch-type"));
             assertTrue(responseString, keys.contains("server-state"));
+            assertTrue(responseString, keys.contains("runtime-configuration-state"));
             assertTrue(responseString, stepResult.hasDefined(ACCESS_CONTROL, "default", ATTRIBUTES));
             Set<String> accessKeys = stepResult.get(ACCESS_CONTROL, "default", ATTRIBUTES).keys();
             assertTrue(responseString, accessKeys.contains("launch-type"));
             assertTrue(responseString, accessKeys.contains("server-state"));
+            assertTrue(responseString, accessKeys.contains("runtime-configuration-state"));
 
             assertTrue(responseString, stepResult.hasDefined(ACCESS_CONTROL, EXCEPTIONS));
             assertEquals(responseString, 0, stepResult.get(ACCESS_CONTROL, EXCEPTIONS).asInt());
@@ -509,8 +511,8 @@ public class CompositeOperationTestCase {
             switch (prop.getName()) {
                 case "step-1":
                 case "step-2":
-                    assertEquals(responseString, 2, keys.size());
-                    assertEquals(responseString, 2, accessKeys.size());
+                    assertEquals(responseString, 3, keys.size());
+                    assertEquals(responseString, 3, accessKeys.size());
                     break;
                 case "step-3":
                 case "step-4":

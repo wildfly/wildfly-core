@@ -194,9 +194,15 @@ public class DeploymentScenario extends ReconnectTestScenario {
         Assert.assertEquals("running",
                 DomainTestUtils.executeForResult(
                         Util.getReadAttributeOperation(SLAVE_ADDR.append(UnaffectedScenario.SERVER), "server-state"), slaveClient).asString());
+        Assert.assertEquals("ok",
+                DomainTestUtils.executeForResult(
+                        Util.getReadAttributeOperation(SLAVE_ADDR.append(UnaffectedScenario.SERVER), "runtime-configuration-state"), slaveClient).asString());
         Assert.assertEquals("reload-required",
                 DomainTestUtils.executeForResult(
                         Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, "server-affected"), "server-state"), slaveClient).asString());
+        Assert.assertEquals("reload-required",
+                DomainTestUtils.executeForResult(
+                        Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, "server-affected"), "runtime-configuration-state"), slaveClient).asString());
 
         ModelNode reload = Util.createEmptyOperation("reload", SLAVE_ADDR.append(SERVER_CONFIG, "server-affected"));
         reload.get(BLOCKING).set(true);

@@ -174,7 +174,11 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             .setValidator(new StringLengthValidator(1, true))
             .setStorageRuntime()
             .build();
-
+    // the current runtime configuration state, replaces HOST_STATE
+    public static final SimpleAttributeDefinition RUNTIME_CONFIGURATION_STATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RUNTIME_CONFIGURATION_STATE, ModelType.STRING)
+            .setMinSize(1)
+            .setStorageRuntime()
+            .build();
     public static final SimpleAttributeDefinition HOST_STATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST_STATE, ModelType.STRING)
             .setMinSize(1)
             .setStorageRuntime()
@@ -294,6 +298,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.NAMESPACES, null);
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SCHEMA_LOCATIONS, null);
         hostRegistration.registerReadWriteAttribute(HostResourceDefinition.NAME, environment.getProcessNameReadHandler(), environment.getProcessNameWriteHandler());
+        hostRegistration.registerReadOnlyAttribute(HostResourceDefinition.RUNTIME_CONFIGURATION_STATE, new ProcessStateAttributeHandler(processState));
         hostRegistration.registerReadOnlyAttribute(HostResourceDefinition.HOST_STATE, new ProcessStateAttributeHandler(processState));
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.RUNNING_MODE, new RunningModeReadHandler(runningModeControl));
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SUSPEND_STATE, SuspendStateReadHandler.INSTANCE);
