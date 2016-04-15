@@ -1341,6 +1341,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     @Override
+    public boolean isWorkflowMode() {
+        return redirection != null;
+    }
+
+    @Override
     public BatchManager getBatchManager() {
         return batchManager;
     }
