@@ -96,74 +96,61 @@ public class AccessAuthorizationResourceDefinition extends SimpleResourceDefinit
     public static final List<AttributeDefinition> CONFIG_ATTRIBUTES = Arrays.<AttributeDefinition>asList(PROVIDER, PERMISSION_COMBINATION_POLICY);
 
     public static AccessAuthorizationResourceDefinition forDomain(DelegatingConfigurableAuthorizer configurableAuthorizer) {
-        return new AccessAuthorizationResourceDefinition(configurableAuthorizer, true, false);
-    }
-
-    public static AccessAuthorizationResourceDefinition forHost(DelegatingConfigurableAuthorizer configurableAuthorizer) {
-        return new AccessAuthorizationResourceDefinition(configurableAuthorizer, true, true);
+        return new AccessAuthorizationResourceDefinition(configurableAuthorizer, true);
     }
 
     public static AccessAuthorizationResourceDefinition forDomainServer(DelegatingConfigurableAuthorizer configurableAuthorizer) {
-        return new AccessAuthorizationResourceDefinition(configurableAuthorizer, true, false);
+        return new AccessAuthorizationResourceDefinition(configurableAuthorizer, true);
     }
 
     public static AccessAuthorizationResourceDefinition forStandaloneServer(DelegatingConfigurableAuthorizer configurableAuthorizer) {
-        return new AccessAuthorizationResourceDefinition(configurableAuthorizer, false, false);
+        return new AccessAuthorizationResourceDefinition(configurableAuthorizer, false);
     }
 
     private final DelegatingConfigurableAuthorizer configurableAuthorizer;
 
     private final boolean isDomain;
-    private final boolean isHostController;
 
-    private AccessAuthorizationResourceDefinition(DelegatingConfigurableAuthorizer configurableAuthorizer, boolean domain, boolean hostController) {
-        super(new Parameters(PATH_ELEMENT, DomainManagementResolver.getResolver("core.access-control")).setAccessConstraints(SensitiveTargetAccessConstraintDefinition.ACCESS_CONTROL));
+    private AccessAuthorizationResourceDefinition(DelegatingConfigurableAuthorizer configurableAuthorizer, boolean domain) {
+        super(new Parameters(PATH_ELEMENT, DomainManagementResolver.getResolver("core.access-control"))
+                            .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.ACCESS_CONTROL));
         this.configurableAuthorizer = configurableAuthorizer;
         isDomain = domain;
-        isHostController = hostController;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        if (!isHostController) {
-            WritableAuthorizerConfiguration authorizerConfiguration = configurableAuthorizer.getWritableAuthorizerConfiguration();
-            resourceRegistration.registerReadWriteAttribute(PROVIDER, null, new AccessAuthorizationProviderWriteAttributeHander(configurableAuthorizer));
-            resourceRegistration.registerReadWriteAttribute(PERMISSION_COMBINATION_POLICY, null,
-                    new AccessAuthorizationCombinationPolicyWriteAttributeHandler(authorizerConfiguration));
+        WritableAuthorizerConfiguration authorizerConfiguration = configurableAuthorizer.getWritableAuthorizerConfiguration();
+        resourceRegistration.registerReadWriteAttribute(PROVIDER, null, new AccessAuthorizationProviderWriteAttributeHander(configurableAuthorizer));
+        resourceRegistration.registerReadWriteAttribute(PERMISSION_COMBINATION_POLICY, null,
+                new AccessAuthorizationCombinationPolicyWriteAttributeHandler(authorizerConfiguration));
 
-            resourceRegistration.registerReadOnlyAttribute(STANDARD_ROLE_NAMES,
-                    AccessAuthorizationRolesHandler.getStandardRolesHandler(authorizerConfiguration));
-            resourceRegistration.registerReadOnlyAttribute(ALL_ROLE_NAMES,
-                    AccessAuthorizationRolesHandler.getAllRolesHandler(authorizerConfiguration));
-        }
+        resourceRegistration.registerReadOnlyAttribute(STANDARD_ROLE_NAMES,
+                AccessAuthorizationRolesHandler.getStandardRolesHandler(authorizerConfiguration));
+        resourceRegistration.registerReadOnlyAttribute(ALL_ROLE_NAMES,
+                AccessAuthorizationRolesHandler.getAllRolesHandler(authorizerConfiguration));
     }
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        if (!isHostController) {
-            // Role Mapping
-            resourceRegistration.registerSubModel(RoleMappingResourceDefinition.create(configurableAuthorizer, isDomain));
-        }
+        // Role Mapping
+        resourceRegistration.registerSubModel(RoleMappingResourceDefinition.create(configurableAuthorizer, isDomain));
 
         // Scoped roles
         if (isDomain) {
             WritableAuthorizerConfiguration authorizerConfiguration = configurableAuthorizer.getWritableAuthorizerConfiguration();
             resourceRegistration.registerSubModel(new ServerGroupScopedRoleResourceDefinition(authorizerConfiguration));
-            if (!isHostController) {
-                resourceRegistration.registerSubModel(new HostScopedRolesResourceDefinition(authorizerConfiguration));
-            }
+            resourceRegistration.registerSubModel(new HostScopedRolesResourceDefinition(authorizerConfiguration));
         }
 
         // Constraints
-        if (!isHostController) {
-            //  -- Application Type
-            resourceRegistration.registerSubModel(ApplicationClassificationParentResourceDefinition.INSTANCE);
-            //  -- Sensitivity Classification
-            resourceRegistration.registerSubModel(SensitivityClassificationParentResourceDefinition.INSTANCE);
-            //  -- Vault Expression
-            resourceRegistration.registerSubModel(SensitivityResourceDefinition.createVaultExpressionConfiguration());
-        }
+        //  -- Application Type
+        resourceRegistration.registerSubModel(ApplicationClassificationParentResourceDefinition.INSTANCE);
+        //  -- Sensitivity Classification
+        resourceRegistration.registerSubModel(SensitivityClassificationParentResourceDefinition.INSTANCE);
+        //  -- Vault Expression
+        resourceRegistration.registerSubModel(SensitivityResourceDefinition.createVaultExpressionConfiguration());
     }
 
     @Override

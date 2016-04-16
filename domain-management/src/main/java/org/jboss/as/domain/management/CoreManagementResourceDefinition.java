@@ -102,23 +102,18 @@ public class CoreManagementResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerSubModel(current);
         }
 
-        boolean registerAuditLog = true;
         switch (environment) {
             case DOMAIN:
                 resourceRegistration.registerSubModel(AccessAuthorizationResourceDefinition.forDomain(authorizer));
-                registerAuditLog = false;
                 break;
             case DOMAIN_SERVER:
                 resourceRegistration.registerSubModel(AccessAuthorizationResourceDefinition.forDomainServer(authorizer));
-                break;
-            case HOST_CONTROLLER:
-                resourceRegistration.registerSubModel(AccessAuthorizationResourceDefinition.forHost(authorizer));
                 break;
             case STANDALONE_SERVER:
                 resourceRegistration.registerSubModel(AccessAuthorizationResourceDefinition.forStandaloneServer(authorizer));
         }
 
-        if (registerAuditLog) {
+        if (environment != Environment.DOMAIN) {
             resourceRegistration.registerSubModel(new AccessAuditResourceDefinition(auditLogger, pathManager, environmentReader));
         }
     }
