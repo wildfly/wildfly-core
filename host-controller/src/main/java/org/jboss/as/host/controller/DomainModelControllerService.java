@@ -1179,8 +1179,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
-        public boolean awaitServerSuspend(Set<String> waitForServers, int timeout) {
-            return getServerInventory().awaitServerSuspend(waitForServers, timeout);
+        public List<ModelNode> awaitServerSuspend(Set<String> waitForServers, int timeout, BlockingTimeout blockingTimeout) {
+            return getServerInventory().awaitServerSuspend(waitForServers, timeout, blockingTimeout);
         }
     }
 
@@ -1512,8 +1512,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
-            public boolean awaitServerSuspend(Set<String> waitForServers, int timeout) {
-                return false;
+            public List<ModelNode> awaitServerSuspend(Set<String> waitForServers, int timeout, BlockingTimeout blockingTimeout) {
+                return Collections.emptyList();
             }
         };
         future.setInventory(inventory);

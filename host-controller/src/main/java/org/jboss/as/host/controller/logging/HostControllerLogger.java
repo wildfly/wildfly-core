@@ -1303,5 +1303,23 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 181, value = "Host Controller shutdown has been requested via an OS signal")
     void shutdownHookInvoked();
 
+    @LogMessage(level = Level.INFO)
+    @Message(id = 182, value = "Timed out after %d ms awaiting server suspend response(s) for server: %s")
+    void timedOutAwaitingSuspendResponse(int blockingTimeout, String serverName);
 
+    @Message(id = 183, value = "Timed out after %d ms awaiting server suspend response(s) for server: %s")
+    String timedOutAwaitingSuspendResponseMsg(int blockingTimeout, String serverName);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 184, value = "%s interrupted awaiting server suspend response(s)")
+    void interruptedAwaitingSuspendResponse(@Cause InterruptedException cause, String serverName);
+
+    @Message(id = 185, value = "%s interrupted awaiting server suspend response(s)")
+    String interruptedAwaitingSuspendResponseMsg(String serverName);
+
+    @Message( id = 186, value = "Failed executing the suspend operation for server: %s")
+    String suspendExecutionFailedMsg(String serverName);
+
+    @Message( id = 187, value = "Failed getting the response from the suspend listener for server: %s")
+    String suspendListenerFailedMsg(String serverName);
 }

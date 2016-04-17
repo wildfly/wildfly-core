@@ -25,7 +25,10 @@ package org.jboss.as.host.controller.operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.util.Collections;
+import java.util.List;
+
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -75,6 +78,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
         final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //timeout in seconds
+        final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
 
         context.addStep(new OperationStepHandler() {
             @Override
@@ -83,7 +87,10 @@ public class ServerSuspendHandler implements OperationStepHandler {
                 context.getServiceRegistry(true);
 
                 if (timeout != 0) {
-                    serverInventory.awaitServerSuspend(Collections.singleton(serverName), timeout);
+                    List<ModelNode> errorResults = serverInventory.awaitServerSuspend(Collections.singleton(serverName), timeout, blockingTimeout);
+                    if ( !errorResults.isEmpty() ){
+                        context.getFailureDescription().set(errorResults);
+                    }
                 } else {
                     serverInventory.suspendServer(serverName);
                 }
