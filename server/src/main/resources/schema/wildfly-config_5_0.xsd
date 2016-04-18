@@ -357,6 +357,13 @@
         <xs:list itemType="xs:anyURI"/>
     </xs:simpleType>
 
+    <xs:simpleType name="portType">
+        <xs:restriction base="xs:token">
+            <!-- either a number (i.e. 9999) or variable name (i.e. ${jboss.management.native.port:9999}) -->
+            <xs:pattern value="[0-9]+|$\{([a-z\-]+\.)*[a-z\-]+:[0-9]+\}" />
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="security-realmType">
         <xs:annotation>
             <xs:documentation>
@@ -2083,7 +2090,7 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="management-socketType">
-                <xs:attribute name="port" type="xs:int" use="required">
+                <xs:attribute name="port" type="portType" use="required">
                     <xs:annotation>
                         <xs:documentation>
                             Port on which the host's socket for native
@@ -2120,7 +2127,7 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="management-socketType">
-                <xs:attribute name="port" type="xs:int" use="optional">
+                <xs:attribute name="port" type="portType" use="optional">
                     <xs:annotation>
                         <xs:documentation>
                             Port on which the host's socket for
@@ -2345,7 +2352,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="port" type="xs:integer" use="optional" >
+        <xs:attribute name="port" type="portType" use="optional" >
             <xs:annotation>
                 <xs:documentation>
                     The remote domain controller's port. If not set, a discovery option must be provided,
@@ -2663,7 +2670,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="port-offset" type="xs:int" default="0" use="optional">
+        <xs:attribute name="port-offset" type="portType" default="0" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     <![CDATA[
@@ -3052,7 +3059,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="port-offset" type="xs:int" use="optional" default="0">
+        <xs:attribute name="port-offset" type="portType" use="optional" default="0">
             <xs:annotation>
                 <xs:documentation>
                     Increment to apply to the base port values defined in the
@@ -3080,7 +3087,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="port-offset" type="xs:int" use="optional" default="0">
+        <xs:attribute name="port-offset" type="portType" use="optional" default="0">
             <xs:annotation>
                 <xs:documentation>
                     Increment to apply to the base port values defined in the
@@ -3123,7 +3130,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="port" type="xs:unsignedShort" use="optional" default="0">
+        <xs:attribute name="port" type="portType" use="optional" default="0">
             <xs:annotation>
                 <xs:documentation>
                     Number of the port to which the socket should be bound.
@@ -3147,7 +3154,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="multicast-port" type="xs:positiveInteger" use="optional">
+        <xs:attribute name="multicast-port" type="portType" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     Port on which the socket should receive multicast
@@ -3290,7 +3297,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="port-offset" type="xs:int" default="0" use="optional">
+        <xs:attribute name="port-offset" type="portType" default="0" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     Increment to apply to the base port values defined in the
@@ -3582,7 +3589,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="port" type="xs:unsignedShort" use="optional" default="0">
+        <xs:attribute name="port" type="portType" use="optional" default="0">
             <xs:annotation>
                 <xs:documentation>
                     Number of the port to which the socket should be bound.
@@ -3606,7 +3613,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="multicast-port" type="xs:positiveInteger" use="optional">
+        <xs:attribute name="multicast-port" type="portType" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     Port on which the socket should receive multicast
