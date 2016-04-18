@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -246,6 +246,13 @@ public interface CommandContext {
      * @return true if the CLI is in the batch mode, false - otherwise.
      */
     boolean isBatchMode();
+
+    /**
+     * Checks whether the CLI is in a workflow mode.
+     *
+     * @return true if the CLI is in a workflow mode, false - otherwise.
+     */
+    boolean isWorkflowMode();
 
     /**
      * Returns batch manager.
