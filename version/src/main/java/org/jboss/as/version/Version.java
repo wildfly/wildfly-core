@@ -32,6 +32,7 @@ import java.util.jar.Manifest;
  * @author Jason T. Greene
  */
 public class Version {
+    public static final String UNKNOWN_CODENAME = "";
     public static final String AS_VERSION;
     public static final String AS_RELEASE_CODENAME;
     public static final int MANAGEMENT_MAJOR_VERSION = 5;
@@ -45,9 +46,10 @@ public class Version {
             if (stream != null)
                 manifest = new Manifest(stream);
         } catch (Exception e) {
+            // ignored
         }
 
-        String version = null, code = version;
+        String version = null, code = null;
         if (manifest != null) {
             version = manifest.getMainAttributes().getValue("JBossAS-Release-Version");
             code = manifest.getMainAttributes().getValue("JBossAS-Release-Codename");
@@ -55,8 +57,8 @@ public class Version {
         if (version == null) {
             version = "Unknown";
         }
-        if (code == null) {
-            code = "Unknown";
+        if (code == null || "N/A".equals(code)) {
+            code = UNKNOWN_CODENAME;
         }
 
         AS_VERSION = version;

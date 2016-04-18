@@ -133,6 +133,9 @@ public class ProductConfig implements Serializable {
         if (name != null) {
             return String.format("%s %s (WildFly Core %s)", name, version, Version.AS_VERSION);
         }
+        if (Version.UNKNOWN_CODENAME.equals(Version.AS_RELEASE_CODENAME)) {
+            return String.format("WildFly Core %s", Version.AS_VERSION);
+        }
         return String.format("WildFly Core %s \"%s\"", Version.AS_VERSION, Version.AS_RELEASE_CODENAME);
     }
 
