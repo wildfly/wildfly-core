@@ -85,6 +85,17 @@ public class ServerReload {
         executeReloadAndWaitForCompletion(client, timeout, false, null, -1);
     }
 
+    public static void executeReloadAndWaitForCompletion(ModelControllerClient client, ModelNode reloadOp) {
+        executeReloadAndWaitForCompletion(client, reloadOp, TIMEOUT, null, -1);
+    }
+
+    public static void executeReloadAndWaitForCompletion(ModelControllerClient client, ModelNode reloadOp, int timeout, String serverAddress, int serverPort) {
+        executeReload(client, reloadOp);
+        waitForLiveServerToReload(timeout,
+                serverAddress != null ? serverAddress : TestSuiteEnvironment.getServerAddress(),
+                serverPort != -1 ? serverPort : TestSuiteEnvironment.getServerPort());
+    }
+
     /**
      * Executes a {@code reload} operation, optionally putting the server into {@code admin-only}
      * running mode, and waits a configurable maximum time for the reload to complete.
@@ -109,8 +120,13 @@ public class ServerReload {
         operation.get(OP_ADDR).setEmptyList();
         operation.get(OP).set("reload");
         operation.get("admin-only").set(adminOnly);
+
+        executeReload(client, operation);
+    }
+
+    private static void executeReload(ModelControllerClient client, ModelNode reloadOp) {
         try {
-            ModelNode result = client.execute(operation);
+            ModelNode result = client.execute(reloadOp);
             Assert.assertEquals("success", result.get(ClientConstants.OUTCOME).asString());
         } catch (IOException e) {
             final Throwable cause = e.getCause();

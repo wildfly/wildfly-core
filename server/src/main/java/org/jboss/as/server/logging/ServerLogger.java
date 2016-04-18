@@ -1176,4 +1176,10 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 236, value = "Suspending server with no timeout.")
     void suspendingServerWithNoTimeout();
+
+    @Message(id = 237, value = "It is not possible to use use-current-server-config=false while specifying a server-config")
+    OperationFailedException cannotBothHaveFalseUseCurrentConfigAndServerConfig();
+
+    @Message(id = 238, value = "server-config '%s' specified for reload could not be found")
+    OperationFailedException serverConfigForReloadNotFound(String serverConfig);
 }
