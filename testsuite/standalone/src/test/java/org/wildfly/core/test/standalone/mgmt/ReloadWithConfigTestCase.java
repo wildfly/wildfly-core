@@ -61,6 +61,7 @@ public class ReloadWithConfigTestCase {
 
     @Test
     public void reloadFromSnapshotTestCase() throws Exception {
+        boolean wasReloaded = false;
         cleanSnapshotDirectory();
         addSystemProperty(RELOAD_TEST_CASE_ONE, "1");
         try {
@@ -73,6 +74,7 @@ public class ReloadWithConfigTestCase {
             Assert.assertEquals(1, snapshots.size());
             reloadOp.get(SERVER_CONFIG).set(snapshots.get(0).getName());
             ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient(), reloadOp);
+            wasReloaded = true;
 
             final ModelNode readChildrenNames = Util.createEmptyOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS);
             readChildrenNames.get(CHILD_TYPE).set(SYSTEM_PROPERTY);
@@ -83,6 +85,11 @@ public class ReloadWithConfigTestCase {
             removeSystemProperty(RELOAD_TEST_CASE_TWO, true);
             removeSystemProperty(RELOAD_TEST_CASE_ONE, false);
             cleanSnapshotDirectory();
+            if (wasReloaded) {
+                //Reset the config file
+                final ModelNode reloadOp = Util.createEmptyOperation("reload", PathAddress.EMPTY_ADDRESS);
+                ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient(), reloadOp);
+            }
         }
     }
 
