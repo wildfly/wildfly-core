@@ -171,6 +171,18 @@
 
         <!-- Test dependencies -->
         <dependency>
+            <groupId>org.codehaus.woodstox</groupId>
+            <artifactId>woodstox-core-asl</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.byteman</groupId>
             <artifactId>byteman</artifactId>
             <scope>test</scope>
