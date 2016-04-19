@@ -1275,4 +1275,8 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message(id = 175, value = "domain-config '%s' specified for reload could not be found")
     OperationFailedException domainConfigForReloadNotFound(String serverConfig);
+
+    @Message(id = 176, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
 }

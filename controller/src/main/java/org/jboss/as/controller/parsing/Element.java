@@ -96,6 +96,7 @@ public enum Element {
     HOST_RELEASE("host-release"),
     HOST_SCOPED_ROLES("host-scoped-roles"),
     HTTP_INTERFACE("http-interface"),
+    HTTP_UPGRADE("http-upgrade"),
 
     IGNORED_RESOURCE("ignored-resources"),
     IN_MEMORY_HANDLER("in-memory-handler"),

@@ -39,7 +39,8 @@
             </security-realm>
         </security-realms>
         <management-interfaces>
-            <http-interface security-realm="ManagementRealm"  http-upgrade-enabled="true">
+            <http-interface security-realm="ManagementRealm">
+                <http-upgrade enabled="true" />
                 <socket interface="management" port="9990"/>
             </http-interface>
         </management-interfaces>

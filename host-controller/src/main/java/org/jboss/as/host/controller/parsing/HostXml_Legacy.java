@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DISCOVERY_OPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_UPGRADE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOOPBACK;
@@ -700,7 +701,8 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case HTTP_UPGRADE_ENABLED: {
-                        HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.parseAndSetParameter(value, addOp, reader);
+                        ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
+                        HttpManagementResourceDefinition.ENABLED.parseAndSetParameter(value, httpUpgrade, reader);
                         break;
                     }
                     default:
@@ -736,7 +738,8 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case HTTP_UPGRADE_ENABLED: {
-                        HttpManagementResourceDefinition.HTTP_UPGRADE_ENABLED.parseAndSetParameter(value, addOp, reader);
+                        ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
+                        HttpManagementResourceDefinition.ENABLED.parseAndSetParameter(value, httpUpgrade, reader);
                         break;
                     }
                     case ALLOWED_ORIGINS: {
