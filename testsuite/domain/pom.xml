@@ -175,7 +175,7 @@
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                     <!-- System properties to forked surefire JVM which runs clients. -->
-                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts}</argLine>
+                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args}</argLine>
 
                     <systemPropertyVariables>
                         <jboss.options>-ea ${surefire.system.args}</jboss.options>
@@ -238,7 +238,7 @@
                             <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                             <!-- System properties to forked surefire JVM which runs clients. -->
-                            <argLine>${jvm.args.ip.client} ${jvm.args.timeouts}</argLine>
+                            <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args}</argLine>
 
                             <systemPropertyVariables>
                                 <jboss.options>${surefire.system.args}</jboss.options>

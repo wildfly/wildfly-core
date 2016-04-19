@@ -140,7 +140,7 @@
 
         <!-- Surefire args -->
         <surefire.jpda.args/>
-        <surefire.system.args>-ea ${surefire.jpda.args}</surefire.system.args>
+        <surefire.system.args>-ea -Duser.region=US -Duser.language=en -XX:MaxMetaspaceSize=256m ${surefire.jpda.args}</surefire.system.args>
 
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
@@ -278,7 +278,7 @@
                                   <value>${test.level}</value>
                               </property>
                           </systemProperties>
-                          <argLine>-Duser.region=US -Duser.language=en -XX:MaxMetaspaceSize=256m</argLine>
+                          <argLine>${surefire.system.args}</argLine>
                     </configuration>
 
                 </plugin>

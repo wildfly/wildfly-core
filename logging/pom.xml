@@ -63,7 +63,7 @@
                     <useManifestOnlyJar>false</useManifestOnlyJar>
                     <!-- the log manager needs to be setup before the agent this is only needed on windows!-->
                     <argLine>-Xbootclasspath/a:"${org.jboss.logmanager:jboss-logmanager:jar}"
-                        -javaagent:"${org.jboss.byteman:byteman:jar}"=port:${byteman.port},address:${byteman.host},boot:"${org.jboss.byteman:byteman:jar}"
+                        -javaagent:"${org.jboss.byteman:byteman:jar}"=port:${byteman.port},address:${byteman.host},boot:"${org.jboss.byteman:byteman:jar}" ${surefire.system.args}
                     </argLine>
                     <systemPropertyVariables>
                         <jboss.server.log.dir>${project.build.directory}${file.separator}logs</jboss.server.log.dir>
