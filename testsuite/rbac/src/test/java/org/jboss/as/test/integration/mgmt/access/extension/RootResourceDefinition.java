@@ -27,10 +27,10 @@ package org.jboss.as.test.integration.mgmt.access.extension;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
+import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
-import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -49,13 +49,13 @@ public class RootResourceDefinition extends SimpleResourceDefinition {
 
     public RootResourceDefinition(String name) {
         super(PathElement.pathElement(SUBSYSTEM, name), new NonResolvingResourceDescriptionResolver(),
-                new AddSubsystemHandler(), ReloadRequiredRemoveStepHandler.INSTANCE);
+                new AddSubsystemHandler(), ModelOnlyRemoveStepHandler.INSTANCE);
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        resourceRegistration.registerReadWriteAttribute(NAME, null, new ReloadRequiredWriteAttributeHandler(NAME));
+        resourceRegistration.registerReadWriteAttribute(NAME, null, new ModelOnlyWriteAttributeHandler(NAME));
     }
 
     @Override

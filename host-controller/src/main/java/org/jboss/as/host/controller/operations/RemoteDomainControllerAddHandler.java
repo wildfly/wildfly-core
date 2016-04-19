@@ -24,6 +24,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
 import static org.jboss.dmr.ModelType.STRING;
 
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -112,6 +113,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))
             .setParameters(PROTOCOL, PORT, HOST, USERNAME, SECURITY_REALM, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.DOMAIN_CONTROLLER)
+            .setDeprecated(ModelVersion.create(5, 0, 0))
             .build();
 
     private final ManagementResourceRegistration rootRegistration;

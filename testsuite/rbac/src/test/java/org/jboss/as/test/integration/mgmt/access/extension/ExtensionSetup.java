@@ -142,17 +142,20 @@ public class ExtensionSetup {
         PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM, "rbac");
         ModelNode removeConstrained = Util.createRemoveOperation(subsystemAddress.append("rbac-constrained", "default"));
         removeConstrained.get(OPERATION_HEADERS).get(ALLOW_RESOURCE_SERVICE_RESTART).set(true);
-        client.getControllerClient().execute(removeConstrained);
+        executeForResult(client.getControllerClient(), removeConstrained);
         ModelNode removeSensitive = Util.createRemoveOperation(subsystemAddress.append("rbac-sensitive", "other"));
         removeSensitive.get(OPERATION_HEADERS).get(ALLOW_RESOURCE_SERVICE_RESTART).set(true);
-        client.getControllerClient().execute(removeSensitive);
+        executeForResult(client.getControllerClient(), removeSensitive);
     }
 
     public static void removeExtensionAndSubsystem(final ManagementClient client) throws IOException, MgmtOperationException {
-        removeResources(client);
+        //removeResources(client);
+        ModelNode removeSubsystem = Util.createRemoveOperation(PathAddress.pathAddress(SUBSYSTEM, "rbac"));
+        removeSubsystem.get(OPERATION_HEADERS).get(ALLOW_RESOURCE_SERVICE_RESTART).set(true);
+        executeForResult(client.getControllerClient(), removeSubsystem);
         ModelNode removeExtension = Util.createRemoveOperation(PathAddress.pathAddress(EXTENSION, TestExtension.MODULE_NAME));
         removeExtension.get(OPERATION_HEADERS).get(ALLOW_RESOURCE_SERVICE_RESTART).set(true);
-        client.getControllerClient().execute(removeExtension);
+        executeForResult(client.getControllerClient(), removeExtension);
     }
 
     static StreamExporter createResourceRoot(Class<? extends Extension> extension, Package... additionalPackages) throws IOException {

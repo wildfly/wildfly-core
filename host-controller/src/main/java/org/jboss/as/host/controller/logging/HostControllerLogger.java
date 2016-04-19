@@ -28,6 +28,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import javax.security.sasl.SaslException;
 import javax.xml.stream.Location;
@@ -1257,6 +1258,25 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 170, value = "Error releasing shared lock after host registration for operationID: %s")
     String hostRegistrationCannotReleaseSharedLock(int operationID);
 
-    @Message(id = 171, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 171, value = "Failed getting the response from the suspend listener for server: %s")
+    void suspendListenerFailed(@Cause ExecutionException cause, String serverName);
+
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 172, value = "Failed executing the suspend operation for server: %s")
+    void suspendExecutionFailed(@Cause IOException cause, String serverName);
+
+    @Message(id = 173, value = "It is not possible to use use-current-host-config=false while specifying a host-config")
+    OperationFailedException cannotBothHaveFalseUseCurrentHostConfigAndHostConfig();
+
+    @Message(id = 174, value = "It is not possible to use use-current-domain-config=false while specifying a domain-config")
+    OperationFailedException cannotBothHaveFalseUseCurrentDomainConfigAndDomainConfig();
+
+
+    @Message(id = 175, value = "domain-config '%s' specified for reload could not be found")
+    OperationFailedException domainConfigForReloadNotFound(String serverConfig);
+
+    @Message(id = 176, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
     OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
 }

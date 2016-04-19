@@ -36,6 +36,7 @@ import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuild
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper.ServerDeploymentException;
 import org.jboss.as.test.integration.logging.AbstractLoggingTestCase;
 import org.jboss.as.test.integration.logging.LoggingServiceActivator;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceActivator;
@@ -47,7 +48,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -73,7 +73,7 @@ public class LoggingProfilesTestCase extends AbstractLoggingTestCase {
     private static final Path dummyLog2 = Paths.get(LOG_DIR, PROFILE2_LOG_NAME);
     private static final Path dummyLog1Changed = Paths.get(LOG_DIR, CHANGED_LOG_NAME);
 
-    static class LoggingProfilesTestCaseSetup implements ServerSetupTask {
+    static class LoggingProfilesTestCaseSetup extends ServerReload.SetupTask {
 
         @Override
         public void setup(ManagementClient managementClient) throws Exception {
@@ -169,6 +169,8 @@ public class LoggingProfilesTestCase extends AbstractLoggingTestCase {
             Files.deleteIfExists(dummyLog1);
             Files.deleteIfExists(dummyLog2);
             Files.deleteIfExists(dummyLog1Changed);
+
+            super.tearDown(client);
         }
     }
 

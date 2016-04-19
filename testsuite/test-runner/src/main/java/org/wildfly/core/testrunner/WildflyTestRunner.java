@@ -6,9 +6,11 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+
 import javax.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.dmr.ModelNode;
 import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
@@ -121,6 +123,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
                 throw new RuntimeException(String.format("Could not run tear down task '%s'", task), e);
             }
         }
+        checkServerState();
     }
 
     private void prepareSetupTasks(Class<?> klass) throws InitializationError {
@@ -142,5 +145,20 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
         if (automaticServerControl) {
             controller.start();
         }
+    }
+
+    private void checkServerState() {
+        ModelNode op = new ModelNode();
+        op.get("operation").set("read-attribute");
+        op.get("name").set("server-state");
+        try {
+            ModelNode result = controller.getClient().executeForResult(op);
+            if (!"running".equalsIgnoreCase(result.asString())) {
+                throw new RuntimeException(String.format("Server state is '%s' following test completion; tests must complete with the server in 'running' state", result.asString()));
+            }
+        } catch (UnsuccessfulOperationException e) {
+            throw new RuntimeException("Failed checking server-state", e);
+        }
+
     }
 }

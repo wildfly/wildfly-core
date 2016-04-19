@@ -24,7 +24,6 @@ package org.jboss.as.server.deployment.scanner;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 
-import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -40,11 +39,14 @@ import org.jboss.dmr.ModelType;
  */
 public class DeploymentScannerDefinition extends SimpleResourceDefinition {
 
+    private final PathManager pathManager;
+
     DeploymentScannerDefinition(final PathManager pathManager) {
         super(DeploymentScannerExtension.SCANNERS_PATH,
                 DeploymentScannerExtension.getResourceDescriptionResolver("deployment.scanner"),
                 new DeploymentScannerAdd(pathManager), DeploymentScannerRemove.INSTANCE
         );
+        this.pathManager = pathManager;
     }
 
     protected static final SimpleAttributeDefinition NAME =
@@ -118,8 +120,8 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         //resourceRegistration.registerReadOnlyAttribute(NAME, null);
-        resourceRegistration.registerReadWriteAttribute(PATH, null, new ReloadRequiredWriteAttributeHandler(PATH));
-        resourceRegistration.registerReadWriteAttribute(RELATIVE_TO, null, new ReloadRequiredWriteAttributeHandler(RELATIVE_TO));
+        resourceRegistration.registerReadWriteAttribute(PATH, null, new WritePathAttributeHandler(pathManager));
+        resourceRegistration.registerReadWriteAttribute(RELATIVE_TO, null, new WriteRelativeToAttributeHandler(pathManager));
         resourceRegistration.registerReadWriteAttribute(SCAN_ENABLED, null, WriteEnabledAttributeHandler.INSTANCE);
         resourceRegistration.registerReadWriteAttribute(SCAN_INTERVAL, null, WriteScanIntervalAttributeHandler.INSTANCE);
         resourceRegistration.registerReadWriteAttribute(AUTO_DEPLOY_ZIPPED, null, WriteAutoDeployZipAttributeHandler.INSTANCE);

@@ -72,7 +72,7 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
     @Override
     public final void undeploy(final DeploymentUnit context) {
         // OSGi bundles deployments may not have a module attached
-        if (hasRegisteredLogContext(context) && context.hasAttachment(Attachments.MODULE)) {
+        if (context.hasAttachment(Attachments.MODULE)) {
             // don't process sub-deployments as they are processed by processing methods
             final ResourceRoot root = context.getAttachment(Attachments.DEPLOYMENT_ROOT);
             if (SubDeploymentMarker.isSubDeployment(root)) return;
@@ -117,22 +117,24 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
     }
 
     protected void unregisterLogContext(final DeploymentUnit deploymentUnit, final Module module) {
-        final LogContext logContext = deploymentUnit.removeAttachment(LOG_CONTEXT_KEY);
-        final boolean success;
-        if (WildFlySecurityManager.isChecking()) {
-            success = WildFlySecurityManager.doUnchecked(new PrivilegedAction<Boolean>() {
-                @Override
-                public Boolean run() {
-                    return logContextSelector.unregisterLogContext(module.getClassLoader(), logContext);
-                }
-            });
-        } else {
-            success = logContextSelector.unregisterLogContext(module.getClassLoader(), logContext);
-        }
-        if (success) {
-            LoggingLogger.ROOT_LOGGER.tracef("Removed LogContext '%s' from '%s'", logContext, module);
-        } else {
-            LoggingLogger.ROOT_LOGGER.logContextNotRemoved(logContext, deploymentUnit.getName());
+        if (hasRegisteredLogContext(deploymentUnit)) {
+            final LogContext logContext = deploymentUnit.removeAttachment(LOG_CONTEXT_KEY);
+            final boolean success;
+            if (WildFlySecurityManager.isChecking()) {
+                success = WildFlySecurityManager.doUnchecked(new PrivilegedAction<Boolean>() {
+                    @Override
+                    public Boolean run() {
+                        return logContextSelector.unregisterLogContext(module.getClassLoader(), logContext);
+                    }
+                });
+            } else {
+                success = logContextSelector.unregisterLogContext(module.getClassLoader(), logContext);
+            }
+            if (success) {
+                LoggingLogger.ROOT_LOGGER.tracef("Removed LogContext '%s' from '%s'", logContext, module);
+            } else {
+                LoggingLogger.ROOT_LOGGER.logContextNotRemoved(logContext, deploymentUnit.getName());
+            }
         }
     }
 

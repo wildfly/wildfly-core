@@ -129,17 +129,31 @@ public class SensitiveTargetConstraint extends AllowAllowNotConstraint {
             return false;
         }
 
-        public final void addSensitivity(SensitivityClassification sensitivity) {
+        /**
+         * Stores a sensitivity classification for use in constraints.
+         *
+         * @param sensitivity the classification
+         * @return either the provided classification, or if a compatible one with the same key is already present, that one
+         *
+         * @throws AssertionError if a classification with the same key is already register and it is not
+         *           {@linkplain SensitivityClassification#isCompatibleWith(AbstractSensitivity) compatible with} the
+         *           one to be added
+         */
+        public final SensitivityClassification addSensitivity(SensitivityClassification sensitivity) {
             SensitivityClassification.Key key = sensitivity.getKey();
             SensitivityClassification existing = sensitivities.get(key);
+            SensitivityClassification result;
             if (existing == null) {
                 sensitivities.put(key, sensitivity);
+                result = sensitivity;
             } else {
                 // Check for programming error -- SensitivityClassification with same key created with
                 // differing default settings
                 assert existing.isCompatibleWith(sensitivity)
                         : "incompatible " + sensitivity.getClass().getSimpleName();
+                result = existing;
             }
+            return result;
         }
 
         public Collection<SensitivityClassification> getSensitivities(){

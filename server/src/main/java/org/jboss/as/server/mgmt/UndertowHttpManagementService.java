@@ -262,15 +262,18 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     }
                 }
             }
-        } catch (BindException e) {
-            final StringBuilder sb = new StringBuilder().append(e.getMessage());
-            if (bindAddress != null)
-                sb.append(" ").append(bindAddress);
-            if (secureBindAddress != null)
-                sb.append(" ").append(secureBindAddress);
-            throw new StartException(sb.toString(), e);
         } catch (Exception e) {
-            throw ServerLogger.ROOT_LOGGER.failedToStartHttpManagementService(e);
+            Throwable cause = e.getCause();
+            if (e instanceof BindException || cause instanceof BindException) {
+                final StringBuilder sb = new StringBuilder().append(e.getLocalizedMessage());
+                if (bindAddress != null)
+                    sb.append(" ").append(bindAddress);
+                if (secureBindAddress != null)
+                    sb.append(" ").append(secureBindAddress);
+                throw new StartException(sb.toString());
+            } else {
+                throw ServerLogger.ROOT_LOGGER.failedToStartHttpManagementService(e);
+            }
         }
     }
 

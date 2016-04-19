@@ -25,16 +25,19 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
  * Test generic command features of CLI.
  * @author Dominik Pospisil <dpospisi@redhat.com>
  */
+@ServerSetup(ServerReload.SetupTask.class)
 @RunWith(WildflyTestRunner.class)
 public class GenericCommandTestCase extends AbstractCliTestBase {
 

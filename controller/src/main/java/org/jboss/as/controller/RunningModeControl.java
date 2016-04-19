@@ -32,6 +32,7 @@ public class RunningModeControl {
     private volatile RunningMode runningMode;
     private volatile boolean reloaded;
     private volatile boolean useCurrentConfig;
+    private volatile String newBootFileName;
 
     public RunningModeControl(final RunningMode initialMode) {
         this.runningMode = initialMode;
@@ -59,5 +60,29 @@ public class RunningModeControl {
 
     public boolean isUseCurrentConfig() {
         return useCurrentConfig;
+    }
+
+    /**
+     * Get the new boot file name. For a standalone server this will be the location of the server configuration
+     * (i.e. the standalone.xml variety). For a host controller this will be the location of the host configuration
+     * (i.e. the host.xml variety). Once called this method will clear the new boot file name.
+     *
+     * @return the new boot file name.
+     */
+    public String getAndClearNewBootFileName() {
+        String newBootFileName = this.newBootFileName;
+        this.newBootFileName = null;
+        return newBootFileName;
+    }
+
+    /**
+     * Set the new boot file name. For a standalone server this will be the location of the server configuration
+     * (i.e. the standalone.xml variety). For a host controller this will be the location of the host configuration
+     * (i.e. the host.xml variety).
+     *
+     * @param newBootFileName the name of the new boot file.
+     */
+    public void setNewBootFileName(String newBootFileName) {
+        this.newBootFileName = newBootFileName;
     }
 }

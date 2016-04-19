@@ -24,7 +24,9 @@ package org.jboss.as.test.integration.logging.syslog;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.productivity.java.syslog4j.SyslogConstants.UDP;
 
 import java.io.IOException;
@@ -37,6 +39,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.test.integration.logging.AbstractLoggingTestCase;
 import org.jboss.as.test.integration.logging.LoggingServiceActivator;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.as.test.syslogserver.BlockedSyslogServerEventHandler;
@@ -54,7 +57,6 @@ import org.productivity.java.syslog4j.server.SyslogServer;
 import org.productivity.java.syslog4j.server.SyslogServerEventIF;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -178,7 +180,7 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
         assertTrue("Invalid response statusCode: " + statusCode, statusCode == HttpStatus.SC_OK);
     }
 
-    static class SyslogHandlerTestCaseSetup implements ServerSetupTask {
+    static class SyslogHandlerTestCaseSetup extends ServerReload.SetupTask {
 
         @Override
         public void setup(final ManagementClient managementClient) throws Exception {
@@ -232,6 +234,8 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
             op.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set(true);
             executeOperation(op);
             LOGGER.info("syslog server logging profile removed");
+
+            super.tearDown(managementClient);
         }
     }
 }

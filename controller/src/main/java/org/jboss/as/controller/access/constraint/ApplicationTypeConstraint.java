@@ -122,17 +122,31 @@ public class ApplicationTypeConstraint extends AllowAllowNotConstraint {
             return false;
         }
 
-        public void addApplicationTypeConfig(ApplicationTypeConfig applicationTypeConfig) {
+        /**
+         * Stores an ApplicationTypeConfig for use in constraints.
+         *
+         * @param applicationTypeConfig the config
+         * @return either the provided confing, or if a compatible one with the same key is already present, that one
+         *
+         * @throws AssertionError if a config with the same key is already register and it is not
+         *           {@linkplain ApplicationTypeConfig#isCompatibleWith(ApplicationTypeConfig)} compatible with} the
+         *           one to be added
+         */
+        public ApplicationTypeConfig addApplicationTypeConfig(ApplicationTypeConfig applicationTypeConfig) {
             ApplicationTypeConfig.Key key = applicationTypeConfig.getKey();
             ApplicationTypeConfig existing = typeConfigs.get(key);
+            ApplicationTypeConfig result;
             if (existing == null) {
                 typeConfigs.put(key, applicationTypeConfig);
+                result = applicationTypeConfig;
             } else {
                 // Check for programming error -- ApplicationTypeConfigs with same key created with
                 // differing default settings
                 assert existing.isCompatibleWith(applicationTypeConfig)
                         : "incompatible " + applicationTypeConfig.getClass().getSimpleName();
+                result = existing;
             }
+            return result;
         }
 
 

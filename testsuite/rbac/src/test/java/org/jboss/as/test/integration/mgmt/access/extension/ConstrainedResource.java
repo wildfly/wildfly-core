@@ -27,10 +27,10 @@ package org.jboss.as.test.integration.mgmt.access.extension;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -101,7 +101,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
     public ConstrainedResource(PathElement pathElement) {
         super(new Parameters(pathElement, new NonResolvingResourceDescriptionResolver())
                 .setAddHandler(new AbstractAddStepHandler(PASSWORD, SECURITY_DOMAIN))
-                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE)
                 .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("rbac", "datasource"))));
     }
 

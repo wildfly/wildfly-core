@@ -1055,8 +1055,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         initNewClient(newClient, null, null);
     }
 
-    private void initNewClient(ModelControllerClient newClient, ControllerAddress address,
-            ConnectionInfoBean conInfo) {
+    private void initNewClient(ModelControllerClient newClient, ControllerAddress address, ConnectionInfoBean conInfo) {
         if (newClient != null) {
             if (this.client != null) {
                 disconnectController();
@@ -1347,6 +1346,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     @Override
+    public boolean isWorkflowMode() {
+        return redirection != null;
+    }
+
+    @Override
     public BatchManager getBatchManager() {
         return batchManager;
     }
@@ -1461,10 +1465,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     + " 'help' for the list of supported commands.");
         }
 
-        console.setPrompt(getPrompt());
         if(!console.running()) {
             console.start();
         }
+        console.setPrompt(getPrompt());
         if(console.isControlled()) {
             console.continuous();
         }

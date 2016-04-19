@@ -33,6 +33,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
@@ -42,7 +43,6 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -109,7 +109,7 @@ public class BlockerExtension implements Extension {
         private BlockerSubsystemResourceDefinition(boolean forHost) {
             super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver(),
                     new AbstractAddStepHandler(),
-                    ReloadRequiredRemoveStepHandler.INSTANCE);
+                    ModelOnlyRemoveStepHandler.INSTANCE);
             this.forHost = forHost;
         }
 
@@ -131,7 +131,7 @@ public class BlockerExtension implements Extension {
         }
     }
 
-    public static enum BlockPoint {
+    public enum BlockPoint {
         MODEL,
         RUNTIME,
         SERVICE_START,
@@ -145,6 +145,7 @@ public class BlockerExtension implements Extension {
 
         private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("block", new NonResolvingResourceDescriptionResolver())
                 .setParameters(CALLER, TARGET_HOST, TARGET_SERVER, BLOCK_POINT, BLOCK_TIME)
+                .setRuntimeOnly()
                 .build();
 
         @Override
@@ -158,6 +159,7 @@ public class BlockerExtension implements Extension {
             if (context.getProcessType() == ProcessType.STANDALONE_SERVER) {
                 forMe = true;
             } else {
+                context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS); // To help with WFCORE-263 testing, get the exclusive lock on this process
                 Resource rootResource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
                 if (targetServer.isDefined()) {
                     if (context.getProcessType().isServer()) {

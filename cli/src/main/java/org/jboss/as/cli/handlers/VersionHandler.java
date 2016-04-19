@@ -86,8 +86,11 @@ public class VersionHandler implements CommandHandler {
                             ++flag;
                         }
                         if(result.hasDefined(Util.RELEASE_CODENAME)) {
-                            buf.append(" \"").append(result.get(Util.RELEASE_CODENAME).asString()).append('\"');
-                            ++flag;
+                            String codename = result.get(Util.RELEASE_CODENAME).asString();
+                            if (codename.length() > 0) {
+                                buf.append(" \"").append(codename).append('\"');
+                                ++flag;
+                            }
                         }
                         if(flag == 0) {
                             buf.append("release info was not provided by the controller");
