@@ -29,9 +29,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MIME_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -115,6 +118,9 @@ class ModelControllerImpl implements ModelController {
         EMPTY_ADDRESS.protect();
     }
 
+    private static final PathAddress MODEL_CONTROLLER_ADDRESS = PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
+            PathElement.pathElement(SERVICE, MANAGEMENT_OPERATIONS));
+
     private final ServiceRegistry serviceRegistry;
     private final ServiceTarget serviceTarget;
     private final ModelControllerLock controllerLock = new ModelControllerLock();
@@ -144,6 +150,7 @@ class ModelControllerImpl implements ModelController {
 
     private final AbstractControllerService.PartialModelIndicator partialModelIndicator;
 
+    private PathAddress modelControllerResourceAddress;
 
     ModelControllerImpl(final ServiceRegistry serviceRegistry, final ServiceTarget serviceTarget,
                         final ManagementResourceRegistration rootRegistration,
@@ -192,6 +199,9 @@ class ModelControllerImpl implements ModelController {
         this.hostServerGroupTracker = processType.isManagedDomain() ? new HostServerGroupTracker() : null;
         this.modelControllerResource = new ModelControllerResource();
         this.extraValidationStepHandler = extraValidationStepHandler;
+        if (processType.isServer()) {
+            this.modelControllerResourceAddress = MODEL_CONTROLLER_ADDRESS;
+        }
         auditLogger.startBoot();
     }
 
@@ -937,6 +947,14 @@ class ModelControllerImpl implements ModelController {
         if (bootingFlag.get()) {
             bootErrorCollector.addFailureDescription(operation, failure);
         }
+    }
+
+    PathAddress getModelControllerResourceAddress(ManagementModel managementModel) {
+        if (modelControllerResourceAddress == null) {
+            String hostName = managementModel.getRootResource().getChildrenNames(HOST).iterator().next();
+            modelControllerResourceAddress = PathAddress.pathAddress(HOST, hostName).append(MODEL_CONTROLLER_ADDRESS);
+        }
+        return modelControllerResourceAddress;
     }
 
     private class DefaultPrepareStepHandler implements OperationStepHandler {

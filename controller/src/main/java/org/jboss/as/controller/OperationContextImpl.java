@@ -40,6 +40,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_TIME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_MODIFICATION_BEGUN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_MODIFICATION_COMPLETE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
@@ -177,6 +179,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private Step lockStep;
     /** The step that acquired the container monitor  */
     private Step containerMonitorStep;
+    private boolean notifiedModificationBegun;
     private volatile Boolean requiresModelUpdateAuthorization;
     private volatile boolean readOnly = true;
 
@@ -476,7 +479,18 @@ final class OperationContextImpl extends AbstractOperationContext {
                 throw te;
             } finally {
                 executionStatus = originalExecutionStatus;
+                notifyModificationsComplete();
             }
+        }
+    }
+
+    private void notifyModificationsComplete() {
+        if (notifiedModificationBegun) {
+            Notification notification = new Notification(RUNTIME_MODIFICATION_COMPLETE,
+                    modelController.getModelControllerResourceAddress(managementModel),
+                    MGMT_OP_LOGGER.runtimeModificationComplete());
+            notificationSupport.emit(notification);
+            notifiedModificationBegun = false;
         }
     }
 
@@ -769,6 +783,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 try {
                     executionStatus = ExecutionStatus.AWAITING_STABILITY;
                     modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, respectInterruption);
+                    notifyModificationBegun();
                 } catch (InterruptedException e) {
                     if (resultAction != ResultAction.ROLLBACK) {
                         // We're not on the way out, so we've been cancelled on the way in
@@ -796,7 +811,20 @@ final class OperationContextImpl extends AbstractOperationContext {
                     executionStatus = origStatus;
                 }
             }
+        } else if (!notifiedModificationBegun) {
+            // We were asked to lock, but affectsRuntime was set while notifiedModificationBegun wasn't
+            // This means we must be trying to modify again after we cleared the notifiedModificationBegun marker,
+            // i.e. in a rollback
+            notifyModificationBegun();
         }
+    }
+
+    private void notifyModificationBegun() {
+        Notification notification = new Notification(RUNTIME_MODIFICATION_BEGUN,
+                modelController.getModelControllerResourceAddress(managementModel),
+                MGMT_OP_LOGGER.runtimeModificationBegun());
+        notificationSupport.emit(notification);
+        notifiedModificationBegun = true;
     }
 
     public Resource readResource(final PathAddress requestAddress) {
@@ -1145,6 +1173,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         } finally {
             try {
                 if (this.containerMonitorStep == step) {
+                    notifyModificationsComplete();
                     resetContainerStateChanges();
                 }
             } finally {
