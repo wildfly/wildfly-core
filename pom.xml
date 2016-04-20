@@ -140,10 +140,11 @@
 
         <!-- Modularized JDK support (various workarounds) - activated via profile -->
         <modular.jdk.args/>
+        <modular.jdk.props/>
 
         <!-- Surefire args -->
         <surefire.jpda.args/>
-        <surefire.system.args>${modular.jdk.args} -ea -Duser.region=US -Duser.language=en -XX:MaxMetaspaceSize=256m ${surefire.jpda.args}</surefire.system.args>
+        <surefire.system.args>${modular.jdk.args} ${modular.jdk.props} -ea -Duser.region=US -Duser.language=en -XX:MaxMetaspaceSize=256m ${surefire.jpda.args}</surefire.system.args>
 
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
@@ -1479,6 +1480,8 @@
             <properties>
                 <!-- [WFCORE-1431] remove SASL workaround -->
                 <modular.jdk.args>-XaddExports:java.security.sasl/com.sun.security.sasl.digest=ALL-UNNAMED,java.security.sasl/com.sun.security.sasl=ALL-UNNAMED</modular.jdk.args>
+                <!-- [WFCORE-1494] remove JUL workaround -->
+                <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true</modular.jdk.props>
             </properties>
         </profile>
         <!--
