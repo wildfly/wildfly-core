@@ -49,10 +49,12 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.UserPrincipal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
@@ -678,7 +680,7 @@ public class PersistanceResourceTestCase {
         assert aclStandardFileView != null;
         List<AclEntry> aclEntries = aclStandardFileView.getAcl();
         List<AclEntry> readWritePermissions = new ArrayList<>(aclEntries.size());
-        UserPrincipal owner = aclStandardFileView.getOwner();
+        final UserPrincipal owner = aclStandardFileView.getOwner();
         //Setting execute permissions on the file
         for(AclEntry entry : aclEntries) {
             if(entry.principal().equals(owner)) {
@@ -695,19 +697,13 @@ public class PersistanceResourceTestCase {
         AclFileAttributeView aclDefaultCreatedFilePermissionView = Files.getFileAttributeView(testPermissions, AclFileAttributeView.class);
         assert aclDefaultCreatedFilePermissionView != null;
         List<AclEntry> defaultPermissions = aclDefaultCreatedFilePermissionView.getAcl();
-        for(AclEntry entry : defaultPermissions) {
-            if(entry.principal().equals(aclDefaultCreatedFilePermissionView.getOwner())) {
-                assertThat(entry.toString(), entry.permissions(), hasItem(AclEntryPermission.WRITE_OWNER));
-            }
-        }
+        Set<AclEntryPermission> ownerPermissions = getOwnerPermissions(defaultPermissions, owner);
+        assertThat(ownerPermissions.toString(), ownerPermissions, hasItem(AclEntryPermission.WRITE_OWNER));
         Files.delete(testPermissions);
         configurationFile.successfulBoot();
-        List<AclEntry> configurationFilePemissions = aclStandardFileView.getAcl();
-         for(AclEntry entry : configurationFilePemissions) {
-            if(entry.principal().equals(owner)) {
-                 assertThat(entry.toString(),entry.permissions(), not(hasItem(AclEntryPermission.WRITE_OWNER)));
-            }
-        }
+        List<AclEntry> configurationFilePermissions = aclStandardFileView.getAcl();
+        ownerPermissions = getOwnerPermissions(configurationFilePermissions, owner);
+        assertThat(ownerPermissions.toString(), ownerPermissions, not(hasItem(AclEntryPermission.WRITE_OWNER)));
     }
 
     private AclEntry createConfigurationAccessACLEntry(UserPrincipal user) {
@@ -729,6 +725,13 @@ public class PersistanceResourceTestCase {
                 .setFlags(AclEntryFlag.FILE_INHERIT)
                 .build();
         return entry;
+    }
+
+    private Set<AclEntryPermission> getOwnerPermissions(Collection<AclEntry> entries, UserPrincipal owner) {
+        return entries.stream()
+                .filter(aclEntry -> aclEntry.principal().equals(owner))
+                .map(AclEntry::permissions)
+                .flatMap(Set::stream).collect(Collectors.toSet());
     }
 
     @Test
