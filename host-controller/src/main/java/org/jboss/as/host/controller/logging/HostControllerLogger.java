@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller.logging;
 
+import static org.jboss.logging.Logger.Level.WARN;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -1278,5 +1280,9 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message(id = 176, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
     OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
+    @LogMessage(level = WARN)
+    @Message(id = 177, value = "No security realm defined for native management service; all access will be unrestricted.")
+    void nativeManagementInterfaceIsUnsecured();
 
 }

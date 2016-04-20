@@ -24,8 +24,6 @@ package org.jboss.as.host.controller.operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 
-import java.util.Collections;
-
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -41,6 +39,7 @@ import org.jboss.dmr.ModelNode;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class HttpManagementRemoveHandler extends ReloadRequiredRemoveStepHandler {
+
 
     public static final HttpManagementRemoveHandler INSTANCE = new HttpManagementRemoveHandler();
 
@@ -63,7 +62,5 @@ public class HttpManagementRemoveHandler extends ReloadRequiredRemoveStepHandler
         hostControllerInfo.setHttpManagementPort(0);
         hostControllerInfo.setHttpManagementSecureInterface(null);
         hostControllerInfo.setHttpManagementSecurePort(0);
-        hostControllerInfo.setHttpManagementSecurityRealm(null);
-        hostControllerInfo.setAllowedOrigins(Collections.emptyList());
     }
 }

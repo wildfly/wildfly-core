@@ -25,11 +25,9 @@ package org.jboss.as.host.controller.operations;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 
-import java.util.Collection;
 import java.util.concurrent.Executor;
 
 import io.undertow.server.ListenerRegistry;
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -37,8 +35,9 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.management.BaseHttpInterfaceAddStepHandler;
+import org.jboss.as.controller.management.HttpInterfaceCommonPolicy;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.management.SecurityRealm;
@@ -60,11 +59,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.remoting3.RemotingOptions;
-import org.xnio.OptionMap;
-import org.xnio.OptionMap.Builder;
 import org.xnio.XnioWorker;
 
 /**
@@ -73,7 +68,7 @@ import org.xnio.XnioWorker;
  * @author Jason T. Greene
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class HttpManagementAddHandler extends AbstractAddStepHandler {
+public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
@@ -87,70 +82,20 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-        if (operation.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED)) {
-            boolean httpUpgradeEnabled = operation.remove(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED).asBoolean();
-            ModelNode httpUpgrade = operation.get(ModelDescriptionConstants.HTTP_UPGRADE);
-            if (httpUpgrade.hasDefined(ModelDescriptionConstants.ENABLED)) {
-                boolean httpUpgradeDotEnabled = httpUpgrade.require(ModelDescriptionConstants.ENABLED).asBoolean();
-                if (httpUpgradeEnabled != httpUpgradeDotEnabled) {
-                    throw ROOT_LOGGER.deprecatedAndCurrentParameterMismatch(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED, ModelDescriptionConstants.ENABLED);
-                }
-            } else {
-                httpUpgrade.set(ModelDescriptionConstants.ENABLED, httpUpgradeEnabled);
-            }
-        }
-
-        super.populateModel(operation, model);
-    }
-
-    @Override
     protected boolean requiresRuntime(OperationContext context) {
         return (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+    protected void installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
         populateHostControllerInfo(hostControllerInfo, context, model);
-        // DomainModelControllerService requires this service
-        installHttpManagementServices(environment, hostControllerInfo, context, model);
-    }
 
-    @Override
-    protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
-
-        HttpManagementRemoveHandler.clearHostControllerInfo(hostControllerInfo);
-    }
-
-    static void populateHostControllerInfo(final LocalHostControllerInfoImpl hostControllerInfo, final OperationContext context, final ModelNode model) throws OperationFailedException {
-        hostControllerInfo.setHttpManagementInterface(HttpManagementResourceDefinition.INTERFACE.resolveModelAttribute(context, model).asString());
-        final ModelNode portNode = HttpManagementResourceDefinition.HTTP_PORT.resolveModelAttribute(context, model);
-        hostControllerInfo.setHttpManagementPort(portNode.isDefined() ? portNode.asInt() : -1);
-        final ModelNode secureAddress = HttpManagementResourceDefinition.SECURE_INTERFACE.resolveModelAttribute(context, model);
-        hostControllerInfo.setHttpManagementSecureInterface(secureAddress.isDefined() ? secureAddress.asString() : null);
-        final ModelNode securePortNode = HttpManagementResourceDefinition.HTTPS_PORT.resolveModelAttribute(context, model);
-        hostControllerInfo.setHttpManagementSecurePort(securePortNode.isDefined() ? securePortNode.asInt() : -1);
-        final ModelNode realmNode = HttpManagementResourceDefinition.SECURITY_REALM.resolveModelAttribute(context, model);
-        hostControllerInfo.setHttpManagementSecurityRealm(realmNode.isDefined() ? realmNode.asString() : null);
-        hostControllerInfo.setAllowedOrigins(HttpManagementResourceDefinition.ALLOWED_ORIGINS.unwrap(context, model));
-    }
-
-    static void installHttpManagementServices(final HostControllerEnvironment environment, final LocalHostControllerInfo hostControllerInfo, final OperationContext context,
-                                              final ModelNode model) throws OperationFailedException {
-
-        boolean httpUpgrade = model.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE)
-                && HttpManagementResourceDefinition.ENABLED.resolveModelAttribute(context,
-                        model.require(ModelDescriptionConstants.HTTP_UPGRADE)).asBoolean();
-        boolean onDemand = context.isBooting();
-        OptionMap options = createConnectorOptions(context, model);
-        ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
         ServiceTarget serviceTarget = context.getServiceTarget();
+        boolean onDemand = context.isBooting();
         String interfaceName = hostControllerInfo.getHttpManagementInterface();
         int port = hostControllerInfo.getHttpManagementPort();
         String secureInterfaceName = hostControllerInfo.getHttpManagementSecureInterface();
         int securePort = hostControllerInfo.getHttpManagementSecurePort();
-        String securityRealm = hostControllerInfo.getHttpManagementSecurityRealm();
-        Collection<String> allowedOrigins = hostControllerInfo.getAllowedOrigins();
 
         ROOT_LOGGER.creatingHttpManagementService(interfaceName, port, securePort);
 
@@ -188,8 +133,9 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, Executor.class, service.getManagementExecutor())
                 .addInjection(service.getPortInjector(), port)
                 .addInjection(service.getSecurePortInjector(), securePort)
-                .addInjection(service.getAllowedOriginsInjector(), allowedOrigins);
+                .addInjection(service.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());
 
+        String securityRealm = commonPolicy.getSecurityRealm();
         if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);
         } else {
@@ -197,7 +143,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
         }
 
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE)
-                .install();
+            .install();
 
         // Add service preventing the server from shutting down
         final HttpShutdownService shutdownService = new HttpShutdownService();
@@ -210,12 +156,12 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
 
-        if (httpUpgrade) {
+        if (commonPolicy.isHttpUpgradeEnabled()) {
             ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
             ManagementRemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, securityRealm, serverCallbackService, tmpDirPath);
 
-            NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), serviceRegistry,onDemand);
+            NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(true), onDemand);
             final String httpConnectorName;
             if (port > -1 || securePort < 0) {
                 httpConnectorName = ManagementRemotingServices.HTTP_CONNECTOR;
@@ -223,20 +169,28 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 httpConnectorName = ManagementRemotingServices.HTTPS_CONNECTOR;
             }
 
-            RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName, ManagementRemotingServices.MANAGEMENT_ENDPOINT, options);
+            RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
+                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions());
         }
     }
 
-    static OptionMap createConnectorOptions(final OperationContext context, final ModelNode model) throws OperationFailedException {
-        Builder builder = OptionMap.builder();
+    private ConsoleMode consoleMode(boolean consoleEnabled, boolean adminOnly) {
+        return consoleEnabled ? adminOnly ?  ConsoleMode.ADMIN_ONLY : ConsoleMode.CONSOLE : ConsoleMode.NO_CONSOLE;
+    }
 
-        builder.set(RemotingOptions.SASL_PROTOCOL, HttpManagementResourceDefinition.SASL_PROTOCOL.resolveModelAttribute(context, model).asString());
-        ModelNode serverName = HttpManagementResourceDefinition.SERVER_NAME.resolveModelAttribute(context, model);
-        if (serverName.isDefined()) {
-            builder.set(RemotingOptions.SERVER_NAME, serverName.asString());
-        }
+    @Override
+    protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
+        HttpManagementRemoveHandler.clearHostControllerInfo(hostControllerInfo);
+    }
 
-        return builder.getMap();
+    static void populateHostControllerInfo(final LocalHostControllerInfoImpl hostControllerInfo, final OperationContext context, final ModelNode model) throws OperationFailedException {
+        hostControllerInfo.setHttpManagementInterface(HttpManagementResourceDefinition.INTERFACE.resolveModelAttribute(context, model).asString());
+        final ModelNode portNode = HttpManagementResourceDefinition.HTTP_PORT.resolveModelAttribute(context, model);
+        hostControllerInfo.setHttpManagementPort(portNode.isDefined() ? portNode.asInt() : -1);
+        final ModelNode secureAddress = HttpManagementResourceDefinition.SECURE_INTERFACE.resolveModelAttribute(context, model);
+        hostControllerInfo.setHttpManagementSecureInterface(secureAddress.isDefined() ? secureAddress.asString() : null);
+        final ModelNode securePortNode = HttpManagementResourceDefinition.HTTPS_PORT.resolveModelAttribute(context, model);
+        hostControllerInfo.setHttpManagementSecurePort(securePortNode.isDefined() ? securePortNode.asInt() : -1);
     }
 
 }

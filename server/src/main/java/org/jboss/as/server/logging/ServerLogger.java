@@ -1183,7 +1183,4 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 238, value = "server-config '%s' specified for reload could not be found")
     OperationFailedException serverConfigForReloadNotFound(String serverConfig);
 
-    @Message(id = 239, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
-    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
-
 }
