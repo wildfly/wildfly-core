@@ -43,15 +43,10 @@ import org.jboss.vfs.VirtualFile;
 final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
     private final InjectedValue<DeploymentMountProvider> serverDeploymentRepositoryInjector = new InjectedValue<DeploymentMountProvider>();
     private final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<PathManager>();
+    private final InjectedValue<VirtualFile> contentsInjector = new InjectedValue<VirtualFile>();
     private final String name;
     private final String managementName;
-    final InjectedValue<VirtualFile> contentsInjector = new InjectedValue<VirtualFile>();
     private final DeploymentUnit parent;
-    private final ImmutableManagementResourceRegistration registration;
-    private final ManagementResourceRegistration mutableRegistration;
-    private final Resource resource;
-    private final CapabilityServiceSupport capabilityServiceSupport;
-    private final AbstractVaultReader vaultReader;
     private final DeploymentOverlayIndex deploymentOverlays;
 
     /**
@@ -70,15 +65,11 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
                                      final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration,
                                      final Resource resource, final CapabilityServiceSupport capabilityServiceSupport,
                                      final AbstractVaultReader vaultReader, DeploymentOverlayIndex deploymentOverlays) {
+        super(registration, mutableRegistration, resource, capabilityServiceSupport, vaultReader);
         assert name != null : "name is null";
         this.name = name;
         this.managementName = managementName;
         this.parent = parent;
-        this.registration = registration;
-        this.mutableRegistration = mutableRegistration;
-        this.resource = resource;
-        this.capabilityServiceSupport = capabilityServiceSupport;
-        this.vaultReader = vaultReader;
         this.deploymentOverlays = deploymentOverlays;
     }
 
@@ -111,6 +102,10 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
 
     InjectedValue<PathManager> getPathManagerInjector() {
         return pathManagerInjector;
+    }
+
+    InjectedValue<VirtualFile> getContentsInjector() {
+        return contentsInjector;
     }
 
     @SuppressWarnings("deprecation")

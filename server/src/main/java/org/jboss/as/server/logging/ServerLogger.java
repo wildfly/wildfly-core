@@ -1060,7 +1060,7 @@ public interface ServerLogger extends BasicLogger {
     IllegalStateException serverAlreadyPaused();
 
     @LogMessage(level = INFO)
-    @Message(id = 211, value = "Suspending server with %dms timeout.")
+    @Message(id = 211, value = "Suspending server with %d ms timeout.")
     void suspendingServer(long timeoutMillis);
 
     @LogMessage(level = INFO)
@@ -1173,7 +1173,14 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 235, value = "Security Manager is enabled")
     void securityManagerEnabled();
 
-    //@Message(id = 236, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
-    //OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+    @LogMessage(level = INFO)
+    @Message(id = 236, value = "Suspending server with no timeout.")
+    void suspendingServerWithNoTimeout();
+
+    @Message(id = 237, value = "It is not possible to use use-current-server-config=false while specifying a server-config")
+    OperationFailedException cannotBothHaveFalseUseCurrentConfigAndServerConfig();
+
+    @Message(id = 238, value = "server-config '%s' specified for reload could not be found")
+    OperationFailedException serverConfigForReloadNotFound(String serverConfig);
 
 }

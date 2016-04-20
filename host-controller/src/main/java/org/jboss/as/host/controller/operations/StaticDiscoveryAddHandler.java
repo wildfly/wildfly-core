@@ -74,7 +74,7 @@ public class StaticDiscoveryAddHandler extends AbstractDiscoveryOptionAddHandler
             ModelNode model) throws OperationFailedException {
         ModelNode hostNode = StaticDiscoveryResourceDefinition.HOST.resolveModelAttribute(context, model);
         ModelNode portNode = StaticDiscoveryResourceDefinition.PORT.resolveModelAttribute(context, model);
-        ModelNode protocolNode = RemoteDomainControllerAddHandler.PROTOCOL.resolveModelAttribute(context, model);
+        ModelNode protocolNode = DomainControllerWriteAttributeHandler.PROTOCOL.resolveModelAttribute(context, model);
         String remoteDcHost = (!hostNode.isDefined()) ? null : NetworkUtils.formatPossibleIpv6Address(hostNode.asString());
         int remoteDcPort = (!portNode.isDefined()) ? -1 : portNode.asInt();
         String remoteDcProtocol = protocolNode.asString();

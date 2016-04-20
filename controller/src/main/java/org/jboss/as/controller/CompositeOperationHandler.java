@@ -61,8 +61,7 @@ public class CompositeOperationHandler implements OperationStepHandler {
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(NAME, ControllerResolver.getResolver("root"))
         .addParameter(STEPS)
         .setReplyType(ModelType.OBJECT)
-        .setPrivateEntry()
-        .setForceDefaultDescriptionProvider()//display description even if operation is private
+        .setReplyValueType(ModelType.OBJECT)
         .build();
 
     public static final OperationDefinition INTERNAL_DEFINITION = new SimpleOperationDefinitionBuilder(NAME, ControllerResolver.getResolver("root"))

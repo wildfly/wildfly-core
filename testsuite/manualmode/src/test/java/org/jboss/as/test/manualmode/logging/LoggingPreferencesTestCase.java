@@ -42,6 +42,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -52,6 +53,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author <a href="mailto:pkremens@redhat.com">Petr Kremensky</a>
  */
 @RunWith(WildflyTestRunner.class)
+@ServerControl(manual = true)
 public class LoggingPreferencesTestCase extends AbstractLoggingTestCase {
 
     private static final String DEPLOYMENT_LOG_MESSAGE = "Deployment logging configuration message.";
@@ -63,17 +65,22 @@ public class LoggingPreferencesTestCase extends AbstractLoggingTestCase {
     private static final String FILE_HANDLER_FILE_NAME = "custom-file-logger.log";
     private static final String PER_DEPLOY_FILE_NAME = "per-deploy-logging.log";
 
-    private static final Path profileLog = getAbsoluteLogFilePath(FILE_HANDLER_FILE_NAME);
-    private static final Path perDeployLog = getAbsoluteLogFilePath(PER_DEPLOY_FILE_NAME);
-
     private static final ModelNode PROFILE_ADDRESS = createAddress("logging-profile", PROFILE_NAME);
     private static final ModelNode ROOT_LOGGER_ADDRESS = createAddress("logging-profile", PROFILE_NAME, "root-logger", "ROOT");
     private static final ModelNode FILE_HANDLER_ADDRESS = createAddress("logging-profile", PROFILE_NAME, FILE_HANDLER, FILE_HANDLER_NAME);
+
+    private Path profileLog;
+    private Path perDeployLog;
 
     @Before
     public void prepareContainer() throws Exception {
         // Start the container
         container.start();
+
+        if (profileLog == null) {
+            profileLog = getAbsoluteLogFilePath(FILE_HANDLER_FILE_NAME);
+            perDeployLog = getAbsoluteLogFilePath(PER_DEPLOY_FILE_NAME);
+        }
 
         final CompositeOperationBuilder builder = CompositeOperationBuilder.create();
         // Create a new logging profile

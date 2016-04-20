@@ -90,6 +90,7 @@ public interface RoleMapper {
      * @param mappedRoles a set of roles obtained from a call to one of this mapper's {@code mapRoles} methods
      * @param runAsRole the role the caller wishes to run as
      * @return {@code true} if running as {@code runAsRole} is allowed
+     * @throws UnknowRoleException when the {@code runAsRole} isn't defined.
      */
     boolean canRunAs(Set<String> mappedRoles, String runAsRole);
 

@@ -33,8 +33,8 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.descriptions.HostResolver;
+import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
-import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.StaticDiscoveryAddHandler;
 import org.jboss.as.host.controller.operations.StaticDiscoveryRemoveHandler;
 
@@ -45,11 +45,11 @@ import org.jboss.as.host.controller.operations.StaticDiscoveryRemoveHandler;
  */
 public class StaticDiscoveryResourceDefinition extends SimpleResourceDefinition {
 
-    public static final SimpleAttributeDefinition HOST = getRequiredCopy(RemoteDomainControllerAddHandler.HOST);
+    public static final SimpleAttributeDefinition HOST = getRequiredCopy(DomainControllerWriteAttributeHandler.HOST);
 
-    public static final SimpleAttributeDefinition PORT = getRequiredCopy(RemoteDomainControllerAddHandler.PORT);
+    public static final SimpleAttributeDefinition PORT = getRequiredCopy(DomainControllerWriteAttributeHandler.PORT);
 
-    public static final SimpleAttributeDefinition PROTOCOL = RemoteDomainControllerAddHandler.PROTOCOL; // protocol should allow null it appears
+    public static final SimpleAttributeDefinition PROTOCOL = DomainControllerWriteAttributeHandler.PROTOCOL; // protocol should allow null it appears
 
     private static SimpleAttributeDefinition getRequiredCopy(SimpleAttributeDefinition attr) {
         return new SimpleAttributeDefinitionBuilder(attr.getName(), attr.getType())

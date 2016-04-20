@@ -39,8 +39,10 @@ public abstract class AuditLogXml {
             case 2:
             case 3:
                 return new AuditLogXml_Legacy(host);
-            default:
+            case 4:
                 return new AuditLogXml_4(host);
+            default:
+                return new AuditLogXml_5(host);
         }
     }
 

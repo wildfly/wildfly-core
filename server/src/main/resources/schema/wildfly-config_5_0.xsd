@@ -1549,7 +1549,7 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="file-audit-log-handlerType">
+    <xs:complexType name="abstract-file-audit-log-handlerType">
         <xs:annotation>
             <xs:documentation>
                 Configuration of a simple file handler for the audit log. This writes to a local file.
@@ -1557,25 +1557,44 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="base-audit-log-handlerType">
-			        <xs:attribute name="path" type="xs:string" use="required">
-			            <xs:annotation>
-			                <xs:documentation>
-			                    The path of the audit log.
-			                </xs:documentation>
-			            </xs:annotation>
-			        </xs:attribute>
-			        <xs:attribute name="relative-to" use="optional" type="xs:string">
-			            <xs:annotation>
-			                <xs:documentation>
-			                    The name of another previously named path, or of one of the
-			                    standard paths provided by the system. If 'relative-to' is
-			                    provided, the value of the 'path' attribute is treated as
-			                    relative to the path specified by this attribute.
-			                </xs:documentation>
-			            </xs:annotation>
-			        </xs:attribute>
-			   </xs:extension>
-			</xs:complexContent>
+                <xs:attribute name="path" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The path of the audit log.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="relative-to" use="optional" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of another previously named path, or of one of the
+                            standard paths provided by the system. If 'relative-to' is
+                            provided, the value of the 'path' attribute is treated as
+                            relative to the path specified by this attribute.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="file-audit-log-handlerType">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration of a simple file handler for the audit log. This writes to a local file.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="abstract-file-audit-log-handlerType">
+                <xs:attribute name="rotate-at-startup" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Whether or not should an old log file be rotated during a handler initialization.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 
     <xs:complexType name="size-rotating-file-audit-log-handlerType">
@@ -1587,7 +1606,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
-            <xs:extension base="file-audit-log-handlerType">
+            <xs:extension base="abstract-file-audit-log-handlerType">
                 <xs:attribute name="rotate-size" type="sizeType" use="optional">
                     <xs:annotation>
                         <xs:documentation>
@@ -1615,7 +1634,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
-            <xs:extension base="file-audit-log-handlerType">
+            <xs:extension base="abstract-file-audit-log-handlerType">
                 <xs:attribute name="suffix" type="xs:string" use="required">
                     <xs:annotation>
                         <xs:documentation>

@@ -48,7 +48,11 @@ public class SuspendController implements Service<SuspendController> {
     };
 
     public synchronized void suspend(long timeoutMillis) {
-        ServerLogger.ROOT_LOGGER.suspendingServer(timeoutMillis);
+        if (timeoutMillis > 0) {
+            ServerLogger.ROOT_LOGGER.suspendingServer(timeoutMillis);
+        } else {
+            ServerLogger.ROOT_LOGGER.suspendingServerWithNoTimeout();
+        }
         state = State.PRE_SUSPEND;
         //we iterate a copy, in case a listener tries to register a new listener
         for(OperationListener listener: new ArrayList<>(operationListeners)) {

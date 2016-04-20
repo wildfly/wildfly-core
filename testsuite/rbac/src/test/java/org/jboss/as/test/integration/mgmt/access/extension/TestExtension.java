@@ -37,16 +37,16 @@ import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
  */
 public class TestExtension implements Extension {
 
-    static final String SUBSYSTEM_NAME = "test-extension";
-    static final String SUBSYSTEM_NAMESPACE = "urn:wildfly:test:test-extension:1.0";
-    public static final String MODULE_NAME = "org.wildfly.test.extension";
+    private static final String SUBSYSTEM_NAME = "rbac";
+    private static final String SUBSYSTEM_NAMESPACE = "urn:wildfly:test:test-extension:1.0";
+    static final String MODULE_NAME = "org.wildfly.test.extension";
 
 
     @Override
     public void initialize(ExtensionContext context) {
         System.out.println("Initializing TestExtension");
         SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1, 0, 0));
-        ManagementResourceRegistration rootRbacRegistration = registration.registerSubsystemModel(new RootResourceDefinition("rbac"));
+        ManagementResourceRegistration rootRbacRegistration = registration.registerSubsystemModel(new RootResourceDefinition(SUBSYSTEM_NAME));
         rootRbacRegistration.registerSubModel(new ConstrainedResource(PathElement.pathElement("rbac-constrained")));
         rootRbacRegistration.registerSubModel(new SensitiveResource(PathElement.pathElement("rbac-sensitive")));
     }

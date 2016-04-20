@@ -52,6 +52,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller._private.OperationCancellationException;
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
+import org.jboss.as.controller.access.rbac.UnknowRoleException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.interfaces.InterfaceCriteria;
 import org.jboss.as.controller.notification.Notification;
@@ -3091,7 +3092,7 @@ public interface ControllerLogger extends BasicLogger {
     //IOException unableToUnmarshallSubject(@Cause ClassNotFoundException e);
 
     @Message(id = 327, value = "Unknown role '%s'")
-    IllegalArgumentException unknownRole(String roleName);
+    UnknowRoleException unknownRole(String roleName);
 
     @Message(id = 328, value = "Cannot remove standard role '%s'")
     IllegalStateException cannotRemoveStandardRole(String roleName);

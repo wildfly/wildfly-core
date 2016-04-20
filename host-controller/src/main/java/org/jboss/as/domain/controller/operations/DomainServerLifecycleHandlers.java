@@ -46,6 +46,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -72,7 +73,7 @@ public class DomainServerLifecycleHandlers {
             .build();
 
     private static final AttributeDefinition TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TIMEOUT, ModelType.INT, true)
-            .setDefaultValue(new ModelNode(0)).build();
+            .setMeasurementUnit(MeasurementUnit.SECONDS).setDefaultValue(new ModelNode(0)).build();
 
 
     public static final String RESTART_SERVERS_NAME = RESTART_SERVERS;
@@ -345,16 +346,19 @@ public class DomainServerLifecycleHandlers {
                     context.getServiceRegistry(true);
                     Map<String, ProcessInfo> processes = serverInventory.determineRunningProcesses(true);
                     final Set<String> serversInGroup = getServersForGroup(model, group);
-                    final Set<String> waitForServers = new HashSet<String>();
+                    final Set<String> waitForServers = new HashSet<>();
                     for (String serverName : processes.keySet()) {
                         final String serverModelName = serverInventory.getProcessServerName(serverName);
                         if (group == null || serversInGroup.contains(serverModelName)) {
-                            serverInventory.suspendServer(serverModelName);
                             waitForServers.add(serverModelName);
                         }
                     }
                     if (timeout != 0) {
-                        serverInventory.awaitServerSuspend(waitForServers, timeout > 0 ? timeout * 1000 : timeout);
+                        serverInventory.awaitServerSuspend(waitForServers, timeout);
+                    } else {
+                        for (String serverModelName : waitForServers){
+                            serverInventory.suspendServer(serverModelName);
+                        }
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }

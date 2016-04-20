@@ -42,24 +42,15 @@ import org.jboss.msc.service.ServiceRegistry;
 public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
     private final ResourceRoot deploymentRoot;
     private final DeploymentUnit parent;
-    private final ImmutableManagementResourceRegistration registration;
-    private final ManagementResourceRegistration mutableRegistration;
-    private Resource resource;
-    private final CapabilityServiceSupport capabilityServiceSupport;
-    private final AbstractVaultReader vaultReader;
     private final PathManager pathManager;
 
     public SubDeploymentUnitService(ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, CapabilityServiceSupport capabilityServiceSupport, final AbstractVaultReader vaultReader, PathManager pathManager) {
+        super(registration, mutableRegistration, resource, capabilityServiceSupport, vaultReader);
         this.pathManager = pathManager;
         if (deploymentRoot == null) throw ServerLogger.ROOT_LOGGER.deploymentRootRequired();
         this.deploymentRoot = deploymentRoot;
         if (parent == null) throw ServerLogger.ROOT_LOGGER.subdeploymentsRequireParent();
         this.parent = parent;
-        this.registration = registration;
-        this.mutableRegistration = mutableRegistration;
-        this.resource = resource;
-        this.capabilityServiceSupport = capabilityServiceSupport;
-        this.vaultReader = vaultReader;
     }
 
     protected DeploymentUnit createAndInitializeDeploymentUnit(ServiceRegistry registry) {
@@ -79,7 +70,6 @@ public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
         // For compatibility only
         addSVH(deploymentUnit);
 
-        this.resource = null;
         return deploymentUnit;
     }
 

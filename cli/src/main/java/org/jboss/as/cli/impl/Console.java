@@ -222,7 +222,7 @@ public interface Console {
                         Prompt origPrompt = null;
                         if(!console.getPrompt().getPromptAsString().equals(prompt)) {
                             origPrompt = console.getPrompt();
-                            console.setPrompt(new Prompt(prompt, mask));
+                            console.updatePrompt(new Prompt(prompt, mask));
                         }
                         try {
                             return console.getInputLine();
@@ -230,7 +230,7 @@ public interface Console {
                             e.printStackTrace();
                         } finally {
                             if(origPrompt != null) {
-                                console.setPrompt(origPrompt);
+                                console.updatePrompt(origPrompt);
                             }
                         }
                     } finally {
@@ -310,8 +310,10 @@ public interface Console {
 
                 @Override
                 public void
-                setPrompt(String prompt, Character mask){
-                    console.setPrompt(new Prompt(prompt, mask));
+                setPrompt(String prompt, Character mask) {
+                    if(!prompt.equals(console.getPrompt().getPromptAsString())) {
+                        console.updatePrompt(new Prompt(prompt, mask));
+                    }
                 }
 
                 class HistoryImpl implements CommandHistory {

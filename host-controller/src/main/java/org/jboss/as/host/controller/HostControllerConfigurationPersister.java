@@ -66,8 +66,9 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
         this.hostExtensionRegistry = hostExtensionRegistry;
         this.extensionRegistry = extensionRegistry;
         final ConfigurationFile configurationFile = environment.getHostConfigurationFile();
-        if (environment.getRunningModeControl().isReloaded()) {
-            configurationFile.resetBootFile(environment.getRunningModeControl().isUseCurrentConfig());
+        final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
+        if (runningModeControl.isReloaded()) {
+            configurationFile.resetBootFile(runningModeControl.isUseCurrentConfig(), runningModeControl.getAndClearNewBootFileName());
         }
         this.hostPersister = ConfigurationPersisterFactory.createHostXmlConfigurationPersister(configurationFile, environment, executorService, hostExtensionRegistry);
     }
@@ -93,7 +94,8 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
             }
         } else {
             domainConfigurationFile = getStandardDomainConfigurationFile();
-            if (environment.getRunningModeControl().isReloaded()) {
+            final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
+            if (runningModeControl.isReloaded()) {
                 if (environment.isBackupDomainFiles()) {
                     // We may have been promoted to master and reloaded.
                     // See if we should still use the domain-cached-remote.xml.
@@ -109,7 +111,9 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
                         domainConfigurationFile = cachedRemote;
                     }
                 }
-                domainConfigurationFile.resetBootFile(environment.getRunningModeControl().isUseCurrentDomainConfig());
+                domainConfigurationFile.resetBootFile(
+                        runningModeControl.isUseCurrentDomainConfig(),
+                        runningModeControl.getAndClearNewDomainBootFileName());
             }
 
             domainPersister = ConfigurationPersisterFactory.createDomainXmlConfigurationPersister(domainConfigurationFile, executorService, extensionRegistry);

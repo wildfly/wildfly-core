@@ -41,6 +41,7 @@ public class StandardExtensionSetupTask implements ServerSetupTask {
 
     @Override
     public void tearDown(ManagementClient managementClient) throws Exception {
+        ExtensionSetup.removeResources(managementClient);
         ExtensionSetup.removeExtensionAndSubsystem(managementClient);
     }
 }

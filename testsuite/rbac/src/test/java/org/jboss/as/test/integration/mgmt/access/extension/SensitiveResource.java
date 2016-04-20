@@ -26,8 +26,8 @@ package org.jboss.as.test.integration.mgmt.access.extension;
 
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
@@ -42,7 +42,7 @@ public class SensitiveResource extends SimpleResourceDefinition {
     public SensitiveResource(PathElement pathElement) {
         super(new Parameters(pathElement, new NonResolvingResourceDescriptionResolver())
                 .setAddHandler(new AbstractAddStepHandler())
-                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE)
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN,
                         new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("rbac", "security-domain"))));
     }

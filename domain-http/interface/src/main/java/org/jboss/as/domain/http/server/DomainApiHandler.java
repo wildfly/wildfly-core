@@ -22,6 +22,7 @@
 package org.jboss.as.domain.http.server;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE_FOR_COORDINATOR;
@@ -38,6 +39,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.domain.http.server.DomainUtil.writeResponse;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
@@ -53,6 +55,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.ETag;
+import io.undertow.util.ETagUtils;
+import io.undertow.util.HeaderMap;
+import io.undertow.util.Headers;
+import io.undertow.util.HexConverter;
+import io.undertow.util.HttpString;
+import io.undertow.util.Methods;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -64,16 +75,6 @@ import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.xnio.IoUtils;
 import org.xnio.streams.ChannelInputStream;
-
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.ETag;
-import io.undertow.util.ETagUtils;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HexConverter;
-import io.undertow.util.HttpString;
-import io.undertow.util.Methods;
 
 /**
  *
@@ -208,7 +209,13 @@ class DomainApiHandler implements HttpHandler {
         } : ModelController.OperationTransactionControl.COMMIT;
 
         try {
-            dmr.get(OPERATION_HEADERS, ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
+            ModelNode headers = dmr.get(OPERATION_HEADERS);
+            headers.get(ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
+            headers.get(CALLER_TYPE).set(USER);
+            // Don't allow a domain-uuid operation header from a user call
+            if (headers.hasDefined(DOMAIN_UUID)) {
+                headers.remove(DOMAIN_UUID);
+            }
             response = modelController.execute(new OperationBuilder(dmr).build(), OperationMessageHandler.logging, control);
             if (cachable && streamIndex > -1) {
                 // Use the MD5 of the model nodes toString() method as ETag
