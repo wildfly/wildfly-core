@@ -1465,10 +1465,15 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     + " 'help' for the list of supported commands.");
         }
 
+        console.setPrompt(getPrompt());
         if(!console.running()) {
             console.start();
         }
-        console.setPrompt(getPrompt());
+        // if console is already running before we have started interacting, we need to
+        // make sure that the prompt is correctly displayed
+        else {
+            console.redrawPrompt();
+        }
         if(console.isControlled()) {
             console.continuous();
         }
