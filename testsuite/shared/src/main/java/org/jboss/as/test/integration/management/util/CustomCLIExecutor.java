@@ -132,6 +132,11 @@ public class CustomCLIExecutor {
         commandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigPath);
         commandBuilder.addCliArgument("--timeout="+CLI_PROC_TIMEOUT);
 
+        // propagate JVM args to the CLI
+        if (System.getProperty("cli.jvm.args") != null) {
+            commandBuilder.addJavaOption(System.getProperty("cli.jvm.args"));
+        }
+
         // Note that this only allows for a single system property
         if (System.getProperty("cli.args") != null) {
             commandBuilder.addJavaOption(System.getProperty("cli.args"));
