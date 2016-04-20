@@ -22,7 +22,7 @@
 package org.jboss.as.platform.mbean;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
@@ -89,7 +89,7 @@ abstract class AbstractPlatformMBeanResource implements Resource.ResourceEntry {
         if (!hasChildren(childType)) {
             return Collections.emptySet();
         } else {
-            Set<Resource.ResourceEntry> result = new HashSet<Resource.ResourceEntry>();
+            Set<Resource.ResourceEntry> result = new LinkedHashSet<ResourceEntry>();
             for (String name : getChildrenNames()) {
                 result.add(getChildEntry(name));
             }

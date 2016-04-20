@@ -24,7 +24,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -101,7 +101,7 @@ public class SensitivityClassificationTypeResourceDefinition extends SimpleResou
         @Override
         public Set<ResourceEntry> getChildren(String childType) {
             if (childType.equals(CLASSIFICATION)) {
-                Set<ResourceEntry> entries = new HashSet<ResourceEntry>();
+                Set<ResourceEntry> entries = new LinkedHashSet<ResourceEntry>();
                 String classificationType = getPathElement().getValue();
                 for (Map.Entry<String, SensitivityClassification> entry : classificationsByName.entrySet()) {
                     entries.add(SensitivityResourceDefinition.createSensitivityClassificationResource(entry.getValue(),
