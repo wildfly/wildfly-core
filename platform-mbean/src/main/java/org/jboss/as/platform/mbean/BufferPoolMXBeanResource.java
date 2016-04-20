@@ -26,7 +26,7 @@ import static org.jboss.as.platform.mbean.PlatformMBeanUtil.escapeMBeanName;
 
 import java.lang.management.ManagementFactory;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.management.MalformedObjectNameException;
@@ -57,7 +57,7 @@ public class BufferPoolMXBeanResource extends AbstractPlatformMBeanResource {
     @Override
     Set<String> getChildrenNames() {
         try {
-            final Set<String> result = new HashSet<String>();
+            final Set<String> result = new LinkedHashSet<String>();
             final ObjectName pattern = new ObjectName(PlatformMBeanConstants.BUFFER_POOL_MXBEAN_DOMAIN_TYPE + ",name=*");
             Set<ObjectName> names = ManagementFactory.getPlatformMBeanServer().queryNames(pattern, null);
             for (ObjectName on : names) {

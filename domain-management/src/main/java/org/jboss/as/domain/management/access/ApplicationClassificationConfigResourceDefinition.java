@@ -27,7 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.parsing.Attribute.APPLICATION;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -206,7 +206,7 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
         public Set<String> getChildrenNames(String type) {
             if (registry != null && APPLIES_TO.equals(type)) {
                 Map<PathAddress, AccessConstraintUtilization> utilizations = getAccessConstraintUtilizations();
-                Set<String> result = new HashSet<String>();
+                Set<String> result = new LinkedHashSet<String>();
                 for (PathAddress pa : utilizations.keySet()) {
                     result.add(pa.toCLIStyleString());
                 }
@@ -219,7 +219,7 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
         public Set<ResourceEntry> getChildren(String childType) {
             if (registry != null && APPLIES_TO.equals(childType)) {
                 Map<PathAddress, AccessConstraintUtilization> utilizations = getAccessConstraintUtilizations();
-                Set<ResourceEntry> result = new HashSet<ResourceEntry>();
+                Set<ResourceEntry> result = new LinkedHashSet<ResourceEntry>();
                 for (AccessConstraintUtilization acu : utilizations.values()) {
                     result.add(AccessConstraintAppliesToResourceDefinition.createResource(acu));
                 }
