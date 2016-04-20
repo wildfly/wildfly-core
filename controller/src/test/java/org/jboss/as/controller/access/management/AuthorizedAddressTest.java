@@ -48,6 +48,8 @@ import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.notification.Notification;
+import org.jboss.as.controller.notification.NotificationFilter;
+import org.jboss.as.controller.notification.NotificationHandler;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -575,6 +577,16 @@ public class AuthorizedAddressTest {
         @Override
         public boolean isDefaultRequiresRuntime() {
             return false;
+        }
+
+        @Override
+        public void registerNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void unregisterNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 

@@ -84,6 +84,8 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
+import org.jboss.as.controller.notification.NotificationFilter;
+import org.jboss.as.controller.notification.NotificationHandler;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
@@ -756,6 +758,16 @@ public abstract class AbstractOperationTestCase {
         @Override
         public boolean isDefaultRequiresRuntime() {
             return false;
+        }
+
+        @Override
+        public void registerNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
+            //no-op
+        }
+
+        @Override
+        public void unregisterNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
+            //no-op
         }
     }
 
