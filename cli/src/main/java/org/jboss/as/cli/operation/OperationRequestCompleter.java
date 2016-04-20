@@ -163,6 +163,9 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                                 final CommandLineCompleter valCompl = arg.getValueCompleter();
                                 if (valCompl != null) {
                                     valCompl.complete(ctx, "", 0, candidates);
+                                } else if (arg.getFullName() != null) {
+                                    String argFullName = arg.getFullName();
+                                    candidates.add(argFullName);
                                 }
                             } else {
                                 String argName = arg.getFullName();
@@ -260,6 +263,11 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                             if (valCompl != null) {
                                 final String value = chunk == null ? "" : chunk;
                                 valCompl.complete(ctx, value, value.length(), candidates);
+                            } else if (arg.getFullName() != null) {
+                                String argFullName = arg.getFullName();
+                                if (chunk == null || argFullName.startsWith(chunk)) {
+                                    candidates.add(argFullName);
+                                }
                             }
                         } else {
                             String argFullName = arg.getFullName();
