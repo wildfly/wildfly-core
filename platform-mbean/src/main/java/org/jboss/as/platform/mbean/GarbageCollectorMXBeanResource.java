@@ -27,7 +27,7 @@ import static org.jboss.as.platform.mbean.PlatformMBeanUtil.escapeMBeanName;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.jboss.as.controller.PathElement;
@@ -56,7 +56,7 @@ public class GarbageCollectorMXBeanResource extends AbstractPlatformMBeanResourc
 
     @Override
     Set<String> getChildrenNames() {
-        final Set<String> result = new HashSet<String>();
+        final Set<String> result = new LinkedHashSet<String>();
         for (GarbageCollectorMXBean mbean : ManagementFactory.getGarbageCollectorMXBeans()) {
             result.add(escapeMBeanName(mbean.getName()));
         }
