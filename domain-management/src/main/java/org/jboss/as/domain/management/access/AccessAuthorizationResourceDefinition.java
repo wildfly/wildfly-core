@@ -138,11 +138,12 @@ public class AccessAuthorizationResourceDefinition extends SimpleResourceDefinit
         resourceRegistration.registerSubModel(RoleMappingResourceDefinition.create(configurableAuthorizer, isDomain));
 
         // Scoped roles
+        WritableAuthorizerConfiguration authorizerConfiguration = configurableAuthorizer.getWritableAuthorizerConfiguration();
         if (isDomain) {
-            WritableAuthorizerConfiguration authorizerConfiguration = configurableAuthorizer.getWritableAuthorizerConfiguration();
             resourceRegistration.registerSubModel(new ServerGroupScopedRoleResourceDefinition(authorizerConfiguration));
             resourceRegistration.registerSubModel(new HostScopedRolesResourceDefinition(authorizerConfiguration));
         }
+        resourceRegistration.registerSubModel(new PatternScopedRolesResourceDefinition(authorizerConfiguration));
 
         // Constraints
         //  -- Application Type

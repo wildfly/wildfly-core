@@ -4135,6 +4135,7 @@
         <xs:sequence>
             <xs:element name="server-group-scoped-roles" type="server-group-scoped-rolesType" minOccurs="0"/>
             <xs:element name="host-scoped-roles" type="host-scoped-rolesType" minOccurs="0"/>
+            <xs:element name="pattern-scoped-roles" type="pattern-scoped-rolesType" minOccurs="0"/>
             <xs:element name="role-mapping" type="role-mappingType" minOccurs="0"/>
             <xs:element name="constraints" type="constraintsType" minOccurs="0"/>
         </xs:sequence>
@@ -4211,6 +4212,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
+            <xs:element name="pattern-scoped-roles" type="pattern-scoped-rolesType" minOccurs="0"/>
             <xs:element name="role-mapping" type="role-mappingType" minOccurs="0"/>
             <xs:element name="constraints" type="constraintsType" minOccurs="0"/>
         </xs:sequence>
@@ -4361,6 +4363,19 @@
         </xs:choice>
     </xs:complexType>
 
+    <xs:complexType name="pattern-scoped-rolesType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                   Roles scoped to a addresses or MBeans whose name match at least one of a set of regular expressions
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice>
+            <xs:element name="role" type="pattern-scoped-roleType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:choice>
+    </xs:complexType>
+
     <xs:complexType name="base-scoped-roleType">
         <xs:annotation>
             <xs:documentation>
@@ -4429,6 +4444,54 @@
                 </xs:choice>
             </xs:extension>
         </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="pattern-scoped-roleType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                   A role scoped to management resources and MBeans whose address or ObjectNames
+                   match at least one of a list of regular expressions. For management resources
+                   the resource address, expressed in CLI-style syntax, must match. For MBeans
+                   the canonical form of the MBean ObjectName must match.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="base-scoped-roleType">
+                <xs:choice>
+                    <xs:element name="pattern" type="patternType" minOccurs="1" maxOccurs="unbounded">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[
+                                   Regular expression which can match the address of a resource (expressed
+                                   in CLI-style syntax) or the canonical form of an MBean ObjectName.
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="patternType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                   A type that represents a pattern used in pattern matching.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="regular-expression" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                   The regular expression to use.
+                ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="constraintsType">

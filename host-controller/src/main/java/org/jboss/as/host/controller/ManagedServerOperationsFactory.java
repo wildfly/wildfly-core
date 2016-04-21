@@ -61,6 +61,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATTERN_SCOPED_ROLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRINCIPAL_TO_GROUP;
@@ -554,6 +555,7 @@ public final class ManagedServerOperationsFactory {
             addRoleMappings(domainConfig, baseAddress, updates);
             convertSimpleResources(domainConfig, SERVER_GROUP_SCOPED_ROLE, baseAddress, updates);
             convertSimpleResources(domainConfig, HOST_SCOPED_ROLE, baseAddress, updates);
+            convertSimpleResources(domainConfig, PATTERN_SCOPED_ROLE, baseAddress, updates);
             if (domainConfig.hasDefined(CONSTRAINT)) {
                 ModelNode constraints = domainConfig.get(CONSTRAINT);
                 if (constraints.hasDefined(APPLICATION_CLASSIFICATION)) {

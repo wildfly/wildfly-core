@@ -24,6 +24,7 @@ package org.jboss.as.domain.management.access;
 import org.jboss.as.controller.ParameterCorrector;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_SCOPED_ROLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATTERN_SCOPED_ROLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP_SCOPED_ROLE;
 
 import java.util.ArrayList;
@@ -140,6 +141,13 @@ abstract class ScopedRoleAddHandler extends AbstractAddStepHandler {
         for (String current : serverGroupScopedRoles) {
             if (roleName.equalsIgnoreCase(current)) {
                 throw DomainManagementLogger.ROOT_LOGGER.duplicateScopedRole(SERVER_GROUP_SCOPED_ROLE, roleName);
+            }
+        }
+
+        Set<String> patternScopedRoles = readResource.getChildrenNames(PATTERN_SCOPED_ROLE);
+        for (String current : patternScopedRoles) {
+            if (roleName.equalsIgnoreCase(current)) {
+                throw DomainManagementLogger.ROOT_LOGGER.duplicateScopedRole(PATTERN_SCOPED_ROLE, roleName);
             }
         }
 

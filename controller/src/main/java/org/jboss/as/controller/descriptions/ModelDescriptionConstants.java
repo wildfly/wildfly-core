@@ -317,9 +317,12 @@ public class ModelDescriptionConstants {
     public static final String OWNER = "owner";
     public static final String PASSWORD = "password";
     public static final String PATH = "path";
+    public static final String PATTERN = "pattern";
+    public static final String PATTERNS = "patterns";
+    public static final String PATTERN_SCOPED_ROLE = "pattern-scoped-role";
+    public static final String PATTERN_SCOPED_ROLES = "pattern-scoped-roles";
     public static final String PERIODIC_ROTATING_FILE_HANDLER = "periodic-rotating-file-handler";
     public static final String PERMISSION_COMBINATION_POLICY = "permission-combination-policy";
-    public static final String PATTERN = "pattern";
     public static final String PERSISTENT = "persistent";
     public static final String PLAIN_TEXT = "plain-text";
     public static final String PLATFORM_MBEAN = "platform-mbean";
