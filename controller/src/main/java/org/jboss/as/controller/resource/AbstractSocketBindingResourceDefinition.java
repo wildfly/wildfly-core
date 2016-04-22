@@ -116,6 +116,13 @@ public abstract class AbstractSocketBindingResourceDefinition extends SimpleReso
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
     }
 
+    public AbstractSocketBindingResourceDefinition(final Parameters parameters) {
+        super(parameters
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+        );
+    }
+
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(NAME, null);

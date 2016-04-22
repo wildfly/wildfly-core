@@ -3407,4 +3407,8 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 414, value = "Could not create a timestamped backup of current history dir %s, so it may still include versions from the previous boot.")
     void couldNotCreateHistoricalBackup(String currentHistoryDir);
+
+    @Message(id = 415, value = "%s may only occur a maximum of %s time(s)")
+    String exceedsMaxOccurs(String name, int max);
+
 }

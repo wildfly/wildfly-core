@@ -22,12 +22,18 @@
 
 package org.jboss.as.host.controller.model.jvm;
 
+import java.util.Set;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -43,12 +49,32 @@ final class JVMAddHandler extends AbstractAddStepHandler {
         this.attrs = attrs;
     }
 
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
+    @Override
+    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
+
+        super.populateModel(context, operation, resource);
+        final ModelNode model = resource.getModel();
+
+        // validate the jvm count is below maxOccurs, if maxOccurs is set to something other than the default
+        // for server-config this is set to one, /host=*/jvm is unbounded. See the server boolean in {@link JvmResourceDefinition}.
+        context.addStep(new OperationStepHandler() {
+            public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+                final Resource root = context.readResourceFromRoot(context.getCurrentAddress().getParent(), false);
+                final int maxOccurs = context.getResourceRegistration().getMaxOccurs();
+                Set<String> children = root.getChildrenNames(ModelDescriptionConstants.JVM);
+                if (children.size() > maxOccurs) {
+                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.exceedsMaxOccurs(ModelDescriptionConstants.JVM, maxOccurs));
+                    // XXX fix
+                }
+            }
+        }, OperationContext.Stage.RUNTIME);
+
         for (AttributeDefinition attr : attrs) {
             attr.validateAndSet(operation, model);
         }
     }
 
+    @Override
     protected boolean requiresRuntime(OperationContext context) {
         return false;
     }

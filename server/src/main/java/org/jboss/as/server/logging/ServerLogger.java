@@ -993,8 +993,8 @@ public interface ServerLogger extends BasicLogger {
     // @Message(id = 189, value = "Validation for %s is not implemented")
     // UnsupportedOperationException attributeValidationUnimplemented(String attribute);
 
-    @Message(id = 190, value = "Cannot add more than one socket binding group. Add of '%s' attempted, but '%s' already exists")
-    OperationFailedException cannotAddMoreThanOneSocketBindingGroupForServerOrHost(PathAddress wanted, PathAddress existing);
+    @Message(id = 190, value = "Cannot add more than %s socket binding group(s). Add of '%s' attempted, but '%s' already exists")
+    OperationFailedException cannotAddMoreSocketBindingGroups(int maxOccurs, PathAddress wanted, PathAddress existing);
 
     @Message(id = 191, value = "Can't use both --server-config and --initial-server-config")
     IllegalArgumentException cannotHaveBothInitialServerConfigAndServerConfig();

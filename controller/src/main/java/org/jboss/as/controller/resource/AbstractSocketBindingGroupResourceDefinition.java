@@ -80,6 +80,14 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
     }
 
+    public AbstractSocketBindingGroupResourceDefinition(final Parameters parameters) {
+        super(parameters
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+        );
+    }
+
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
