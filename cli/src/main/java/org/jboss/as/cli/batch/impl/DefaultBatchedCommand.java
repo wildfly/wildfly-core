@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.batch.impl;
 
+import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.Util;
 import org.jboss.as.cli.batch.BatchedCommand;
 import org.jboss.dmr.ModelNode;
 
@@ -32,8 +34,9 @@ public class DefaultBatchedCommand implements BatchedCommand {
 
     private final String command;
     private final ModelNode request;
-
-    public DefaultBatchedCommand(String command, ModelNode request) {
+    private final ModelNode description;
+    private final CommandContext ctx;
+    public DefaultBatchedCommand(CommandContext ctx, String command, ModelNode request) {
         if(command == null) {
             throw new IllegalArgumentException("Command is null.");
         }
@@ -42,6 +45,23 @@ public class DefaultBatchedCommand implements BatchedCommand {
             throw new IllegalArgumentException("Request is null.");
         }
         this.request = request;
+        if (ctx == null) {
+            throw new IllegalArgumentException("Context is null.");
+        }
+        this.ctx = ctx;
+        // Keep a ref on description to speedup validation.
+        description = (ModelNode) ctx.get(CommandContext.Scope.REQUEST,
+                Util.DESCRIPTION_RESPONSE);
+    }
+
+    @Override
+    public ModelNode getDescriptionResponse() {
+        return description;
+    }
+
+    @Override
+    public CommandContext getCommandContext() {
+        return ctx;
     }
 
     public String getCommand() {

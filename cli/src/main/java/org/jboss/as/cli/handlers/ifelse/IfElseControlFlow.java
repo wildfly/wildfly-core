@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandContext.Scope;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandLineRedirection;
 import org.jboss.as.cli.batch.BatchManager;
@@ -45,7 +46,7 @@ class IfElseControlFlow implements CommandLineRedirection {
     private static final String CTX_KEY = "IF";
 
     static IfElseControlFlow get(CommandContext ctx) {
-        return (IfElseControlFlow) ctx.get(CTX_KEY);
+        return (IfElseControlFlow) ctx.get(Scope.CONTEXT, CTX_KEY);
     }
 
     private Registration registration;
@@ -65,7 +66,7 @@ class IfElseControlFlow implements CommandLineRedirection {
         }
         this.ifCondition = ifCondition;
         this.ifRequest = ctx.buildRequest(ifRequest);
-        ctx.set(CTX_KEY, this);
+        ctx.set(Scope.CONTEXT, CTX_KEY, this);
     }
 
     @Override
@@ -126,7 +127,7 @@ class IfElseControlFlow implements CommandLineRedirection {
             if(registration.isActive()) {
                 registration.unregister();
             }
-            ctx.remove(CTX_KEY);
+            ctx.remove(Scope.CONTEXT, CTX_KEY);
         }
     }
 

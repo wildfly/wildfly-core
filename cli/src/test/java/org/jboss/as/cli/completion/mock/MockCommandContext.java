@@ -26,6 +26,7 @@ import java.io.PrintStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.jboss.as.cli.CliConfig;
 import org.jboss.as.cli.CliEventListener;
@@ -71,14 +72,14 @@ public class MockCommandContext implements CommandContext {
 
     private File curDir = new File("");
     private boolean resolveParameterValues;
-    private Map<String, Object> map = new HashMap<String, Object>();
+    private Map<Scope, Map<String, Object>> map = new HashMap<>();
 
     private boolean silent;
     private ConnectionInfoBeanMock connInfo =  new ConnectionInfoBeanMock();
 
     public MockCommandContext() {
         connInfo.setUsername("test");
-        set("connection_info", connInfo);
+        set(Scope.CONTEXT, "connection_info", connInfo);
     }
 
     public void parseCommandLine(String buffer) throws CommandFormatException {
@@ -127,20 +128,42 @@ public class MockCommandContext implements CommandContext {
 
     }
 
-    /* (non-Javadoc)
-     * @see org.jboss.as.cli.CommandContext#set(java.lang.String, java.lang.Object)
-     */
     @Override
-    public void set(String key, Object value) {
-        map.put(key, value);
+    public void set(Scope scope, String key, Object value) {
+        Objects.requireNonNull(scope);
+        Objects.requireNonNull(key);
+        Map<String, Object> store = map.get(scope);
+        if (store == null) {
+            store = new HashMap<>();
+            map.put(scope, store);
+        }
+        store.put(key, value);
     }
 
-    /* (non-Javadoc)
-     * @see org.jboss.as.cli.CommandContext#get(java.lang.String)
-     */
     @Override
-    public Object get(String key) {
-        return map.get(key);
+    public Object get(Scope scope, String key) {
+        Objects.requireNonNull(scope);
+        Objects.requireNonNull(key);
+        Map<String, Object> store = map.get(scope);
+        Object value = null;
+        if (store != null) {
+            value = store.get(key);
+        }
+        return value;
+    }
+
+    @Override
+    public void clear(Scope scope) {
+        Objects.requireNonNull(scope);
+        Map<String, Object> store = map.remove(scope);
+        if (store != null) {
+            store.clear();
+        }
+    }
+
+    @Override
+    public Object remove(Scope scope, String key) {
+        return null;
     }
 
     /* (non-Javadoc)
@@ -356,12 +379,6 @@ public class MockCommandContext implements CommandContext {
     @Override
     public void connectController() {
         connectController(null);
-    }
-
-    @Override
-    public Object remove(String key) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     public boolean isResolveParameterValues() {

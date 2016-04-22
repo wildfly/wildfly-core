@@ -21,6 +21,7 @@
  */
 package org.jboss.as.cli.batch;
 
+import org.jboss.as.cli.CommandContext;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -32,4 +33,8 @@ public interface BatchedCommand {
     String getCommand();
 
     ModelNode getRequest();
+
+    ModelNode getDescriptionResponse();
+
+    CommandContext getCommandContext();
 }

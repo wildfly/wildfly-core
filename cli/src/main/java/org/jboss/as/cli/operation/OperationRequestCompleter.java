@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -166,9 +166,6 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                                 }
                             } else {
                                 String argName = arg.getFullName();
-                                if (arg.isValueRequired()) {
-                                    argName += '=';
-                                }
                                 candidates.add(argName);
                             }
                         }
@@ -226,6 +223,20 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             }
 
             if (valueCompleter != null) {
+                if (chunk == null) {
+                    // The user typed xxx=
+                    // Complete with false if boolean
+                    String parsedName = parsedCmd.getLastParsedPropertyName();
+                    for (CommandArgument arg : allArgs) {
+                        String argFullName = arg.getFullName();
+                        if (argFullName.equals(parsedName)) {
+                            if (!arg.isValueRequired()) {
+                                candidates.add(Util.FALSE);
+                                return result;
+                            }
+                        }
+                    }
+                }
                 int valueResult = valueCompleter.complete(ctx, chunk == null ? "" : chunk, 0, candidates);
                 if (valueResult < 0) {
                     return valueResult;
@@ -252,6 +263,29 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 }
             }
 
+            CommandArgument lastArg = null;
+            // All property present means proposing end of list instead of property
+            // separator when the last property is a boolean one.
+            boolean allPropertiesPresent = true;
+            // Lookup for the existence of a fully named property.
+            // Doing so we will not mix properties that are prefix of other ones
+            // e.g.: recursive and recursive-depth
+            for (CommandArgument arg : allArgs) {
+                try {
+                    if (arg.canAppearNext(ctx)) {
+                        allPropertiesPresent = false;
+                    } else {
+                        String argFullName = arg.getFullName();
+                        if (argFullName.equals(chunk)) {
+                            lastArg = arg;
+                        }
+                    }
+                } catch (CommandFormatException e) {
+                    e.printStackTrace();
+                    return -1;
+                }
+            }
+
             for (CommandArgument arg : allArgs) {
                 try {
                     if (arg.canAppearNext(ctx)) {
@@ -263,15 +297,8 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                             }
                         } else {
                             String argFullName = arg.getFullName();
-                            if (chunk == null) {
-                                if (arg.isValueRequired()) {
-                                    argFullName += '=';
-                                }
-                                candidates.add(argFullName);
-                            } else if (argFullName.startsWith(chunk)) {
-                                if (arg.isValueRequired()) {
-                                    argFullName += '=';
-                                }
+                            if (chunk == null
+                                    || argFullName.startsWith(chunk)) {
                                 candidates.add(argFullName);
                             }
                         }
@@ -279,6 +306,24 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 } catch (CommandFormatException e) {
                     e.printStackTrace();
                     return -1;
+                }
+            }
+
+            if (lastArg != null) {
+                if (lastArg.isValueRequired()) {
+                    candidates.add(lastArg.getFullName() + "=");
+                } else {
+                    CommandLineFormat format = parsedCmd.getFormat();
+                    // This is a way to optimise false value.
+                    // Setting to true is useless, the property name is
+                    // enough.
+                    candidates.add("=" + Util.FALSE);
+                    if (format != null && format.getPropertyListEnd() != null) {
+                        candidates.add(format.getPropertyListEnd());
+                        if (!allPropertiesPresent) {
+                            candidates.add(format.getPropertySeparator());
+                        }
+                    }
                 }
             }
 

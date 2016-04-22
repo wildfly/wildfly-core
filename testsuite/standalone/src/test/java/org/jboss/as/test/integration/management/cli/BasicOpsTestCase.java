@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2014, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.dmr.ModelNode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -65,5 +66,38 @@ public class BasicOpsTestCase {
         assertTrue(ls.contains("path"));
 
         cli.quit();
+    }
+
+    @Test
+    public void testImplicitValues() throws Exception {
+        try (CLIWrapper cli = new CLIWrapper(true)) {
+
+            cli.sendLine(":read-resource(recursive)");
+
+            {
+                ModelNode mn
+                        = cli.getCommandContext().
+                        buildRequest(":read-resource(recursive)");
+                assertTrue(mn.get("recursive").asBoolean());
+            }
+
+            {
+                ModelNode mn
+                        = cli.getCommandContext().
+                        buildRequest(":reload(admin-only, server-config=toto, use-current-server-config)");
+                assertTrue(mn.get("admin-only").asBoolean());
+                assertTrue(mn.get("use-current-server-config").asBoolean());
+                assertTrue(mn.get("server-config").asString().equals("toto"));
+            }
+
+            {
+                ModelNode mn
+                        = cli.getCommandContext().
+                        buildRequest(":reload(admin-only=false, server-config=toto, use-current-server-config=false)");
+                assertTrue(!mn.get("admin-only").asBoolean());
+                assertTrue(!mn.get("use-current-server-config").asBoolean());
+                assertTrue(mn.get("server-config").asString().equals("toto"));
+            }
+        }
     }
 }

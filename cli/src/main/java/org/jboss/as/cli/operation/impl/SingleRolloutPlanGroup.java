@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -91,6 +91,15 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
     }
 
     public void addProperty(String name, int index) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("Invalid property name: " + name);
+        }
+        // Property name without a value. can be an implicit value.
+        if (props == null) {
+            props = new HashMap<String, String>();
+        }
+        // Default value for boolean
+        props.put(name, Util.TRUE);
         this.lastPropertyName = name;
         this.lastChunkIndex = index;
         separator = -1;

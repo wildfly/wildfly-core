@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -297,7 +297,13 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
 
                         @Override
                         public boolean isValueRequired() {
-                            return true;
+                            boolean required = true;
+                            ModelNode mn = prop.getValue().get("type");
+                            if (mn != null) {
+                                // No value required for boolean
+                                required = mn.asType() != ModelType.BOOLEAN;
+                            }
+                            return required;
                         }
 
                         @Override

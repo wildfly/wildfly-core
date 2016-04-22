@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -29,6 +29,7 @@ import java.util.concurrent.CancellationException;
 
 import org.jboss.as.cli.CommandArgument;
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandContext.Scope;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandHandler;
 import org.jboss.as.cli.CommandLineException;
@@ -63,7 +64,7 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
                     " or 'help' for the list of supported commands.");
         }
 
-        ModelNode request = (ModelNode) ctx.get("OP_REQ");
+        ModelNode request = (ModelNode) ctx.get(Scope.REQUEST, "OP_REQ");
         if(request == null) {
             throw new CommandLineException("Parsed request isn't available.");
         }

@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -239,7 +240,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     /** The TrustManager in use by the SSLContext, a reference is kept to rejected certificates can be captured. */
     private LazyDelagatingTrustManager trustManager;
     /** various key/value pairs */
-    private Map<String, Object> map = new HashMap<String, Object>();
+    private Map<Scope, Map<String, Object>> map = new HashMap<>();
     /** operation request address prefix */
     private final OperationRequestAddress prefix = new DefaultOperationRequestAddress();
     /** the prefix formatter */
@@ -749,16 +750,13 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     StringBuilder op = new StringBuilder();
                     op.append(getNodePathFormatter().format(parsedCmd.getAddress()));
                     op.append(line.substring(line.indexOf(':')));
-                    DefaultBatchedCommand batchedCmd = new DefaultBatchedCommand(op.toString(), request);
+                    DefaultBatchedCommand batchedCmd
+                            = new DefaultBatchedCommand(this, op.toString(), request);
                     Batch batch = getBatchManager().getActiveBatch();
                     batch.add(batchedCmd);
                 } else {
-                    set("OP_REQ", request);
-                    try {
-                        operationHandler.handle(this);
-                    } finally {
-                        set("OP_REQ", null);
-                    }
+                    set(Scope.REQUEST, "OP_REQ", request);
+                    operationHandler.handle(this);
                 }
             } else {
                 final String cmdName = parsedCmd.getOperationName();
@@ -770,7 +768,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         } else {
                             try {
                                 ModelNode request = ((OperationCommand) handler).buildRequest(this);
-                                BatchedCommand batchedCmd = new DefaultBatchedCommand(line, request);
+                                BatchedCommand batchedCmd
+                                        = new DefaultBatchedCommand(this, line, request);
                                 Batch batch = getBatchManager().getActiveBatch();
                                 batch.add(batchedCmd);
                             } catch (CommandFormatException e) {
@@ -795,6 +794,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             // so that getArgumentsString() doesn't return this line
             // during the tab-completion of the next command
             cmdLine = null;
+            clear(Scope.REQUEST);
         }
     }
 
@@ -827,6 +827,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     @Override
     public void terminateSession() {
         if(terminate == RUNNING) {
+            clear(Scope.CONTEXT);
+            clear(Scope.REQUEST);
             terminate = TERMINATING;
             disconnectController();
             restoreStdIO();
@@ -940,18 +942,47 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     @Override
-    public void set(String key, Object value) {
-        map.put(key, value);
+    public void set(Scope scope, String key, Object value) {
+        Objects.requireNonNull(scope);
+        Objects.requireNonNull(key);
+        Map<String, Object> store = map.get(scope);
+        if (store == null) {
+            store = new HashMap<>();
+            map.put(scope, store);
+        }
+        store.put(key, value);
     }
 
     @Override
-    public Object get(String key) {
-        return map.get(key);
+    public Object get(Scope scope, String key) {
+        Objects.requireNonNull(scope);
+        Objects.requireNonNull(key);
+        Map<String, Object> store = map.get(scope);
+        Object value = null;
+        if (store != null) {
+            value = store.get(key);
+        }
+        return value;
     }
 
     @Override
-    public Object remove(String key) {
-        return map.remove(key);
+    public void clear(Scope scope) {
+        Objects.requireNonNull(scope);
+        Map<String, Object> store = map.remove(scope);
+        if (store != null) {
+            store.clear();
+        }
+    }
+
+    @Override
+    public Object remove(Scope scope, String key) {
+        Objects.requireNonNull(scope);
+        Map<String, Object> store = map.get(scope);
+        Object value = null;
+        if (store != null) {
+            value = store.remove(key);
+        }
+        return value;
     }
 
     @Override
@@ -1357,7 +1388,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public BatchedCommand toBatchedCommand(String line) throws CommandFormatException {
-        return new DefaultBatchedCommand(line, buildRequest(line, true));
+        return new DefaultBatchedCommand(this, line, buildRequest(line, true));
     }
 
     @Override
@@ -1399,6 +1430,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
             return ((OperationCommand) handler).buildRequest(this);
         } finally {
+            clear(Scope.REQUEST);
             this.parsedCmd = originalParsedArguments;
             this.cmdLine = originalCmdLine;
         }
@@ -1986,46 +2018,48 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             ensureActive();
 
             final String line = parsedLine.getSubstitutedLine();
-            if (parsedLine.getFormat() == OperationFormat.INSTANCE) {
-                final ModelNode request = Util.toOperationRequest(CommandContextImpl.this, parsedLine);
-                if (isBatchMode()) {
-                    StringBuilder op = new StringBuilder();
-                    op.append(getNodePathFormatter().format(parsedCmd.getAddress()));
-                    op.append(line.substring(line.indexOf(':')));
-                    DefaultBatchedCommand batchedCmd = new DefaultBatchedCommand(op.toString(), request);
-                    Batch batch = getBatchManager().getActiveBatch();
-                    batch.add(batchedCmd);
-                } else {
-                    set("OP_REQ", request);
-                    try {
+            try {
+                if (parsedLine.getFormat() == OperationFormat.INSTANCE) {
+                    final ModelNode request = Util.toOperationRequest(CommandContextImpl.this, parsedLine);
+                    if (isBatchMode()) {
+                        StringBuilder op = new StringBuilder();
+                        op.append(getNodePathFormatter().format(parsedCmd.getAddress()));
+                        op.append(line.substring(line.indexOf(':')));
+                        DefaultBatchedCommand batchedCmd
+                                = new DefaultBatchedCommand(CommandContextImpl.this, op.toString(), request);
+                        Batch batch = getBatchManager().getActiveBatch();
+                        batch.add(batchedCmd);
+                    } else {
+                        set(Scope.REQUEST, "OP_REQ", request);
                         operationHandler.handle(CommandContextImpl.this);
-                    } finally {
-                        set("OP_REQ", null);
                     }
-                }
-            } else {
-                final String cmdName = parsedCmd.getOperationName();
-                CommandHandler handler = cmdRegistry.getCommandHandler(cmdName.toLowerCase());
-                if (handler != null) {
-                    if (isBatchMode() && handler.isBatchMode(CommandContextImpl.this)) {
-                        if (!(handler instanceof OperationCommand)) {
-                            throw new CommandLineException("The command is not allowed in a batch.");
-                        } else {
-                            try {
-                                ModelNode request = ((OperationCommand) handler).buildRequest(CommandContextImpl.this);
-                                BatchedCommand batchedCmd = new DefaultBatchedCommand(line, request);
-                                Batch batch = getBatchManager().getActiveBatch();
-                                batch.add(batchedCmd);
-                            } catch (CommandFormatException e) {
-                                throw new CommandFormatException("Failed to add to batch '" + line + "'", e);
+                } else {
+                    final String cmdName = parsedCmd.getOperationName();
+                    CommandHandler handler = cmdRegistry.getCommandHandler(cmdName.toLowerCase());
+                    if (handler != null) {
+                        if (isBatchMode() && handler.isBatchMode(CommandContextImpl.this)) {
+                            if (!(handler instanceof OperationCommand)) {
+                                throw new CommandLineException("The command is not allowed in a batch.");
+                            } else {
+                                try {
+                                    ModelNode request = ((OperationCommand) handler).buildRequest(CommandContextImpl.this);
+                                    BatchedCommand batchedCmd
+                                            = new DefaultBatchedCommand(CommandContextImpl.this, line, request);
+                                    Batch batch = getBatchManager().getActiveBatch();
+                                    batch.add(batchedCmd);
+                                } catch (CommandFormatException e) {
+                                    throw new CommandFormatException("Failed to add to batch '" + line + "'", e);
+                                }
                             }
+                        } else {
+                            handler.handle(CommandContextImpl.this);
                         }
                     } else {
-                        handler.handle(CommandContextImpl.this);
+                        throw new CommandLineException("Unexpected command '" + line + "'. Type 'help --commands' for the list of supported commands.");
                     }
-                } else {
-                    throw new CommandLineException("Unexpected command '" + line + "'. Type 'help --commands' for the list of supported commands.");
                 }
+            } finally {
+                clear(Scope.REQUEST);
             }
         }
 
