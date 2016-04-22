@@ -287,7 +287,7 @@ final class HandlerOperations {
             if (moduleName != null) {
                 // Check if this is a log4j appender
                 final ModuleLoader moduleLoader = ModuleLoader.forClass(HandlerOperations.class);
-                final ModuleIdentifier id = ModuleIdentifier.create(moduleName);
+                final ModuleIdentifier id = ModuleIdentifier.fromString(moduleName);
                 try {
                     final Class<?> actualClass = Class.forName(className, false, moduleLoader.loadModule(id).getClassLoader());
                     if (Appender.class.isAssignableFrom(actualClass)) {
