@@ -21,6 +21,7 @@ package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 
 import java.util.EnumSet;
 
@@ -39,7 +40,9 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.host.controller.descriptions.HostResolver;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.ExitCodes;
+import org.jboss.as.server.SystemExiter;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -92,6 +95,12 @@ public class HostShutdownHandler implements OperationStepHandler {
                     throw ControllerLogger.ACCESS_LOGGER.unauthorized(operation.get(OP).asString(),
                             PathAddress.pathAddress(operation.get(OP_ADDR)), authorizationResult.getExplanation());
                 }
+                SystemExiter.logBeforeExit(new SystemExiter.ExitLogger() {
+                    @Override
+                    public void logExit() {
+                        HostControllerLogger.ROOT_LOGGER.shuttingDownInResponseToManagementRequest(getOperationName(operation));
+                    }
+                });
                 if (restart) {
                     //Add the exit code so that we get respawned
                     domainController.stopLocalHost(ExitCodes.RESTART_PROCESS_FROM_STARTUP_SCRIPT);
@@ -101,5 +110,9 @@ public class HostShutdownHandler implements OperationStepHandler {
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
         }, OperationContext.Stage.RUNTIME);
+    }
+
+    private static String getOperationName(ModelNode op) {
+        return op.hasDefined(OP) ? op.get(OP).asString() : SHUTDOWN;
     }
 }

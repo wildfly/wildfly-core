@@ -1266,4 +1266,38 @@ public interface HostControllerLogger extends BasicLogger {
     @LogMessage(level = Level.ERROR)
     @Message( id = 172, value = "Failed executing the suspend operation for server: %s")
     void suspendExecutionFailed(@Cause IOException cause, String serverName);
+
+    @Message(id = 173, value = "It is not possible to use use-current-host-config=false while specifying a host-config")
+    OperationFailedException cannotBothHaveFalseUseCurrentHostConfigAndHostConfig();
+
+    @Message(id = 174, value = "It is not possible to use use-current-domain-config=false while specifying a domain-config")
+    OperationFailedException cannotBothHaveFalseUseCurrentDomainConfigAndDomainConfig();
+
+
+    @Message(id = 175, value = "domain-config '%s' specified for reload could not be found")
+    OperationFailedException domainConfigForReloadNotFound(String serverConfig);
+
+    @Message(id = 176, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 177, value = "No security realm defined for native management service; all access will be unrestricted.")
+    void nativeManagementInterfaceIsUnsecured();
+
+    @LogMessage(level = Level.FATAL)
+    @Message(id = 178, value = "Aborting with exit code %d")
+    void aborting(int code);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 179, value = "ProcessController has signalled to shut down; shutting down")
+    void shuttingDownInResponseToProcessControllerSignal();
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 180, value = "Shutting down in response to management operation '%s'")
+    void shuttingDownInResponseToManagementRequest(String op);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 181, value = "Host Controller shutdown has been requested via an OS signal")
+    void shutdownHookInvoked();
+
 }
