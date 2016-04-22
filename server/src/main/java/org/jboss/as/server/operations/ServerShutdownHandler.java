@@ -25,6 +25,7 @@ package org.jboss.as.server.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 
 import java.util.EnumSet;
 
@@ -44,6 +45,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
@@ -112,7 +114,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
                         if(resultAction == OperationContext.ResultAction.KEEP) {
                             //even if the timeout is zero we still pause the server
                             //to stop new requests being accepted as it is shutting down
-                            final ShutdownAction shutdown = new ShutdownAction(restart);
+                            final ShutdownAction shutdown = new ShutdownAction(getOperationName(operation), restart);
                             final ServiceRegistry registry = context.getServiceRegistry(false);
                             final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(SuspendController.SERVICE_NAME);
                             final SuspendController suspendController = suspendControllerServiceController.getValue();
@@ -153,11 +155,17 @@ public class ServerShutdownHandler implements OperationStepHandler {
         }, OperationContext.Stage.RUNTIME);
     }
 
+    private static String getOperationName(ModelNode op) {
+        return op.hasDefined(OP) ? op.get(OP).asString() : SHUTDOWN;
+    }
+
     private final class ShutdownAction extends AtomicBoolean {
 
+        private final String op;
         private final boolean restart;
 
-        private ShutdownAction(boolean restart) {
+        private ShutdownAction(String op, boolean restart) {
+            this.op = op;
             this.restart = restart;
         }
 
@@ -170,7 +178,13 @@ public class ServerShutdownHandler implements OperationStepHandler {
                 processState.setStopping();
                 final Thread thread = new Thread(new Runnable() {
                     public void run() {
-                        SystemExiter.exit(restart ? ExitCodes.RESTART_PROCESS_FROM_STARTUP_SCRIPT : ExitCodes.NORMAL);
+                        int exitCode = restart ? ExitCodes.RESTART_PROCESS_FROM_STARTUP_SCRIPT : ExitCodes.NORMAL;
+                        SystemExiter.logAndExit(new SystemExiter.ExitLogger() {
+                            @Override
+                            public void logExit() {
+                                ServerLogger.ROOT_LOGGER.shuttingDownInResponseToManagementRequest(op);
+                            }
+                        }, exitCode);
                     }
                 });
                 // The intention is that this shutdown is graceful, and so the client gets a reply.

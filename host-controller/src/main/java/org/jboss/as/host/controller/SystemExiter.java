@@ -23,6 +23,8 @@
 package org.jboss.as.host.controller;
 
 
+import org.jboss.as.host.controller.logging.HostControllerLogger;
+
 /**
  * Used to override System.exit() calls. For our tests we don't
  * want System.exit to have any effect.
@@ -30,28 +32,19 @@ package org.jboss.as.host.controller;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @version $Revision: 1.1 $
  */
-public class SystemExiter {
-    private static Exiter exiter;
+public class SystemExiter extends org.jboss.as.server.SystemExiter {
 
-    public static void initialize(Exiter exiter) {
-        SystemExiter.exiter = exiter;
+    public static void abort(final int status) {
+        logAndExit(new ExitLogger() {
+            @Override
+            public void logExit() {
+                HostControllerLogger.ROOT_LOGGER.aborting(status);
+            }
+        }, status);
     }
 
-    public static void exit(int status) {
-        getExiter().exit(status);
-    }
-
-    private static Exiter getExiter() {
-        return exiter == null ? new DefaultExiter() : exiter;
-    }
-
-    public interface Exiter {
-        void exit(int status);
-    }
-
-    private static class DefaultExiter implements Exiter{
-        public void exit(int status) {
-            System.exit(status);
-        }
+    /** @deprecated use {@link org.jboss.as.server.SystemExiter.Exiter}*/
+    @Deprecated
+    public interface Exiter extends org.jboss.as.server.SystemExiter.Exiter {
     }
 }
