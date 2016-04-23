@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.xnio.IoUtils;
@@ -71,12 +72,6 @@ class FilePersistenceUtils {
 
     static void copyFile(final File file, final File backup) throws IOException {
         Files.copy(file.toPath(), backup.toPath(), StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
-    }
-
-    static void rename(File file, File to) throws IOException {
-        if (!file.renameTo(to) && file.exists()) {
-            copyFile(file, to);
-        }
     }
 
     static void moveTempFileToMain(File tempFileName, File fileName) throws ConfigurationPersistenceException {
