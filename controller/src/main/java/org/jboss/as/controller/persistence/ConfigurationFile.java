@@ -653,7 +653,7 @@ public class ConfigurationFile {
             if (currentHistoryFiles != null && currentHistoryFiles.length > 0) {
                 String backupName = getTimeStamp(date);
                 File old = new File(historyRoot, backupName);
-                if (!new File(currentHistory.getAbsolutePath()).renameTo(old)) {
+                if (!forcedMove(currentHistory.toPath(), old.toPath())) {
                     if (old.exists()) {
                         // AS7-5801. Unit tests sometimes fail on File.renameTo due to only having 100 ms
                         // precision on the timestamps we use for dir names on some systems. So, if that happens,
@@ -661,11 +661,11 @@ public class ConfigurationFile {
                         date = new Date(date.getTime() + 100);
                         backupName = getTimeStamp(date);
                         old = new File(historyRoot, backupName);
-                        if (!new File(currentHistory.getAbsolutePath()).renameTo(old)) {
-                            throw ControllerLogger.ROOT_LOGGER.cannotRename(currentHistory.getAbsolutePath(), old.getAbsolutePath());
+                        if (!forcedMove(currentHistory.toPath(), old.toPath())) {
+                            ControllerLogger.ROOT_LOGGER.couldNotCreateHistoricalBackup(currentHistory.getAbsolutePath());
                         }
                     } else {
-                        throw ControllerLogger.ROOT_LOGGER.cannotRename(currentHistory.getAbsolutePath(), old.getAbsolutePath());
+                        ControllerLogger.ROOT_LOGGER.couldNotCreateHistoricalBackup(currentHistory.getAbsolutePath());
                     }
                 }
             }
@@ -761,6 +761,16 @@ public class ConfigurationFile {
             throw ControllerLogger.ROOT_LOGGER.notADirectory(dir.getAbsolutePath());
         }
         return dir;
+    }
+
+    private static boolean forcedMove(Path from, Path to) {
+        try {
+            Files.move(from, to, StandardCopyOption.REPLACE_EXISTING);
+            return true;
+        } catch (IOException e) {
+            ControllerLogger.ROOT_LOGGER.cannotRename(e, from, to);
+            return false;
+        }
     }
 
     private class BackupSnapshotInfo implements SnapshotInfo {
