@@ -35,6 +35,7 @@ import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * Handler that dumps all services in the server container
@@ -56,10 +57,19 @@ public class DumpServicesHandler implements OperationStepHandler {
     /** {@inheritDoc} */
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        final ServiceName serviceName;
+        if (context.getProcessType().isServer()) {
+            serviceName = Services.JBOSS_AS;
+        } else {
+            //The HC/DC service name
+            serviceName = ServiceName.JBOSS.append("host", "controller");
+
+        }
+
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceController<?> service = context.getServiceRegistry(false).getRequiredService(Services.JBOSS_AS);
+                ServiceController<?> service = context.getServiceRegistry(false).getRequiredService(serviceName);
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 PrintStream print = new PrintStream(out);
                 service.getServiceContainer().dumpServices(print);
