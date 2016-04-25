@@ -22,8 +22,6 @@
 
 package org.jboss.as.patching.metadata;
 
-import static org.jboss.as.patching.IoUtils.safeClose;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -170,12 +168,8 @@ public class PatchXml {
     }
 
     public static PatchMetadataResolver parse(final File patchXml, InstalledIdentity original) throws IOException, XMLStreamException {
-
-        final InputStream is = new FileInputStream(patchXml);
-        try {
+        try (final InputStream is = new FileInputStream(patchXml)){
             return parse(is, original);
-        } finally {
-            safeClose(is);
         }
     }
 
