@@ -101,6 +101,7 @@ import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.controller.resources.ModuleLoadingResourceDefinition;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
+import org.jboss.as.server.controller.resources.ServiceContainerResourceDefinition;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.controller.resources.VaultResourceDefinition;
 import org.jboss.as.server.operations.CleanObsoleteContentHandler;
@@ -413,9 +414,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerSubModel(CoreManagementResourceDefinition.forHost(authorizer, auditLogger, pathManager, environmentNameReader, bootErrorCollector, nativeManagement, httpManagement));
 
         // Other core services
-        // TODO get a DumpServicesHandler that works on the domain
-        //        ManagementResourceRegistration serviceContainer = hostRegistration.registerSubModel(PathElement.pathElement(CORE_SERVICE, SERVICE_CONTAINER), CommonProviders.SERVICE_CONTAINER_PROVIDER);
-        //        serviceContainer.registerOperationHandler(DumpServicesHandler.OPERATION_NAME, DumpServicesHandler.INSTANCE, DumpServicesHandler.INSTANCE, false);
+        hostRegistration.registerSubModel(new ServiceContainerResourceDefinition());
 
         //host-environment
         hostRegistration.registerSubModel(HostEnvironmentResourceDefinition.of(environment));

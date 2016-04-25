@@ -38,9 +38,9 @@ import org.jboss.as.server.operations.DumpServicesHandler;
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
 
-class ServiceContainerResourceDefinition extends SimpleResourceDefinition {
+public class ServiceContainerResourceDefinition extends SimpleResourceDefinition {
 
-    ServiceContainerResourceDefinition() {
+    public ServiceContainerResourceDefinition() {
         super(new Parameters(PathElement.pathElement(CORE_SERVICE, SERVICE_CONTAINER),
                 ServerDescriptions.getResourceDescriptionResolver("core", SERVICE_CONTAINER))
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SERVICE_CONTAINER));
