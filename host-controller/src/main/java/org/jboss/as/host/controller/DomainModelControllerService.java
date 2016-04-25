@@ -261,6 +261,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
                 ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
                 hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, capabilityRegistry, domainHostExcludeRegistry);
+
+        HostControllerEnvironmentService.addService(environment, serviceTarget);
+
         return serviceTarget.addService(SERVICE_NAME, service)
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
