@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.services.net;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.server.services.net.OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY;
 
@@ -51,6 +52,16 @@ public class RemoteDestinationOutboundSocketBindingAddHandler extends AbstractAd
 
     private RemoteDestinationOutboundSocketBindingAddHandler() {
         super(OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY, RemoteDestinationOutboundSocketBindingResourceDefinition.ATTRIBUTES);
+    }
+
+    @Override
+    protected boolean requiresRuntime(OperationContext context) {
+        if (context.getProcessType().isServer()) {
+            return super.requiresRuntime(context);
+        }
+        //Check if we are a host's socket binding and install the service if we are
+        PathAddress pathAddress = context.getCurrentAddress();
+        return pathAddress.size() > 0 && pathAddress.getElement(0).getKey().equals(HOST);
     }
 
     @Override
