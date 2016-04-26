@@ -108,6 +108,8 @@ public interface Console {
 
     void setPrompt(String prompt, Character mask);
 
+    void redrawPrompt();
+
     static final class Factory {
 
         public static Console getConsole(CommandContext ctx, Settings settings) throws CliInitializationException {
@@ -222,7 +224,8 @@ public interface Console {
                         Prompt origPrompt = null;
                         if(!console.getPrompt().getPromptAsString().equals(prompt)) {
                             origPrompt = console.getPrompt();
-                            console.updatePrompt(new Prompt(prompt, mask));
+                            console.setPrompt(new Prompt(prompt, mask));
+                            redrawPrompt();
                         }
                         try {
                             return console.getInputLine();
@@ -230,7 +233,7 @@ public interface Console {
                             e.printStackTrace();
                         } finally {
                             if(origPrompt != null) {
-                                console.updatePrompt(origPrompt);
+                                console.setPrompt(origPrompt);
                             }
                         }
                     } finally {
@@ -309,11 +312,15 @@ public interface Console {
                 }
 
                 @Override
-                public void
-                setPrompt(String prompt, Character mask) {
+                public void setPrompt(String prompt, Character mask) {
                     if(!prompt.equals(console.getPrompt().getPromptAsString())) {
-                        console.updatePrompt(new Prompt(prompt, mask));
+                        console.setPrompt(new Prompt(prompt, mask));
                     }
+                }
+
+                @Override
+                public void redrawPrompt() {
+                    console.clearBufferAndDisplayPrompt();
                 }
 
                 class HistoryImpl implements CommandHistory {
