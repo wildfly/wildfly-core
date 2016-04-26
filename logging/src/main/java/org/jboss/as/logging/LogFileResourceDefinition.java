@@ -257,6 +257,11 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
             }
             try (
                     final InputStream in = (tail ? new LifoFileInputStream(file) : Files.newInputStream(file.toPath()));
+                    /* we should stick with the default here and not use UTF-8.
+                    The encoding on the file handler does not default to UTF-8 but the system default.
+                    I think here we should stick with the system default unless explicitly defined.
+                    I could see a UTF-8 default possibly being problematic on IBM bases systems.
+                     */
                     final InputStreamReader isr = (encoding == null ? new InputStreamReader(in) : new InputStreamReader(in, encoding));
                     final BufferedReader reader = new BufferedReader(isr)
             ) {

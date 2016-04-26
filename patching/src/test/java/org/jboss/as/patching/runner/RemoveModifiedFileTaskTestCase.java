@@ -37,6 +37,7 @@ import static org.jboss.as.patching.runner.TestUtils.touch;
 import static org.junit.Assert.assertArrayEquals;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.patching.ContentConflictsException;
 import org.jboss.as.patching.metadata.ContentModification;
@@ -66,10 +67,10 @@ public class RemoveModifiedFileTaskTestCase extends AbstractTaskTestCase {
         File binDir = mkdir(env.getInstalledImage().getJbossHome(), "bin");
         String fileName = "standalone.sh";
         removedFile = touch(binDir, fileName);
-        dump(removedFile, "modified script to run standalone AS7");
+        dump(removedFile, "modified script to run standalone AS");
         expectedModifiedHash = hashFile(removedFile);
         // let's simulate that the file has been modified by the users by using a hash that is not the file checksum
-        byte[] unmodifiedHash = randomString().getBytes();
+        byte[] unmodifiedHash = randomString().getBytes(StandardCharsets.UTF_8);
 
         String patchID = randomString();
         File patchDir = mkdir(tempDir, patchID);

@@ -37,6 +37,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.http.HttpEntity;
@@ -404,7 +405,7 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
     }
 
     private void readLogStream(InputStream stream) throws IOException {
-        LineNumberReader reader = new LineNumberReader(new InputStreamReader(stream));
+        LineNumberReader reader = new LineNumberReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
         String read;
         boolean readMessage = false;
         String expected = LogStreamExtension.getLogMessage(logMessageContent);

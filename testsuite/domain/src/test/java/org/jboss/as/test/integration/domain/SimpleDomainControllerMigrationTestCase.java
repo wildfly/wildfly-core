@@ -27,10 +27,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
@@ -137,13 +137,8 @@ public class SimpleDomainControllerMigrationTestCase {
         hostConfig.setStartupTimeoutInSeconds(120);
         hostConfig.setBackupDC(true);
         File usersFile = new File(hostConfigDir, "mgmt-users.properties");
-        FileOutputStream fos = new FileOutputStream(usersFile);
-        PrintWriter pw = new PrintWriter(fos);
-        pw.println("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray()));
-        pw.close();
-        fos.close();
-
-
+        Files.write(usersFile.toPath(),
+                ("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray())+"\n").getBytes(StandardCharsets.UTF_8));
         return hostConfig;
     }
 

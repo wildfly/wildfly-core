@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
@@ -196,7 +197,7 @@ public class CLIWrapper implements AutoCloseable {
         if(consoleOut.size() <= 0) {
             return null;
         }
-        return new String(consoleOut.toByteArray()).trim();
+        return new String(consoleOut.toByteArray(), StandardCharsets.UTF_8).trim();
     }
 
     /**

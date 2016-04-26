@@ -27,8 +27,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
@@ -149,22 +151,13 @@ public class BatchFileTestCase {
             }
         }
 
-        FileWriter writer = null;
-        try {
-            writer = new FileWriter(TMP_FILE);
+        try (Writer writer = Files.newBufferedWriter(TMP_FILE.toPath(), StandardCharsets.UTF_8)){
             for(String line : cmd) {
                 writer.write(line);
                 writer.write('\n');
             }
         } catch (IOException e) {
             fail("Failed to write to " + TMP_FILE.getAbsolutePath() + ": " + e.getLocalizedMessage());
-        } finally {
-            if(writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                }
-            }
         }
     }
 }

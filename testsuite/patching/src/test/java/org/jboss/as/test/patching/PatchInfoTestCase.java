@@ -33,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -74,7 +75,7 @@ public class PatchInfoTestCase extends PatchInfoTestBase {
     public void setup() throws Exception {
         bytesOs = new ByteArrayOutputStream();
         final Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         moduleDir = module.writeToDisk(new File(MODULES_PATH));
     }
@@ -265,7 +266,7 @@ public class PatchInfoTestCase extends PatchInfoTestBase {
 
         void refresh() {
             if(bytesOs.size() > 0) {
-                reader = new BufferedReader(new StringReader(new String(bytesOs.toByteArray())));
+                reader = new BufferedReader(new StringReader(new String(bytesOs.toByteArray(), StandardCharsets.UTF_8)));
             } else {
                 reader = null;
             }

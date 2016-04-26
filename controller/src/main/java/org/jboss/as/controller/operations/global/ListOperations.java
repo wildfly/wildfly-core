@@ -153,7 +153,7 @@ public class ListOperations {
     /**
      * Add element to list, with optional index where to put it
      * <p/>
-     * <pre>:list-remove(name=list-attribute, value="some value")</pre>
+     * <pre>:list-get(name=list-attribute, index=5)</pre>
      *
      * @author Tomaz Cerar (c) 2014 Red Hat Inc.
      */

@@ -29,6 +29,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -324,7 +325,7 @@ public class ManagedDMRContentTypeResource implements Resource.ResourceEntry {
             }
         }
         if (hasContent) {
-            ByteArrayInputStream bais = new ByteArrayInputStream(node.toString().getBytes());
+            ByteArrayInputStream bais = new ByteArrayInputStream(node.toString().getBytes(StandardCharsets.UTF_8));
             byte[] ourHash = contentRepository.addContent(bais);
             this.model.get(HASH).set(ourHash);
             this.contentRepository.addContentReference(new ContentReference(address.toCLIStyleString(), ourHash));
@@ -348,7 +349,7 @@ public class ManagedDMRContentTypeResource implements Resource.ResourceEntry {
             messageDigest.reset();
 
             DigestOutputStream dos = new DigestOutputStream(os, messageDigest);
-            ByteArrayInputStream bis = new ByteArrayInputStream(content.toString().getBytes());
+            ByteArrayInputStream bis = new ByteArrayInputStream(content.toString().getBytes(StandardCharsets.UTF_8));
             byte[] bytes = new byte[8192];
             int read;
             while ((read = bis.read(bytes)) > -1) {
