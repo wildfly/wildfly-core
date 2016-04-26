@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -73,28 +73,28 @@ public class PropertiesCompletionTestCase {
     public void testAllCandidates() {
 
         List<String> candidates = fetchCandidates(":operation-properties-one-two-three(");
-        assertEquals(Arrays.asList("one=", "three=", "two="), candidates);
+        assertEquals(Arrays.asList("one", "three", "two"), candidates);
     }
 
     @Test
     public void testTCandidates() {
 
         List<String> candidates = fetchCandidates(":operation-properties-one-two-three(t");
-        assertEquals(Arrays.asList("three=", "two="), candidates);
+        assertEquals(Arrays.asList("three", "two"), candidates);
     }
 
     @Test
     public void testTwCandidates() {
 
         List<String> candidates = fetchCandidates(":operation-properties-one-two-three(tw");
-        assertEquals(Arrays.asList("two="), candidates);
+        assertEquals(Arrays.asList("two"), candidates);
     }
 
     @Test
     public void testTwoCandidates() {
 
         List<String> candidates = fetchCandidates(":operation-properties-one-two-three(two");
-        assertEquals(Arrays.asList("two="), candidates);
+        assertEquals(Arrays.asList("two"), candidates);
     }
 
     @Test
@@ -115,7 +115,7 @@ public class PropertiesCompletionTestCase {
     public void testAfterTwoCandidates() {
 
         List<String> candidates = fetchCandidates(":operation-properties-one-two-three(two=2,");
-        assertEquals(Arrays.asList("one=", "three="), candidates);
+        assertEquals(Arrays.asList("one", "three"), candidates);
     }
 
     @Test
@@ -123,7 +123,7 @@ public class PropertiesCompletionTestCase {
 
         List<String> candidates = fetchCandidates(":operation-properties-one-two-three(two=2,o");
         //assertEquals(Arrays.asList("one"), candidates);
-        assertEquals(Arrays.asList("one="), candidates);
+        assertEquals(Arrays.asList("one"), candidates);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class PropertiesCompletionTestCase {
 
         List<String> candidates = fetchCandidates(":operation-properties-one-two-three(two=2,one=1,");
         //assertEquals(Arrays.asList("three"), candidates);
-        assertEquals(Arrays.asList("three="), candidates);
+        assertEquals(Arrays.asList("three"), candidates);
     }
 
     @Test

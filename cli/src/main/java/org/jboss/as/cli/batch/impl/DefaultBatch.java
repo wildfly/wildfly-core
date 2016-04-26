@@ -23,6 +23,9 @@ package org.jboss.as.cli.batch.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandContext.Scope;
+import org.jboss.as.cli.CommandFormatException;
 
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.batch.Batch;
@@ -103,8 +106,25 @@ public class DefaultBatch implements Batch {
         composite.get(Util.OPERATION).set(Util.COMPOSITE);
         composite.get(Util.ADDRESS).setEmptyList();
         final ModelNode steps = composite.get(Util.STEPS);
-        for(BatchedCommand cmd : commands) {
-            steps.add(cmd.getRequest());
+        for (BatchedCommand cmd : commands) {
+            CommandContext ctx = cmd.getCommandContext();
+            ModelNode request = cmd.getRequest();
+            if (ctx.getConfig().isValidateOperationRequests()) {
+                try {
+                    ctx.set(Scope.REQUEST, Util.DESCRIPTION_RESPONSE,
+                            cmd.getDescriptionResponse());
+                    ModelNode opDescOutcome = Util.validateRequest(ctx, request);
+                    if (opDescOutcome != null) { // operation has params that might need to be replaced
+                        Util.replaceFilePathsWithBytes(request, opDescOutcome);
+                    }
+                } catch (CommandFormatException ex) {
+                    throw new RuntimeException(ex);
+                } finally {
+                    ctx.remove(CommandContext.Scope.REQUEST,
+                            Util.DESCRIPTION_RESPONSE);
+                }
+            }
+            steps.add(request);
         }
         return composite;
     }

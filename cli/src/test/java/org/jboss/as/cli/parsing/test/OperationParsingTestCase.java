@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -391,6 +391,22 @@ public class OperationParsingTestCase {
             fail("Shouldn't allow parsing of operation names following incomplete node paths");
         } catch(OperationFormatException expected) {
         }
+    }
+
+    @Test
+    public void testImplicitValuesForBooleanProperties() throws Exception {
+        DefaultCallbackHandler handler = new DefaultCallbackHandler();
+        parse("/subsystem=logging:read-resource(prop1,prop2,prop3=toto,prop4)",
+                handler);
+        assertTrue(handler.getPropertyNames().size() == 4);
+        assertTrue(handler.getPropertyNames().contains("prop1"));
+        assertTrue(handler.getPropertyValue("prop1") == null);
+        assertTrue(handler.getPropertyNames().contains("prop2"));
+        assertTrue(handler.getPropertyValue("prop2") == null);
+        assertTrue(handler.getPropertyNames().contains("prop3"));
+        assertTrue(handler.getPropertyValue("prop3").equals("toto"));
+        assertTrue(handler.getPropertyNames().contains("prop4"));
+        assertTrue(handler.getPropertyValue("prop4") == null);
     }
 
     protected void parse(String opReq, DefaultCallbackHandler handler) throws CommandFormatException {
