@@ -131,6 +131,7 @@ public class PatchModuleInvalidationWithRenamingFailureTestCase extends Abstract
         final Constructor<?> constructor = clazz.getConstructor(String.class);
         final Object instance = constructor.newInstance("test");
         Assert.assertNotNull(instance);
+        cl.close();
     }
 
     static void assertNotLoadable(final File jar) throws Exception {

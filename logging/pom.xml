@@ -63,7 +63,7 @@
                     <useManifestOnlyJar>false</useManifestOnlyJar>
                     <!-- the log manager needs to be setup before the agent this is only needed on windows!-->
                     <argLine>-Xbootclasspath/a:"${org.jboss.logmanager:jboss-logmanager:jar}"
-                        -javaagent:"${org.jboss.byteman:byteman:jar}"=port:${byteman.port},address:${byteman.host},boot:"${org.jboss.byteman:byteman:jar}"
+                        -javaagent:"${org.jboss.byteman:byteman:jar}"=port:${byteman.port},address:${byteman.host},boot:"${org.jboss.byteman:byteman:jar}" ${surefire.system.args}
                     </argLine>
                     <systemPropertyVariables>
                         <jboss.server.log.dir>${project.build.directory}${file.separator}logs</jboss.server.log.dir>
@@ -170,6 +170,18 @@
         </dependency>
 
         <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.codehaus.woodstox</groupId>
+            <artifactId>woodstox-core-asl</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.jboss.byteman</groupId>
             <artifactId>byteman</artifactId>

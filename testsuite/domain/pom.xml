@@ -51,7 +51,6 @@
         <xslt.scripts.dir>${basedir}/../src/test/xslt</xslt.scripts.dir>
         <enforcer.skip>true</enforcer.skip>
         <jbossas.ts.dir>${basedir}/..</jbossas.ts.dir>
-
     </properties>
 
     <!--
@@ -175,7 +174,7 @@
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                     <!-- System properties to forked surefire JVM which runs clients. -->
-                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts}</argLine>
+                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args}</argLine>
 
                     <systemPropertyVariables>
                         <jboss.options>-ea ${surefire.system.args}</jboss.options>
@@ -187,7 +186,7 @@
                         <management.address>${management.address}</management.address>
                         <settings.localRepository>${settings.localRepository}</settings.localRepository>
                         <cli.args>-Dmaven.repo.local=${settings.localRepository}</cli.args>
-                        <server.jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</server.jvm.args>
+                        <server.jvm.args>${modular.jdk.args} -Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</server.jvm.args>
                     </systemPropertyVariables>
                     <includes>
                          <include>org/jboss/as/test/integration/domain/autoignore/*TestCase.java</include>
@@ -238,7 +237,7 @@
                             <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                             <!-- System properties to forked surefire JVM which runs clients. -->
-                            <argLine>${jvm.args.ip.client} ${jvm.args.timeouts}</argLine>
+                            <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args}</argLine>
 
                             <systemPropertyVariables>
                                 <jboss.options>${surefire.system.args}</jboss.options>

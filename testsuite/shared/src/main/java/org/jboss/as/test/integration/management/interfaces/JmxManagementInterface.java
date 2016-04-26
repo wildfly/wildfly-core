@@ -191,13 +191,17 @@ public class JmxManagementInterface implements ManagementInterface {
         for (MBeanAttributeInfo attribute : attributeInfos) {
             String attributeName = attribute.getName();
             try {
-                Object attributeValue = connection.getAttribute(objectName, attributeName);
                 try {
+                    Object attributeValue = connection.getAttribute(objectName, attributeName);
                     attributes.get(JmxInterfaceStringUtils.toDashCase(attributeName)).set(modelNode(attributeValue));
                 } catch (UnsupportedOperationException e) {
                     // happens for some attributes that are represented as a Tabular***; let's just ignore them
                 }
             } catch (Exception e) {
+                if (e.getMessage().contains("UnsupportedOperationException")){
+                    //in some rare cases it throws RuntimeException with UOE in message.
+                    continue;
+                }
                 // see RbacUtil.checkOperationResult for error codes
                 // TODO could possibly use MBeanAttributeInfo#isReadable instead of error codes, but it's currently broken
                 String message = e.getMessage();
