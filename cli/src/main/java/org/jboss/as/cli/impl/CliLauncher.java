@@ -25,7 +25,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -333,7 +334,7 @@ public class CliLauncher {
 
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new FileReader(file));
+            reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8);
             String line = reader.readLine();
             while (cmdCtx.getExitCode() == 0 && !cmdCtx.isTerminated() && line != null) {
                 cmdCtx.handleSafe(line.trim());

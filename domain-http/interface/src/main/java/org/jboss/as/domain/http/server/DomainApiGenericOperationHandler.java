@@ -41,6 +41,7 @@ import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGG
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Deque;
 import java.util.Iterator;
@@ -206,7 +207,7 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         if (op.isFile()) {
             return Files.newInputStream(op.getPath());
         } else {
-            return new ByteArrayInputStream(op.getValue().getBytes());
+            return new ByteArrayInputStream(op.getValue().getBytes(StandardCharsets.UTF_8));
         }
     }
 

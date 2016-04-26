@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  *  All methods on this class should be called with {@link org.jboss.as.controller.audit.ManagedAuditLoggerImpl}'s lock taken.
@@ -41,7 +42,7 @@ import java.io.InputStream;
  * @author <a href="mailto:istudens@redhat.com">Ivo Studensky</a>
  */
 public abstract class AbstractFileAuditLogHandler extends AuditLogHandler {
-    protected static final byte[] LINE_TERMINATOR = String.format("%n").getBytes();
+    protected static final byte[] LINE_TERMINATOR = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
     private final PathManagerService pathManager;
     private final String path;
     private final String relativeTo;
@@ -93,7 +94,7 @@ public abstract class AbstractFileAuditLogHandler extends AuditLogHandler {
         final FileOutputStream fos = new FileOutputStream(file, true);
         final BufferedOutputStream output = new BufferedOutputStream(fos);
         try {
-            output.write(formattedItem.getBytes());
+            output.write(formattedItem.getBytes(StandardCharsets.UTF_8));
             output.write(LINE_TERMINATOR);
 
             //Flush and force the file to sync

@@ -34,6 +34,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -101,7 +102,7 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
     public void testOneCP() throws Exception {
 
         Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
@@ -123,7 +124,7 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
     public void testOneOffsOnly() throws Exception {
 
         Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
@@ -146,7 +147,7 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
     public void testCPWithOneOffs() throws Exception {
 
         Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
@@ -170,7 +171,7 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
     public void testCPBeforeCPWithOneOffs() throws Exception {
 
         Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
@@ -200,7 +201,7 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
     public void testCPWithOneOffsBeforeCPWithOneOffs() throws Exception {
 
         Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
@@ -292,7 +293,7 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
         File patchDir = mkdir(tempDir, patchID);
 
         Module module = new Module.Builder(moduleName).
-                miscFile(new ResourceItem("resource-test", ("resource patch " + patchID).getBytes())).
+                miscFile(new ResourceItem("resource-test", ("resource patch " + patchID).getBytes(StandardCharsets.UTF_8))).
                 build();
 
         // create the patch with the updated module

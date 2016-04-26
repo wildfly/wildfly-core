@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -220,7 +221,7 @@ class DomainApiHandler implements HttpHandler {
             if (cachable && streamIndex > -1) {
                 // Use the MD5 of the model nodes toString() method as ETag
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                md.update(response.toString().getBytes());
+                md.update(response.toString().getBytes(StandardCharsets.UTF_8));
                 ETag etag = new ETag(false, HexConverter.convertToHexString(md.digest()));
                 operationParameterBuilder.etag(etag);
                 if (!ETagUtils.handleIfNoneMatch(exchange, etag, false)) {

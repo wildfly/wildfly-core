@@ -24,6 +24,7 @@ package org.jboss.as.server.operations;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -74,7 +75,7 @@ public class DumpServicesHandler implements OperationStepHandler {
                 PrintStream print = new PrintStream(out);
                 service.getServiceContainer().dumpServices(print);
                 print.flush();
-                context.getResult().set(new String(out.toByteArray()));
+                context.getResult().set(new String(out.toByteArray(), StandardCharsets.UTF_8));
             }
         }, OperationContext.Stage.RUNTIME);
     }

@@ -39,6 +39,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.patching.HashUtils;
@@ -82,7 +83,7 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
         File baseModuleDir = newFile(new File(PatchingTestUtil.AS_DISTRIBUTION), MODULES, SYSTEM, LAYERS, BASE);
         String moduleName = "module-test";
         Module module = new Module.Builder(moduleName)
-                .miscFile(new ResourceItem("resource-test", "new resource in the module".getBytes()))
+                .miscFile(new ResourceItem("resource-test", "new resource in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
@@ -143,7 +144,7 @@ public class RollbackLastUnitTestCase extends AbstractPatchingTestCase {
         final File patchedModule = newFile(baseModuleDir, ".overlays", patchElementId, moduleName);
 
         Module modifiedModule = new Module.Builder(moduleName)
-                .miscFile(new ResourceItem("resource-test", "another module update".getBytes()))
+                .miscFile(new ResourceItem("resource-test", "another module update".getBytes(StandardCharsets.UTF_8)))
                 .build();
 
         ContentModification fileModified2 = ContentModificationUtils.modifyMisc(patchDir, patchID2, "another file update", miscFile, "bin", fileName);

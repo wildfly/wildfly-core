@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -99,7 +100,7 @@ public class PersistentResourceXMLParserTestCase {
         Assert.assertNotNull(name + " url is null", configURL);
 
         StringWriter writer = new StringWriter();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(configURL.openStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(configURL.openStream(), StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 writer.write(line + "\n");

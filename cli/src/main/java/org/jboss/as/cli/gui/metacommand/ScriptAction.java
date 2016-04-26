@@ -19,12 +19,12 @@
 package org.jboss.as.cli.gui.metacommand;
 
 import java.awt.event.ActionEvent;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileReader;
+import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
@@ -32,7 +32,6 @@ import javax.swing.SwingWorker;
 import org.jboss.as.cli.gui.CliGuiContext;
 import org.jboss.as.cli.gui.component.CLIOutput;
 import org.jboss.as.cli.gui.component.ScriptMenu;
-import org.jboss.as.protocol.StreamUtils;
 
 /**
  * Abstract action that runs scripts.
@@ -85,22 +84,11 @@ public abstract class ScriptAction extends AbstractAction {
 
     // read the file as a list of text lines
     private List<String> getCommandLines(File file) {
-        List<String> lines = new ArrayList<String>();
-        BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new FileReader(file));
-            String line = reader.readLine();
-            while (line != null) {
-                lines.add(line);
-                line = reader.readLine();
-            }
-        } catch (Throwable e) {
+            return Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
             throw new IllegalStateException("Failed to process file " + file.getAbsolutePath(), e);
-        } finally {
-            StreamUtils.safeClose(reader);
         }
-
-        return lines;
     }
 
     // We need this class because we have to pass on whether or not a

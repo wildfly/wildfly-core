@@ -35,12 +35,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -66,7 +66,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.handlers.SyslogHandler;
 import org.junit.After;
 import org.junit.Assert;
-import org.xnio.IoUtils;
 
 /**
  * Don't use core-model test for this. It does not support runtime, and more importantly for backwards compatibility the audit logger cannot be used
@@ -159,8 +158,8 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
 
     protected List<ModelNode> readFile(File file, int expectedRecords) throws IOException {
         List<ModelNode> list = new ArrayList<ModelNode>();
-        final BufferedReader reader = new BufferedReader(new FileReader(file));
-        try {
+
+        try (final BufferedReader reader = Files.newBufferedReader(file.toPath(),StandardCharsets.UTF_8)){
             StringWriter writer = null;
             String line = reader.readLine();
             while (line != null) {
@@ -178,16 +177,13 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
             if (writer != null) {
                 list.add(ModelNode.fromJSONString(writer.getBuffer().toString()));
             }
-        } finally {
-            IoUtils.safeClose(reader);
         }
         Assert.assertEquals(list.toString(), expectedRecords, list.size());
         return list;
     }
 
     protected String readFullFileRecord(File file) throws IOException {
-        final BufferedReader reader = new BufferedReader(new FileReader(file));
-        try {
+        try (final BufferedReader reader = Files.newBufferedReader(file.toPath(),StandardCharsets.UTF_8)){
             boolean firstLine = true;
             StringWriter writer = new StringWriter();
             String line = reader.readLine();
@@ -201,8 +197,6 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
                 line = reader.readLine();
             }
             return writer.toString();
-        } finally {
-            IoUtils.safeClose(reader);
         }
     }
 

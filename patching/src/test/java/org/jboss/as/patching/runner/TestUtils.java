@@ -43,10 +43,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 import java.util.jar.Attributes.Name;
@@ -207,21 +209,15 @@ public class TestUtils {
     }
 
     public static void createPatchXMLFile(File dir, Patch patch, boolean logContent) throws Exception {
-        File patchXMLfile = new File(dir, "patch.xml");
-        patchXMLfile.createNewFile();
-        FileOutputStream fos = new FileOutputStream(patchXMLfile);
-        try {
+        Path patchXMLfile = dir.toPath().resolve("patch.xml");
+        try (Writer fos = Files.newBufferedWriter(patchXMLfile, StandardCharsets.UTF_8)){
             PatchXml.marshal(fos, patch);
-        } finally {
-            safeClose(fos);
         }
 
         if(logContent) {
-            try (java.io.FileInputStream fis = new java.io.FileInputStream(new java.io.File(dir, "patch.xml"))){
-                final byte[] bytes = new byte[fis.available()];
-                fis.read(bytes);
-                System.out.println(new String(bytes));
-            }
+            final byte[] bytes = Files.readAllBytes(dir.toPath().resolve("patch.xml"));
+            System.out.println(new String(bytes, StandardCharsets.UTF_8));
+
         }
     }
 
@@ -267,12 +263,9 @@ public class TestUtils {
         assertTrue("Failed to create product.conf", productConf.createNewFile());
         Properties props = new Properties();
         props.setProperty("slot", identity);
-        FileWriter writer = null;
-        try {
-            writer = new FileWriter(productConf);
+
+        try (final Writer writer = Files.newBufferedWriter(productConf.toPath(), StandardCharsets.UTF_8)) {
             props.store(writer, null);
-        } finally {
-            StreamUtils.safeClose(writer);
         }
 
         // create the product module

@@ -27,12 +27,12 @@ import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.util.HelpFormatter;
-import org.jboss.as.protocol.StreamUtils;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 /**
  *
@@ -58,14 +58,11 @@ public class CliExtCommandHandler extends CommandHandlerWithHelp {
         ClassLoader cl = WildFlySecurityManager.getClassLoaderPrivileged(CliExtCommandHandler.class);
         InputStream helpInput = cl.getResourceAsStream(filename);
         if (helpInput != null) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(helpInput));
-            try {
+            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(helpInput, StandardCharsets.UTF_8))){
                 System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
                 HelpFormatter.format(ctx, reader);
             } catch (java.io.IOException e) {
                 throw new CommandFormatException("Failed to read help/help.txt: " + e.getLocalizedMessage());
-            } finally {
-                StreamUtils.safeClose(reader);
             }
         } else {
             throw new CommandFormatException("Failed to locate command description " + filename);
