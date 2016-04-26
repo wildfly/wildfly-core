@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -676,10 +677,10 @@ public interface ControllerLogger extends BasicLogger {
      * @param fromPath the from file.
      * @param toPath   the to file.
      *
-     * @return an {@link IllegalStateException} for the error.
      */
+    @LogMessage(level = Level.ERROR)
     @Message(id = 56, value = "Could not rename %s to %s")
-    IllegalStateException cannotRename(String fromPath, String toPath);
+    void cannotRename(@Cause IOException ioe, Path fromPath, Path toPath);
 
     /**
      * Creates an exception indicating the inability to write the {@code name}.
@@ -3403,4 +3404,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 413, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
     OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
 
+    @LogMessage(level = Level.WARN)
+    @Message(id = 414, value = "Could not create a timestamped backup of current history dir %s, so it may still include versions from the previous boot.")
+    void couldNotCreateHistoricalBackup(String currentHistoryDir);
 }
