@@ -976,6 +976,7 @@ abstract class AbstractOperationContext implements OperationContext {
                 }
 
             } catch (Throwable t) {
+
                 // If t doesn't implement OperationClientException marker interface, throw it on to outer catch block
                 if (!(t instanceof OperationClientException)) {
                     throw t;

@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import javax.management.ObjectName;
 
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ControlledProcessStateJmx;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.Module;
@@ -106,6 +107,7 @@ final class BootstrapImpl implements Bootstrap {
         final ControlledProcessState processState = new ControlledProcessState(true);
         shutdownHook.setControlledProcessState(processState);
         ControlledProcessStateService.addService(tracker, processState);
+        ControlledProcessStateJmx.registerMBean(processState);
         final Service<?> applicationServerService = new ApplicationServerService(extraServices, configuration, processState);
         tracker.addService(Services.JBOSS_AS, applicationServerService)
             .install();

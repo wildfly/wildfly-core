@@ -25,6 +25,7 @@ package org.wildfly.core.embedded;
 import java.util.concurrent.CountDownLatch;
 
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ControlledProcessStateJmx;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostControllerService;
@@ -63,6 +64,7 @@ public class EmbeddedHostControllerBootstrap {
             ServiceTarget target = serviceContainer.subTarget();
 
             final ServiceController<ControlledProcessStateService> serviceController = ControlledProcessStateService.addService(target, processState);
+            ControlledProcessStateJmx.registerMBean(processState);
             final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, futureContainer);
             target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
             return futureContainer;

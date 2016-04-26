@@ -56,7 +56,11 @@ public class ControlledProcessState {
          */
         RESTART_REQUIRED("restart-required"),
         /** The process is stopping. */
-        STOPPING("stopping");
+        STOPPING("stopping"),
+        /**
+         * The process is stopped
+         */
+        STOPPED("stopped");
 
         private final String stringForm;
 
@@ -80,7 +84,7 @@ public class ControlledProcessState {
 
     public ControlledProcessState(final boolean reloadSupported) {
         this.reloadSupported = reloadSupported;
-        service = new ControlledProcessStateService(State.STARTING);
+        service = new ControlledProcessStateService(State.STOPPED);
     }
 
     public State getState() {
@@ -123,6 +127,13 @@ public class ControlledProcessState {
         synchronized (service) {
             state.set(State.STOPPING, stamp.incrementAndGet());
             service.stateChanged(State.STOPPING);
+        }
+    }
+
+    public void setStopped() {
+        synchronized (service) {
+            state.set(State.STOPPED, stamp.incrementAndGet());
+            service.stateChanged(State.STOPPED);
         }
     }
 
