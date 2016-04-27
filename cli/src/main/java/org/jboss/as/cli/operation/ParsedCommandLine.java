@@ -54,6 +54,10 @@ public interface ParsedCommandLine {
 
     boolean endsOnPropertyListEnd();
 
+    boolean endsOnNotOperator();
+
+    boolean isLastPropertyNegated();
+
     boolean endsOnAddressOperationNameSeparator();
 
     boolean endsOnNodeSeparator();

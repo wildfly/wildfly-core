@@ -144,6 +144,13 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
             candidates.add(Util.MAX_FAILED_SERVERS);
             candidates.add(Util.MAX_FAILURE_PERCENTAGE);
             candidates.add(Util.ROLLING_TO_SERVERS);
+            candidates.add(Util.NOT_OPERATOR);
+            return buffer.length();
+        }
+
+        // Only return the set of boolean properties
+        if (lastGroup.endsOnNotOperator()) {
+            candidates.add(Util.ROLLING_TO_SERVERS);
             return buffer.length();
         }
 
@@ -178,6 +185,7 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
                 }
                 if(!lastGroup.hasProperty(Util.ROLLING_TO_SERVERS)) {
                     candidates.add(Util.ROLLING_TO_SERVERS);
+                    candidates.add(Util.NOT_OPERATOR);
                 }
                 return lastGroup.getLastSeparatorIndex() + 1;
             } else {
@@ -188,11 +196,17 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
                 if(Util.MAX_FAILURE_PERCENTAGE.startsWith(propName)) {
                     candidates.add(Util.MAX_FAILURE_PERCENTAGE + '=');
                 } else if (Util.ROLLING_TO_SERVERS.equals(propName)) {
-                    candidates.add("=" + Util.FALSE);
-                    candidates.add(")");
-                    if (!containsAll) {
-                        candidates.add(",");
+                    if (lastGroup.isLastPropertyNegated() && !containsAll) {
+                        candidates.add(Util.ROLLING_TO_SERVERS + ",");
+                    } else {
+                        candidates.add("=" + Util.FALSE);
+                        if (!containsAll) {
+                            candidates.add(",");
+                        } else {
+                            candidates.add(")");
+                        }
                     }
+
                 } else if (Util.ROLLING_TO_SERVERS.startsWith(propName)) {
                     candidates.add(Util.ROLLING_TO_SERVERS);
                 }

@@ -65,7 +65,7 @@ public class PropertiesWithIndexCompletionTestCase {
     protected List<String> fetchCandidates(String buffer) {
         ArrayList<String> candidates = new ArrayList<String>();
         try {
-            ctx.parseCommandLine(buffer);
+            ctx.parseCommandLine(buffer, false);
         } catch (CommandFormatException e) {
             return Collections.emptyList();
         }

@@ -63,7 +63,7 @@ public class CommandLineArgumentsTestCase {
         assertTrue(args.hasProperty("--name"));
         assertEquals("value", args.getPropertyValue("--name"));
         assertTrue(args.hasProperty("--name1"));
-        assertNull(args.getPropertyValue("--name1"));
+        assertTrue(args.getPropertyValue("--name1").equals("true"));
 
         List<String> otherArgs = args.getOtherProperties();
         assertEquals(1, otherArgs.size());
