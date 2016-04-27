@@ -97,7 +97,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 public class BasicOperationsUnitTestCase {
 
     @Inject
-    private ManagementClient managementClient;
+    private static ManagementClient managementClient;
 
     @Test
     public void testSocketBindingsWildcards() throws IOException {
@@ -124,16 +124,18 @@ public class BasicOperationsUnitTestCase {
     }
 
     @Test
-    public void testReadResourceRecursiveDepthRecursiveUndefined() throws Exception {
+    public void testReadResourceRecursiveDepthRecursiveUndefined() throws IOException {
         // WFCORE-76
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_RESOURCE_OPERATION);
         operation.get(OP_ADDR).setEmptyList();
         operation.get(RECURSIVE_DEPTH).set(1);
 
-        final ModelNode result = managementClient.executeForResult(operation);
+        final ModelNode result = managementClient.getControllerClient().execute(operation);
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
 
-        final ModelNode logging = result.get(SUBSYSTEM, "logging");
+        final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
         assertTrue(logging.hasDefined("logger"));
         final ModelNode rootLogger = result.get(RESULT, SUBSYSTEM, "logging", "root-logger");
         assertFalse(rootLogger.hasDefined("ROOT"));
@@ -447,7 +449,7 @@ public class BasicOperationsUnitTestCase {
         }
     }
 
-    private int countSystemProperties() throws IOException {
+    private static int countSystemProperties() throws IOException {
         ModelNode readProperties = Operations.createOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS.toModelNode());
         readProperties.get(CHILD_TYPE).set(SYSTEM_PROPERTY);
         ModelNode response = managementClient.getControllerClient().execute(readProperties);
@@ -455,7 +457,7 @@ public class BasicOperationsUnitTestCase {
         return properties.asList().size();
     }
 
-    private void validateSystemProperty(Map<String, String> properties, String propertyName, boolean exist, int origPropCount) throws IOException, MgmtOperationException {
+    private static void validateSystemProperty(Map<String, String> properties, String propertyName, boolean exist, int origPropCount) throws IOException, MgmtOperationException {
         ModelNode readProperties = Operations.createOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS.toModelNode());
         readProperties.get(CHILD_TYPE).set(SYSTEM_PROPERTY);
         ModelNode response = managementClient.getControllerClient().execute(readProperties);

@@ -22,15 +22,23 @@
 
 package org.wildfly.core.test.standalone.mgmt;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.HTTPS_CONTROLLER;
+import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_NATIVE_PORT;
+import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
+import static org.junit.Assert.assertThat;
+import static org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfaceTestCase.reloadServer;
+
 import java.io.File;
 import java.io.IOException;
 import javax.inject.Inject;
 
 import org.apache.commons.io.FileUtils;
-import org.jboss.as.cli.CommandContext;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.integration.management.util.CustomCLIExecutor;
 import org.jboss.as.test.integration.security.PicketBoxModuleUtil;
 import org.jboss.as.test.integration.security.common.AbstractBaseSecurityRealmsServerSetupTask;
@@ -53,15 +61,6 @@ import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
-import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.HTTPS_CONTROLLER;
-import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_NATIVE_PORT;
-import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
-import static org.junit.Assert.assertThat;
 
 /**
  * Testing https connection to the http management interface with cli console
@@ -102,16 +101,17 @@ public class HTTPSConnectionWithCLITestCase {
 
     @BeforeClass
     public static void prepareServer() throws Exception {
-        containerController.startInAdminMode();
+        containerController.start();
         ManagementClient mgmtClient = containerController.getClient();
         //final ModelControllerClient client = mgmtClient.getControllerClient();
         keystoreFilesSetup.setup(mgmtClient);
         managementNativeRealmSetup.setup(mgmtClient);
 
 
-        picketLinkModule = PicketBoxModuleUtil.createTestModule();
-        // To apply new security realm settings for http interface reload of  server is required
+        // To apply new security realm settings for http interface reload of
+        // server is required
         reloadServer();
+        picketLinkModule = PicketBoxModuleUtil.createTestModule();
     }
 
     /**
@@ -159,7 +159,7 @@ public class HTTPSConnectionWithCLITestCase {
         HTTPSManagementInterfaceTestCase.resetHttpInterfaceConfiguration(client);
 
         // reload to apply changes
-        reloadServer();//reload using CLI
+        reloadServer();
 
         keystoreFilesSetup.tearDown(managementClient);
         managementNativeRealmSetup.tearDown(managementClient);
@@ -169,15 +169,6 @@ public class HTTPSConnectionWithCLITestCase {
         FileUtils.deleteDirectory(WORK_DIR);
     }
 
-    public static void reloadServer() throws Exception {
-        final CommandContext ctx = CLITestUtil.getCommandContext("remoting", TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT);
-        try {
-            ctx.connectController();
-            ctx.handle("reload");
-        } finally {
-            ctx.terminateSession();
-        }
-    }
 
     static class ManagementNativeRealmSetup extends AbstractBaseSecurityRealmsServerSetupTask {
 

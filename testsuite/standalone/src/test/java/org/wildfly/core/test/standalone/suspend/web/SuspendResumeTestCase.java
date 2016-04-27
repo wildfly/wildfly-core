@@ -36,13 +36,14 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.ServerController;
+import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.test.suspendresumeendpoint.SuspendResumeHandler;
 import org.wildfly.test.suspendresumeendpoint.TestSuspendServiceActivator;
@@ -57,25 +58,24 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
 public class SuspendResumeTestCase {
 
     public static final String WEB_SUSPEND_JAR = "web-suspend.jar";
-
     @Inject
-    private static ServerController serverController;
+    private static ManagementClient managementClient;
 
     @BeforeClass
     public static void deploy() throws Exception {
-        //ServerDeploymentHelper helper = new ServerDeploymentHelper(managementClient.getControllerClient());
+        ServerDeploymentHelper helper = new ServerDeploymentHelper(managementClient.getControllerClient());
         JavaArchive war = ShrinkWrap.create(JavaArchive.class, WEB_SUSPEND_JAR);
         war.addPackage(SuspendResumeHandler.class.getPackage());
         war.addAsServiceProvider(ServiceActivator.class, TestSuspendServiceActivator.class);
         war.addAsResource(new StringAsset("Dependencies: org.jboss.dmr, org.jboss.as.controller, io.undertow.core, org.jboss.as.server,org.wildfly.extension.request-controller, org.jboss.as.network\n"), "META-INF/MANIFEST.MF");
-        //helper.deploy(WEB_SUSPEND_JAR, war.as(ZipExporter.class).exportAsInputStream());
-        serverController.deploy(war, WEB_SUSPEND_JAR);
+        helper.deploy(WEB_SUSPEND_JAR, war.as(ZipExporter.class).exportAsInputStream());
 
     }
 
     @AfterClass
     public static void undeploy() throws ServerDeploymentHelper.ServerDeploymentException {
-        serverController.undeploy(WEB_SUSPEND_JAR);
+        ServerDeploymentHelper helper = new ServerDeploymentHelper(managementClient.getControllerClient());
+        helper.undeploy(WEB_SUSPEND_JAR);
     }
 
     @Test
@@ -96,16 +96,16 @@ public class SuspendResumeTestCase {
 
             ModelNode op = new ModelNode();
             op.get(OP).set("suspend");
-            serverController.getClient().getControllerClient().execute(op);
+            managementClient.getControllerClient().execute(op);
 
             op = new ModelNode();
             op.get(OP).set(READ_ATTRIBUTE_OPERATION);
             op.get(NAME).set(SUSPEND_STATE);
-            Assert.assertEquals("SUSPENDING", serverController.getClient().executeForResult(op).asString());
+            Assert.assertEquals("SUSPENDING", managementClient.executeForResult(op).asString());
 
             HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", 10, TimeUnit.SECONDS);
             Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
-            Assert.assertEquals("SUSPENDED", serverController.getClient().executeForResult(op).asString());
+            Assert.assertEquals("SUSPENDED", managementClient.executeForResult(op).asString());
 
             final HttpURLConnection conn = (HttpURLConnection) new URL(address).openConnection();
             try {
@@ -118,7 +118,7 @@ public class SuspendResumeTestCase {
 
             op = new ModelNode();
             op.get(OP).set("resume");
-            serverController.getClient().getControllerClient().execute(op);
+            managementClient.getControllerClient().execute(op);
 
             Assert.assertEquals(SuspendResumeHandler.TEXT, HttpRequest.get(address, 60, TimeUnit.SECONDS));
         } finally {
@@ -127,7 +127,9 @@ public class SuspendResumeTestCase {
 
             ModelNode op = new ModelNode();
             op.get(OP).set("resume");
-            serverController.getClient().getControllerClient().execute(op);
+            managementClient.getControllerClient().execute(op);
         }
+
+
     }
 }

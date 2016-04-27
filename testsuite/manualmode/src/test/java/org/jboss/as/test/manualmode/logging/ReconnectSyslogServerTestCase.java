@@ -24,6 +24,8 @@ package org.jboss.as.test.manualmode.logging;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.jboss.as.test.integration.security.common.CoreUtils;
+import static org.jboss.as.test.manualmode.logging.AbstractLoggingTestCase.deploy;
+import static org.jboss.as.test.manualmode.logging.AbstractLoggingTestCase.undeploy;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.syslogserver.BlockedAllProtocolsSyslogServerEventHandler;
 import org.junit.After;

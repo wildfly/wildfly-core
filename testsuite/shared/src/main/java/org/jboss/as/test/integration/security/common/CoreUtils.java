@@ -178,7 +178,7 @@ public class CoreUtils {
 
     public static void applyUpdate(ModelNode update, final ModelControllerClient client) throws Exception {
         ModelNode result = client.execute(new OperationBuilder(update).build());
-        if (LOGGER.isDebugEnabled()) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Client update: " + update);
             LOGGER.info("Client update result: " + result);
         }

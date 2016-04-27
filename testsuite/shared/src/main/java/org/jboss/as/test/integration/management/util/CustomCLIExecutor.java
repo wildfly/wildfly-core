@@ -22,6 +22,7 @@
 
 package org.jboss.as.test.integration.management.util;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
@@ -197,6 +198,37 @@ public class CustomCLIExecutor {
             }
         }
         return exitCode + ": " + cliOutput;
+    }
+
+    /**
+     * Waits for server to reload until server-state is running
+     *
+     * @param timeout
+     * @param controller
+     * @throws Exception
+     */
+    public static void waitForServerToReload(int timeout, String controller) throws Exception {
+
+        Thread.sleep(TimeoutUtil.adjust(500));
+        long start = System.currentTimeMillis();
+        long now;
+        do {
+            try {
+                String result = CustomCLIExecutor.execute(null, READ_ATTRIBUTE_OPERATION + " server-state", controller);
+                boolean normal = result.contains("running");
+                if (normal) {
+                    return;
+                }
+            } catch (Exception e) {
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+            now = System.currentTimeMillis();
+        } while (now - start < timeout);
+
+        fail("Server did not reload in the imparted time.");
     }
 
     private static class ConsoleConsumer implements Runnable {

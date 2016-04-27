@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIRECTORY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
@@ -36,11 +37,12 @@ import javax.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.ServerController;
+import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -52,9 +54,8 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 public class ReloadWithConfigTestCase {
     private static final String RELOAD_TEST_CASE_ONE = "reload-test-case-one";
     private static final String RELOAD_TEST_CASE_TWO = "reload-test-case-two";
-
     @Inject
-    private static ServerController container;
+    private static ManagementClient managementClient;
 
     private File snapshotDir;
 
@@ -65,17 +66,19 @@ public class ReloadWithConfigTestCase {
         addSystemProperty(RELOAD_TEST_CASE_ONE, "1");
         try {
 
-            executeForResult(Util.createEmptyOperation("take-snapshot", PathAddress.EMPTY_ADDRESS));
+            managementClient.executeForResult(Util.createEmptyOperation("take-snapshot", PathAddress.EMPTY_ADDRESS));
             addSystemProperty(RELOAD_TEST_CASE_TWO, "2");
 
+            final ModelNode reloadOp = Util.createEmptyOperation("reload", PathAddress.EMPTY_ADDRESS);
             List<File> snapshots = listSnapshots();
             Assert.assertEquals(1, snapshots.size());
-            container.reload(snapshots.get(0).getName());
+            reloadOp.get(SERVER_CONFIG).set(snapshots.get(0).getName());
+            ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient(), reloadOp);
             wasReloaded = true;
 
             final ModelNode readChildrenNames = Util.createEmptyOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS);
             readChildrenNames.get(CHILD_TYPE).set(SYSTEM_PROPERTY);
-            List<ModelNode> list = executeForResult(readChildrenNames).asList();
+            List<ModelNode> list = managementClient.executeForResult(readChildrenNames).asList();
             Assert.assertEquals(1, list.size());
             Assert.assertEquals(RELOAD_TEST_CASE_ONE, list.get(0).asString());
         } finally {
@@ -84,7 +87,8 @@ public class ReloadWithConfigTestCase {
             cleanSnapshotDirectory();
             if (wasReloaded) {
                 //Reset the config file
-                container.reload();
+                final ModelNode reloadOp = Util.createEmptyOperation("reload", PathAddress.EMPTY_ADDRESS);
+                ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient(), reloadOp);
             }
         }
     }
@@ -92,12 +96,12 @@ public class ReloadWithConfigTestCase {
     private void addSystemProperty(String name, String value) throws Exception {
         ModelNode op = Util.createAddOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, name));
         op.get(VALUE).set(value);
-        executeForResult(op);
+        managementClient.executeForResult(op);
     }
 
     private List<File> listSnapshots() throws Exception {
         final ModelNode op = Util.createEmptyOperation("list-snapshots", PathAddress.EMPTY_ADDRESS);
-        final ModelNode result = executeForResult(op);
+        final ModelNode result = managementClient.executeForResult(op);
         String dir = result.get(DIRECTORY).asString();
         ModelNode names = result.get(NAMES);
         List<File> snapshotFiles = new ArrayList<>();
@@ -113,14 +117,10 @@ public class ReloadWithConfigTestCase {
         }
     }
 
-    private ModelNode executeForResult(ModelNode op)throws Exception{
-        return container.getClient().executeForResult(op);
-    }
-
     private File getSnapshotDir() throws Exception {
         if (snapshotDir == null) {
             final ModelNode op = Util.createEmptyOperation("list-snapshots", PathAddress.EMPTY_ADDRESS);
-            final ModelNode result = executeForResult(op);
+            final ModelNode result = managementClient.executeForResult(op);
             final String dir = result.get(DIRECTORY).asString();
             snapshotDir = new File(dir);
         }
@@ -129,7 +129,7 @@ public class ReloadWithConfigTestCase {
 
     private void removeSystemProperty(String name, boolean safe) throws Exception {
         try {
-            executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, name)));
+            managementClient.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, name)));
         } catch (Exception e) {
             if (safe) {
                 e.printStackTrace();
