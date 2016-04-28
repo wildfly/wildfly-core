@@ -25,7 +25,6 @@ import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MA
 import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_NATIVE_PORT;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertThat;
-import static org.wildfly.core.test.standalone.mgmt.HTTPSConnectionWithCLITestCase.reloadServer;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -34,13 +33,16 @@ import java.net.UnknownHostException;
 import javax.inject.Inject;
 import org.hamcrest.CoreMatchers;
 
+import org.jboss.as.cli.CommandContext;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.categories.CommonCriteria;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -68,16 +70,27 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @Category(CommonCriteria.class)
 public class RemoveManagementInterfaceTestCase {
 
+    public static Logger LOGGER = Logger.getLogger(RemoveManagementInterfaceTestCase.class);
     @Inject
     protected static ServerController controller;
 
     @BeforeClass
     public static void startAndSetupContainer() throws Exception {
-        controller.startInAdminMode();
+        controller.start();
         ManagementClient managementClient = controller.getClient();
         serverSetup(managementClient.getControllerClient());
         // To have the native management interface ok, we need a reload of the server
-        controller.reload();
+        reloadServer();
+    }
+
+    public static void reloadServer() throws Exception {
+        final CommandContext ctx = CLITestUtil.getCommandContext("remoting", TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT);
+        try {
+            ctx.connectController();
+            ctx.handle("reload");
+        } finally {
+            ctx.terminateSession();
+        }
     }
 
     @Test
@@ -154,7 +167,7 @@ public class RemoveManagementInterfaceTestCase {
             CoreUtils.applyUpdate(operation, client);
         }
         // To recreate http interface, a reload of server is required
-        controller.reload();
+        reloadServer();
         //Remove native interface
         operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.REMOVE);
         CoreUtils.applyUpdate(operation, client);

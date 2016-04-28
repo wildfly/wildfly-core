@@ -21,6 +21,10 @@
  */
 package org.jboss.as.test.integration.management.http;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
@@ -36,12 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests all management operation types which are available via HTTP POST requests.
@@ -218,22 +217,6 @@ public class HttpPostMgmtOpsTestCase {
         ModelNode result = ret.get("result");
 
         assertFalse(result.asList().isEmpty());
-    }
-
-    @Inject
-    private static ServerController container;
-
-    //@Test this is prototype for reload testing via http interface
-    public void testReload() throws Exception {
-
-        ModelNode op = HttpMgmtProxy.getOpNode("/", "reload");
-
-        for (int i = 0; i < 10; i++) {
-            ModelNode ret = httpMgmt.sendPostCommand(op);
-            assertTrue("success".equals(ret.get("outcome").asString()));
-            container.waitForLiveServerToReload(10 * 1000); //wait 10 seconds for reload
-            testReadChildrenResources();
-        }
     }
 
     @Test

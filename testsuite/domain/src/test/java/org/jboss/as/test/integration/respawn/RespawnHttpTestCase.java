@@ -219,6 +219,8 @@ public class RespawnHttpTestCase {
     @Test
     public void testReloadHc() throws Exception {
 
+        System.out.println("testReloadHc()");
+
         List<RunningProcess> original = waitForAllProcessesFullyStarted();
         Set<String> serverIds = new HashSet<String>();
         for (RunningProcess proc : original) {

@@ -24,7 +24,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_NATIVE_PORT;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertThat;
-import static org.wildfly.core.test.standalone.mgmt.HTTPSConnectionWithCLITestCase.reloadServer;
+import static org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfaceTestCase.reloadServer;
 
 import java.io.File;
 import java.io.IOException;
@@ -91,6 +91,8 @@ public class VaultPasswordsInCLITestCase {
     private static final File WRONG_VAULT_PASSWORD_FILE = new File(WORK_DIR, "wrong-vault-pass.xml");
 
     private static final String TESTING_OPERATION = "/core-service=management/management-interface=http-interface:read-resource";
+    private static final String RELOAD = "reload";
+    private static final int MAX_RELOAD_TIME = 20000;
 
     private static final ManagementInterfacesSetup managementInterfacesSetup = new ManagementInterfacesSetup();
     private static final ManagemenCLIRealmSetup managementCLICliRealmSetup = new ManagemenCLIRealmSetup();
@@ -104,7 +106,7 @@ public class VaultPasswordsInCLITestCase {
     public static void prepareServer() throws Exception {
 
         LOGGER.info("*** starting server");
-        containerController.startInAdminMode();
+        containerController.start();
         ManagementClient mgmtClient = containerController.getClient();
         managementInterfacesSetup.setup(mgmtClient);
         managementCLICliRealmSetup.setup(mgmtClient);
@@ -114,8 +116,9 @@ public class VaultPasswordsInCLITestCase {
 
         // To apply new security realm settings for native interface reload of
         // server is required
-        LOGGER.trace("*** reload server");
+        LOGGER.info("*** reload server");
         reloadServer();
+
     }
 
     /**
@@ -149,16 +152,16 @@ public class VaultPasswordsInCLITestCase {
     public static void resetConfigurationForNativeInterface() throws Exception {
 
         LOGGER.info("*** reseting test configuration");
+        ModelControllerClient client = getNativeModelControllerClient();
+        ManagementClient mgmtClient = new ManagementClient(client, TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT, "remoting");
 
-        resetHttpInterfaceConfiguration(getNativeModelControllerClient());
+        resetHttpInterfaceConfiguration(client);
 
         // reload to apply changes
-        reloadServer();
+        reloadServer(); //mo need to reload we are shutting down anyway
 
-        ManagementClient client = containerController.createNewManagementClient();
-
-        managementInterfacesSetup.tearDown(client);
-        managementCLICliRealmSetup.tearDown(client);
+        managementInterfacesSetup.tearDown(mgmtClient);
+        managementCLICliRealmSetup.tearDown(mgmtClient);
 
         LOGGER.info("*** stopping container");
         containerController.stop();

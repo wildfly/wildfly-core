@@ -21,12 +21,20 @@
  */
 package org.jboss.as.test.manualmode.deployment;
 
+import static org.jboss.as.controller.ControlledProcessState.State.RUNNING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -48,11 +56,13 @@ import javax.inject.Inject;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 
+import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.byteman.agent.submit.Submit;
 import org.jboss.dmr.ModelNode;
@@ -67,7 +77,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -92,6 +101,7 @@ public class DeploymentScannerShutdownTestCase {
     @Inject
     private ServerController container;
 
+    private ModelControllerClient client;
     private File deployDir;
     private final String scannerName = "autoZips";
     private static final Map<String, String> properties = new HashMap<>();
@@ -110,32 +120,22 @@ public class DeploymentScannerShutdownTestCase {
 
     @After
     public void cleanAll() throws Exception {
-        try {
-            removeRules();
-        } catch (Exception e) {
-
-        }
-        try {
-            removeDeploymentScanner(scannerName);
-        } catch (Exception e) {
-
-        }
-        try {
-            removeDeploymentScannerExtension();
-        } catch (Exception e) {
-
-        }
+        removeRules();
+        removeDeploymentScanner(client, scannerName);
+        removeDeploymentScannerExtension();
         cleanFile(deployDir);
         deployDir.delete();
+        client.close();
         container.stop();
     }
 
     @Before
     public void prepareServer() throws Exception {
-        deployDir = createDeploymentDir("auto-deployments");
         container.start();
+        client = TestSuiteEnvironment.getModelControllerClient();
         addDeploymentScannerExtension();
-        addDeploymentScanner(deployDir, scannerName, true);
+        deployDir = createDeploymentDir("auto-deployments");
+        addDeploymentScanner(deployDir, client, scannerName, true);
     }
 
     private void deployRules() throws Exception {
@@ -162,7 +162,8 @@ public class DeploymentScannerShutdownTestCase {
         final File file = new File(dir, DEPLOYMENT_NAME);
         archive.as(ZipExporter.class).exportTo(file, true);
         deploy(file, target, deployed);
-        container.reload(TIMEOUT);
+        client.close();
+        waitForServerToReload(TIMEOUT);
         Assert.assertTrue("We should have the deployed marker", deployed.exists());
         Assert.assertTrue(container.isStarted());
         Path serverLog = getAbsoluteLogFilePath("jboss.server.log.dir", "server.log");
@@ -191,12 +192,13 @@ public class DeploymentScannerShutdownTestCase {
         deploy(file, target, deployed);
         deployRules();
         undeploy(target, undeployed);
-        container.reload(TIMEOUT);
+        client.close();
+        waitForServerToReload(TIMEOUT);
         Assert.assertTrue("We should have the undeployed marker", undeployed.exists());
         Assert.assertTrue(container.isStarted());
         Path serverLog = getAbsoluteLogFilePath("jboss.server.log.dir", "server.log");
         assertLogContains(serverLog, "rejected from java.util.concurrent.ScheduledThreadPoolExecutor", false);
-        //container.start();
+        container.start();
     }
 
     private void assertLogContains(final Path logFile, final String msg, final boolean expected) throws Exception {
@@ -256,8 +258,8 @@ public class DeploymentScannerShutdownTestCase {
         }
     }
 
-    private ModelNode addDeploymentScanner(final File deployDir, final String scannerName, final boolean autoDeployZipped)
-            throws Exception {
+    private ModelNode addDeploymentScanner(final File deployDir, final ModelControllerClient client, final String scannerName, final boolean autoDeployZipped)
+            throws IOException {
         ModelNode add = new ModelNode();
         add.get(OP).set(ADD);
         ModelNode addr = new ModelNode();
@@ -270,17 +272,20 @@ public class DeploymentScannerShutdownTestCase {
         if (autoDeployZipped == false) {
             add.get("auto-deploy-zipped").set(false);
         }
-        return container.getClient().executeForResult(add);
+        ModelNode result = client.execute(add);
+        Assert.assertEquals(result.toString(), ModelDescriptionConstants.SUCCESS, result.require(ModelDescriptionConstants.OUTCOME).asString());
+        return result;
     }
 
-    private void removeDeploymentScanner(final String scannerName) throws Exception {
+    private void removeDeploymentScanner(final ModelControllerClient client, final String scannerName) throws IOException {
         ModelNode addr = new ModelNode();
         addr.add("subsystem", "deployment-scanner");
         addr.add("scanner", scannerName);
         ModelNode remove = new ModelNode();
         remove.get(OP).set(REMOVE);
         remove.get(OP_ADDR).set(addr);
-        container.getClient().executeForResult(remove);
+        ModelNode result = client.execute(remove);
+        Assert.assertEquals(result.toString(), ModelDescriptionConstants.SUCCESS, result.require(ModelDescriptionConstants.OUTCOME).asString());
     }
 
     private File createDeploymentDir(String dir) {
@@ -300,34 +305,77 @@ public class DeploymentScannerShutdownTestCase {
         toClean.delete();
     }
 
-    private Path getAbsoluteLogFilePath(final String relativePath, final String fileName) throws UnsuccessfulOperationException {
+    private void waitForServerToReload(int timeout) throws Exception {
+        // FIXME use the CLI high-level reload operation that blocks instead of
+        // fiddling with timeouts...
+        // leave some time to have the server starts its reload process and change
+        // its server-state from running.
+        Thread.sleep(TimeoutUtil.adjust(500));
+        ModelControllerClient liveClient = null;
+        long start = System.currentTimeMillis();
+        long now;
+        do {
+            if (liveClient != null) {
+                liveClient.close();
+            }
+            liveClient = TestSuiteEnvironment.getModelControllerClient();
+            ModelNode operation = new ModelNode();
+            operation.get(OP_ADDR).setEmptyList();
+            operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
+            operation.get(NAME).set("server-state");
+            try {
+                ModelNode result = liveClient.execute(operation);
+                boolean normal = RUNNING.toString().equals(result.get(RESULT).asString());
+                if (normal) {
+                    client = liveClient;
+                    return;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                Thread.sleep(TimeoutUtil.adjust(100));
+            } catch (InterruptedException e) {
+            }
+            now = System.currentTimeMillis();
+        } while (now - start < timeout);
+
+        fail("Server did not reload in the imparted time.");
+    }
+
+    private Path getAbsoluteLogFilePath(final String relativePath, final String fileName) {
         final ModelNode address = PathAddress.pathAddress(
                 PathElement.pathElement(ModelDescriptionConstants.PATH, relativePath)).toModelNode();
         final ModelNode result;
         try {
             final ModelNode op = Operations.createReadAttributeOperation(address, ModelDescriptionConstants.PATH);
-            result = container.getClient().executeForResult(op);
-            return Paths.get(result.asString(), fileName);
-        } catch (Exception e) {
+            result = client.execute(op);
+            if (Operations.isSuccessfulOutcome(result)) {
+                return Paths.get(Operations.readResult(result).asString(), fileName);
+            }
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        throw new RuntimeException(Operations.getFailureDescription(result).asString());
     }
 
 
     private void addDeploymentScannerExtension() throws Exception {
         ModelNode addOp = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, DEPLOYMENT_SCANNER_EXTENSION)));
-        container.getClient().executeForResult(addOp);
+        ModelNode result = client.execute(addOp);
+        assertEquals("Unexpected outcome of adding the test deployment scanner extension: " + addOp, SUCCESS, result.get(OUTCOME).asString());
         addOp = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, DEPLOYMENT_SCANNER_SUBSYSTEM)));
-        container.getClient().executeForResult(addOp);
+        result = client.execute(addOp);
+        assertEquals("Unexpected outcome of adding the test deployment scanner subsystem: " + addOp, SUCCESS, result.get(OUTCOME).asString());
     }
 
     private void removeDeploymentScannerExtension() throws Exception {
         try {
             ModelNode removeOp = Util.createRemoveOperation(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, DEPLOYMENT_SCANNER_SUBSYSTEM)));
-            container.getClient().executeForResult(removeOp);
+            client.execute(removeOp);
         } finally {
             ModelNode removeOp = Util.createRemoveOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, DEPLOYMENT_SCANNER_EXTENSION)));
-            container.getClient().executeForResult(removeOp);
+            client.execute(removeOp);
         }
     }
 }
