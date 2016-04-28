@@ -519,7 +519,7 @@ final class SubsystemTestDelegate {
         //2) Check that the transformed model is valid according to the resource definition in the legacy subsystem controller
         ResourceDefinition rd = getResourceDefinition(kernelServices, modelVersion);
         Assert.assertNotNull("Could not load legacy dmr for subsystem '" + mainSubsystemName + "' version: '" + modelVersion + "' please add it", rd);
-        ManagementResourceRegistration rr = ManagementResourceRegistration.Factory.create(rd);
+        ManagementResourceRegistration rr = ManagementResourceRegistration.Factory.forEnvironment(getProcessType(), RunningMode.NORMAL).createRegistry(rd);
         ModelTestUtils.checkModelAgainstDefinition(transformed, rr);
         return legacyModel;
     }

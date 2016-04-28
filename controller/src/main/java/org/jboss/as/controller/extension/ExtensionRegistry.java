@@ -532,7 +532,7 @@ public class ExtensionRegistry {
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
             return new SubsystemRegistrationImpl(name, version,
-                    profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName);
+                    profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType);
         }
 
         @Override
@@ -673,12 +673,13 @@ public class ExtensionRegistry {
                                           ManagementResourceRegistration profileRegistration,
                                           ManagementResourceRegistration deploymentsRegistration,
                                           ExtensionRegistryType extensionRegistryType,
-                                          String extensionModuleName) {
+                                          String extensionModuleName,
+                                          ProcessType processType) {
             assert profileRegistration != null;
             this.name = name;
             this.profileRegistration = profileRegistration;
             if (deploymentsRegistration == null){
-                this.deploymentsRegistration = ManagementResourceRegistration.Factory.create(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
+                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
             }else {
                 this.deploymentsRegistration = deploymentsRegistration;
             }

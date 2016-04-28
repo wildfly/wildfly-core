@@ -49,11 +49,13 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
     static AttributeDefinition CURRENT_THREAD_CPU_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.CURRENT_THREAD_CPU_TIME, ModelType.LONG, false)
             .setMeasurementUnit(MeasurementUnit.NANOSECONDS)
             .setStorageRuntime()
+            .forceRegistration()
             .build();
 
     static AttributeDefinition CURRENT_THREAD_USER_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.CURRENT_THREAD_USER_TIME, ModelType.LONG, false)
             .setMeasurementUnit(MeasurementUnit.NANOSECONDS)
             .setStorageRuntime()
+            .forceRegistration()
             .build();
 
 
@@ -63,21 +65,25 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
 
     static AttributeDefinition THREAD_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.THREAD_COUNT, ModelType.INT, false)
             .setStorageRuntime()
+            .forceRegistration()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
     static AttributeDefinition PEAK_THREAD_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.PEAK_THREAD_COUNT, ModelType.INT, false)
             .setStorageRuntime()
+            .forceRegistration()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
     static AttributeDefinition TOTAL_STARTED_THREAD_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_STARTED_THREAD_COUNT, ModelType.LONG, false)
             .setStorageRuntime()
+            .forceRegistration()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
     static AttributeDefinition DAEMON_THREAD_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.DAEMON_THREAD_COUNT, ModelType.INT, false)
             .setStorageRuntime()
+            .forceRegistration()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 

@@ -414,6 +414,14 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
+     * Adds the {@link AttributeAccess.Flag#FORCE_REGISTRATION} flag.
+     *
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public BUILDER forceRegistration() {
+        return addFlag(AttributeAccess.Flag.FORCE_REGISTRATION);
+    }
+    /**
      * Adds the {@link AttributeAccess.Flag#RESTART_ALL_SERVICES} flag and removes any conflicting flag.
      *
      * @return a builder that can be used to continue building the attribute definition

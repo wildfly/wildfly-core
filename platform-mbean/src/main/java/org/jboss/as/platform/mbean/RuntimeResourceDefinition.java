@@ -49,6 +49,7 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
     private static AttributeDefinition UPTIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.UPTIME, ModelType.LONG, false)
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .setStorageRuntime()
+            .forceRegistration()
             .build();
 
     private static AttributeDefinition START_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.START_TIME, ModelType.LONG, false)

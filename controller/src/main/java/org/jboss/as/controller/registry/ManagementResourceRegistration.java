@@ -31,6 +31,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
@@ -310,7 +311,37 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      */
     class Factory {
 
+        /**
+         * The default factory for creating a new, root model node registration.
+         *
+         * Root model node registration created by this factory will always register metrics
+         * regardless of the process type.
+         */
+        public static final Factory DEFAULT = new Factory();
+
+        private final ProcessType processType;
+
         private Factory() {
+            processType = null;
+        }
+
+        private Factory(ProcessType processType) {
+            this.processType = processType;
+        }
+
+        /**
+         * Returns a ManagementResourceRegistration's Factory that will use the specified {@code processType}
+         * to determine whether resource metrics are registered or not.
+         *
+         * If the {@code processType} id {@code null}, metrics are <em>always</em> registered.
+         *
+         * @param processType can be {@code null}
+
+         * @return a Factory which creates ManagementResourceRegistration that
+         * dynamically determine whether resource metrics are actually registered
+         */
+        public static Factory forProcessType(ProcessType processType) {
+            return new Factory(processType);
         }
 
         /**
@@ -396,7 +427,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
                     return false;
                 }
             };
-            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, false, null);
+            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, false, null, null);
         }
 
         /**
@@ -407,8 +438,21 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          *
          * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
          */
+        @Deprecated
         public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition) {
-            return create(resourceDefinition, null, null);
+            return DEFAULT.createRegistration(resourceDefinition, null, null);
+        }
+
+        /**
+         * Create a new root model node registration.
+         *
+         * @param resourceDefinition the facotry for the model description provider for the root model node
+         * @return the new root model node registration
+         *
+         * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+         */
+        public ManagementResourceRegistration createRegistration(final ResourceDefinition resourceDefinition) {
+            return createRegistration(resourceDefinition, null, null);
         }
 
         /**
@@ -424,7 +468,25 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
         @Deprecated
         public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition,
                                                             AccessConstraintUtilizationRegistry constraintUtilizationRegistry) {
-            return create(resourceDefinition, constraintUtilizationRegistry, null);
+            return DEFAULT.createRegistration(resourceDefinition, constraintUtilizationRegistry, null);
+        }
+
+
+        /**
+         * Create a new root model node registration.
+         *
+         * @param resourceDefinition the factory for the model description provider for the root model node
+         * @param constraintUtilizationRegistry registry for recording access constraints. Can be {@code null} if
+         *                                      tracking access constraint usage is not supported
+         * @return the new root model node registration
+         *
+         * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+         */
+        @Deprecated
+        public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition,
+                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
+                                                            CapabilityRegistry registry) {
+            return DEFAULT.createRegistration(resourceDefinition, constraintUtilizationRegistry, registry);
         }
 
 
@@ -434,19 +496,20 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          * @param resourceDefinition the facotry for the model description provider for the root model node
          * @param constraintUtilizationRegistry registry for recording access constraints. Can be {@code null} if
          *                                      tracking access constraint usage is not supported
+         * @param registry the capability registry (can be {@code null})
          * @return the new root model node registration
          *
          * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
          */
-        public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition,
-                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
-                                                            CapabilityRegistry registry) {
+        public ManagementResourceRegistration createRegistration(final ResourceDefinition resourceDefinition,
+                                                                 AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
+                                                                 CapabilityRegistry registry) {
             if (resourceDefinition == null) {
                 throw ControllerLogger.ROOT_LOGGER.nullVar("rootModelDescriptionProviderFactory");
             }
             ConcreteResourceRegistration resourceRegistration =
                     new ConcreteResourceRegistration(null, null, resourceDefinition,
-                            constraintUtilizationRegistry, false, registry);
+                            constraintUtilizationRegistry, false, registry, processType);
             resourceDefinition.registerAttributes(resourceRegistration);
             resourceDefinition.registerOperations(resourceRegistration);
             resourceDefinition.registerChildren(resourceRegistration);

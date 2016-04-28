@@ -138,7 +138,11 @@ public final class AttributeAccess {
         /**
          * The attribute is an alias to something else
          */
-        ALIAS
+        ALIAS,
+        /**
+         * Force the registration of the attribute regardless of the actual process type.
+         */
+        FORCE_REGISTRATION
     }
 
     private final AccessType access;
