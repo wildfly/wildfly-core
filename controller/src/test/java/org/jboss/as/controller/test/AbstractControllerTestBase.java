@@ -45,6 +45,8 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.TestModelControllerService;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
@@ -196,13 +198,13 @@ public abstract class AbstractControllerTestBase {
     public class ModelControllerService extends TestModelControllerService {
 
         public ModelControllerService(final ProcessType processType) {
-            super(processType, new EmptyConfigurationPersister(), new ControlledProcessState(true),
+            super(processType, new RunningModeControl(RunningMode.NORMAL), new EmptyConfigurationPersister(), new ControlledProcessState(true),
                     ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build()
             );
         }
 
         public ModelControllerService(final ProcessType processType, ResourceDefinition resourceDefinition){
-            super(processType, new EmptyConfigurationPersister(), new ControlledProcessState(true), resourceDefinition);
+            super(processType, new RunningModeControl(RunningMode.NORMAL), new EmptyConfigurationPersister(), new ControlledProcessState(true), resourceDefinition);
         }
 
         @Override

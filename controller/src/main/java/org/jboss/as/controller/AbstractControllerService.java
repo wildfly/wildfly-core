@@ -279,7 +279,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         final NotificationSupport notificationSupport = NotificationSupport.Factory.create(executorService);
         WritableAuthorizerConfiguration authorizerConfig = authorizer.getWritableAuthorizerConfiguration();
         authorizerConfig.reset();
-        ManagementResourceRegistration rootResourceRegistration = ManagementResourceRegistration.Factory.create(rootResourceDefinition, authorizerConfig, capabilityRegistry);
+        ManagementResourceRegistration rootResourceRegistration = ManagementResourceRegistration.Factory.forServer(processType, runningModeControl.getRunningMode()).createRegistration(rootResourceDefinition, authorizerConfig, capabilityRegistry);
         final ModelControllerImpl controller = new ModelControllerImpl(container, target,
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),

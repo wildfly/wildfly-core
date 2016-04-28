@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
@@ -132,6 +133,12 @@ public class Util {
 
     public static ModelNode getReadAttributeOperation(final PathAddress address, String attributeName) {
         ModelNode op = createEmptyOperation(READ_ATTRIBUTE_OPERATION, address);
+        op.get(NAME).set(attributeName);
+        return op;
+    }
+
+    public static ModelNode getReadResourceDescriptionOperation(final PathAddress address, String attributeName) {
+        ModelNode op = createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, address);
         op.get(NAME).set(attributeName);
         return op;
     }

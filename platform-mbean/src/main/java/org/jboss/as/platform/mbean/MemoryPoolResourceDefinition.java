@@ -61,13 +61,13 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     private static AttributeDefinition USAGE_THRESHOLD = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.USAGE_THRESHOLD, ModelType.LONG, true)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .setValidator(new IntRangeValidator(0))
             .build();
 
     private static AttributeDefinition USAGE_THRESHOLD_EXCEEDED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.USAGE_THRESHOLD_EXCEEDED, ModelType.BOOLEAN, true)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .build();
 
     private static AttributeDefinition USAGE_THRESHOLD_SUPPORTED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.USAGE_THRESHOLD_SUPPORTED, ModelType.BOOLEAN, false)
@@ -75,12 +75,12 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     private static AttributeDefinition USAGE_THRESHOLD_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.USAGE_THRESHOLD_COUNT, ModelType.LONG, true)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
     private static AttributeDefinition COLLECTION_USAGE_THRESHOLD_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_USAGE_THRESHOLD_COUNT, ModelType.LONG, true)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
@@ -94,7 +94,7 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .build();
     private static AttributeDefinition COLLECTION_USAGE_THRESHOLD_EXCEEDED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_USAGE_THRESHOLD_EXCEEDED, ModelType.BOOLEAN, true)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .build();
 
 
@@ -115,7 +115,7 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_USED,
             PlatformMBeanConstants.MEMORY_COMMITTED,
             PlatformMBeanConstants.MEMORY_MAX)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .setAllowNull(false)
             .build();
 
@@ -125,7 +125,7 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_USED,
             PlatformMBeanConstants.MEMORY_COMMITTED,
             PlatformMBeanConstants.MEMORY_MAX)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .build();
 
 

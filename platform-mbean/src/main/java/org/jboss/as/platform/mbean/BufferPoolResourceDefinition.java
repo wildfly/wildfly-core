@@ -46,16 +46,16 @@ class BufferPoolResourceDefinition extends SimpleResourceDefinition {
 
 
     private static AttributeDefinition MEMORY_USED_NAME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.MEMORY_USED_NAME, ModelType.LONG, false)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .build();
     private static AttributeDefinition TOTAL_CAPACITY = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_CAPACITY, ModelType.LONG, false)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .build();
 
     private static AttributeDefinition COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COUNT, ModelType.LONG, false)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .build();
 
     private static final List<AttributeDefinition> METRICS = Arrays.asList(

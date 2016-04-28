@@ -16,15 +16,15 @@ import org.jboss.dmr.ModelType;
 class ClassLoadingResourceDefinition extends SimpleResourceDefinition {
     //metrics
     private static SimpleAttributeDefinition TOTAL_LOADED_CLASS_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_LOADED_CLASS_COUNT, ModelType.LONG, false)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
     private static SimpleAttributeDefinition LOADED_CLASS_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.LOADED_CLASS_COUNT, ModelType.INT, false)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
     private static SimpleAttributeDefinition UNLOADED_CLASS_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.UNLOADED_CLASS_COUNT, ModelType.LONG, false)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
     //r+w attributes

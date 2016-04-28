@@ -30,7 +30,6 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.network.ManagedBinding;
@@ -79,7 +78,10 @@ public final class BindingMetricHandlers {
     public static class BoundHandler extends AbstractBindingMetricsHandler {
 
         public static final String ATTRIBUTE_NAME = "bound";
-        public static final AttributeDefinition ATTRIBUTE_DEFINITION = new SimpleAttributeDefinition(ATTRIBUTE_NAME, ModelType.BOOLEAN, true);
+        public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.BOOLEAN)
+                .setAllowNull(true)
+                .setStorageRuntime(true)
+                .build();
         public static final OperationStepHandler INSTANCE = new BoundHandler();
 
         private BoundHandler() {
@@ -101,7 +103,10 @@ public final class BindingMetricHandlers {
     public static class BoundAddressHandler extends AbstractBindingMetricsHandler {
 
         public static final String ATTRIBUTE_NAME = "bound-address";
-        public static final AttributeDefinition ATTRIBUTE_DEFINITION = new SimpleAttributeDefinition(ATTRIBUTE_NAME, ModelType.STRING, true);
+        public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.STRING)
+                .setAllowNull(true)
+                .setStorageRuntime(true)
+                .build();
         public static final OperationStepHandler INSTANCE = new BoundAddressHandler();
 
         private BoundAddressHandler() {
@@ -125,9 +130,11 @@ public final class BindingMetricHandlers {
     public static class BoundPortHandler extends AbstractBindingMetricsHandler {
 
         public static final String ATTRIBUTE_NAME = "bound-port";
-        public static final AttributeDefinition ATTRIBUTE_DEFINITION =
-                new SimpleAttributeDefinitionBuilder(ATTRIBUTE_NAME, ModelType.INT, true)
-                        .setValidator(new IntRangeValidator(1, Integer.MAX_VALUE, true, false)).build();
+        public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.INT)
+                .setAllowNull(true)
+                .setValidator(new IntRangeValidator(1, Integer.MAX_VALUE, true, false))
+                .setStorageRuntime(true)
+                .build();
 
         public static final OperationStepHandler INSTANCE = new BoundPortHandler();
 
