@@ -33,7 +33,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.AbstractSocketBindingGroupAddHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBindingManager;
@@ -79,18 +78,18 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
 
                 // Do a non-recursive read, which will bring in placeholders for the children
                 final Resource root = context.readResourceFromRoot(context.getCurrentAddress().getParent(), false);
-
-                Set<ResourceEntry> children = root.getChildren(SOCKET_BINDING_GROUP);
-                if (children.size() > 1) {
-                    for (ResourceEntry entry : children) {
-                        if (!entry.getName().equals(mine.getLastElement().getValue())) {
-                            throw ServerLogger.ROOT_LOGGER.cannotAddMoreThanOneSocketBindingGroupForServerOrHost(
+                final int maxOccurs = context.getResourceRegistration().getMaxOccurs();
+                Set<String> children = root.getChildrenNames(SOCKET_BINDING_GROUP);
+                if (children.size() > maxOccurs) {
+                    for (String childName : children) {
+                        if (!childName.equals(context.getCurrentAddressValue())) {
+                            throw ServerLogger.ROOT_LOGGER.cannotAddMoreSocketBindingGroups(
+                                    maxOccurs,
                                     mine,
-                                    PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, entry.getName())));
+                                    PathAddress.pathAddress(PathElement.pathElement(SOCKET_BINDING_GROUP, childName)));
                         }
                     }
                 }
-
                 AbstractSocketBindingGroupResourceDefinition.validateDefaultInterfaceReference(context, model);
             }
         }, OperationContext.Stage.MODEL);

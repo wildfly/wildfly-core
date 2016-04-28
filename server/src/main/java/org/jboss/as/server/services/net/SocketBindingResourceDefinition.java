@@ -29,6 +29,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
@@ -50,7 +51,13 @@ public class SocketBindingResourceDefinition extends AbstractSocketBindingResour
     public static final SocketBindingResourceDefinition INSTANCE = new SocketBindingResourceDefinition();
 
     private SocketBindingResourceDefinition() {
-        super(BindingAddHandler.INSTANCE, BindingRemoveHandler.INSTANCE);
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.SOCKET_BINDING),
+                ControllerResolver.getResolver(ModelDescriptionConstants.SOCKET_BINDING))
+                .setAddHandler(BindingAddHandler.INSTANCE)
+                .setRemoveHandler(BindingRemoveHandler.INSTANCE)
+                .setMaxOccurs(1)
+                .setMinOccurs(0)
+        );
     }
 
     @Override

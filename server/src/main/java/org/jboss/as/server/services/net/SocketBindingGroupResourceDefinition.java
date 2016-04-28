@@ -21,10 +21,12 @@
  */
 package org.jboss.as.server.services.net;
 
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.common.SocketBindingGroupRemoveHandler;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -45,7 +47,13 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
             .setDefaultValue(new ModelNode().set(0)).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
     private SocketBindingGroupResourceDefinition() {
-        super(BindingGroupAddHandler.INSTANCE, SocketBindingGroupRemoveHandler.INSTANCE);
+                super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.SOCKET_BINDING_GROUP),
+                        ControllerResolver.getResolver(ModelDescriptionConstants.SOCKET_BINDING_GROUP))
+                .setAddHandler(BindingGroupAddHandler.INSTANCE)
+                .setRemoveHandler(SocketBindingGroupRemoveHandler.INSTANCE)
+                .setMaxOccurs(1)
+                .setMinOccurs(0)
+        );
     }
 
     @Override
