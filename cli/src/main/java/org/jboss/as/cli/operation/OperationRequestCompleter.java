@@ -33,6 +33,7 @@ import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.CommandLineFormat;
 import org.jboss.as.cli.EscapeSelector;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
 
 
@@ -312,7 +313,23 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             if (lastArg != null) {
                 if (lastArg.isValueRequired()) {
                     candidates.add(lastArg.getFullName() + "=");
+                } else if (lastArg instanceof ArgumentWithoutValue) {
+                    ArgumentWithoutValue argWithoutValue = (ArgumentWithoutValue) lastArg;
+                    // If the last argument is exclusive, no need to add any separator
+                    if (!argWithoutValue.isExclusive()) {
+                        // Command argument without value have no completion.
+                        // If more arguments can come, add an argument separator
+                        // to make completion propose next argument
+                        if (!allPropertiesPresent) {
+                            CommandLineFormat format = parsedCmd.getFormat();
+                            if (format != null && format.getPropertySeparator() != null) {
+                                candidates.add(lastArg.getFullName()
+                                        + format.getPropertySeparator());
+                            }
+                        }
+                    }
                 } else {
+                    // We are completing implicit values for operation.
                     CommandLineFormat format = parsedCmd.getFormat();
                     // This is a way to optimise false value.
                     // Setting to true is useless, the property name is
