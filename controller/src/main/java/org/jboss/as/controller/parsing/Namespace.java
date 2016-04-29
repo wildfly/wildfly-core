@@ -58,6 +58,8 @@ public enum Namespace {
 
     DOMAIN_1_7(1, "urn:jboss:domain:1.7"),
 
+    DOMAIN_1_8(1, "urn:jboss:domain:1.8"),
+
     DOMAIN_2_0(2, "urn:jboss:domain:2.0"),
 
     DOMAIN_2_1(2, "urn:jboss:domain:2.1"),
