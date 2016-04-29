@@ -3395,7 +3395,7 @@ public interface ControllerLogger extends BasicLogger {
     void timeoutAwaitingFinalResponse(String operation, PathAddress proxyNodeAddress, long timeout);
 
     @LogMessage(level = Level.WARN)
-    @Message(id = 411, value = "Failed to parse element '%s', ingoring ...")
+    @Message(id = 411, value = "Failed to parse element '%s', ignoring ...")
     void failedToParseElementLenient(@Cause XMLStreamException e, String elementName);
 
     @Message(id = 412, value = "Required services that are not installed:")
@@ -3413,4 +3413,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 416, value = "Modification of the runtime service container by a management operation has completed")
     String runtimeModificationComplete();
+
+    @Message(id = 417, value = "Cannot add more than one jvm. Add of '%s' attempted, but '%s' already exists")
+    OperationFailedException cannotAddMoreThanOneJvmForServerOrHost(PathAddress requested, PathAddress existing);
 }
