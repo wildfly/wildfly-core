@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -190,6 +190,20 @@ public class ArgumentWithValue extends ArgumentWithoutValue {
         }
         return valueConverter.fromString(ctx, value);
     }
+
+    /**
+     * Argument can only appear if not already present in the parsed command
+     * BUT
+     * this is not all the time true, for example, an argument cannot appear
+     * AFTER some other arguments. This logic is in the parent implementation.
+     * That is why, although we would like to redefine the method at this point
+     * we can't.
+     */
+//    @Override
+//    public boolean canAppearNext(CommandContext ctx)
+//            throws CommandFormatException {
+//        return !isPresent(ctx.getParsedCommandLine());
+//    }
 
     @Override
     public boolean isValueRequired() {

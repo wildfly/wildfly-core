@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -314,7 +314,7 @@ public class ReadAttributeHandler extends BaseOperationCommand {
     protected OperationRequestAddress getAddress(CommandContext ctx) throws CommandFormatException {
         final ParsedCommandLine args = ctx.getParsedCommandLine();
         final OperationRequestAddress address;
-        if (node.isPresent(args)) {
+        if (node.isPresent(args) && node.isValueComplete(args)) {
             address = new DefaultOperationRequestAddress(ctx.getCurrentNodePath());
             CommandLineParser.CallbackHandler handler = new DefaultCallbackHandler(address);
 
