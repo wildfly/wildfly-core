@@ -1,23 +1,17 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2013, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
- *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+Copyright 2016 Red Hat, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
  */
 
 package org.jboss.as.domain.management.access;
@@ -25,28 +19,29 @@ package org.jboss.as.domain.management.access;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.access.constraint.HostEffectConstraint;
+import org.jboss.as.controller.access.constraint.PatternScopedConstraint;
 import org.jboss.as.controller.access.management.WritableAuthorizerConfiguration;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Handles the {@code remove} operation for a {@link HostScopedRolesResourceDefinition host scoped role}.
+ * Handles the {@code remove} operation for a {@link PatternScopedRolesResourceDefinition pattern scoped role}.
  *
- * @author Brian Stansberry (c) 2013 Red Hat Inc.
+ * @author Brian Stansberry
  */
-class HostScopedRoleRemove implements OperationStepHandler {
+public class PatternScopedRoleRemove  implements OperationStepHandler {
 
-    private final Map<String, HostEffectConstraint> constraintMap;
+    private final Map<String, PatternScopedConstraint> constraintMap;
     private final WritableAuthorizerConfiguration authorizerConfiguration;
 
-    HostScopedRoleRemove(Map<String, HostEffectConstraint> constraintMap,
+    PatternScopedRoleRemove(Map<String, PatternScopedConstraint> constraintMap,
                          WritableAuthorizerConfiguration authorizerConfiguration) {
         this.constraintMap = constraintMap;
         this.authorizerConfiguration = authorizerConfiguration;
@@ -66,20 +61,20 @@ class HostScopedRoleRemove implements OperationStepHandler {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-                final String baseRole = HostScopedRolesResourceDefinition.BASE_ROLE.resolveModelAttribute(context, model).asString();
-                ModelNode hostsAttribute = HostScopedRolesResourceDefinition.HOSTS.resolveModelAttribute(context, model);
-                final List<ModelNode> hostNodes = hostsAttribute.isDefined() ? hostsAttribute.asList() : Collections.<ModelNode>emptyList();
+                final String baseRole = PatternScopedRolesResourceDefinition.BASE_ROLE.resolveModelAttribute(context, model).asString();
+                ModelNode patternsAttribute = PatternScopedRolesResourceDefinition.PATTERNS.resolveModelAttribute(context, model);
+                final List<ModelNode> patternNodes = patternsAttribute.isDefined() ? patternsAttribute.asList() : Collections.<ModelNode>emptyList();
 
                 authorizerConfiguration.removeScopedRole(roleName);
                 constraintMap.remove(roleName);
                 context.completeStep(new OperationContext.RollbackHandler() {
                     @Override
                     public void handleRollback(OperationContext context, ModelNode operation) {
-                        HostScopedRoleAdd.addScopedRole(roleName, baseRole, hostNodes, authorizerConfiguration, constraintMap);
+                        List<Pattern> patterns = PatternScopedRoleAdd.stringsToPatterns(patternNodes);
+                        PatternScopedRoleAdd.addScopedRole(roleName, baseRole, patterns, authorizerConfiguration, constraintMap);
                     }
                 });
             }
         }, OperationContext.Stage.RUNTIME);
     }
 }
-

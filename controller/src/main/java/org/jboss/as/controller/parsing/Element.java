@@ -147,6 +147,8 @@ public enum Element {
     PASSWORD("password"),
     PATH("path"),
     PATHS("paths"),
+    PATTERN("pattern"),
+    PATTERN_SCOPED_ROLES("pattern-scoped-roles"),
     PERIODIC_ROTATING_FILE_HANDLER("periodic-rotating-file-handler"),
     PERMGEN("permgen"),
     PLUG_IN("plug-in"),

@@ -44,6 +44,7 @@ import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.access.constraint.ConstraintFactory;
+import org.jboss.as.controller.access.constraint.PatternScopedConstraint;
 import org.jboss.as.controller.access.constraint.ScopingConstraint;
 import org.jboss.as.controller.access.JmxAction;
 import org.jboss.as.controller.access.JmxTarget;
@@ -371,6 +372,7 @@ public class DefaultPermissionFactory implements PermissionFactory, AuthorizerCo
         result.add(SensitiveTargetConstraint.FACTORY);
         result.add(SensitiveVaultExpressionConstraint.FACTORY);
         result.add(ServerGroupEffectConstraint.FACTORY);
+        result.add(PatternScopedConstraint.FACTORY);
         result.add(TopRoleConstraint.FACTORY);
         return result;
     }

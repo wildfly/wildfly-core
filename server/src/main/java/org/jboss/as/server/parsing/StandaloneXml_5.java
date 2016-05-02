@@ -68,10 +68,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.stream.XMLStreamException;
-
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -847,6 +846,10 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             switch (element) {
                 case ROLE_MAPPING: {
                     accessControlXml.parseAccessControlRoleMapping(reader, accAuthzAddr, operationsList);
+                    break;
+                }
+                case PATTERN_SCOPED_ROLES: {
+                    accessControlXml.parsePatternScopedRoles(reader, accAuthzAddr, operationsList);
                     break;
                 }
                 case CONSTRAINTS: {

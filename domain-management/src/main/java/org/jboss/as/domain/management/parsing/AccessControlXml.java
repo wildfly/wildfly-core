@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATTERN_SCOPED_ROLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REALM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLE_MAPPING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SENSITIVITY_CLASSIFICATION;
@@ -73,6 +74,7 @@ import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefiniti
 import org.jboss.as.domain.management.access.ApplicationClassificationConfigResourceDefinition;
 import org.jboss.as.domain.management.access.ApplicationClassificationTypeResourceDefinition;
 import org.jboss.as.domain.management.access.HostScopedRolesResourceDefinition;
+import org.jboss.as.domain.management.access.PatternScopedRolesResourceDefinition;
 import org.jboss.as.domain.management.access.PrincipalResourceDefinition;
 import org.jboss.as.domain.management.access.RoleMappingResourceDefinition;
 import org.jboss.as.domain.management.access.SensitivityClassificationTypeResourceDefinition;
@@ -156,7 +158,7 @@ public class AccessControlXml {
             switch (element) {
                 case ROLE: {
                     parseScopedRole(reader, address, list, scopedRoleType, Element.SERVER_GROUP,
-                            ServerGroupScopedRoleResourceDefinition.BASE_ROLE, ServerGroupScopedRoleResourceDefinition.SERVER_GROUPS, true);
+                            Attribute.NAME, ServerGroupScopedRoleResourceDefinition.BASE_ROLE, ServerGroupScopedRoleResourceDefinition.SERVER_GROUPS, true);
                     break;
                 }
                 default: {
@@ -178,7 +180,30 @@ public class AccessControlXml {
             switch (element) {
                 case ROLE: {
                     parseScopedRole(reader, address, list, scopedRoleType, Element.HOST,
-                            HostScopedRolesResourceDefinition.BASE_ROLE, HostScopedRolesResourceDefinition.HOSTS, false);
+                            Attribute.NAME, HostScopedRolesResourceDefinition.BASE_ROLE, HostScopedRolesResourceDefinition.HOSTS, false);
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+
+    }
+
+    public void parsePatternScopedRoles(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+
+        ParseUtils.requireNoAttributes(reader);
+
+        String scopedRoleType = PatternScopedRolesResourceDefinition.PATH_ELEMENT.getKey();
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case ROLE: {
+                    parseScopedRole(reader, address, list, scopedRoleType, Element.PATTERN,
+                            Attribute.REGULAR_EXPRESSION, PatternScopedRolesResourceDefinition.BASE_ROLE, PatternScopedRolesResourceDefinition.PATTERNS, false);
                     break;
                 }
                 default: {
@@ -191,7 +216,7 @@ public class AccessControlXml {
 
     private void parseScopedRole(XMLExtendedStreamReader reader, ModelNode address,
                                  List<ModelNode> ops, String scopedRoleType, final Element listElement,
-                                 SimpleAttributeDefinition baseRoleDefinition, ListAttributeDefinition listDefinition,
+                                 Attribute listItemAttribute, SimpleAttributeDefinition baseRoleDefinition, ListAttributeDefinition listDefinition,
                                  boolean requireChildren) throws XMLStreamException {
 
         final ModelNode addOp = Util.createAddOperation();
@@ -238,7 +263,7 @@ public class AccessControlXml {
                     }
                     final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                     required.remove(attribute);
-                    if (attribute == Attribute.NAME) {
+                    if (attribute == listItemAttribute) {
                         named = true;
                         listDefinition.parseAndAddParameterElement(value, addOp, reader);
                     } else {
@@ -250,7 +275,7 @@ public class AccessControlXml {
             }
 
             if (!named) {
-                throw missingRequired(reader, EnumSet.of(Attribute.NAME));
+                throw missingRequired(reader, EnumSet.of(listItemAttribute));
             }
 
             requireNoContent(reader);
@@ -559,6 +584,7 @@ public class AccessControlXml {
 
         boolean hasServerGroupRoles =  accessAuthorization.hasDefined(SERVER_GROUP_SCOPED_ROLE);
         boolean hasHostRoles = accessAuthorization.hasDefined(HOST_SCOPED_ROLE) || accessAuthorization.hasDefined(HOST_SCOPED_ROLES);
+        boolean hasPatternRoles =  accessAuthorization.hasDefined(PATTERN_SCOPED_ROLE);
         boolean hasRoleMapping = accessAuthorization.hasDefined(ROLE_MAPPING);
         Map<String, Map<String, Set<String>>> configuredAccessConstraints = getConfiguredAccessConstraints(accessAuthorization);
         boolean hasProvider = accessAuthorization.hasDefined(AccessAuthorizationResourceDefinition.PROVIDER.getName());
@@ -582,9 +608,16 @@ public class AccessControlXml {
         }
 
         if (hasHostRoles) {
-            ModelNode serverGroupRoles = accessAuthorization.get(HOST_SCOPED_ROLE);
-            if (serverGroupRoles.asInt() > 0) {
-                writeHostScopedRoles(writer, serverGroupRoles);
+            ModelNode hostRoles = accessAuthorization.get(HOST_SCOPED_ROLE);
+            if (hostRoles.asInt() > 0) {
+                writeHostScopedRoles(writer, hostRoles);
+            }
+        }
+
+        if (hasPatternRoles) {
+            ModelNode patternScopedRoles = accessAuthorization.get(PATTERN_SCOPED_ROLE);
+            if (patternScopedRoles.asInt() > 0) {
+                writePatternScopedRoles(writer, patternScopedRoles);
             }
         }
 
@@ -622,6 +655,20 @@ public class AccessControlXml {
             ModelNode value = property.getValue();
             HostScopedRolesResourceDefinition.BASE_ROLE.marshallAsAttribute(value, writer);
             HostScopedRolesResourceDefinition.HOSTS.marshallAsElement(value, writer);
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
+    }
+
+    private void writePatternScopedRoles(XMLExtendedStreamWriter writer, ModelNode scopedRoles) throws XMLStreamException {
+        writer.writeStartElement(Element.PATTERN_SCOPED_ROLES.getLocalName());
+
+        for (Property property : scopedRoles.asPropertyList()) {
+            writer.writeStartElement(Element.ROLE.getLocalName());
+            writer.writeAttribute(Attribute.NAME.getLocalName(), property.getName());
+            ModelNode value = property.getValue();
+            PatternScopedRolesResourceDefinition.BASE_ROLE.marshallAsAttribute(value, writer);
+            PatternScopedRolesResourceDefinition.PATTERNS.marshallAsElement(value, writer);
             writer.writeEndElement();
         }
         writer.writeEndElement();
