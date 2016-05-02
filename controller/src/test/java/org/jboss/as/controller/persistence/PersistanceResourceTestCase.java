@@ -697,8 +697,10 @@ public class PersistanceResourceTestCase {
         AclFileAttributeView aclDefaultCreatedFilePermissionView = Files.getFileAttributeView(testPermissions, AclFileAttributeView.class);
         assert aclDefaultCreatedFilePermissionView != null;
         List<AclEntry> defaultPermissions = aclDefaultCreatedFilePermissionView.getAcl();
-        Set<AclEntryPermission> ownerPermissions = getOwnerPermissions(defaultPermissions, owner);
-        assertThat(ownerPermissions.toString(), ownerPermissions, hasItem(AclEntryPermission.WRITE_OWNER));
+        Set<AclEntryPermission> ownerPermissions = getOwnerPermissions(defaultPermissions, aclDefaultCreatedFilePermissionView.getOwner());
+        if (!ownerPermissions.isEmpty()) {
+            assertThat(ownerPermissions.toString(), ownerPermissions, hasItem(AclEntryPermission.WRITE_OWNER));
+        }
         Files.delete(testPermissions);
         configurationFile.successfulBoot();
         List<AclEntry> configurationFilePermissions = aclStandardFileView.getAcl();
