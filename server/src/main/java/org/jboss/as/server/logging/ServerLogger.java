@@ -23,6 +23,7 @@
 package org.jboss.as.server.logging;
 
 import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.FATAL;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
@@ -1095,7 +1096,7 @@ public interface ServerLogger extends BasicLogger {
     void undeployingDeploymentHasBeenRedeployed(String deploymentName);
 
     @LogMessage(level = INFO)
-    @Message(id = 220, value = "Server shutdown has been requested.")
+    @Message(id = 220, value = "Server shutdown has been requested via an OS signal")
     void shutdownHookInvoked();
 
     @LogMessage(level = WARN)
@@ -1182,5 +1183,17 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 238, value = "server-config '%s' specified for reload could not be found")
     OperationFailedException serverConfigForReloadNotFound(String serverConfig);
+
+    @LogMessage(level = FATAL)
+    @Message(id = 239, value = "Aborting with exit code %d")
+    void aborting(int code);
+
+    @LogMessage(level = INFO)
+    @Message(id = 240, value = "ProcessController has signalled to shut down; shutting down")
+    void shuttingDownInResponseToProcessControllerSignal();
+
+    @LogMessage(level = INFO)
+    @Message(id = 241, value = "Shutting down in response to management operation '%s'")
+    void shuttingDownInResponseToManagementRequest(String op);
 
 }

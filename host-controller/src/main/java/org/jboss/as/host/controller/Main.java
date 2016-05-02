@@ -167,21 +167,21 @@ public final class Main {
     }
 
     private static void abort() {
-        SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+        SystemExiter.abort(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
     }
 
     /**
      * Terminates JVM with exit code: 0 - normal termination.
      */
     private static void exit(){
-        SystemExiter.exit(ExitCodes.NORMAL);
+        SystemExiter.logAndExit(HostControllerLogger.ROOT_LOGGER::shuttingDownInResponseToProcessControllerSignal, ExitCodes.NORMAL);
     }
 
     /**
      * Terminates JVM with exit code: 1 - failed termination but not an abort situation.
      */
     private static void fail(){
-        SystemExiter.exit(ExitCodes.FAILED);
+        SystemExiter.abort(ExitCodes.FAILED);
     }
 
     private static void usage() {
