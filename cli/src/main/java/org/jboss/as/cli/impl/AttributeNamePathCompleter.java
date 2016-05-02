@@ -363,13 +363,12 @@ public class AttributeNamePathCompleter implements CommandLineCompleter {
                 @Override
                 public void handle(ParsingContext ctx) throws CommandFormatException {
                     final char c = ctx.getCharacter();
-                    if(isAttributeNameChar(c)) {
-                        WordCharacterHandler.IGNORE_LB_ESCAPE_ON.handle(ctx);
-                    } else {
-                        ctx.leaveState();
-                    }
+                    WordCharacterHandler.IGNORE_LB_ESCAPE_ON.handle(ctx);
                 }
             });
+            putHandler('.', GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
+            putHandler('[', GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
+            putHandler(']', GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
         }
     }
 
