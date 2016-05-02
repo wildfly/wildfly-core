@@ -29,11 +29,17 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+
 import org.jboss.vfs.VirtualFile;
 import org.junit.After;
 import org.junit.Before;
@@ -44,6 +50,8 @@ import org.junit.Test;
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
  */
 public class ContentRepositoryTest {
+    private static final boolean IS_WINDOWS = AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
+            System.getProperty("os.name", null).toLowerCase(Locale.ENGLISH).contains("windows"));
 
     private ContentRepository repository;
     private final File rootDir = new File("target", "repository");
@@ -78,7 +86,7 @@ public class ContentRepositoryTest {
     }
 
     private String readFileContent(File file) throws Exception {
-        try (InputStream in = new FileInputStream(file);
+        try (InputStream in = getFileInputStream(file);
                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8];
             int length = 8;
@@ -94,7 +102,7 @@ public class ContentRepositoryTest {
      */
     @Test
     public void testAddContent() throws Exception {
-        try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+        try (InputStream stream = getResourceAsStream("overlay.xhtml")) {
             String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
             byte[] result = repository.addContent(stream);
             assertThat(result, is(notNullValue()));
@@ -107,7 +115,7 @@ public class ContentRepositoryTest {
      */
     @Test
     public void testAddContentReference() throws Exception {
-        try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+        try (InputStream stream = getResourceAsStream("overlay.xhtml")) {
             String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
             byte[] result = repository.addContent(stream);
             assertThat(result, is(notNullValue()));
@@ -122,7 +130,7 @@ public class ContentRepositoryTest {
      */
     @Test
     public void testGetContent() throws Exception {
-        try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+        try (InputStream stream = getResourceAsStream("overlay.xhtml")) {
             String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
             byte[] result = repository.addContent(stream);
             assertThat(result, is(notNullValue()));
@@ -140,7 +148,7 @@ public class ContentRepositoryTest {
     @Test
     public void testHasContent() throws Exception {
         String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
-        try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+        try (InputStream stream = getResourceAsStream("overlay.xhtml")) {
             assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
             byte[] result = repository.addContent(stream);
             assertThat(result, is(notNullValue()));
@@ -162,7 +170,7 @@ public class ContentRepositoryTest {
         assertFalse(expectedContent.getParent() + " shouldn't exist", Files.exists(parent));
         assertFalse(expectedContent.getParent().getParent() + " shouldn't exist", Files.exists(grandparent));
         byte[] result;
-        try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+        try (InputStream stream = getResourceAsStream("overlay.xhtml")) {
             assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
             result = repository.addContent(stream);
         }
@@ -263,7 +271,7 @@ public class ContentRepositoryTest {
         assertFalse(expectedContent + " shouldn't exist", Files.exists(expectedContent));
         assertFalse(parent + " shouldn't exist", Files.exists(parent));
         byte[] result;
-        try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+        try (InputStream stream = getResourceAsStream("overlay.xhtml")) {
             assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
             result = repository.addContent(stream);
         }
@@ -291,7 +299,7 @@ public class ContentRepositoryTest {
         Path overlay = parentDir.resolve("overlay.xhtml");
         Path content = parentDir.resolve("content");
         Files.createDirectories(overlay.getParent());
-        try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+        try (InputStream stream = getResourceAsStream("overlay.xhtml")) {
             Files.copy(stream, overlay);
             Files.copy(overlay, content);
             assertThat(Files.exists(content), is(true));
@@ -313,5 +321,101 @@ public class ContentRepositoryTest {
             Files.deleteIfExists(overlay.getParent().getParent());
         }
 
+    }
+
+    private InputStream getResourceAsStream(final String name) throws IOException {
+        final InputStream result = getClass().getClassLoader().getResourceAsStream(name);
+        // If we're on Windows we want to replace the stream with one that ignores \r
+        if (result != null && IS_WINDOWS) {
+            return new CarriageReturnRemovalInputStream(result);
+        }
+        return result;
+    }
+
+    private InputStream getFileInputStream(final File file) throws IOException {
+        if (IS_WINDOWS) {
+            return new CarriageReturnRemovalInputStream(new FileInputStream(file));
+        }
+        return new FileInputStream(file);
+    }
+
+    private static class CarriageReturnRemovalInputStream extends InputStream {
+        private final InputStream delegate;
+
+        private CarriageReturnRemovalInputStream(final InputStream delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int result = delegate.read();
+            if (result == '\r') {
+                result = delegate.read();
+            }
+            return result;
+        }
+
+        @Override
+        public int read(final byte[] b) throws IOException {
+            Objects.nonNull(b);
+            int result = 0;
+            while (result > -1 && result < b.length) {
+                int c = read();
+                if (c == -1) {
+                    return result == 0 ? -1 : result;
+                }
+                b[result++] = (byte) c;
+            }
+            return result;
+        }
+
+        @Override
+        public int read(final byte[] b, final int off, final int len) throws IOException {
+            Objects.nonNull(b);
+            if (off < 0 || len < 0 || len > b.length - off) {
+                throw new IndexOutOfBoundsException();
+            } else if (len == 0) {
+                return 0;
+            }
+            int result = 0;
+            while (result > -1 && result < len) {
+                int c = read();
+                if (c == -1) {
+                    return result == 0 ? -1 : result;
+                }
+                b[off + result++] = (byte) c;
+            }
+            return result;
+        }
+
+        @Override
+        public long skip(final long n) throws IOException {
+            return delegate.skip(n);
+        }
+
+        @Override
+        public int available() throws IOException {
+            return delegate.available();
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
+
+        @Override
+        public void mark(final int readlimit) {
+            delegate.mark(readlimit);
+        }
+
+        @Override
+        public void reset() throws IOException {
+            delegate.reset();
+        }
+
+        @Override
+        public boolean markSupported() {
+            return delegate.markSupported();
+        }
     }
 }
