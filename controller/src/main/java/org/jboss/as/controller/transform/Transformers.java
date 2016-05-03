@@ -276,6 +276,7 @@ public interface Transformers {
     }
 
     /** Provides information on whether a target process is ignoring particular resource addresses. */
+    @FunctionalInterface
     interface ResourceIgnoredTransformationRegistry {
 
         /**
@@ -309,6 +310,7 @@ public interface Transformers {
     };
 
     /** Provides information on whether a target process is excluded from receiving operations for a particular resource addresses. */
+    @FunctionalInterface
     interface OperationExcludedTransformationRegistry {
 
         /**

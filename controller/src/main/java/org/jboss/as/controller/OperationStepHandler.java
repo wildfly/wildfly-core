@@ -37,6 +37,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
+@FunctionalInterface
 public interface OperationStepHandler {
 
     /**

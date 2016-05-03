@@ -28,6 +28,7 @@ import org.jboss.as.controller.transform.TransformationContext;
 /**
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>
  */
+@FunctionalInterface
 public interface DynamicDiscardPolicy {
     /**
      * Checks whether the child should be added

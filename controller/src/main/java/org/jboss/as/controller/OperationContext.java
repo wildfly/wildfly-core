@@ -1044,6 +1044,7 @@ public interface OperationContext extends ExpressionResolver {
      * Handler for a callback to an {@link OperationStepHandler} indicating that the overall operation is being
      * rolled back and the handler should revert any change it has made.
      */
+    @FunctionalInterface
     interface RollbackHandler {
 
         /**
@@ -1104,6 +1105,7 @@ public interface OperationContext extends ExpressionResolver {
      * Handler for a callback to an {@link OperationStepHandler} indicating that the result of the overall operation is
      * known and the handler can take any necessary actions to deal with that result.
      */
+    @FunctionalInterface
     interface ResultHandler {
 
         /**

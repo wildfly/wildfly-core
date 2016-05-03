@@ -763,6 +763,7 @@ class ManagedServer {
         }
     }
 
+    @FunctionalInterface
     interface TransitionTask {
 
         boolean execute(ManagedServer server) throws Exception;

@@ -36,6 +36,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Alexey Loubyansky
  */
+@FunctionalInterface
 public interface ParameterCorrector {
 
     /**

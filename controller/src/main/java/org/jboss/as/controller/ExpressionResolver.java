@@ -31,6 +31,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
+@FunctionalInterface
 public interface ExpressionResolver {
 
     /** A {@link Pattern} that can be used to identify strings that include expression syntax */

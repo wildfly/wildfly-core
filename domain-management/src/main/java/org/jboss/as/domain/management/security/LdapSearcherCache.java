@@ -62,7 +62,7 @@ interface LdapSearcherCache<R, K> {
 
     int count(Predicate<K> predicate);
 
-    interface Predicate<K> {
+    interface Predicate<K> {//todo maybe move to java.util.function.Predicate
 
         boolean matches(final K key);
 

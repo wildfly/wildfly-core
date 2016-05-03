@@ -32,6 +32,7 @@ import org.jboss.dmr.ModelNode;
  *
 * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
 */
+@FunctionalInterface
 public interface OperationTransformer {
 
     /**

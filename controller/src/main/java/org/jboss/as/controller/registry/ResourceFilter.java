@@ -29,6 +29,7 @@ import org.jboss.as.controller.PathAddress;
  *
  * @author Emanuel Muckenhuber
  */
+@FunctionalInterface
 public interface ResourceFilter {
 
     /**
