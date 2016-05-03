@@ -51,6 +51,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
@@ -296,19 +297,14 @@ public class GlobalOperationHandlers {
         }
     }
 
-    interface FilterPredicate {
-        boolean appliesTo(ModelNode result);
+    @FunctionalInterface
+    interface FilterPredicate extends Predicate<ModelNode> {
     }
 
     private abstract static class AbstractAddressResolver implements OperationStepHandler {
 
-        private static final FilterPredicate DEFAULT_PREDICATE = new FilterPredicate() {
-            @Override
-            public boolean appliesTo(ModelNode item) {
-                return !item.isDefined()
-                        || !item.hasDefined(OP_ADDR);
-            }
-        };
+        private static final FilterPredicate DEFAULT_PREDICATE = item -> !item.isDefined()
+                || !item.hasDefined(OP_ADDR);
 
 
         private final ModelNode operation;
@@ -346,7 +342,7 @@ public class GlobalOperationHandlers {
                         boolean replace = false;
                         ModelNode replacement = new ModelNode().setEmptyList();
                         for (ModelNode item : result.asList()) {
-                            if (predicate.appliesTo(item)) {
+                            if (predicate.test(item)) {
                                 // item will be skipped and the result amended
                                 replace = true;
                             } else {

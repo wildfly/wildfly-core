@@ -403,6 +403,7 @@ public class ModelTestModelDescriptionValidator {
     /**
      * Validate an attribute or parameter descriptor
      */
+    @FunctionalInterface
     public interface AttributeOrParameterArbitraryDescriptorValidator {
         /**
          * Validate an attribute or parameter descriptor
@@ -418,6 +419,7 @@ public class ModelTestModelDescriptionValidator {
     /**
      * Validate a resource or operation descriptor
      */
+    @FunctionalInterface
     public interface ArbitraryDescriptorValidator {
         /**
          * Validate a resource or operation arbitrary descriptor

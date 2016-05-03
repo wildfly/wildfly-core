@@ -34,6 +34,7 @@ import org.jboss.dmr.ModelType;
  *
  * @author Brian Stansberry (c) 2012 Red Hat Inc.
  */
+@FunctionalInterface
 public interface ModelHarmonizer {
 
     /**

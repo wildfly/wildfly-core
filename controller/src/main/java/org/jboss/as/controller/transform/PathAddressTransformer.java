@@ -36,6 +36,7 @@ import java.util.Iterator;
  *
  * @author Emanuel Muckenhuber
  */
+@FunctionalInterface
 public interface PathAddressTransformer {
 
     /**

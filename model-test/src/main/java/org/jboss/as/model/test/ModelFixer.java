@@ -27,6 +27,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
+@FunctionalInterface
 public interface ModelFixer {
     ModelNode fixModel(ModelNode modelNode);
 
