@@ -44,15 +44,15 @@ import org.jboss.dmr.ModelType;
  */
 class MemoryManagerResourceDefinition extends SimpleResourceDefinition {
     private static SimpleAttributeDefinition VALID = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VALID, ModelType.BOOLEAN, false)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .build();
     private static AttributeDefinition MEMORY_POOL_NAMES = new StringListAttributeDefinition.Builder(PlatformMBeanConstants.MEMORY_POOL_NAMES)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .build();
 
 
     private static final List<AttributeDefinition> METRICS = Arrays.asList(
-            NAME,
+            NAME, // TODO is name really a metric? It seems to be a runtime r/o attibute
             VALID,
             MEMORY_POOL_NAMES
     );

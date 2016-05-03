@@ -138,7 +138,8 @@ public final class AttributeAccess {
         /**
          * The attribute is an alias to something else
          */
-        ALIAS
+        ALIAS,
+        FORCE_REGISTRATION
     }
 
     private final AccessType access;

@@ -91,7 +91,7 @@ final class NodeSubregistry {
         boolean ordered = provider.isOrderedChild();
 
         final ConcreteResourceRegistration newRegistry =
-                new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, ordered, capabilityRegistry);
+                new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, ordered, capabilityRegistry, parent.processType, parent.runningMode);
 
         newRegistry.beginInitialization();
         try {

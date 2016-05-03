@@ -77,7 +77,7 @@ public class AttributesTestCase {
 
     private Resource resourceRoot = Resource.Factory.create();
     private TransformerRegistry registry = TransformerRegistry.Factory.create();
-    private ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
+    private ManagementResourceRegistration resourceRegistration;
     private TransformersSubRegistration transformersSubRegistration;
     private ModelNode resourceModel;
 
@@ -86,7 +86,7 @@ public class AttributesTestCase {
         // Cleanup
         resourceRoot = Resource.Factory.create();
         registry = TransformerRegistry.Factory.create();
-        resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
+        resourceRegistration = ManagementResourceRegistration.Factory.forServer(ProcessType.EMBEDDED_SERVER, RunningMode.NORMAL).createRegistration(ROOT);
         // test
         final Resource toto = Resource.Factory.create();
         resourceRoot.registerChild(PATH, toto);

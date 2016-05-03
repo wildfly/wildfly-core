@@ -70,7 +70,7 @@ public class AliasTransformerTestCase {
 
     private Resource resourceRoot = Resource.Factory.create();
     private TransformerRegistry registry = TransformerRegistry.Factory.create();
-    private ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
+    private ManagementResourceRegistration resourceRegistration;
     private TransformersSubRegistration transformersSubRegistration;
 
     @Before
@@ -78,7 +78,7 @@ public class AliasTransformerTestCase {
         // Cleanup
         resourceRoot = Resource.Factory.create();
         registry = TransformerRegistry.Factory.create();
-        resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
+        resourceRegistration = ManagementResourceRegistration.Factory.forServer(ProcessType.EMBEDDED_SERVER, RunningMode.NORMAL).createRegistration(ROOT);
         ManagementResourceRegistration ss = resourceRegistration.registerSubModel(new AbstractChildResourceDefinition(PATH));
         ManagementResourceRegistration target = ss.registerSubModel(new AbstractChildResourceDefinition(CHILD));
         ss.registerAlias(CHILD_ALIAS, new AliasEntry(target) {

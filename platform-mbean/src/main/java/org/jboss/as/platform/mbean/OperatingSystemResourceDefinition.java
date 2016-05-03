@@ -45,13 +45,13 @@ class OperatingSystemResourceDefinition extends SimpleResourceDefinition {
 
 
     private static SimpleAttributeDefinition AVAILABLE_PROCESSORS = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.AVAILABLE_PROCESSORS, ModelType.INT, false)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
     private static SimpleAttributeDefinition SYSTEM_LOAD_AVERAGE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.SYSTEM_LOAD_AVERAGE, ModelType.DOUBLE, false)
             .setMeasurementUnit(MeasurementUnit.PERCENTAGE)
-            .setStorageRuntime()
+            .setStorageRuntime(true)
             .build();
 
 

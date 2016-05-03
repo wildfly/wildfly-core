@@ -414,6 +414,16 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
+     * Adds the {@link AttributeAccess.Flag#STORAGE_RUNTIME} flag and removes any conflicting flag.
+     *
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public BUILDER setStorageRuntime(boolean forceRegistration) {
+        setStorageRuntime();
+        return addFlag(AttributeAccess.Flag.FORCE_REGISTRATION);
+    }
+
+    /**
      * Adds the {@link AttributeAccess.Flag#RESTART_ALL_SERVICES} flag and removes any conflicting flag.
      *
      * @return a builder that can be used to continue building the attribute definition
