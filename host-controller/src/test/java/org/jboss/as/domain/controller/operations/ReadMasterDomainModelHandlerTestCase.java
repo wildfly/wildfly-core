@@ -71,7 +71,7 @@ public class ReadMasterDomainModelHandlerTestCase {
     public void testResourceTransformation() throws Exception {
         Resource resourceRoot = Resource.Factory.create();
         TransformerRegistry registry = TransformerRegistry.Factory.create();
-        ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
+        ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(ROOT);
 
         final Resource extension = Resource.Factory.create();
         extension.getModel().get("attr").set("value");

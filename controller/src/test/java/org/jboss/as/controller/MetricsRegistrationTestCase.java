@@ -175,7 +175,7 @@ public class MetricsRegistrationTestCase {
         public ManagementResourceRegistration managementControllerResource;
 
         public ModelControllerService(ProcessType processType, TestResourceDefinition resourceDefinition) {
-            super(processType, new RunningModeControl(RunningMode.NORMAL));
+            super(processType);
             this.resourceDefinition = resourceDefinition;
         }
 

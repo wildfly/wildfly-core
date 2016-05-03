@@ -90,7 +90,7 @@ public class ListAttributeDefinitionTestCase {
             }
         };
 
-        ImmutableManagementResourceRegistration registration = ManagementResourceRegistration.Factory.create(resource);
+        ImmutableManagementResourceRegistration registration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(resource);
         ModelNode modelDescription = resource.getDescriptionProvider(registration).getModelDescription(Locale.ENGLISH);
         assertEquals("incorrect type for description " + modelDescription, LIST, modelDescription.get(ATTRIBUTES, MY_LIST_OF_STRINGS, TYPE).asType());
         assertEquals("incorrect value-type for description " + modelDescription, STRING, modelDescription.get(ATTRIBUTES, MY_LIST_OF_STRINGS, VALUE_TYPE).asType());
@@ -157,7 +157,7 @@ public class ListAttributeDefinitionTestCase {
             }
         };
 
-        ImmutableManagementResourceRegistration registration = ManagementResourceRegistration.Factory.create(resource);
+        ImmutableManagementResourceRegistration registration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(resource);
         ModelNode modelDescription = resource.getDescriptionProvider(registration).getModelDescription(Locale.ENGLISH);
         assertEquals("incorrect type for description " + modelDescription, LIST, modelDescription.get(ATTRIBUTES, MY_LIST_OF_OBJECTS, TYPE).asType());
         assertEquals("incorrect value-type for description " + modelDescription, OBJECT, modelDescription.get(ATTRIBUTES, MY_LIST_OF_OBJECTS, VALUE_TYPE).getType());
