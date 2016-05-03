@@ -33,6 +33,7 @@ import java.util.List;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
@@ -54,7 +55,7 @@ import org.junit.Test;
  */
 public class ManagementPermissionAuthorizerTestCase {
 
-    private static final ManagementResourceRegistration ROOT_RR = ManagementResourceRegistration.Factory.create(new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()) {
+    private static final ManagementResourceRegistration ROOT_RR = ManagementResourceRegistration.Factory.forServer(ProcessType.EMBEDDED_SERVER, RunningMode.NORMAL).createRegistration(new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()) {
         @Override
         public List<AccessConstraintDefinition> getAccessConstraints() {
             return Collections.emptyList();

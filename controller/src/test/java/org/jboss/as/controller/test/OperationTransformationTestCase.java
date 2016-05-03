@@ -81,7 +81,7 @@ public class OperationTransformationTestCase {
 
     private final Resource resourceRoot = Resource.Factory.create();
     private final GlobalTransformerRegistry registry = new GlobalTransformerRegistry();
-    private final ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
+    private final ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.forServer(ProcessType.EMBEDDED_SERVER, RunningMode.NORMAL).createRegistration(ROOT);
     private final OperationTransformer NOOP_TRANSFORMER = new OperationTransformer() {
         @Override
         public TransformedOperation transformOperation(TransformationContext context, PathAddress address, ModelNode operation) {

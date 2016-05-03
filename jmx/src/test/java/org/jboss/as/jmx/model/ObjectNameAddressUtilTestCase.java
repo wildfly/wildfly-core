@@ -32,8 +32,10 @@ import javax.management.ObjectName;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -101,7 +103,7 @@ public class ObjectNameAddressUtilTestCase {
 
         NonResolvingResourceDescriptionResolver resolver = new NonResolvingResourceDescriptionResolver();
 
-        ManagementResourceRegistration rootRegistration = ManagementResourceRegistration.Factory.create(rootResourceDef);
+        ManagementResourceRegistration rootRegistration = ManagementResourceRegistration.Factory.forServer(ProcessType.EMBEDDED_SERVER, RunningMode.NORMAL).createRegistration(rootResourceDef);
         ManagementResourceRegistration subsystemRegistration = rootRegistration.registerSubModel(new SimpleResourceDefinition(pathElement("subsystem", "foo"), resolver));
         ManagementResourceRegistration resourceRegistration = subsystemRegistration.registerSubModel(new SimpleResourceDefinition(pathElement("resource", "resourceA"), resolver));
         ManagementResourceRegistration subresourceRegistration = resourceRegistration.registerSubModel(new SimpleResourceDefinition(pathElement("subresource", "resourceB"), resolver));
