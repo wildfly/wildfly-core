@@ -42,7 +42,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.helpers.Operations;
-import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper.ServerDeploymentException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -51,7 +50,6 @@ import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -161,7 +159,7 @@ public abstract class AbstractLoggingTestCase {
      *
      * @throws ServerDeploymentException if an error occurs deploying the archive
      */
-    public static void deploy() throws ServerDeploymentException {
+    public void deploy() throws ServerDeploymentException {
         deploy(createDeployment(), DEPLOYMENT_NAME);
     }
 
@@ -172,7 +170,7 @@ public abstract class AbstractLoggingTestCase {
      *
      * @throws ServerDeploymentException if an error occurs deploying the archive
      */
-    public static void deploy(final String runtimeName) throws ServerDeploymentException {
+    public void deploy(final String runtimeName) throws ServerDeploymentException {
         deploy(createDeployment(), runtimeName);
     }
 
@@ -183,7 +181,7 @@ public abstract class AbstractLoggingTestCase {
      *
      * @throws ServerDeploymentException if an error occurs deploying the archive
      */
-    public static void deploy(final Archive<?> archive) throws ServerDeploymentException {
+    public void deploy(final Archive<?> archive) throws ServerDeploymentException {
         deploy(archive, DEPLOYMENT_NAME);
     }
 
@@ -195,9 +193,8 @@ public abstract class AbstractLoggingTestCase {
      *
      * @throws ServerDeploymentException if an error occurs deploying the archive
      */
-    public static void deploy(final Archive<?> archive, final String runtimeName) throws ServerDeploymentException {
-        final ServerDeploymentHelper helper = new ServerDeploymentHelper(client);
-        helper.deploy(runtimeName, archive.as(ZipExporter.class).exportAsInputStream());
+    public void deploy(final Archive<?> archive, final String runtimeName) throws ServerDeploymentException {
+        container.deploy(archive, runtimeName);
     }
 
     /**
@@ -205,7 +202,7 @@ public abstract class AbstractLoggingTestCase {
      *
      * @throws ServerDeploymentException if an error occurs undeploying the application
      */
-    public static void undeploy() throws ServerDeploymentException {
+    public void undeploy() throws ServerDeploymentException {
         undeploy(DEPLOYMENT_NAME);
     }
 
@@ -216,9 +213,8 @@ public abstract class AbstractLoggingTestCase {
      *
      * @throws ServerDeploymentException if an error occurs undeploying the application
      */
-    public static void undeploy(final String runtimeName) throws ServerDeploymentException {
-        final ServerDeploymentHelper helper = new ServerDeploymentHelper(client);
-        helper.undeploy(runtimeName);
+    public void undeploy(final String runtimeName) throws ServerDeploymentException {
+        container.undeploy(runtimeName);
     }
 
     public static ModelNode createAddress(final String resourceKey, final String resourceName) {

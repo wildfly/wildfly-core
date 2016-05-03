@@ -52,7 +52,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
             while (c != null && c != Object.class) {
                 for (Field field : c.getDeclaredFields()) {
                     if ((instance == null && Modifier.isStatic(field.getModifiers()) ||
-                            instance != null && !Modifier.isStatic(field.getModifiers()))) {
+                            instance != null )) {//we want to do injection even on static fields before test run, so we make sure that client is correct for current state of server
                         if (field.isAnnotationPresent(Inject.class)) {
                             field.setAccessible(true);
                             if (field.getType() == ManagementClient.class && controller.isStarted()) {
