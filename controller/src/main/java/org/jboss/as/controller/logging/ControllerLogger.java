@@ -3407,4 +3407,10 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 414, value = "Could not create a timestamped backup of current history dir %s, so it may still include versions from the previous boot.")
     void couldNotCreateHistoricalBackup(String currentHistoryDir);
+
+    @Message(id = 415, value = "Modification of the runtime service container by a management operation has begun")
+    String runtimeModificationBegun();
+
+    @Message(id = 416, value = "Modification of the runtime service container by a management operation has completed")
+    String runtimeModificationComplete();
 }

@@ -116,7 +116,7 @@ abstract class AbstractOperationContext implements OperationContext {
     private final EnumMap<Stage, Deque<Step>> steps;
     private final ModelController.OperationTransactionControl transactionControl;
     final ControlledProcessState processState;
-    private final NotificationSupport notificationSupport;
+    final NotificationSupport notificationSupport;
     private final boolean booting;
     private final ProcessType processType;
     private final RunningMode runningMode;

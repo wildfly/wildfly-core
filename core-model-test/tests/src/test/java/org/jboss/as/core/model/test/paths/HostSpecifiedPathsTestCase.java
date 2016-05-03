@@ -22,6 +22,9 @@
 package org.jboss.as.core.model.test.paths;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.registry.PlaceholderResource;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.core.model.test.ModelInitializer;
 import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.core.model.test.util.ServerConfigInitializers;
@@ -49,6 +52,18 @@ public class HostSpecifiedPathsTestCase extends AbstractSpecifiedPathsTestCase {
     @Override
     protected ModelInitializer getModelInitalizer() {
         return ServerConfigInitializers.XML_MODEL_INITIALIZER;
+    }
+
+    @Override
+    protected ModelInitializer createEmptyModelInitalizer() {
+        return new ModelInitializer() {
+            @Override
+            public void populateModel(Resource rootResource) {
+                PathElement pe = PathElement.pathElement("host", "test");
+                Resource res = new PlaceholderResource.PlaceholderResourceEntry(pe);
+                rootResource.registerChild(pe, res);
+            }
+        };
     }
 
 }
