@@ -578,6 +578,33 @@ public class CliCompletionTestCase {
             }
 
             {
+                String cmd = "read-attribute na";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.size() == 2);
+                assertTrue(candidates.toString(), candidates.contains("name"));
+                assertTrue(candidates.toString(), candidates.contains("namespaces"));
+            }
+
+            {
+                String cmd = "read-attribute name";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("namespaces"));
+            }
+
+            {
+                String cmd = "read-attribute name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
                 String cmd = "read-operation --node";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
