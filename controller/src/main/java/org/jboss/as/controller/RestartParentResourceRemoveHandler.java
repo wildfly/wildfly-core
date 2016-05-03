@@ -44,6 +44,9 @@ public abstract class RestartParentResourceRemoveHandler extends RestartParentRe
      * @throws OperationFailedException if there is a problem updating the model
      */
     protected void updateModel(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+        // verify that the resource exist before removing it
+        context.readResource(PathAddress.EMPTY_ADDRESS, false);
+
         context.removeResource(PathAddress.EMPTY_ADDRESS);
     }
 }
