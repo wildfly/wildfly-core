@@ -148,23 +148,11 @@ public interface ExtensionContext {
     /**
      * Gets whether it is valid for the extension to register resources, attributes or operations that do not
      * involve the persistent configuration, but rather only involve runtime services. Extensions should use this
-     * method before registering such "runtime only" resources, attributes or operations. The specific uses case this
-     * method is intended to support is avoiding registering resources, attributes or operations:
+     * method before registering such "runtime only" resources, attributes or operations. This
+     * method is intended to avoid registering resources, attributes or operations on process types that
+     * can not install runtime services.
      *
-     * <ul>
-     *     <li>on a Host Controller (which is only concerned with subsystem configuration) and typically doesn't
-     *     install runtime services associated with a subsystem</li>
-     *     <li>on a server whose running mode is {@link RunningMode#ADMIN_ONLY ADMIN_ONLY}, where again the
-     *     runtime services associated with a subsystem typically would not be installed</li>
-     * </ul>
-     * <p>
-     * This method is a shorthand for:
-     * <pre>
-     *     boolean valid = context.getProcessType().isServer() && context.getRunningMode() != RunningMode.ADMIN_ONLY;
-     * </pre>
-     * </p>
-     *
-     * @return whether the current process type is a server and the server running mode is not ADMIN_ONLY
+     * @return whether it is valid to register runtime resources, attributes, or operations.
      */
     boolean isRuntimeOnlyRegistrationValid();
 
