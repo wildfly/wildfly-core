@@ -25,12 +25,17 @@ import java.util.Set;
 
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
+import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
+import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityRegistration;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -49,41 +54,59 @@ public class CapabilityRegistryResourceDefinition extends SimpleResourceDefiniti
             .build();
 
     private static final StringListAttributeDefinition REGISTRATION_POINTS = new StringListAttributeDefinition.Builder("registration-points")
-            .build();
-
-    private static final SimpleAttributeDefinition DYNAMIC = SimpleAttributeDefinitionBuilder.create("dynamic", ModelType.BOOLEAN, false)
                 .build();
 
-    private static final ObjectTypeAttributeDefinition CAPABILITY = new ObjectTypeAttributeDefinition.Builder("capability", NAME, DYNAMIC, REGISTRATION_POINTS)
+    private static final SimpleAttributeDefinition DYNAMIC = SimpleAttributeDefinitionBuilder.create("dynamic", ModelType.BOOLEAN, false)
+            .build();
+    private static final SimpleAttributeDefinition SCOPE = SimpleAttributeDefinitionBuilder.create("scope", ModelType.STRING, true)
             .build();
 
-
-    private static final ObjectListAttributeDefinition POSSIBLE_CAPABILITIES = new ObjectListAttributeDefinition.Builder("possible-capabilities", CAPABILITY)
+    private static final ObjectTypeAttributeDefinition CAPABILITY = new ObjectTypeAttributeDefinition.Builder("capability", NAME, DYNAMIC, SCOPE, REGISTRATION_POINTS)
             .build();
 
     private static final ObjectListAttributeDefinition CAPABILITIES = new ObjectListAttributeDefinition.Builder("capabilities", CAPABILITY)
             .build();
+
+    private static final ObjectTypeAttributeDefinition POSSIBLE_CAPABILITY = new ObjectTypeAttributeDefinition.Builder("possible-capability", NAME, DYNAMIC, REGISTRATION_POINTS)
+            .build();
+
+    private static final ObjectListAttributeDefinition POSSIBLE_CAPABILITIES = new ObjectListAttributeDefinition.Builder("possible-capabilities", POSSIBLE_CAPABILITY)
+            .build();
+
+    private static final OperationDefinition GET_PROVIDER_POINTS = new SimpleOperationDefinitionBuilder("get-provider-points", ServerDescriptions.getResourceDescriptionResolver("core", CAPABILITY_REGISTRY))
+            .addParameter(NAME)
+            .setReadOnly()
+            .setRuntimeOnly()
+            .setReplyType(ModelType.LIST)
+            .setReplyValueType(ModelType.STRING)
+            .build();
+    private static final OperationDefinition GET_CAPABILITY = new SimpleOperationDefinitionBuilder("get-capability", ServerDescriptions.getResourceDescriptionResolver("core", CAPABILITY_REGISTRY))
+            .addParameter(NAME)
+            .addParameter(SCOPE)
+            .setReadOnly()
+            .setRuntimeOnly()
+            .setReplyParameters(CAPABILITY)
+            .build();
+
     private final ImmutableCapabilityRegistry capabilityRegistry;
 
 
     public CapabilityRegistryResourceDefinition(final ImmutableCapabilityRegistry capabilityRegistry) {
         super(new Parameters(
-                        PathElement.pathElement(CORE_SERVICE, CAPABILITY_REGISTRY),
-                        ServerDescriptions.getResourceDescriptionResolver("core", CAPABILITY_REGISTRY))
-                        .setRuntime()
+                PathElement.pathElement(CORE_SERVICE, CAPABILITY_REGISTRY),
+                ServerDescriptions.getResourceDescriptionResolver("core", CAPABILITY_REGISTRY))
+                .setRuntime()
         );
-        assert capabilityRegistry !=null;
+        assert capabilityRegistry != null;
         this.capabilityRegistry = capabilityRegistry;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadOnlyAttribute(POSSIBLE_CAPABILITIES, (context, operation) -> {
-            populateCapabilities(capabilityRegistry.getPossibleCapabilities(), context.getResult());
-        });
-        resourceRegistration.registerReadOnlyAttribute(CAPABILITIES, (context, operation) -> {
-            populateCapabilities(capabilityRegistry.getCapabilities(), context.getResult());
-        });
+        resourceRegistration.registerReadOnlyAttribute(POSSIBLE_CAPABILITIES,
+                (context, operation) -> populateCapabilities(capabilityRegistry.getPossibleCapabilities(), context.getResult(), true));
+        resourceRegistration.registerReadOnlyAttribute(CAPABILITIES,
+                (context, operation) -> populateCapabilities(capabilityRegistry.getCapabilities(), context.getResult(), false));
     }
 
     private static void populateRegistrationPoints(ModelNode points, Set<RegistrationPoint> registrationPoints) {
@@ -92,14 +115,54 @@ public class CapabilityRegistryResourceDefinition extends SimpleResourceDefiniti
         }
     }
 
-    private static void populateCapabilities(Set<CapabilityRegistration> caps, ModelNode res) {
-        // TODO WFCORE-960 We need to account for CapabilityScope
+    private static void populateCapabilities(Set<CapabilityRegistration> caps, ModelNode res, boolean possible) {
         for (CapabilityRegistration cr : caps) {
             ModelNode cap = res.add();
             cap.get(NAME.getName()).set(cr.getCapabilityName());
             cap.get(DYNAMIC.getName()).set(cr.getCapability().isDynamicallyNamed());
+            if (!possible) {
+                cap.get(SCOPE.getName()).set(cr.getCapabilityScope().getName());
+            }
             populateRegistrationPoints(cap.get(REGISTRATION_POINTS.getName()), cr.getRegistrationPoints());
         }
     }
 
+    @Override
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration);
+        resourceRegistration.registerOperationHandler(GET_PROVIDER_POINTS, (context, operation) -> {
+            final ModelNode model = new ModelNode();
+            NAME.validateAndSet(operation, model);
+            final String name = NAME.resolveModelAttribute(context, model).asString();
+            CapabilityId id = new CapabilityId(name, CapabilityScope.GLOBAL); //for possible capabilities it is always global
+            Set<PathAddress> providerPoints = capabilityRegistry.getPossibleProviderPoints(id);
+            for (PathAddress point : providerPoints) {
+                context.getResult().add(point.toCLIStyleString());
+            }
+        });
+
+        resourceRegistration.registerOperationHandler(GET_CAPABILITY, (context, operation) -> {
+            final ModelNode model = new ModelNode();
+            NAME.validateAndSet(operation, model);
+            SCOPE.validateAndSet(operation, model);
+            final String name = NAME.resolveModelAttribute(context, model).asString();
+            final CapabilityScope scope;
+            if (model.hasDefined(SCOPE.getName())) {
+                String scopeName = SCOPE.resolveModelAttribute(context, model).asString();
+                scope = CapabilityScope.Factory.forName(scopeName);
+            } else {
+                scope = CapabilityScope.GLOBAL;
+            }
+            CapabilityId id = new CapabilityId(name, scope);
+            CapabilityRegistration reg = capabilityRegistry.getCapability(id);
+            if (reg!=null) {
+                ModelNode result = context.getResult();
+                populateCapabilityRegistration(reg, result);
+            }
+        });
+    }
+
+    private void populateCapabilityRegistration(CapabilityRegistration reg, ModelNode capability) {
+        populateRegistrationPoints(capability.get(REGISTRATION_POINTS.getName()), reg.getRegistrationPoints());
+    }
 }
