@@ -238,4 +238,11 @@ public interface PatchLogger extends BasicLogger {
 
     @Message(id = 47, value = "Cannot copy files from %s to %s: %s")
     IOException cannotCopyFiles(String from, String to, String reason, @Cause Throwable cause);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 48, value = "Error when restoring file[%s] - %s")
+    void deleteRollbackError(String path, String message);
+
+    @Message(id = 49, value = "Some backup files were not removed.")
+    IOException failedToDeleteBackup();
 }
