@@ -315,7 +315,7 @@ public class EmbeddedHostControllerFactory {
 
         private synchronized void establishModelControllerClient(ControlledProcessState.State state) {
             ModelControllerClient newClient = null;
-            if (state != ControlledProcessState.State.STOPPING && serviceContainer != null) {
+            if (state != ControlledProcessState.State.STOPPING && state != ControlledProcessState.State.STOPPED && serviceContainer != null) {
                 @SuppressWarnings("unchecked")
                 final ServiceController<ModelController> modelControllerValue = (ServiceController<ModelController>) serviceContainer.getService(DomainModelControllerService.SERVICE_NAME);
                 if (modelControllerValue != null) {

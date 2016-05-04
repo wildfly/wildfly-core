@@ -22,7 +22,9 @@ import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.AttributeChangeNotification;
+import javax.management.InstanceNotFoundException;
 import javax.management.MBeanNotificationInfo;
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
@@ -77,7 +79,7 @@ public class ControlledProcessStateJmx extends NotificationBroadcasterSupport im
         sendNotification(notification);
     }
 
-    public static void registerMBean(ControlledProcessState processState) {
+    public static void registerMBean(ControlledProcessState processState, ProcessType processType) {
         try {
             final ObjectName name = new ObjectName(OBJECT_NAME);
             final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
@@ -90,6 +92,12 @@ public class ControlledProcessStateJmx extends NotificationBroadcasterSupport im
                     if ("currentState".equals(evt.getPropertyName())) {
                         ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
                         mbean.setProcessState(newState);
+                        if (processType.isEmbedded() && newState == ControlledProcessState.State.STOPPED) {
+                            try {
+                                server.unregisterMBean(name);
+                            } catch (InstanceNotFoundException | MBeanRegistrationException ignore) {
+                            }
+                        }
                     }
                 }
             });

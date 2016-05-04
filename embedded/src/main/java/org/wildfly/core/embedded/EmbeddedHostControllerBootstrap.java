@@ -32,7 +32,6 @@ import org.jboss.as.host.controller.HostControllerService;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
 
 /**
@@ -63,8 +62,8 @@ public class EmbeddedHostControllerBootstrap {
             shutdownHook.setControlledProcessState(processState);
             ServiceTarget target = serviceContainer.subTarget();
 
-            final ServiceController<ControlledProcessStateService> serviceController = ControlledProcessStateService.addService(target, processState);
-            ControlledProcessStateJmx.registerMBean(processState);
+            ControlledProcessStateService.addService(target, processState);
+            ControlledProcessStateJmx.registerMBean(processState, environment.getProcessType());
             final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, futureContainer);
             target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
             return futureContainer;

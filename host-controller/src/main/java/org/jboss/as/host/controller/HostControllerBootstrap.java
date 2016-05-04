@@ -63,7 +63,7 @@ public class HostControllerBootstrap {
         shutdownHook.setControlledProcessState(processState);
         ServiceTarget target = serviceContainer.subTarget();
         ControlledProcessStateService.addService(target, processState);
-        ControlledProcessStateJmx.registerMBean(processState);
+        ControlledProcessStateJmx.registerMBean(processState, environment.getProcessType());
         final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState);
         target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
     }

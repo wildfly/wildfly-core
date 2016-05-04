@@ -107,7 +107,7 @@ final class BootstrapImpl implements Bootstrap {
         final ControlledProcessState processState = new ControlledProcessState(true);
         shutdownHook.setControlledProcessState(processState);
         ControlledProcessStateService.addService(tracker, processState);
-        ControlledProcessStateJmx.registerMBean(processState);
+        ControlledProcessStateJmx.registerMBean(processState, configuration.getServerEnvironment().getLaunchType().getProcessType());
         final Service<?> applicationServerService = new ApplicationServerService(extraServices, configuration, processState);
         tracker.addService(Services.JBOSS_AS, applicationServerService)
             .install();

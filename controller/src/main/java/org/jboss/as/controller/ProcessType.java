@@ -28,20 +28,22 @@ package org.jboss.as.controller;
  * need to be present. {@link OperationStepHandler}s can use this to determine how to handle operations.
  */
 public enum ProcessType {
-    DOMAIN_SERVER(true, true),
-    EMBEDDED_SERVER(true, false),
-    STANDALONE_SERVER(true, false),
-    HOST_CONTROLLER(false, true),
-    EMBEDDED_HOST_CONTROLLER(false, true),
-    APPLICATION_CLIENT(true, false),
-    SELF_CONTAINED(true,false);
+    DOMAIN_SERVER(true, true, false),
+    EMBEDDED_SERVER(true, false, true),
+    STANDALONE_SERVER(true, false, false),
+    HOST_CONTROLLER(false, true, false),
+    EMBEDDED_HOST_CONTROLLER(false, true, true),
+    APPLICATION_CLIENT(true, false, false),
+    SELF_CONTAINED(true, false, true);
 
     private final boolean server;
     private final boolean domain;
+    private final boolean embedded;
 
-    ProcessType(final boolean server, final boolean domain) {
+    ProcessType(final boolean server, final boolean domain, final boolean embedded) {
         this.server = server;
         this.domain = domain;
+        this.embedded = embedded;
     }
 
     /**
@@ -60,5 +62,14 @@ public enum ProcessType {
      */
     public boolean isManagedDomain() {
         return domain;
+    }
+
+    /**
+     * Returns true if the process is an embedded process.
+     *
+     * @return Returns <tt>true</tt> if the process is an embedded process. Returns <tt>false</tt> otherwise.
+     */
+    public boolean isEmbedded() {
+        return embedded;
     }
 }
