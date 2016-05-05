@@ -61,7 +61,7 @@ public class Server {
     private Thread shutdownThread;
 
     private volatile Process process;
-    private volatile ManagementClient client;
+    private final ManagementClient client = createClient();
 
 
     private static boolean processHasDied(final Process process) {
@@ -132,8 +132,6 @@ public class Server {
             final Process proc = process;
             shutdownThread = ProcessHelper.addShutdownHook(proc);
 
-
-            client = createClient();
 
             long startupTimeout = 30;
             long timeout = startupTimeout * 1000;
@@ -256,7 +254,6 @@ public class Server {
         try {
             if (client != null) {
                 client.close();
-                client = null;
             }
         } catch (final Exception e) {
             Logger.getLogger(this.getClass().getName()).warnf(e, "Caught exception closing ModelControllerClient");
@@ -307,7 +304,7 @@ public class Server {
 
     private void recreateClient(){
         safeCloseClient();
-        client = createClient();
+        ServerClientProvider.INSTANCE.setClient(createModelControllerClient());
     }
 
     void waitForLiveServerToReload(int timeout) {
@@ -372,6 +369,7 @@ public class Server {
         private final AtomicReference<ModelControllerClient> client = new AtomicReference<>();
 
         void setClient(final ModelControllerClient client) {
+            assert client != null;
             this.client.set(client);
         }
 

@@ -16,43 +16,6 @@
  */
 package org.wildfly.core.testrunner;
 
-import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.network.NetworkUtils;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
-import org.jboss.logging.Logger;
-
-import javax.management.Attribute;
-import javax.management.AttributeList;
-import javax.management.AttributeNotFoundException;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.IntrospectionException;
-import javax.management.InvalidAttributeValueException;
-import javax.management.ListenerNotFoundException;
-import javax.management.MBeanException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServerConnection;
-import javax.management.NotCompliantMBeanException;
-import javax.management.NotificationFilter;
-import javax.management.NotificationListener;
-import javax.management.ObjectInstance;
-import javax.management.ObjectName;
-import javax.management.QueryExp;
-import javax.management.ReflectionException;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
-import javax.security.auth.callback.CallbackHandler;
-import java.io.Closeable;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-
 import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_PROCESS_STATE_STARTING;
 import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_PROCESS_STATE_STOPPING;
 import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT;
@@ -66,6 +29,19 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.RECURSIVE;
 import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.SUCCESS;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+import javax.management.remote.JMXServiceURL;
+
+import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.network.NetworkUtils;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
+import org.jboss.logging.Logger;
+
 /**
  * A helper class to join management related operations, like extract sub system ip/port (web/jmx)
  * and deployment introspection.
@@ -76,11 +52,8 @@ public class ManagementClient implements AutoCloseable, Closeable {
 
     private static final Logger logger = Logger.getLogger(ManagementClient.class);
 
-    private static final String SUBDEPLOYMENT = "subdeployment";
-
     private static final String UNDERTOW = "undertow";
     private static final String NAME = "name";
-    private static final String SERVLET = "servlet";
 
     private static final String POSTFIX_WEB = ".war";
     private static final String POSTFIX_EAR = ".ear";
@@ -96,8 +69,6 @@ public class ManagementClient implements AutoCloseable, Closeable {
     // cache static RootNode
     private ModelNode rootNode = null;
 
-    private MBeanServerConnection connection;
-    private JMXConnector connector;
 
     public ManagementClient(ModelControllerClient client, final String mgmtAddress, final int managementPort, final String protocol) {
         if (client == null) {
@@ -118,8 +89,10 @@ public class ManagementClient implements AutoCloseable, Closeable {
     }
 
     /**
-     * @return The base URI or the web susbsystem. Usually http://localhost:8080
+     * @return The base URI or the web subsystem. Usually http://localhost:8080
+     * @deprecated check if it is even used anywhere
      */
+    @Deprecated
     public URI getWebUri() {
         if (webUri == null) {
             try {
@@ -173,14 +146,6 @@ public class ManagementClient implements AutoCloseable, Closeable {
             getControllerClient().close();
         } catch (IOException e) {
             throw new RuntimeException("Could not close connection", e);
-        } finally {
-            if (connector != null) {
-                try {
-                    connector.close();
-                } catch (IOException e) {
-                    throw new RuntimeException("Could not close JMX connection", e);
-                }
-            }
         }
     }
 
@@ -283,22 +248,6 @@ public class ManagementClient implements AutoCloseable, Closeable {
         }
     }
 
-    private MBeanServerConnection getConnection() {
-        if (connection == null) {
-            try {
-                final HashMap<String, Object> env = new HashMap<String, Object>();
-                if (Authentication.username != null && Authentication.username.length() > 0) {
-                    // Only set this is there is a username as it disabled local authentication.
-                    env.put(CallbackHandler.class.getName(), Authentication.getCallbackHandler());
-                }
-                connector = JMXConnectorFactory.connect(getRemoteJMXURL(), env);
-                connection = new MBeanConnectionProxy(connector.getMBeanServerConnection());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return connection;
-    }
 
     public JMXServiceURL getRemoteJMXURL() {
         try {
@@ -326,6 +275,10 @@ public class ManagementClient implements AutoCloseable, Closeable {
         return mgmtProtocol;
     }
 
+    /**
+     * @deprecated check if it is even used anywhere
+     */
+    @Deprecated
     public URI getRemoteEjbURL() {
         if (ejbUri == null) {
             URI webUri = getWebUri();
@@ -336,295 +289,5 @@ public class ManagementClient implements AutoCloseable, Closeable {
             }
         }
         return ejbUri;
-    }
-
-    private class MBeanConnectionProxy implements MBeanServerConnection {
-        private MBeanServerConnection connection;
-
-        /**
-         * @param connection connection to delegate to
-         */
-        private MBeanConnectionProxy(MBeanServerConnection connection) {
-            super();
-            this.connection = connection;
-        }
-
-        @Override
-        public ObjectInstance createMBean(String className, ObjectName name) throws ReflectionException,
-                InstanceAlreadyExistsException, MBeanException, NotCompliantMBeanException,
-                IOException {
-            checkConnection();
-            return connection.createMBean(className, name);
-        }
-
-        @Override
-        public ObjectInstance createMBean(String className, ObjectName name, ObjectName loaderName) throws ReflectionException,
-                InstanceAlreadyExistsException, MBeanException, NotCompliantMBeanException,
-                InstanceNotFoundException, IOException {
-            checkConnection();
-            return connection.createMBean(className, name, loaderName);
-        }
-
-        @Override
-        public ObjectInstance createMBean(String className, ObjectName name, Object[] params, String[] signature)
-                throws ReflectionException, InstanceAlreadyExistsException, MBeanException,
-                NotCompliantMBeanException, IOException {
-            checkConnection();
-            return connection.createMBean(className, name, params, signature);
-        }
-
-        @Override
-        public ObjectInstance createMBean(String className, ObjectName name, ObjectName loaderName, Object[] params,
-                                          String[] signature) throws ReflectionException, InstanceAlreadyExistsException,
-                MBeanException, NotCompliantMBeanException, InstanceNotFoundException, IOException {
-            checkConnection();
-            return connection.createMBean(className, name, loaderName, params, signature);
-        }
-
-        @Override
-        public void unregisterMBean(ObjectName name) throws InstanceNotFoundException, MBeanRegistrationException, IOException {
-            checkConnection();
-            connection.unregisterMBean(name);
-        }
-
-        @Override
-        public ObjectInstance getObjectInstance(ObjectName name) throws InstanceNotFoundException, IOException {
-            try {
-                return connection.getObjectInstance(name);
-            } catch (IOException e) {
-                checkConnection();
-                return connection.getObjectInstance(name);
-            }
-        }
-
-        @Override
-        public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query) throws IOException {
-            try {
-                return connection.queryMBeans(name, query);
-            } catch (IOException e) {
-                checkConnection();
-                return connection.queryMBeans(name, query);
-            }
-        }
-
-        @Override
-        public Set<ObjectName> queryNames(ObjectName name, QueryExp query) throws IOException {
-            try {
-                return connection.queryNames(name, query);
-            } catch (IOException e) {
-                checkConnection();
-                return connection.queryNames(name, query);
-            }
-        }
-
-        @Override
-        public boolean isRegistered(ObjectName name) throws IOException {
-            try {
-                return connection.isRegistered(name);
-            } catch (IOException e) {
-                checkConnection();
-                return connection.isRegistered(name);
-            }
-        }
-
-        @Override
-        public Integer getMBeanCount() throws IOException {
-            try {
-                return connection.getMBeanCount();
-            } catch (IOException e) {
-                checkConnection();
-                return connection.getMBeanCount();
-            }
-        }
-
-        @Override
-        public Object getAttribute(ObjectName name, String attribute) throws MBeanException, AttributeNotFoundException,
-                InstanceNotFoundException, ReflectionException, IOException {
-            try {
-                return connection.getAttribute(name, attribute);
-            } catch (IOException e) {
-                checkConnection();
-                return connection.getAttribute(name, attribute);
-            }
-        }
-
-        @Override
-        public AttributeList getAttributes(ObjectName name, String[] attributes) throws InstanceNotFoundException,
-                ReflectionException, IOException {
-            try {
-                return connection.getAttributes(name, attributes);
-            } catch (IOException e) {
-                checkConnection();
-                return connection.getAttributes(name, attributes);
-            }
-        }
-
-        @Override
-        public void setAttribute(ObjectName name, Attribute attribute) throws InstanceNotFoundException,
-                AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException, IOException {
-            checkConnection();
-            connection.setAttribute(name, attribute);
-        }
-
-        @Override
-        public AttributeList setAttributes(ObjectName name, AttributeList attributes) throws InstanceNotFoundException,
-                ReflectionException, IOException {
-            checkConnection();
-            return connection.setAttributes(name, attributes);
-        }
-
-        @Override
-        public Object invoke(ObjectName name, String operationName, Object[] params, String[] signature)
-                throws InstanceNotFoundException, MBeanException, ReflectionException, IOException {
-            checkConnection();
-            return connection.invoke(name, operationName, params, signature);
-        }
-
-        @Override
-        public String getDefaultDomain() throws IOException {
-            try {
-                return connection.getDefaultDomain();
-            } catch (IOException e) {
-                checkConnection();
-                return connection.getDefaultDomain();
-            }
-        }
-
-        @Override
-        public String[] getDomains() throws IOException {
-            try {
-                return connection.getDomains();
-            } catch (IOException e) {
-                checkConnection();
-                return connection.getDomains();
-            }
-        }
-
-        @Override
-        public void addNotificationListener(ObjectName name, NotificationListener listener, NotificationFilter filter,
-                                            Object handback) throws InstanceNotFoundException, IOException {
-            try {
-                connection.addNotificationListener(name, listener, filter, handback);
-            } catch (IOException e) {
-                if (!checkConnection()) {
-                    connection.addNotificationListener(name, listener, filter, handback);
-                } else {
-                    throw e;
-                }
-            }
-        }
-
-        @Override
-        public void addNotificationListener(ObjectName name, ObjectName listener, NotificationFilter filter, Object handback)
-                throws InstanceNotFoundException, IOException {
-            try {
-                connection.addNotificationListener(name, listener, filter, handback);
-            } catch (IOException e) {
-                if (!checkConnection()) {
-                    connection.addNotificationListener(name, listener, filter, handback);
-                } else {
-                    throw e;
-                }
-            }
-        }
-
-        @Override
-        public void removeNotificationListener(ObjectName name, ObjectName listener) throws InstanceNotFoundException,
-                ListenerNotFoundException, IOException {
-            try {
-                connection.removeNotificationListener(name, listener);
-            } catch (IOException e) {
-                if (!checkConnection()) {
-                    connection.removeNotificationListener(name, listener);
-                } else {
-                    throw e;
-                }
-            }
-        }
-
-        @Override
-        public void removeNotificationListener(ObjectName name, ObjectName listener, NotificationFilter filter, Object handback)
-                throws InstanceNotFoundException, ListenerNotFoundException, IOException {
-            try {
-                connection.removeNotificationListener(name, listener, filter, handback);
-            } catch (IOException e) {
-                if (!checkConnection()) {
-                    connection.removeNotificationListener(name, listener, filter, handback);
-                } else {
-                    throw e;
-                }
-            }
-        }
-
-        @Override
-        public void removeNotificationListener(ObjectName name, NotificationListener listener)
-                throws InstanceNotFoundException, ListenerNotFoundException, IOException {
-            try {
-                connection.removeNotificationListener(name, listener);
-            } catch (IOException e) {
-                if (!checkConnection()) {
-                    connection.removeNotificationListener(name, listener);
-                } else {
-                    throw e;
-                }
-            }
-        }
-
-        @Override
-        public void removeNotificationListener(ObjectName name, NotificationListener listener, NotificationFilter filter,
-                                               Object handback) throws InstanceNotFoundException, ListenerNotFoundException, IOException {
-            try {
-                connection.removeNotificationListener(name, listener, filter, handback);
-            } catch (IOException e) {
-                if (!checkConnection()) {
-                    connection.removeNotificationListener(name, listener, filter, handback);
-                } else {
-                    throw e;
-                }
-            }
-        }
-
-        @Override
-        public MBeanInfo getMBeanInfo(ObjectName name) throws InstanceNotFoundException, IntrospectionException,
-                ReflectionException, IOException {
-            try {
-                return connection.getMBeanInfo(name);
-            } catch (IOException e) {
-                checkConnection();
-                return connection.getMBeanInfo(name);
-            }
-        }
-
-        @Override
-        public boolean isInstanceOf(ObjectName name, String className) throws InstanceNotFoundException, IOException {
-            try {
-                return connection.isInstanceOf(name, className);
-            } catch (IOException e) {
-                checkConnection();
-                return connection.isInstanceOf(name, className);
-            }
-        }
-
-        private boolean checkConnection() {
-            try {
-                this.connection.getDefaultDomain();
-                return true;
-            } catch (IOException ioe) {
-            }
-            this.connection = this.getConnection();
-            return false;
-        }
-
-        private MBeanServerConnection getConnection() {
-            try {
-                final HashMap<String, Object> env = new HashMap<String, Object>();
-                env.put(CallbackHandler.class.getName(), Authentication.getCallbackHandler());
-                connector = JMXConnectorFactory.connect(getRemoteJMXURL(), env);
-                connection = connector.getMBeanServerConnection();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            return connection;
-        }
     }
 }
