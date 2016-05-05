@@ -223,6 +223,7 @@ public final class ServerService extends AbstractControllerService {
         serviceTarget.addService(JBOSS_SERVER_SCHEDULED_EXECUTOR, serverScheduledExecutorService)
                 .addDependency(Services.JBOSS_SERVER_EXECUTOR, ExecutorService.class, serverScheduledExecutorService.executorInjector)
                 .install();
+        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, Services.JBOSS_SERVER_EXECUTOR);
         final CapabilityRegistry capabilityRegistry = configuration.getCapabilityRegistry();
 
         ServerService service = new ServerService(configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(), runningModeControl, vaultReader, auditLogger, authorizer, capabilityRegistry);
