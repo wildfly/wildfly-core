@@ -1,5 +1,13 @@
 package org.wildfly.core.testrunner;
 
+import static org.jboss.as.controller.client.helpers.ClientConstants.NAME;
+import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
+import static org.jboss.as.controller.client.helpers.ClientConstants.OP_ADDR;
+import static org.jboss.as.controller.client.helpers.ClientConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
+import static org.jboss.as.controller.client.helpers.ClientConstants.SERVER_CONFIG;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,10 +19,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -22,14 +32,6 @@ import org.junit.Assert;
 import org.wildfly.core.launcher.Launcher;
 import org.wildfly.core.launcher.ProcessHelper;
 import org.wildfly.core.launcher.StandaloneCommandBuilder;
-
-import static org.jboss.as.controller.client.helpers.ClientConstants.NAME;
-import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
-import static org.jboss.as.controller.client.helpers.ClientConstants.OP_ADDR;
-import static org.jboss.as.controller.client.helpers.ClientConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
-import static org.jboss.as.controller.client.helpers.ClientConstants.SERVER_CONFIG;
-import static org.junit.Assert.fail;
 
 /**
  * encapsulation of a server process
@@ -59,7 +61,7 @@ public class Server {
     private Thread shutdownThread;
 
     private volatile Process process;
-    private volatile ManagementClient client;
+    private final ManagementClient client = createClient();
 
 
     private static boolean processHasDied(final Process process) {
@@ -130,8 +132,6 @@ public class Server {
             final Process proc = process;
             shutdownThread = ProcessHelper.addShutdownHook(proc);
 
-
-            client = createClient();
 
             long startupTimeout = 30;
             long timeout = startupTimeout * 1000;
@@ -231,7 +231,12 @@ public class Server {
         return client;
     }
 
-    ManagementClient createClient(){
+    ManagementClient createClient() {
+        ServerClientProvider.INSTANCE.setClient(createModelControllerClient());
+        return new ManagementClient(new DelegatingModelControllerClient(ServerClientProvider.INSTANCE), managementAddress, managementPort, managementProtocol);
+    }
+
+    private ModelControllerClient createModelControllerClient() {
         ModelControllerClient modelControllerClient = null;
         try {
             modelControllerClient = ModelControllerClient.Factory.create(
@@ -242,14 +247,13 @@ public class Server {
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
-        return new ManagementClient(modelControllerClient, managementAddress, managementPort, managementProtocol);
+        return modelControllerClient;
     }
 
     private void safeCloseClient() {
         try {
             if (client != null) {
                 client.close();
-                client = null;
             }
         } catch (final Exception e) {
             Logger.getLogger(this.getClass().getName()).warnf(e, "Caught exception closing ModelControllerClient");
@@ -300,7 +304,7 @@ public class Server {
 
     private void recreateClient(){
         safeCloseClient();
-        client = createClient();
+        ServerClientProvider.INSTANCE.setClient(createModelControllerClient());
     }
 
     void waitForLiveServerToReload(int timeout) {
@@ -356,6 +360,26 @@ public class Server {
                 }
             } catch (IOException ignore) {
             }
+        }
+    }
+
+    private static class ServerClientProvider implements DelegatingModelControllerClient.DelegateProvider {
+
+        static final ServerClientProvider INSTANCE = new ServerClientProvider();
+        private final AtomicReference<ModelControllerClient> client = new AtomicReference<>();
+
+        void setClient(final ModelControllerClient client) {
+            assert client != null;
+            this.client.set(client);
+        }
+
+        @Override
+        public ModelControllerClient getDelegate() {
+            final ModelControllerClient result = client.get();
+            if (result == null) {
+                throw new IllegalStateException("The client has been closed");
+            }
+            return result;
         }
     }
 

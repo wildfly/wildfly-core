@@ -78,6 +78,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>${version.surefire.plugin}</version>
                 <configuration>
                     <failIfNoTests>false</failIfNoTests>
                     <!-- parallel>none</parallel -->
@@ -95,6 +96,7 @@
                         <jboss.home>${wildfly.home}</jboss.home>
                         <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                     </systemPropertyVariables>
+                    <runOrder>random</runOrder>
                 </configuration>
             </plugin>
             <plugin>

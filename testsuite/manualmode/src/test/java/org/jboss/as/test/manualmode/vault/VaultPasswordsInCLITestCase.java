@@ -155,7 +155,7 @@ public class VaultPasswordsInCLITestCase {
         // reload to apply changes
         reloadServer();
 
-        ManagementClient client = containerController.createNewManagementClient();
+        ManagementClient client = containerController.getClient();
 
         managementInterfacesSetup.tearDown(client);
         managementCLICliRealmSetup.tearDown(client);
