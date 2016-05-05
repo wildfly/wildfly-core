@@ -1031,7 +1031,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         // WFLY-3017 See if this write means a persistent config change
         // For speed, we assume all calls during boot relate to persistent config
         boolean runtimeOnly = isResourceRuntimeOnly(address);
-        if (runtimeOnly) {
+        if (!runtimeOnly) {
             rejectUserDomainServerUpdates();
         }
         checkHostServerGroupTracker(address);
