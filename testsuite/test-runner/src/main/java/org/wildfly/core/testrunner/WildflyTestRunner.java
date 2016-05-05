@@ -6,7 +6,6 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
 import javax.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -15,7 +14,9 @@ import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.model.FrameworkField;
 import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.TestClass;
 
 /**
  * A lightweight test runner for running management based tests
@@ -42,31 +43,29 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
             automaticServerControl = true;
         }
         startServerIfRequired();
-        doInject(klass, null);
-        prepareSetupTasks(klass);
+        doInject(getTestClass(), null);
+        prepareSetupTasks(getTestClass());
     }
 
-    private void doInject(Class<?> klass, Object instance) {
-        Class c = klass;
+    private void doInject(TestClass klass, Object instance) {
+
         try {
-            while (c != null && c != Object.class) {
-                for (Field field : c.getDeclaredFields()) {
-                    if ((instance == null && Modifier.isStatic(field.getModifiers()) ||
-                            instance != null )) {//we want to do injection even on static fields before test run, so we make sure that client is correct for current state of server
-                        if (field.isAnnotationPresent(Inject.class)) {
-                            field.setAccessible(true);
-                            if (field.getType() == ManagementClient.class && controller.isStarted()) {
-                                field.set(instance, controller.getClient());
-                            } else if (field.getType() == ModelControllerClient.class && controller.isStarted()) {
-                                field.set(instance, controller.getClient().getControllerClient());
-                            } else if (field.getType() == ServerController.class) {
-                                field.set(instance, controller);
-                            }
-                        }
+
+            for (FrameworkField frameworkField : klass.getAnnotatedFields(Inject.class)) {
+                Field field = frameworkField.getField();
+                if ((instance == null && Modifier.isStatic(field.getModifiers()) ||
+                        instance != null)) {//we want to do injection even on static fields before test run, so we make sure that client is correct for current state of server
+                    field.setAccessible(true);
+                    if (field.getType() == ManagementClient.class && controller.isStarted()) {
+                        field.set(instance, controller.getClient());
+                    } else if (field.getType() == ModelControllerClient.class && controller.isStarted()) {
+                        field.set(instance, controller.getClient().getControllerClient());
+                    } else if (field.getType() == ServerController.class) {
+                        field.set(instance, controller);
                     }
                 }
-                c = c.getSuperclass();
             }
+
         } catch (Exception e) {
             throw new RuntimeException("Failed to inject", e);
         }
@@ -75,7 +74,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
     @Override
     protected Object createTest() throws Exception {
         Object res = super.createTest();
-        doInject(getTestClass().getJavaClass(), res);
+        doInject(getTestClass(), res);
         return res;
     }
 
@@ -126,9 +125,9 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
         checkServerState();
     }
 
-    private void prepareSetupTasks(Class<?> klass) throws InitializationError {
+    private void prepareSetupTasks(TestClass klass) throws InitializationError {
         try {
-            if (klass.isAnnotationPresent(ServerSetup.class)) {
+            if (klass.getJavaClass().isAnnotationPresent(ServerSetup.class)) {
                 ServerSetup serverSetup = klass.getAnnotation(ServerSetup.class);
                 for (Class<? extends ServerSetupTask> clazz : serverSetup.value()) {
                     Constructor<? extends ServerSetupTask> ctor = clazz.getDeclaredConstructor();
