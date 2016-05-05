@@ -29,11 +29,10 @@ import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURITY
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
 
-import io.undertow.server.ListenerRegistry;
-
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import io.undertow.server.ListenerRegistry;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -53,6 +52,7 @@ import org.jboss.as.remoting.RemotingHttpUpgradeService;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
+import org.jboss.as.server.ExternalManagementRequestExecutor;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerEnvironmentService;
 import org.jboss.as.server.Services;
@@ -73,6 +73,13 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
 import org.xnio.XnioWorker;
+
+<<<<<<<HEAD
+        =======
+        >>>>>>>4559d34...[WFCORE-1528]Use a separate executor for non-upgrade HTTP management requests
+        <<<<<<<HEAD
+        =======
+        >>>>>>>4559d34...[WFCORE-1528]Use a separate executor for non-upgrade HTTP management requests
 
 /**
  * A handler that activates the HTTP management API on a Server.
@@ -169,7 +176,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, undertowService.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue())
                 .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, undertowService.getWorker())
-                .addDependency(Services.JBOSS_SERVER_EXECUTOR, Executor.class, undertowService.getManagementExecutor())
+                .addDependency(ExternalManagementRequestExecutor.SERVICE_NAME, Executor.class, undertowService.getManagementExecutor())
                 .addInjection(undertowService.getAllowedOriginsInjector(), allowedOrigins);
 
             if (socketBindingServiceName != null) {

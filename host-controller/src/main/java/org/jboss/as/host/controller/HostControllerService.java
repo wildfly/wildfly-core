@@ -46,6 +46,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.BootstrapListener;
+import org.jboss.as.server.ExternalManagementRequestExecutor;
 import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.deployment.ContentCleanerService;
@@ -77,9 +78,10 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     public static final ServiceName HC_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("executor");
     public static final ServiceName HC_SCHEDULED_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("scheduled", "executor");
 
+    private final ThreadGroup threadGroup = new ThreadGroup("Host Controller Service Threads");
     private final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
         public JBossThreadFactory run() {
-            return new JBossThreadFactory(new ThreadGroup("Host Controller Service Threads"), Boolean.FALSE, null, "%G - %t", null, null);
+            return new JBossThreadFactory(threadGroup, Boolean.FALSE, null, "%G - %t", null, null);
         }
     });
     private final HostControllerEnvironment environment;
@@ -172,6 +174,9 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         serviceTarget.addService(HC_SCHEDULED_EXECUTOR_SERVICE_NAME, scheduledExecutorService)
                 .addDependency(HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, scheduledExecutorService.executorInjector)
                 .install();
+
+        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, HC_EXECUTOR_SERVICE_NAME);
+
         // Install required path services. (Only install those identified as required)
         HostPathManagerService hostPathManagerService = new HostPathManagerService();
         HostPathManagerService.addService(serviceTarget, hostPathManagerService, environment);
