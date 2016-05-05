@@ -301,6 +301,7 @@ public class ModelDescriptionConstants {
     public static final String NOTIFICATION = "notification";
     public static final String NOTIFICATION_DATA_TYPE = "data-type";
     public static final String NOTIFICATION_TYPE = "notification-type";
+    public static final String NOTIFICATION_REGISTRAR = "notification-registrar";
     public static final String NOTIFICATIONS = "notifications";
     /** Use this as the standard operation name field in the operation *request* ModelNode */
     public static final String OP = "operation";
@@ -367,6 +368,7 @@ public class ModelDescriptionConstants {
     public static final String RECURSIVE_DEPTH = "recursive-depth";
     public static final String RECYCLE = "recycle";
     public static final String REDEPLOY = "redeploy";
+    public static final String REGISTRAR = "registrar";
     public static final String RELATIVE_ADDRESS = "relative-address";
     public static final String RELATIVE_TO = "relative-to";
     public static final String RELEASE_CODENAME = "release-codename";

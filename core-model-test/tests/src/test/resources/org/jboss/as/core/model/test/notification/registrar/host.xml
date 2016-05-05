@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<host name="master" xmlns="urn:jboss:domain:5.0">
+
+    <management>
+        <!-- One interface is always needed by the parser -->
+        <management-interfaces>
+            <native-interface security-realm="ManagementRealm">
+                <socket interface="management" port="${jboss.management.native.port:9999}"/>
+            </native-interface>
+        </management-interfaces>
+        <notification-registrars>
+            <registrar name="test1" code="org.jboss.TestRegistrar1" module="org.jboss.test1"/>
+            <registrar name="test2" code="org.jboss.TestRegistrar2" module="org.jboss.test2">
+                <properties>
+                    <property name="prop1" value="one"/>
+                    <property name="prop2"/>
+                    <property name="prop3" value="three"/>
+                </properties>
+            </registrar>
+        </notification-registrars>
+    </management>
+</host>

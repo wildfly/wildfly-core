@@ -46,6 +46,7 @@ import org.jboss.as.domain.management.audit.AccessAuditResourceDefinition;
 import org.jboss.as.domain.management.audit.EnvironmentNameReader;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition;
 import org.jboss.as.domain.management.controller.ManagementControllerResourceDefinition;
+import org.jboss.as.domain.management.notification.registrar.NotificationRegistrarsRootResourceDefinition;
 import org.jboss.as.domain.management.security.SecurityRealmResourceDefinition;
 
 /**
@@ -113,8 +114,10 @@ public class CoreManagementResourceDefinition extends SimpleResourceDefinition {
                 resourceRegistration.registerSubModel(AccessAuthorizationResourceDefinition.forStandaloneServer(authorizer));
         }
 
+
         if (environment != Environment.DOMAIN) {
             resourceRegistration.registerSubModel(new AccessAuditResourceDefinition(auditLogger, pathManager, environmentReader));
+            resourceRegistration.registerSubModel(NotificationRegistrarsRootResourceDefinition.INSTANCE);
         }
     }
 
@@ -135,20 +138,23 @@ public class CoreManagementResourceDefinition extends SimpleResourceDefinition {
             final ManagedAuditLogger auditLogger, final PathManagerService pathManager, final EnvironmentNameReader environmentReader,
             final BootErrorCollector bootErrorCollector) {
         List<ResourceDefinition> interfaces = Collections.emptyList();
-        return new CoreManagementResourceDefinition(Environment.DOMAIN_SERVER, authorizer, auditLogger, pathManager, environmentReader, interfaces, bootErrorCollector);
+        return new CoreManagementResourceDefinition(Environment.DOMAIN_SERVER, authorizer, auditLogger, pathManager,
+                environmentReader, interfaces, bootErrorCollector);
     }
 
 
     public static SimpleResourceDefinition forHost(final DelegatingConfigurableAuthorizer authorizer,
             final ManagedAuditLogger auditLogger, final PathManagerService pathManager, final EnvironmentNameReader environmentReader,
             final BootErrorCollector bootErrorCollector, final ResourceDefinition... interfaces) {
-        return new CoreManagementResourceDefinition(Environment.HOST_CONTROLLER, authorizer, auditLogger, pathManager, environmentReader, Arrays.asList(interfaces), bootErrorCollector);
+        return new CoreManagementResourceDefinition(Environment.HOST_CONTROLLER, authorizer, auditLogger, pathManager,
+                environmentReader, Arrays.asList(interfaces), bootErrorCollector);
     }
 
     public static SimpleResourceDefinition forStandaloneServer(final DelegatingConfigurableAuthorizer authorizer,
             final ManagedAuditLogger auditLogger, final PathManagerService pathManager, final EnvironmentNameReader environmentReader,
             final BootErrorCollector bootErrorCollector, final ResourceDefinition... interfaces) {
-        return new CoreManagementResourceDefinition(Environment.STANDALONE_SERVER, authorizer, auditLogger, pathManager, environmentReader, Arrays.asList(interfaces), bootErrorCollector);
+        return new CoreManagementResourceDefinition(Environment.STANDALONE_SERVER, authorizer, auditLogger, pathManager,
+                environmentReader, Arrays.asList(interfaces), bootErrorCollector);
     }
 
 }

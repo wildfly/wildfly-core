@@ -84,7 +84,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
     }
 
     /**
-     * If the {@link OperationContext#isResourceServiceRestartAllowed() context allows resource removal},
+     * If {@link #isResourceServiceRestartAllowed(OperationContext)} context allows resource removal},
      * removes services; otherwise puts the process in reload-required state. The following services are
      * removed:
      * <ul>
@@ -97,7 +97,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
      */
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
-        if (context.isResourceServiceRestartAllowed()) {
+        if (isResourceServiceRestartAllowed(context)) {
 
             final PathAddress address = context.getCurrentAddress();
             final String name = address.getLastElement().getValue();
@@ -158,7 +158,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
     }
 
     /**
-     * If the {@link OperationContext#isResourceServiceRestartAllowed() context allows resource removal},
+     * If {@link #isResourceServiceRestartAllowed(OperationContext)} allows resource removal,
      * attempts to restore services by invoking the {@code performRuntime} method on the @{code addOperation}
      * handler passed to the constructor; otherwise puts the process in reload-required state.
      *
@@ -166,10 +166,20 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
      */
     @Override
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        if (context.isResourceServiceRestartAllowed()) {
+        if (isResourceServiceRestartAllowed(context)) {
             addOperation.performRuntime(context, operation, model);
         } else {
             context.revertReloadRequired();
         }
+    }
+
+    /**
+     * Return whether resources can be removed and/added without reloading the server.
+     *
+     * @param context the operation context
+     * @return whether resources can be removed and/or added without reloading the server
+     */
+    protected boolean isResourceServiceRestartAllowed(OperationContext context) {
+        return context.isResourceServiceRestartAllowed();
     }
 }

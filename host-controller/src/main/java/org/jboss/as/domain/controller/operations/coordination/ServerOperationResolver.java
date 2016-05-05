@@ -38,6 +38,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION_REGISTRAR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -49,6 +50,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_LOGGER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
@@ -920,27 +922,17 @@ public class ServerOperationResolver {
                     }
                     op.get(OP_ADDR).set(newAddr.toModelNode());
                 }
-//                    String key = address.getElement(2).getKey();
-//                    if (key.equals(LOGGER)) {
-//                        //logger=>audit-log is only for the HC
-//                        return Collections.emptyMap();
-//                    } else if (key.equals(SERVER_LOGGER)) {
-//                        //server-logger=audit-log gets sent to the servers as logger=>audit-log
-//                        PathAddress newAddr = address.subAddress(0, 2);
-//                        newAddr = newAddr.append(PathElement.pathElement(LOGGER, address.getElement(2).getValue()));
-//                        op.get(OP_ADDR).set(newAddr.toModelNode());
-//                    }
-//                }
+                return Collections.singletonMap(getAllRunningServers(host, localHostName, serverProxies), op);
+            } else if (address.size() >= 2 && address.getElement(1).getKey().equals(SERVICE) &&
+                    address.getElement(1).getValue().equals(NOTIFICATION_REGISTRAR)) {
+                ModelNode op = operation.clone();
+                op.get(OP_ADDR).set(address.toModelNode());
                 return Collections.singletonMap(getAllRunningServers(host, localHostName, serverProxies), op);
             }
             // TODO does server need to know about other changes?
         }
         return Collections.emptyMap();
     }
-
-
-
-
 
     private ServerIdentity getServerIdentity(String serverName, ModelNode host) {
         ModelNode serverNode = host.get(SERVER_CONFIG, serverName);

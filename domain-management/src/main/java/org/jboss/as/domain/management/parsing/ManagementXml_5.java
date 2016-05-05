@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADV
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHENTICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURATION_CHANGES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED_CIPHER_SUITES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED_PROTOCOLS;
@@ -41,14 +42,17 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_REMOTING_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION_REGISTRAR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRINCIPAL_TO_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REGISTRAR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLE_MAPPING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECRET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP_SCOPED_ROLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_IDENTITY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
@@ -102,6 +106,9 @@ import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionPropertyResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition;
+import org.jboss.as.domain.management.notification.registrar.NotificationRegistrarPropertyResourceDefinition;
+import org.jboss.as.domain.management.notification.registrar.NotificationRegistrarResourceDefinition;
+import org.jboss.as.domain.management.notification.registrar.NotificationRegistrarsRootResourceDefinition;
 import org.jboss.as.domain.management.security.AbstractPlugInAuthResourceDefinition;
 import org.jboss.as.domain.management.security.AdvancedUserSearchResourceDefintion;
 import org.jboss.as.domain.management.security.BaseLdapGroupSearchResource;
@@ -209,6 +216,10 @@ class ManagementXml_5 extends ManagementXml {
                 }
                 case CONFIGURATION_CHANGES: {
                     parseConfigurationChanges(reader, managementAddress, list);
+                    break;
+                }
+                case NOTIFICATION_REGISTRARS: {
+                    parseNotificationRegistrars(reader, managementAddress, list);
                     break;
                 }
                 default: {
@@ -1849,7 +1860,99 @@ class ManagementXml_5 extends ManagementXml {
         requireNoContent(reader);
     }
 
+    private void parseNotificationRegistrars(final XMLExtendedStreamReader reader, final ModelNode parentAddress,
+                                             final List<ModelNode> list) throws XMLStreamException {
+        requireNoAttributes(reader);
 
+        boolean addedRegistrars = false;
+        final ModelNode addr = parentAddress.clone().add(
+                NotificationRegistrarsRootResourceDefinition.PATH.getKey(),
+                NotificationRegistrarsRootResourceDefinition.PATH.getValue());
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case REGISTRAR: {
+                    if (!addedRegistrars) {
+                        list.add(Util.createAddOperation(PathAddress.pathAddress(addr)));
+                        addedRegistrars = true;
+                    }
+                    parseNotificationRegistrar(reader, addr, list);
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+    }
+
+    private void parseNotificationRegistrar(XMLExtendedStreamReader reader, ModelNode parentAddress,
+                                            List<ModelNode> list) throws XMLStreamException {
+        final int count = reader.getAttributeCount();
+        ModelNode addr = null;
+        ModelNode addOp = Util.createAddOperation();
+
+        Set<Attribute> requiredAttributes = EnumSet.of(Attribute.NAME, Attribute.CODE, Attribute.MODULE);
+        for (int i = 0; i < count; i++) {
+
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                requiredAttributes.remove(attribute);
+                switch (attribute) {
+                    case NAME: {
+                        addr = parentAddress.clone().add(NotificationRegistrarResourceDefinition.PATH.getKey(), value);
+                        addOp.get(OP_ADDR).set(addr);
+                        break;
+                    }
+                    case CODE: {
+                        NotificationRegistrarResourceDefinition.CODE.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case MODULE: {
+                        NotificationRegistrarResourceDefinition.MODULE.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
+                }
+            }
+        }
+
+        if (!requiredAttributes.isEmpty()) {
+            throw missingRequired(reader, requiredAttributes);
+        }
+        list.add(addOp);
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case PROPERTIES: {
+                    while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+                        requireNamespace(reader, namespace);
+                        final Element propertyElement = Element.forName(reader.getLocalName());
+                        switch (propertyElement) {
+                            case PROPERTY:
+                                parseProperty(reader, addr, list);
+                                break;
+                            default:
+                                throw unexpectedElement(reader);
+                        }
+                    }
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+    }
 
     @Override
     public void writeManagement(final XMLExtendedStreamWriter writer, final ModelNode management, boolean allowInterfaces)
@@ -1864,23 +1967,24 @@ class ManagementXml_5 extends ManagementXml {
         ModelNode accessAuthorization = management.hasDefined(ACCESS) ? management.get(ACCESS, AUTHORIZATION) : null;
         boolean accessAuthorizationDefined = accessAuthorization != null && accessAuthorization.isDefined();
         boolean hasServerGroupRoles = accessAuthorizationDefined && accessAuthorization.hasDefined(SERVER_GROUP_SCOPED_ROLE);
-        boolean hasConfigurationChanges = management.hasDefined(ModelDescriptionConstants.SERVICE, ModelDescriptionConstants.CONFIGURATION_CHANGES);
+        boolean hasConfigurationChanges = management.hasDefined(SERVICE, CONFIGURATION_CHANGES);
         boolean hasHostRoles = accessAuthorizationDefined && (accessAuthorization.hasDefined(HOST_SCOPED_ROLE) || accessAuthorization.hasDefined(HOST_SCOPED_ROLES));
         boolean hasRoleMapping = accessAuthorizationDefined && accessAuthorization.hasDefined(ROLE_MAPPING);
         Map<String, Map<String, Set<String>>> configuredAccessConstraints = AccessControlXml.getConfiguredAccessConstraints(accessAuthorization);
         boolean hasProvider = accessAuthorizationDefined && accessAuthorization.hasDefined(AccessAuthorizationResourceDefinition.PROVIDER.getName());
         boolean hasCombinationPolicy = accessAuthorizationDefined && accessAuthorization.hasDefined(AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName());
         ModelNode auditLog = management.hasDefined(ACCESS) ? management.get(ACCESS, AUDIT) : new ModelNode();
+        boolean hasNotificationRegistrars = management.hasDefined(SERVICE, NOTIFICATION_REGISTRAR) && management.get(SERVICE, NOTIFICATION_REGISTRAR).keys().size() > 0;
 
         if (!hasSecurityRealm && !hasConnection && !hasInterface && !hasServerGroupRoles
               && !hasHostRoles && !hasRoleMapping && configuredAccessConstraints.size() == 0
-                && !hasProvider && !hasCombinationPolicy && !auditLog.isDefined()) {
+                && !hasProvider && !hasCombinationPolicy && !auditLog.isDefined() && !hasNotificationRegistrars) {
             return;
         }
 
         writer.writeStartElement(Element.MANAGEMENT.getLocalName());
         if(hasConfigurationChanges) {
-            writeConfigurationChanges(writer, management.get(ModelDescriptionConstants.SERVICE, ModelDescriptionConstants.CONFIGURATION_CHANGES));
+            writeConfigurationChanges(writer, management.get(SERVICE, CONFIGURATION_CHANGES));
         }
 
         if (hasSecurityRealm) {
@@ -1907,6 +2011,41 @@ class ManagementXml_5 extends ManagementXml {
             }
         }
 
+        if (hasNotificationRegistrars) {
+            writeNotificationRegistrars(writer, management.get(SERVICE, NOTIFICATION_REGISTRAR, REGISTRAR));
+        }
+
+        writer.writeEndElement();
+    }
+
+    private void writeNotificationRegistrars(XMLExtendedStreamWriter writer,
+                                             ModelNode notificationRegistrars) throws XMLStreamException {
+        writer.writeStartElement(Element.NOTIFICATION_REGISTRARS.getLocalName());
+
+        for (String key : notificationRegistrars.keys()) {
+            ModelNode registrar = notificationRegistrars.get(key);
+            writer.writeStartElement(Element.REGISTRAR.getLocalName());
+
+            writeAttribute(writer, Attribute.NAME, key);
+            NotificationRegistrarResourceDefinition.CODE.marshallAsAttribute(registrar, writer);
+            NotificationRegistrarResourceDefinition.MODULE.marshallAsAttribute(registrar, writer);
+
+            if (registrar.hasDefined(PROPERTY) && registrar.get(PROPERTY).keys().size() > 0) {
+                writer.writeStartElement(Element.PROPERTIES.getLocalName());
+                ModelNode properties = registrar.get(PROPERTY);
+
+                for (String prop : properties.keys()) {
+                    writer.writeStartElement(Element.PROPERTY.getLocalName());
+                    ModelNode property = properties.get(prop);
+                    writeAttribute(writer, Attribute.NAME, prop);
+                    NotificationRegistrarPropertyResourceDefinition.VALUE.marshallAsAttribute(property, writer);
+                    writer.writeEndElement();
+                }
+                writer.writeEndElement();
+            }
+
+            writer.writeEndElement();
+        }
         writer.writeEndElement();
     }
 
