@@ -61,6 +61,8 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private final boolean orderedChild;
     private final RuntimeCapability[] capabilities;
     private final List<AccessConstraintDefinition> accessConstraints;
+    private final int minOccurs;
+    private final int maxOccurs;
 
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionProvider} to describe the resource.
@@ -88,6 +90,8 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.orderedChild = false;
         this.capabilities = new RuntimeCapability[0];
         this.accessConstraints = Collections.emptyList();
+        this.minOccurs = 0;
+        this.maxOccurs = Integer.MAX_VALUE;
     }
 
     /**
@@ -278,6 +282,8 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.orderedChild = false;
         this.capabilities = new RuntimeCapability[0];
         this.accessConstraints = Collections.emptyList();
+        this.minOccurs = 0;
+        this.maxOccurs = Integer.MAX_VALUE;
     }
 
     /**
@@ -303,6 +309,8 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         } else {
             this.accessConstraints = Collections.emptyList();
         }
+        this.minOccurs = parameters.minOccurs;
+        this.maxOccurs = parameters.maxOccurs;
     }
 
 
@@ -473,6 +481,28 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         return runtime;
     }
 
+   /**
+   * {@inheritDoc}
+   */
+    @Override
+    public int getMinOccurs() {
+        if (minOccurs == 0) {
+            return ResourceDefinition.super.getMinOccurs();
+        }
+        return minOccurs;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getMaxOccurs() {
+        if (maxOccurs == Integer.MAX_VALUE) {
+            return ResourceDefinition.super.getMaxOccurs();
+        }
+        return maxOccurs;
+    }
+
     /**
      * Whether this resource registration is ordered in the parent. The automatically generated 'add' operation will
      * get the {@code add-index} parameter added. Also, it will get registered as an ordered child in the parent's
@@ -500,7 +530,8 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         private boolean orderedChildResource;
         private RuntimeCapability[] capabilities;
         private AccessConstraintDefinition[] accessConstraints;
-
+        private int minOccurs = 0;
+        private int maxOccurs = Integer.MAX_VALUE;
         /**
          * Creates a Parameters object
          * @param pathElement the path element of the created ResourceDefinition. Cannot be {@code null}
@@ -658,5 +689,27 @@ public class SimpleResourceDefinition implements ResourceDefinition {
             this.accessConstraints = accessConstraints;
             return this;
         }
+
+        /**
+         * set the maximum number of occurrences for this resource
+         * @param maxOccurs the maximum number of times this resource can occur
+         * @return Parameters object
+         */
+        public Parameters setMaxOccurs(final int maxOccurs){
+            this.maxOccurs = maxOccurs;
+            return this;
+        }
+
+        /**
+         * set the minimum number of occurrences for this resource
+         * @param minOccurs the minimum number of times this resource must occur
+         * @return Parameters object
+         */
+        public Parameters setMinOccurs(final int minOccurs){
+            this.minOccurs = minOccurs;
+            return this;
+        }
+
+
     }
 }
