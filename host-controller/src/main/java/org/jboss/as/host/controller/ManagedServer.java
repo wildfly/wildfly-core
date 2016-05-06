@@ -683,26 +683,6 @@ class ManagedServer {
         return null;
     }
 
-    boolean suspend() {
-
-        final ModelNode operation = new ModelNode();
-        operation.get(OP).set(SUSPEND);
-        operation.get(OP_ADDR).setEmptyList();
-
-        try {
-            final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
-            if (prepared.isFailed()) {
-                return false;
-            }
-            prepared.commit();
-            prepared.getFinalResult().get();
-        } catch (Exception ignore) {
-            return false;
-        }
-        return true;
-    }
-
-
     boolean resume() {
 
         final ModelNode operation = new ModelNode();

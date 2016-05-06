@@ -302,13 +302,17 @@ public interface ServerInventory {
      */
     void awaitServersState(Collection<String> serverNames, boolean started);
 
+
     /**
-     * Suspends a server, allowing current requests to finish and blocking any new requests
+     * Suspend the servers, allowing current requests to finish and blocking any new requests
      * from starting.
+     * @param serverNames The server names to suspend, can be an immutable collection.
+     * @param blockingTimeout control for maximum period any blocking operations can block. Cannot be {@code null}
      *
-     * @param serverName The server name
+     * @return An empty {@link Collection} if no errors were returned suspending the servers, otherwise it will contain
+     * all error responses. Will not be {@code null}
      */
-    void suspendServer(String serverName);
+    List<ModelNode> suspendServers(Set<String> serverNames, BlockingTimeout blockingTimeout);
 
     /**
      * Resumes a server, allowing it to begin processing requests normally
@@ -317,14 +321,15 @@ public interface ServerInventory {
     void resumeServer(String serverName);
 
     /**
-     * Suspends and waits for the given set of servers to suspend up to the timeout.
+     * Suspend the servers up to the timeout, allowing current requests to finish and blocking any new requests from starting.
      *
-     * @param waitForServers The servers to wait for
-     * @param timeoutInSeconds The maximum amount of time to wait in seconds, with -1 meaning indefinitly
-     * @param blockingTimeout  control for maximum period any blocking operations can block. Cannot be {@code null}
+     * @param serverNames The servers to wait for, can be an immutable collection.
+     * @param timeoutInSeconds The maximum amount of time to wait in seconds, with -1 meaning wait indefinitely, 0 meaning
+     *                         return immediately and with a value bigger than 0 meaning wait n seconds.
+     * @param blockingTimeout control for maximum period any blocking operations can block. Cannot be {@code null}
+     *
      * @return An empty {@link Collection} if no errors were returned suspending the servers, otherwise it will contain
      * all error responses. Will not be {@code null}
      */
-    List<ModelNode> awaitServerSuspend(Set<String> waitForServers, int timeoutInSeconds, BlockingTimeout blockingTimeout);
-
+    List<ModelNode> suspendServers(Set<String> serverNames, int timeoutInSeconds, BlockingTimeout blockingTimeout);
 }

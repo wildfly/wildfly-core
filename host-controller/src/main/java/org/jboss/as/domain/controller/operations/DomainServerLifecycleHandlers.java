@@ -340,7 +340,7 @@ public class DomainServerLifecycleHandlers {
             context.readResource(PathAddress.EMPTY_ADDRESS, false);
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
-            final int suspendTimeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
+            final int suspendTimeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); // timeout in seconds, by default is 0
             final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
 
 
@@ -358,15 +358,9 @@ public class DomainServerLifecycleHandlers {
                             waitForServers.add(serverModelName);
                         }
                     }
-                    if (suspendTimeout != 0) {
-                        final List<ModelNode> errorResponses = serverInventory.awaitServerSuspend(waitForServers, suspendTimeout, blockingTimeout);
-                        if ( !errorResponses.isEmpty() ){
-                            context.getFailureDescription().set(errorResponses);
-                        }
-                    } else {
-                        for (String serverModelName : waitForServers){
-                            serverInventory.suspendServer(serverModelName);
-                        }
+                    final List<ModelNode> errorResponses  = serverInventory.suspendServers(waitForServers, suspendTimeout, blockingTimeout);
+                    if ( !errorResponses.isEmpty() ){
+                        context.getFailureDescription().set(errorResponses);
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }

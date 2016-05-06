@@ -388,13 +388,10 @@ public class ServerInventoryImpl implements ServerInventory {
         }
     }
 
+
     @Override
-    public void suspendServer(String serverName) {
-        final ManagedServer server = servers.get(serverName);
-        if(server == null) {
-            return;
-        }
-        server.suspend();
+    public List<ModelNode> suspendServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+        return suspendServers(serverNames, 0, blockingTimeout);
     }
 
     @Override
@@ -407,7 +404,7 @@ public class ServerInventoryImpl implements ServerInventory {
     }
 
     @Override
-    public List<ModelNode> awaitServerSuspend(Set<String> waitForServers, int timeoutInSeconds, BlockingTimeout blockingTimeout) {
+    public List<ModelNode> suspendServers(Set<String> serverNames, int timeoutInSeconds, BlockingTimeout blockingTimeout) {
         List<ModelNode> errorResults = new ArrayList<>();
 
         class OperationData {
@@ -423,7 +420,7 @@ public class ServerInventoryImpl implements ServerInventory {
         }
 
         Map<String, OperationData> operationDataMap = new HashMap<>();
-        for (String serverName : waitForServers) {
+        for (String serverName : serverNames) {
             final ManagedServer server = servers.get(serverName);
             if (server != null) {
                 try {
