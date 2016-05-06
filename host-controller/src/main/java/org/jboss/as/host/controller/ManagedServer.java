@@ -46,6 +46,7 @@ import org.jboss.as.controller.ProxyOperationAddressTranslator;
 import org.jboss.as.controller.TransformingProxyController;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.remote.BlockingQueueOperationListener;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
@@ -64,6 +65,7 @@ import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.msc.service.ServiceActivator;
+import org.jboss.threads.AsyncFuture;
 
 /**
  * Represents a managed server.
@@ -125,6 +127,8 @@ class ManagedServer {
     private volatile int operationID = CurrentOperationIdHolder.getCurrentOperationID();
     private volatile ManagedServerBootConfiguration bootConfiguration;
 
+    private final PathAddress address;
+
     ManagedServer(final String hostControllerName, final String serverName, final String authKey,
                   final ProcessControllerClient processControllerClient, final URI managementURI,
                   final TransformationTarget transformationTarget) {
@@ -144,7 +148,7 @@ class ManagedServer {
 
         // Setup the proxy controller
         final PathElement serverPath = PathElement.pathElement(RUNNING_SERVER, serverName);
-        final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(HOST, hostControllerName), serverPath);
+        address = PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(HOST, hostControllerName), serverPath);
         this.protocolClient = new ManagedServerProxy(this);
         this.proxyController = TransformingProxyController.Factory.create(protocolClient,
                 Transformers.Factory.create(transformationTarget), address, ProxyOperationAddressTranslator.SERVER);
@@ -718,15 +722,13 @@ class ManagedServer {
         return true;
     }
 
-    BlockingQueueOperationListener<?> suspend(int timeoutInSeconds) throws IOException {
+    AsyncFuture<OperationResponse> suspend(int timeoutInSeconds, final BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener) throws IOException {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(SUSPEND);
         operation.get(OP_ADDR).setEmptyList();
         operation.get(TIMEOUT).set(timeoutInSeconds);
 
-        BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener = new BlockingQueueOperationListener<>();
-        protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
-        return listener;
+        return protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
     }
 
     static enum InternalState {
@@ -939,6 +941,10 @@ class ManagedServer {
             }
         }
         return result;
+    }
+
+    PathAddress getAddress(){
+        return address;
     }
 
 }

@@ -48,6 +48,7 @@ import java.util.concurrent.TimeoutException;
 
 import javax.security.auth.callback.CallbackHandler;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessState.State;
 import org.jboss.as.controller.OperationContext;
@@ -688,7 +689,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public boolean awaitServerSuspend(Set<String> waitForServers, int timeout) {
+        public List<ModelNode> awaitServerSuspend(Set<String> waitForServers, int timeout, BlockingTimeout blockingTimeout) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }

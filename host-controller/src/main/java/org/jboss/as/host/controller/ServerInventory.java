@@ -23,11 +23,13 @@
 package org.jboss.as.host.controller;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.security.auth.callback.CallbackHandler;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.process.ProcessInfo;
@@ -315,11 +317,14 @@ public interface ServerInventory {
     void resumeServer(String serverName);
 
     /**
-     * Suspends and waits for the given set of servers to suspend up to the timeout
+     * Suspends and waits for the given set of servers to suspend up to the timeout.
+     *
      * @param waitForServers The servers to wait for
      * @param timeoutInSeconds The maximum amount of time to wait in seconds, with -1 meaning indefinitly
-     * @return <code>true</code> if all the servers suspended in time
+     * @param blockingTimeout  control for maximum period any blocking operations can block. Cannot be {@code null}
+     * @return An empty {@link Collection} if no errors were returned suspending the servers, otherwise it will contain
+     * all error responses. Will not be {@code null}
      */
-    boolean awaitServerSuspend(Set<String> waitForServers, int timeoutInSeconds);
+    List<ModelNode> awaitServerSuspend(Set<String> waitForServers, int timeoutInSeconds, BlockingTimeout blockingTimeout);
 
 }

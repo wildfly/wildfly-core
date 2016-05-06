@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,6 +45,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -52,10 +55,12 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.CurrentOperationIdHolder;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProxyController;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.remote.BlockingQueueOperationListener;
@@ -77,6 +82,7 @@ import org.jboss.remoting3.CloseHandler;
 import org.jboss.sasl.callback.DigestHashCallback;
 import org.jboss.sasl.callback.VerifyPasswordCallback;
 import org.jboss.sasl.util.UsernamePasswordHashUtil;
+import org.jboss.threads.AsyncFuture;
 
 /**
  * Inventory of the managed servers.
@@ -401,41 +407,78 @@ public class ServerInventoryImpl implements ServerInventory {
     }
 
     @Override
-    public boolean awaitServerSuspend(Set<String> waitForServers, int timeoutInSeconds) {
-        long end = System.currentTimeMillis() + timeoutInSeconds * 1000;
+    public List<ModelNode> awaitServerSuspend(Set<String> waitForServers, int timeoutInSeconds, BlockingTimeout blockingTimeout) {
+        List<ModelNode> errorResults = new ArrayList<>();
 
-        Map<String, BlockingQueueOperationListener<?>> listeners = new HashMap<>();
-        //Do one pass initiating the shutdown
+        class OperationData {
+            int blockingTimeout;
+            AsyncFuture<OperationResponse> future;
+            BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener;
+
+            public OperationData(int blockingTimeout, AsyncFuture<OperationResponse> future, BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener) {
+                this.blockingTimeout = blockingTimeout;
+                this.future = future;
+                this.listener = listener;
+            }
+        }
+
+        Map<String, OperationData> operationDataMap = new HashMap<>();
         for (String serverName : waitForServers) {
             final ManagedServer server = servers.get(serverName);
             if (server != null) {
                 try {
-                    BlockingQueueOperationListener<?> listener = server.suspend(timeoutInSeconds);
-                    listeners.put(serverName, listener);
+                    int blockingTimeoutValue = blockingTimeout.getProxyBlockingTimeout(server.getAddress(), server.getProxyController());
+                    BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener = new  BlockingQueueOperationListener<>();
+                    AsyncFuture<OperationResponse> future = server.suspend(timeoutInSeconds, listener);
+
+                    operationDataMap.put(serverName, new OperationData(blockingTimeoutValue, future, listener));
+
                 } catch (IOException e) {
                     HostControllerLogger.ROOT_LOGGER.suspendExecutionFailed(e, serverName);
+                    errorResults.add(getSuspendExecutionFailedResponse(serverName));
                 }
             }
         }
 
-        for (Map.Entry<String, BlockingQueueOperationListener<?>> listenerEntry : listeners.entrySet()) {
+        for (Map.Entry<String, OperationData> operationDataEntry : operationDataMap.entrySet()) {
+            final OperationData operationData = operationDataEntry.getValue();
+            final String serverName = operationDataEntry.getKey();
+            final int timeout = operationData.blockingTimeout;
+            final AsyncFuture<OperationResponse> future = operationData.future;
+            final BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener = operationData.listener;
+
             try {
                 final TransactionalProtocolClient.PreparedOperation<?> prepared =
-                        listenerEntry.getValue().retrievePreparedOperation();
+                        listener.retrievePreparedOperation(timeout, TimeUnit.MILLISECONDS);
+                if (prepared == null){
+                    HostControllerLogger.ROOT_LOGGER.timedOutAwaitingSuspendResponse(timeout, serverName);
+                    errorResults.add(getTimedOutAwaitingSuspendResponse(timeout, serverName));
+                    future.asyncCancel(true);
+                    continue;
+                }
                 if (prepared.isFailed()) {
+                    errorResults.add(appendServerNameToFailureResponse(serverName, prepared.getPreparedResult()));
                     continue;
                 }
                 prepared.commit();
-                prepared.getFinalResult().get();
+                prepared.getFinalResult().get(timeout, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
+                HostControllerLogger.ROOT_LOGGER.interruptedAwaitingSuspendResponse(e, serverName);
+                errorResults.add(getInterruptedAwaitingSuspendResponse(serverName));
+                future.asyncCancel(true);
                 Thread.currentThread().interrupt();
-                continue;
+            } catch (TimeoutException e) {
+                HostControllerLogger.ROOT_LOGGER.timedOutAwaitingSuspendResponse(timeout, serverName);
+                errorResults.add(getTimedOutAwaitingSuspendResponse(timeout, serverName));
+                future.asyncCancel(true);
             } catch (ExecutionException e) {
-                HostControllerLogger.ROOT_LOGGER.suspendListenerFailed(e, listenerEntry.getKey());
+                HostControllerLogger.ROOT_LOGGER.suspendListenerFailed(e, serverName);
+                errorResults.add(getSuspendListenerFailedResponse(serverName));
+                future.asyncCancel(true);
             }
         }
 
-        return System.currentTimeMillis() < end;
+        return errorResults;
     }
 
     void shutdown(final boolean shutdownServers, final int gracefulTimeout, final boolean blockUntilStopped) {
@@ -720,4 +763,30 @@ public class ServerInventoryImpl implements ServerInventory {
             }
         };
     }
+
+    private ModelNode appendServerNameToFailureResponse(String serverName, ModelNode failureResponse) {
+        String currentDescription = failureResponse.get(FAILURE_DESCRIPTION).asString();
+        return new ModelNode(String.format("%s server: %s", currentDescription, serverName));
+    }
+
+    private ModelNode getTimedOutAwaitingSuspendResponse(int timeout, String serverName) {
+        String msg = HostControllerLogger.ROOT_LOGGER.timedOutAwaitingSuspendResponseMsg(timeout, serverName);
+        return new ModelNode(msg);
+    }
+
+    private ModelNode getInterruptedAwaitingSuspendResponse(String serverName) {
+        String msg = HostControllerLogger.ROOT_LOGGER.interruptedAwaitingSuspendResponseMsg(serverName);
+        return new ModelNode(msg);
+    }
+
+    private ModelNode getSuspendExecutionFailedResponse(String serverName) {
+        String msg = HostControllerLogger.ROOT_LOGGER.suspendExecutionFailedMsg(serverName);
+        return new ModelNode(msg);
+    }
+
+    private ModelNode getSuspendListenerFailedResponse(String serverName) {
+        String msg = HostControllerLogger.ROOT_LOGGER.suspendListenerFailedMsg(serverName);
+        return new ModelNode(msg);
+    }
+
 }

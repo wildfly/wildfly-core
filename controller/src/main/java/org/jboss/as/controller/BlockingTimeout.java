@@ -102,7 +102,7 @@ public interface BlockingTimeout {
          * @param context the context. Cannot e {@code null}
          * @return the blocking timeout. Will not return {@code null}
          */
-        static BlockingTimeout getProxyBlockingTimeout(OperationContext context) {
+        public static BlockingTimeout getProxyBlockingTimeout(OperationContext context) {
             return context.getAttachment(ATTACHMENT_KEY);
         }
     }

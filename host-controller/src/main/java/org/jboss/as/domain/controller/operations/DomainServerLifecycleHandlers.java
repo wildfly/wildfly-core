@@ -34,10 +34,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUS
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationDefinition;
@@ -338,7 +340,10 @@ public class DomainServerLifecycleHandlers {
             context.readResource(PathAddress.EMPTY_ADDRESS, false);
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
-            final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
+            final int suspendTimeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
+            final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
+
+
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -353,8 +358,11 @@ public class DomainServerLifecycleHandlers {
                             waitForServers.add(serverModelName);
                         }
                     }
-                    if (timeout != 0) {
-                        serverInventory.awaitServerSuspend(waitForServers, timeout);
+                    if (suspendTimeout != 0) {
+                        final List<ModelNode> errorResponses = serverInventory.awaitServerSuspend(waitForServers, suspendTimeout, blockingTimeout);
+                        if ( !errorResponses.isEmpty() ){
+                            context.getFailureDescription().set(errorResponses);
+                        }
                     } else {
                         for (String serverModelName : waitForServers){
                             serverInventory.suspendServer(serverModelName);
