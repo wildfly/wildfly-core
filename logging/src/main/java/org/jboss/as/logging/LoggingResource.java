@@ -39,7 +39,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -126,7 +126,45 @@ public class LoggingResource implements Resource {
     @Override
     public boolean hasChildren(final String childType) {
         if (LOG_FILE.equals(childType)) {
-            return !getChildrenNames(LOG_FILE).isEmpty();
+            final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
+            if (logDir != null) {
+                final Path dir = Paths.get(logDir);
+                final Collection<String> validFileNames = findValidFileNames(getFileHandlersModel());
+                // If there's at least one child, then we have children
+                for (String name : validFileNames) {
+                    final Path file = dir.resolve(name);
+                    // First just check if the file exist and if it's readable, if not we need to walk the tree and
+                    // look for possibly rotated files.
+                    if (Files.exists(file) && Files.isReadable(file)) {
+                        return true;
+                    } else {
+                        // Used an AtomicBoolean as it's mutable
+                        final AtomicBoolean found = new AtomicBoolean(false);
+                        try {
+                            // Walk the tree and look for the first possible match
+                            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+                                @Override
+                                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                                    final Path relativeFile = dir.relativize(file);
+                                    final String resourceName = relativeFile.toString();
+                                    // Check if the file may be a rotated file
+                                    if ((resourceName.equals(name) || resourceName.startsWith(name)) && Files.isReadable(file)) {
+                                        found.set(true);
+                                        return FileVisitResult.TERMINATE;
+                                    }
+                                    return FileVisitResult.CONTINUE;
+                                }
+                            });
+                            if (found.get()) {
+                                return true;
+                            }
+                        } catch (IOException e) {
+                            LoggingLogger.ROOT_LOGGER.errorDeterminingChildrenExist(e, childType);
+                        }
+                    }
+                }
+            }
+            return false;
         }
         return delegate.hasChildren(childType);
     }
@@ -154,10 +192,12 @@ public class LoggingResource implements Resource {
         if (LOG_FILE.equals(childType)) {
             final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
             try {
-                return findFiles(logDir, Tools.readModel(delegate, -1, FileHandlerResourceFilter.INSTANCE), true)
-                        .stream()
-                        .map(Path::toString)
-                        .collect(Collectors.toCollection(LinkedHashSet::new));
+                final Set<Path> validPaths = findFiles(logDir, getFileHandlersModel(), true);
+                final Set<String> result = new LinkedHashSet<>();
+                for (Path p : validPaths) {
+                    result.add(p.toString());
+                }
+                return result;
             } catch (IOException e) {
                 LoggingLogger.ROOT_LOGGER.errorProcessingLogDirectory(logDir);
             }
@@ -226,7 +266,23 @@ public class LoggingResource implements Resource {
     }
 
     private boolean hasReadableFile(final String fileName) {
-        return getChildrenNames(LOG_FILE).contains(fileName);
+        final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
+        if (logDir != null) {
+            final Path dir = Paths.get(logDir);
+            final Collection<String> validFileNames = findValidFileNames(getFileHandlersModel());
+            for (String name : validFileNames) {
+                // Check if the file name is a valid file name or a possibly rotated valid file name
+                if ((fileName.equals(name) || fileName.startsWith(name))) {
+                    final Path file = dir.resolve(fileName);
+                    return Files.exists(file) && Files.isReadable(file);
+                }
+            }
+        }
+        return false;
+    }
+
+    private ModelNode getFileHandlersModel() {
+        return Tools.readModel(delegate, -1, FileHandlerResourceFilter.INSTANCE);
     }
 
 
@@ -234,8 +290,8 @@ public class LoggingResource implements Resource {
      * Finds all the files in the {@code jboss.server.log.dir} that are defined on a known file handler. Files in
      * subdirectories are also returned.
      *
-     * @param logDir the log directory to look fr files
-     * @param model the model used to resolve the file handlers
+     * @param logDir     the log directory to look fr files
+     * @param model      the model used to resolve the file handlers
      * @param relativize {@code true} to return a set of paths relative to the log directory
      *
      * @return a list of paths or an empty list if no files were found
@@ -250,6 +306,7 @@ public class LoggingResource implements Resource {
         final Path dir = Paths.get(logDir);
         Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
             boolean first = true;
+
             @Override
             public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
                 if (first || relativize) {
@@ -265,7 +322,7 @@ public class LoggingResource implements Resource {
                 final String resourceName = relativeFile.toString();
                 // Check each valid file name, rotated files will just start with the name
                 for (String name : validFileNames) {
-                    if (Files.isReadable(file) && (resourceName.equals(name) || resourceName.startsWith(name))) {
+                    if ((resourceName.equals(name) || resourceName.startsWith(name)) && Files.isReadable(file)) {
                         if (relativize) {
                             logFiles.add(relativeFile);
                         } else {
@@ -290,7 +347,10 @@ public class LoggingResource implements Resource {
                     // This should always exist, but better to be safe
                     if (handlerModel.hasDefined(CommonAttributes.FILE.getName())) {
                         final ModelNode fileModel = handlerModel.get(CommonAttributes.FILE.getName());
-                        if (fileModel.hasDefined(PathResourceDefinition.PATH.getName())) {
+                        // Only allow from the jboss.server.log.dir
+                        if (fileModel.hasDefined(PathResourceDefinition.RELATIVE_TO.getName())
+                                && ServerEnvironment.SERVER_LOG_DIR.equals(fileModel.get(PathResourceDefinition.RELATIVE_TO.getName()).asString())
+                                && fileModel.hasDefined(PathResourceDefinition.PATH.getName())) {
                             names.add(fileModel.get(PathResourceDefinition.PATH.getName()).asString());
                         }
                     }

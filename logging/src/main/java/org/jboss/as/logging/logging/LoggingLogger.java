@@ -916,4 +916,14 @@ public interface LoggingLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 87, value = "Failed to process logging directory %s. Log files cannot be listed.")
     void errorProcessingLogDirectory(String logDir);
+
+    /**
+     * Logs an error message indicating a failure to determine if a child resource exists.
+     *
+     * @param cause     the cause of the error
+     * @param childType the child resource
+     */
+    @LogMessage(level = ERROR)
+    @Message(id = 88, value = "Could not determine %s had any children resources.")
+    void errorDeterminingChildrenExist(@Cause Throwable cause, String childType);
 }
