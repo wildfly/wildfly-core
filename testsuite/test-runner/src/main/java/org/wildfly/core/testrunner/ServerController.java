@@ -64,10 +64,6 @@ public class ServerController {
         return server.getClient();
     }
 
-    public ManagementClient createNewManagementClient(){
-        return server.createClient();
-    }
-
     public ServerDeploymentHelper getDeploymentHelper() {
         return new ServerDeploymentHelper(server.getClient().getControllerClient());
     }
