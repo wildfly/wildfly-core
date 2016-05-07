@@ -1322,4 +1322,32 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message( id = 187, value = "Failed getting the response from the suspend listener for server: %s")
     String suspendListenerFailedMsg(String serverName);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 188, value = "Timed out after %d ms awaiting server resume response(s) for server: %s")
+    void timedOutAwaitingResumeResponse(int blockingTimeout, String serverName);
+
+    @Message(id = 189, value = "Timed out after %d ms awaiting server resume response(s) for server: %s")
+    String timedOutAwaitingResumeResponseMsg(int blockingTimeout, String serverName);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 190, value = "%s interrupted awaiting server resume response(s)")
+    void interruptedAwaitingResumeResponse(@Cause InterruptedException cause, String serverName);
+
+    @Message(id = 191, value = "%s interrupted awaiting server resume response(s)")
+    String interruptedAwaitingResumeResponseMsg(String serverName);
+
+    @Message( id = 192, value = "Failed executing the resume operation for server: %s")
+    String resumeExecutionFailedMsg(String serverName);
+
+    @Message( id = 193, value = "Failed getting the response from the resume listener for server: %s")
+    String resumeListenerFailedMsg(String serverName);
+
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 194, value = "Failed executing the resume operation for server: %s")
+    void resumeExecutionFailed(@Cause IOException cause, String serverName);
+
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 195, value = "Failed getting the response from the resume listener for server: %s")
+    void resumeListenerFailed(@Cause ExecutionException cause, String serverName);
 }

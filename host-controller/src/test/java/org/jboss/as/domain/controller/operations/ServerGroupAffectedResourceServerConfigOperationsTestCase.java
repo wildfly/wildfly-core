@@ -684,7 +684,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public void resumeServer(String serverName) {
+        public List<ModelNode> resumeServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 

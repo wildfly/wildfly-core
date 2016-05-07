@@ -378,6 +378,8 @@ public class DomainServerLifecycleHandlers {
             context.readResource(PathAddress.EMPTY_ADDRESS, false);
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
+            final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
+
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -389,9 +391,12 @@ public class DomainServerLifecycleHandlers {
                     for (String serverName : processes.keySet()) {
                         final String serverModelName = serverInventory.getProcessServerName(serverName);
                         if (group == null || serversInGroup.contains(serverModelName)) {
-                            serverInventory.resumeServer(serverModelName);
                             waitForServers.add(serverModelName);
                         }
+                    }
+                    final List<ModelNode> errorResponses = serverInventory.resumeServers(waitForServers, blockingTimeout);
+                    if ( !errorResponses.isEmpty() ){
+                        context.getFailureDescription().set(errorResponses);
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }

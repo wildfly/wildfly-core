@@ -1174,8 +1174,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
-        public void resumeServer(String serverName) {
-            getServerInventory().resumeServer(serverName);
+        public List<ModelNode> resumeServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+            return getServerInventory().resumeServers(serverNames, blockingTimeout);
         }
 
         @Override
@@ -1504,16 +1504,17 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
-            public List<ModelNode> suspendServers(Set<String> serverName, BlockingTimeout blockingTimeout) {
+            public List<ModelNode> suspendServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
                 return Collections.emptyList();
             }
 
             @Override
-            public void resumeServer(String serverName) {
+            public List<ModelNode> resumeServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+                return Collections.emptyList();
             }
 
             @Override
-            public List<ModelNode> suspendServers(Set<String> serverName, int timeout, BlockingTimeout blockingTimeout) {
+            public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
                 return Collections.emptyList();
             }
         };

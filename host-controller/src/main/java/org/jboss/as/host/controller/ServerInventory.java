@@ -302,7 +302,6 @@ public interface ServerInventory {
      */
     void awaitServersState(Collection<String> serverNames, boolean started);
 
-
     /**
      * Suspend the servers, allowing current requests to finish and blocking any new requests
      * from starting.
@@ -315,10 +314,14 @@ public interface ServerInventory {
     List<ModelNode> suspendServers(Set<String> serverNames, BlockingTimeout blockingTimeout);
 
     /**
-     * Resumes a server, allowing it to begin processing requests normally
-     * @param serverName The server name
+     * Resume the servers, allowing them to begin processing requests normally
+     * @param serverNames The server names to resume. It allows an immutable collection.
+     * @param blockingTimeout control for maximum period any blocking operations can block. Cannot be {@code null}
+     *
+     * @return An empty {@link Collection} if no errors were returned resuming the servers, otherwise it will contain
+     * all error responses. Will not be {@code null}
      */
-    void resumeServer(String serverName);
+    List<ModelNode> resumeServers(Set<String> serverNames, BlockingTimeout blockingTimeout);
 
     /**
      * Suspend the servers up to the timeout, allowing current requests to finish and blocking any new requests from starting.

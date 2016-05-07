@@ -683,23 +683,12 @@ class ManagedServer {
         return null;
     }
 
-    boolean resume() {
-
+    AsyncFuture<OperationResponse> resume(final BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener) throws IOException {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(RESUME);
         operation.get(OP_ADDR).setEmptyList();
 
-        try {
-            final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
-            if (prepared.isFailed()) {
-                return false;
-            }
-            prepared.commit();
-            prepared.getFinalResult().get();
-        } catch (Exception ignore) {
-            return false;
-        }
-        return true;
+        return protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
     }
 
     AsyncFuture<OperationResponse> suspend(int timeoutInSeconds, final BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener) throws IOException {
