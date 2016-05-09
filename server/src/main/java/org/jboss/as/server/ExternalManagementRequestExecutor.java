@@ -27,6 +27,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -36,6 +37,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.JBossThreadFactory;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Provides an executor for handling external management requests.
@@ -61,8 +63,23 @@ public class ExternalManagementRequestExecutor implements Service<ExecutorServic
     // but for HTTP EAP 6 had no limit (not great) and WildFly < 10.1 had 10 with no queue, so we'll go
     // with 10 to be more like what was out there getting bake in WildFly < 10.1.
     // We provide a fairly large but not unlimited queue to avoid rejecting requests.
-    private static final int POOL_SIZE = 10;
+    private static final int DEFAULT_POOL_SIZE = 10;
     private static final int WORK_QUEUE_SIZE = 512;
+    private static final String POOL_SIZE_PROP = "org.wildfly.unsupported.external.management.pool-size";
+
+    private static int getPoolSize() {
+        int defaultThreads = DEFAULT_POOL_SIZE;
+        String maxThreads = WildFlySecurityManager.getPropertyPrivileged(POOL_SIZE_PROP, null);
+        if (maxThreads != null && maxThreads.length() > 0) {
+            try {
+                int max = Integer.decode(maxThreads);
+                defaultThreads = Math.max(max, 1);
+            } catch (NumberFormatException ex) {
+                ServerLogger.ROOT_LOGGER.failedToParseCommandLineInteger(POOL_SIZE_PROP, maxThreads);
+            }
+        }
+        return defaultThreads;
+    }
 
     private final InjectedValue<ExecutorService> injectedExecutor = new InjectedValue<>();
     private final ThreadGroup threadGroup;
@@ -90,7 +107,8 @@ public class ExternalManagementRequestExecutor implements Service<ExecutorServic
         });
 
         final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(WORK_QUEUE_SIZE);
-        executorService = new ThreadPoolExecutor(POOL_SIZE, POOL_SIZE, 60L, TimeUnit.SECONDS,
+        int poolSize = getPoolSize();
+        executorService = new ThreadPoolExecutor(poolSize, poolSize, 60L, TimeUnit.SECONDS,
                 workQueue, threadFactory);
     }
 
