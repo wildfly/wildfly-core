@@ -360,11 +360,11 @@ public interface HostControllerLogger extends BasicLogger {
     void lostConnectionToRemoteHost(String hostId);
 
     @LogMessage(level = Level.WARN)
-    @Message(id = 31, value = "Cannot load the domain model using using --backup")
+    @Message(id = 31, value = "Cannot load the domain model using --backup")
     void invalidRemoteBackupPersisterState();
 
     @LogMessage(level = Level.WARN)
-    @Message(id = 32, value = "Cannot store the domain model using using --cached-dc")
+    @Message(id = 32, value = "Cannot store the domain model using --cached-dc")
     void invalidCachedPersisterState();
 
     @LogMessage(level = Level.ERROR)
