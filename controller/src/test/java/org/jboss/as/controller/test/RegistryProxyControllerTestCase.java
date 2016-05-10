@@ -33,6 +33,7 @@ import java.util.Set;
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
@@ -66,7 +67,7 @@ public class RegistryProxyControllerTestCase {
 
     @Before
     public void setup() {
-        root = ManagementResourceRegistration.Factory.create(rootResource);
+        root = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(rootResource);
         assertNotNull(root);
 
         profileAReg = registerSubModel(root, profileA);

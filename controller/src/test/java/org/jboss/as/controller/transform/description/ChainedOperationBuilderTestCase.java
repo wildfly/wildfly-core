@@ -77,7 +77,7 @@ public class ChainedOperationBuilderTestCase {
     private Resource resourceRoot = Resource.Factory.create();
     private Resource toto;
     private TransformerRegistry registry = TransformerRegistry.Factory.create();
-    private ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
+    private ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(ROOT);
     private TransformersSubRegistration transformersSubRegistration;
     private ModelNode resourceModel;
 
@@ -86,7 +86,7 @@ public class ChainedOperationBuilderTestCase {
         // Cleanup
         resourceRoot = Resource.Factory.create();
         registry = TransformerRegistry.Factory.create();
-        resourceRegistration = ManagementResourceRegistration.Factory.create(ROOT);
+        resourceRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(ROOT);
         // test
         toto = Resource.Factory.create();
         resourceRoot.registerChild(PATH, toto);

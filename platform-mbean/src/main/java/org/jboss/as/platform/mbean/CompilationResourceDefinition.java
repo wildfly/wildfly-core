@@ -26,6 +26,7 @@ class CompilationResourceDefinition extends SimpleResourceDefinition {
     static SimpleAttributeDefinition TOTAL_COMPILATION_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_COMPILATION_TIME, ModelType.LONG, true)
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .setStorageRuntime()
+            .forceRegistration()
             .build();
     protected static final List<String> COMPILATION_READ_ATTRIBUTES = Arrays.asList(
             NAME.getName(),

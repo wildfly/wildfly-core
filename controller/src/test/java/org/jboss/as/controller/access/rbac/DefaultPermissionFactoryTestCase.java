@@ -62,7 +62,7 @@ import org.junit.Test;
  */
 public class DefaultPermissionFactoryTestCase {
 
-    private static final ManagementResourceRegistration ROOT_RR = ManagementResourceRegistration.Factory.create(new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()) {
+    private static final ManagementResourceRegistration ROOT_RR = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()) {
         @Override
         public List<AccessConstraintDefinition> getAccessConstraints() {
             return Collections.emptyList();

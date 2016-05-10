@@ -48,7 +48,16 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     private final CapabilityRegistry capabilityRegistry;
 
     protected TestModelControllerService() {
-        this(new NullConfigurationPersister(), new ControlledProcessState(true));
+        this(ProcessType.EMBEDDED_SERVER, new NullConfigurationPersister(), new ControlledProcessState(true));
+    }
+
+    protected TestModelControllerService(ProcessType processType) {
+        this(processType, new NullConfigurationPersister(), new ControlledProcessState(true));
+    }
+
+    protected TestModelControllerService(ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
+        this(processType, configurationPersister, processState,
+                ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build());
     }
 
     protected TestModelControllerService(final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
@@ -62,7 +71,7 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     }
 
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
-                                             final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry) {
+                                         final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry) {
         super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
                         AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), capabilityRegistry);
         this.processState = processState;

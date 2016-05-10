@@ -44,6 +44,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
@@ -79,14 +80,19 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     private final Lock readLock;
     private final Lock writeLock;
+    /**
+     * Can be {@code null}. In that case, the MMR will always register metrics.
+     */
+    final ProcessType processType;
 
     ConcreteResourceRegistration(final String valueString, final NodeSubregistry parent, final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
-                                 final boolean ordered, CapabilityRegistry capabilityRegistry) {
+                                 final boolean ordered, CapabilityRegistry capabilityRegistry, ProcessType processType) {
         super(valueString, parent);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
         this.resourceDefinition = definition;
+        this.processType = processType;
         this.runtimeOnly = definition.isRuntime();
         this.accessConstraintDefinitions = buildAccessConstraints();
         this.ordered = ordered;
@@ -445,8 +451,24 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
         assert assertMetricValues(definition); //The real message will be in an assertion thrown by assertMetricValues
         checkPermission();
-        AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition, definition.getFlags());
-        storeAttribute(definition, aa);
+        if (isMetricRegistrationAllowed(definition)) {
+            AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition, definition.getFlags());
+            storeAttribute(definition, aa);
+        }
+    }
+
+    /**
+     * Metrics are registered in the MMR only for normal server.
+     * Registration can also be forced if the AttributeDefinitions has the FORCE_REGISTRATION flag.
+     */
+    private boolean isMetricRegistrationAllowed(AttributeDefinition definition) {
+        if (definition.getFlags().contains(AttributeAccess.Flag.FORCE_REGISTRATION)) {
+            return true;
+        }
+        if (processType ==  null) {
+            return true;
+        }
+        return processType.isServer();
     }
 
     private void storeAttribute(AttributeDefinition definition, AttributeAccess aa) {
