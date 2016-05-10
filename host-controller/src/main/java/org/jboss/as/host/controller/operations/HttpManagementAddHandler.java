@@ -52,6 +52,7 @@ import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
+import org.jboss.as.server.ExternalManagementRequestExecutor;
 import org.jboss.as.server.mgmt.HttpManagementRequestsService;
 import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.server.mgmt.ManagementWorkerService;
@@ -168,7 +169,7 @@ public class HttpManagementAddHandler extends AbstractAddStepHandler {
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, service.getRequestProcessorValue())
                 .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, service.getWorker())
-                .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, Executor.class, service.getManagementExecutor())
+                .addDependency(ExternalManagementRequestExecutor.SERVICE_NAME, Executor.class, service.getManagementExecutor())
                 .addInjection(service.getPortInjector(), port)
                 .addInjection(service.getSecurePortInjector(), securePort)
                 .addInjection(service.getAllowedOriginsInjector(), allowedOrigins);
