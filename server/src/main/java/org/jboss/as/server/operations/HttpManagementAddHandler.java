@@ -74,13 +74,6 @@ import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
 import org.xnio.XnioWorker;
 
-<<<<<<<HEAD
-        =======
-        >>>>>>>4559d34...[WFCORE-1528]Use a separate executor for non-upgrade HTTP management requests
-        <<<<<<<HEAD
-        =======
-        >>>>>>>4559d34...[WFCORE-1528]Use a separate executor for non-upgrade HTTP management requests
-
 /**
  * A handler that activates the HTTP management API on a Server.
  *
