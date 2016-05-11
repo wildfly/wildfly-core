@@ -62,6 +62,7 @@ import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.security.CredentialStoreURIParser;
 import org.jboss.as.protocol.mgmt.RequestProcessingException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -78,6 +79,7 @@ import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleNotFoundException;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
+import org.wildfly.security.credential.store.UnsupportedCredentialTypeException;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -3452,4 +3454,36 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 422, value = "Could not load module '%s' for transformers")
     RuntimeException couldNotLoadModuleForTransformers(String name, @Cause ModuleLoadException e);
+
+    // ---- Credential Store related messages -----------
+
+    @Message(id = 450, value = "Credential store \"%s\" doesn't support credential type \"%s\" ")
+    UnsupportedCredentialTypeException unsupportedCredentialType(String credentialStore, String credentialType);
+
+    @Message(id = 451, value = "Supposed Credential Store URI has no scheme or different from '" + CredentialStoreURIParser.CR_STORE_SCHEME + "://' ('%s')")
+    IllegalArgumentException credentialStoreURIWrongScheme(String uri);
+
+    @Message(id = 452, value = "Credential Store URI has to be absolute '%s'")
+    IllegalArgumentException credentialStoreURIisNotAbsolute(String uri);
+
+    @Message(id = 453, value = "More than one fragment defined for Credential Store URI")
+    String moreThanOneFragmentDefined();
+
+    @Message(id = 454, value = "Credential Store name has to be defined '%s'")
+    IllegalArgumentException credentialStoreHasNoName(String uri);
+
+    @Message(id = 455, value = "Attribute name is defined, but empty '%s'")
+    IllegalArgumentException credentialStoreURIAttributeEmpty(String uri);
+
+    @Message(id = 456, value = "Opening quote has to be the first character in parameter value '%s'")
+    IllegalArgumentException credentialStoreURIParameterOpeningQuote(String uri);
+
+    @Message(id = 457, value = "Closing quote has to be the last character of parameter value '%s'")
+    IllegalArgumentException credentialStoreURIParameterClosingQuote(String uri);
+
+    @Message(id = 458, value = "Unexpected end of parameter part of '%s'")
+    IllegalArgumentException credentialStoreURIParameterUnexpectedEnd(String uri);
+
+    @Message(id = 459, value = "Parameter name expected, but is missing '%s'")
+    IllegalArgumentException credentialStoreURIParameterNameExpected(String uri);
 }
