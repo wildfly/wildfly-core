@@ -41,13 +41,15 @@ import org.wildfly.core.launcher.StandaloneCommandBuilder;
  */
 public class Server {
 
+    public static final String LEGACY_JAVA_HOME = "legacy.java.home";
+
     private final String jbossHome = System.getProperty("jboss.home", System.getenv("JBOSS_HOME"));
     private final String modulePath = System.getProperty("module.path");
     private final String jvmArgs = System.getProperty("jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
     private final String jbossArgs = System.getProperty("jboss.args");
     private final String javaHome = System.getProperty("java.home", System.getenv("JAVA_HOME"));
     //Use this when specifying an older java to be used for running the server
-    private final String legacyJavaHome = System.getProperty("legacy.java.home");
+    private final String legacyJavaHome = System.getProperty(LEGACY_JAVA_HOME);
     private String serverConfig = System.getProperty("server.config", "standalone.xml");
     private final int managementPort = Integer.getInteger("management.port", 9990);
     private final String managementAddress = System.getProperty("management.address", "localhost");
