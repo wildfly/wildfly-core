@@ -21,6 +21,8 @@
  */
 package org.wildfly.client.old.server.util;
 
+import static org.wildfly.core.testrunner.Server.LEGACY_JAVA_HOME;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -63,6 +65,8 @@ public class OldVersionTestRunner extends Suite {
     private static final String LARGE_DEPLOYMENT_NAME = "large-deployment.xml";
 
     static final String DEPLOYMENT_SIZE = "jboss.test.client.old.server.size";
+
+
 
     static String OLD_VERSIONS_DIR = OldVersionCopier.OLD_VERSIONS_DIR;
 
@@ -249,16 +253,15 @@ public class OldVersionTestRunner extends Suite {
                     throw new IllegalStateException("Could not determine " + version.getJdk() +
                             " home from either -D" + prop);
                 }
-                System.setProperty("legacy.java.home", jdkHome);
+                System.setProperty(LEGACY_JAVA_HOME, jdkHome);
 
                 //Server has this
                 //    private final String jvmArgs = System.getProperty("jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
                 //-XX:MaxMetaspaceSize is not available < JDK 8, so remove it:
                 System.setProperty("jvm.args", "-Xmx512m");
+            } else {
+                System.clearProperty(LEGACY_JAVA_HOME);
             }
-        }
-
-        private void setJdk(Version.JDK version, String propName, String defaultName) {
         }
     }
 
