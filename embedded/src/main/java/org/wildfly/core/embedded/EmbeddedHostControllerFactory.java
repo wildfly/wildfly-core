@@ -329,6 +329,9 @@ public class EmbeddedHostControllerFactory {
 
         private synchronized ModelControllerClient getActiveModelControllerClient() {
             switch (currentProcessState) {
+                case STOPPED: {
+                    throw EmbeddedLogger.ROOT_LOGGER.processIsStopped();
+                }
                 case STOPPING: {
                     throw EmbeddedLogger.ROOT_LOGGER.processIsStopping();
                 }
