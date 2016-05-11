@@ -39,7 +39,7 @@ public class Version {
         WF_8_2_0_FINAL(WILDFLY, "8.2.0.Final", false, JDK.JDK8, "http-remoting", "9990"),
         WF_9_0_0_FINAL(WILDFLY, "9.0.0.Final", false, JDK.JDK8, "http-remoting", "9990"),
         WF_10_0_0_FINAL(WILDFLY, "10.0.0.Final", false, JDK.JDK8, "http-remoting", "9990"),
-        
+
         EAP_6_2_0(EAP, "6.2.0", true, JDK.JDK6, "remote", "9999"),
         EAP_6_3_0(EAP, "6.3.0", true, JDK.JDK7, "remote", "9999"),
         EAP_6_4_0(EAP, "6.4.0", true, JDK.JDK8, "remote", "9999"),
