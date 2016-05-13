@@ -126,7 +126,7 @@ start() {
 		sleep 1
 		let count=$count+1;
 		if [ -f $JBOSS_MARKERFILE ]; then
-			markerfiletimestamp=$(grep -o '[0-9]*' $JBOSS_MARKERFILE) > /dev/null
+			markerfiletimestamp=$(grep -o '[0-9]\+' $JBOSS_MARKERFILE) > /dev/null
 			if [ "$markerfiletimestamp" -gt "$currenttime" ] ; then
 				grep -i 'success:' $JBOSS_MARKERFILE > /dev/null
 				if [ $? -eq 0 ] ; then
