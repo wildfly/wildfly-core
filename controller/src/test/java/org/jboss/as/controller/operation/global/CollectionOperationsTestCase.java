@@ -103,7 +103,13 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
                 .addReadWriteAttribute(LIST_ATTRIBUTE, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        context.getResult().set(runtimeMapAttributeValue);
+                        context.addStep(new OperationStepHandler() {
+                                            @Override
+                                            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                                                context.getResult().set(runtimeListAttributeValue);
+                                            }
+                                        }, OperationContext.Stage.RUNTIME);
+
                     }
                 }, new AbstractWriteAttributeHandler(LIST_ATTRIBUTE) {
                     @Override
@@ -120,7 +126,12 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
                 .addReadWriteAttribute(MAP_ATTRIBUTE, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        context.getResult().set(runtimeMapAttributeValue);
+                        context.addStep(new OperationStepHandler() {
+                            @Override
+                            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                                context.getResult().set(runtimeMapAttributeValue);
+                            }
+                        }, OperationContext.Stage.RUNTIME);
                     }
                 }, new AbstractWriteAttributeHandler() {
                     @Override
