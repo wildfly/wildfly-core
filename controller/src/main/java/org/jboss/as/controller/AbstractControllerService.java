@@ -752,7 +752,14 @@ public abstract class AbstractControllerService implements Service<ModelControll
                             RUNTIME_CONFIGURATION_STATE,
                             createStateStringNode(oldState),
                             createStateStringNode(newState));
-            notificationSupport.emit(notification);
+            //Force these notifications to be emitted synchronously to avoid the situation where e.g. if we are shutting down,
+            //if the queue in the asynch notification support takes long to poll the notifications, services etc. installing
+            //the notification handlers may already have been stopped, causing the handlers to be unregistered,
+            //so we can miss these lifecycle notifications.
+            //Another option would have been to rewrite the use of the executor in NonBlockingNotificationSupport to
+            //query for all the handlers before placing the notification on the queue, but if the handler was installed by
+            //a service it might have some dependencies which will be invalid once the service has been stopped.
+            notificationSupport.emitSync(notification);
         }
 
         private ModelNode createStateStringNode(ControlledProcessState.State state) {
