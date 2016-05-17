@@ -456,6 +456,15 @@ public class OperationParsingTestCase {
         }
     }
 
+    @Test
+    public void testWhitespacesInMiddleOfPropertyNotIgnored() throws Exception {
+        DefaultCallbackHandler handler = new DefaultCallbackHandler();
+
+        parse("/system-property=test:add(value= ha ha ha)", handler);
+        assertTrue(handler.getPropertyNames().contains("value"));
+        assertTrue(handler.getPropertyValue("value").length() == 8);
+    }
+
     protected void parse(String opReq, DefaultCallbackHandler handler) throws CommandFormatException {
         parser.parse(opReq, handler);
     }
