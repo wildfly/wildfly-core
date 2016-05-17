@@ -105,6 +105,73 @@ public class CliCompletionTestCase {
     }
 
     @Test
+    public void testPropertiesNoNegatedValue() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        try {
+
+            {
+                String cmd = " ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                assertFalse(candidates.toString(), candidates.contains(Util.NOT_OPERATOR));
+            }
+
+            {
+                String cmd = ":read-resource(";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.contains("recursive"));
+                assertTrue(candidates.toString(), candidates.contains("recursive-depth"));
+                assertTrue(candidates.toString(), candidates.contains(Util.NOT_OPERATOR));
+            }
+
+            {
+                String cmd = ":read-resource(" + Util.NOT_OPERATOR;
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.contains("recursive"));
+                assertFalse(candidates.toString(), candidates.contains("recursive-depth"));
+            }
+
+            {
+                String cmd = ":read-resource(" + Util.NOT_OPERATOR + "recursive";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.size() == 2);
+                assertTrue(candidates.toString(), candidates.contains(","));
+                assertTrue(candidates.toString(), candidates.contains(")"));
+            }
+
+            {
+                String cmd = ":read-resource(" + Util.NOT_OPERATOR + "recursive," + Util.NOT_OPERATOR + "resolve-expressions,";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertFalse(candidates.toString(), candidates.contains("recursive"));
+            }
+
+            {
+                String cmd = ":reload-servers(" + Util.NOT_OPERATOR + "blocking";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains(")"));
+            }
+
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
+    @Test
     public void testRolloutGroupPropertiesNoValue() throws Exception {
         CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
                 System.in, System.out);
@@ -115,8 +182,11 @@ public class CliCompletionTestCase {
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.size() == 4);
                 assertTrue(candidates.toString(), candidates.contains("rolling-to-servers"));
+                assertTrue(candidates.toString(), candidates.contains("max-failed-servers"));
                 assertTrue(candidates.toString(), candidates.contains("max-failure-percentage"));
+                assertTrue(candidates.toString(), candidates.contains(Util.NOT_OPERATOR));
             }
 
             {
@@ -124,8 +194,8 @@ public class CliCompletionTestCase {
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains(","));
-                assertTrue(candidates.toString(), candidates.contains(")"));
                 assertTrue(candidates.toString(), candidates.contains("=false"));
             }
 
@@ -134,6 +204,7 @@ public class CliCompletionTestCase {
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("max-failed-servers"));
                 assertTrue(candidates.toString(), candidates.contains("max-failure-percentage"));
             }
@@ -143,8 +214,8 @@ public class CliCompletionTestCase {
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains(")"));
-                assertFalse(candidates.toString(), candidates.contains(","));
             }
 
             {
@@ -152,9 +223,37 @@ public class CliCompletionTestCase {
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.size() == 2);
+                assertTrue(candidates.toString(), candidates.contains("=false"));
+                assertTrue(candidates.toString(), candidates.contains(")"));
+            }
+
+            {
+                String cmd = ":reload-servers(blocking){rollout main-server-group(" + Util.NOT_OPERATOR;
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("rolling-to-servers"));
+            }
+
+            {
+                String cmd = ":reload-servers(blocking){rollout main-server-group(" + Util.NOT_OPERATOR + "rolling-to-servers";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("rolling-to-servers,"));
+            }
+
+            {
+                String cmd = ":reload-servers(blocking){rollout main-server-group(max-failed-servers=1,max-failure-percentage=2," + Util.NOT_OPERATOR + "rolling-to-servers";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains(")"));
                 assertTrue(candidates.toString(), candidates.contains("=false"));
-                assertFalse(candidates.toString(), candidates.contains(","));
             }
 
         } finally {
@@ -254,6 +353,25 @@ public class CliCompletionTestCase {
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length() - 1, candidates);
                 assertFalse(candidates.toString(), candidates.contains("--help"));
+            }
+
+            {
+                String cmd = "reload ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                assertFalse(candidates.toString(), candidates.contains(Util.NOT_OPERATOR));
+            }
+
+            {
+                // The parsing will concider the ! as a value and will be not
+                // able to complete a value starting with the not operator
+                String cmd = "reload " + Util.NOT_OPERATOR;
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
             {
@@ -548,6 +666,16 @@ public class CliCompletionTestCase {
                         cmd.length() - 1, candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--verbose "));
+            }
+
+            {
+                // The parsing will concider the ! as a value and will be not
+                // able to complete a value starting with the not operator
+                String cmd = "read-attribute " + Util.NOT_OPERATOR;
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length() - 1, candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
             {

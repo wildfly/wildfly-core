@@ -113,7 +113,7 @@ public class CommandTestCase {
         assertEquals(1, cmd.getPropertyNames().size());
         assertTrue(cmd.getOtherProperties().isEmpty());
         assertTrue(cmd.hasProperty("--arg-name"));
-        assertNull(cmd.getPropertyValue("--arg-name"));
+        assertTrue(cmd.getPropertyValue("--arg-name").equals("true"));
         assertEquals(13, cmd.getLastChunkIndex());
     }
 
@@ -131,7 +131,7 @@ public class CommandTestCase {
         assertEquals(1, cmd.getPropertyNames().size());
         assertTrue(cmd.getOtherProperties().isEmpty());
         assertTrue(cmd.hasProperty("--arg-name"));
-        assertNull(cmd.getPropertyValue("--arg-name"));
+        assertTrue(cmd.getPropertyValue("--arg-name").equals("true"));
         assertEquals(13, cmd.getLastChunkIndex());
     }
 
@@ -232,7 +232,7 @@ public class CommandTestCase {
         assertTrue(cmd.hasProperty("--name"));
         assertEquals("value", cmd.getPropertyValue("--name"));
         assertTrue(cmd.hasProperty("--name1"));
-        assertNull(cmd.getPropertyValue("--name1"));
+        assertTrue(cmd.getPropertyValue("--name1").equals("true"));
 
         List<String> otherArgs = cmd.getOtherProperties();
         assertEquals(1, otherArgs.size());

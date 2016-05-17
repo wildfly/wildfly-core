@@ -82,9 +82,9 @@ public class MockCommandContext implements CommandContext {
         set(Scope.CONTEXT, "connection_info", connInfo);
     }
 
-    public void parseCommandLine(String buffer) throws CommandFormatException {
+    public void parseCommandLine(String buffer, boolean validate) throws CommandFormatException {
         try {
-            parsedCmd.parse(prefix, buffer);
+            parsedCmd.parse(prefix, buffer, validate);
         } catch (CommandFormatException e) {
             if(!parsedCmd.endsOnAddressOperationNameSeparator() || !parsedCmd.endsOnSeparator()) {
                throw e;

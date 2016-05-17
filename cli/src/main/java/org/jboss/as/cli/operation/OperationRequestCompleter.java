@@ -143,7 +143,8 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             return buffer.length();
         }
 
-        if (parsedCmd.hasProperties() || parsedCmd.endsOnPropertyListStart()) {
+        if (parsedCmd.hasProperties() || parsedCmd.endsOnPropertyListStart()
+                || parsedCmd.endsOnNotOperator()) {
             if(!parsedCmd.hasOperationName()) {
                 return -1;
             }
@@ -157,7 +158,22 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             }
 
             try {
+                // Retrieve properties with implicit values only.
+                if (parsedCmd.endsOnNotOperator()) {
+                    for (CommandArgument arg : allArgs) {
+                        if (arg.canAppearNext(ctx)) {
+                            if (!arg.isValueRequired()) {
+                                candidates.add(arg.getFullName());
+                            }
+                        }
+                    }
+
+                    Collections.sort(candidates);
+                    return buffer.length();
+                }
+
                 if (!parsedCmd.hasProperties()) {
+                    boolean needNeg = false;
                     for (CommandArgument arg : allArgs) {
                         if (arg.canAppearNext(ctx)) {
                             if (arg.getIndex() >= 0) {
@@ -171,8 +187,14 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                             } else {
                                 String argName = arg.getFullName();
                                 candidates.add(argName);
+                                if (!arg.isValueRequired()) {
+                                    needNeg = true;
+                                }
                             }
                         }
+                    }
+                    if (needNeg) {
+                        candidates.add(Util.NOT_OPERATOR);
                     }
                     Collections.sort(candidates);
                     return buffer.length();
@@ -289,7 +311,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                     return -1;
                 }
             }
-
+            boolean needNeg = false;
             for (CommandArgument arg : allArgs) {
                 try {
                     if (arg.canAppearNext(ctx)) {
@@ -308,7 +330,25 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                             String argFullName = arg.getFullName();
                             if (chunk == null
                                     || argFullName.startsWith(chunk)) {
-                                candidates.add(argFullName);
+                                /* The following complexity is due to cases like:
+                                 recursive and recursive-depth. Both start with the same name
+                                 but are of different types. Completion can't propose
+                                 recursive-depth of !recursive has been typed.
+                                 If the last property is not negated,
+                                 we can add all properties with the same name.
+                                 */
+                                if (!parsedCmd.isLastPropertyNegated()) {
+                                    candidates.add(argFullName);
+                                } else // We can only add candidates that are of type boolean
+                                 if (!arg.isValueRequired()) {
+                                        candidates.add(argFullName);
+                                    }
+                            }
+                            // Only add the not operator if the property is of type boolean
+                            // and this property is not already negated.
+                            if (!arg.isValueRequired()
+                                    && !parsedCmd.isLastPropertyNegated()) {
+                                needNeg = true;
                             }
                         }
                     }
@@ -316,6 +356,11 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                     e.printStackTrace();
                     return -1;
                 }
+            }
+
+            // Propose not operator only after a property separator
+            if (needNeg && parsedCmd.endsOnPropertySeparator()) {
+                candidates.add(Util.NOT_OPERATOR);
             }
 
             if (lastArg != null) {
@@ -342,7 +387,9 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                     // This is a way to optimise false value.
                     // Setting to true is useless, the property name is
                     // enough.
-                    candidates.add("=" + Util.FALSE);
+                    if (!parsedCmd.isLastPropertyNegated()) {
+                        candidates.add("=" + Util.FALSE);
+                    }
                     if (format != null && format.getPropertyListEnd() != null) {
                         candidates.add(format.getPropertyListEnd());
                         if (!allPropertiesPresent) {

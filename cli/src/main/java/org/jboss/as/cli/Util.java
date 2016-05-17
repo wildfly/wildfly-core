@@ -189,6 +189,8 @@ public class Util {
 
     public static final String DESCRIPTION_RESPONSE = "DESCRIPTION_RESPONSE";
 
+    public static final String NOT_OPERATOR = "!";
+
     public static boolean isWindows() {
         return WildFlySecurityManager.getPropertyPrivileged("os.name", null).toLowerCase(Locale.ENGLISH).indexOf("windows") >= 0;
     }
@@ -1072,34 +1074,12 @@ public class Util {
         }
         request.get(Util.OPERATION).set(operationName);
 
-        ModelNode description_response = null;
-        if (!parsedLine.getPropertyNames().isEmpty()) {
-            if (ctx.getConfig().isValidateOperationRequests()) {
-                try {
-                    // Operation description is retrieved for top level request
-                    // as well as substitution sub requests.
-                    description_response = retrieveDescription(ctx, request);
-                    ctx.set(Scope.REQUEST, DESCRIPTION_RESPONSE,
-                            description_response);
-                } catch (Exception ex) {
-                    // XXX OK. This is a best effort
-                    // Validation would fail later and report the exception
-                }
-            }
-        }
-        for(String propName : parsedLine.getPropertyNames()) {
+        for (String propName : parsedLine.getPropertyNames()) {
             String value = parsedLine.getPropertyValue(propName);
             if(propName == null || propName.trim().isEmpty())
                 throw new OperationFormatException("The argument name is not specified: '" + propName + "'");
             if (value == null || value.trim().isEmpty()) {
-                if (description_response == null) {
-                    throw new OperationFormatException("The argument value is not specified for " + propName + ": '" + value + "'");
-                } else {
-                    value = getImplicitValue(propName, description_response);
-                    if (value == null) {
-                        throw new OperationFormatException("The argument value is not specified for " + propName + ": '" + value + "'");
-                    }
-                }
+                throw new OperationFormatException("The argument value is not specified for " + propName + ": '" + value + "'");
             }
             final ModelNode toSet = ArgumentValueConverter.DEFAULT.fromString(ctx, value);
             request.get(propName).set(toSet);
@@ -1239,30 +1219,5 @@ public class Util {
                 }
             }
         }
-    }
-
-    private static String getImplicitValue(String propName,
-            ModelNode description_response) {
-        String value = null;
-        ModelNode result = description_response.get(Util.RESULT);
-        if (result == null) {
-            return value;
-        }
-        ModelNode props = result.get(Util.REQUEST_PROPERTIES);
-        if (props == null) {
-            return value;
-        }
-        ModelNode prop = props.get(propName);
-        if (prop == null) {
-            return value;
-        }
-        ModelNode type = prop.get(Util.TYPE);
-        if (type == null) {
-            return value;
-        }
-        if (type.asType() == ModelType.BOOLEAN) {
-            value = Util.TRUE;
-        }
-        return value;
     }
 }

@@ -38,6 +38,7 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
     private static final int SEPARATOR_PROPERTY_LIST_END = 2;
     private static final int SEPARATOR_PROPERTY_VALUE = 3;
     private static final int SEPARATOR_PROPERTY = 4;
+    private static final int SEPARATOR_NOT_OPERATOR = 5;
 
     private String groupName;
     private Map<String,String> props;
@@ -48,6 +49,8 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
 
     private String lastPropertyName;
     private String lastPropertyValue;
+
+    private int lastNotOperatorIndex = -1;
 
     public SingleRolloutPlanGroup() {
     }
@@ -70,6 +73,15 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
 
     public int getLastChunkIndex() {
         return lastChunkIndex;
+    }
+
+    public boolean endsOnNotOperator() {
+        return separator == SEPARATOR_NOT_OPERATOR;
+    }
+
+    public boolean isLastPropertyNegated() {
+        return lastPropertyName != null
+                && lastNotOperatorIndex + 1 == lastChunkIndex;
     }
 
     // TODO perhaps add a list of allowed properties and their values
@@ -98,11 +110,28 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
         if (props == null) {
             props = new HashMap<String, String>();
         }
-        // Default value for boolean
-        props.put(name, Util.TRUE);
-        this.lastPropertyName = name;
-        this.lastChunkIndex = index;
-        separator = -1;
+        String value = Util.TRUE;
+        if (name.startsWith(Util.NOT_OPERATOR)) {
+            value = Util.FALSE;
+            name = name.substring(1);
+            notOperator(index);
+            index += 1;
+        }
+
+        if (name.length() > 0) {
+            // Default value for boolean
+            props.put(name, value);
+            this.lastPropertyName = name;
+            this.lastChunkIndex = index;
+            separator = -1;
+        }
+    }
+
+    public void notOperator(int index) {
+        separator = SEPARATOR_NOT_OPERATOR;
+        this.lastNotOperatorIndex = index;
+        this.lastPropertyName = null;
+        this.lastPropertyValue = null;
     }
 
     public void propertyValueSeparator(int index) {

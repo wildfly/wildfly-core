@@ -124,6 +124,13 @@ public class CommandCompleter implements CommandLineCompleter {
         }
 
         final int result = OperationRequestCompleter.INSTANCE.complete(ctx, candidatesProvider, buffer, cursor, candidates);
+        // Util.NOT_OPERATOR not supported in commands.
+        if (parsedCmd.getFormat() != OperationFormat.INSTANCE) {
+            int notIndex = candidates.indexOf(Util.NOT_OPERATOR);
+            if (notIndex >= 0) {
+                candidates.remove(notIndex);
+            }
+        }
         // if there is nothing else to suggest, check whether it could be a start of a variable
         if(candidates.isEmpty() && buffer.charAt(buffer.length() - 1) == '$' && !ctx.getVariables().isEmpty()) {
             candidates.addAll(ctx.getVariables());

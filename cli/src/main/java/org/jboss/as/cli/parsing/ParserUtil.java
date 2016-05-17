@@ -200,10 +200,7 @@ public class ParserUtil {
                             }
                         }
                     } else {
-                        handler.propertyName(bufferStartIndex, buffer.toString().trim());
-                        if (nameValueSeparator != -1) {
-                            handler.propertyNameValueSeparator(nameValueSeparator);
-                        }
+                        handler.propertyNoValue(bufferStartIndex, buffer.toString().trim());
                     }
                     if(!ctx.isEndOfContent() || format != null &&
                             // if the char is recognized as the separator but there was an error,
