@@ -679,17 +679,17 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public void suspendServer(String serverName) {
+        public List<ModelNode> suspendServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public void resumeServer(String serverName) {
+        public List<ModelNode> resumeServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public List<ModelNode> awaitServerSuspend(Set<String> waitForServers, int timeout, BlockingTimeout blockingTimeout) {
+        public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }

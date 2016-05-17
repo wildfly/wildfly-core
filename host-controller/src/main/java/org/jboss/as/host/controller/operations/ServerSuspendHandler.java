@@ -77,7 +77,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
-        final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //timeout in seconds
+        final int suspendTimeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //timeout in seconds, by default is 0
         final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
 
         context.addStep(new OperationStepHandler() {
@@ -85,14 +85,9 @@ public class ServerSuspendHandler implements OperationStepHandler {
             public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                 // WFLY-2189 trigger a write-runtime authz check
                 context.getServiceRegistry(true);
-
-                if (timeout != 0) {
-                    List<ModelNode> errorResults = serverInventory.awaitServerSuspend(Collections.singleton(serverName), timeout, blockingTimeout);
-                    if ( !errorResults.isEmpty() ){
-                        context.getFailureDescription().set(errorResults);
-                    }
-                } else {
-                    serverInventory.suspendServer(serverName);
+                final List<ModelNode> errorResponses  = serverInventory.suspendServers(Collections.singleton(serverName), suspendTimeout, blockingTimeout);
+                if ( !errorResponses.isEmpty() ){
+                    context.getFailureDescription().set(errorResponses.get(0));
                 }
             }
         }, OperationContext.Stage.RUNTIME);

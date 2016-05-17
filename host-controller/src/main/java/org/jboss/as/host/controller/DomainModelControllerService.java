@@ -1169,18 +1169,18 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
-        public void suspendServer(String serverName) {
-            getServerInventory().suspendServer(serverName);
+        public List<ModelNode> suspendServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+            return getServerInventory().suspendServers(serverNames, blockingTimeout);
         }
 
         @Override
-        public void resumeServer(String serverName) {
-            getServerInventory().resumeServer(serverName);
+        public List<ModelNode> resumeServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+            return getServerInventory().resumeServers(serverNames, blockingTimeout);
         }
 
         @Override
-        public List<ModelNode> awaitServerSuspend(Set<String> waitForServers, int timeout, BlockingTimeout blockingTimeout) {
-            return getServerInventory().awaitServerSuspend(waitForServers, timeout, blockingTimeout);
+        public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
+            return getServerInventory().suspendServers(serverNames, timeout, blockingTimeout);
         }
     }
 
@@ -1504,15 +1504,17 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
-            public void suspendServer(String serverName) {
+            public List<ModelNode> suspendServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+                return Collections.emptyList();
             }
 
             @Override
-            public void resumeServer(String serverName) {
+            public List<ModelNode> resumeServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+                return Collections.emptyList();
             }
 
             @Override
-            public List<ModelNode> awaitServerSuspend(Set<String> waitForServers, int timeout, BlockingTimeout blockingTimeout) {
+            public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
                 return Collections.emptyList();
             }
         };
