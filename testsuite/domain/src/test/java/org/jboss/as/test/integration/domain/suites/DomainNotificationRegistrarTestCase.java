@@ -26,7 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODULE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION_REGISTRAR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REGISTRAR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
@@ -138,20 +138,26 @@ public class DomainNotificationRegistrarTestCase {
             //This write attribute shold appear in the list
             DomainTestUtils.executeForResult(Util.getWriteAttributeOperation(sysPropAddr, VALUE, "b"), masterClient);
 
-            PathAddress propAddress = REGISTRAR_ADDR.append(PROPERTY, "first");
-            ModelNode addProp = Util.createAddOperation(propAddress);
+            ModelNode addProp = Util.getEmptyOperation("map-put", REGISTRAR_ADDR.toModelNode());
+            addProp.get(NAME).set(PROPERTIES);
+            addProp.get("key").set("first");
             addProp.get(VALUE).set("1");
             DomainTestUtils.executeForResult(addProp, masterClient);
 
             //This write attribute shold appear in the list
             DomainTestUtils.executeForResult(Util.getWriteAttributeOperation(sysPropAddr, VALUE, "c"), masterClient);
 
-            DomainTestUtils.executeForResult(Util.getWriteAttributeOperation(propAddress, VALUE, "2"), masterClient);
+            addProp.get(VALUE).set(2);
+            DomainTestUtils.executeForResult(addProp, masterClient);
 
             //This write attribute shold appear in the list
             DomainTestUtils.executeForResult(Util.getWriteAttributeOperation(sysPropAddr, VALUE, "d"), masterClient);
 
-            DomainTestUtils.executeForResult(Util.getResourceRemoveOperation(propAddress), masterClient);
+            ModelNode removeProp = Util.getEmptyOperation("map-remove", REGISTRAR_ADDR.toModelNode());
+            removeProp.get(NAME).set(PROPERTIES);
+            removeProp.get("key").set("first");
+
+            DomainTestUtils.executeForResult(removeProp, masterClient);
 
             //This write attribute shold appear in the list
             DomainTestUtils.executeForResult(Util.getWriteAttributeOperation(sysPropAddr, VALUE, "e"), masterClient);
@@ -210,31 +216,41 @@ public class DomainNotificationRegistrarTestCase {
         checkAttributeValueWritten(entry, sysPropAddr, "test", "two", "value", "a", "b");
 
         entry = list.get(2);
-        checkAttributeValueWritten(entry, sysPropAddr, "test", "two", "value", "b", "c");
+        checkAttributeValueWritten(entry, sysPropAddr, "test", "two", "value", "b", "c", "first", "1");
 
         entry = list.get(3);
-        checkAttributeValueWritten(entry, sysPropAddr, "test", "two", "value", "c", "d");
+        checkAttributeValueWritten(entry, sysPropAddr, "test", "two", "value", "c", "d", "first", "2");
 
         entry = list.get(4);
         checkAttributeValueWritten(entry, sysPropAddr, "test", "two", "value", "d", "e");
     }
 
-    private void checkResourceAdded(ModelNode entry, PathAddress source, String registrarName, String qualifier) {
-        checkCommon(entry, RESOURCE_ADDED_NOTIFICATION, source, registrarName, qualifier);
+    private void checkResourceAdded(ModelNode entry, PathAddress source, String registrarName, String qualifier, String...properties) {
+        checkCommon(entry, RESOURCE_ADDED_NOTIFICATION, source, registrarName, qualifier, properties);
     }
 
     private void checkAttributeValueWritten(ModelNode entry, PathAddress source, String registrarName, String qualifier,
-                                            String attr, String oldValue, String newValue) {
-        checkCommon(entry, ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION, source, registrarName, qualifier);
+                                            String attr, String oldValue, String newValue, String...properties) {
+        checkCommon(entry, ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION, source, registrarName, qualifier, properties);
         Assert.assertEquals(attr, entry.get(NAME).asString());
         Assert.assertEquals(oldValue, entry.get("old-value").asString());
         Assert.assertEquals(newValue, entry.get("new-value").asString());
     }
 
-    private void checkCommon(ModelNode entry, String type, PathAddress source, String registrarName, String qualifier) {
+    private void checkCommon(ModelNode entry, String type, PathAddress source, String registrarName, String qualifier, String...properties) {
         Assert.assertEquals(type, entry.get(TYPE).asString());
         Assert.assertEquals(source, PathAddress.pathAddress(entry.get("source")));
         Assert.assertEquals(qualifier, entry.get("qualifier").asString());
         Assert.assertEquals(registrarName, entry.get("registrar-name").asString());
+
+        if (properties.length == 0) {
+            Assert.assertFalse(entry.hasDefined(PROPERTIES));
+        } else {
+            Assert.assertTrue(entry.hasDefined(PROPERTIES));
+            Assert.assertEquals(properties.length/2, entry.get(PROPERTIES).keys().size());
+            for (int i = 0 ; i < properties.length - 1 ; i+=2) {
+                Assert.assertEquals(properties[i + 1], entry.get(PROPERTIES, properties[i]).asString());
+            }
+        }
     }
 }

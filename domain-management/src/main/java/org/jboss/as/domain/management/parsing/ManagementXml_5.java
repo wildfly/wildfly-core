@@ -106,7 +106,6 @@ import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionPropertyResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition;
-import org.jboss.as.domain.management.notification.registrar.NotificationRegistrarPropertyResourceDefinition;
 import org.jboss.as.domain.management.notification.registrar.NotificationRegistrarResourceDefinition;
 import org.jboss.as.domain.management.notification.registrar.NotificationRegistrarsRootResourceDefinition;
 import org.jboss.as.domain.management.security.AbstractPlugInAuthResourceDefinition;
@@ -1929,17 +1928,19 @@ class ManagementXml_5 extends ManagementXml {
         }
         list.add(addOp);
 
+        ModelNode props = null;
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case PROPERTIES: {
+                    props = new ModelNode();
                     while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
                         requireNamespace(reader, namespace);
                         final Element propertyElement = Element.forName(reader.getLocalName());
                         switch (propertyElement) {
                             case PROPERTY:
-                                parseProperty(reader, addr, list);
+                                parsePropertyAttribute(reader, props);
                                 break;
                             default:
                                 throw unexpectedElement(reader);
@@ -1952,6 +1953,47 @@ class ManagementXml_5 extends ManagementXml {
                 }
             }
         }
+
+        if (props != null) {
+            addOp.get(PROPERTIES).set(props);
+        }
+    }
+
+    private void parsePropertyAttribute(final XMLExtendedStreamReader reader, final ModelNode props)
+            throws XMLStreamException {
+
+        String name = null;
+        String val = null;
+
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case NAME:
+                        name = value;
+                        break;
+                    case VALUE: {
+                        val = value;
+                        break;
+                    }
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
+                }
+            }
+        }
+
+        if (name == null) {
+            throw missingRequired(reader, Collections.singleton(Attribute.NAME));
+        }
+
+        requireNoContent(reader);
+
+        props.get(name).set(val == null ? new ModelNode() : new ModelNode(val));
     }
 
     @Override
@@ -2030,15 +2072,17 @@ class ManagementXml_5 extends ManagementXml {
             NotificationRegistrarResourceDefinition.CODE.marshallAsAttribute(registrar, writer);
             NotificationRegistrarResourceDefinition.MODULE.marshallAsAttribute(registrar, writer);
 
-            if (registrar.hasDefined(PROPERTY) && registrar.get(PROPERTY).keys().size() > 0) {
+            if (registrar.hasDefined(PROPERTIES)) {
                 writer.writeStartElement(Element.PROPERTIES.getLocalName());
-                ModelNode properties = registrar.get(PROPERTY);
+                ModelNode properties = registrar.get(PROPERTIES);
 
                 for (String prop : properties.keys()) {
                     writer.writeStartElement(Element.PROPERTY.getLocalName());
                     ModelNode property = properties.get(prop);
                     writeAttribute(writer, Attribute.NAME, prop);
-                    NotificationRegistrarPropertyResourceDefinition.VALUE.marshallAsAttribute(property, writer);
+                    if (property.isDefined()) {
+                        writeAttribute(writer, Attribute.VALUE, property.asString());
+                    }
                     writer.writeEndElement();
                 }
                 writer.writeEndElement();

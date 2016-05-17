@@ -21,7 +21,6 @@ package org.jboss.as.domain.management.notification.registrar;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REGISTRAR;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -31,6 +30,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.RestartParentWriteAttributeHandler;
 import org.jboss.as.controller.ServiceRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -69,7 +69,14 @@ public class NotificationRegistrarResourceDefinition extends SimpleResourceDefin
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {MODULE, CODE};
+    public static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(ModelDescriptionConstants.PROPERTIES, true)
+            .setElementValidator(new StringLengthValidator(1, true))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setAllowExpression(true)
+            .build();
+
+
+    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {MODULE, CODE, PROPERTIES};
 
     static final NotificationRegistrarResourceDefinition INSTANCE = new NotificationRegistrarResourceDefinition();
 
@@ -88,11 +95,6 @@ public class NotificationRegistrarResourceDefinition extends SimpleResourceDefin
         }
     }
 
-    @Override
-    public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerSubModel(NotificationRegistrarPropertyResourceDefinition.INSTANCE);
-    }
-
     static ServiceName getServiceName(PathAddress address) {
         return SERVICE_NAME_BASE.append(address.getLastElement().getValue());
     }
@@ -101,7 +103,9 @@ public class NotificationRegistrarResourceDefinition extends SimpleResourceDefin
         final String className = CODE.resolveModelAttribute(context, model).asString();
         final ModuleIdentifier module = ModuleIdentifier.fromString(MODULE.resolveModelAttribute(context, model).asString());
         final ServiceName serviceName = getServiceName(pathAddress);
-        Map<String, String> properties = new HashMap();
+
+        final Map<String, String> properties = PROPERTIES.unwrap(context, model);
+
         NotificationRegistrarService.install(
                 context.getServiceTarget(), serviceName, className, module,
                 context.getProcessType(), context.getRunningMode(), properties);
