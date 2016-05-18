@@ -394,7 +394,7 @@ public class NetworkUtils {
        return stringBuilder.toString();
     }
 
-    public static boolean isBindingToMulticastDressSupported() {
+    public static boolean isBindingToMulticastAddressSupported() {
         return can_bind_to_mcast_addr;
     }
 

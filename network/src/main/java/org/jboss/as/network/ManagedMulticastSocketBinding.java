@@ -36,7 +36,7 @@ import java.net.SocketException;
 public class ManagedMulticastSocketBinding extends MulticastSocket implements ManagedBinding {
 
     static ManagedMulticastSocketBinding create(final String name, final ManagedBindingRegistry socketBindings, SocketAddress address) throws IOException {
-        if (NetworkUtils.isBindingToMulticastDressSupported()) {
+        if (NetworkUtils.isBindingToMulticastAddressSupported()) {
             return new ManagedMulticastSocketBinding(name, socketBindings, address);
         } else if (address instanceof InetSocketAddress) {
             return new ManagedMulticastSocketBinding(name, socketBindings, new InetSocketAddress(((InetSocketAddress) address).getPort()));
