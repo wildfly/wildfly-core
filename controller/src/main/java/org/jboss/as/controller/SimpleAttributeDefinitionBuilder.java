@@ -37,8 +37,8 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
         return new SimpleAttributeDefinitionBuilder(name, type);
     }
 
-    public static SimpleAttributeDefinitionBuilder create(final String name, final ModelType type, final boolean allowNull) {
-        return new SimpleAttributeDefinitionBuilder(name, type, allowNull);
+    public static SimpleAttributeDefinitionBuilder create(final String name, final ModelType type, final boolean optional) {
+        return new SimpleAttributeDefinitionBuilder(name, type, optional);
     }
 
     public static SimpleAttributeDefinitionBuilder create(final SimpleAttributeDefinition basis) {
@@ -76,8 +76,8 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
         this(attributeName, type, false);
     }
 
-    public SimpleAttributeDefinitionBuilder(final String attributeName, final ModelType type, final boolean allowNull) {
-        super(attributeName, type, allowNull);
+    public SimpleAttributeDefinitionBuilder(final String attributeName, final ModelType type, final boolean optional) {
+        super(attributeName, type, optional);
         parser = AttributeParser.SIMPLE;
     }
 

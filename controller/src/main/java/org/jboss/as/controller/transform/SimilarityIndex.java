@@ -98,9 +98,9 @@ class SimilarityIndex {
         res *= compareStrings(attr1.getName(), attr2.getName());
         res *= compareStrings(attr1.getType().name(), attr2.getType().name());
         res *= compareStrings(String.valueOf(attr1.isAllowExpression()), String.valueOf(attr2.isAllowExpression()));
-        res *= compareStrings(String.valueOf(attr1.isAllowNull()), String.valueOf(attr2.isAllowNull()));
+        res *= compareStrings(String.valueOf(attr1.isRequired()), String.valueOf(attr2.isRequired()));
         res *= attr1.isAllowExpression() == attr2.isAllowExpression() ? 1d : 0.9d;
-        res *= attr1.isAllowNull() == attr2.isAllowNull() ? 1d : 0.9d;
+        res *= attr1.isRequired() == attr2.isRequired() ? 1d : 0.9d;
         return res;
     }
 
