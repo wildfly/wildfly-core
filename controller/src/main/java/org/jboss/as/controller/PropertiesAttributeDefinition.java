@@ -94,7 +94,9 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
         if (!model.isDefined()) return Collections.emptyMap();
         Map<String, String> props = new HashMap<>();
         for (Property p : model.asPropertyList()) {
-            props.put(p.getName(), context.resolveExpressions(p.getValue()).asString());
+            // TODO this is wasteful if we are called from unwrap(...) as the passed in model is already fully resolved
+            ModelNode value = context.resolveExpressions(p.getValue());
+            props.put(p.getName(), value.isDefined() ? value.asString() : null);
         }
         return props;
     }
