@@ -277,7 +277,8 @@ public class ManagementHttpServer {
         ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(consoleHandler);
         HttpHandler domainApiHandler = InExecutorHandler.wrap(
                 builder.executor,
-                new DomainApiCheckHandler(builder.modelController, builder.controlledProcessStateService, builder.allowedOrigins)
+                associateIdentity(new DomainApiCheckHandler(builder.modelController, builder.controlledProcessStateService,
+                        builder.allowedOrigins), builder)
         );
         pathHandler.addPrefixPath("/", rootConsoleRedirectHandler);
         if (consoleHandler != null) {
@@ -289,19 +290,25 @@ public class ManagementHttpServer {
         addLogoutHandler(pathHandler, builder);
     }
 
-    private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final Builder builder) {
+    private static HttpHandler associateIdentity(HttpHandler domainHandler, final Builder builder) {
         if (builder.httpAuthenticationFactory != null) {
             domainHandler = new ElytronSubjectDoAsHandler(domainHandler, builder.httpAuthenticationFactory.getSecurityDomain());
             domainHandler = new ElytronRunAsHandler(domainHandler);
-            domainHandler = new BlockingHandler(domainHandler);
-            return secureDomainAccess(domainHandler, builder.httpAuthenticationFactory);
         } else if (builder.securityRealm != null) {
             domainHandler = new SubjectDoAsHandler(domainHandler);
-            domainHandler = new BlockingHandler(domainHandler);
-            return secureDomainAccess(domainHandler, builder.securityRealm);
         }
 
         return new BlockingHandler(domainHandler);
+    }
+
+    private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final Builder builder) {
+        if (builder.httpAuthenticationFactory != null) {
+            return secureDomainAccess(domainHandler, builder.httpAuthenticationFactory);
+        } else if (builder.securityRealm != null) {
+            return secureDomainAccess(domainHandler, builder.securityRealm);
+        }
+
+        return domainHandler;
     }
 
     private static HttpHandler secureDomainAccess(final HttpHandler domainHandler, final SecurityRealm securityRealm) {
