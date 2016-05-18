@@ -78,6 +78,7 @@ import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
 import org.jboss.as.test.integration.management.interfaces.CliManagementInterface;
 import org.jboss.as.test.integration.management.interfaces.ManagementInterface;
 import org.jboss.as.test.integration.management.rbac.RbacAdminCallbackHandler;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Before;
@@ -92,7 +93,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
 @RunWith(WildflyTestRunner.class)
-@ServerSetup({StandardUsersSetupTask.class})
+@ServerSetup({ServerReload.SetupTask.class, StandardUsersSetupTask.class})
 public class ConfigurationChangesHistoryTestCase extends AbstractManagementInterfaceRbacTestCase {
 
     private static final int MAX_HISTORY_SIZE = 8;

@@ -29,6 +29,7 @@ import static org.jboss.as.test.integration.security.common.CoreUtils.makeCallWi
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.wildfly.core.test.standalone.mgmt.HTTPSConnectionWithCLITestCase.reloadServer;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,11 +46,9 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.jboss.as.cli.CommandContext;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.categories.CommonCriteria;
-import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.integration.security.common.AbstractBaseSecurityRealmsServerSetupTask;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.integration.security.common.SSLTruststoreUtil;
@@ -108,7 +107,7 @@ public class HTTPSManagementInterfaceTestCase {
 
     @BeforeClass
     public static void startAndSetupContainer() throws Exception {
-        controller.start();
+        controller.startInAdminMode();
 
         ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
         ManagementClient managementClient = controller.getClient();
@@ -119,16 +118,6 @@ public class HTTPSManagementInterfaceTestCase {
         // To apply new security realm settings for http interface reload of
         // server is required
         reloadServer();
-    }
-
-    public static void reloadServer() throws Exception {
-        final CommandContext ctx = CLITestUtil.getCommandContext("remoting", TestSuiteEnvironment.getServerAddress(), 9999);
-        try {
-            ctx.connectController();
-            ctx.handle("reload");
-        } finally {
-            ctx.terminateSession();
-        }
     }
 
     /**

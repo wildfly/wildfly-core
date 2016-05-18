@@ -51,6 +51,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
@@ -63,6 +64,7 @@ import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.ResourceNotAddressableException;
+import org.jboss.as.controller.access.rbac.UnknowRoleException;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AliasEntry;
@@ -215,48 +217,14 @@ public class GlobalOperationHandlers {
                         doExecute(context, operation, localFilteredData, true);
                     }
                 };
-                context.addStep(new ModelNode(), FAKE_OPERATION.clone(),
+                final ModelNode fakeOperationResponse = new ModelNode();
+                context.addStep(fakeOperationResponse, FAKE_OPERATION.clone(),
                         registryOnly ?
                             new RegistrationAddressResolver(operation, result, delegateStepHandler) :
                             new ModelAddressResolver(operation, result, localFilteredData, delegateStepHandler, predicate),
                         OperationContext.Stage.MODEL, true
                 );
-                context.completeStep(new OperationContext.ResultHandler() {
-                    @Override
-                    public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-
-                        // Report on filtering
-                        if (localFilteredData.hasFilteredData()) {
-                            context.getResponseHeaders().get(ACCESS_CONTROL).set(localFilteredData.toModelNode());
-                        }
-
-                        // Extract any failure info from the individual results and use them
-                        // to construct an overall failure description if necessary
-                        if (resultAction == OperationContext.ResultAction.ROLLBACK
-                                && !context.hasFailureDescription() && result.isDefined()) {
-                            String op = operation.require(OP).asString();
-                            Map<PathAddress, ModelNode> failures = new HashMap<PathAddress, ModelNode>();
-                            for (ModelNode resultItem : result.asList()) {
-                                if (resultItem.hasDefined(FAILURE_DESCRIPTION)) {
-                                    final PathAddress failedAddress = PathAddress.pathAddress(resultItem.get(ADDRESS));
-                                    ModelNode failedDesc = resultItem.get(FAILURE_DESCRIPTION);
-                                    failures.put(failedAddress, failedDesc);
-                                }
-                            }
-
-                            if (failures.size() == 1) {
-                                Map.Entry<PathAddress, ModelNode> entry = failures.entrySet().iterator().next();
-                                if (entry.getValue().getType() == ModelType.STRING) {
-                                    context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtSingleAddress(op, entry.getKey(), entry.getValue().asString()));
-                                } else {
-                                    context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtSingleAddressWithComplexFailure(op, entry.getKey()));
-                                }
-                            } else if (failures.size() > 1) {
-                                context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtMultipleAddresses(op, failures.keySet()));
-                            }
-                        }
-                    }
-                });
+                context.completeStep(new MultiTargetResultHandler(fakeOperationResponse, localFilteredData, result));
             } else {
                 doExecute(context, operation, filteredData, ignoreMissingResource);
             }
@@ -276,21 +244,67 @@ public class GlobalOperationHandlers {
          * @throws OperationFailedException
          */
         abstract void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData, boolean ignoreMissingResource) throws OperationFailedException;
+
+        private static class MultiTargetResultHandler implements OperationContext.ResultHandler {
+
+            private final FilteredData localFilteredData;
+            private final ModelNode result;
+            private final ModelNode fakeOperationResponse;
+
+            public MultiTargetResultHandler(ModelNode fakeOperationResponse, FilteredData localFilteredData, ModelNode result) {
+                this.localFilteredData = localFilteredData;
+                this.result = result;
+                this.fakeOperationResponse = fakeOperationResponse;
+            }
+
+            @Override
+            public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                if(fakeOperationResponse != null && fakeOperationResponse.hasDefined(FAILURE_DESCRIPTION)) {
+                    context.getFailureDescription().set(fakeOperationResponse.get(FAILURE_DESCRIPTION));
+                    return;
+                }
+                // Report on filtering
+                if (localFilteredData.hasFilteredData()) {
+                    context.getResponseHeaders().get(ACCESS_CONTROL).set(localFilteredData.toModelNode());
+                }
+
+                // Extract any failure info from the individual results and use them
+                // to construct an overall failure description if necessary
+                if (resultAction == OperationContext.ResultAction.ROLLBACK
+                        && !context.hasFailureDescription() && result.isDefined()) {
+                    String op = operation.require(OP).asString();
+                    Map<PathAddress, ModelNode> failures = new HashMap<PathAddress, ModelNode>();
+                    for (ModelNode resultItem : result.asList()) {
+                        if (resultItem.hasDefined(FAILURE_DESCRIPTION)) {
+                            final PathAddress failedAddress = PathAddress.pathAddress(resultItem.get(ADDRESS));
+                            ModelNode failedDesc = resultItem.get(FAILURE_DESCRIPTION);
+                            failures.put(failedAddress, failedDesc);
+                        }
+                    }
+
+                    if (failures.size() == 1) {
+                        Map.Entry<PathAddress, ModelNode> entry = failures.entrySet().iterator().next();
+                        if (entry.getValue().getType() == ModelType.STRING) {
+                            context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtSingleAddress(op, entry.getKey(), entry.getValue().asString()));
+                        } else {
+                            context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtSingleAddressWithComplexFailure(op, entry.getKey()));
+                        }
+                    } else if (failures.size() > 1) {
+                        context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.wildcardOperationFailedAtMultipleAddresses(op, failures.keySet()));
+                    }
+                }
+            }
+        }
     }
 
-    interface FilterPredicate {
-        boolean appliesTo(ModelNode result);
+    @FunctionalInterface
+    interface FilterPredicate extends Predicate<ModelNode> {
     }
 
     private abstract static class AbstractAddressResolver implements OperationStepHandler {
 
-        private static final FilterPredicate DEFAULT_PREDICATE = new FilterPredicate() {
-            @Override
-            public boolean appliesTo(ModelNode item) {
-                return !item.isDefined()
-                        || !item.hasDefined(OP_ADDR);
-            }
-        };
+        private static final FilterPredicate DEFAULT_PREDICATE = item -> !item.isDefined()
+                || !item.hasDefined(OP_ADDR);
 
 
         private final ModelNode operation;
@@ -328,7 +342,7 @@ public class GlobalOperationHandlers {
                         boolean replace = false;
                         ModelNode replacement = new ModelNode().setEmptyList();
                         for (ModelNode item : result.asList()) {
-                            if (predicate.appliesTo(item)) {
+                            if (predicate.test(item)) {
                                 // item will be skipped and the result amended
                                 replace = true;
                             } else {
@@ -776,10 +790,12 @@ public class GlobalOperationHandlers {
 
         @Override
         protected boolean authorize(OperationContext context, PathAddress base, ModelNode operation) {
-//            if (base.size() > 0) {
-                //We should always be able to read the root resource
+            try {
                 context.readResource(base, false);
-//            }
+            } catch(UnknowRoleException ex) {
+                context.getFailureDescription().set(ex.getMessage());
+                return false;
+            }
             //An exception will happen if not allowed
             return true;
         }

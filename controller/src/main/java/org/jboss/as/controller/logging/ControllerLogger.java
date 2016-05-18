@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -52,6 +53,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller._private.OperationCancellationException;
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
+import org.jboss.as.controller.access.rbac.UnknowRoleException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.interfaces.InterfaceCriteria;
 import org.jboss.as.controller.notification.Notification;
@@ -675,10 +677,10 @@ public interface ControllerLogger extends BasicLogger {
      * @param fromPath the from file.
      * @param toPath   the to file.
      *
-     * @return an {@link IllegalStateException} for the error.
      */
+    @LogMessage(level = Level.ERROR)
     @Message(id = 56, value = "Could not rename %s to %s")
-    IllegalStateException cannotRename(String fromPath, String toPath);
+    void cannotRename(@Cause IOException ioe, Path fromPath, Path toPath);
 
     /**
      * Creates an exception indicating the inability to write the {@code name}.
@@ -3091,7 +3093,7 @@ public interface ControllerLogger extends BasicLogger {
     //IOException unableToUnmarshallSubject(@Cause ClassNotFoundException e);
 
     @Message(id = 327, value = "Unknown role '%s'")
-    IllegalArgumentException unknownRole(String roleName);
+    UnknowRoleException unknownRole(String roleName);
 
     @Message(id = 328, value = "Cannot remove standard role '%s'")
     IllegalStateException cannotRemoveStandardRole(String roleName);
@@ -3393,7 +3395,7 @@ public interface ControllerLogger extends BasicLogger {
     void timeoutAwaitingFinalResponse(String operation, PathAddress proxyNodeAddress, long timeout);
 
     @LogMessage(level = Level.WARN)
-    @Message(id = 411, value = "Failed to parse element '%s', ingoring ...")
+    @Message(id = 411, value = "Failed to parse element '%s', ignoring ...")
     void failedToParseElementLenient(@Cause XMLStreamException e, String elementName);
 
     @Message(id = 412, value = "Required services that are not installed:")
@@ -3402,4 +3404,16 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 413, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
     OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
 
+    @LogMessage(level = Level.WARN)
+    @Message(id = 414, value = "Could not create a timestamped backup of current history dir %s, so it may still include versions from the previous boot.")
+    void couldNotCreateHistoricalBackup(String currentHistoryDir);
+
+    @Message(id = 415, value = "Modification of the runtime service container by a management operation has begun")
+    String runtimeModificationBegun();
+
+    @Message(id = 416, value = "Modification of the runtime service container by a management operation has completed")
+    String runtimeModificationComplete();
+
+    @Message(id = 417, value = "Cannot add more than one jvm. Add of '%s' attempted, but '%s' already exists")
+    OperationFailedException cannotAddMoreThanOneJvmForServerOrHost(PathAddress requested, PathAddress existing);
 }

@@ -36,6 +36,7 @@ import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.process.stdin.Base64InputStream;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.HostControllerClient;
 import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
 import org.jboss.logmanager.Level;
@@ -99,7 +100,7 @@ public final class DomainServerMain {
             StreamUtils.readFully(initialInput, asAuthBytes);
         } catch (IOException e) {
             e.printStackTrace();
-            SystemExiter.exit(ExitCodes.FAILED);
+            SystemExiter.abort(ExitCodes.FAILED);
             throw new IllegalStateException(); // not reached
         }
 
@@ -125,7 +126,7 @@ public final class DomainServerMain {
             }));
         } catch (Exception e) {
             e.printStackTrace(initialError);
-            SystemExiter.exit(ExitCodes.FAILED);
+            SystemExiter.abort(ExitCodes.FAILED);
             throw new IllegalStateException(); // not reached
         } finally {
         }
@@ -173,7 +174,7 @@ public final class DomainServerMain {
             e.printStackTrace();
         }
         // Once the input stream is cut off, shut down
-        SystemExiter.exit(ExitCodes.NORMAL);
+        SystemExiter.logAndExit(ServerLogger.ROOT_LOGGER::shuttingDownInResponseToProcessControllerSignal, ExitCodes.NORMAL);
         throw new IllegalStateException(); // not reached
     }
 

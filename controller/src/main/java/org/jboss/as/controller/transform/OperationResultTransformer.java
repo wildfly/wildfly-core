@@ -30,6 +30,7 @@ import org.jboss.dmr.ModelNode;
  *
 * @author Emanuel Muckenhuber
 */
+@FunctionalInterface
 public interface OperationResultTransformer {
 
     /**

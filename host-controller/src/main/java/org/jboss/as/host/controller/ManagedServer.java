@@ -25,7 +25,9 @@ package org.jboss.as.host.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESUME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIMEOUT;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
@@ -42,7 +44,11 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyOperationAddressTranslator;
 import org.jboss.as.controller.TransformingProxyController;
+import org.jboss.as.controller.client.OperationAttachments;
+import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
+import org.jboss.as.controller.remote.BlockingQueueOperationListener;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.remote.TransactionalProtocolHandlers;
 import org.jboss.as.controller.transform.TransformationTarget;
@@ -59,6 +65,7 @@ import org.jboss.marshalling.Marshalling;
 import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.msc.service.ServiceActivator;
+import org.jboss.threads.AsyncFuture;
 
 /**
  * Represents a managed server.
@@ -120,6 +127,8 @@ class ManagedServer {
     private volatile int operationID = CurrentOperationIdHolder.getCurrentOperationID();
     private volatile ManagedServerBootConfiguration bootConfiguration;
 
+    private final PathAddress address;
+
     ManagedServer(final String hostControllerName, final String serverName, final String authKey,
                   final ProcessControllerClient processControllerClient, final URI managementURI,
                   final TransformationTarget transformationTarget) {
@@ -139,7 +148,7 @@ class ManagedServer {
 
         // Setup the proxy controller
         final PathElement serverPath = PathElement.pathElement(RUNNING_SERVER, serverName);
-        final PathAddress address = PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(HOST, hostControllerName), serverPath);
+        address = PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(HOST, hostControllerName), serverPath);
         this.protocolClient = new ManagedServerProxy(this);
         this.proxyController = TransformingProxyController.Factory.create(protocolClient,
                 Transformers.Factory.create(transformationTarget), address, ProxyOperationAddressTranslator.SERVER);
@@ -674,64 +683,21 @@ class ManagedServer {
         return null;
     }
 
-    boolean suspend() {
-
+    AsyncFuture<OperationResponse> resume(final BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener) throws IOException {
         final ModelNode operation = new ModelNode();
-        operation.get(OP).set("suspend");
+        operation.get(OP).set(RESUME);
         operation.get(OP_ADDR).setEmptyList();
 
-        try {
-            final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
-            if (prepared.isFailed()) {
-                return false;
-            }
-            prepared.commit();
-            prepared.getFinalResult().get();
-        } catch (Exception ignore) {
-            return false;
-        }
-        return true;
+        return protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
     }
 
-
-    boolean resume() {
-
+    AsyncFuture<OperationResponse> suspend(int timeoutInSeconds, final BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener) throws IOException {
         final ModelNode operation = new ModelNode();
-        operation.get(OP).set("resume");
+        operation.get(OP).set(SUSPEND);
         operation.get(OP_ADDR).setEmptyList();
+        operation.get(TIMEOUT).set(timeoutInSeconds);
 
-        try {
-            final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
-            if (prepared.isFailed()) {
-                return false;
-            }
-            prepared.commit();
-            prepared.getFinalResult().get();
-        } catch (Exception ignore) {
-            return false;
-        }
-        return true;
-    }
-
-    void awaitSuspended(long timeout) {
-
-        //we just re-suspend, but this time give a timeout
-        final ModelNode operation = new ModelNode();
-        operation.get(OP).set("suspend");
-        operation.get(OP_ADDR).setEmptyList();
-        operation.get(TIMEOUT).set(timeout);
-
-        try {
-            final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
-            if (prepared.isFailed()) {
-                return;
-            }
-            prepared.commit();
-            prepared.getFinalResult().get();
-        } catch (Exception ignore) {
-            return;
-        }
-        return;
+        return protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
     }
 
     static enum InternalState {
@@ -768,6 +734,7 @@ class ManagedServer {
         }
     }
 
+    @FunctionalInterface
     interface TransitionTask {
 
         boolean execute(ManagedServer server) throws Exception;
@@ -943,6 +910,10 @@ class ManagedServer {
             }
         }
         return result;
+    }
+
+    PathAddress getAddress(){
+        return address;
     }
 
 }

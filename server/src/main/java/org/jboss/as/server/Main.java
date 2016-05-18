@@ -114,7 +114,7 @@ public final class Main {
                 t.printStackTrace(STDERR);
             }
         } finally {
-            SystemExiter.exit(ExitCodes.FAILED);
+            SystemExiter.abort(ExitCodes.FAILED);
         }
     }
 

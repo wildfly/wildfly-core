@@ -26,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceTarget;
 
@@ -102,6 +103,7 @@ public class HostControllerBootstrap {
                 }
             } finally {
                 if (sc != null) {
+                    SystemExiter.logBeforeExit(HostControllerLogger.ROOT_LOGGER::shutdownHookInvoked);
                     final CountDownLatch latch = new CountDownLatch(1);
                     sc.addTerminateListener(new ServiceContainer.TerminateListener() {
                         @Override

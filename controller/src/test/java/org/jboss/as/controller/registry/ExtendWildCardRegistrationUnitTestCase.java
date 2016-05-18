@@ -30,6 +30,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
@@ -87,7 +88,7 @@ public class ExtendWildCardRegistrationUnitTestCase {
 
     @BeforeClass
     public static void setup() {
-        registration = ManagementResourceRegistration.Factory.create(new SimpleResourceDefinition(PathElement.pathElement("root","root"), new NonResolvingResourceDescriptionResolver()));
+        registration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(new SimpleResourceDefinition(PathElement.pathElement("root","root"), new NonResolvingResourceDescriptionResolver()));
 
         parentWildReg = registration.registerSubModel(new SimpleResourceDefinition(parentWild, new NonResolvingResourceDescriptionResolver()));
         parentWildReg.registerReadOnlyAttribute(wildAttr, parentWildAttr);

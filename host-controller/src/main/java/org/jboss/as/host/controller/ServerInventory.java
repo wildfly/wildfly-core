@@ -23,11 +23,13 @@
 package org.jboss.as.host.controller;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.security.auth.callback.CallbackHandler;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.process.ProcessInfo;
@@ -301,25 +303,36 @@ public interface ServerInventory {
     void awaitServersState(Collection<String> serverNames, boolean started);
 
     /**
-     * Suspends a server, allowing current requests to finish and blocking any new requests
+     * Suspend the servers, allowing current requests to finish and blocking any new requests
      * from starting.
+     * @param serverNames The server names to suspend, can be an immutable collection.
+     * @param blockingTimeout control for maximum period any blocking operations can block. Cannot be {@code null}
      *
-     * @param serverName The server name
+     * @return An empty {@link Collection} if no errors were returned suspending the servers, otherwise it will contain
+     * all error responses. Will not be {@code null}
      */
-    void suspendServer(String serverName);
+    List<ModelNode> suspendServers(Set<String> serverNames, BlockingTimeout blockingTimeout);
 
     /**
-     * Resumes a server, allowing it to begin processing requests normally
-     * @param serverName The server name
+     * Resume the servers, allowing them to begin processing requests normally
+     * @param serverNames The server names to resume. It allows an immutable collection.
+     * @param blockingTimeout control for maximum period any blocking operations can block. Cannot be {@code null}
+     *
+     * @return An empty {@link Collection} if no errors were returned resuming the servers, otherwise it will contain
+     * all error responses. Will not be {@code null}
      */
-    void resumeServer(String serverName);
+    List<ModelNode> resumeServers(Set<String> serverNames, BlockingTimeout blockingTimeout);
 
     /**
-     * Waits for the given set of servers to suspend
-     * @param waitForServers The servers to wait for
-     * @param timeout The maximum amount of time to wait in milliseconds, with -1 meaning indefinitly
-     * @return <code>true</code> if all the servers suspended in time
+     * Suspend the servers up to the timeout, allowing current requests to finish and blocking any new requests from starting.
+     *
+     * @param serverNames The servers to wait for, can be an immutable collection.
+     * @param timeoutInSeconds The maximum amount of time to wait in seconds, with -1 meaning wait indefinitely, 0 meaning
+     *                         return immediately and with a value bigger than 0 meaning wait n seconds.
+     * @param blockingTimeout control for maximum period any blocking operations can block. Cannot be {@code null}
+     *
+     * @return An empty {@link Collection} if no errors were returned suspending the servers, otherwise it will contain
+     * all error responses. Will not be {@code null}
      */
-    boolean awaitServerSuspend(Set<String> waitForServers, int timeout);
-
+    List<ModelNode> suspendServers(Set<String> serverNames, int timeoutInSeconds, BlockingTimeout blockingTimeout);
 }

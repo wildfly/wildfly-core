@@ -23,9 +23,11 @@
 package org.jboss.as.patching.metadata;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -84,7 +86,7 @@ public class PatchMerger {
 
             patch = merge(patch, patch2Metadata);
 
-            try (FileWriter writer = new FileWriter(new File(mergedDir, f.getName()))){
+            try (Writer writer = Files.newBufferedWriter(new File(mergedDir, f.getName()).toPath(), StandardCharsets.UTF_8)){
                 PatchXml.marshal(writer, patch);
             } catch (Exception e) {
                 throw new PatchingException("Failed to marshal merged metadata into " + f.getName(), e);
@@ -94,9 +96,8 @@ public class PatchMerger {
 
         // the latest patch.xml
         copyFile(new File(patch2Dir, PatchXml.PATCH_XML), new File(mergedDir, patch2Metadata.getIdentity().getVersion() +  PATCH_XML_SUFFIX));
-
         // merged patch.xml is the metadata from the earliest version to the latest
-        try (FileWriter writer = new FileWriter(new File(mergedDir, PatchXml.PATCH_XML))){
+        try (Writer writer = Files.newBufferedWriter(new File(mergedDir, PatchXml.PATCH_XML).toPath(), StandardCharsets.UTF_8)){
             PatchXml.marshal(writer, mergedMetadata);
         } catch (Exception e) {
             throw new PatchingException("Failed to marshal merged metadata into " + PatchXml.PATCH_XML, e);
@@ -124,7 +125,7 @@ public class PatchMerger {
 
     private static void copyFile(File source, File target) throws PatchingException {
         try {
-            IoUtils.copy(source, target);
+            Files.copy(source.toPath(), target.toPath());
         } catch (IOException e1) {
             throw new PatchingException("Failed to copy " + source.getAbsolutePath() + " to " + target.getAbsolutePath());
         }

@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller.logging;
 
+import static org.jboss.logging.Logger.Level.FATAL;
+import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.File;
@@ -30,6 +32,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import javax.security.sasl.SaslException;
 import javax.xml.stream.Location;
@@ -103,7 +106,7 @@ public interface HostControllerLogger extends BasicLogger {
      * @param port          the port number.
      * @param securePort    the secure port number.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 3, value = "Creating http management service using network interface (%s) port (%d) securePort (%d)")
     void creatingHttpManagementService(String interfaceName, int port, int securePort);
 
@@ -245,7 +248,7 @@ public interface HostControllerLogger extends BasicLogger {
      *
      * @param serverName the name of the server.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 18, value = "Reconnecting server %s")
     void reconnectingServer(String serverName);
 
@@ -255,7 +258,7 @@ public interface HostControllerLogger extends BasicLogger {
      * @param hostName the host name
      * @param productName the product name
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 19, value = "Registered remote slave host \"%s\", %s")
     void registeredRemoteSlaveHost(String hostName, String productName);
 
@@ -265,7 +268,7 @@ public interface HostControllerLogger extends BasicLogger {
      *
      * @param name the name of the server.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 20, value = "Registering server %s")
     void registeringServer(String name);
 
@@ -276,7 +279,7 @@ public interface HostControllerLogger extends BasicLogger {
      * @param name    the name of the server.
      * @param channel the channel used to register the connection.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 21, value = "Server [%s] connected using connection [%s]")
     void serverConnected(String name, Channel channel);
 
@@ -295,7 +298,7 @@ public interface HostControllerLogger extends BasicLogger {
      *
      * @param serverName the name of the server that is starting.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 23, value = "Starting server %s")
     void startingServer(String serverName);
 
@@ -304,7 +307,7 @@ public interface HostControllerLogger extends BasicLogger {
      *
      * @param serverName the name of the server.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 24, value = "Stopping server %s")
     void stoppingServer(String serverName);
 
@@ -324,7 +327,7 @@ public interface HostControllerLogger extends BasicLogger {
      *
      * @param host the host.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 26, value = "Unregistered remote slave host \"%s\"")
     void unregisteredRemoteSlaveHost(String host);
 
@@ -334,21 +337,21 @@ public interface HostControllerLogger extends BasicLogger {
      *
      * @param name the name of the server.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 27, value = "Unregistering server %s")
     void unregisteringServer(String name);
 
     /**
      * Informal log message indicating the local host registered at the remote domain controller.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 28, value =  "Registered at domain controller")
     void registeredAtRemoteHostController();
 
     /**
      * Informal log message indicating the local host unregistered at the remote domain controller.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 29, value =  "Unregistered at domain controller")
     void unregisteredAtRemoteHostController();
 
@@ -385,7 +388,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 36, value = "Graceful shutdown of the handler used for messages from other Host Controllers did not complete within [%d] ms but shutdown of the underlying communication channel is proceeding")
     void gracefulManagementChannelHandlerShutdownTimedOut(int timeout);
 
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 37, value="The master host controller has been restarted. Re-registering this slave host controller with the new master.")
     void masterHostControllerChanged();
 
@@ -393,7 +396,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 38, value="The master host controller could not be reached in the last [%d] milliseconds. Re-connecting.")
     void masterHostControllerUnreachable(long timeout);
 
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 39, value="The slave host controller \"%s\" has been restarted or is attempting to reconnect. Unregistering the current connection to this slave.")
     void slaveHostControllerChanged(String hostName);
 
@@ -1171,15 +1174,15 @@ public interface HostControllerLogger extends BasicLogger {
      *
      * @param uri the URI at which the master was reached
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 148, value = "Connected to master host controller at %s")
     void connectedToMaster(URI uri);
 
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 149, value = "Option %s was set; obtaining domain-wide configuration from %s")
     void usingCachedDC(String configOption, String cachedXmlFile);
 
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 150, value = "Trying to reconnect to master host controller.")
     void reconnectingToMaster();
 
@@ -1196,7 +1199,7 @@ public interface HostControllerLogger extends BasicLogger {
      * @param serverName the name of the server that will be started with launch command prefix.
      * @param launchCommandPrefix the prefixed launch command.
      */
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message(id = 152, value = "Server %s will be started with JVM launch command prefix '%s'")
     void serverLaunchCommandPrefix(String serverName, String launchCommandPrefix);
 
@@ -1219,7 +1222,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message( id = 157, value = "Could not create domain auto-start directory: %s")
     IllegalStateException couldNotCreateDomainAutoStartDirectory(Path file, @Cause Throwable cause);
 
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = INFO)
     @Message( id = 158, value = "Error persisting server autostart status")
     void couldNotPersistAutoStartServerStatus(@Cause Throwable cause);
 
@@ -1259,11 +1262,92 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 170, value = "Error releasing shared lock after host registration for operationID: %s")
     String hostRegistrationCannotReleaseSharedLock(int operationID);
 
-    @Message(id = 171, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 171, value = "Failed getting the response from the suspend listener for server: %s")
+    void suspendListenerFailed(@Cause ExecutionException cause, String serverName);
+
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 172, value = "Failed executing the suspend operation for server: %s")
+    void suspendExecutionFailed(@Cause IOException cause, String serverName);
+
+    @Message(id = 173, value = "It is not possible to use use-current-host-config=false while specifying a host-config")
+    OperationFailedException cannotBothHaveFalseUseCurrentHostConfigAndHostConfig();
+
+    @Message(id = 174, value = "It is not possible to use use-current-domain-config=false while specifying a domain-config")
+    OperationFailedException cannotBothHaveFalseUseCurrentDomainConfigAndDomainConfig();
+
+
+    @Message(id = 175, value = "domain-config '%s' specified for reload could not be found")
+    OperationFailedException domainConfigForReloadNotFound(String serverConfig);
+
+    @Message(id = 176, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
     OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
 
     @LogMessage(level = WARN)
-    @Message(id = 172, value = "No security realm defined for native management service; all access will be unrestricted.")
+    @Message(id = 177, value = "No security realm defined for native management service; all access will be unrestricted.")
     void nativeManagementInterfaceIsUnsecured();
 
+    @LogMessage(level = FATAL)
+    @Message(id = 178, value = "Aborting with exit code %d")
+    void aborting(int code);
+
+    @LogMessage(level = INFO)
+    @Message(id = 179, value = "ProcessController has signalled to shut down; shutting down")
+    void shuttingDownInResponseToProcessControllerSignal();
+
+    @LogMessage(level = INFO)
+    @Message(id = 180, value = "Shutting down in response to management operation '%s'")
+    void shuttingDownInResponseToManagementRequest(String op);
+
+    @LogMessage(level = INFO)
+    @Message(id = 181, value = "Host Controller shutdown has been requested via an OS signal")
+    void shutdownHookInvoked();
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 182, value = "Timed out after %d ms awaiting server suspend response(s) for server: %s")
+    void timedOutAwaitingSuspendResponse(int blockingTimeout, String serverName);
+
+    @Message(id = 183, value = "Timed out after %d ms awaiting server suspend response(s) for server: %s")
+    String timedOutAwaitingSuspendResponseMsg(int blockingTimeout, String serverName);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 184, value = "%s interrupted awaiting server suspend response(s)")
+    void interruptedAwaitingSuspendResponse(@Cause InterruptedException cause, String serverName);
+
+    @Message(id = 185, value = "%s interrupted awaiting server suspend response(s)")
+    String interruptedAwaitingSuspendResponseMsg(String serverName);
+
+    @Message( id = 186, value = "Failed executing the suspend operation for server: %s")
+    String suspendExecutionFailedMsg(String serverName);
+
+    @Message( id = 187, value = "Failed getting the response from the suspend listener for server: %s")
+    String suspendListenerFailedMsg(String serverName);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 188, value = "Timed out after %d ms awaiting server resume response(s) for server: %s")
+    void timedOutAwaitingResumeResponse(int blockingTimeout, String serverName);
+
+    @Message(id = 189, value = "Timed out after %d ms awaiting server resume response(s) for server: %s")
+    String timedOutAwaitingResumeResponseMsg(int blockingTimeout, String serverName);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 190, value = "%s interrupted awaiting server resume response(s)")
+    void interruptedAwaitingResumeResponse(@Cause InterruptedException cause, String serverName);
+
+    @Message(id = 191, value = "%s interrupted awaiting server resume response(s)")
+    String interruptedAwaitingResumeResponseMsg(String serverName);
+
+    @Message( id = 192, value = "Failed executing the resume operation for server: %s")
+    String resumeExecutionFailedMsg(String serverName);
+
+    @Message( id = 193, value = "Failed getting the response from the resume listener for server: %s")
+    String resumeListenerFailedMsg(String serverName);
+
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 194, value = "Failed executing the resume operation for server: %s")
+    void resumeExecutionFailed(@Cause IOException cause, String serverName);
+
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 195, value = "Failed getting the response from the resume listener for server: %s")
+    void resumeListenerFailed(@Cause ExecutionException cause, String serverName);
 }

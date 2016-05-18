@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.jboss.as.cli.CommandFormatException;
+import org.jboss.as.cli.Util;
 import org.jboss.as.cli.completion.mock.MockCommandContext;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.OperationFormatException;
@@ -391,6 +392,77 @@ public class OperationParsingTestCase {
             fail("Shouldn't allow parsing of operation names following incomplete node paths");
         } catch(OperationFormatException expected) {
         }
+    }
+
+    @Test
+    public void testImplicitValuesForBooleanProperties() throws Exception {
+        DefaultCallbackHandler handler = new DefaultCallbackHandler();
+        parse("/subsystem=logging:read-resource(prop1,prop2,prop3=toto,prop4,!prop5,prop6=true,!prop7)",
+                handler);
+        assertTrue(handler.getPropertyNames().size() == 7);
+        assertTrue(handler.getPropertyNames().contains("prop1"));
+        assertTrue(handler.getPropertyValue("prop1").equals(Util.TRUE));
+        assertTrue(handler.getPropertyNames().contains("prop2"));
+        assertTrue(handler.getPropertyValue("prop2").equals(Util.TRUE));
+        assertTrue(handler.getPropertyNames().contains("prop3"));
+        assertTrue(handler.getPropertyValue("prop3").equals("toto"));
+        assertTrue(handler.getPropertyNames().contains("prop4"));
+        assertTrue(handler.getPropertyValue("prop4").equals(Util.TRUE));
+        assertTrue(handler.getPropertyNames().contains("prop5"));
+        assertTrue(handler.getPropertyValue("prop5").equals(Util.FALSE));
+        assertTrue(handler.getPropertyNames().contains("prop6"));
+        assertTrue(handler.getPropertyValue("prop6").equals(Util.TRUE));
+        assertTrue(handler.getPropertyNames().contains("prop7"));
+        assertTrue(handler.getPropertyValue("prop7").equals(Util.FALSE));
+    }
+
+    @Test
+    public void testImplicitValuesForBooleanProperties2() throws Exception {
+        DefaultCallbackHandler handler = new DefaultCallbackHandler();
+        parse("/subsystem=logging:read-resource( prop1    , prop2        ",
+                handler);
+        assertTrue(handler.getPropertyNames().size() == 2);
+        assertTrue(handler.getPropertyNames().contains("prop1"));
+        assertTrue(handler.getPropertyValue("prop1").equals(Util.TRUE));
+        assertTrue(handler.getPropertyNames().contains("prop2"));
+        assertTrue(handler.getPropertyValue("prop2").equals(Util.TRUE));
+    }
+
+    @Test
+    public void testImplicitValuesForBooleanProperties3() throws Exception {
+        DefaultCallbackHandler handler = new DefaultCallbackHandler();
+        parse("/subsystem=logging:read-resource( ! prop1    , ! prop2        ",
+                handler);
+        assertTrue(handler.getPropertyNames().size() == 2);
+        assertTrue(handler.getPropertyNames().contains("prop1"));
+        assertTrue(handler.getPropertyValue("prop1").equals(Util.FALSE));
+        assertTrue(handler.getPropertyNames().contains("prop2"));
+        assertTrue(handler.getPropertyValue("prop2").equals(Util.FALSE));
+    }
+
+    @Test
+    public void testImplicitValuesForBooleanProperties4() throws Exception {
+        DefaultCallbackHandler handler = new DefaultCallbackHandler();
+        boolean failed = true;
+        try {
+            parse("/subsystem=logging:read-resource( !! prop1    , ! prop2    ",
+                    handler);
+            failed = false;
+        } catch (CommandFormatException ex) {
+            //OK.
+        }
+        if (!failed) {
+            throw new Exception("Test case should have failed");
+        }
+    }
+
+    @Test
+    public void testWhitespacesInMiddleOfPropertyNotIgnored() throws Exception {
+        DefaultCallbackHandler handler = new DefaultCallbackHandler();
+
+        parse("/system-property=test:add(value= ha ha ha)", handler);
+        assertTrue(handler.getPropertyNames().contains("value"));
+        assertTrue(handler.getPropertyValue("value").length() == 8);
     }
 
     protected void parse(String opReq, DefaultCallbackHandler handler) throws CommandFormatException {

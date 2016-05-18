@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -41,6 +41,21 @@ import org.jboss.dmr.ModelNode;
  * @author Alexey Loubyansky
  */
 public interface CommandContext {
+
+    /**
+     * Scope for entries added to context.
+     */
+    public enum Scope {
+
+        /**
+         * The duration of a request.
+         */
+        REQUEST,
+        /**
+         * The duration of the context.
+         */
+        CONTEXT
+    }
 
     /**
      * Returns the JBoss CLI configuration.
@@ -92,25 +107,77 @@ public interface CommandContext {
     /**
      * Associates an object with key. The mapping is valid until this method is called with the same key value
      * and null as the new value for this key.
+     * @param scope Entry duration scope
      * @param key the key
      * @param value the value to be associated with the key
      */
-    void set(String key, Object value);
+    void set(Scope scope, String key, Object value);
+
+    /**
+     * Associates an object with key. The mapping is valid until this method is
+     * called with the same key value and null as the new value for this key.
+     *
+     * @param key the key
+     * @param value the value to be associated with the key
+     *
+     * @deprecated Use {@link #set(Scope, String, Object)} instead.
+     */
+    default void set(String key, Object value) {
+        set(Scope.CONTEXT, key, value);
+    }
 
     /**
      * Returns the value the key was associated with using the set(key, value) method above.
+     * @param scope Entry duration scope
      * @param key the key to fetch the value for
      * @return the value associated with the key or null, if the key wasn't associated with any non-null value.
      */
-    Object get(String key);
+    Object get(Scope scope, String key);
+
+    /**
+     * Returns the value the key was associated with using the set(key, value)
+     * method above.
+     *
+     * @param key the key to fetch the value for
+     * @return the value associated with the key or null, if the key wasn't
+     * associated with any non-null value.
+     *
+     * @deprecated Use {@link #get(Scope, String)} instead.
+     */
+    default Object get(String key) {
+        return get(Scope.CONTEXT, key);
+    }
+
+    /**
+     * Clear the content of a scope.
+     *
+     * @param scope The scope to clear, can't be null.
+     */
+    void clear(Scope scope);
 
     /**
      * Removes the value the key was associated with using the set(key, value) method above.
      * If the key isn't associated with any value, the method will return null.
+     * @param scope The entry duration scope
      * @param key the key to be removed
      * @return the value associated with the key or null, if the key wasn't associated with any non-null value.
      */
-    Object remove(String key);
+    Object remove(Scope scope, String key);
+
+    /**
+     * Removes the value the key was associated with using the set(key, value)
+     * method above. If the key isn't associated with any value, the method will
+     * return null.
+     *
+     * @param key the key to be removed
+     * @return the value associated with the key or null, if the key wasn't
+     * associated with any non-null value.
+     *
+     * @deprecated Use {@link #remove(Scope, String)} instead.
+     */
+    default Object remove(String key) {
+        return remove(Scope.CONTEXT, key);
+    }
 
     /**
      * Returns the model controller client or null if it hasn't been initialized.
@@ -246,6 +313,13 @@ public interface CommandContext {
      * @return true if the CLI is in the batch mode, false - otherwise.
      */
     boolean isBatchMode();
+
+    /**
+     * Checks whether the CLI is in a workflow mode.
+     *
+     * @return true if the CLI is in a workflow mode, false - otherwise.
+     */
+    boolean isWorkflowMode();
 
     /**
      * Returns batch manager.

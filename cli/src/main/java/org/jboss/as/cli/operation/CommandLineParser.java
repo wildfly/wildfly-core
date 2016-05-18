@@ -62,6 +62,10 @@ public interface CommandLineParser {
 
         void property(String name, String value, int nameValueSeparatorIndex) throws CommandFormatException;
 
+        void propertyNoValue(int index, String name) throws CommandFormatException;
+
+        void notOperator(int index);
+
         void propertySeparator(int index);
 
         void propertyListEnd(int index);

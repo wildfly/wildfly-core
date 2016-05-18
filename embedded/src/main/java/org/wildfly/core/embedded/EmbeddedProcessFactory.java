@@ -353,30 +353,37 @@ public class EmbeddedProcessFactory {
 
     private static void resetEmbeddedServerProperties(final String jbossHomeDir, final ProcessType embeddedServerType) {
         assert jbossHomeDir != null;
-
+        String oldJbossHomeDir = WildFlySecurityManager.getPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, null);
         String jbossBaseDir;
+        boolean shouldReset = oldJbossHomeDir != null && !jbossHomeDir.equals(oldJbossHomeDir);
         WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, jbossHomeDir);
         switch (embeddedServerType) {
             case STANDALONE_SERVER:
                 jbossBaseDir = jbossHomeDir + File.separator + "standalone";
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_CONFIG_DIR, jbossBaseDir + File.separator + "configuration");
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_DEPLOY_DIR, jbossBaseDir + File.separator + "data" + File.separator +"content");
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_TEMP_DIR, jbossBaseDir + File.separator + "data" + File.separator + "tmp");
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_LOG_DIR, jbossBaseDir + File.separator + "log");
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_DATA_DIR, jbossBaseDir + File.separator + "data");
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_SERVER_BASE_DIR, jbossBaseDir);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_CONFIG_DIR, jbossBaseDir + File.separator + "configuration", shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_DEPLOY_DIR, jbossBaseDir + File.separator + "data" + File.separator + "content", shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_TEMP_DIR, jbossBaseDir + File.separator + "data" + File.separator + "tmp", shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_LOG_DIR, jbossBaseDir + File.separator + "log", shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_DATA_DIR, jbossBaseDir + File.separator + "data", shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_BASE_DIR, jbossBaseDir, shouldReset);
                 break;
             case HOST_CONTROLLER:
                 jbossBaseDir = jbossHomeDir + File.separator + "domain";
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR, jbossBaseDir + File.separator + "configuration");
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_DEPLOY_DIR, jbossBaseDir + File.separator + "data" + File.separator +"content");
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR, jbossBaseDir + File.separator + "data" + File.separator + "tmp");
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR, jbossBaseDir + File.separator + "log");
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_DATA_DIR, jbossBaseDir + File.separator + "data");
-                WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR, jbossBaseDir);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR, jbossBaseDir + File.separator + "configuration", shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_DEPLOY_DIR, jbossBaseDir + File.separator + "data" + File.separator + "content", shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR, jbossBaseDir + File.separator + "data" + File.separator + "tmp", shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR, jbossBaseDir + File.separator + "log", shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_DATA_DIR, jbossBaseDir + File.separator + "data", shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR, jbossBaseDir, shouldReset);
                 break;
             default:
                 throw new RuntimeException("Unknown embedded server type: " + embeddedServerType);
+        }
+    }
+
+    private static void resetEmbeddedServerProperty(String propertyName, String value, boolean shouldReset) {
+        if(shouldReset || WildFlySecurityManager.getPropertyPrivileged(propertyName, null) == null) {
+            WildFlySecurityManager.setPropertyPrivileged(propertyName, value);
         }
     }
 }

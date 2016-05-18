@@ -60,11 +60,13 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     private static final int SEPARATOR_ARG_LIST_END = 7;
     private static final int SEPARATOR_HEADERS_START = 8;
     private static final int SEPARATOR_HEADER = 9;
+    private static final int SEPARATOR_NOT_OPERATOR = 10;
 
     private static final DefaultOperationRequestAddress EMPTY_ADDRESS = new DefaultOperationRequestAddress();
 
     private int separator = SEPARATOR_NONE;
     private int lastSeparatorIndex = -1;
+    private int lastNotOperatorIndex = -1;
     private int lastChunkIndex = 0;
 
     private boolean operationComplete;
@@ -208,6 +210,11 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     }
 
     @Override
+    public boolean endsOnNotOperator() {
+        return separator == SEPARATOR_NOT_OPERATOR;
+    }
+
+    @Override
     public boolean endsOnHeaderListStart() {
         return separator == SEPARATOR_HEADERS_START;
     }
@@ -347,6 +354,30 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     }
 
     @Override
+    public boolean isLastPropertyNegated() {
+        return lastPropName != null
+                && lastNotOperatorIndex + 1 == lastChunkIndex;
+    }
+
+    @Override
+    public void propertyNoValue(int index, String name) throws CommandFormatException {
+        String value = Util.TRUE;
+        if (name.startsWith(Util.NOT_OPERATOR)) {
+            name = name.substring(1);
+            value = Util.FALSE;
+            notOperator(index);
+            index += 1;
+        }
+        if (name.length() > 0) {
+            if (validation) {
+                property(name, value, index);
+            } else { // Completion, can't set default value/
+                propertyName(index, name);
+            }
+        }
+    }
+
+    @Override
     protected void validatedPropertyName(int index, String propertyName) throws OperationFormatException {
         putProperty(propertyName, null);
         lastPropName = propertyName;
@@ -398,6 +429,14 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     public void propertySeparator(int index) {
         separator = SEPARATOR_ARG;
         this.lastSeparatorIndex = index;
+        this.lastPropName = null;
+        this.lastPropValue = null;
+    }
+
+    @Override
+    public void notOperator(int index) {
+        separator = SEPARATOR_NOT_OPERATOR;
+        this.lastNotOperatorIndex = index;
         this.lastPropName = null;
         this.lastPropValue = null;
     }

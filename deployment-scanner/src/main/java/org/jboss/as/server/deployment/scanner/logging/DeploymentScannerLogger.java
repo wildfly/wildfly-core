@@ -25,6 +25,7 @@ package org.jboss.as.server.deployment.scanner.logging;
 import java.io.File;
 import java.util.Set;
 
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
@@ -408,4 +409,19 @@ public interface DeploymentScannerLogger extends BasicLogger {
      */
     @Message(id = 36, value = "Deployment model operation failed. %s")
     RuntimeException deployModelOperationFailed(String msg);
+
+    @LogMessage(level = WARN)
+    @Message(id = 37, value = "%s does not exist")
+    void directoryIsNonexistent(String path);
+
+    @LogMessage(level = WARN)
+    @Message(id = 38, value = "%s is not a directory")
+    void isNotADirectory(String path);
+
+    @LogMessage(level = WARN)
+    @Message(id = 39, value = "%s is not writable")
+    void directoryIsNotWritable(String path);
+
+    @Message(id = 40, value = "Could not find relative-to path entry for %s")
+    OperationFailedException pathEntryNotFound(String pathName);
 }

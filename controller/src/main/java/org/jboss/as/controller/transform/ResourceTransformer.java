@@ -31,6 +31,7 @@ import org.jboss.as.controller.registry.Resource;
  *
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
+@FunctionalInterface
 public interface ResourceTransformer {
 
     /**

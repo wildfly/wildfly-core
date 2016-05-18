@@ -27,7 +27,7 @@ import static org.jboss.as.platform.mbean.PlatformMBeanUtil.escapeMBeanName;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.jboss.as.controller.PathElement;
@@ -56,7 +56,7 @@ public class MemoryPoolMXBeanResource extends AbstractPlatformMBeanResource {
 
     @Override
     Set<String> getChildrenNames() {
-        final Set<String> result = new HashSet<String>();
+        final Set<String> result = new LinkedHashSet<String>();
         for (MemoryPoolMXBean mbean : ManagementFactory.getMemoryPoolMXBeans()) {
             result.add(escapeMBeanName(mbean.getName()));
         }

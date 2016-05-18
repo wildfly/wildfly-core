@@ -94,11 +94,11 @@
         <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core-asl>4.4.1</version.org.codehaus.woodstox.woodstox-core-asl>
         <version.org.fusesource.jansi>1.11</version.org.fusesource.jansi>
-        <version.org.jboss.aesh>0.66.4</version.org.jboss.aesh>
+        <version.org.jboss.aesh>0.66.8</version.org.jboss.aesh>
         <version.org.jboss.byteman>3.0.3</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.1.2.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.5.0.Beta1</version.org.jboss.invocation>
-        <version.org.jboss.jandex>2.0.1.Final</version.org.jboss.jandex>
+        <version.org.jboss.jandex>2.0.2.Final</version.org.jboss.jandex>
         <version.org.jboss.jboss-dmr>1.3.0.Final</version.org.jboss.jboss-dmr>
         <version.org.jboss.jboss-vfs>3.2.11.Final</version.org.jboss.jboss-vfs>
         <version.org.jboss.logging.jboss-logging>3.3.0.Final</version.org.jboss.logging.jboss-logging>
@@ -113,7 +113,7 @@
         <version.org.jboss.remoting>4.0.18.Final</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>2.0.1.Final</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.sasl>1.0.5.Final</version.org.jboss.sasl>
-        <version.org.jboss.shrinkwrap.shrinkwrap>1.1.2</version.org.jboss.shrinkwrap.shrinkwrap>
+        <version.org.jboss.shrinkwrap.shrinkwrap>1.2.3</version.org.jboss.shrinkwrap.shrinkwrap>
         <version.org.jboss.slf4j.slf4j-jboss-logmanager>1.0.3.GA</version.org.jboss.slf4j.slf4j-jboss-logmanager>
         <version.org.jboss.logging.jul-to-slf4j-stub>1.0.1.Final</version.org.jboss.logging.jul-to-slf4j-stub>
         <version.org.jboss.spec.javax.interceptor.jboss-interceptors-api_1.2_spec>1.0.0.Final</version.org.jboss.spec.javax.interceptor.jboss-interceptors-api_1.2_spec>
@@ -139,9 +139,13 @@
         <version.org.zanata.plugin>3.1.1</version.org.zanata.plugin>
         <version.xml.plugin>1.0</version.xml.plugin>
 
+        <!-- Modularized JDK support (various workarounds) - activated via profile -->
+        <modular.jdk.args/>
+        <modular.jdk.props/>
+
         <!-- Surefire args -->
         <surefire.jpda.args/>
-        <surefire.system.args>-ea ${surefire.jpda.args}</surefire.system.args>
+        <surefire.system.args>${modular.jdk.args} ${modular.jdk.props} -ea -Duser.region=US -Duser.language=en -XX:MaxMetaspaceSize=256m ${surefire.jpda.args}</surefire.system.args>
 
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
@@ -279,7 +283,7 @@
                                   <value>${test.level}</value>
                               </property>
                           </systemProperties>
-                          <argLine>-Duser.region=US -Duser.language=en -XX:MaxMetaspaceSize=256m</argLine>
+                          <argLine>${surefire.system.args}</argLine>
                     </configuration>
 
                 </plugin>
@@ -1477,6 +1481,22 @@
 
     <!-- Profiles -->
     <profiles>
+        <!--
+          Name: modularizedJdk
+          Descr: various workarounds activation for modularized JDK
+        -->
+        <profile>
+            <id>modularizedJdk</id>
+            <activation>
+                <jdk>9</jdk>
+            </activation>
+            <properties>
+                <!-- [WFCORE-1431] remove SASL workaround -->
+                <modular.jdk.args>-XaddExports:java.security.sasl/com.sun.security.sasl.digest=ALL-UNNAMED,java.security.sasl/com.sun.security.sasl=ALL-UNNAMED</modular.jdk.args>
+                <!-- [WFCORE-1494] remove JUL workaround -->
+                <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true</modular.jdk.props>
+            </properties>
+        </profile>
         <!--
           Name: jpda
           Descr: Enable JPDA remote debuging

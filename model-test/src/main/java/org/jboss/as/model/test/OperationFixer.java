@@ -29,6 +29,7 @@ import org.jboss.dmr.ModelNode;
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  */
+@FunctionalInterface
 public interface OperationFixer {
     ModelNode fixOperation(ModelNode operation);
 }

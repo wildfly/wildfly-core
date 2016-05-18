@@ -78,6 +78,7 @@ import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
+import org.jboss.as.test.integration.management.rbac.RbacUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -277,6 +278,15 @@ public class ServerManagementTestCase {
 
         DomainTestSupport.validateResponse(client.execute(read));
 
+    }
+
+    @Test
+    public void testPoorHandlingOfInvalidRoles() throws IOException {
+        ModelNode op = Util.createOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(PathElement.pathElement("host")));
+        RbacUtil.addRoleHeader(op, "slave-monitor");
+        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelNode failureDescription = DomainTestSupport.validateFailedResponse(client.execute(op));
+        Assert.assertTrue(failureDescription.asString(), failureDescription.asString().contains("WFLYCTL0327"));
     }
 
     @Test

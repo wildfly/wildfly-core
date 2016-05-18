@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -33,6 +33,7 @@ import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.CommandLineFormat;
 import org.jboss.as.cli.EscapeSelector;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
 
 
@@ -142,7 +143,8 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             return buffer.length();
         }
 
-        if (parsedCmd.hasProperties() || parsedCmd.endsOnPropertyListStart()) {
+        if (parsedCmd.hasProperties() || parsedCmd.endsOnPropertyListStart()
+                || parsedCmd.endsOnNotOperator()) {
             if(!parsedCmd.hasOperationName()) {
                 return -1;
             }
@@ -156,22 +158,43 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             }
 
             try {
+                // Retrieve properties with implicit values only.
+                if (parsedCmd.endsOnNotOperator()) {
+                    for (CommandArgument arg : allArgs) {
+                        if (arg.canAppearNext(ctx)) {
+                            if (!arg.isValueRequired()) {
+                                candidates.add(arg.getFullName());
+                            }
+                        }
+                    }
+
+                    Collections.sort(candidates);
+                    return buffer.length();
+                }
+
                 if (!parsedCmd.hasProperties()) {
+                    boolean needNeg = false;
                     for (CommandArgument arg : allArgs) {
                         if (arg.canAppearNext(ctx)) {
                             if (arg.getIndex() >= 0) {
                                 final CommandLineCompleter valCompl = arg.getValueCompleter();
                                 if (valCompl != null) {
                                     valCompl.complete(ctx, "", 0, candidates);
+                                } else if (arg.getFullName() != null) {
+                                    String argFullName = arg.getFullName();
+                                    candidates.add(argFullName);
                                 }
                             } else {
                                 String argName = arg.getFullName();
-                                if (arg.isValueRequired()) {
-                                    argName += '=';
-                                }
                                 candidates.add(argName);
+                                if (!arg.isValueRequired()) {
+                                    needNeg = true;
+                                }
                             }
                         }
+                    }
+                    if (needNeg) {
+                        candidates.add(Util.NOT_OPERATOR);
                     }
                     Collections.sort(candidates);
                     return buffer.length();
@@ -226,6 +249,20 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             }
 
             if (valueCompleter != null) {
+                if (chunk == null) {
+                    // The user typed xxx=
+                    // Complete with false if boolean
+                    String parsedName = parsedCmd.getLastParsedPropertyName();
+                    for (CommandArgument arg : allArgs) {
+                        String argFullName = arg.getFullName();
+                        if (argFullName.equals(parsedName)) {
+                            if (!arg.isValueRequired()) {
+                                candidates.add(Util.FALSE);
+                                return result;
+                            }
+                        }
+                    }
+                }
                 int valueResult = valueCompleter.complete(ctx, chunk == null ? "" : chunk, 0, candidates);
                 if (valueResult < 0) {
                     return valueResult;
@@ -252,6 +289,29 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 }
             }
 
+            CommandArgument lastArg = null;
+            // All property present means proposing end of list instead of property
+            // separator when the last property is a boolean one.
+            boolean allPropertiesPresent = true;
+            // Lookup for the existence of a fully named property.
+            // Doing so we will not mix properties that are prefix of other ones
+            // e.g.: recursive and recursive-depth
+            for (CommandArgument arg : allArgs) {
+                try {
+                    if (arg.canAppearNext(ctx)) {
+                        allPropertiesPresent = false;
+                    } else {
+                        String argFullName = arg.getFullName();
+                        if (argFullName.equals(chunk)) {
+                            lastArg = arg;
+                        }
+                    }
+                } catch (CommandFormatException e) {
+                    e.printStackTrace();
+                    return -1;
+                }
+            }
+            boolean needNeg = false;
             for (CommandArgument arg : allArgs) {
                 try {
                     if (arg.canAppearNext(ctx)) {
@@ -260,25 +320,82 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                             if (valCompl != null) {
                                 final String value = chunk == null ? "" : chunk;
                                 valCompl.complete(ctx, value, value.length(), candidates);
+                            } else if (arg.getFullName() != null) {
+                                String argFullName = arg.getFullName();
+                                if (chunk == null || argFullName.startsWith(chunk)) {
+                                    candidates.add(argFullName);
+                                }
                             }
                         } else {
                             String argFullName = arg.getFullName();
-                            if (chunk == null) {
-                                if (arg.isValueRequired()) {
-                                    argFullName += '=';
-                                }
-                                candidates.add(argFullName);
-                            } else if (argFullName.startsWith(chunk)) {
-                                if (arg.isValueRequired()) {
-                                    argFullName += '=';
-                                }
-                                candidates.add(argFullName);
+                            if (chunk == null
+                                    || argFullName.startsWith(chunk)) {
+                                /* The following complexity is due to cases like:
+                                 recursive and recursive-depth. Both start with the same name
+                                 but are of different types. Completion can't propose
+                                 recursive-depth of !recursive has been typed.
+                                 If the last property is not negated,
+                                 we can add all properties with the same name.
+                                 */
+                                if (!parsedCmd.isLastPropertyNegated()) {
+                                    candidates.add(argFullName);
+                                } else // We can only add candidates that are of type boolean
+                                 if (!arg.isValueRequired()) {
+                                        candidates.add(argFullName);
+                                    }
+                            }
+                            // Only add the not operator if the property is of type boolean
+                            // and this property is not already negated.
+                            if (!arg.isValueRequired()
+                                    && !parsedCmd.isLastPropertyNegated()) {
+                                needNeg = true;
                             }
                         }
                     }
                 } catch (CommandFormatException e) {
                     e.printStackTrace();
                     return -1;
+                }
+            }
+
+            // Propose not operator only after a property separator
+            if (needNeg && parsedCmd.endsOnPropertySeparator()) {
+                candidates.add(Util.NOT_OPERATOR);
+            }
+
+            if (lastArg != null) {
+                if (lastArg.isValueRequired()) {
+                    candidates.add(lastArg.getFullName() + "=");
+                } else if (lastArg instanceof ArgumentWithoutValue) {
+                    ArgumentWithoutValue argWithoutValue = (ArgumentWithoutValue) lastArg;
+                    // If the last argument is exclusive, no need to add any separator
+                    if (!argWithoutValue.isExclusive()) {
+                        // Command argument without value have no completion.
+                        // If more arguments can come, add an argument separator
+                        // to make completion propose next argument
+                        if (!allPropertiesPresent) {
+                            CommandLineFormat format = parsedCmd.getFormat();
+                            if (format != null && format.getPropertySeparator() != null) {
+                                candidates.add(lastArg.getFullName()
+                                        + format.getPropertySeparator());
+                            }
+                        }
+                    }
+                } else {
+                    // We are completing implicit values for operation.
+                    CommandLineFormat format = parsedCmd.getFormat();
+                    // This is a way to optimise false value.
+                    // Setting to true is useless, the property name is
+                    // enough.
+                    if (!parsedCmd.isLastPropertyNegated()) {
+                        candidates.add("=" + Util.FALSE);
+                    }
+                    if (format != null && format.getPropertyListEnd() != null) {
+                        candidates.add(format.getPropertyListEnd());
+                        if (!allPropertiesPresent) {
+                            candidates.add(format.getPropertySeparator());
+                        }
+                    }
                 }
             }
 

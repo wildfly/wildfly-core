@@ -31,6 +31,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
+@FunctionalInterface
 public interface AllowedValuesValidator {
 
     /**

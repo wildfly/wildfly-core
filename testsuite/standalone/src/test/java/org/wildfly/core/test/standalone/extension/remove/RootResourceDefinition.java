@@ -27,9 +27,9 @@ package org.wildfly.core.test.standalone.extension.remove;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -49,7 +49,7 @@ public class RootResourceDefinition extends SimpleResourceDefinition {
 
     public RootResourceDefinition() {
         super(PathElement.pathElement(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver(),
-                new AddSubsystemHandler(), ReloadRequiredRemoveStepHandler.INSTANCE);
+                new AddSubsystemHandler(), ModelOnlyRemoveStepHandler.INSTANCE);
     }
 
     @Override

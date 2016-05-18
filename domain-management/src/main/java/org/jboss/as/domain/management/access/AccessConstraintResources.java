@@ -30,7 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAU
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -149,7 +149,7 @@ public class AccessConstraintResources {
         public Set<ResourceEntry> getChildren(String childType) {
             if (TYPE.equals(childType)) {
                 Map<String, Map<String, ApplicationTypeConfig>> applicationTypes = getApplicationClassifications();
-                Set<ResourceEntry> children = new HashSet<ResourceEntry>();
+                Set<ResourceEntry> children = new LinkedHashSet<ResourceEntry>();
                 for (Map.Entry<String, Map<String, ApplicationTypeConfig>> entry : applicationTypes.entrySet()) {
                     children.add(ApplicationClassificationTypeResourceDefinition.createResource(entry.getValue(),
                             entry.getKey(), registry));
@@ -200,7 +200,7 @@ public class AccessConstraintResources {
         public Set<ResourceEntry> getChildren(String childType) {
             if (TYPE.equals(childType)) {
                 Map<String, Map<String, SensitivityClassification>> classifications = getSensitivityClassifications();
-                Set<ResourceEntry> children = new HashSet<ResourceEntry>();
+                Set<ResourceEntry> children = new LinkedHashSet<ResourceEntry>();
                 for (Map.Entry<String, Map<String, SensitivityClassification>> entry : classifications.entrySet()) {
                     children.add(SensitivityClassificationTypeResourceDefinition.createResource(entry.getValue(), childType,
                             entry.getKey(), registry));

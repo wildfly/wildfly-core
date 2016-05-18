@@ -38,6 +38,7 @@ import org.jboss.dmr.Property;
  *
  * @author Brian Stansberry (c) 2012 Red Hat Inc.
  */
+@FunctionalInterface
 public interface AttributeTransformationRequirementChecker {
 
     /**

@@ -24,7 +24,7 @@ package org.jboss.as.platform.mbean;
 
 import java.lang.management.ManagementFactory;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -47,7 +47,7 @@ public class RootPlatformMBeanResource extends AbstractPlatformMBeanResource {
 
     @Override
     Set<String> getChildrenNames() {
-        return new HashSet<String>(PlatformMBeanConstants.BASE_TYPES);
+        return new LinkedHashSet<String>(PlatformMBeanConstants.BASE_TYPES);
     }
 
     ResourceEntry getChildEntry(String name) {

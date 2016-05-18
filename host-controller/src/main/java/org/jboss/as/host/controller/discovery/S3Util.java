@@ -1717,7 +1717,7 @@ public class S3Util {
             String canonicalString
                     = makeCanonicalString(method, bucket, key, pathArgs, headers, "" + expirationDate);
             String encodedCanonical = encode(awsSecretAccessKey, canonicalString, true);
-            return "http://" + DEFAULT_HOST + "/" + bucket + "/" + key + "?"
+            return "https://" + DEFAULT_HOST + "/" + bucket + "/" + key + "?"
                     + "AWSAccessKeyId=" + awsAccessKey + "&Expires=" + expirationDate
                     + "&Signature=" + encodedCanonical;
         }

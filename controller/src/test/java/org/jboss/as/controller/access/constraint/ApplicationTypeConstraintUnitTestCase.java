@@ -33,6 +33,7 @@ import org.jboss.as.controller.NoopOperationStepHandler;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -93,7 +94,7 @@ public class ApplicationTypeConstraintUnitTestCase {
                 return rootResourceConstraints;
             }
         };
-        ManagementResourceRegistration rootRegistration = ManagementResourceRegistration.Factory.create(rootRd);
+        ManagementResourceRegistration rootRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(rootRd);
         rootRegistration.registerOperationHandler(WRITE_CONFIG_DEF, NoopOperationStepHandler.WITHOUT_RESULT, true);
 
         PathElement childPE = PathElement.pathElement("child");

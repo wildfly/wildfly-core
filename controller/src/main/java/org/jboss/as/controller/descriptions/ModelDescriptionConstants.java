@@ -142,11 +142,13 @@ public class ModelDescriptionConstants {
     public static final String DISCOVERY_OPTION = "discovery-option";
     public static final String DISCOVERY_OPTIONS = "discovery-options";
     public static final String DOMAIN = "domain";
-    public static final String DOMAIN_FAILURE_DESCRIPTION = "domain-failure-description";
+    public static final String DOMAIN_CONFIG = "domain-config";
     public static final String DOMAIN_CONTROLLER = "domain-controller";
+    public static final String DOMAIN_FAILURE_DESCRIPTION = "domain-failure-description";
     public static final String DOMAIN_ORGANIZATION = "domain-organization";
     public static final String DOMAIN_MODEL = "domain-model";
     public static final String DOMAIN_RESULTS = "domain-results";
+    public static final String DOMAIN_ROLLOUT = "domain-rollout";
     public static final String DOMAIN_UUID = "domain-uuid";
     public static final String DYNAMIC = "dynamic";
     public static final String DUMP_SERVICES = "dump-services";
@@ -201,6 +203,7 @@ public class ModelDescriptionConstants {
     public static final String HEAD_COMMENT_ALLOWED = "head-comment-allowed";
     public static final String HOST = "host";
     public static final String HOSTS = "hosts";
+    public static final String HOST_CONFIG = "host-config";
     public static final String HOST_CONNECTION = "host-connection";
     public static final String HOST_CONTROLLER = "host-controller";
     public static final String HOST_ENVIRONMENT = "host-environment";
@@ -400,10 +403,14 @@ public class ModelDescriptionConstants {
     public static final String ROLLOUT_PLAN = "rollout-plan";
     public static final String ROLLOUT_PLANS = "rollout-plans";
     public static final String ROLES_FILTER = "roles-filter";
+    public static final String ROTATE_AT_STARTUP = "rotate-at-startup";
     public static final String ROTATE_SIZE = "rotate-size";
     public static final String RUNNING_MODE = "running-mode";
     public static final String RUNNING_SERVER = "server";
     public static final String RUNNING_TIME = "running-time";
+    public static final String RUNTIME_CONFIGURATION_STATE = "runtime-configuration-state";
+    public static final String RUNTIME_MODIFICATION_BEGUN = "runtime-modification-begun";
+    public static final String RUNTIME_MODIFICATION_COMPLETE = "runtime-modification-complete";
     public static final String RUNTIME_NAME = "runtime-name";
     public static final String RUNTIME_ONLY = "runtime-only";
     public static final String RUNTIME_UPDATE_SKIPPED = "runtime-update-skipped";

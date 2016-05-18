@@ -5,6 +5,7 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.registry.LegacyResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -23,7 +24,7 @@ public class ModelDescriptionTestCase {
 
     @BeforeClass
     public static void setup() {
-        registration = ManagementResourceRegistration.Factory.create(RootSubsystemResource.INSTANCE);
+        registration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(RootSubsystemResource.INSTANCE);
         registration.registerSubModel(SessionDefinition.INSTANCE);
 
     }
@@ -37,7 +38,7 @@ public class ModelDescriptionTestCase {
     public void testManagementResourceSerialization() {
         ModelNode model = SubsystemDescriptionDump.readFullModelDescription(PathAddress.EMPTY_ADDRESS, registration);
         ResourceDefinition definition = new LegacyResourceDefinition(model);
-        ManagementResourceRegistration loaded = ManagementResourceRegistration.Factory.create(definition);
+        ManagementResourceRegistration loaded = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(definition);
         validate(registration, loaded);
 
 

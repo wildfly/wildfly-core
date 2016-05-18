@@ -51,6 +51,7 @@ public class GlobalOpsTestCase extends AbstractCliTestBase {
 
     @AfterClass
     public static void after() throws Exception {
+        cli.sendLine("reload");
         AbstractCliTestBase.closeCLI();
     }
 

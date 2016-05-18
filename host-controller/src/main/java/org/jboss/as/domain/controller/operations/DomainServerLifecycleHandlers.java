@@ -34,10 +34,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUS
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationDefinition;
@@ -46,6 +48,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -72,7 +75,7 @@ public class DomainServerLifecycleHandlers {
             .build();
 
     private static final AttributeDefinition TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TIMEOUT, ModelType.INT, true)
-            .setDefaultValue(new ModelNode(0)).build();
+            .setMeasurementUnit(MeasurementUnit.SECONDS).setDefaultValue(new ModelNode(0)).build();
 
 
     public static final String RESTART_SERVERS_NAME = RESTART_SERVERS;
@@ -337,7 +340,10 @@ public class DomainServerLifecycleHandlers {
             context.readResource(PathAddress.EMPTY_ADDRESS, false);
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
-            final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
+            final int suspendTimeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); // timeout in seconds, by default is 0
+            final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
+
+
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -345,16 +351,16 @@ public class DomainServerLifecycleHandlers {
                     context.getServiceRegistry(true);
                     Map<String, ProcessInfo> processes = serverInventory.determineRunningProcesses(true);
                     final Set<String> serversInGroup = getServersForGroup(model, group);
-                    final Set<String> waitForServers = new HashSet<String>();
+                    final Set<String> waitForServers = new HashSet<>();
                     for (String serverName : processes.keySet()) {
                         final String serverModelName = serverInventory.getProcessServerName(serverName);
                         if (group == null || serversInGroup.contains(serverModelName)) {
-                            serverInventory.suspendServer(serverModelName);
                             waitForServers.add(serverModelName);
                         }
                     }
-                    if (timeout != 0) {
-                        serverInventory.awaitServerSuspend(waitForServers, timeout > 0 ? timeout * 1000 : timeout);
+                    final List<ModelNode> errorResponses  = serverInventory.suspendServers(waitForServers, suspendTimeout, blockingTimeout);
+                    if ( !errorResponses.isEmpty() ){
+                        context.getFailureDescription().set(errorResponses);
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }
@@ -372,6 +378,8 @@ public class DomainServerLifecycleHandlers {
             context.readResource(PathAddress.EMPTY_ADDRESS, false);
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
+            final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
+
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -383,9 +391,12 @@ public class DomainServerLifecycleHandlers {
                     for (String serverName : processes.keySet()) {
                         final String serverModelName = serverInventory.getProcessServerName(serverName);
                         if (group == null || serversInGroup.contains(serverModelName)) {
-                            serverInventory.resumeServer(serverModelName);
                             waitForServers.add(serverModelName);
                         }
+                    }
+                    final List<ModelNode> errorResponses = serverInventory.resumeServers(waitForServers, blockingTimeout);
+                    if ( !errorResponses.isEmpty() ){
+                        context.getFailureDescription().set(errorResponses);
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }

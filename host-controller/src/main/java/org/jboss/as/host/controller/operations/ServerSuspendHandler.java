@@ -25,7 +25,10 @@ package org.jboss.as.host.controller.operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.util.Collections;
+import java.util.List;
+
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -35,6 +38,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.ServerInventory;
@@ -51,6 +55,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = ModelDescriptionConstants.SUSPEND;
     private static final AttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT, true)
             .setDefaultValue(new ModelNode(0))
+            .setMeasurementUnit(MeasurementUnit.SECONDS)
             .build();
 
     public static final OperationDefinition DEFINITION = getOperationDefinition();
@@ -72,17 +77,17 @@ public class ServerSuspendHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
-        final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //timeout in seconds
+        final int suspendTimeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //timeout in seconds, by default is 0
+        final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
 
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                 // WFLY-2189 trigger a write-runtime authz check
                 context.getServiceRegistry(true);
-
-                serverInventory.suspendServer(serverName);
-                if(timeout!= 0) {
-                    serverInventory.awaitServerSuspend(Collections.singleton(serverName), timeout > 0 ? timeout * 1000 : timeout);
+                final List<ModelNode> errorResponses  = serverInventory.suspendServers(Collections.singleton(serverName), suspendTimeout, blockingTimeout);
+                if ( !errorResponses.isEmpty() ){
+                    context.getFailureDescription().set(errorResponses.get(0));
                 }
             }
         }, OperationContext.Stage.RUNTIME);

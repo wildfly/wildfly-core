@@ -22,11 +22,6 @@
 
 package org.jboss.as.patching.metadata;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,11 +30,15 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.util.Scanner;
-
 import javax.xml.stream.XMLStreamException;
 
 import org.junit.Test;
 import org.xnio.IoUtils;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Emanuel Muckenhuber
@@ -126,14 +125,13 @@ public class PatchXmlUnitTestCase {
     private void doMarshall(String fileName) throws Exception {
         final String original = toString(fileName);
 
-        final InputStream is = getResource(fileName);
-        final Patch patch = PatchXml.parse(is).resolvePatch(null, null);
-
-        final StringWriter writer = new StringWriter();
-        PatchXml.marshal(writer, patch);
-        final String marshalled = writer.toString();
-
-        XMLUtils.compareXml(original, marshalled, false);
+        try (final InputStream is = getResource(fileName)) {
+            final Patch patch = PatchXml.parse(is).resolvePatch(null, null);
+            final StringWriter writer = new StringWriter();
+            PatchXml.marshal(writer, patch);
+            final String marshalled = writer.toString();
+            XMLUtils.compareXml(original, marshalled, false);
+        }
     }
 
     static InputStream getResource(String name) throws IOException {

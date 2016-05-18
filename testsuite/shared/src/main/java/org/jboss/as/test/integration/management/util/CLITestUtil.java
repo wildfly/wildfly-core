@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -88,6 +88,19 @@ public class CLITestUtil {
         System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
         return CommandContextFactory.getInstance().newCommandContext(constructUri(null, serverAddr , serverPort), null, null, null, out);
+    }
+
+    public static CommandContext getCommandContext(DomainTestSupport domainTestSupport, InputStream in, OutputStream out) throws CliInitializationException {
+        // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
+        System.setProperty("aesh.ansi", "false");
+        System.setProperty("aesh.terminal", "org.jboss.aesh.terminal.TestTerminal");
+        setJBossCliConfig();
+        WildFlyManagedConfiguration config = domainTestSupport.getDomainMasterConfiguration();
+        return CommandContextFactory.getInstance().
+                newCommandContext(constructUri(config.getHostControllerManagementProtocol(),
+                        config.getHostControllerManagementAddress(),
+                        config.getHostControllerManagementPort()), null, null,
+                        in, out);
     }
 
     protected static void setJBossCliConfig() {

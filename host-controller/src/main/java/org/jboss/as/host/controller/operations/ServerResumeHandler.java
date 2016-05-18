@@ -24,6 +24,7 @@ package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -38,6 +39,9 @@ import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Stuart Douglas
@@ -63,6 +67,7 @@ public class ServerResumeHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
+        final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
 
         context.addStep(new OperationStepHandler() {
             @Override
@@ -70,7 +75,10 @@ public class ServerResumeHandler implements OperationStepHandler {
                 // WFLY-2189 trigger a write-runtime authz check
                 context.getServiceRegistry(true);
 
-                serverInventory.resumeServer(serverName);
+                final List<ModelNode> errorResponses = serverInventory.resumeServers(Collections.singleton(serverName), blockingTimeout);
+                if ( !errorResponses.isEmpty() ){
+                    context.getFailureDescription().set(errorResponses.get(0));
+                }
             }
         }, OperationContext.Stage.RUNTIME);
     }

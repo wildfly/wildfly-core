@@ -28,6 +28,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_THREAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_ROLLOUT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXCLUSIVE_RUNNING_TIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTION_STATUS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -38,6 +40,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_TIME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_MODIFICATION_BEGUN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_MODIFICATION_COMPLETE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
@@ -175,6 +179,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private Step lockStep;
     /** The step that acquired the container monitor  */
     private Step containerMonitorStep;
+    private boolean notifiedModificationBegun;
     private volatile Boolean requiresModelUpdateAuthorization;
     private volatile boolean readOnly = true;
 
@@ -186,7 +191,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final Integer operationId;
     private final String operationName;
     private final ModelNode operationAddress;
-    private final AccessMechanism accessMechanism;
+    private final AccessAuditContext accessAuditContext;
     private final ActiveOperationResource activeOperationResource;
     private final BooleanHolder done = new BooleanHolder();
     private final boolean capabilitiesAlreadyBroken;
@@ -204,7 +209,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                          final ControlledProcessState processState, final AuditLogger auditLogger, final boolean booting,
                          final HostServerGroupTracker hostServerGroupTracker,
                          final ModelNode blockingTimeoutConfig,
-                         final AccessMechanism accessMechanism,
+                         final AccessAuditContext accessAuditContext,
                          final NotificationSupport notificationSupport,
                          final boolean skipModelValidation,
                          final OperationStepHandler extraValidationStepHandler,
@@ -225,7 +230,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.hostServerGroupTracker = hostServerGroupTracker;
         this.blockingTimeoutConfig = blockingTimeoutConfig != null && blockingTimeoutConfig.isDefined() ? blockingTimeoutConfig : null;
         this.activeOperationResource = new ActiveOperationResource();
-        this.accessMechanism = accessMechanism;
+        this.accessAuditContext = accessAuditContext;
         this.partialModel = partialModel;
         if(runningMode == RunningMode.ADMIN_ONLY) {
             boolean hostXmlOnly = booting && !processType.isServer() && partialModel;
@@ -474,7 +479,18 @@ final class OperationContextImpl extends AbstractOperationContext {
                 throw te;
             } finally {
                 executionStatus = originalExecutionStatus;
+                notifyModificationsComplete();
             }
+        }
+    }
+
+    private void notifyModificationsComplete() {
+        if (notifiedModificationBegun) {
+            Notification notification = new Notification(RUNTIME_MODIFICATION_COMPLETE,
+                    modelController.getModelControllerResourceAddress(managementModel),
+                    MGMT_OP_LOGGER.runtimeModificationComplete());
+            notificationSupport.emit(notification);
+            notifiedModificationBegun = false;
         }
     }
 
@@ -767,6 +783,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 try {
                     executionStatus = ExecutionStatus.AWAITING_STABILITY;
                     modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, respectInterruption);
+                    notifyModificationBegun();
                 } catch (InterruptedException e) {
                     if (resultAction != ResultAction.ROLLBACK) {
                         // We're not on the way out, so we've been cancelled on the way in
@@ -794,7 +811,20 @@ final class OperationContextImpl extends AbstractOperationContext {
                     executionStatus = origStatus;
                 }
             }
+        } else if (!notifiedModificationBegun) {
+            // We were asked to lock, but affectsRuntime was set while notifiedModificationBegun wasn't
+            // This means we must be trying to modify again after we cleared the notifiedModificationBegun marker,
+            // i.e. in a rollback
+            notifyModificationBegun();
         }
+    }
+
+    private void notifyModificationBegun() {
+        Notification notification = new Notification(RUNTIME_MODIFICATION_BEGUN,
+                modelController.getModelControllerResourceAddress(managementModel),
+                MGMT_OP_LOGGER.runtimeModificationBegun());
+        notificationSupport.emit(notification);
+        notifiedModificationBegun = true;
     }
 
     public Resource readResource(final PathAddress requestAddress) {
@@ -1029,7 +1059,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         // WFLY-3017 See if this write means a persistent config change
         // For speed, we assume all calls during boot relate to persistent config
         boolean runtimeOnly = isResourceRuntimeOnly(address);
-        if (runtimeOnly) {
+        if (!runtimeOnly) {
             rejectUserDomainServerUpdates();
         }
         checkHostServerGroupTracker(address);
@@ -1143,6 +1173,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         } finally {
             try {
                 if (this.containerMonitorStep == step) {
+                    notifyModificationsComplete();
                     resetContainerStateChanges();
                 }
             } finally {
@@ -2443,9 +2474,20 @@ final class OperationContextImpl extends AbstractOperationContext {
 
             model.get(CALLER_THREAD).set(initiatingThread.getName());
             ModelNode accessMechanismNode = model.get(ACCESS_MECHANISM);
-            if (accessMechanism != null) {
-                accessMechanismNode.set(accessMechanism.toString());
+            ModelNode domainUUIDNode = model.get(DOMAIN_UUID);
+            boolean domainRollout = false;
+            if (accessAuditContext != null) {
+                AccessMechanism accessMechanism = accessAuditContext.getAccessMechanism();
+                if (accessMechanism != null) {
+                    accessMechanismNode.set(accessMechanism.toString());
+                }
+                String domainUUID = accessAuditContext.getDomainUuid();
+                if (domainUUID != null) {
+                    domainUUIDNode.set(domainUUID);
+                }
+                domainRollout = accessAuditContext.isDomainRollout();
             }
+            model.get(DOMAIN_ROLLOUT).set(domainRollout);
             model.get(EXECUTION_STATUS).set(getExecutionStatus());
             model.get(RUNNING_TIME).set(System.nanoTime() - startTime);
             long exclusive = exclusiveStartTime;

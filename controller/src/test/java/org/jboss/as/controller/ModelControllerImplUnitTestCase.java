@@ -26,8 +26,11 @@
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
@@ -45,7 +48,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLED_BACK;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_MODIFICATION_BEGUN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_MODIFICATION_COMPLETE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_UPDATE_SKIPPED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.junit.Assert.assertEquals;
@@ -53,10 +59,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.notification.Notification;
+import org.jboss.as.controller.notification.NotificationFilter;
+import org.jboss.as.controller.notification.NotificationHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
@@ -92,6 +104,7 @@ public class ModelControllerImplUnitTestCase {
     private ServiceContainer container;
     private ModelController controller;
     private AtomicBoolean sharedState;
+    private ServiceNotificationHandler notificationHandler;
 
     public static void toggleRuntimeState(AtomicBoolean state) {
         boolean runtimeVal = false;
@@ -113,7 +126,8 @@ public class ModelControllerImplUnitTestCase {
         controller = svc.getValue();
         ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
         controller.execute(setup, null, null, null);
-
+        notificationHandler = new ServiceNotificationHandler();
+        controller.getNotificationRegistry().registerNotificationHandler(PathAddress.pathAddress(CORE_SERVICE, MANAGEMENT).append(SERVICE, MANAGEMENT_OPERATIONS), notificationHandler, notificationHandler);
         assertEquals(ControlledProcessState.State.RUNNING, svc.getCurrentProcessState());
     }
 
@@ -137,9 +151,11 @@ public class ModelControllerImplUnitTestCase {
         ModelNode result = controller.execute(getOperation("good", "attr1", 5), null, null, null);
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
         assertEquals(1, result.get("result").asInt());
+        notificationHandler.validate(0);
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
         assertEquals(5, result.get(RESULT).asInt());
+        notificationHandler.validate(0);
     }
 
     /**
@@ -148,10 +164,10 @@ public class ModelControllerImplUnitTestCase {
     @Test
     public void testGoodModelExecutionTxRollback() {
         ModelNode result = controller.execute(getOperation("good", "attr1", 5), null, RollbackTransactionControl.INSTANCE, null);
-        System.out.println(result);
         // Store response data for later assertions after we check more critical stuff
         String outcome = result.get(OUTCOME).asString();
         boolean rolledback = result.get(ROLLED_BACK).asBoolean();
+        notificationHandler.validate(0);
 
         // Confirm model was unchanged
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
@@ -161,6 +177,7 @@ public class ModelControllerImplUnitTestCase {
         // Assert the first response was as expected
         assertEquals(FAILED, outcome);  // TODO success may be valid???
         assertTrue(rolledback);
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -168,11 +185,13 @@ public class ModelControllerImplUnitTestCase {
         ModelNode result = controller.execute(getOperation("bad", "attr1", 5), null, null, null);
         assertEquals(FAILED, result.get(OUTCOME).asString());
         assertEquals("this request is bad", result.get(FAILURE_DESCRIPTION).asString());
+        notificationHandler.validate(0);
 
         // Confirm model was unchanged
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
         assertEquals(1, result.get(RESULT).asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -183,11 +202,13 @@ public class ModelControllerImplUnitTestCase {
 
         // Confirm runtime state was unchanged
         assertTrue(sharedState.get());
+        notificationHandler.validate(0);
 
         // Confirm model was unchanged
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(1, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -198,11 +219,13 @@ public class ModelControllerImplUnitTestCase {
 
         // Confirm runtime state was unchanged
         assertTrue(sharedState.get());
+        notificationHandler.validate(0);
 
         // Confirm model was unchanged
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(1, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -216,11 +239,13 @@ public class ModelControllerImplUnitTestCase {
 
         // Confirm runtime state was changed
         assertFalse(sharedState.get());
+        notificationHandler.validate(0);
 
         // Confirm model was changed
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(5, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -234,11 +259,13 @@ public class ModelControllerImplUnitTestCase {
 
         // Confirm runtime state was changed (handler changes it and throws exception, does not fix state)
         assertFalse(sharedState.get());
+        notificationHandler.validate(0);
 
         // Confirm model was unchanged
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(1, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -249,12 +276,14 @@ public class ModelControllerImplUnitTestCase {
         ModelNode result = controller.execute(op, null, null, null);
         assertEquals(FAILED, result.get(OUTCOME).asString());
         assertTrue(result.get("failure-description").toString().contains("OFE"));
+        notificationHandler.validate(0);
 
         // Confirm model was changed
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         System.out.println(result);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(5, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -265,11 +294,13 @@ public class ModelControllerImplUnitTestCase {
 
         // Confirm runtime state was unchanged
         assertTrue(sharedState.get());
+        notificationHandler.validate(0);
 
         // Confirm model was unchanged
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(1, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -282,22 +313,24 @@ public class ModelControllerImplUnitTestCase {
         ServiceController<?> sc = container.getService(ServiceName.JBOSS.append("good-service"));
         assertNotNull(sc);
         assertEquals(ServiceController.State.UP, sc.getState());
+        notificationHandler.validate(1);
 
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(5, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
     public void testGoodServiceTxRollback() throws Exception {
         ModelNode result = controller.execute(getOperation("good-service", "attr1", 5), null, RollbackTransactionControl.INSTANCE, null);
-        System.out.println(result);
         // Store response data for later assertions after we check more critical stuff
 
         ServiceController<?> sc = container.getService(ServiceName.JBOSS.append("good-service"));
         if (sc != null) {
             assertEquals(ServiceController.Mode.REMOVE, sc.getMode());
         }
+        notificationHandler.validate(2);
 
         // Confirm model was unchanged
         ModelNode result2 = controller.execute(getOperation("good", "attr1", 1), null, null, null);
@@ -307,6 +340,7 @@ public class ModelControllerImplUnitTestCase {
         // Assert the first response was as expected
         assertEquals(FAILED, result.get(OUTCOME).asString());   // TODO success may be valid???
         assertTrue(result.get(ROLLED_BACK).asBoolean());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -319,10 +353,11 @@ public class ModelControllerImplUnitTestCase {
         ServiceController<?> sc = container.getService(ServiceName.JBOSS.append("good-service"));
         assertNotNull(sc);
         assertEquals(ServiceController.State.UP, sc.getState());
+        notificationHandler.validate(1);
 
         ModelNode result2 = controller.execute(getOperation("invalid-service-update", "attr1", 5), null, null, null);
-        System.out.println(result2);
-        assertEquals(1, result.get("result").asInt());
+        assertEquals("failed", result2.get("outcome").asString());
+        notificationHandler.validate(2);
 
         ServiceController<?> sc2 = container.getService(ServiceName.JBOSS.append("good-service"));
         assertNotNull(sc2);
@@ -332,7 +367,6 @@ public class ModelControllerImplUnitTestCase {
     @Test
     public void testBadService() throws Exception {
         ModelNode result = controller.execute(getOperation("bad-service", "attr1", 5, "good"), null, null, null);
-        System.out.println(result);
         assertEquals(FAILED, result.get(OUTCOME).asString());
         assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
 
@@ -340,11 +374,13 @@ public class ModelControllerImplUnitTestCase {
         if (sc != null) {
             assertEquals(ServiceController.Mode.REMOVE, sc.getMode());
         }
+        notificationHandler.validate(2);
 
         // Confirm model was unchanged
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(1, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -358,11 +394,13 @@ public class ModelControllerImplUnitTestCase {
         if (sc != null) {
             assertEquals(ServiceController.Mode.REMOVE, sc.getMode());
         }
+        notificationHandler.validate(2);
 
         // Confirm model was unchanged
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(1, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -377,6 +415,7 @@ public class ModelControllerImplUnitTestCase {
         assertTrue(result.get("result").hasDefined("child"));
         assertTrue(result.get("result", "child").has("one"));
         assertFalse(result.get("result", "child").hasDefined("one"));
+        notificationHandler.validate(0);
 
         operation = new ModelNode();
         operation.get(OP).set(READ_RESOURCE_OPERATION);
@@ -385,6 +424,7 @@ public class ModelControllerImplUnitTestCase {
 
         result = controller.execute(operation, null, null, null);
         assertTrue(result.get("result", "child", "one").hasDefined("attribute1"));
+        notificationHandler.validate(0);
 
         operation = new ModelNode();
         operation.get(OP).set(READ_CHILDREN_NAMES_OPERATION);
@@ -394,6 +434,7 @@ public class ModelControllerImplUnitTestCase {
         result = controller.execute(operation, null, null, null).get("result");
         assertEquals("one", result.get(0).asString());
         assertEquals("two", result.get(1).asString());
+        notificationHandler.validate(0);
 
         operation = new ModelNode();
         operation.get(OP).set(READ_CHILDREN_TYPES_OPERATION);
@@ -401,77 +442,90 @@ public class ModelControllerImplUnitTestCase {
 
         result = controller.execute(operation, null, null, null).get("result");
         assertEquals("child", result.get(0).asString());
+        notificationHandler.validate(0);
 
         operation = new ModelNode();
         operation.get(OP).set(READ_CHILDREN_RESOURCES_OPERATION);
         operation.get(OP_ADDR).setEmptyList();
         operation.get(CHILD_TYPE).set("child");
+
+        result = controller.execute(operation, null, null, null).get("result");
+        assertEquals(result.toString(), 2, result.asInt());
+        Iterator<String> iter = result.keys().iterator();
+        assertEquals(result.toString(), "one", iter.next());
+        assertEquals(result.toString(), "two", iter.next());
+
+        notificationHandler.validate(0);
     }
 
     @Test
     public void testReloadRequired() throws Exception {
         ModelNode result = controller.execute(getOperation("reload-required", "attr1", 5), null, null, null);
-        System.out.println(result);
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
         assertTrue(result.get(RESPONSE_HEADERS, RUNTIME_UPDATE_SKIPPED).asBoolean());
         assertTrue(result.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RELOAD).asBoolean());
         assertEquals(ControlledProcessState.State.RELOAD_REQUIRED.toString(), result.get(RESPONSE_HEADERS, PROCESS_STATE).asString());
+        notificationHandler.validate(0);
 
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(5, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
     public void testRestartRequired() throws Exception {
         ModelNode result = controller.execute(getOperation("restart-required", "attr1", 5), null, null, null);
-        System.out.println(result);
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
         assertTrue(result.get(RESPONSE_HEADERS, RUNTIME_UPDATE_SKIPPED).asBoolean());
         assertTrue(result.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RESTART).asBoolean());
         assertEquals(ControlledProcessState.State.RESTART_REQUIRED.toString(), result.get(RESPONSE_HEADERS, PROCESS_STATE).asString());
+        notificationHandler.validate(0);
 
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(5, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
     public void testReloadRequiredTxRollback() throws Exception {
         ModelNode result = controller.execute(getOperation("reload-required", "attr1", 5), null, RollbackTransactionControl.INSTANCE, null);
-        System.out.println(result);
         assertEquals(FAILED, result.get(OUTCOME).asString());
         assertTrue(result.get(RESPONSE_HEADERS, RUNTIME_UPDATE_SKIPPED).asBoolean());
         assertFalse(result.get(RESPONSE_HEADERS).hasDefined(OPERATION_REQUIRES_RELOAD));
         assertFalse(result.get(RESPONSE_HEADERS).hasDefined(PROCESS_STATE));
+        notificationHandler.validate(0);
 
         // Confirm model was unchanged
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(1, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
     public void testRestartRequiredTxRollback() throws Exception {
         ModelNode result = controller.execute(getOperation("restart-required", "attr1", 5), null, RollbackTransactionControl.INSTANCE, null);
-        System.out.println(result);
         assertEquals(FAILED, result.get(OUTCOME).asString());
         assertTrue(result.get(RESPONSE_HEADERS, RUNTIME_UPDATE_SKIPPED).asBoolean());
         assertFalse(result.get(RESPONSE_HEADERS).hasDefined(OPERATION_REQUIRES_RESTART));
         assertFalse(result.get(RESPONSE_HEADERS).hasDefined(PROCESS_STATE));
+        notificationHandler.validate(0);
 
         // Confirm model was unchanged
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(1, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
     public void testRemoveDependentService() throws Exception {
         ModelNode result = controller.execute(getOperation("dependent-service", "attr1", 5), null, null, null);
-        System.out.println(result);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(1, result.get("result").asInt());
+        notificationHandler.validate(1);
 
         ServiceController<?> sc = container.getService(ServiceName.JBOSS.append("depended-service"));
         assertNotNull(sc);
@@ -506,6 +560,7 @@ public class ModelControllerImplUnitTestCase {
         System.out.println(result);
         assertTrue(outcome);
         assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
+        notificationHandler.validate(2);
 
         sc = container.getService(ServiceName.JBOSS.append("depended-service"));
         assertNotNull(sc);
@@ -519,6 +574,7 @@ public class ModelControllerImplUnitTestCase {
         result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(5, result.get("result").asInt());
+        notificationHandler.validate(0);
     }
 
     @Test
@@ -543,6 +599,7 @@ public class ModelControllerImplUnitTestCase {
         ModelNode result = controller.execute(operation, null, null, null);
         assertEquals(FAILED, result.get(OUTCOME).asString());
         assertTrue(result.hasDefined(FAILURE_DESCRIPTION));
+        notificationHandler.validate(1);
 
         ServiceController<?> sc = container.getService(ServiceName.JBOSS.append("bad-service"));
         assertNotNull(sc);
@@ -552,10 +609,12 @@ public class ModelControllerImplUnitTestCase {
         result = controller.execute(getOperation("read-attribute", CHILD_ONE, "attribute1", 1), null, null, null);
         assertEquals("success", result.get("outcome").asString());
         assertEquals(5, result.get("result").asInt());
+        notificationHandler.validate(0);
 
         // Confirm we can still remove the resource
         result = controller.execute(getOperation("remove-bad-service", CHILD_ONE, "attribute1", 6), null, null, null);
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        notificationHandler.validate(1);
         sc = container.getService(ServiceName.JBOSS.append("bad-service"));
         if (sc != null) {
             assertEquals(ServiceController.Mode.REMOVE, sc.getMode());
@@ -565,6 +624,7 @@ public class ModelControllerImplUnitTestCase {
         operation = getOperation("read-attribute", CHILD_ONE, "attribute1", 1);
         result = controller.execute(operation, null, null, null);
         assertEquals(FAILED, result.get(OUTCOME).asString());
+        notificationHandler.validate(0);
     }
 
     /**
@@ -580,16 +640,19 @@ public class ModelControllerImplUnitTestCase {
         ModelNode result = controller.execute(operation, null, null, null);
         assertEquals(FAILED, result.get(OUTCOME).asString());
         assertTrue(result.get("failure-description").toString().contains("OFE"));
+        notificationHandler.validate(0);
 
         // Confirm we can still remove the resource
         result = controller.execute(getOperation("remove-bad-service", CHILD_ONE, "attribute1", 6), null, null, null);
         System.out.println(result);
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
         assertFalse(result.get(RESULT).isDefined());
+        notificationHandler.validate(1);
 
         // Confirm the resource is gone
         result = controller.execute(getOperation("read-attribute", CHILD_ONE, "attribute1", 1), null, null, null);
         assertEquals(FAILED, result.get(OUTCOME).asString());
+        notificationHandler.validate(0);
     }
 
     public static ModelNode getOperation(String opName, String attr, int val) {
@@ -1129,6 +1192,31 @@ public class ModelControllerImplUnitTestCase {
         @Override
         public void operationPrepared(ModelController.OperationTransaction transaction, ModelNode result) {
             transaction.rollback();
+        }
+    }
+
+    private static class ServiceNotificationHandler implements NotificationHandler, NotificationFilter {
+
+        private final List<String> events = new ArrayList<>();
+
+        @Override
+        public boolean isNotificationEnabled(Notification notification) {
+            return RUNTIME_MODIFICATION_BEGUN.equals(notification.getType())
+                    || RUNTIME_MODIFICATION_COMPLETE.equals(notification.getType());
+        }
+
+        @Override
+        public void handleNotification(Notification notification) {
+            events.add(notification.getType());
+        }
+
+        void validate(int expectedPairs) {
+            assertEquals(events.toString(), expectedPairs * 2, events.size());
+            for (int i = 0; i < events.size(); i++) {
+                String expected = i % 2 == 0 ? RUNTIME_MODIFICATION_BEGUN : RUNTIME_MODIFICATION_COMPLETE;
+                assertEquals(events.toString() + " " + i, expected, events.get(i));
+            }
+            events.clear();
         }
     }
 }

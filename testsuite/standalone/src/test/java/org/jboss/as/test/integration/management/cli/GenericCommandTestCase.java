@@ -45,6 +45,7 @@ public class GenericCommandTestCase extends AbstractCliTestBase {
 
     @AfterClass
     public static void after() throws Exception {
+        cli.sendLine("reload");
         AbstractCliTestBase.closeCLI();
     }
 

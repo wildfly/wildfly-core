@@ -60,7 +60,6 @@ public class PropertyValueState extends ExpressionBaseState {
         enterState('[', new DefaultStateWithEndCharacter("BRACKETS", ']', true, true, enterStateHandlers));
         enterState('(', new DefaultStateWithEndCharacter("PARENTHESIS", ')', true, true, enterStateHandlers));
         enterState('{', new DefaultStateWithEndCharacter("BRACES", '}', true, true, enterStateHandlers));
-        setIgnoreWhitespaces(true);
         setDefaultHandler(WordCharacterHandler.IGNORE_LB_ESCAPE_OFF);
     }
 

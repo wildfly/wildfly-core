@@ -25,9 +25,9 @@
 package org.wildfly.core.test.standalone.extension.remove;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -46,7 +46,7 @@ public class ChildResourceDefinition extends SimpleResourceDefinition {
     public ChildResourceDefinition() {
         super(PathElement.pathElement("child"), new NonResolvingResourceDescriptionResolver(),
                 new AddChildHandler(),
-                ReloadRequiredRemoveStepHandler.INSTANCE
+                ModelOnlyRemoveStepHandler.INSTANCE
         );
     }
 

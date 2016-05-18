@@ -21,39 +21,28 @@
  */
 package org.jboss.as.test.manualmode.management.cli;
 
+import java.util.Map;
+import javax.inject.Inject;
+
+import org.jboss.as.cli.CommandContext;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
+import org.jboss.as.test.integration.management.util.CLIOpResult;
+import org.jboss.as.test.integration.management.util.CLITestUtil;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ServerControl;
+import org.wildfly.core.testrunner.ServerController;
+import org.wildfly.core.testrunner.WildflyTestRunner;
+
 import static org.hamcrest.CoreMatchers.is;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.util.Map;
-import javax.inject.Inject;
-
-import org.jboss.as.cli.CommandContext;
-import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
-import org.jboss.as.test.integration.management.util.CLIOpResult;
-import org.jboss.as.test.integration.management.util.CLITestUtil;
-import org.jboss.dmr.ModelNode;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.ServerControl;
-import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.xnio.IoUtils;
 
 /**
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a>  (c) 2013 Red Hat, inc.
@@ -62,7 +51,7 @@ import org.xnio.IoUtils;
 @ServerControl(manual = true)
 public class ReloadOpsTestCase extends AbstractCliTestBase {
 
-    private static final long TIMEOUT = 10_000L;
+    private static final int TIMEOUT = 10_000;
 
     @Inject
     private static ServerController container;
@@ -81,7 +70,6 @@ public class ReloadOpsTestCase extends AbstractCliTestBase {
 
     @Test
     public void testWriteAttribvuteWithReload() throws Exception {
-        ManagementClient managementClient = container.getClient();
         cli.sendLine("/subsystem=logging:read-attribute(name=add-logging-api-dependencies)");
         CLIOpResult result = cli.readAllAsOpResult();
         assertTrue(result.isIsOutcomeSuccess());
@@ -91,7 +79,7 @@ public class ReloadOpsTestCase extends AbstractCliTestBase {
         result = cli.readAllAsOpResult();
         assertTrue(result.isIsOutcomeSuccess());
         checkResponseHeadersForProcessState(result);
-        reloadServer(TIMEOUT);
+        executeReload();
         cli.sendLine("/subsystem=logging:read-attribute(name=add-logging-api-dependencies)");
         result = cli.readAllAsOpResult();
         assertTrue(result.isIsOutcomeSuccess());
@@ -108,9 +96,22 @@ public class ReloadOpsTestCase extends AbstractCliTestBase {
         assertThat(value, is("false"));
     }
 
-    private void reloadServer(long timeout) throws Exception {
-        executeReload();
-        waitForLiveServerToReload(timeout);
+    protected void checkResponseHeadersForProcessState(CLIOpResult result) {
+        assertNotNull("No response headers!", result.getFromResponse(ModelDescriptionConstants.RESPONSE_HEADERS));
+        Map responseHeaders = (Map) result.getFromResponse(ModelDescriptionConstants.RESPONSE_HEADERS);
+        Object processState = responseHeaders.get("process-state");
+        assertNotNull("No process state in response-headers!", processState);
+        assertTrue("Process state is of wrong type!", processState instanceof String);
+        assertEquals("Wrong content of process-state header", "reload-required", processState);
+    }
+
+    protected void assertNoProcessState(CLIOpResult result) {
+        if (result.getFromResponse(ModelDescriptionConstants.RESPONSE_HEADERS) == null) {
+            return;
+        }
+        Map responseHeaders = (Map) result.getFromResponse(ModelDescriptionConstants.RESPONSE_HEADERS);
+        Object processState = responseHeaders.get("process-state");
+        assertNull(processState);
     }
 
     private static void executeReload() throws Exception {
@@ -121,51 +122,6 @@ public class ReloadOpsTestCase extends AbstractCliTestBase {
         } finally {
             ctx.terminateSession();
         }
-
-    }
-
-    private void waitForLiveServerToReload(long timeout) throws Exception {
-        long start = System.currentTimeMillis();
-        ModelNode operation = new ModelNode();
-        operation.get(OP_ADDR).setEmptyList();
-        operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        operation.get(NAME).set("server-state");
-        ModelControllerClient liveClient = container.getClient().getControllerClient();
-        while (System.currentTimeMillis() - start < timeout) {
-            try {
-                ModelNode result = liveClient.execute(operation);
-                if ("running".equals(result.get(RESULT).asString())) {
-                    return;
-                }
-            } catch (IOException e) {
-            } finally {
-                IoUtils.safeClose(liveClient);
-            }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-            }
-        }
-        fail("Live Server did not reload in the imparted time.");
-    }
-
-    protected void checkResponseHeadersForProcessState(CLIOpResult result) {
-        assertNotNull("No response headers!", result.getFromResponse(ModelDescriptionConstants.RESPONSE_HEADERS));
-        Map responseHeaders = (Map) result.getFromResponse(ModelDescriptionConstants.RESPONSE_HEADERS);
-        Object processState = responseHeaders.get("process-state");
-        assertNotNull("No process state in response-headers!", processState);
-        assertTrue("Process state is of wrong type!", processState instanceof String);
-        assertEquals("Wrong content of process-state header", "reload-required", (String) processState);
-
-    }
-
-    protected void assertNoProcessState(CLIOpResult result) {
-        if (result.getFromResponse(ModelDescriptionConstants.RESPONSE_HEADERS) == null) {
-            return;
-        }
-        Map responseHeaders = (Map) result.getFromResponse(ModelDescriptionConstants.RESPONSE_HEADERS);
-        Object processState = responseHeaders.get("process-state");
-        assertNull(processState);
 
     }
 }

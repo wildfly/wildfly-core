@@ -24,6 +24,7 @@ package org.jboss.as.server.mgmt;
 import io.undertow.server.ListenerRegistry;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
 
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -283,7 +284,17 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                 }
             }
         } catch (Exception e) {
-            throw ServerLogger.ROOT_LOGGER.failedToStartHttpManagementService(e);
+            Throwable cause = e.getCause();
+            if (e instanceof BindException || cause instanceof BindException) {
+                final StringBuilder sb = new StringBuilder().append(e.getLocalizedMessage());
+                if (bindAddress != null)
+                    sb.append(" ").append(bindAddress);
+                if (secureBindAddress != null)
+                    sb.append(" ").append(secureBindAddress);
+                throw new StartException(sb.toString());
+            } else {
+                throw ServerLogger.ROOT_LOGGER.failedToStartHttpManagementService(e);
+            }
         }
     }
 

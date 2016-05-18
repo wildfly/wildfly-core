@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2014, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -48,6 +48,7 @@ public class CommandSubstitutionTestCase {
     private static final String READ_ATTRIBUTE = "read-attribute";
     private static final String SYSTEM_PROPERTY = "system-property";
     private static final String TEST = "prop_test";
+    private static final String TEST2 = "prop_test2";
     private static final String VALUE = "value";
 
     private CommandContext ctx;
@@ -73,6 +74,7 @@ public class CommandSubstitutionTestCase {
             safeRemove(READ_ATTRIBUTE);
             safeRemove(SYSTEM_PROPERTY);
             safeRemove(TEST);
+            safeRemove(TEST2);
             safeRemove(VALUE);
             ctx.setVariable("a", null);
             ctx.setVariable("b", null);
@@ -89,6 +91,14 @@ public class CommandSubstitutionTestCase {
            .append(cmdSubstitution(ADD)).append('(').append(opSubstitution(VALUE)).append('=').append("1").append(')');
         ctx.handle(buf.toString());
         assertEquals("1", readProperty(TEST));
+
+        // Same substitution but this time with implicit values.
+        buf.setLength(0);
+        buf.append('/')
+                .append(opSubstitution(SYSTEM_PROPERTY, true)).append('=').append(TEST2).append(':')
+                .append(cmdSubstitution(ADD)).append('(').append(opSubstitution(VALUE, true)).append('=').append("1").append(')');
+        ctx.handle(buf.toString());
+        assertEquals("1", readProperty(TEST2));
 
         buf.setLength(0);
         buf.append(opSubstitution(READ_ATTRIBUTE))
@@ -108,7 +118,12 @@ public class CommandSubstitutionTestCase {
     }
 
     private String opSubstitution(String prop) {
-        return "`/system-property=" + prop + ":read-attribute(name=value)`";
+        return opSubstitution(prop, false);
+    }
+
+    private String opSubstitution(String prop, boolean resolve) {
+        return resolve ? "`/system-property=" + prop + ":read-attribute(name=value, resolve-expressions)`"
+                : "`/system-property=" + prop + ":read-attribute(name=value)`";
     }
 
     private String cmdSubstitution(String prop) {

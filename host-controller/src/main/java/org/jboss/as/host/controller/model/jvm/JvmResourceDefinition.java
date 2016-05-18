@@ -45,10 +45,13 @@ public class JvmResourceDefinition extends SimpleResourceDefinition {
     private final boolean server;
 
     protected JvmResourceDefinition(boolean server) {
-        super(PathElement.pathElement(ModelDescriptionConstants.JVM),
-                new StandardResourceDescriptionResolver("jvm", HostEnvironmentResourceDefinition.class.getPackage().getName() + ".LocalDescriptions", HostEnvironmentResourceDefinition.class.getClassLoader(), true, false),
-                new JVMAddHandler(JvmAttributes.getAttributes(server)),
-                JVMRemoveHandler.INSTANCE);
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.JVM),
+            new StandardResourceDescriptionResolver(ModelDescriptionConstants.JVM, HostEnvironmentResourceDefinition.class.getPackage().getName() + ".LocalDescriptions",
+            HostEnvironmentResourceDefinition.class.getClassLoader(), true, false))
+            .setAddHandler(new JVMAddHandler(JvmAttributes.getAttributes(server)))
+            .setRemoveHandler(JVMRemoveHandler.INSTANCE)
+            .setMaxOccurs(server ? 1 : Integer.MAX_VALUE)
+            .setMinOccurs(0));
         this.server = server;
     }
 

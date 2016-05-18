@@ -1,18 +1,34 @@
 package org.wildfly.core.testrunner;
 
+import static org.jboss.as.controller.client.helpers.ClientConstants.NAME;
+import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
+import static org.jboss.as.controller.client.helpers.ClientConstants.OP_ADDR;
+import static org.jboss.as.controller.client.helpers.ClientConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
+import static org.jboss.as.controller.client.helpers.ClientConstants.SERVER_CONFIG;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
+import org.junit.Assert;
 import org.wildfly.core.launcher.Launcher;
 import org.wildfly.core.launcher.ProcessHelper;
 import org.wildfly.core.launcher.StandaloneCommandBuilder;
@@ -21,8 +37,11 @@ import org.wildfly.core.launcher.StandaloneCommandBuilder;
  * encapsulation of a server process
  *
  * @author Stuart Douglas
+ * @author Tomaz Cerar
  */
 public class Server {
+
+    public static final String LEGACY_JAVA_HOME = "legacy.java.home";
 
     private final String jbossHome = System.getProperty("jboss.home", System.getenv("JBOSS_HOME"));
     private final String modulePath = System.getProperty("module.path");
@@ -30,20 +49,21 @@ public class Server {
     private final String jbossArgs = System.getProperty("jboss.args");
     private final String javaHome = System.getProperty("java.home", System.getenv("JAVA_HOME"));
     //Use this when specifying an older java to be used for running the server
-    private final String legacyJavaHome = System.getProperty("legacy.java.home");
-    private final String serverConfig = System.getProperty("server.config", "standalone.xml");
+    private final String legacyJavaHome = System.getProperty(LEGACY_JAVA_HOME);
+    private String serverConfig = System.getProperty("server.config", "standalone.xml");
     private final int managementPort = Integer.getInteger("management.port", 9990);
     private final String managementAddress = System.getProperty("management.address", "localhost");
     private final String managementProtocol = System.getProperty("management.protocol", "http-remoting");
 
     private final String serverDebug = "wildfly.debug";
     private final int serverDebugPort = Integer.getInteger("wildfly.debug.port", 8787);
+    private boolean adminMode = false;
 
     private final Logger log = Logger.getLogger(Server.class.getName());
     private Thread shutdownThread;
 
     private volatile Process process;
-    private volatile ManagementClient client;
+    private final ManagementClient client = new ManagementClient(new DelegatingModelControllerClient(ServerClientProvider.INSTANCE), managementAddress, managementPort, managementProtocol);
 
 
     private static boolean processHasDied(final Process process) {
@@ -54,6 +74,18 @@ public class Server {
             // good
             return false;
         }
+    }
+
+    /**
+     * Sets server config to use
+     * @param serverConfig
+     */
+    public void setServerConfig(String serverConfig) {
+        this.serverConfig = serverConfig;
+    }
+
+    public void setAdminMode(boolean adminMode) {
+        this.adminMode = adminMode;
     }
 
     protected void start() {
@@ -77,6 +109,10 @@ public class Server {
                 commandBuilder.setDebug(true, serverDebugPort);
             }
 
+            if (this.adminMode) {
+                commandBuilder.setAdminOnly();
+            }
+
             //we are testing, of course we want assertions and set-up some other defaults
             commandBuilder.addJavaOption("-ea")
                     .setServerConfiguration(serverConfig)
@@ -98,18 +134,7 @@ public class Server {
             final Process proc = process;
             shutdownThread = ProcessHelper.addShutdownHook(proc);
 
-
-            ModelControllerClient modelControllerClient = null;
-            try {
-                modelControllerClient = ModelControllerClient.Factory.create(
-                        managementProtocol,
-                        managementAddress,
-                        managementPort,
-                        Authentication.getCallbackHandler());
-            } catch (UnknownHostException e) {
-                throw new RuntimeException(e);
-            }
-            client = new ManagementClient(modelControllerClient, managementAddress, managementPort, managementProtocol);
+            createClient();
 
             long startupTimeout = 30;
             long timeout = startupTimeout * 1000;
@@ -145,23 +170,20 @@ public class Server {
         }
         try {
             if (process != null) {
-                Thread shutdown = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        long timeout = System.currentTimeMillis() + 10000;
-                        while (process != null && System.currentTimeMillis() < timeout) {
-                            try {
-                                process.exitValue();
-                                process = null;
-                            } catch (IllegalThreadStateException e) {
+                Thread shutdown = new Thread(() -> {
+                    long timeout = System.currentTimeMillis() + 10000;
+                    while (process != null && System.currentTimeMillis() < timeout) {
+                        try {
+                            process.exitValue();
+                            process = null;
+                        } catch (IllegalThreadStateException e) {
 
-                            }
                         }
+                    }
 
-                        // The process hasn't shutdown within 60 seconds. Terminate forcibly.
-                        if (process != null) {
-                            process.destroy();
-                        }
+                    // The process hasn't shutdown within 60 seconds. Terminate forcibly.
+                    if (process != null) {
+                        process.destroy();
                     }
                 });
                 shutdown.start();
@@ -209,16 +231,106 @@ public class Server {
         return client;
     }
 
+    private void createClient() {
+        ServerClientProvider.INSTANCE.setClient(createModelControllerClient());
+    }
+
+    private ModelControllerClient createModelControllerClient() {
+        ModelControllerClient modelControllerClient = null;
+        try {
+            modelControllerClient = ModelControllerClient.Factory.create(
+                    managementProtocol,
+                    managementAddress,
+                    managementPort,
+                    Authentication.getCallbackHandler());
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        return modelControllerClient;
+    }
+
     private void safeCloseClient() {
         try {
             if (client != null) {
                 client.close();
-                client = null;
             }
         } catch (final Exception e) {
             Logger.getLogger(this.getClass().getName()).warnf(e, "Caught exception closing ModelControllerClient");
         }
     }
+
+    /**
+     * Reload current server
+     * This method makes sure client on server is still operational after reload is done.
+     * @param adminOnly tells server to boot in admin only mode or normal
+     * @param timeout time in miliseconds to wait for server to come back after reload
+     */
+    public void reload(boolean adminOnly, int timeout) {
+        reload(adminOnly, timeout, null);
+    }
+
+    /**
+     * Reload current server
+     * This method makes sure client on server is still operational after reload is done.
+     * @param adminOnly tells server to boot in admin only mode or normal
+     * @param timeout time in miliseconds to wait for server to come back after reload
+     */
+    public void reload(boolean adminOnly, int timeout, String serverConfig) {
+        executeReload(adminOnly, serverConfig);
+        waitForLiveServerToReload(timeout); //30 seconds
+    }
+
+    private void executeReload(boolean adminOnly, String serverConfig) {
+        ModelNode operation = new ModelNode();
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(OP).set("reload");
+        operation.get("admin-only").set(adminOnly);
+        if (serverConfig != null) {
+            operation.get(SERVER_CONFIG).set(serverConfig);
+        }
+        try {
+            ModelNode result = client.getControllerClient().execute(operation);
+            Assert.assertEquals("success", result.get(ClientConstants.OUTCOME).asString());
+        } catch (IOException e) {
+            final Throwable cause = e.getCause();
+            if (!(cause instanceof ExecutionException) && !(cause instanceof CancellationException) && !(cause instanceof SocketException) ) {
+                throw new RuntimeException(e);
+            } // else ignore, this might happen if the channel gets closed before we got the response
+        }finally {
+            safeCloseClient();//close existing client
+        }
+    }
+
+    private void recreateClient(){
+        safeCloseClient();
+        ServerClientProvider.INSTANCE.setClient(createModelControllerClient());
+    }
+
+    void waitForLiveServerToReload(int timeout) {
+        long start = System.currentTimeMillis();
+        ModelNode operation = new ModelNode();
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
+        operation.get(NAME).set("server-state");
+        while (System.currentTimeMillis() - start < timeout) {
+            recreateClient();
+            ModelControllerClient liveClient = client.getControllerClient();
+            try {
+                ModelNode result = liveClient.execute(operation);
+                if ("running".equals(result.get(RESULT).asString())) {
+                    return;
+                }
+            } catch (IOException e) {
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+
+        }
+        fail("Live Server did not reload in the imparted time.");
+    }
+
 
     /**
      * Runnable that consumes the output of the process. If nothing consumes the output the AS will hang on some
@@ -247,6 +359,26 @@ public class Server {
                 }
             } catch (IOException ignore) {
             }
+        }
+    }
+
+    private static class ServerClientProvider implements DelegatingModelControllerClient.DelegateProvider {
+
+        static final ServerClientProvider INSTANCE = new ServerClientProvider();
+        private final AtomicReference<ModelControllerClient> client = new AtomicReference<>();
+
+        void setClient(final ModelControllerClient client) {
+            assert client != null;
+            this.client.set(client);
+        }
+
+        @Override
+        public ModelControllerClient getDelegate() {
+            final ModelControllerClient result = client.get();
+            if (result == null) {
+                throw new IllegalStateException("The client has been closed");
+            }
+            return result;
         }
     }
 

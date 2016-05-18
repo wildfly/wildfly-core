@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -141,13 +141,25 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
         }
 
         if(lastGroup.endsOnPropertyListStart()) {
-            candidates.add(Util.MAX_FAILED_SERVERS + '=');
-            candidates.add(Util.MAX_FAILURE_PERCENTAGE + '=');
-            candidates.add(Util.ROLLING_TO_SERVERS + '=');
+            candidates.add(Util.MAX_FAILED_SERVERS);
+            candidates.add(Util.MAX_FAILURE_PERCENTAGE);
+            candidates.add(Util.ROLLING_TO_SERVERS);
+            candidates.add(Util.NOT_OPERATOR);
             return buffer.length();
         }
 
-        if(lastGroup.hasProperties()) {
+        // Only return the set of boolean properties
+        if (lastGroup.endsOnNotOperator()) {
+            candidates.add(Util.ROLLING_TO_SERVERS);
+            return buffer.length();
+        }
+
+        if (lastGroup.hasProperties()) {
+            // To propose the right end character
+            boolean containsAll = lastGroup.hasProperty(Util.MAX_FAILED_SERVERS)
+                    && lastGroup.hasProperty(Util.MAX_FAILURE_PERCENTAGE)
+                    && lastGroup.hasProperty(Util.ROLLING_TO_SERVERS);
+
             final String propValue = lastGroup.getLastPropertyValue();
             if(propValue != null) {
                 if(Util.TRUE.startsWith(propValue)) {
@@ -155,23 +167,25 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
                 } else if(Util.FALSE.startsWith(propValue)) {
                     candidates.add(Util.FALSE);
                 } else {
+                    candidates.add(containsAll ? ")" : ",");
                     return buffer.length();
                 }
             } else if(lastGroup.endsOnPropertyValueSeparator()) {
                 if(Util.ROLLING_TO_SERVERS.equals(lastGroup.getLastPropertyName())) {
                     candidates.add(Util.FALSE);
-                    candidates.add(Util.TRUE);
+                    candidates.add(containsAll ? ")" : ",");
                 }
                 return buffer.length();
             } else if(lastGroup.endsOnPropertySeparator()) {
                 if(!lastGroup.hasProperty(Util.MAX_FAILED_SERVERS)) {
-                    candidates.add(Util.MAX_FAILED_SERVERS + '=');
+                    candidates.add(Util.MAX_FAILED_SERVERS);
                 }
                 if(!lastGroup.hasProperty(Util.MAX_FAILURE_PERCENTAGE)) {
-                    candidates.add(Util.MAX_FAILURE_PERCENTAGE + '=');
+                    candidates.add(Util.MAX_FAILURE_PERCENTAGE);
                 }
                 if(!lastGroup.hasProperty(Util.ROLLING_TO_SERVERS)) {
-                    candidates.add(Util.ROLLING_TO_SERVERS + '=');
+                    candidates.add(Util.ROLLING_TO_SERVERS);
+                    candidates.add(Util.NOT_OPERATOR);
                 }
                 return lastGroup.getLastSeparatorIndex() + 1;
             } else {
@@ -181,9 +195,24 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
                 }
                 if(Util.MAX_FAILURE_PERCENTAGE.startsWith(propName)) {
                     candidates.add(Util.MAX_FAILURE_PERCENTAGE + '=');
-                } else if(Util.ROLLING_TO_SERVERS.startsWith(propName)) {
-                    candidates.add(Util.ROLLING_TO_SERVERS + '=');
+                } else if (Util.ROLLING_TO_SERVERS.equals(propName)) {
+                    if (lastGroup.isLastPropertyNegated() && !containsAll) {
+                        candidates.add(Util.ROLLING_TO_SERVERS + ",");
+                    } else {
+                        candidates.add("=" + Util.FALSE);
+                        if (!containsAll) {
+                            candidates.add(",");
+                        } else {
+                            candidates.add(")");
+                        }
+                    }
+
+                } else if (Util.ROLLING_TO_SERVERS.startsWith(propName)) {
+                    candidates.add(Util.ROLLING_TO_SERVERS);
                 }
+            }
+            if (candidates.isEmpty() && containsAll) {
+                candidates.add(")");
             }
             return lastGroup.getLastChunkIndex();
         }

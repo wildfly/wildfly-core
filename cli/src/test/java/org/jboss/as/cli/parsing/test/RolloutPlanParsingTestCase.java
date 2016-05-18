@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -1116,6 +1116,27 @@ public class RolloutPlanParsingTestCase {
         assertTrue(handler.endsOnHeaderListStart());
         assertFalse(handler.isRequestComplete());
         assertFalse(handler.hasHeaders());
+    }
+
+    @Test
+    public void testImplictBooleanValueInGroupProperties() throws Exception {
+        parse("{rollout grp1(prop1,prop2,prop3,prop4=toto,prop5)}");
+        assertTrue(handler.getHeaders().size() == 1);
+        final ParsedRolloutPlanHeader rollout
+                = (ParsedRolloutPlanHeader) handler.getHeaders().
+                iterator().next();
+        SingleRolloutPlanGroup grp = rollout.getLastGroup();
+        assertTrue(grp.hasProperty("prop1"));
+        assertTrue(grp.hasProperty("prop2"));
+        assertTrue(grp.hasProperty("prop3"));
+        assertTrue(grp.hasProperty("prop4"));
+        assertTrue(grp.hasProperty("prop5"));
+        ModelNode mn = grp.toModelNode();
+        assertTrue(mn.get("prop1").asBoolean());
+        assertTrue(mn.get("prop2").asBoolean());
+        assertTrue(mn.get("prop3").asBoolean());
+        assertTrue(mn.get("prop4").asString().equals("toto"));
+        assertTrue(mn.get("prop5").asBoolean());
     }
 
     protected void parse(String opReq) throws CommandFormatException {

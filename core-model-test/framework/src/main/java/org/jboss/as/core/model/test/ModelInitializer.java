@@ -32,6 +32,7 @@ import org.jboss.as.controller.registry.Resource;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
+@FunctionalInterface
 public interface ModelInitializer {
 
     default void populateModel(ManagementModel managementModel) {

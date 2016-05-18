@@ -58,6 +58,7 @@ import org.jboss.as.controller.operations.common.SnapshotListHandler;
 import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.controller.operations.common.ValidateOperationHandler;
+import org.jboss.as.server.operations.WriteConfigHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -179,6 +180,11 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             .build();
     public static final SimpleAttributeDefinition NULL_PROFILE_NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PROFILE_NAME, ModelType.STRING, true)
             .build();
+    // replaces SERVER_STATE below, aliased in #ProcessStateAttributeHandler
+    public static final SimpleAttributeDefinition RUNTIME_CONFIGURATION_STATE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.RUNTIME_CONFIGURATION_STATE, ModelType.STRING)
+            .setStorageRuntime()
+            .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
+            .build();
     public static final SimpleAttributeDefinition SERVER_STATE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.PROCESS_STATE, ModelType.STRING)
             .setStorageRuntime()
             .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
@@ -290,6 +296,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerOperationHandler(SnapshotListHandler.DEFINITION, snapshotList);
             SnapshotTakeHandler snapshotTake = new SnapshotTakeHandler(extensibleConfigurationPersister);
             resourceRegistration.registerOperationHandler(SnapshotTakeHandler.DEFINITION, snapshotTake);
+            resourceRegistration.registerOperationHandler(WriteConfigHandler.DEFINITION, WriteConfigHandler.INSTANCE);
         }
 
         if (isDomain) {
@@ -310,7 +317,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         if (isDomain) {
 
             // TODO enable the descriptions so that they show up in the resource description
-            final ServerDomainProcessReloadHandler reloadHandler = new ServerDomainProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, operationIDUpdater);
+            final ServerDomainProcessReloadHandler reloadHandler = new ServerDomainProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, operationIDUpdater, serverEnvironment);
             resourceRegistration.registerOperationHandler(ServerDomainProcessReloadHandler.DOMAIN_DEFINITION, reloadHandler, false);
             resourceRegistration.registerOperationHandler(SetServerGroupHostHandler.DEFINITION, SetServerGroupHostHandler.INSTANCE);
 
@@ -330,7 +337,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 //            resourceRegistration.registerOperationHandler(getOperationDefinition("destroy"), NOOP);
 //            resourceRegistration.registerOperationHandler(getOperationDefinition("kill"), NOOP);
         } else {
-            final ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState);
+            final ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, serverEnvironment);
             resourceRegistration.registerOperationHandler(ServerProcessReloadHandler.DEFINITION, reloadHandler, false);
 
             resourceRegistration.registerOperationHandler(ServerSuspendHandler.DEFINITION, ServerSuspendHandler.INSTANCE);
@@ -365,6 +372,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerReadOnlyAttribute(LAUNCH_TYPE, new LaunchTypeHandler(serverEnvironment.getLaunchType()));
         }
 
+        resourceRegistration.registerReadOnlyAttribute(RUNTIME_CONFIGURATION_STATE, new ProcessStateAttributeHandler(processState));
         resourceRegistration.registerReadOnlyAttribute(SERVER_STATE, new ProcessStateAttributeHandler(processState));
         resourceRegistration.registerReadOnlyAttribute(PROCESS_TYPE, ProcessTypeHandler.INSTANCE);
         resourceRegistration.registerReadOnlyAttribute(RUNNING_MODE, new RunningModeReadHandler(runningModeControl));

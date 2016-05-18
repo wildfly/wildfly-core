@@ -138,7 +138,7 @@ class ExtensionsLoader {
             if(!module.isDefined()) {
                 addError("Extension " + ext.getName() + " is missing module attribute");
             } else {
-                final ModuleIdentifier moduleId = ModuleIdentifier.create(module.asString());
+                final ModuleIdentifier moduleId = ModuleIdentifier.fromString(module.asString());
                 ModuleClassLoader cl;
                 try {
                     cl = moduleLoader.loadModule(moduleId).getClassLoader();

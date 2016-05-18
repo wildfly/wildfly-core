@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.jboss.as.cli.CommandContext.Scope;
 
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.OperationRequestAddress;
@@ -185,6 +186,10 @@ public class Util {
     public static final String VALUE_TYPE = "value-type";
     public static final String WRITE = "write";
     public static final String WRITE_ATTRIBUTE = "write-attribute";
+
+    public static final String DESCRIPTION_RESPONSE = "DESCRIPTION_RESPONSE";
+
+    public static final String NOT_OPERATOR = "!";
 
     public static boolean isWindows() {
         return WildFlySecurityManager.getPropertyPrivileged("os.name", null).toLowerCase(Locale.ENGLISH).indexOf("windows") >= 0;
@@ -1069,12 +1074,13 @@ public class Util {
         }
         request.get(Util.OPERATION).set(operationName);
 
-        for(String propName : parsedLine.getPropertyNames()) {
-            final String value = parsedLine.getPropertyValue(propName);
+        for (String propName : parsedLine.getPropertyNames()) {
+            String value = parsedLine.getPropertyValue(propName);
             if(propName == null || propName.trim().isEmpty())
                 throw new OperationFormatException("The argument name is not specified: '" + propName + "'");
-            if(value == null || value.trim().isEmpty())
+            if (value == null || value.trim().isEmpty()) {
                 throw new OperationFormatException("The argument value is not specified for " + propName + ": '" + value + "'");
+            }
             final ModelNode toSet = ArgumentValueConverter.DEFAULT.fromString(ctx, value);
             request.get(propName).set(toSet);
         }
@@ -1113,30 +1119,24 @@ public class Util {
         return buf.toString();
     }
 
-    // returns the READ_OPERATION_DESCRIPTION outcome used to validate the request params
-    // return null if the operation has no params to validate
-    public static ModelNode validateRequest(CommandContext ctx, ModelNode request) throws CommandFormatException {
-
+    private static ModelNode retrieveDescription(CommandContext ctx,
+            ModelNode request) throws CommandFormatException {
         final ModelControllerClient client = ctx.getModelControllerClient();
-        if(client == null) {
+        if (client == null) {
             throw new CommandFormatException("No connection to the controller.");
         }
 
         final Set<String> keys = request.keys();
 
-        if(!keys.contains(Util.OPERATION)) {
+        if (!keys.contains(Util.OPERATION)) {
             throw new CommandFormatException("Request is missing the operation name.");
         }
         final String operationName = request.get(Util.OPERATION).asString();
 
-        if(!keys.contains(Util.ADDRESS)) {
+        if (!keys.contains(Util.ADDRESS)) {
             throw new CommandFormatException("Request is missing the address part.");
         }
         final ModelNode address = request.get(Util.ADDRESS);
-
-        if(keys.size() == 2) { // no props
-            return null;
-        }
 
         final ModelNode opDescrReq = new ModelNode();
         opDescrReq.get(Util.ADDRESS).set(address);
@@ -1146,16 +1146,38 @@ public class Util {
         final ModelNode outcome;
         try {
             outcome = client.execute(opDescrReq);
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new CommandFormatException("Failed to perform " + Util.READ_OPERATION_DESCRIPTION + " to validate the request: " + e.getLocalizedMessage());
         }
         if (!Util.isSuccess(outcome)) {
             throw new CommandFormatException("Failed to get the list of the operation properties: \"" + Util.getFailureDescription(outcome) + '\"');
         }
+        return outcome;
+    }
 
+    // returns the READ_OPERATION_DESCRIPTION outcome used to validate the request params
+    // return null if the operation has no params to validate
+    public static ModelNode validateRequest(CommandContext ctx, ModelNode request) throws CommandFormatException {
+
+        final Set<String> keys = request.keys();
+        if (keys.size() == 2) { // no props
+            return null;
+        }
+        ModelNode outcome = (ModelNode) ctx.get(Scope.REQUEST, DESCRIPTION_RESPONSE);
+        if (outcome == null) {
+            outcome = retrieveDescription(ctx, request);
+            if (outcome == null) {
+                return null;
+            } else {
+                ctx.set(Scope.REQUEST, DESCRIPTION_RESPONSE, outcome);
+            }
+        }
         if(!outcome.has(Util.RESULT)) {
             throw new CommandFormatException("Failed to perform " + Util.READ_OPERATION_DESCRIPTION + " to validate the request: result is not available.");
         }
+
+        final String operationName = request.get(Util.OPERATION).asString();
+
         final ModelNode result = outcome.get(Util.RESULT);
         final Set<String> definedProps = result.hasDefined(Util.REQUEST_PROPERTIES) ? result.get(Util.REQUEST_PROPERTIES).keys() : Collections.emptySet();
         if(definedProps.isEmpty()) {

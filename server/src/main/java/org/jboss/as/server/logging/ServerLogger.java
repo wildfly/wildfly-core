@@ -23,6 +23,7 @@
 package org.jboss.as.server.logging;
 
 import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.FATAL;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
@@ -1060,7 +1061,7 @@ public interface ServerLogger extends BasicLogger {
     IllegalStateException serverAlreadyPaused();
 
     @LogMessage(level = INFO)
-    @Message(id = 211, value = "Suspending server with %dms timeout.")
+    @Message(id = 211, value = "Suspending server with %d ms timeout.")
     void suspendingServer(long timeoutMillis);
 
     @LogMessage(level = INFO)
@@ -1095,7 +1096,7 @@ public interface ServerLogger extends BasicLogger {
     void undeployingDeploymentHasBeenRedeployed(String deploymentName);
 
     @LogMessage(level = INFO)
-    @Message(id = 220, value = "Server shutdown has been requested.")
+    @Message(id = 220, value = "Server shutdown has been requested via an OS signal")
     void shutdownHookInvoked();
 
     @LogMessage(level = WARN)
@@ -1173,7 +1174,26 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 235, value = "Security Manager is enabled")
     void securityManagerEnabled();
 
-    //@Message(id = 236, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
-    //OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+    @LogMessage(level = INFO)
+    @Message(id = 236, value = "Suspending server with no timeout.")
+    void suspendingServerWithNoTimeout();
+
+    @Message(id = 237, value = "It is not possible to use use-current-server-config=false while specifying a server-config")
+    OperationFailedException cannotBothHaveFalseUseCurrentConfigAndServerConfig();
+
+    @Message(id = 238, value = "server-config '%s' specified for reload could not be found")
+    OperationFailedException serverConfigForReloadNotFound(String serverConfig);
+
+    @LogMessage(level = FATAL)
+    @Message(id = 239, value = "Aborting with exit code %d")
+    void aborting(int code);
+
+    @LogMessage(level = INFO)
+    @Message(id = 240, value = "ProcessController has signalled to shut down; shutting down")
+    void shuttingDownInResponseToProcessControllerSignal();
+
+    @LogMessage(level = INFO)
+    @Message(id = 241, value = "Shutting down in response to management operation '%s'")
+    void shuttingDownInResponseToManagementRequest(String op);
 
 }

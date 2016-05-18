@@ -25,7 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -108,7 +108,7 @@ public class ApplicationClassificationTypeResourceDefinition extends SimpleResou
         @Override
         public Set<ResourceEntry> getChildren(String childType) {
             if (childType.equals(CLASSIFICATION)) {
-                Set<ResourceEntry> entries = new HashSet<ResourceEntry>();
+                Set<ResourceEntry> entries = new LinkedHashSet<ResourceEntry>();
                 for (Map.Entry<String, ApplicationTypeConfig> entry : applicationClassificationsByName.entrySet()) {
                     entries.add(ApplicationClassificationConfigResourceDefinition.createResource(entry.getValue(), childType, entry.getKey(), registry));
                 }

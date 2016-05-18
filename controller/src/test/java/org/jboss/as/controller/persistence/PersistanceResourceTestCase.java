@@ -26,6 +26,9 @@ import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertThat;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -36,12 +39,23 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryFlag;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.UserPrincipal;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
@@ -49,19 +63,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.xnio.IoUtils;
-
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
-
-import java.nio.file.attribute.AclEntry;
-import java.nio.file.attribute.AclEntryFlag;
-import java.nio.file.attribute.AclEntryPermission;
-import java.nio.file.attribute.AclEntryType;
-import java.nio.file.attribute.AclFileAttributeView;
-import java.nio.file.attribute.UserPrincipal;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
@@ -679,7 +680,7 @@ public class PersistanceResourceTestCase {
         assert aclStandardFileView != null;
         List<AclEntry> aclEntries = aclStandardFileView.getAcl();
         List<AclEntry> readWritePermissions = new ArrayList<>(aclEntries.size());
-        UserPrincipal owner = aclStandardFileView.getOwner();
+        final UserPrincipal owner = aclStandardFileView.getOwner();
         //Setting execute permissions on the file
         for(AclEntry entry : aclEntries) {
             if(entry.principal().equals(owner)) {
@@ -696,19 +697,15 @@ public class PersistanceResourceTestCase {
         AclFileAttributeView aclDefaultCreatedFilePermissionView = Files.getFileAttributeView(testPermissions, AclFileAttributeView.class);
         assert aclDefaultCreatedFilePermissionView != null;
         List<AclEntry> defaultPermissions = aclDefaultCreatedFilePermissionView.getAcl();
-        for(AclEntry entry : defaultPermissions) {
-            if(entry.principal().equals(aclDefaultCreatedFilePermissionView.getOwner())) {
-                assertThat(entry.toString(), entry.permissions(), hasItem(AclEntryPermission.WRITE_OWNER));
-            }
+        Set<AclEntryPermission> ownerPermissions = getOwnerPermissions(defaultPermissions, aclDefaultCreatedFilePermissionView.getOwner());
+        if (!ownerPermissions.isEmpty()) {
+            assertThat(ownerPermissions.toString(), ownerPermissions, hasItem(AclEntryPermission.WRITE_OWNER));
         }
         Files.delete(testPermissions);
         configurationFile.successfulBoot();
-        List<AclEntry> configurationFilePemissions = aclStandardFileView.getAcl();
-         for(AclEntry entry : configurationFilePemissions) {
-            if(entry.principal().equals(owner)) {
-                 assertThat(entry.toString(),entry.permissions(), not(hasItem(AclEntryPermission.WRITE_OWNER)));
-            }
-        }
+        List<AclEntry> configurationFilePermissions = aclStandardFileView.getAcl();
+        ownerPermissions = getOwnerPermissions(configurationFilePermissions, owner);
+        assertThat(ownerPermissions.toString(), ownerPermissions, not(hasItem(AclEntryPermission.WRITE_OWNER)));
     }
 
     private AclEntry createConfigurationAccessACLEntry(UserPrincipal user) {
@@ -732,6 +729,13 @@ public class PersistanceResourceTestCase {
         return entry;
     }
 
+    private Set<AclEntryPermission> getOwnerPermissions(Collection<AclEntry> entries, UserPrincipal owner) {
+        return entries.stream()
+                .filter(aclEntry -> aclEntry.principal().equals(owner))
+                .map(AclEntry::permissions)
+                .flatMap(Set::stream).collect(Collectors.toSet());
+    }
+
     @Test
     public void testNonPersistentReload() throws Exception {
         assertFileContents(standardFile, "std");
@@ -750,17 +754,114 @@ public class PersistanceResourceTestCase {
         store(persister, "One");
         checkFiles(null, "std", "std", "std", "One", "std");
 
-        configurationFile.resetBootFile(false);
+        configurationFile.resetBootFile(false, null);
         bootingFile = configurationFile.getBootFile();
         Assert.assertEquals(standardFile.getCanonicalPath(), bootingFile.getCanonicalPath());
-        persister = new TestConfigurationFilePersister(configurationFile);
         configurationFile.successfulBoot();
+        checkFiles(null, "std", "std", "std", "std");
+
+        store(persister, "One");
         checkFiles(null, "std", "std", "std", "One", "std");
 
-        configurationFile.resetBootFile(true);
+        configurationFile.resetBootFile(true, null);
         bootingFile = configurationFile.getBootFile();
         Assert.assertEquals(addSuffix(standardFile, "last"), bootingFile.getCanonicalPath());
+        configurationFile.successfulBoot();
+        checkFiles(null, "std", "std", "One", "One");
+    }
 
+    @Test
+    public void testReloadPersistentSpecifyingNewConfig() throws Exception {
+        assertFileContents(standardFile, "std");
+        ConfigurationFile configurationFile = new ConfigurationFile(standardDir, "standard.xml", null, true);
+        File bootingFile = configurationFile.getBootFile();
+        Assert.assertEquals(standardFile.getCanonicalPath(), bootingFile.getCanonicalPath());
+        TestConfigurationFilePersister persister = new TestConfigurationFilePersister(configurationFile);
+
+        configurationFile.successfulBoot();
+        checkDirectoryExists(historyDir);
+        checkDirectoryExists(currentHistoryDir);
+
+        store(persister, "One");
+        checkFiles(null, "One", "std", "std", "One", "std");
+
+        //Make sure that a reset to a snapshot loads that file
+        configurationFile.snapshot();
+        ConfigurationPersister.SnapshotInfo snapshotInfo = configurationFile.listSnapshots();
+        Assert.assertEquals(1, snapshotInfo.names().size());
+        store(persister, "Two");
+        checkFiles(null, "Two", "std", "std", "Two", "std", "One");
+        configurationFile.resetBootFile(true, snapshotInfo.names().get(0));
+        bootingFile = configurationFile.getBootFile();
+        File snapshotFile = new File(snapshotInfo.getSnapshotDirectory(), snapshotInfo.names().get(0));
+        Assert.assertEquals(snapshotFile.getCanonicalFile(), bootingFile.getCanonicalFile());
+        configurationFile.successfulBoot();
+        checkFiles(null, "One", "std", "One", "One");
+
+        //Make sure that a reload to last loads that file
+        store(persister, "Two");
+        checkFiles(null, "Two", "std", "One", "Two", "One");
+        configurationFile.resetBootFile(true, "last");
+        bootingFile = configurationFile.getBootFile();
+        Assert.assertEquals(lastFile.getCanonicalFile(), bootingFile.getCanonicalFile());
+        configurationFile.successfulBoot();
+        checkFiles(null, "Two", "std", "Two", "Two");
+
+        //Make sure that a reload to initial loads that file
+        store(persister, "Three");
+        checkFiles(null, "Three", "std", "Two", "Three", "Two");
+        configurationFile.resetBootFile(true, "initial");
+        bootingFile = configurationFile.getBootFile();
+        Assert.assertEquals(initialFile.getCanonicalFile(), bootingFile.getCanonicalFile());
+        configurationFile.successfulBoot();
+        checkFiles(null, "std", "std", "std", "std");
+    }
+
+    @Test
+    public void testReloadNonPersistentSpecifyingNewConfig() throws Exception {
+        assertFileContents(standardFile, "std");
+        ConfigurationFile configurationFile = new ConfigurationFile(standardDir, "standard.xml", null, false);
+        File bootingFile = configurationFile.getBootFile();
+        Assert.assertEquals(standardFile.getCanonicalPath(), bootingFile.getCanonicalPath());
+        TestConfigurationFilePersister persister = new TestConfigurationFilePersister(configurationFile);
+
+        configurationFile.successfulBoot();
+        checkDirectoryExists(historyDir);
+        checkDirectoryExists(currentHistoryDir);
+
+        store(persister, "One");
+        checkFiles(null, "std", "std", "std", "One", "std");
+
+        //Make sure that a reset to a snapshot loads that file
+        configurationFile.snapshot();
+        ConfigurationPersister.SnapshotInfo snapshotInfo = configurationFile.listSnapshots();
+        Assert.assertEquals(1, snapshotInfo.names().size());
+        store(persister, "Two");
+        checkFiles(null, "std", "std", "std", "Two", "std", "One");
+        configurationFile.resetBootFile(true, snapshotInfo.names().get(0));
+        bootingFile = configurationFile.getBootFile();
+        File snapshotFile = new File(snapshotInfo.getSnapshotDirectory(), snapshotInfo.names().get(0));
+        Assert.assertEquals(snapshotFile.getCanonicalFile(), bootingFile.getCanonicalFile());
+        configurationFile.successfulBoot();
+        checkFiles(null, "std", "std", "One", "One");
+
+        //Make sure that a reload to last loads that file
+        store(persister, "Two");
+        checkFiles(null, "std", "std", "One", "Two", "One");
+        configurationFile.resetBootFile(true, "last");
+        bootingFile = configurationFile.getBootFile();
+        Assert.assertEquals(lastFile.getCanonicalFile(), bootingFile.getCanonicalFile());
+        configurationFile.successfulBoot();
+        checkFiles(null, "std", "std", "Two", "Two");
+
+        //Make sure that a reload to initial loads that file
+        store(persister, "Three");
+        checkFiles(null, "std", "std", "Two", "Three", "Two");
+        configurationFile.resetBootFile(true, "initial");
+        bootingFile = configurationFile.getBootFile();
+        Assert.assertEquals(initialFile.getCanonicalFile(), bootingFile.getCanonicalFile());
+        configurationFile.successfulBoot();
+        checkFiles(null, "std", "std", "std", "std");
     }
 
     private String addSuffix(File file, String suffix) throws IOException {

@@ -261,6 +261,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
                 ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
                 hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, capabilityRegistry, domainHostExcludeRegistry);
+
+        HostControllerEnvironmentService.addService(environment, serviceTarget);
+
         return serviceTarget.addService(SERVICE_NAME, service)
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
@@ -637,7 +640,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                             // Invalid configuration; no way to get the domain config
                             ROOT_LOGGER.noDomainControllerConfigurationProvided(currentRunningMode,
                                     CommandLineConstants.ADMIN_ONLY, RunningMode.ADMIN_ONLY);
-                            SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                            SystemExiter.abort(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
                         }
                     } else {
                         // We're in admin-only mode. See how we handle access control config
@@ -654,7 +657,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                             ModelDescriptionConstants.ADMIN_ONLY_POLICY,
                                             AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG,
                                             CommandLineConstants.CACHED_DC, RunningMode.ADMIN_ONLY);
-                                    SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                                    SystemExiter.abort(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
                                     break;
                                 }
                                 break;
@@ -664,7 +667,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                         ModelDescriptionConstants.ADMIN_ONLY_POLICY,
                                         AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG,
                                         CommandLineConstants.CACHED_DC, currentRunningMode);
-                                SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                                SystemExiter.abort(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
                                 break;
                             default:
                                 throw new IllegalStateException(hostControllerInfo.getAdminOnlyDomainConfigPolicy().toString());
@@ -774,7 +777,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
                 // don't exit if we're embedded
                 if (processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
-                    SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                    SystemExiter.abort(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
                 }
             }
         }
@@ -857,7 +860,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                         CommandLineConstants.CACHED_DC);
 
             }
-            SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+            SystemExiter.abort(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
         }
     }
 
@@ -1166,18 +1169,18 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
-        public void suspendServer(String serverName) {
-            getServerInventory().suspendServer(serverName);
+        public List<ModelNode> suspendServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+            return getServerInventory().suspendServers(serverNames, blockingTimeout);
         }
 
         @Override
-        public void resumeServer(String serverName) {
-            getServerInventory().resumeServer(serverName);
+        public List<ModelNode> resumeServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+            return getServerInventory().resumeServers(serverNames, blockingTimeout);
         }
 
         @Override
-        public boolean awaitServerSuspend(Set<String> waitForServers, int timeout) {
-            return getServerInventory().awaitServerSuspend(waitForServers, timeout);
+        public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
+            return getServerInventory().suspendServers(serverNames, timeout, blockingTimeout);
         }
     }
 
@@ -1501,16 +1504,18 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
-            public void suspendServer(String serverName) {
+            public List<ModelNode> suspendServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+                return Collections.emptyList();
             }
 
             @Override
-            public void resumeServer(String serverName) {
+            public List<ModelNode> resumeServers(Set<String> serverNames, BlockingTimeout blockingTimeout) {
+                return Collections.emptyList();
             }
 
             @Override
-            public boolean awaitServerSuspend(Set<String> waitForServers, int timeout) {
-                return false;
+            public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
+                return Collections.emptyList();
             }
         };
         future.setInventory(inventory);

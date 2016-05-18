@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -38,6 +38,7 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
     private static final int SEPARATOR_PROPERTY_LIST_END = 2;
     private static final int SEPARATOR_PROPERTY_VALUE = 3;
     private static final int SEPARATOR_PROPERTY = 4;
+    private static final int SEPARATOR_NOT_OPERATOR = 5;
 
     private String groupName;
     private Map<String,String> props;
@@ -48,6 +49,8 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
 
     private String lastPropertyName;
     private String lastPropertyValue;
+
+    private int lastNotOperatorIndex = -1;
 
     public SingleRolloutPlanGroup() {
     }
@@ -72,6 +75,15 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
         return lastChunkIndex;
     }
 
+    public boolean endsOnNotOperator() {
+        return separator == SEPARATOR_NOT_OPERATOR;
+    }
+
+    public boolean isLastPropertyNegated() {
+        return lastPropertyName != null
+                && lastNotOperatorIndex + 1 == lastChunkIndex;
+    }
+
     // TODO perhaps add a list of allowed properties and their values
     public void addProperty(String name, String value, int valueIndex) {
         if(name == null || name.isEmpty()) {
@@ -91,9 +103,35 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
     }
 
     public void addProperty(String name, int index) {
-        this.lastPropertyName = name;
-        this.lastChunkIndex = index;
-        separator = -1;
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("Invalid property name: " + name);
+        }
+        // Property name without a value. can be an implicit value.
+        if (props == null) {
+            props = new HashMap<String, String>();
+        }
+        String value = Util.TRUE;
+        if (name.startsWith(Util.NOT_OPERATOR)) {
+            value = Util.FALSE;
+            name = name.substring(1);
+            notOperator(index);
+            index += 1;
+        }
+
+        if (name.length() > 0) {
+            // Default value for boolean
+            props.put(name, value);
+            this.lastPropertyName = name;
+            this.lastChunkIndex = index;
+            separator = -1;
+        }
+    }
+
+    public void notOperator(int index) {
+        separator = SEPARATOR_NOT_OPERATOR;
+        this.lastNotOperatorIndex = index;
+        this.lastPropertyName = null;
+        this.lastPropertyValue = null;
     }
 
     public void propertyValueSeparator(int index) {

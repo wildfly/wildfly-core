@@ -98,12 +98,7 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
             .build();
 
     private QueryOperationHandler() {
-        super(null, true, new GlobalOperationHandlers.FilterPredicate() {
-            @Override
-            public boolean appliesTo(ModelNode item) {
-                return !item.hasDefined(RESULT);
-            }
-        });
+        super(null, true, item -> !item.hasDefined(RESULT));
     }
 
     @Override

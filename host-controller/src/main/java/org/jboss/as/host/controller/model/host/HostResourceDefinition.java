@@ -82,6 +82,7 @@ import org.jboss.as.host.controller.discovery.DiscoveryOptionsResourceDefinition
 import org.jboss.as.host.controller.discovery.StaticDiscoveryResourceDefinition;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.model.jvm.JvmResourceDefinition;
+import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
 import org.jboss.as.host.controller.operations.HostShutdownHandler;
 import org.jboss.as.host.controller.operations.HostSpecifiedInterfaceAddHandler;
 import org.jboss.as.host.controller.operations.HostSpecifiedInterfaceRemoveHandler;
@@ -89,7 +90,6 @@ import org.jboss.as.host.controller.operations.HostXmlMarshallingHandler;
 import org.jboss.as.host.controller.operations.InstallationReportHandler;
 import org.jboss.as.host.controller.operations.IsMasterHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
-import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.ResolveExpressionOnHostHandler;
 import org.jboss.as.host.controller.operations.StartServersHandler;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
@@ -101,12 +101,14 @@ import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.controller.resources.ModuleLoadingResourceDefinition;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
+import org.jboss.as.server.controller.resources.ServiceContainerResourceDefinition;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.controller.resources.VaultResourceDefinition;
 import org.jboss.as.server.operations.CleanObsoleteContentHandler;
 import org.jboss.as.server.operations.InstanceUuidReadHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.SuspendStateReadHandler;
+import org.jboss.as.server.operations.WriteConfigHandler;
 import org.jboss.as.server.services.net.InterfaceResourceDefinition;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
@@ -173,7 +175,11 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             .setValidator(new StringLengthValidator(1, true))
             .setStorageRuntime()
             .build();
-
+    // the current runtime configuration state, replaces HOST_STATE
+    public static final SimpleAttributeDefinition RUNTIME_CONFIGURATION_STATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RUNTIME_CONFIGURATION_STATE, ModelType.STRING)
+            .setMinSize(1)
+            .setStorageRuntime()
+            .build();
     public static final SimpleAttributeDefinition HOST_STATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST_STATE, ModelType.STRING)
             .setMinSize(1)
             .setStorageRuntime()
@@ -195,14 +201,13 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
     public static final ObjectTypeAttributeDefinition DC_REMOTE = new ObjectTypeAttributeDefinition.Builder(
                 ModelDescriptionConstants.REMOTE,
-                RemoteDomainControllerAddHandler.PROTOCOL,
-                RemoteDomainControllerAddHandler.HOST,
-                RemoteDomainControllerAddHandler.PORT,
-                RemoteDomainControllerAddHandler.USERNAME,
-                RemoteDomainControllerAddHandler.SECURITY_REALM,
-                RemoteDomainControllerAddHandler.SECURITY_REALM,
-                RemoteDomainControllerAddHandler.IGNORE_UNUSED_CONFIG,
-                RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY)
+                DomainControllerWriteAttributeHandler.PROTOCOL,
+                DomainControllerWriteAttributeHandler.HOST,
+                DomainControllerWriteAttributeHandler.PORT,
+                DomainControllerWriteAttributeHandler.USERNAME,
+                DomainControllerWriteAttributeHandler.SECURITY_REALM,
+                DomainControllerWriteAttributeHandler.IGNORE_UNUSED_CONFIG,
+                DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY)
             .build();
 
     public static final ObjectTypeAttributeDefinition DOMAIN_CONTROLLER = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.DOMAIN_CONTROLLER, DC_LOCAL, DC_REMOTE)
@@ -289,10 +294,10 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerReadOnlyAttribute(MANAGEMENT_MINOR_VERSION, null);
         hostRegistration.registerReadOnlyAttribute(MANAGEMENT_MICRO_VERSION, null);
         hostRegistration.registerReadOnlyAttribute(MASTER, IsMasterHandler.INSTANCE);
-        hostRegistration.registerReadOnlyAttribute(DOMAIN_CONTROLLER, null);
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.NAMESPACES, null);
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SCHEMA_LOCATIONS, null);
         hostRegistration.registerReadWriteAttribute(HostResourceDefinition.NAME, environment.getProcessNameReadHandler(), environment.getProcessNameWriteHandler());
+        hostRegistration.registerReadOnlyAttribute(HostResourceDefinition.RUNTIME_CONFIGURATION_STATE, new ProcessStateAttributeHandler(processState));
         hostRegistration.registerReadOnlyAttribute(HostResourceDefinition.HOST_STATE, new ProcessStateAttributeHandler(processState));
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.RUNNING_MODE, new RunningModeReadHandler(runningModeControl));
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SUSPEND_STATE, SuspendStateReadHandler.INSTANCE);
@@ -317,6 +322,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerOperationHandler(ResolveExpressionOnHostHandler.DEFINITION, ResolveExpressionOnHostHandler.INSTANCE);
         hostRegistration.registerOperationHandler(SpecifiedInterfaceResolveHandler.DEFINITION, SpecifiedInterfaceResolveHandler.INSTANCE);
         hostRegistration.registerOperationHandler(CleanObsoleteContentHandler.DEFINITION, CleanObsoleteContentHandler.createOperation(contentRepository));
+        hostRegistration.registerOperationHandler(WriteConfigHandler.DEFINITION, WriteConfigHandler.INSTANCE);
 
         XmlMarshallingHandler xmh = new HostXmlMarshallingHandler(configurationPersister.getHostPersister(), hostControllerInfo);
         hostRegistration.registerOperationHandler(XmlMarshallingHandler.DEFINITION, xmh);
@@ -330,7 +336,8 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             hostRegistration.registerOperationHandler(HostShutdownHandler.DEFINITION, hsh);
         }
 
-        HostProcessReloadHandler reloadHandler = new HostProcessReloadHandler(HostControllerService.HC_SERVICE_NAME, runningModeControl, processState, environment.getProcessType());
+        HostProcessReloadHandler reloadHandler = new HostProcessReloadHandler(HostControllerService.HC_SERVICE_NAME,
+                runningModeControl, processState, environment, hostControllerInfo);
         hostRegistration.registerOperationHandler(HostProcessReloadHandler.getDefinition(hostControllerInfo), reloadHandler);
 
 
@@ -407,9 +414,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerSubModel(CoreManagementResourceDefinition.forHost(authorizer, auditLogger, pathManager, environmentNameReader, bootErrorCollector, nativeManagement, httpManagement));
 
         // Other core services
-        // TODO get a DumpServicesHandler that works on the domain
-        //        ManagementResourceRegistration serviceContainer = hostRegistration.registerSubModel(PathElement.pathElement(CORE_SERVICE, SERVICE_CONTAINER), CommonProviders.SERVICE_CONTAINER_PROVIDER);
-        //        serviceContainer.registerOperationHandler(DumpServicesHandler.OPERATION_NAME, DumpServicesHandler.INSTANCE, DumpServicesHandler.INSTANCE, false);
+        hostRegistration.registerSubModel(new ServiceContainerResourceDefinition());
 
         //host-environment
         hostRegistration.registerSubModel(HostEnvironmentResourceDefinition.of(environment));
