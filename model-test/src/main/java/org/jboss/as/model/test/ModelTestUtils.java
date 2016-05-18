@@ -440,12 +440,12 @@ public class ModelTestUtils {
                 AttributeDefinition ad = aa.getAttributeDefinition();
                 if (!value.isDefined()) {
                     // check if the attribute definition allows null *or* if its default value is null
-                    Assert.assertTrue(getComparePathAsString(stack) + " Attribute " + name + " does not allow null", (ad.isAllowNull() || ad.getDefaultValue() == null));
+                    Assert.assertTrue(getComparePathAsString(stack) + " Attribute " + name + " does not allow null", (!ad.isRequired() || ad.getDefaultValue() == null));
                 } else {
                    // Assert.assertEquals("Attribute '" + name + "' type mismatch", value.getType(), ad.getType()); //todo re-enable this check
                 }
                 try {
-                    if (!ad.isAllowNull()&&value.isDefined()){
+                    if (ad.isRequired() && value.isDefined()){
                         ad.getValidator().validateParameter(name, value);
                     }
                 } catch (OperationFailedException e) {

@@ -163,8 +163,11 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
         node.get(ModelDescriptionConstants.DESCRIPTION); // placeholder
         node.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(valueType.isAllowExpression());
         if (forOperation) {
-            node.get(ModelDescriptionConstants.REQUIRED).set(!valueType.isAllowNull());
+            node.get(ModelDescriptionConstants.REQUIRED).set(valueType.isRequired());
         }
+        // TODO use isNillable instead of isAllowNull
+        // TODO why do we use valueType for REQUIRED but not for NILLABLE?
+        //node.get(ModelDescriptionConstants.NILLABLE).set(isNillable());
         node.get(ModelDescriptionConstants.NILLABLE).set(isAllowNull());
         final ModelNode defaultValue = valueType.getDefaultValue();
         if (!forOperation && defaultValue != null && defaultValue.isDefined()) {

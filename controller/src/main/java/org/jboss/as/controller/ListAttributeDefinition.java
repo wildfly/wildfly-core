@@ -284,8 +284,8 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
             super(attributeName, ModelType.LIST);
         }
 
-        protected Builder(String attributeName, boolean allowNull) {
-            super(attributeName, ModelType.LIST, allowNull);
+        protected Builder(String attributeName, boolean optional) {
+            super(attributeName, ModelType.LIST, optional);
         }
 
         public Builder(ListAttributeDefinition basis) {

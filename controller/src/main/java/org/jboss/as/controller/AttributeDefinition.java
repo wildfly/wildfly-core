@@ -71,7 +71,7 @@ public abstract class AttributeDefinition {
     private final String name;
     private final String xmlName;
     private final ModelType type;
-    private final boolean allowNull;
+    private final boolean required;
     private final boolean allowExpression;
     private final ModelNode defaultValue;
     private final MeasurementUnit measurementUnit;
@@ -136,7 +136,7 @@ public abstract class AttributeDefinition {
         this.name = name;
         this.xmlName = xmlName == null ? name : xmlName;
         this.type = type;
-        this.allowNull = allowNull;
+        this.required = !allowNull;
         this.allowExpression = allowExpression;
         this.parser = parser != null ? parser : AttributeParser.SIMPLE;
         if (defaultValue != null && defaultValue.isDefined()) {
@@ -259,12 +259,49 @@ public abstract class AttributeDefinition {
 
     /**
      * Whether a {@link org.jboss.dmr.ModelNode} holding the value of this attribute can be
-     * {@link org.jboss.dmr.ModelType#UNDEFINED}.
+     * {@link org.jboss.dmr.ModelType#UNDEFINED} when all other attributes in the same overall
+     * model that are {@link #getAlternatives() alternatives} of this attribute are undefined.
+     * <p>
+     * In a valid model an attribute that is required must be undefined if any alternative
+     * is defined, so this method should not be used for checking if it is valid for
+     * the attribute ever to have an undefined value. Use {@link #isNillable()} for that.
+     *
+     * @return {@code true} if an {@code undefined ModelNode} is invalid in the absence of
+     *         alternatives; {@code false} if not
+     */
+    public boolean isRequired() {
+        return required;
+    }
+
+    /**
+     * <strong>Inverse</strong> of {@link #isRequired()}.
+     * <p>
+     * In a valid model an attribute that is required must be undefined if any alternative
+     * is defined, so this method should not be used for checking if it is valid for
+     * the attribute ever to have an undefined value. Use {@link #isNillable()} for that.
+     *
+     * @return {@code true} if an {@code undefined ModelNode} is valid in the absence of
+     *         alternatives; {@code false} if not
+     *
+     * @deprecated use either {@link #isRequired()} or {@link #isNillable()} depending on which provides the desired information
+     */
+    @Deprecated
+    public boolean isAllowNull() {
+        return !required;
+    }
+
+    /**
+     * Whether a {@link org.jboss.dmr.ModelNode} holding the value of this attribute can be
+     * {@link org.jboss.dmr.ModelType#UNDEFINED} in any situation. An attribute that ordinarily is
+     * {@link #isRequired() required} may still be undefined in a given model if an
+     * {@link #getAlternatives() alternative attribute} is defined.
+     * <p>
+     * This is equivalent to {@code !isRequired() || (getAlternatives() != null && getAlternatives().length > 0)}.
      *
      * @return {@code true} if an {@code undefined ModelNode} is valid; {@code false} if not
      */
-    public boolean isAllowNull() {
-        return allowNull;
+    public boolean isNillable() {
+        return !required || (alternatives != null && alternatives.length > 0);
     }
 
     /**
@@ -274,7 +311,7 @@ public abstract class AttributeDefinition {
      * add a resource but does not define some attributes, a write permission check will be performed for
      * any attributes where this method returns {@code true}.
      * <p>
-     * Generally this is {@code true} if {@link #isAllowNull() undefined is allowed} and a
+     * Generally this is {@code true} if {@link #isRequired() undefined is allowed} and a
      * {@link #getDefaultValue() default value} exists, although some instances may have a different setting.
      *
      * @return {@code true} if an {@code undefined} value is significant
@@ -283,7 +320,7 @@ public abstract class AttributeDefinition {
         if (nilSignificant != null) {
             return nilSignificant;
         }
-        return allowNull && defaultValue != null && defaultValue.isDefined();
+        return !required && defaultValue != null && defaultValue.isDefined();
     }
 
     /**
@@ -644,12 +681,12 @@ public abstract class AttributeDefinition {
     /**
      * Gets whether this attribute must be defined in the given {@code operationObject}
      * @param operationObject an object {@code ModelNode} whose keys are attribute names.
-     * @return {@code true} if this attribute does not {@link #isAllowNull() allow null} and the given
+     * @return {@code true} if this attribute is {@link #isRequired() required} and the given
      *         {@code operationObject} does not have any defined attributes configured as
      *         {@link #getAlternatives() alternatives} to this attribute
      */
     public boolean isRequired(final ModelNode operationObject) {
-        return !allowNull && !hasAlternative(operationObject);
+        return required && !hasAlternative(operationObject);
     }
 
     /**
@@ -899,8 +936,10 @@ public abstract class AttributeDefinition {
         }
         result.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(isAllowExpression());
         if (forOperation) {
-            result.get(ModelDescriptionConstants.REQUIRED).set(!isAllowNull());
+            result.get(ModelDescriptionConstants.REQUIRED).set(isRequired());
         }
+        // TODO use isNillable instead of isAllowNull
+        //result.get(ModelDescriptionConstants.NILLABLE).set(isNillable());
         result.get(ModelDescriptionConstants.NILLABLE).set(isAllowNull());
         if (!forOperation && nilSignificant != null) {
             if (nilSignificant) {

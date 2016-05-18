@@ -509,7 +509,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     private boolean assertMetricValues(AttributeDefinition definition) {
-        if (definition.isAllowNull() && definition.getUndefinedMetricValue() != null) {
+        if (!definition.isRequired() && definition.getUndefinedMetricValue() != null) {
             assert false : "Nillable metric has an undefined metric value for '" + definition.getName() + "'";
         }
         // BES 2015/08/28 The WFCORE-831 spec does not require this assertion. The requirement is that read-attribute
