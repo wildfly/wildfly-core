@@ -56,7 +56,7 @@ public class LocalDeploymentFileRepository implements DeploymentFileRepository {
         File deployment = getDeploymentRoot(reference);
         if (deployment != deploymentRoot) {
             deleteRecursively(deployment);
-            if (deployment.getParentFile().list().length == 0) {
+            if (isEmptyDirectory(deployment.getParentFile())) {
                 deployment.getParentFile().delete();
             }
         }
@@ -64,12 +64,19 @@ public class LocalDeploymentFileRepository implements DeploymentFileRepository {
 
     private void deleteRecursively(File file) {
         if (file.exists()) {
-            if (file.isDirectory()) {
+            if (file.isDirectory() && file.list() != null) {
                 for (String name : file.list()) {
                     deleteRecursively(new File(file, name));
                 }
             }
             file.delete();
         }
+    }
+    private boolean isEmptyDirectory(File dir) {
+        if(dir != null && dir.isDirectory()) {
+            String[] children = dir.list();
+            return children != null && children.length == 0;
+        }
+        return false;
     }
 }

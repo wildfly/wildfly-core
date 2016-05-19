@@ -186,17 +186,19 @@ public class EmbeddedStandaloneServerFactory {
     }
 
     private static void copyDirectory(File src, File dest) {
-        for (String current : src.list()) {
-            final File srcFile = new File(src, current);
-            final File destFile = new File(dest, current);
+        if (src.list() != null) {
+            for (String current : src.list()) {
+                final File srcFile = new File(src, current);
+                final File destFile = new File(dest, current);
 
-            try {
-                Files.copy(srcFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-                if (srcFile.isDirectory()) {
-                    copyDirectory(srcFile, destFile);
+                try {
+                    Files.copy(srcFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+                    if (srcFile.isDirectory()) {
+                        copyDirectory(srcFile, destFile);
+                    }
+                } catch (IOException e) {
+                    throw ServerLogger.ROOT_LOGGER.errorCopyingFile(srcFile.getAbsolutePath(), destFile.getAbsolutePath(), e);
                 }
-            } catch (IOException e) {
-                throw ServerLogger.ROOT_LOGGER.errorCopyingFile(srcFile.getAbsolutePath(), destFile.getAbsolutePath(), e);
             }
         }
     }
