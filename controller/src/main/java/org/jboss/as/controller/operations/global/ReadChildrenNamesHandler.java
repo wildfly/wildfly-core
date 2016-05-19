@@ -44,20 +44,23 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.operations.validation.ParametersValidator;
+import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
- * {@link org.jboss.as.controller.OperationStepHandler} querying the children names of a given "child-type".
+ * {@link org.jboss.as.controller.operations.global.GlobalOperationHandlers.AbstractMultiTargetHandler} querying the children names for a given "child-type".
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class ReadChildrenNamesHandler implements OperationStepHandler {
+public class ReadChildrenNamesHandler extends GlobalOperationHandlers.AbstractMultiTargetHandler {
 
     static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_CHILDREN_NAMES_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(CHILD_TYPE, INCLUDE_SINGLETONS)
@@ -67,13 +70,32 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
             .setReplyValueType(ModelType.STRING)
             .build();
 
-    static final OperationStepHandler INSTANCE = new ReadChildrenNamesHandler();
+    static OperationStepHandler INSTANCE = new ReadChildrenNamesHandler();
+
+    private final ParametersValidator validator = new ParametersValidator() {
+        @Override
+        public void validate(final ModelNode operation) throws OperationFailedException {
+            if (!operation.hasDefined(ModelDescriptionConstants.CHILD_TYPE)) {
+                throw ControllerLogger.ROOT_LOGGER.nullNotAllowed(ModelDescriptionConstants.CHILD_TYPE);
+            }
+            super.validate(operation);
+        }
+    };
+
+    private ReadChildrenNamesHandler() {
+        validator.registerValidator(GlobalOperationAttributes.CHILD_TYPE.getName(), new StringLengthValidator(1));
+    }
 
     @Override
-    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+    public void doExecute(final OperationContext context, final ModelNode operation, final FilteredData filteredData, boolean ignoreMissingResource) throws OperationFailedException {
+        doExecuteInternal(context, operation, filteredData);
+    }
 
+    private void doExecuteInternal(final OperationContext context, final ModelNode operation, final FilteredData filteredData) throws OperationFailedException {
+        validator.validate(operation);
         final PathAddress address = context.getCurrentAddress();
         final String childType = CHILD_TYPE.resolveModelAttribute(context, operation).asString();
+
         final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
         ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
         Map<String, Set<String>> childAddresses = GlobalOperationHandlers.getChildAddresses(context, address, registry, resource, childType);
@@ -91,7 +113,7 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
             }
         }
         // Sort the result
-        childNames = new TreeSet<String>(childNames);
+        childNames = new TreeSet<>(childNames);
         ModelNode result = context.getResult();
         result.setEmptyList();
         PathAddress childAddress = address.append(PathElement.pathElement(childType));
@@ -100,20 +122,21 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
         ModelNode opAddr = op.get(OP_ADDR);
         ModelNode childProperty = opAddr.require(address.size());
         Set<Action.ActionEffect> actionEffects = EnumSet.of(Action.ActionEffect.ADDRESS);
-        FilteredData fd = null;
+
+        final FilteredData fd = filteredData == null ? new FilteredData(address) : filteredData;
+
         for (String childName : childNames) {
             childProperty.set(childType, new ModelNode(childName));
-            if (context.authorize(op, actionEffects).getDecision() == AuthorizationResult.Decision.PERMIT) {
+
+            AuthorizationResult.Decision ar = context.authorize(op, actionEffects).getDecision();
+            if (ar == AuthorizationResult.Decision.PERMIT) {
                 result.add(childName);
             } else {
-                if (fd == null) {
-                    fd = new FilteredData(address);
-                }
                 fd.addAccessRestrictedResource(childAddress);
             }
         }
 
-        if (fd != null) {
+        if (fd.hasFilteredData()) {
             context.getResponseHeaders().get(ACCESS_CONTROL).set(fd.toModelNode());
         }
     }

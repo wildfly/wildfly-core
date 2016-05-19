@@ -176,7 +176,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 }
             } catch (ResourceNotAddressableException rnae) {
                 // Just report the failure to the filter and complete normally
-                reportInaccesible(context, operation, filteredData);
+                reportInaccessible(context, operation, filteredData);
                 ControllerLogger.MGMT_OP_LOGGER.tracef("Caught ResourceNotAddressableException in %s", this);
             } catch (Resource.NoSuchResourceException nsre) {
                 // It's possible this is a remote failure, in which case we
@@ -186,7 +186,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 ControllerLogger.MGMT_OP_LOGGER.tracef("Caught NoSuchResourceException in %s. Authorization decision is %s", this ,decision);
                 if (decision == AuthorizationResult.Decision.DENY) {
                     // Just report the failure to the filter and complete normally
-                    reportInaccesible(context, operation, filteredData);
+                    reportInaccessible(context, operation, filteredData);
                 } else if (!ignoreMissingResource) {
                     throw nsre;
                 }
@@ -201,7 +201,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         }
     }
 
-    private void reportInaccesible(OperationContext context, ModelNode operation, FilteredData filteredData) {
+    private void reportInaccessible(OperationContext context, ModelNode operation, FilteredData filteredData) {
         PathAddress pa = PathAddress.pathAddress(operation.get(OP_ADDR));
         filteredData.addAccessRestrictedResource(pa);
         context.getResult().set(new ModelNode());
