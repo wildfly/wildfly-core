@@ -9,9 +9,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -25,18 +28,25 @@ import org.jboss.as.patching.installation.InstalledImage;
 import org.jboss.as.patching.installation.PatchableTarget;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.ContentItem;
+import org.jboss.as.patching.metadata.ContentModification;
+import org.jboss.as.patching.metadata.ContentType;
 import org.jboss.as.patching.metadata.Identity;
 import org.jboss.as.patching.metadata.LayerType;
+import org.jboss.as.patching.metadata.ModuleItem;
 import org.jboss.as.patching.metadata.Patch;
+import org.jboss.as.patching.metadata.Patch.PatchType;
 import org.jboss.as.patching.metadata.PatchElement;
 import org.jboss.as.patching.metadata.PatchElementProvider;
 import org.jboss.as.patching.metadata.PatchMetadataResolver;
 import org.jboss.as.patching.metadata.PatchXml;
 import org.jboss.as.patching.metadata.RollbackPatch;
 import org.jboss.as.patching.metadata.UpgradeCondition;
+import org.jboss.as.patching.runner.IdentityPatchContext.PatchEntry;
 import org.jboss.as.patching.runner.PatchingTasks.ContentTaskDefinition;
 import org.jboss.as.patching.tool.ContentVerificationPolicy;
 import org.jboss.as.patching.tool.PatchingHistory;
+import org.jboss.as.patching.tool.PatchingHistory.Entry;
+import org.jboss.as.patching.tool.PatchingHistory.Iterator;
 import org.jboss.as.patching.tool.PatchingResult;
 
 /**
@@ -109,16 +119,12 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
      */
     private PatchingResult applyPatch(final String patchId, final Patch patch, final IdentityPatchContext context) throws PatchingException, IOException, XMLStreamException {
 
-        final List<String> invalidation;
         final Identity identity = patch.getIdentity();
         final Patch.PatchType patchType = identity.getPatchType();
         final InstallationManager.InstallationModification modification = context.getModification();
-        if (patchType == Patch.PatchType.ONE_OFF) {
-            // We don't need to invalidate anything
-            invalidation = Collections.emptyList();
-        } else {
+        if (patchType == Patch.PatchType.CUMULATIVE) {
             // Invalidate all installed patches (one-off, cumulative) - we never need to invalidate the release base
-            invalidation = new ArrayList<String>(modification.getPatchIDs());
+            final List<String> invalidation = new ArrayList<String>(modification.getPatchIDs());
             if (!invalidation.isEmpty()) {
                 try {
                     // Before rolling back the one-off patches, validate that the state until that point is consistent
@@ -129,11 +135,11 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
                 } catch (Exception e) {
                     throw new PatchingException(e);
                 }
+                // Invalidate the installed patches first
+                for (final String rollback : invalidation) {
+                    rollback(rollback, context);
+                }
             }
-        }
-        // Invalidate the installed patches first
-        for (final String rollback : invalidation) {
-            rollback(rollback, context);
         }
 
         // Add to installed patches list
@@ -154,12 +160,12 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
             }
             // Check upgrade conditions
             checkUpgradeConditions(provider, target);
-            apply(elementPatchId, element.getModifications(), target.getDefinitions());
+            apply(elementPatchId, element.getModifications(), target);
             target.apply(elementPatchId, elementPatchType);
         }
         // Apply the patch to the identity
         final IdentityPatchContext.PatchEntry identityEntry = context.getIdentityEntry();
-        apply(patchId, patch.getModifications(), identityEntry.getDefinitions());
+        apply(patchId, patch.getModifications(), identityEntry);
         identityEntry.apply(patchId, patchType);
 
         // Port forward missing module changes
@@ -364,9 +370,8 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
                     throw PatchLogger.ROOT_LOGGER.noSuchLayer(layerName);
                 }
                 final IdentityPatchContext.PatchEntry entry = context.resolveForElement(patchElement);
-                final Map<Location, ContentTaskDefinition> modifications = entry.getDefinitions();
                 // Create the rollback
-                PatchingTasks.rollback(elementPatchId, original.getModifications(), patchElement.getModifications(), modifications, ContentItemFilter.ALL_BUT_MISC, mode);
+                PatchingTasks.rollback(elementPatchId, original.getModifications(), patchElement.getModifications(), entry, ContentItemFilter.ALL_BUT_MISC, mode);
                 entry.rollback(original.getId());
 
                 // We need to restore the previous state
@@ -387,13 +392,16 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
 
             // Rollback the patch
             final IdentityPatchContext.PatchEntry identity = context.getIdentityEntry();
-            PatchingTasks.rollback(patchID, originalPatch.getModifications(), rollbackPatch.getModifications(), identity.getDefinitions(), ContentItemFilter.MISC_ONLY, mode);
+            PatchingTasks.rollback(patchID, originalPatch.getModifications(), rollbackPatch.getModifications(), identity, ContentItemFilter.MISC_ONLY, mode);
             identity.rollback(patchID);
 
             // Restore previous state
             if (mode == ROLLBACK) {
                 final PatchableTarget.TargetInfo identityHistory = history.getIdentity().loadTargetInfo();
                 restoreFromHistory(identity, rollbackPatch.getPatchId(), patchType, identityHistory);
+                if(patchType == Patch.PatchType.CUMULATIVE) {
+                    reenableNotOverridenModules(rollbackPatch, context);
+                }
             }
 
             if (patchType == Patch.PatchType.CUMULATIVE) {
@@ -434,6 +442,115 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
         assert n.getCumulativePatchID().equals(o.getCumulativePatchID());
     }
 
+    void reenableNotOverridenModules(final RollbackPatch patch, IdentityPatchContext context) throws PatchingException, IOException, XMLStreamException {
+        assert patch.getIdentity().getPatchType() == Patch.PatchType.CUMULATIVE;
+
+        final Iterator historyIterator = context.getHistory().iterator(patch.getIdentityState().getIdentity().loadTargetInfo());
+        if(!historyIterator.hasNext()) {
+            return;
+        }
+
+        final List<PatchElement> elements = patch.getElements();
+        final Map<String, List<PatchElement>> layerPatches = new HashMap<String, List<PatchElement>>(elements.size());
+        final Map<String, List<PatchElement>> addonPatches = new HashMap<String, List<PatchElement>>(elements.size());
+        for(PatchElement e : elements) {
+            if(e.getProvider().isAddOn()) {
+                addonPatches.put(e.getProvider().getName(), Collections.<PatchElement>emptyList());
+            } else {
+                layerPatches.put(e.getProvider().getName(), Collections.<PatchElement>emptyList());
+            }
+        }
+
+        Patch prevCP = null;
+        while(historyIterator.hasNext()) {
+            final Entry entry = historyIterator.next();
+            if(entry.getType() == PatchType.CUMULATIVE) {
+                prevCP = entry.getMetadata();
+                break;
+            }
+            final Patch oneOff = entry.getMetadata();
+            for(PatchElement oneOffElement : oneOff.getElements()) {
+                final Map<String, List<PatchElement>> providerPatches;
+                if(oneOffElement.getProvider().isAddOn()) {
+                    providerPatches = addonPatches;
+                } else {
+                    providerPatches = layerPatches;
+                }
+                List<PatchElement> patches = providerPatches.get(oneOffElement.getProvider().getName());
+                if(patches != null) {
+                    switch(patches.size()) {
+                        case 0:
+                            providerPatches.put(oneOffElement.getProvider().getName(), Collections.singletonList(oneOffElement));
+                            break;
+                        case 1:
+                            patches = new ArrayList<PatchElement>(patches);
+                            providerPatches.put(oneOffElement.getProvider().getName(), patches);
+                        default:
+                            patches.add(oneOffElement);
+                    }
+                }
+            }
+        }
+
+        Set<ModuleItem> cpElementModules;
+        Set<ModuleItem> reenabledModules = Collections.emptySet();
+        for(PatchElement e : elements) {
+            final List<PatchElement> patches;
+            if(e.getProvider().isAddOn()) {
+                patches = addonPatches.get(e.getProvider().getName());
+            } else {
+                patches = layerPatches.get(e.getProvider().getName());
+            }
+            if(patches.isEmpty()) {
+                continue;
+            }
+
+            cpElementModules = null;
+            final PatchEntry rollbackEntry = context.resolveForElement(e);
+            for(PatchElement oneOff : patches) {
+                for(ContentModification mod : oneOff.getModifications()) {
+                    if(mod.getItem().getContentType() != ContentType.MODULE) {
+                        continue;
+                    }
+                    final ModuleItem module = (ModuleItem) mod.getItem();
+                    if(rollbackEntry.get(new Location(module)) != null) {
+                        continue;
+                    }
+                    if(reenabledModules.contains(module)) {
+                        continue;
+                    }
+                    final File modulePath = PatchContentLoader.getModulePath(rollbackEntry.getDirectoryStructure().getModulePatchDirectory(oneOff.getId()), module);
+                    rollbackEntry.invalidateRoot(modulePath);
+                    if(reenabledModules.isEmpty()) {
+                        reenabledModules = new HashSet<ModuleItem>();
+                    }
+                    reenabledModules.add(module);
+                    if(prevCP == null) {
+                        rollbackEntry.disableBaseModule(module);
+                    } else {
+                        if(cpElementModules == null) {
+                            for(PatchElement cpE : prevCP.getElements()) {
+                                if(cpE.getProvider().getName().equals(e.getProvider().getName()) &&
+                                        cpE.getProvider().getLayerType().equals(e.getProvider().getLayerType())) {
+                                    cpElementModules = new HashSet<ModuleItem>(cpE.getModifications().size());
+                                    for(ContentModification cpMod : cpE.getModifications()) {
+                                        if(cpMod.getItem().getContentType() == ContentType.MODULE) {
+                                            cpElementModules.add(cpMod.getItem(ModuleItem.class));
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        if(cpElementModules != null && !cpElementModules.contains(module)) {
+                            rollbackEntry.disableBaseModule(module);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Port forward missing module changes for each layer.
      *
@@ -456,6 +573,7 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
             final IdentityPatchContext.PatchEntry target = context.resolveForElement(element);
             final String cumulativePatchID = target.getCumulativePatchID();
             if (Constants.BASE.equals(cumulativePatchID)) {
+                reenableRolledBackInBase(target);
                 continue;
             }
 
@@ -470,7 +588,7 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
                     for (final PatchElement originalElement : original.getElements()) {
                         if (name.equals(originalElement.getProvider().getName())
                                 && addOn == originalElement.getProvider().isAddOn()) {
-                            PatchingTasks.addMissingModifications(cumulativePatchID, originalElement.getModifications(), target.getDefinitions(), ContentItemFilter.ALL_BUT_MISC);
+                            PatchingTasks.addMissingModifications(target, originalElement.getModifications(), ContentItemFilter.ALL_BUT_MISC);
                         }
                     }
                     // Record a loader to have access to the current modules
@@ -485,6 +603,19 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
             }
             if (!found) {
                 throw PatchLogger.ROOT_LOGGER.patchNotFoundInHistory(cumulativePatchID);
+            }
+
+            reenableRolledBackInBase(target);
+        }
+    }
+
+    protected void reenableRolledBackInBase(final IdentityPatchContext.PatchEntry target) throws IOException {
+        for(ContentTaskDefinition def : target.getTaskDefinitions()) {
+            if(def.isRollback()) {
+                final ContentItem item = def.getTarget().getItem();
+                if(item.getContentType() == ContentType.MODULE) {
+                    target.reenableBaseModule((ModuleItem)item);
+                }
             }
         }
     }
@@ -536,7 +667,7 @@ class IdentityPatchRunner implements InstallationManager.ModificationCompletionC
      * @throws PatchingException
      */
     static void prepareTasks(final IdentityPatchContext.PatchEntry entry, final IdentityPatchContext context, final List<PreparedTask> tasks, final List<ContentItem> conflicts) throws PatchingException {
-        for (final PatchingTasks.ContentTaskDefinition definition : entry.getDefinitions().values()) {
+        for (final PatchingTasks.ContentTaskDefinition definition : entry.getTaskDefinitions()) {
             final PatchingTask task = createTask(definition, context, entry);
             if(!task.isRelevant(entry)) {
                 continue;
