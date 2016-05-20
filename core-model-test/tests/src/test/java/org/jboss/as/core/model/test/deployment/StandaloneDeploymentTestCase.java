@@ -866,10 +866,17 @@ public class StandaloneDeploymentTestCase extends AbstractCoreModelTest {
 
     private ModelNode getContentHashOnly(ModelNode deployment) {
         ModelNode contentEntry = getContentOnly(deployment);
-        Assert.assertEquals(1, contentEntry.keys().size());
+        Assert.assertTrue(contentEntry.keys().size() < 3);
         ModelNode hash = contentEntry.get(HASH);
         Assert.assertTrue(hash.isDefined());
         Assert.assertEquals(ModelType.BYTES, hash.getType());
+        if (contentEntry.keys().size() == 2) {
+            Assert.assertTrue(contentEntry.has(ARCHIVE));
+            ModelNode archive = contentEntry.get(ARCHIVE);
+            if (archive.isDefined()) {
+                Assert.assertEquals(ModelType.BOOLEAN, archive.getType());
+            }
+        }
         return hash;
     }
 

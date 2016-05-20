@@ -25,14 +25,19 @@ package org.jboss.as.controller.management;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController.State;
+import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.remoting3.RemotingOptions;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
@@ -82,7 +87,7 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
         }
         final OptionMap options = builder.getMap();
 
-        installServices(context, new HttpInterfaceCommonPolicy() {
+        final List<ServiceName> mandatoryServices = installServices(context, new HttpInterfaceCommonPolicy() {
 
             @Override
             public boolean isHttpUpgradeEnabled() {
@@ -109,7 +114,27 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
                 return allowedOrigins;
             }
         }, model);
-
+        if(context.isBooting()) {
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    List<ServiceName> failures = new ArrayList<>();
+                    for (ServiceName serviceName : mandatoryServices) {
+                        try {
+                            if (State.UP != context.getServiceRegistry(false).getRequiredService(serviceName).getState()) {
+                                failures.add(serviceName);
+                            }
+                        } catch (ServiceNotFoundException ex) {
+                            failures.add(serviceName);
+                        }
+                    }
+                    if(!failures.isEmpty()) {
+                        context.setRollbackOnly();
+                        throw ROOT_LOGGER.missingRequiredServices();
+                    }
+                }
+            }, OperationContext.Stage.VERIFY);
+        }
     }
 
     private String asStringIfDefined(OperationContext context, AttributeDefinition attribute, ModelNode model) throws OperationFailedException {
@@ -118,6 +143,6 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
         return attributeValue.isDefined() ? attributeValue.asString() : null;
     }
 
-    protected abstract void installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException;
+    protected abstract List<ServiceName> installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException;
 
 }

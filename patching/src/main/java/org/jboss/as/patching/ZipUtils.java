@@ -100,7 +100,6 @@ public class ZipUtils {
     public static void unzip(final File zip, final File patchDir) throws IOException {
         try (final ZipFile zipFile = new ZipFile(zip)){
             unzip(zipFile, patchDir);
-            zipFile.close();
         }
     }
 

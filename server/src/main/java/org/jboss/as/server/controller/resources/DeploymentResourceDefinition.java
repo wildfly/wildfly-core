@@ -42,10 +42,11 @@ import org.jboss.as.server.deployment.DeploymentStatusHandler;
 @SuppressWarnings("deprecation")
 public abstract class DeploymentResourceDefinition extends SimpleResourceDefinition {
 
-    private DeploymentResourceParent parent;
+    private final DeploymentResourceParent parent;
+    public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT);
 
     protected DeploymentResourceDefinition(DeploymentResourceParent parent, OperationStepHandler addHandler, OperationStepHandler removeHandler) {
-        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT), DeploymentAttributes.DEPLOYMENT_RESOLVER)
+        super(new Parameters(PATH, DeploymentAttributes.DEPLOYMENT_RESOLVER)
                 .setAddHandler(addHandler)
                 .setRemoveHandler(removeHandler)
                 .setAccessConstraints(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
