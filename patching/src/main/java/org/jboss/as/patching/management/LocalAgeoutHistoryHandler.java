@@ -25,6 +25,8 @@ package org.jboss.as.patching.management;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.controller.OperationContext;
@@ -97,45 +99,34 @@ public class LocalAgeoutHistoryHandler extends PatchStreamResourceOperationStepH
             while(i.hasNext()) {
                 final PatchingHistory.Entry entry = i.next();
                 final Map<String, String> layerPatches = entry.getLayerPatches();
-                if(!layerPatches.isEmpty()) {
-                    for(String layerName : layerPatches.keySet()) {
+                final List<DeleteOp> ops = new ArrayList<>();
+
+                if (!layerPatches.isEmpty()) {
+                    for (String layerName : layerPatches.keySet()) {
                         final Layer layer = installedIdentity.getLayer(layerName);
-                        if(layer == null) {
+                        if (layer == null) {
                             // if an identity is missing a layer that means either it was re-configured and the layer was removed
                             // or the layer in the patch is optional and may be missing on the disk
                             // we haven't had this case yet, not sure how critical this is to terminate the process of cleaning up
                             throw new IllegalStateException(PatchLogger.ROOT_LOGGER.layerNotFound(layerName));
                         }
                         final File patchDir = layer.getDirectoryStructure().getModulePatchDirectory(layerPatches.get(layerName));
-                        if(patchDir.exists()) {
-                            recursiveDelete(patchDir);
+                        if (patchDir.exists()) {
+                            ops.add(new DeleteOp(patchDir, ALL));
                         }
                     }
                 }
                 final File patchHistoryDir = installedIdentity.getInstalledImage().getPatchHistoryDir(entry.getPatchId());
-                if(patchHistoryDir.exists()) {
-                    recursiveDelete(patchHistoryDir, HISTORY_FILTER);
+                if (patchHistoryDir.exists()) {
+                    ops.add(new DeleteOp(patchHistoryDir, HISTORY_FILTER));
+                }
+
+                try {
+                    DeleteOp.execute(ops);
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
                 }
             }
         }
     }
-
-    static boolean recursiveDelete(final File root) {
-        return recursiveDelete(root, ALL);
-    }
-
-    static boolean recursiveDelete(File root, FilenameFilter filter) {
-        boolean ok = true;
-        if (root.isDirectory()) {
-            final File[] files = root.listFiles(filter);
-            for (File file : files) {
-                ok &= recursiveDelete(file, filter);
-            }
-            return ok && (root.delete() || !root.exists());
-        } else {
-            ok &= root.delete() || !root.exists();
-        }
-        return ok;
-    }
-
 }
