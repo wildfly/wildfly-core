@@ -126,7 +126,6 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         this.measurementUnit = basis.getMeasurementUnit();
         this.corrector = basis.getCorrector();
         this.validator = basis.getValidator();
-        this.validateNull = basis.isValidatingNull();
         this.alternatives = basis.getAlternatives();
         this.requires = basis.getRequires();
         this.attributeMarshaller = basis.getAttributeMarshaller();
@@ -288,16 +287,17 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
-     * Sets whether the attribute definition should check for {@link org.jboss.dmr.ModelNode#isDefined() undefined} values if
-     * {@link #setAllowNull(boolean) null is not allowed} in addition to any validation provided by any
-     * {@link #setValidator(org.jboss.as.controller.operations.validation.ParameterValidator) configured validator}. The default if not set is {@code true}. The use
-     * case for setting this to {@code false} would be to ignore undefined values in the basic validation performed
-     * by the {@link org.jboss.as.controller.AttributeDefinition} and instead let operation handlers validate using more complex logic
-     * (e.g. checking for {@link #setAlternatives(String...) alternatives}.
+     * Has no effect. The behavior of {@link AttributeDefinition} now is to allow undefined values
+     * for {@link #setRequired(boolean) required} attributes if alternatives have been declared via
+     * {@link #setAlternatives(String...)} or {@link #addAlternatives(String...)}. Handling such
+     * situations was the original purpose for this setting.
      *
-     * @param validateNull {@code true} if additional validation should be performed; {@code false} otherwise
+     * @param validateNull ignored
      * @return a builder that can be used to continue building the attribute definition
+     *
+     * @deprecated has no effect
      */
+    @Deprecated
     public BUILDER setValidateNull(boolean validateNull) {
         this.validateNull = validateNull;
         return (BUILDER) this;
@@ -823,6 +823,8 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return validator;
     }
 
+    /** @deprecated meaningless and not used. */
+    @Deprecated
     public boolean isValidateNull() {
         return validateNull;
     }

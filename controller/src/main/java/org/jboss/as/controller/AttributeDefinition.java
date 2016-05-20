@@ -80,7 +80,6 @@ public abstract class AttributeDefinition {
     private final ModelNode[] allowedValues;
     private final ParameterCorrector valueCorrector;
     private final ParameterValidator validator;
-    private final boolean validateNull;
     private final EnumSet<AttributeAccess.Flag> flags;
     protected final AttributeMarshaller attributeMarshaller;
     private final boolean resourceOnly;
@@ -103,9 +102,9 @@ public abstract class AttributeDefinition {
     protected AttributeDefinition(AbstractAttributeDefinitionBuilder<?, ?> toCopy) {
         this(toCopy.getName(), toCopy.getXmlName(), toCopy.getDefaultValue(), toCopy.getType(),
                 toCopy.isAllowNull(), toCopy.isAllowExpression(), toCopy.getMeasurementUnit(), toCopy.getCorrector(),
-                wrapValidator(toCopy.getValidator(), toCopy.isAllowNull(), toCopy.isValidateNull(), toCopy.isAllowExpression(),
+                wrapValidator(toCopy.getValidator(), toCopy.isAllowNull(), toCopy.getAlternatives(), toCopy.isAllowExpression(),
                         toCopy.getType(), toCopy.getConfiguredMinSize(), toCopy.getConfiguredMaxSize()),
-                toCopy.isValidateNull(), toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
+                true, toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
                 toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), toCopy.getArbitraryDescriptors(),
@@ -120,7 +119,7 @@ public abstract class AttributeDefinition {
                                   Boolean nilSignificant, AttributeParser parser, final AttributeAccess.Flag... flags) {
 
         this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
-                wrapValidator(validator, allowNull, validateNull, allowExpression, type, null, null), validateNull, alternatives, requires,
+                wrapValidator(validator, allowNull, alternatives, allowExpression, type, null, null), validateNull, alternatives, requires,
                 attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
                 nilSignificant, parser, null, null, null, null, null, wrapFlags(flags));
     }
@@ -150,7 +149,6 @@ public abstract class AttributeDefinition {
         this.requires = requires;
         this.valueCorrector = valueCorrector;
         this.validator = validator;
-        this.validateNull = validateNull;
         this.flags = flags;
         if (attributeMarshaller != null) {
             this.attributeMarshaller = attributeMarshaller;
@@ -176,9 +174,11 @@ public abstract class AttributeDefinition {
     }
 
     private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
-                                                    boolean validateNull, boolean allowExpression, ModelType type,
+                                                    String[] alternatives, boolean allowExpression, ModelType type,
                                                     Integer minSize, Integer maxSize) {
         NillableOrExpressionParameterValidator result = null;
+        boolean hasAlternatives = alternatives != null && alternatives.length > 0;
+        boolean nullOK = allowNull || hasAlternatives;
         if (toWrap == null) {
             if (type == ModelType.STRING) {
                 // If sizing was specified, use it. If unspecified use defaults we've used since early AS 7
@@ -197,16 +197,14 @@ public abstract class AttributeDefinition {
             // Avoid re-wrapping
             NillableOrExpressionParameterValidator current = (NillableOrExpressionParameterValidator) toWrap;
             if (allowExpression == current.isAllowExpression() &&
-                    (!validateNull && current.getAllowNull() == null
-                            || allowNull == current.getAllowNull())) {
+                    nullOK == current.getAllowNull()) {
                 result = current;
             } else {
                 toWrap = current.getDelegate();
             }
         }
         if (result == null) {
-            Boolean nullCheck = validateNull ? allowNull : null;
-            result = new NillableOrExpressionParameterValidator(toWrap, nullCheck, allowExpression);
+            result = new NillableOrExpressionParameterValidator(toWrap, nullOK, allowExpression);
         }
 
         return result;
@@ -389,17 +387,20 @@ public abstract class AttributeDefinition {
     }
 
     /**
-     * Gets whether the attribute definition should check for {@link org.jboss.dmr.ModelNode#isDefined() undefined} values if
-     * {@link #isAllowNull() null is not allowed} in addition to any validation provided by any
-     * {@link #getValidator() configured validator}. The use
-     * case for setting this to {@code false} would be to ignore undefined values in the basic validation performed
-     * by the {@code AttributeDefinition} and instead let operation handlers validate using more complex logic
-     * (e.g. checking for {@link #getAlternatives() alternatives}.
+     * Gets whether the attribute definition is checking for {@link org.jboss.dmr.ModelNode#isDefined() undefined} values.
+     * This will be {@code true} for attributes that are not {@link #isRequired()} (although the validation is
+     * meaningless, since undefined is valid) and for required attributes that have {@link #getAlternatives() alternatives}.
+     * <p>
+     * Validation by the AttributeDefinition of required attributes with alternatives is not possible, as the necessary
+     * context of the overall change being made is not available.
      *
-     * @return {@code true} if validation will ignore undefined values.
+     * @return {@code true} if validation will check undefined values.
+     *
+     * @deprecated  this is no longer configurable, so this getter may be removed in a future major release.
      */
+    @Deprecated
     public boolean isValidatingNull() {
-        return validateNull;
+        return !required || alternatives == null || alternatives.length == 0;
     }
 
     /**
