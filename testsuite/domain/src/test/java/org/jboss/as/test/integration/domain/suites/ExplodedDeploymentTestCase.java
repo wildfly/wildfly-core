@@ -1,0 +1,440 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2015, Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+package org.jboss.as.test.integration.domain.suites;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT;
+import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT_BROWSE_CONTENT_OPERATION;
+import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD_CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ARCHIVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EMPTY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXPLODE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_DEFAULTS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATHS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE_CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TARGET_PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEPLOY;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import org.jboss.as.controller.HashUtil;
+import org.jboss.as.controller.PathAddress;
+
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.controller.client.helpers.domain.DomainClient;
+import org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment;
+import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
+import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
+import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.shared.TimeoutUtil;
+import org.jboss.dmr.ModelNode;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jboss.threads.AsyncFuture;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+/**
+ *
+ * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a>  (c) 2015 Red Hat, inc.
+ */
+public class ExplodedDeploymentTestCase {
+
+    private static final int TIMEOUT = TimeoutUtil.adjust(20000);
+    private static final String DEPLOYMENT_NAME = "deployment.jar";
+    private static final String MSG = "main-server-group";
+    private static final PathElement DEPLOYMENT_PATH = PathElement.pathElement(DEPLOYMENT, DEPLOYMENT_NAME);
+    private static final PathElement MAIN_SERVER_GROUP = PathElement.pathElement(SERVER_GROUP, MSG);
+    private static DomainTestSupport testSupport;
+    private static DomainClient masterClient;
+
+    private static final Properties properties = new Properties();
+    private static final Properties properties2 = new Properties();
+    private static final Properties properties3 = new Properties();
+
+    @BeforeClass
+    public static void setupDomain() throws Exception {
+        testSupport = DomainTestSuite.createSupport(ExplodedDeploymentTestCase.class.getSimpleName());
+        masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        properties.clear();
+        properties.put("service", "is new");
+
+        properties2.clear();
+        properties2.put("service", "is added");
+
+        properties3.clear();
+        properties3.put("service", "is replaced");
+    }
+
+    @AfterClass
+    public static void tearDownDomain() throws Exception {
+        testSupport = null;
+        masterClient = null;
+        DomainTestSuite.stopSupport();
+    }
+
+    @After
+    public void cleanup() throws IOException {
+        try {
+            cleanDeployment();
+        } catch (MgmtOperationException e) {
+            // ignored
+        }
+    }
+
+    @Test
+    public void testInstallAndExplodeDeploymentOnDC() throws IOException, MgmtOperationException {
+        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
+        ModelNode result;
+        try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()){
+            AsyncFuture<ModelNode> future = masterClient.executeAsync(addDeployment(is), null);
+            result = awaitSimpleOperationExecution(future);
+        }
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
+        String initialHash = HashUtil.bytesToHexString(contentNode.get(HASH).asBytes());
+        assertTrue(contentNode.get(ARCHIVE).asBoolean(true));
+        //Let's explode it
+        AsyncFuture<ModelNode> future = masterClient.executeAsync(Operations.createOperation(EXPLODE, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode()), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
+        String explodedHash = HashUtil.bytesToHexString(contentNode.get(HASH).asBytes());
+        assertFalse(contentNode.get(ARCHIVE).asBoolean(true));
+        assertFalse(initialHash.equals(explodedHash));
+        //Let's deploy now
+        future = masterClient.executeAsync(deployOnServerGroup(), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(SERVER, "main-three")), properties);
+        readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is new");
+        //Let's replace the properties
+        Map<String, InputStream> contents = new HashMap<>();
+        contents.put(ServiceActivatorDeployment.PROPERTIES_RESOURCE, toStream(properties3, "Replacing content"));
+        contents.put("org/wildfly/test/deployment/trivial/simple.properties", toStream(properties2, "Adding content"));
+        future = masterClient.executeAsync(addContentToDeployment(contents), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is replaced");
+        readContent("org/wildfly/test/deployment/trivial/simple.properties", "is added");
+        browseContent("", new ArrayList<>(Arrays.asList("META-INF/", "META-INF/MANIFEST.MF", "META-INF/services/",
+                "META-INF/services/org.jboss.msc.service.ServiceActivator", "org/", "org/jboss/", "org/jboss/as/",
+                "org/jboss/as/test/", "org/jboss/as/test/deployment/", "org/jboss/as/test/deployment/trivial/",
+                "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class",
+                "service-activator-deployment.properties", "org/wildfly/","org/wildfly/test/",
+                "org/wildfly/test/deployment/", "org/wildfly/test/deployment/trivial/",
+                "org/wildfly/test/deployment/trivial/simple.properties")));
+        browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF", "services/", "services/org.jboss.msc.service.ServiceActivator")));
+        //Redeploy
+        future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        future = masterClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(SERVER, "main-three")), properties3);
+        readContent("org/wildfly/test/deployment/trivial/simple.properties", "is added");
+        //Let's remove some content
+        future = masterClient.executeAsync(removeContentFromDeployment(
+                Arrays.asList("org/wildfly/test/deployment/trivial/simple.properties", ServiceActivatorDeployment.PROPERTIES_RESOURCE)), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        checkNoContent("org/wildfly/test/deployment/trivial/simple.properties");
+        checkNoContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE);
+        //Redeploy
+        future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        future = masterClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+    }
+
+    @Test
+    public void testInstallAndExplodeDeploymentOnDCFromScratch() throws IOException, MgmtOperationException {
+        AsyncFuture<ModelNode> future = masterClient.executeAsync(addEmptyDeployment(), null); //Add empty deployment
+        ModelNode result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
+        String initialHash = HashUtil.bytesToHexString(contentNode.get(HASH).asBytes());
+        Assert.assertNotNull(initialHash);
+        assertFalse(contentNode.get(ARCHIVE).asBoolean(true));
+        //Let's add some files / directories
+        Map<String, InputStream> initialContents = new HashMap<>();
+        initialContents.put(ServiceActivatorDeployment.class.getName().replace('.', File.separatorChar) + ".class",
+                ServiceActivatorDeployment.class.getResourceAsStream("ServiceActivatorDeployment.class"));
+        initialContents.put("META-INF/MANIFEST.MF",
+                new ByteArrayInputStream("Dependencies: org.jboss.msc\n".getBytes(StandardCharsets.UTF_8)));
+        initialContents.put("META-INF/services/org.jboss.msc.service.ServiceActivator",
+                new ByteArrayInputStream("org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment\n".getBytes(StandardCharsets.UTF_8)));
+        initialContents.put(ServiceActivatorDeployment.PROPERTIES_RESOURCE,
+                toStream(properties, "Creating content"));
+        future = masterClient.executeAsync(addContentToDeployment(initialContents), null); //Add content to deployment
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        //Let's deploy now
+        future = masterClient.executeAsync(deployOnServerGroup(), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(SERVER, "main-three")), properties);
+        readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is new");
+        //Let's replace the properties
+        Map<String, InputStream> contents = new HashMap<>();
+        contents.put(ServiceActivatorDeployment.PROPERTIES_RESOURCE, toStream(properties3, "Replacing content"));
+        contents.put("org/wildfly/test/deployment/trivial/simple.properties", toStream(properties2, "Adding content"));
+        future = masterClient.executeAsync(addContentToDeployment(contents), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is replaced");
+        readContent("org/wildfly/test/deployment/trivial/simple.properties", "is added");
+        browseContent("", new ArrayList<>(Arrays.asList("META-INF/", "META-INF/MANIFEST.MF", "META-INF/services/",
+                "META-INF/services/org.jboss.msc.service.ServiceActivator", "org/", "org/jboss/", "org/jboss/as/",
+                "org/jboss/as/test/", "org/jboss/as/test/deployment/", "org/jboss/as/test/deployment/trivial/",
+                "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class",
+                "service-activator-deployment.properties", "org/wildfly/","org/wildfly/test/",
+                "org/wildfly/test/deployment/", "org/wildfly/test/deployment/trivial/",
+                "org/wildfly/test/deployment/trivial/simple.properties")));
+        browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF","services/", "services/org.jboss.msc.service.ServiceActivator")));
+        //Redeploy
+        future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        future = masterClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(SERVER, "main-three")), properties3);
+        readContent("org/wildfly/test/deployment/trivial/simple.properties", "is added");
+        //Let's remove some content
+        future = masterClient.executeAsync(removeContentFromDeployment(
+                Arrays.asList("org/wildfly/test/deployment/trivial/simple.properties", ServiceActivatorDeployment.PROPERTIES_RESOURCE)), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        checkNoContent("org/wildfly/test/deployment/trivial/simple.properties");
+        checkNoContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE);
+        //Redeploy
+        future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        future = masterClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+    }
+
+    private ModelNode readDeploymentResource(PathAddress address) {
+        ModelNode operation = Operations.createReadResourceOperation(address.toModelNode());
+        operation.get(INCLUDE_RUNTIME).set(true);
+        operation.get(INCLUDE_DEFAULTS).set(true);
+        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        ModelNode result = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        return Operations.readResult(result);
+    }
+
+    private void readContent(String path, String expectedValue) throws IOException {
+        ModelNode op = Operations.createOperation(READ_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        op.get(PATH).set(path);
+        Future<OperationResponse> future = masterClient.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
+        OperationResponse response = awaitReadContentExecution(future);
+        Assert.assertTrue(response.getResponseNode().toString(), Operations.isSuccessfulOutcome(response.getResponseNode()));
+        List<OperationResponse.StreamEntry> streams = response.getInputStreams();
+        Assert.assertThat(streams, is(notNullValue()));
+        Assert.assertThat(streams.size(), is(1));
+        try (InputStream in = streams.get(0).getStream()) {
+            Properties content = new Properties();
+            content.load(in);
+            Assert.assertThat(content.getProperty("service"), is(expectedValue));
+        }
+    }
+
+    public void browseContent(String path, List<String> expectedContents) throws IOException {
+        ModelNode operation = Operations.createOperation(DEPLOYMENT_BROWSE_CONTENT_OPERATION, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        if (path != null && !path.isEmpty()) {
+            operation.get(PATH).set(path);
+        }
+        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        ModelNode response = awaitSimpleOperationExecution(future);
+        assertTrue(Operations.isSuccessfulOutcome(response));
+        List<ModelNode> contents = Operations.readResult(response).asList();
+        for (ModelNode content : contents) {
+            Assert.assertTrue(content.asString() + " isn't expected", expectedContents.contains(content.asString()));
+            expectedContents.remove(content.asString());
+        }
+        Assert.assertTrue(expectedContents.isEmpty());
+    }
+
+    public void checkNoContent(String path) throws IOException {
+        ModelNode operation = Operations.createOperation(READ_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        operation.get(PATH).set(path);
+        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        ModelNode result = awaitSimpleOperationExecution(future);
+        assertFalse(Operations.isSuccessfulOutcome(result));
+    }
+
+    private InputStream toStream(Properties props, String comment) throws IOException {
+        try (StringWriter writer = new StringWriter()) {
+            props.store(writer, comment);
+            String content = writer.toString();
+            return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private ModelNode awaitSimpleOperationExecution(Future<ModelNode> future) {
+        try {
+            return future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private OperationResponse awaitReadContentExecution(Future<OperationResponse> future) {
+        try {
+            return future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Operation addDeployment(InputStream attachment) throws MalformedURLException {
+        ModelNode operation = Operations.createAddOperation(PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        ModelNode content = new ModelNode();
+        content.get(INPUT_STREAM_INDEX).set(0);
+        operation.get(CONTENT).add(content);
+        return Operation.Factory.create(operation, Collections.singletonList(attachment));
+    }
+
+    private Operation addContentToDeployment(Map<String, InputStream> contents) throws MalformedURLException {
+        ModelNode operation = Operations.createOperation(ADD_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        int stream = 0;
+        List<InputStream> attachments = new ArrayList<>(contents.size());
+        for(Entry<String, InputStream> content : contents.entrySet()) {
+            ModelNode contentNode = new ModelNode();
+            contentNode.get(INPUT_STREAM_INDEX).set(stream);
+            contentNode.get(TARGET_PATH).set(content.getKey());
+            attachments.add(content.getValue());
+            operation.get(CONTENT).add(contentNode);
+            stream++;
+        }
+        return Operation.Factory.create(operation, attachments);
+    }
+
+    private Operation removeContentFromDeployment(List<String> paths) throws MalformedURLException {
+        ModelNode operation = Operations.createOperation(REMOVE_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        operation.get(PATHS).setEmptyList();
+        for(String path : paths) {
+            operation.get(PATHS).add(path);
+        }
+        return Operation.Factory.create(operation);
+    }
+
+    private ModelNode deployOnServerGroup() throws MalformedURLException {
+        ModelNode operation = Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode());
+        operation.get(ENABLED).set(true);
+        return operation;
+    }
+
+    private Operation addEmptyDeployment() throws MalformedURLException {
+        ModelNode operation = Operations.createAddOperation(PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        ModelNode content = new ModelNode();
+        content.get(EMPTY).set(true);
+        operation.get(CONTENT).add(content);
+        return Operation.Factory.create(operation);
+    }
+
+    private ModelNode undeployAndRemoveOp() throws MalformedURLException {
+        ModelNode op = new ModelNode();
+        op.get(OP).set(COMPOSITE);
+        ModelNode steps = op.get(STEPS);
+
+        ModelNode sgDep = PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode();
+        steps.add(Operations.createOperation(UNDEPLOY, sgDep));
+        steps.add(Operations.createRemoveOperation(sgDep));
+        steps.add(Operations.createRemoveOperation(PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode()));
+
+        return op;
+    }
+
+    private void cleanDeployment() throws IOException, MgmtOperationException {
+        DomainTestUtils.executeForResult(undeployAndRemoveOp(), masterClient);
+    }
+}

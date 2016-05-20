@@ -35,9 +35,19 @@ public interface DeploymentAction {
          */
         ADD,
         /**
+         * Add content to an exploded deployment in content repository. Does not imply
+         * deploying it into the runtime.
+         */
+        ADD_CONTENT,
+        /**
          * Deploy content into the runtime, without replacing existing content.
          */
         DEPLOY,
+        /**
+         * Explode a deployment content in the content repository. The content must have
+         * been previously {@link #ADD added to the content repository}.
+         */
+        EXPLODE,
         /**
          * Replace existing content in the runtime. The new content must have
          * been previously {@link #ADD added to the content repository}.
@@ -66,7 +76,13 @@ public interface DeploymentAction {
          * must have previously been {@link #UNDEPLOY undeployed from all
          * runtimes}.
          */
-        REMOVE
+        REMOVE,
+        /**
+         * Remove content from an exploded deployment in the content repository. The content
+         * must have previously been {@link #UNDEPLOY undeployed from all
+         * runtimes}.
+         */
+        REMOVE_CONTENT
     }
 
     /**

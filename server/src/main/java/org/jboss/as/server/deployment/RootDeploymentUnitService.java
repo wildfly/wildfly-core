@@ -48,6 +48,7 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
     private final String managementName;
     private final DeploymentUnit parent;
     private final DeploymentOverlayIndex deploymentOverlays;
+    private final boolean isExplodedContent;
 
     /**
      * Construct a new instance.
@@ -60,17 +61,19 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
      * @param capabilityServiceSupport support for capability integration
      * @param vaultReader the vault reader
      * @param deploymentOverlays the deployment overlays
+     * @param exploded the deployment has been exploded
      */
     public RootDeploymentUnitService(final String name, final String managementName, final DeploymentUnit parent,
                                      final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration,
                                      final Resource resource, final CapabilityServiceSupport capabilityServiceSupport,
-                                     final AbstractVaultReader vaultReader, DeploymentOverlayIndex deploymentOverlays) {
+                                     final AbstractVaultReader vaultReader, DeploymentOverlayIndex deploymentOverlays, boolean exploded) {
         super(registration, mutableRegistration, resource, capabilityServiceSupport, vaultReader);
         assert name != null : "name is null";
         this.name = name;
         this.managementName = managementName;
         this.parent = parent;
         this.deploymentOverlays = deploymentOverlays;
+        this.isExplodedContent = exploded;
     }
 
     protected DeploymentUnit createAndInitializeDeploymentUnit(final ServiceRegistry registry) {
@@ -86,6 +89,9 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         deploymentUnit.putAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY, vaultReader);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX, deploymentOverlays);
         deploymentUnit.putAttachment(Attachments.PATH_MANAGER, pathManagerInjector.getValue());
+        if(this.isExplodedContent) {
+            MountExplodedMarker.setMountExploded(deploymentUnit);
+        }
 
         // Attach the deployment repo
         deploymentUnit.putAttachment(Attachments.SERVER_DEPLOYMENT_REPOSITORY, serverDeploymentRepositoryInjector.getValue());

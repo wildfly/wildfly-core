@@ -42,6 +42,7 @@ public class ModelDescriptionConstants {
     public static final String ACTIVE_SOCKET_BINDING_GROUPS = "active-socket-binding-groups";
     public static final String ADD = "add";
     public static final String ADDRESS = "address";
+    public static final String ADD_CONTENT = "add-content";
     public static final String ADD_INDEX = "add-index";
     public static final String ADMIN_ONLY = "admin-only";
     public static final String ADMIN_ONLY_POLICY = "admin-only-policy";
@@ -83,6 +84,7 @@ public class ModelDescriptionConstants {
     public static final String BOOT_TIME = "boot-time";
     public static final String BOOT_ERROR = "boot-error";
     public static final String BOOT_ERRORS = "boot-errors";
+    public static final String BROWSE_CONTENT = "browse-content";
     public static final String BYTES = "bytes";
     public static final String CALLER_THREAD = "caller-thread";
     public static final String CALLER_TYPE = "caller-type";
@@ -123,6 +125,7 @@ public class ModelDescriptionConstants {
     public static final String DEFAULT_REQUIRES_WRITE = "default-requires-write";
     public static final String DEFAULT_REQUIRES_READ = "default-requires-read";
     public static final String DEFAULT_REQUIRES_ADDRESSABLE = "default-requires-addressable";
+    public static final String DEPTH = "depth";
     public static final String DEPLOY = "deploy";
     public static final String DEPLOYMENT = "deployment";
     public static final String DEPLOYMENT_DEPLOYED_NOTIFICATION = "deployment-deployed";
@@ -153,6 +156,7 @@ public class ModelDescriptionConstants {
     public static final String DOMAIN_UUID = "domain-uuid";
     public static final String DYNAMIC = "dynamic";
     public static final String DUMP_SERVICES = "dump-services";
+    public static final String EMPTY = "empty";
     public static final String ENABLE = "enable";
     public static final String ENABLED = "enabled";
     public static final String ENABLED_CIPHER_SUITES = "enabled-cipher-suites";
@@ -169,6 +173,7 @@ public class ModelDescriptionConstants {
     public static final String EXCLUSIVE_RUNNING_TIME = "exclusive-running-time";
     public static final String EXECUTE_FOR_COORDINATOR = "execute-for-coordinator";
     public static final String EXECUTION_STATUS = "execution-status";
+    public static final String EXPLODE = "explode";
     public static final String EXPRESSIONS_ALLOWED = "expressions-allowed";
     public static final String EXTENSION = "extension";
     public static final String FACILITY = "facility";
@@ -258,6 +263,7 @@ public class ModelDescriptionConstants {
     public static final String LOG_BOOT = "log-boot";
     public static final String LOG_READ_ONLY = "log-read-only";
     public static final String LOOPBACK = "loopback";
+    public static final String MANAGED = "managed";
     public static final String MANAGEMENT = "management";
     public static final String MANAGEMENT_CLIENT_CONTENT = "management-client-content";
     public static final String MANAGEMENT_INTERFACE = "management-interface";
@@ -319,9 +325,11 @@ public class ModelDescriptionConstants {
     public static final String OUTBOUND_CONNECTION = "outbound-connection";
     /** Use this standard operation address field in the operation *description* ModelNode */
     public static final String OUTCOME = "outcome";
+    public static final String OVERWRITE = "overwrite";
     public static final String OWNER = "owner";
     public static final String PASSWORD = "password";
     public static final String PATH = "path";
+    public static final String PATHS = "paths";
     public static final String PERIODIC_ROTATING_FILE_HANDLER = "periodic-rotating-file-handler";
     public static final String PERMISSION_COMBINATION_POLICY = "permission-combination-policy";
     public static final String PATTERN = "pattern";
@@ -448,11 +456,13 @@ public class ModelDescriptionConstants {
     public static final String SERVICE_CONTAINER = "service-container";
     public static final String SINCE = "since";
     public static final String SIZE_ROTATING_FILE_HANDLER = "size-rotating-file-handler";
+    public static final String SOURCE_FILE = "source-file";
     public static final String SOURCE_NETWORK = "source-network";
     public static final String SSL_PROTOCOL = "ssl-protocol";
     public static final String OPERATION_REQUIRES_RELOAD = "operation-requires-reload";
     public static final String OPERATION_REQUIRES_RESTART = "operation-requires-restart";
     public static final String RELOAD_SERVERS = "reload-servers";
+    public static final String REMOVE_CONTENT = "remove-content";
     public static final String RESTART_SERVERS = "restart-servers";
     public static final String RESUME_SERVERS = "resume-servers";
     public static final String RESUME = "resume";
@@ -499,6 +509,7 @@ public class ModelDescriptionConstants {
      */
     public static final String SYNC_REMOVED_FOR_READD = "sync-dropped-for-readd";
     public static final String TAIL_COMMENT_ALLOWED = "tail-comment-allowed";
+    public static final String TARGET_PATH = "target-path";
     public static final String TCP = "tcp";
     public static final String TIMEOUT = "timeout";
     public static final String TLS = "tls";

@@ -116,7 +116,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
             //
         }
 
-        serviceActivatorDeployment = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(SERVICE_ACTIVATOR_DEPLOYMENT_NAME, null);
+        serviceActivatorDeployment = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(SERVICE_ACTIVATOR_DEPLOYMENT_NAME, Collections.emptyMap());
 
         File tmpDir = new File(System.getProperty("java.io.tmpdir"));
         serviceActivatorDeploymentFile = new File(tmpDir, SERVICE_ACTIVATOR_DEPLOYMENT_NAME);

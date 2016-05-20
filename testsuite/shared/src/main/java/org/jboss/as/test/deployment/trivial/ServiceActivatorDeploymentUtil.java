@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
@@ -84,11 +85,33 @@ public class ServiceActivatorDeploymentUtil {
         return archive;
     }
 
+    public static JavaArchive createServiceActivatorDeploymentArchive(String name, Properties properties) throws IOException {
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, name);
+        archive.addClass(ServiceActivatorDeployment.class);
+        archive.addAsServiceProvider(ServiceActivator.class, ServiceActivatorDeployment.class);
+        if (properties != null && properties.size() > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<Object, Object> prop : properties.entrySet()) {
+                sb.append(prop.getKey());
+                sb.append('=');
+                sb.append(prop.getValue());
+                sb.append("\n");
+            }
+            archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc\n"), "MANIFEST.MF");
+            archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
+        }
+        return archive;
+    }
+
     public static void validateProperties(ModelControllerClient client) throws IOException, MgmtOperationException {
         validateProperties(client, PathAddress.EMPTY_ADDRESS, DEFAULT_MAP);
     }
 
     public static void validateProperties(ModelControllerClient client, Map<String, String>  properties) throws IOException, MgmtOperationException {
+        validateProperties(client, PathAddress.EMPTY_ADDRESS, properties);
+    }
+
+    public static void validateProperties(ModelControllerClient client, Properties properties) throws IOException, MgmtOperationException {
         validateProperties(client, PathAddress.EMPTY_ADDRESS, properties);
     }
 
@@ -99,6 +122,14 @@ public class ServiceActivatorDeploymentUtil {
     public static void validateProperties(ModelControllerClient client, PathAddress baseAddress, Map<String, String>  properties) throws IOException, MgmtOperationException {
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             ModelNode value = getPropertyValue(client, baseAddress, entry.getKey());
+            Assert.assertTrue(entry.getKey() + " is not defined: " + value, value.isDefined());
+            Assert.assertEquals(entry.getKey() + " has the wrong value", entry.getValue(), value.asString());
+        }
+    }
+
+    public static void validateProperties(ModelControllerClient client, PathAddress baseAddress, Properties  properties) throws IOException, MgmtOperationException {
+        for (Map.Entry entry : properties.entrySet()) {
+            ModelNode value = getPropertyValue(client, baseAddress, (String) entry.getKey());
             Assert.assertTrue(entry.getKey() + " is not defined: " + value, value.isDefined());
             Assert.assertEquals(entry.getKey() + " has the wrong value", entry.getValue(), value.asString());
         }

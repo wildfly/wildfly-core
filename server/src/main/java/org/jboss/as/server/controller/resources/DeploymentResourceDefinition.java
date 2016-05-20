@@ -23,9 +23,15 @@ package org.jboss.as.server.controller.resources;
 
 
 
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ALL;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.isUnmanagedContent;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.NotificationDefinition;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -34,6 +40,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.deployment.DeploymentStatusHandler;
+import org.jboss.dmr.ModelNode;
 
 /**
  *
@@ -42,10 +49,11 @@ import org.jboss.as.server.deployment.DeploymentStatusHandler;
 @SuppressWarnings("deprecation")
 public abstract class DeploymentResourceDefinition extends SimpleResourceDefinition {
 
-    private DeploymentResourceParent parent;
+    private final DeploymentResourceParent parent;
+    public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT);
 
     protected DeploymentResourceDefinition(DeploymentResourceParent parent, OperationStepHandler addHandler, OperationStepHandler removeHandler) {
-        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT), DeploymentAttributes.DEPLOYMENT_RESOLVER)
+        super(new Parameters(PATH, DeploymentAttributes.DEPLOYMENT_RESOLVER)
                 .setAddHandler(addHandler)
                 .setRemoveHandler(removeHandler)
                 .setAccessConstraints(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
@@ -60,6 +68,17 @@ public abstract class DeploymentResourceDefinition extends SimpleResourceDefinit
                 resourceRegistration.registerMetric(attr, DeploymentStatusHandler.INSTANCE);
             } else if (attr.getName().equals(DeploymentAttributes.NAME.getName())) {
                 resourceRegistration.registerReadOnlyAttribute(DeploymentAttributes.NAME, ReadResourceNameOperationStepHandler.INSTANCE);
+            } else if (DeploymentAttributes.MANAGED.getName().equals(attr.getName())) {
+                resourceRegistration.registerReadOnlyAttribute(DeploymentAttributes.MANAGED, new OperationStepHandler() {
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        ModelNode deployment = context.readResource(PathAddress.EMPTY_ADDRESS, true).getModel();
+                        if(deployment.hasDefined(CONTENT_ALL.getName())) {
+                            ModelNode content = deployment.get(CONTENT_ALL.getName()).asList().get(0);
+                            context.getResult().set(!isUnmanagedContent(content));
+                        }
+                    }
+                });
             } else {
                 resourceRegistration.registerReadOnlyAttribute(attr, null);
             }

@@ -768,4 +768,43 @@ public interface DomainControllerLogger extends BasicLogger {
     @LogMessage(level = Level.INFO)
     @Message(id = 83, value = "Timed out after %d ms awaiting final response from server %s on host %s; remote process has been notified to cancel operation")
     void timedOutAwaitingFinalResponse(int patient, String serverName, String hostName);
+
+    @Message(id = 84, value = "Cannot explode a deployment in a self-contained server")
+    OperationFailedException cannotExplodeDeploymentOfSelfContainedServer();
+
+    @Message(id = 85, value = "Cannot explode an unmanaged deployment")
+    OperationFailedException cannotExplodeUnmanagedDeployment();
+
+    @Message(id = 86, value = "Cannot explode an already exploded deployment")
+    OperationFailedException cannotExplodeAlreadyExplodedDeployment();
+
+    @Message(id = 87, value = "Cannot explode an already deployed deployment")
+    OperationFailedException cannotExplodeEnabledDeployment();
+
+    @Message(id = 88, value = "Cannot add content to a deployment in a self-contained server")
+    OperationFailedException cannotAddContentToSelfContainedServer();
+
+    @Message(id = 89, value = "Cannot add content to an unmanaged deployment")
+    OperationFailedException cannotAddContentToUnmanagedDeployment();
+
+    @Message(id = 90, value = "Cannot add content to an unexploded deployment")
+    OperationFailedException cannotAddContentToUnexplodedDeployment();
+
+    @Message(id = 91, value = "Cannot remove content from a deployment in a self-contained server")
+    OperationFailedException cannotRemoveContentFromSelfContainedServer();
+
+    @Message(id = 92, value = "Cannot remove content from an unmanaged deployment")
+    OperationFailedException cannotRemoveContentFromUnmanagedDeployment();
+
+    @Message(id = 93, value = "Cannot remove content from an unexploded deployment")
+    OperationFailedException cannotRemoveContentFromUnexplodedDeployment();
+
+    @Message(id = 94, value = "Cannot read content from a deployment in a self-contained server")
+    OperationFailedException cannotReadContentFromSelfContainedServer();
+
+    @Message(id = 95, value = "Cannot read content from an unmanaged deployment")
+    OperationFailedException cannotReadContentFromUnmanagedDeployment();
+
+    @Message(id = 96, value = "Cannot read content from an unexploded deployment")
+    OperationFailedException cannotReadContentFromUnexplodedDeployment();
 }

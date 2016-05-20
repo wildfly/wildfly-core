@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<domain xmlns="urn:jboss:domain:5.0">
+    <deployments>
+        <deployment name="myFirstApp" runtime-name="abc.war">
+            <content sha1="12345678901234567890"/>
+        </deployment>
+        <deployment name="mySecondApp" runtime-name="def.war">
+            <content sha1="12345678901234567890" archive="true"/>
+        </deployment>
+    </deployments>
+</domain>

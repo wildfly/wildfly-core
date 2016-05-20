@@ -21,11 +21,13 @@
  */
 package org.jboss.as.controller.client.helpers.standalone;
 
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Builder capable of creating a {@link DeploymentPlan}. This interface
@@ -126,7 +128,7 @@ public interface DeploymentPlanBuilder {
     AddDeploymentPlanBuilder add(URL url) throws IOException;
 
     /**
-     * Indicates the content of the specified fileL should be added to the content
+     * Indicates the content of the specified file should be added to the content
      * repository.
      * <p>
      * Note that this operation does not indicate the content should
@@ -211,6 +213,49 @@ public interface DeploymentPlanBuilder {
      * @return a builder that can continue building the overall deployment plan
      */
     AddDeploymentPlanBuilder add(String name, String commonName, InputStream stream) throws IOException;
+
+    /**
+     * Indicates the deployment to be exploded.
+     * <p>
+     * Note that this operation does not indicate the content should
+     * be undeployed into the runtime.
+     *
+     * @param deploymentName name by which the deployment is known in the model.
+     *
+     * @return a builder that can continue building the overall deployment plan
+     * @throws java.io.IOException
+     */
+    DeploymentPlanBuilder explodeDeployment(String deploymentName) throws IOException;
+
+    /**
+     * Indicates the content readable from the specified <code>InputStream</code>
+     * should be added to the content repository.
+     * <p>
+     * Note that this operation does not indicate the content should
+     * be deployed into the runtime. See {@link AddDeploymentPlanBuilder#andDeploy()}.
+     *
+     * @param deploymentName name by which the deployment is known in the model.
+     * @param contents tyhe content relative path and bytes.
+     *
+     * @return a builder that can continue building the overall deployment plan
+     * @throws java.io.IOException
+     */
+    DeploymentPlanBuilder addContentToDeployment(String deploymentName, Map<String, InputStream> contents) throws IOException;
+
+    /**
+     * Indicates the content readable from the specified targetPath should be removed from the deployment with the
+     * specified name.
+     * <p>
+     * Note that this operation does not indicate the content should
+     * be undeployed into the runtime.
+     *
+     * @param deploymentName name by which the deployment is known in the model.
+     * @param paths paths to the exploded deployment from which the content will be removed.
+     *
+     * @return a builder that can continue building the overall deployment plan
+     * @throws java.io.IOException
+     */
+    DeploymentPlanBuilder removeContenFromDeployment(String deploymentName, List<String> paths) throws IOException;
 
     /**
      * Indicates the specified deployment content should be deployed.
