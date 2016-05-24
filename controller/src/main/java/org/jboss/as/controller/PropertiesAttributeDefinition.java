@@ -100,7 +100,7 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
         }
         return props;
     }
-
+    @Deprecated
     public void parse(final XMLExtendedStreamReader reader, final ModelNode operation) throws XMLStreamException {
         final String[] array = requireAttributes(reader, org.jboss.as.controller.parsing.Attribute.NAME.getLocalName(), org.jboss.as.controller.parsing.Attribute.VALUE.getLocalName());
         parseAndAddParameterElement(array[0], array[1], operation, reader);

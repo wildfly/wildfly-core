@@ -48,7 +48,6 @@ import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
@@ -123,16 +122,11 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
 
     private static final ParameterValidator NOT_NULL_STRING_LENGTH_ONE_VALIDATOR = new StringLengthValidator(1, false, false);
 
-    public static final AttributeDefinition NAMESPACES = new SimpleMapAttributeDefinition.Builder(
-            new PropertiesAttributeDefinition.Builder(ModelDescriptionConstants.NAMESPACES, false)
-            .build()
-        )
-        .build();
+    public static final AttributeDefinition NAMESPACES = new PropertiesAttributeDefinition.Builder(ModelDescriptionConstants.NAMESPACES, false)
+            .build();
 
-    public static final AttributeDefinition SCHEMA_LOCATIONS = new SimpleMapAttributeDefinition.Builder(
-        new PropertiesAttributeDefinition.Builder(ModelDescriptionConstants.SCHEMA_LOCATIONS, false).build()
-        )
-        .build();
+    public static final AttributeDefinition SCHEMA_LOCATIONS = new PropertiesAttributeDefinition.Builder(ModelDescriptionConstants.SCHEMA_LOCATIONS, false)
+            .build();
 
     public static final SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.NAME, ModelType.STRING, true)
         .setValidator(new StringLengthValidator(1, true))

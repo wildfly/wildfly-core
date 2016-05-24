@@ -49,9 +49,12 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParser;
+import org.jboss.as.controller.AttributeParsers;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
+import org.jboss.as.controller.ObjectMapAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -235,6 +238,15 @@ public class PersistentResourceXMLParserTestCase {
 
         Assert.assertEquals(4, operations.size());
         ModelNode subsystem = opsToModel(operations);
+        ModelNode resource = subsystem.get("resource","foo");
+
+        ModelNode complexMap = MyParser.COMPLEX_MAP.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, resource);
+        Assert.assertEquals("Model type should be map", ModelType.OBJECT, complexMap.getType());
+        Assert.assertEquals("Map should have 3 elements", 3, complexMap.asList().size());
+        Assert.assertEquals("some.class1", complexMap.get("key1", "name").asString());
+        Assert.assertEquals("some.class2", complexMap.get("key2", "name").asString());
+        Assert.assertEquals("some.module3", complexMap.get("key3", "module").asString());
+
 
         StringWriter stringWriter = new StringWriter();
         XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter));
@@ -520,12 +532,17 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
 
-        static final ObjectTypeAttributeDefinition CLASS = ObjectTypeAttributeDefinition.Builder.of("class", create("name", ModelType.STRING, false)
+        static final ObjectTypeAttributeDefinition CLASS = ObjectTypeAttributeDefinition.Builder.of("class",
+                create("name", ModelType.STRING, false)
                         .setAllowExpression(false)
                         .build(),
                 create("module", ModelType.STRING, false)
                         .setAllowExpression(false)
                         .build())
+                .build();
+
+
+        static final ObjectTypeAttributeDefinition OBJECT = ObjectTypeAttributeDefinition.Builder.of("object",ALIAS, SECURITY_ENABLED, securityAttr1)
                 .build();
         static final ModelNode COMPLEX_LIST_DEFAULT_VALUE = new ModelNode();
         static{
@@ -556,6 +573,22 @@ public class PersistentResourceXMLParserTestCase {
                 .setDefaultValue(COMPLEX_LIST_DEFAULT_VALUE)
                 .build();
 
+        static final ObjectMapAttributeDefinition COMPLEX_MAP = ObjectMapAttributeDefinition.create("complex-map", CLASS)
+                .setAllowNull(true)
+                .setAttributeParser(new AttributeParsers.ObjectMapParser("element", true))
+                .setAttributeMarshaller(new AttributeMarshallers.ObjectMapAttributeMarshaller(null, "element", true))
+                .build();
+        static final ObjectMapAttributeDefinition COMPLEX_MAP2 = ObjectMapAttributeDefinition.create("object-map", OBJECT)
+                .setAllowNull(true)
+                .setAttributeParser(AttributeParsers.getObjectMapAttributeParser("name")) //change key attribute to name
+                .setAttributeMarshaller(AttributeMarshallers.getObjectMapAttributeMarshaller("name"))
+                .build();
+
+
+        static final ObjectMapAttributeDefinition COMPLEX_MAP3 = ObjectMapAttributeDefinition.create("map", CLASS)
+                .setAllowNull(true)
+                .build();
+
 
         static final PersistentResourceDefinition RESOURCE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("resource"), new NonResolvingResourceDescriptionResolver()) {
             @Override
@@ -570,6 +603,7 @@ public class PersistentResourceXMLParserTestCase {
                 attributes.add(WRAPPED_PROPERTIES_GROUP);
                 attributes.add(WRAPPED_PROPERTIES);
                 attributes.add(ALIAS);
+                attributes.add(COMPLEX_MAP);
                 return attributes;
             }
         };
@@ -582,6 +616,7 @@ public class PersistentResourceXMLParserTestCase {
                 attributes.add(BUFFERS_PER_REGION);
                 attributes.add(MAX_REGIONS);
                 attributes.add(ALIAS);
+                attributes.add(COMPLEX_MAP2);
                 return attributes;
             }
         };
@@ -596,6 +631,7 @@ public class PersistentResourceXMLParserTestCase {
                 attributes.add(INTERCEPTORS);
                 attributes.add(COMPLEX_LIST);
                 attributes.add(COMPLEX_LIST_WITH_DEFAULT);
+                attributes.add(COMPLEX_MAP3);
                 return attributes;
             }
 
@@ -674,13 +710,15 @@ public class PersistentResourceXMLParserTestCase {
                                             PROPERTIES,
                                             WRAPPED_PROPERTIES_GROUP,
                                             WRAPPED_PROPERTIES,
-                                            ALIAS
+                                            ALIAS,
+                                            COMPLEX_MAP
                                     )
                     )
                     .addChild(
                             builder(BUFFER_CACHE_INSTANCE)
                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
+                                    .addAttribute(COMPLEX_MAP2)
                     )
                     .build();
         }
@@ -730,6 +768,7 @@ public class PersistentResourceXMLParserTestCase {
                                     .addAttribute(COMPLEX_LIST)
                                     .addAttribute(COMPLEX_LIST_WITH_DEFAULT)
                                     .addAttribute(PROPERTIES)
+                                    .addAttribute(COMPLEX_MAP3)
                                     .addChild(
                                             builder(BUFFER_CACHE_INSTANCE)
                                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
