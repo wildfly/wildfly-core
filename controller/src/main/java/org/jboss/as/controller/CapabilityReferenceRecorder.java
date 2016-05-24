@@ -35,7 +35,7 @@ public interface CapabilityReferenceRecorder {
      * Registers capability requirement information to the given context.
      * @param context the context
      * @param attributeName the name of the attribute
-     * @param attributeValues the values of the attribute
+     * @param attributeValues the values of the attribute, which may contain null
      */
     void addCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues);
 
@@ -43,7 +43,7 @@ public interface CapabilityReferenceRecorder {
      * Deregisters capability requirement information from the given context.
      * @param context the context
      * @param attributeName the name of the attribute
-     * @param attributeValues the values of the attribute
+     * @param attributeValues the values of the attribute, which may contain null
      */
     void removeCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues);
 
@@ -101,11 +101,14 @@ public interface CapabilityReferenceRecorder {
             }
 
             for (String attributeValue : attributeValues) {
-                String requirementName = RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, attributeValue);
-                if (remove) {
-                    context.deregisterCapabilityRequirement(requirementName, dependentName);
-                } else {
-                    context.registerAdditionalCapabilityRequirement(requirementName, dependentName, attributeName);
+                // This implementation does not handle null attribute values
+                if (attributeValue != null) {
+                    String requirementName = RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, attributeValue);
+                    if (remove) {
+                        context.deregisterCapabilityRequirement(requirementName, dependentName);
+                    } else {
+                        context.registerAdditionalCapabilityRequirement(requirementName, dependentName, attributeName);
+                    }
                 }
             }
         }
