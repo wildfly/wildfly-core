@@ -889,13 +889,10 @@ public abstract class AttributeDefinition {
      */
     public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
         if (referenceRecorder != null) {
-            if (!attributeValue.isDefined()) {
-                attributeValue = getDefaultValue();
-            }
-            // We can't process expressions, and there's no point processing undefined
-            if (attributeValue != null && attributeValue.isDefined()
-                    && attributeValue.getType() != ModelType.EXPRESSION) {
-                referenceRecorder.addCapabilityRequirements(context, getName(), attributeValue.asString());
+            // We can't process expressions
+            if (attributeValue.getType() != ModelType.EXPRESSION) {
+                ModelNode value = attributeValue.isDefined() ? attributeValue : (defaultValue != null) ? defaultValue : new ModelNode();
+                referenceRecorder.addCapabilityRequirements(context, name, value.isDefined() ? value.asString() : null);
             }
         }
     }
@@ -913,13 +910,10 @@ public abstract class AttributeDefinition {
      */
     public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
         if (referenceRecorder != null) {
-            if (!attributeValue.isDefined()) {
-                attributeValue = getDefaultValue();
-            }
-            // We can't process expressions, and there's no point processing undefined
-            if (attributeValue != null && attributeValue.isDefined()
-                    && attributeValue.getType() != ModelType.EXPRESSION) {
-                referenceRecorder.removeCapabilityRequirements(context, getName(), attributeValue.asString());
+            // We can't process expressions
+            if (attributeValue.getType() != ModelType.EXPRESSION) {
+                ModelNode value = attributeValue.isDefined() ? attributeValue : (defaultValue != null) ? defaultValue : new ModelNode();
+                referenceRecorder.removeCapabilityRequirements(context, name, value.isDefined() ? value.asString() : null);
             }
         }
     }
