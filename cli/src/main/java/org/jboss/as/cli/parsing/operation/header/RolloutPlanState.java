@@ -51,9 +51,8 @@ public class RolloutPlanState extends DefaultParsingState {
             @Override
             public void doHandle(ParsingContext ctx) throws CommandFormatException {
                 final String input = ctx.getInput();
-                if(input.startsWith("id", ctx.getLocation()) &&
-                        input.length() > ctx.getLocation() + 2 &&
-                        (input.charAt(ctx.getLocation() + 2) == '=' || Character.isWhitespace(input.charAt(ctx.getLocation() + 2)))) {
+                final int location = ctx.getLocation();
+                if(inputHasArgument("id", input, location) || (inputHasArgument("name", input, location))) {
                     ctx.enterState(props);
                 } else {
                     ctx.enterState(sgList);
@@ -74,5 +73,11 @@ public class RolloutPlanState extends DefaultParsingState {
                 ctx.enterState(props);
                 //ctx.leaveState();
             }});
+    }
+
+    private static boolean inputHasArgument(String argName, String input, int location) {
+        return input.startsWith(argName, location) &&
+                input.length() > location + argName.length() &&
+                (input.charAt(location + argName.length()) == '=' || Character.isWhitespace(input.charAt(location + argName.length())));
     }
 }
