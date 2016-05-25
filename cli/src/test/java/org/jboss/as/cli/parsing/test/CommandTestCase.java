@@ -264,6 +264,36 @@ public class CommandTestCase {
         assertEquals("\"a \\\"b\\\"\"", cmd.getPropertyValue("--arg"));
     }
 
+    @Test
+    public void testCurlyBrackets() throws Exception {
+        DefaultCallbackHandler cmd = parse("cmd --arg={a ");
+        assertEquals("cmd", cmd.getOperationName());
+        assertEquals("--arg", cmd.getLastParsedPropertyName());
+        assertEquals("{a ", cmd.getPropertyValue("--arg"));
+    }
+
+    @Test
+    public void testSpaceAfterValue() throws Exception {
+        DefaultCallbackHandler cmd = parse("cmd --arg=a ");
+        assertEquals("cmd", cmd.getOperationName());
+        assertEquals("a", cmd.getPropertyValue("--arg"));
+    }
+
+    @Test
+    public void testLeadingSpacesInArgumentValueAreTrimmed() throws Exception {
+        DefaultCallbackHandler cmd = parse("cmd --arg= a");
+        assertEquals("cmd", cmd.getOperationName());
+        assertEquals("a", cmd.getPropertyValue("--arg"));
+    }
+
+    @Test
+    public void testCurlyBracketsClosed() throws Exception {
+        DefaultCallbackHandler cmd = parse("cmd --arg={a} b");
+        assertEquals("cmd", cmd.getOperationName());
+        assertNull(cmd.getLastParsedPropertyName());
+        assertEquals("{a}", cmd.getPropertyValue("--arg"));
+    }
+
     protected DefaultCallbackHandler parse(String line) {
         DefaultCallbackHandler args = new DefaultCallbackHandler();
         try {

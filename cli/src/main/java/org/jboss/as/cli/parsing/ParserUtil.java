@@ -28,6 +28,7 @@ import org.jboss.as.cli.CommandLineFormat;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.parsing.command.ArgumentListState;
 import org.jboss.as.cli.parsing.command.ArgumentState;
+import org.jboss.as.cli.parsing.command.ArgumentValueNotFinishedException;
 import org.jboss.as.cli.parsing.command.ArgumentValueState;
 import org.jboss.as.cli.parsing.command.CommandFormat;
 import org.jboss.as.cli.parsing.command.CommandNameState;
@@ -190,8 +191,8 @@ public class ParserUtil {
                     }
                 } else if (ArgumentState.ID.equals(id)) {
                     if (this.name != null) {
-                        final String value = buffer.toString().trim();
-                        if (value.length() > 0) {
+                        final String value = getPropertyValue(ctx);
+                        if (value != null) {
                             handler.property(this.name, value, bufferStartIndex/*nameValueSeparator*/);
                         } else {
                             handler.propertyName(bufferStartIndex, this.name);
@@ -303,6 +304,20 @@ public class ParserUtil {
 
                 if(inValue && ctx.getState().lockValueIndex()) {
                     inValue = false;
+                }
+            }
+
+            private String getPropertyValue(ParsingContext ctx) {
+                final String value = buffer.toString();
+                if (value.trim().length() == 0) {
+                    return null;
+                } else if(ctx.isEndOfContent() && ctx.getError() != null &&
+                        ctx.getError() instanceof ArgumentValueNotFinishedException) {
+                    // if there was an error and it's the end of input the argument value is incomplete (missing },], or ")
+                    // and the trailing whitespaces should be treated as part of the value.
+                    return value.replaceAll("^\\s+","");
+                } else {
+                    return value.trim();
                 }
             }
 
