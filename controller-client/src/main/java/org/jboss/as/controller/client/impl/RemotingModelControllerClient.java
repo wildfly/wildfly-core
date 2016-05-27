@@ -95,7 +95,7 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
             }
             // Then the endpoint
             if (endpoint != null) {
-                StreamUtils.safeClose(endpoint);
+                endpoint.closeAsync();
                 endpoint = null;
             }
             // Cancel all still active operations
