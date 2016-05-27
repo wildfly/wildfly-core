@@ -348,4 +348,7 @@ public interface ProtocolLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 59, value = "You are using a deprecated way to set the client bind address. Please use the \"--bind\" parameter on the CLI instead of the %s system property.")
     void deprecatedCLIConfiguration(String systemPropName);
+
+    @Message(id = 60, value = "Channel open request timed out")
+    IOException channelTimedOut();
 }
