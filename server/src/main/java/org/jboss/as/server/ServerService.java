@@ -87,7 +87,6 @@ import org.jboss.as.server.deployment.dependencies.DeploymentDependenciesProcess
 import org.jboss.as.server.deployment.integration.Seam2Processor;
 import org.jboss.as.server.deployment.jbossallxml.JBossAllXMLParsingProcessor;
 import org.jboss.as.server.deployment.module.ClassFileTransformerProcessor;
-import org.jboss.as.server.deployment.module.DeploymentRootExplodedMountProcessor;
 import org.jboss.as.server.deployment.module.DeploymentRootMountProcessor;
 import org.jboss.as.server.deployment.module.DeploymentVisibilityProcessor;
 import org.jboss.as.server.deployment.module.DriverDependenciesProcessor;
@@ -304,7 +303,6 @@ public final class ServerService extends AbstractControllerService {
 
 
             // Activate core processors for jar deployment
-            DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_EXPLODED_MOUNT, new DeploymentRootExplodedMountProcessor());
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_MOUNT, new DeploymentRootMountProcessor());
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_MANIFEST, new ManifestAttachmentProcessor());
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_ADDITIONAL_MANIFEST, new ManifestAttachmentProcessor());
