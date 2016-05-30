@@ -67,7 +67,7 @@ public class VersionHandler implements CommandHandler {
         final StringBuilder buf = new StringBuilder();
         buf.append("JBoss Admin Command-line Interface\n");
         buf.append("JBOSS_HOME: ").append(WildFlySecurityManager.getEnvPropertyPrivileged("JBOSS_HOME", null)).append('\n');
-        buf.append("JBoss AS release: ");
+        buf.append("Release: ");
         final ModelControllerClient client = ctx.getModelControllerClient();
         if(client == null) {
             buf.append("<connect to the controller and re-run the version command to see the release info>\n");
@@ -97,7 +97,7 @@ public class VersionHandler implements CommandHandler {
                         }
 
                         if(result.hasDefined(Util.PRODUCT_NAME)) {
-                            buf.append("\nJBoss AS product: ").append(result.get(Util.PRODUCT_NAME).asString());
+                            buf.append("\nProduct: ").append(result.get(Util.PRODUCT_NAME).asString());
                             if(result.hasDefined(Util.PRODUCT_VERSION)) {
                                 buf.append(' ').append(result.get(Util.PRODUCT_VERSION).asString());
                             }
