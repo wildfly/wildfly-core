@@ -52,6 +52,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_MEMORY_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JSON_FORMATTER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.KERBEROS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.KEYTAB;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP_CONNECTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING;
@@ -406,7 +408,12 @@ public final class ManagedServerOperationsFactory {
 
                 ModelNode currentRealm = securityRealms.get(current);
                 if (currentRealm.hasDefined(SERVER_IDENTITY)) {
-                    addManagementComponentComponent(currentRealm, realmAddress, SERVER_IDENTITY, updates);
+                    ModelNode serverIdentity = currentRealm.require(SERVER_IDENTITY);
+                    if (serverIdentity.hasDefined(KERBEROS)) {
+                        addKerberosServerIdentity(serverIdentity, realmAddress, updates);
+                    } else {
+                        addManagementComponentComponent(currentRealm, realmAddress, SERVER_IDENTITY, updates);
+                    }
                 }
                 if (currentRealm.hasDefined(AUTHENTICATION)) {
                     addManagementComponentComponent(currentRealm, realmAddress, AUTHENTICATION, updates);
@@ -446,6 +453,22 @@ public final class ManagedServerOperationsFactory {
                     }
                 }
             }
+        }
+    }
+
+    private void addKerberosServerIdentity(ModelNode serverIdentity, ModelNode realmAddress, List<ModelNode> updates) {
+        ModelNode kerberos = serverIdentity.require(KERBEROS);
+        ModelNode addKerberos = new ModelNode();
+        ModelNode kerberosAddr = realmAddress.clone().add(SERVER_IDENTITY, KERBEROS);
+        addAddNameAndAddress(addKerberos, kerberosAddr);
+        updates.add(addKerberos);
+        if (kerberos.hasDefined(KEYTAB)) {
+            ModelNode keytab = kerberos.require(KEYTAB);
+            ModelNode addKeytab = new ModelNode();
+            Property keytabProp = keytab.asProperty();
+            convertAttributesToParams(keytabProp.getValue(), addKeytab);
+            addAddNameAndAddress(addKeytab, kerberosAddr.clone().add(KEYTAB, keytabProp.getName()));
+            updates.add(addKeytab);
         }
     }
 
