@@ -5,12 +5,14 @@ Before=httpd.service
 
 [Service]
 Environment=LAUNCH_JBOSS_IN_BACKGROUND=1
+EnvironmentFile=-/etc/wildfly/wildfly.d/*
 EnvironmentFile=-/etc/wildfly/wildfly.conf
 User=wildfly
 LimitNOFILE=102642
 PIDFile=/var/run/wildfly/wildfly.pid
-ExecStart=/opt/wildfly/bin/launch.sh $WILDFLY_MODE $WILDFLY_CONFIG $WILDFLY_BIND
+ExecStart=/usr/share/wildfly/bin/launch.sh $WILDFLY_MODE $WILDFLY_CONFIG $WILDFLY_BIND
 StandardOutput=null
 
 [Install]
 WantedBy=multi-user.target
+
