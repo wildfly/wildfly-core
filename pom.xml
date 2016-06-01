@@ -1479,10 +1479,28 @@
             </activation>
             <properties>
                 <!-- [WFCORE-1431] remove SASL workaround -->
-                <modular.jdk.args>-XaddExports:java.security.sasl/com.sun.security.sasl.digest=ALL-UNNAMED,java.security.sasl/com.sun.security.sasl=ALL-UNNAMED</modular.jdk.args>
+                <modular.jdk.args>-XaddExports:java.security.sasl/com.sun.security.sasl.digest=ALL-UNNAMED -XaddExports:java.security.sasl/com.sun.security.sasl=ALL-UNNAMED -XaddExports:jdk.unsupported/sun.reflect=ALL-UNNAMED</modular.jdk.args>
                 <!-- [WFCORE-1494] remove JUL workaround -->
                 <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true</modular.jdk.props>
             </properties>
+            <build>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-compiler-plugin</artifactId>
+                            <version>${version.compiler.plugin}</version>
+                            <configuration>
+                                <!-- fork is needed so compiler args can be used -->
+                                <fork>true</fork>
+                                <compilerArgs>
+                                    <arg>-J-addmods</arg>
+                                    <arg>-Jjava.annotations.common</arg>
+                                </compilerArgs>
+                            </configuration>
+                        </plugin>
+
+                    </plugins>
+            </build>
         </profile>
         <!--
           Name: jpda
