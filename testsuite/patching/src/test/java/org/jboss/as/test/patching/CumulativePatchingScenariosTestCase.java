@@ -527,7 +527,7 @@ public class CumulativePatchingScenariosTestCase extends AbstractPatchingTestCas
             controller.stop();
         }
     }
-
+    //todo this should be done via CLI commands not by manipulating xml DOM
     private void addSystemProperties(String filePath) throws Exception {
         // modify xml
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();

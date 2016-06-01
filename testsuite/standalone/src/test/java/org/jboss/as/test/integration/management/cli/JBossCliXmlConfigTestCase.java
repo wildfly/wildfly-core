@@ -22,9 +22,11 @@
 package org.jboss.as.test.integration.management.cli;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -100,7 +102,7 @@ public class JBossCliXmlConfigTestCase {
         File f = new File(TestSuiteEnvironment.getTmpDir(), "test-jboss-cli.xml");
         String namespace = "urn:jboss:cli:" + version;
         XMLOutputFactory output = XMLOutputFactory.newInstance();
-        try (FileWriter stream = new FileWriter(f)) {
+        try (Writer stream = Files.newBufferedWriter(f.toPath(), StandardCharsets.UTF_8)) {
             XMLStreamWriter writer = output.createXMLStreamWriter(stream);
             writer.writeStartDocument();
             writer.writeStartElement("jboss-cli");

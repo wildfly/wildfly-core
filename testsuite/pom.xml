@@ -135,7 +135,7 @@
         <surefire.memory.args>-Xmx512m -XX:MaxMetaspaceSize=256m</surefire.memory.args>
         <surefire.jpda.args></surefire.jpda.args>
         <as.debug.port>8787</as.debug.port>
-        <surefire.system.args>${surefire.memory.args} ${surefire.jpda.args} -Djboss.dist=${jboss.dist}</surefire.system.args>
+        <surefire.system.args>${surefire.memory.args} ${surefire.jpda.args} ${modular.jdk.args} ${modular.jdk.props} -Djboss.dist=${jboss.dist}</surefire.system.args>
         <surefire.forked.process.timeout>1500</surefire.forked.process.timeout>
 
         <!-- If servers should be killed before the test suite is run-->
@@ -180,6 +180,23 @@
             <artifactId>jboss-logging-annotations</artifactId>
             <scope>compile</scope>
             <optional>true</optional>
+        </dependency>
+        <!-- needed to make JAXP work properly -->
+        <dependency>
+            <groupId>org.codehaus.woodstox</groupId>
+            <artifactId>woodstox-core-asl</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>xalan</groupId>
+            <artifactId>xalan</artifactId>
+            <version>2.7.1.jbossorg-2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

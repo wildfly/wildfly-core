@@ -561,27 +561,22 @@ public final class Main {
         final Map<String, String> hostSystemProperties = new HashMap<String, String>();
         try {
             RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+            String propertyName, propertyValue;
             for (String arg : runtime.getInputArguments()) {
                 if (arg != null && arg.length() > 2 && arg.startsWith("-D")) {
                     arg = arg.substring(2);
-                    String[] split = arg.split("=");
-                    if (!hostSystemProperties.containsKey(split[0])) {
-                        String val;
-                        if (split.length == 1) {
-                            val = null;
-                        } else if (split.length == 2) {
-                            val = split[1];
-                        } else {
-                            //Things like -Djava.security.policy==/Users/kabir/tmp/permit.policy will end up here, and the extra '=' needs to be part of the value,
-                            //see http://docs.oracle.com/javase/6/docs/technotes/guides/security/PolicyFiles.html
-                            StringBuilder sb = new StringBuilder();
-                            for (int i = 2 ; i < split.length ; i++) {
-                                sb.append("=");
-                            }
-                            sb.append(split[split.length - 1]);
-                            val = sb.toString();
-                        }
-                        hostSystemProperties.put(split[0], val);
+                    int equalIndex = arg.indexOf("=");
+                    if (equalIndex >= 0) {
+                        //Things like -Djava.security.policy==/Users/kabir/tmp/permit.policy will end up here, and the extra '=' needs to be part of the value,
+                        //see http://docs.oracle.com/javase/6/docs/technotes/guides/security/PolicyFiles.html
+                        propertyName = arg.substring(0, equalIndex);
+                        propertyValue = arg.substring(equalIndex + 1);
+                    } else {
+                        propertyName = arg;
+                        propertyValue = null;
+                    }
+                    if (!hostSystemProperties.containsKey(propertyName)) {
+                        hostSystemProperties.put(propertyName, propertyValue);
                     }
                 }
             }

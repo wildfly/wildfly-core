@@ -22,7 +22,6 @@
 
 package org.jboss.as.test.integration.management.util;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
@@ -35,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -132,6 +132,14 @@ public class CustomCLIExecutor {
         commandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigPath);
         commandBuilder.addCliArgument("--timeout="+CLI_PROC_TIMEOUT);
 
+        // propagate JVM args to the CLI
+        if (System.getProperty("cli.jvm.args") != null) {
+            StringTokenizer st = new StringTokenizer(System.getProperty("cli.jvm.args"), " ");
+            while (st.hasMoreTokens()) {
+                commandBuilder.addJavaOption(st.nextToken());
+            }
+        }
+
         // Note that this only allows for a single system property
         if (System.getProperty("cli.args") != null) {
             commandBuilder.addJavaOption(System.getProperty("cli.args"));
@@ -193,37 +201,6 @@ public class CustomCLIExecutor {
             }
         }
         return exitCode + ": " + cliOutput;
-    }
-
-    /**
-     * Waits for server to reload until server-state is running
-     *
-     * @param timeout
-     * @param controller
-     * @throws Exception
-     */
-    public static void waitForServerToReload(int timeout, String controller) throws Exception {
-
-        Thread.sleep(TimeoutUtil.adjust(500));
-        long start = System.currentTimeMillis();
-        long now;
-        do {
-            try {
-                String result = CustomCLIExecutor.execute(null, READ_ATTRIBUTE_OPERATION + " server-state", controller);
-                boolean normal = result.contains("running");
-                if (normal) {
-                    return;
-                }
-            } catch (Exception e) {
-            }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-            }
-            now = System.currentTimeMillis();
-        } while (now - start < timeout);
-
-        fail("Server did not reload in the imparted time.");
     }
 
     private static class ConsoleConsumer implements Runnable {
