@@ -259,6 +259,7 @@ final class BootstrapImpl implements Bootstrap {
                             latch.await();
                             break;
                         } catch (InterruptedException e) {
+                            // ignored
                         }
                     }
                 }

@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -68,25 +69,18 @@ public final class OperationEntry {
         RUNTIME_ONLY
     }
 
+    private final OperationDefinition operationDefinition;
     private final OperationStepHandler operationHandler;
-    private final DescriptionProvider descriptionProvider;
-    private final EntryType type;
-    private final EnumSet<Flag> flags;
     private final boolean inherited;
-    private final List<AccessConstraintDefinition> accessConstraints;
 
-    OperationEntry(final OperationStepHandler operationHandler, final DescriptionProvider descriptionProvider,
-                   final boolean inherited, final EntryType type, final EnumSet<Flag> flags, final List<AccessConstraintDefinition> accessConstraints) {
+    OperationEntry(final OperationDefinition definition, final OperationStepHandler operationHandler, final boolean inherited) {
+        this.operationDefinition = definition;
         this.operationHandler = operationHandler;
-        this.descriptionProvider = descriptionProvider;
         this.inherited = inherited;
-        this.type = type;
-        this.flags = flags == null ? EnumSet.noneOf(Flag.class) : flags;
-        this.accessConstraints = accessConstraints == null ? Collections.<AccessConstraintDefinition>emptyList() : accessConstraints;
     }
 
-    OperationEntry(final OperationStepHandler operationHandler, final DescriptionProvider descriptionProvider, final boolean inherited, final EntryType type) {
-       this(operationHandler, descriptionProvider, inherited, type, EnumSet.noneOf(Flag.class), null);
+    public OperationDefinition getOperationDefinition() {
+        return operationDefinition;
     }
 
     public OperationStepHandler getOperationHandler() {
@@ -94,7 +88,7 @@ public final class OperationEntry {
     }
 
     public DescriptionProvider getDescriptionProvider() {
-        return descriptionProvider;
+        return operationDefinition.getDescriptionProvider();
     }
 
     public boolean isInherited() {
@@ -102,15 +96,17 @@ public final class OperationEntry {
     }
 
     public EntryType getType() {
-        return type;
+        return operationDefinition.getEntryType();
     }
 
     public EnumSet<Flag> getFlags() {
+        EnumSet<Flag> flags = operationDefinition.getFlags();
         return flags == null ? EnumSet.noneOf(Flag.class) : flags.clone();
     }
 
     public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
+        List<AccessConstraintDefinition> accessConstraints = operationDefinition.getAccessConstraints();
+        return accessConstraints == null ? Collections.emptyList() : accessConstraints;
     }
 
 }

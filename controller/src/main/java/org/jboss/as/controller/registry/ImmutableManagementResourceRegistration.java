@@ -58,6 +58,13 @@ public interface ImmutableManagementResourceRegistration {
     PathAddress getPathAddress();
 
     /**
+     * Gets the registration for this resource type's parent, if there is one.
+     * @return the parent, or {@code null} if {@link #getPathAddress()} returns an address with a
+     *         {@link PathAddress#size() size} of {@code 0}
+     */
+    ImmutableManagementResourceRegistration getParent();
+
+    /**
      * Gets the maximum number of times a resource of the type described by this registration
      * can occur under its parent resource (or, for a root resource, the minimum number of times it can
      * occur at all.)
@@ -278,9 +285,59 @@ public interface ImmutableManagementResourceRegistration {
     Set<String> getOrderedChildTypes();
 
     /**
-     * Returns all capabilities defined for this resource.
+     * Returns all capabilities provided by this resource. This will only include capabilities for which
+     * this resource controls the registration of the capability. If any children of this resource are involved
+     * in providing the capability, the registration for the children must not include the capability in the
+     * value they return from this method.
      *
-     * @return Set of capabilities if any registered otherwise empty set
+     * @return Set of capabilities if any registered otherwise an empty set
+     *
+     * @see #getIncorporatingCapabilities()
      */
     Set<RuntimeCapability> getCapabilities();
+
+    /**
+     * Returns all capabilities provided by parents of this resource, to which this resource contributes. This will
+     * only include capabilities for which this resource <strong>does not</strong> control the registration of the
+     * capability. Any capabilities registered by this resource will instead be included in the return value for
+     * {@link #getCapabilities()}.
+     * <p>
+     * Often, this method will return {@code null}, which has a special meaning. A {@code null} value means
+     * this resource contributes to any capabilities provided by resources higher in its branch of the resource tree,
+     * with the search for such capabilities continuing through ancestor resources until:
+     * <ol>
+     *     <li>The ancestor has registered a capability; i.e. once a capability is identified, higher levels
+     *     are not searched</li>
+     *     <li>The ancestor returns a non-null value from this method; i.e. once an ancestor declares an incorporating
+     *     capability or that there are no incorporating capabilities, higher levels are not searched</li>
+     *     <li>The ancestor is a root resource. Child resources do not contribute to root capabilities unless
+     *     they specifically declare they do so</li>
+     *     <li>The ancestor has single element address whose key is {@code host}. Child resources do not contribute
+     *     to host root capabilities unless they specifically declare they do so</li>
+     *     <li>For subsystem resources, the ancestor resource is not provided by the subsystem. Subsystem resources
+     *     do not contribute to capabilities provided by the kernel</li>
+     * </ol>
+     * <p>
+     * A non-{@code null} value indicates no search of parent resources for capabilities should be performed, and
+     * only those capabilities included in the return set should be considered as incorporating this resource
+     * (or none at all if the return set is empty.)
+     * <p>
+     * An instance of this interface that returns a non-empty set from {@link #getCapabilities()}
+     * <strong>must not</strong> return {@code null} from this method. If a resource itself provides a capability but
+     * also contributes to a different capability provided by a parent, that relationship must be specifically noted
+     * in the return value from this method.
+     * <p>Note that providing a capability that is in turn a requirement of a parent resource's capability is not
+     * the kind of "contributing" to the parent resource's capability that is being considered here. The relationship
+     * between a capability and its requirements is separately tracked by the {@link RuntimeCapability} itself.  A
+     * typical "contributing" resource would be one that represents a chunk of configuration directly used by the parent
+     * resource's capability.
+     *
+     * @return set of capabilities, or {@code null} if default resolution of capabilities to which this resource
+     *         contributes should be used; an empty set can be used to indicate this resource does not contribute
+     *         to capabilities provided by its parent. Will not return {@code null} if {@link #getCapabilities()}
+     *         returns a non-empty set.
+     *
+     * @see #getCapabilities()
+     */
+    Set<RuntimeCapability> getIncorporatingCapabilities();
 }

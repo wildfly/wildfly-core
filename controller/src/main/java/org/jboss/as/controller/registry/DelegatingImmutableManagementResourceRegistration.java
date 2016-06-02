@@ -60,6 +60,11 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     }
 
     @Override
+    public ImmutableManagementResourceRegistration getParent() {
+        return delegate.getParent();
+    }
+
+    @Override
     public int getMaxOccurs() {
         return delegate.getMaxOccurs();
     }
@@ -178,5 +183,10 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     @Override
     public Set<RuntimeCapability> getCapabilities() {
         return delegate.getCapabilities();
+    }
+
+    @Override
+    public Set<RuntimeCapability> getIncorporatingCapabilities() {
+        return delegate.getIncorporatingCapabilities();
     }
 }

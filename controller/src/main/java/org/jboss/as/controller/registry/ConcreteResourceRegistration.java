@@ -78,6 +78,8 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     private Set<RuntimeCapability> capabilities;
 
+    private Set<RuntimeCapability> incorporatingCapabilities;
+
     private final Lock readLock;
     private final Lock writeLock;
     /**
@@ -193,7 +195,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         List<AccessConstraintDefinition> list = new ArrayList<AccessConstraintDefinition>();
         while (reg != null) {
             reg.addAccessConstraints(list);
-            NodeSubregistry parent = reg.getParent();
+            NodeSubregistry parent = reg.getParentSubRegistry();
             reg = parent == null ? null : parent.getParent();
         }
         return Collections.unmodifiableList(list);
@@ -228,8 +230,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
         checkPermission();
         String opName = definition.getName();
-        OperationEntry entry = new OperationEntry(handler, definition.getDescriptionProvider(), inherited, definition.getEntryType(),
-                definition.getFlags(), definition.getAccessConstraints());
+        OperationEntry entry = new OperationEntry(definition, handler, inherited);
         writeLock.lock();
         try {
             if (operations == null) {
@@ -585,6 +586,34 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
     }
 
+    @Override
+    Set<RuntimeCapability> getIncorporatingCapabilities(ListIterator<PathElement> iterator) {
+        if (iterator.hasNext()) {
+            final PathElement next = iterator.next();
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
+            if (subregistry == null) {
+                return Collections.emptySet();
+            }
+            return subregistry.getIncorporatingCapabilities(iterator, next.getValue());
+        } else {
+            checkPermission();
+            readLock.lock();
+            try {
+                Set<RuntimeCapability> result;
+                if (incorporatingCapabilities != null) {
+                    result = incorporatingCapabilities;
+                } else if (capabilities != null && !capabilities.isEmpty()) {
+                    result = Collections.emptySet();
+                } else {
+                    result = null;
+                }
+                return result;
+            } finally {
+                readLock.unlock();
+            }
+        }
+    }
+
 
     @Override
     public void registerProxyController(final PathElement address, final ProxyController controller) throws IllegalArgumentException {
@@ -626,6 +655,22 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             capabilities.add(capability);
             if (capabilityRegistry != null) {
                 capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
+            }
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities) {
+        writeLock.lock();
+        try {
+            if (capabilities == null) {
+                incorporatingCapabilities = null;
+            } else if (capabilities.isEmpty()) {
+                incorporatingCapabilities = Collections.emptySet();
+            } else {
+                incorporatingCapabilities = Collections.unmodifiableSet(new HashSet<>(capabilities));
             }
         } finally {
             writeLock.unlock();

@@ -73,7 +73,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         }
     }
 
-    NodeSubregistry getParent() {
+    NodeSubregistry getParentSubRegistry() {
         return parent;
     }
 
@@ -421,6 +421,19 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     abstract Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator);
 
+    @Override
+    public final Set<RuntimeCapability> getIncorporatingCapabilities() {
+
+        if (parent != null) {
+            RootInvocation ri = getRootInvocation();
+            return ri.root.getIncorporatingCapabilities(ri.pathAddress.iterator());
+        }
+        // else we are the root
+        return getIncorporatingCapabilities(pathAddress.iterator());
+    }
+
+    abstract Set<RuntimeCapability> getIncorporatingCapabilities(ListIterator<PathElement> iterator);
+
     private RootInvocation getRootInvocation() {
         RootInvocation result = null;
         if (parent != null) {
@@ -486,6 +499,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public PathAddress getPathAddress() {
         return pathAddress;
+    }
+
+    @Override
+    public ImmutableManagementResourceRegistration getParent() {
+        return parent == null ? null : parent.getParent();
     }
 
     @Override

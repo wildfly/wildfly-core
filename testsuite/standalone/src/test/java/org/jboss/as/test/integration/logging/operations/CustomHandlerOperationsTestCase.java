@@ -29,7 +29,9 @@ import org.jboss.logmanager.handlers.ConsoleHandler;
 import org.jboss.logmanager.handlers.QueueHandler;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
+import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -98,5 +100,19 @@ public class CustomHandlerOperationsTestCase extends AbstractLoggingOperationsTe
             return createAddress("custom-handler", name);
         }
         return createAddress("logging-profile", profileName, "custom-handler", name);
+    }
+
+    static class CustomHandlerSetUp implements ServerSetupTask {
+
+        @Override
+        public void setup(ManagementClient managementClient) throws Exception {
+            //no-op
+        }
+
+        @Override
+        public void tearDown(ManagementClient managementClient) throws Exception {
+            //TODO implement tearDown
+            throw new UnsupportedOperationException();
+        }
     }
 }

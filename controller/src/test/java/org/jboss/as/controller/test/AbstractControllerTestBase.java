@@ -73,7 +73,7 @@ public abstract class AbstractControllerTestBase {
 
     protected abstract void initModel(ManagementModel managementModel);
 
-    private ServiceContainer container;
+    protected ServiceContainer container;
     protected ModelController controller;
     protected final ProcessType processType;
     protected CapabilityRegistry capabilityRegistry;

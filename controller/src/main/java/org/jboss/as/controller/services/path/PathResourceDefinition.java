@@ -37,6 +37,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
+ * Definition of a resource type that represents a logical filesystem path.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
@@ -86,32 +87,100 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
                     .build();
 
 
-    protected final PathManagerService pathManager;
+    private final PathManagerService pathManager;
     private final boolean specified;
-    private final boolean services;
     private final boolean resolvable;
 
-    private PathResourceDefinition(PathManagerService pathManager, ResourceDescriptionResolver resolver, PathAddHandler addHandler, PathRemoveHandler removeHandler, boolean specified, boolean services, boolean resolvable) {
+    /**
+     * Creates a PathResourceDefinition.
+     *  @param pathManager  the path manager. May be {@code null} if the type of path only represents
+     *                      configuration used by other processes and therefore does not
+     *                      involve interaction with the path manager
+     * @param resolver      resolver for text descriptions. Cannot be {@code null}
+     * @param addHandler    handler for the add operation. Cannot be {@code null}
+     * @param removeHandler handler for the remove operation. Cannot be {@code null}
+     * @param specified     {@code true} if the resource requires details of the path specification;
+*                           {@code false} if it can represent a simple logical placeholder for the path
+     * @param resolvable    {@code true} if the {@code read-resource} management operation for the resource
+*                                should support the {@code resolve-expresssions} parameter
+     */
+    private PathResourceDefinition(PathManagerService pathManager, ResourceDescriptionResolver resolver, PathAddHandler addHandler, PathRemoveHandler removeHandler, boolean specified, boolean resolvable) {
         super(PATH_ADDRESS, resolver, addHandler, removeHandler);
         this.pathManager = pathManager;
         this.specified = specified;
-        this.services = services;
         this.resolvable = resolvable;
     }
 
+    /**
+     * Creates a resource definition for a path resource that must have the path specified, but
+     * for which the {@code read-resource} management operation should support the
+     * {@code resolve-expresssions} parameter.
+     * @param pathManager the path manager. Cannot be {@code null}
+     * @return the resource definition
+     */
     public static PathResourceDefinition createResolvableSpecified(PathManagerService pathManager){
         return new SpecifiedPathResourceDefinition(pathManager, true);
     }
+
+    /**
+     * Creates a resource definition for a path resource that must have the path specified, but
+     * for which the {@code read-resource} management operation should not support the
+     * {@code resolve-expresssions} parameter.
+     * @param pathManager the path manager. Cannot be {@code null}
+     * @return the resource definition
+     */
     public static PathResourceDefinition createSpecified(PathManagerService pathManager) {
         return new SpecifiedPathResourceDefinition(pathManager, false);
     }
 
+    /**
+     * Creates a resource definition for a path resource that does not require that the path details
+     * be specified. Interaction with the path manager will not be part of the execution of management
+     * operations.  Only for use by the kernel.
+     * @param pathManager the path manager
+     * @return the resource definition
+     *
+     * @deprecated only for use by the kernel. May be removed at any time.
+     */
+    @Deprecated
     public static PathResourceDefinition createNamed(PathManagerService pathManager) {
-        return new NamedPathResourceDefinition(pathManager, false);
+        return new NamedPathResourceDefinition(false);
     }
 
+    /**
+     * Creates a resource definition for a path resource that does not require that the path details
+     * be specified. Interaction with the path manager will not be part of the execution of management
+     * operations. Only for use by the kernel.
+     *
+     * @return the resource definition
+     */
+    public static PathResourceDefinition createNamed() {
+        return new NamedPathResourceDefinition(false);
+    }
+
+    /**
+     * Creates a resource definition for a path resource that must have the path specified, but
+     * for which interaction with the path manager should not be part of the execution of management
+     * operations.  Only for use by the kernel.
+     * @param pathManager the path manager
+     * @return the resource definition
+     *
+     * @deprecated only for use by the kernel. May be removed at any time
+     */
+    @Deprecated
     public static PathResourceDefinition createSpecifiedNoServices(PathManagerService pathManager) {
-        return new SpecifiedNoServicesPathResourceDefinition(pathManager, false);
+        return new SpecifiedNoServicesPathResourceDefinition(false);
+    }
+
+    /**
+     * Creates a resource definition for a path resource that must have the path specified, but
+     * for which interaction with the path manager should not be part of the execution of management
+     * operations.  Only for use by the kernel.
+     *
+     * @return the resource definition
+     */
+    public static PathResourceDefinition createSpecifiedNoServices() {
+        return new SpecifiedNoServicesPathResourceDefinition(false);
     }
 
     @Override
@@ -130,9 +199,9 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(RELATIVE_TO, null, new PathWriteAttributeHandler(pathManager, RELATIVE_TO, services));
+        resourceRegistration.registerReadWriteAttribute(RELATIVE_TO, null, new PathWriteAttributeHandler(pathManager, RELATIVE_TO));
         SimpleAttributeDefinition pathAttr = specified ? PATH_SPECIFIED : PATH_NAMED;
-        resourceRegistration.registerReadWriteAttribute(pathAttr, null, new PathWriteAttributeHandler(pathManager, pathAttr, services));
+        resourceRegistration.registerReadWriteAttribute(pathAttr, null, new PathWriteAttributeHandler(pathManager, pathAttr));
         resourceRegistration.registerReadOnlyAttribute(READ_ONLY, null);
     }
 
@@ -143,31 +212,28 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
                     PathAddHandler.createSpecifiedInstance(pathManager),
                     PathRemoveHandler.createSpecifiedInstance(pathManager),
                     true,
-                    true,
                     resolvable);
         }
     }
 
     private static class NamedPathResourceDefinition extends PathResourceDefinition {
-        NamedPathResourceDefinition(PathManagerService pathManager, boolean resolvable){
-            super(pathManager,
+        NamedPathResourceDefinition(boolean resolvable){
+            super(null,
                     ControllerResolver.getResolver(NAMED_PATH_RESOURCE_PREFIX),
-                    PathAddHandler.createNamedInstance(pathManager),
-                    PathRemoveHandler.createNamedInstance(pathManager),
-                    false,
+                    PathAddHandler.createNamedInstance(),
+                    PathRemoveHandler.createNamedInstance(),
                     false,
                     resolvable);
         }
     }
 
     private static class SpecifiedNoServicesPathResourceDefinition extends PathResourceDefinition {
-        SpecifiedNoServicesPathResourceDefinition(PathManagerService pathManager, boolean resolvable){
-            super(pathManager,
+        SpecifiedNoServicesPathResourceDefinition(boolean resolvable){
+            super(null,
                     ControllerResolver.getResolver(SPECIFIED_PATH_RESOURCE_PREFIX),
-                    PathAddHandler.createSpecifiedNoServicesInstance(pathManager),
-                    PathRemoveHandler.createSpecifiedNoServicesInstance(pathManager),
+                    PathAddHandler.createSpecifiedNoServicesInstance(),
+                    PathRemoveHandler.createSpecifiedNoServicesInstance(),
                     true,
-                    false,
                     resolvable);
         }
     }
