@@ -183,8 +183,26 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                 }
             }
             if (useEnhancedSyntax) {
-                ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression.substring(attributeName.length()), context.getResult());
-                context.getResult().set(resolved);
+                // remove attribute name from expression string ("attribute-name.rest" => "rest")
+                int prefixLength = attributeName.length();
+                if (attributeExpression.charAt(prefixLength) == '.') {
+                    prefixLength++; // remove also '.' character if present
+                }
+                String remainingExpression = attributeExpression.substring(prefixLength);
+
+                if (AttributeAccess.Storage.CONFIGURATION == attributeAccess.getStorageType()) {
+                    ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(remainingExpression, context.getResult());
+                    context.getResult().set(resolved);
+                } else {
+                    assert AttributeAccess.Storage.RUNTIME == attributeAccess.getStorageType();
+
+                    // Resolution must be postponed to RUNTIME stage for Storage.RUNTIME attributes.
+
+                    context.addStep((context1, operation1) -> {
+                        ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(remainingExpression, context.getResult());
+                        context.getResult().set(resolved);
+                    }, OperationContext.Stage.RUNTIME);
+                }
             }
         }
     }
