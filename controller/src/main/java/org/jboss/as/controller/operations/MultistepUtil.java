@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -127,6 +128,7 @@ public final class MultistepUtil {
      *                                {@link OperationContext#getCurrentAddress() current address}
      *
      * @throws OperationFailedException  if there is a problem registering a step for any of the operations
+     *
      */
     public static <T> void recordOperationSteps(final OperationContext context,
                                                 final Map<T, ModelNode> operations,
@@ -155,9 +157,9 @@ public final class MultistepUtil {
                 op.get(OP_ADDR).set(stepAddress.toModelNode());
             }
 
-            OperationStepHandler osh = getOsh(context, op, stepAddress, handlerResolver);
+            OpData opData = getOpData(context, op, response, stepAddress, handlerResolver);
             // Reverse the order for addition to the context
-            opdatas.add(0, new OpData(op, osh, response));
+            opdatas.add(0, opData);
 
             if (!responsesProvided) {
                 responses.put(entry.getKey(), response);
@@ -165,11 +167,11 @@ public final class MultistepUtil {
         }
 
         for (OpData opData : opdatas) {
-            context.addStep(opData.response, opData.operation, opData.handler, OperationContext.Stage.MODEL, true);
+            context.addModelStep(opData.response, opData.operation, opData.definition, opData.handler, true);
         }
     }
 
-    private static OperationStepHandler getOsh(OperationContext context, ModelNode subOperation, PathAddress stepAddress,
+    private static OpData getOpData(OperationContext context, ModelNode subOperation, ModelNode response, PathAddress stepAddress,
                                                OperationHandlerResolver handlerResolver) throws OperationFailedException {
         ImmutableManagementResourceRegistration registry = context.getRootResourceRegistration();
         String stepOpName = subOperation.require(OP).asString();
@@ -182,22 +184,27 @@ public final class MultistepUtil {
                 throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(stepOpName, stepAddress));
             }
         }
-        return handlerResolver.getOperationStepHandler(stepOpName, stepAddress, subOperation, operationEntry);
+        OperationStepHandler osh = handlerResolver.getOperationStepHandler(stepOpName, stepAddress, subOperation, operationEntry);
+        return new OpData(subOperation, operationEntry.getOperationDefinition(), osh, response);
     }
 
     private static class OpData {
         private final ModelNode operation;
+        private final OperationDefinition definition;
         private final OperationStepHandler handler;
         private final ModelNode response;
 
-        private OpData(ModelNode operation, OperationStepHandler handler, ModelNode response) {
+        private OpData(ModelNode operation, OperationDefinition definition, OperationStepHandler handler, ModelNode response) {
+            this.definition = definition;
             this.operation = operation;
             this.handler = handler;
             this.response = response;
         }
     }
 
-    /** Resolves an {@link OperationStepHandler} to use given a set of inputs. */
+    /**
+     * Resolves an {@link OperationStepHandler} to use given a set of inputs.
+     */
     public interface OperationHandlerResolver {
 
         OperationHandlerResolver DEFAULT = new OperationHandlerResolver() {};

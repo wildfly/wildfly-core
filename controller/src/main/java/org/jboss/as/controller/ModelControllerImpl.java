@@ -966,9 +966,9 @@ class ModelControllerImpl implements ModelController {
             }
             final PathAddress address = context.getCurrentAddress();
             final String operationName =  operation.require(OP).asString();
-            final OperationStepHandler stepHandler = resolveOperationHandler(address, operationName);
-            if(stepHandler != null) {
-                context.addStep(stepHandler, OperationContext.Stage.MODEL);
+            final OperationEntry stepOperation = resolveOperationHandler(address, operationName);
+            if (stepOperation != null) {
+                context.addModelStep(stepOperation.getOperationDefinition(), stepOperation.getOperationHandler(), false);
             } else {
 
                 ImmutableManagementResourceRegistration child = managementModel.get().getRootResourceRegistration().getSubModel(address);
@@ -982,9 +982,9 @@ class ModelControllerImpl implements ModelController {
         }
     }
 
-    private OperationStepHandler resolveOperationHandler(final PathAddress address, final String operationName) {
+    private OperationEntry resolveOperationHandler(final PathAddress address, final String operationName) {
         ManagementResourceRegistration rootRegistration = managementModel.get().getRootResourceRegistration();
-        OperationStepHandler result = rootRegistration.getOperationHandler(address, operationName);
+        OperationEntry result = rootRegistration.getOperationEntry(address, operationName);
         if (result == null && address.size() > 0) {
             // For wildcard elements, check specific registrations where the same OSH is used
             // for all such registrations
@@ -994,18 +994,18 @@ class ModelControllerImpl implements ModelController {
                 PathAddress parent = address.subAddress(0, address.size() - 1);
                 Set<PathElement> children = rootRegistration.getChildAddresses(parent);
                 if (children != null) {
-                    OperationStepHandler found = null;
+                    OperationEntry found = null;
                     for (PathElement child : children) {
                         if (type.equals(child.getKey())) {
                             OperationEntry oe = rootRegistration.getOperationEntry(parent.append(child), operationName);
                             OperationStepHandler osh = oe == null ? null : oe.getOperationHandler();
-                            if (osh == null || (found != null && !found.equals(osh))) {
+                            if (osh == null || (found != null && !osh.equals(found.getOperationHandler()))) {
                                 // Not all children have the same handler; give up
                                 found = null;
                                 break;
                             }
                             // We have a candidate OSH
-                            found = osh;
+                            found = oe;
                         }
                     }
                     if (found != null) {

@@ -84,14 +84,19 @@ public class PathEntry {
     }
 
     /**
-     * Gets the relative to
+     * Gets the name of the logical path this path is relative to, if any.
      *
-     * @return the name of the path this path is relative to. If {@code null} this is an absolute path
+     * @return the name of the logical path. If {@code null} this is an absolute path
      */
     String getRelativeTo() {
         return relativeTo;
     }
 
+    /**
+     * Gets whether the path is immutable, and cannot be removed or modified via a management operation.
+     *
+     * @return {@code true} if the path is immutable
+     */
     boolean isReadOnly() {
         return readOnly;
     }

@@ -455,6 +455,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         PlatformMBeanResourceRegistrar.registerPlatformMBeanResources(resourceRegistration);
 
         // Paths
+        // TODO why not resolvable?
         resourceRegistration.registerSubModel(PathResourceDefinition.createSpecified(pathManager));
 
         //capability registry

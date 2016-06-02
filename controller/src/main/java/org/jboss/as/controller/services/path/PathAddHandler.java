@@ -40,7 +40,7 @@ import org.jboss.msc.service.ServiceTarget;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class PathAddHandler implements OperationStepHandler {
+public class PathAddHandler implements OperationStepHandler {  // TODO make this package protected
 
     public static final String OPERATION_NAME = ADD;
 
@@ -57,27 +57,50 @@ public class PathAddHandler implements OperationStepHandler {
 
     private final SimpleAttributeDefinition pathAttribute;
     private final PathManagerService pathManager;
-    private final boolean services;
 
     /**
      * Create the PathAddHandler
+     *
+     * @param pathManager   the path manager, or {@code null} if interaction with the path manager is not required
+     *                      for the resource
+     * @param pathAttribute the definition of the attribute to use to represent the portion of the path specification
+     *                      that identifies the absolute path or portion of the path that is relative to the 'relative-to' path.
+     *                      Cannot be {@code null}
      */
-    protected PathAddHandler(final PathManagerService pathManager, final boolean services, final SimpleAttributeDefinition pathAttribute) {
+    PathAddHandler(final PathManagerService pathManager, final SimpleAttributeDefinition pathAttribute) {
         this.pathManager = pathManager;
-        this.services = services;
         this.pathAttribute = pathAttribute;
     }
 
-    static PathAddHandler createNamedInstance(final PathManagerService pathManager) {
-        return new PathAddHandler(pathManager, false, PathResourceDefinition.PATH_NAMED);
+    /**
+     * Create the PathAddHandler
+     *
+     * @param pathManager   the path manager, or {@code null} if interaction with the path manager is not required
+     *                      for the resource
+     * @param services      {@code true} if interaction with the path manager is required for the resource
+     * @param pathAttribute the definition of the attribute to use to represent the portion of the path specification
+     *                      that identifies the absolute path or portion of the path that is relative to the 'relative-to' path.
+     *                      Cannot be {@code null}
+     *
+     * @deprecated not for use outside the kernel; may be removed at any time
+     */
+    @Deprecated
+    protected PathAddHandler(final PathManagerService pathManager, final boolean services, final SimpleAttributeDefinition pathAttribute) {
+        this(services ? null: pathManager, pathAttribute);
+        assert !services || pathManager != null;
+    }
+
+    static PathAddHandler createNamedInstance() {
+        return new PathAddHandler(null, PathResourceDefinition.PATH_NAMED);
     }
 
     static PathAddHandler createSpecifiedInstance(final PathManagerService pathManager) {
-        return new PathAddHandler(pathManager, true, PathResourceDefinition.PATH_SPECIFIED);
+        assert pathManager != null;
+        return new PathAddHandler(pathManager, PathResourceDefinition.PATH_SPECIFIED);
     }
 
-    static PathAddHandler createSpecifiedNoServicesInstance(final PathManagerService pathManager) {
-        return new PathAddHandler(pathManager, false, PathResourceDefinition.PATH_SPECIFIED);
+    static PathAddHandler createSpecifiedNoServicesInstance() {
+        return new PathAddHandler(null, PathResourceDefinition.PATH_SPECIFIED);
     }
 
 
@@ -92,13 +115,13 @@ public class PathAddHandler implements OperationStepHandler {
 
 
 
-        if (services) {
+        if (pathManager != null) {
             final String path = getPathValue(context, PATH_SPECIFIED, model);
             final String relativeTo = getPathValue(context, RELATIVE_TO, model);
             final PathEventContextImpl pathEventContext = pathManager.checkRestartRequired(context, name, Event.ADDED);
 
             if (pathEventContext.isInstallServices()) {
-                //Add service to the path manager
+                //Add entry to the path manager
                 pathManager.addPathEntry(name, path, relativeTo, false);
             }
 

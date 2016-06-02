@@ -24,7 +24,10 @@
 
 package org.jboss.as.controller;
 
+import java.util.Set;
+
 import org.jboss.as.controller.capability.Capability;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
@@ -76,6 +79,14 @@ public interface ResourceBuilder {
     ResourceBuilder addCapability(Capability capability);
 
     ResourceBuilder addCapabilities(Capability... capability);
+
+    default ResourceBuilder setIncorporatingCapabilities(Set<RuntimeCapability> incorporating) {
+        // We have a default implementation so unknown impls can compile, but if anyone calls
+        // this against those unknown impls, that will fail. The expectation is there are no
+        // such impls.
+        // TODO remove this default impl at some point
+        throw new UnsupportedOperationException();
+    }
 
     ResourceDefinition build();
 

@@ -128,6 +128,36 @@ public interface OperationContext extends ExpressionResolver {
     void addStep(ModelNode response, ModelNode operation, OperationStepHandler step, Stage stage, boolean addFirst) throws IllegalArgumentException;
 
     /**
+     * Add a {@link org.jboss.as.controller.OperationContext.Stage#MODEL} execution step to this operation process,
+     * including descriptive information for the operation.
+     * <p>
+     * This method is primarily intended for internal use.
+     * </p>
+     *
+     * @param stepDefinition the definition of the step to add
+     * @param stepHandler the handler for the step
+     * @param addFirst add the handler before the others  @throws IllegalArgumentException if the step handler is not valid for this controller type
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
+     */
+    void addModelStep(OperationDefinition stepDefinition, OperationStepHandler stepHandler, boolean addFirst) throws IllegalArgumentException;
+
+    /**
+     * Add a {@link org.jboss.as.controller.OperationContext.Stage#MODEL} execution step to this operation process,
+     * including descriptive information for the operation.
+     * <p>
+     * This method is primarily intended for use by a handler for the {@code composite} operation.
+     * </p>
+     *
+     * @param response the response which the nested step should populate
+     * @param operation the operation body to pass into the added step
+     * @param stepDefinition the definition of the step to add
+     * @param stepHandler the handler for the step
+     * @param addFirst add the handler before the others  @throws IllegalArgumentException if the step handler is not valid for this controller type
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
+     */
+    void addModelStep(ModelNode response, ModelNode operation, OperationDefinition stepDefinition, OperationStepHandler stepHandler, boolean addFirst) throws IllegalArgumentException;
+
+    /**
      * Get a stream which is attached to the request.
      *
      * @param index the index
@@ -798,7 +828,7 @@ public interface OperationContext extends ExpressionResolver {
      * where a capability optionally depends on another capability, and whether or not that requirement is needed is
      * not known when the capability is first registered.
      * <p>
-     * This method should be used in preference to {@link #requestOptionalCapability(String, String, String)}
+     * This method should be used in preference to {@link #requireOptionalCapability(String, String, String)}
      * when, based on its own configuration, the caller knows in {@link org.jboss.as.controller.OperationContext.Stage#MODEL}
      * that the optional capability is actually required in the current process.
      * </p>

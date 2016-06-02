@@ -42,32 +42,48 @@ import org.jboss.msc.service.ServiceTarget;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class PathRemoveHandler implements OperationStepHandler {
+public class PathRemoveHandler implements OperationStepHandler { // TODO make this package protected
 
     public static final String OPERATION_NAME = REMOVE;
-
-    private final boolean services;
 
     private final PathManagerService pathManager;
 
     /**
      * Create the PathRemoveHandler
+     *
+     * @param pathManager the path manager, or {@code null} if interaction with the path manager is not required
+     *                    for the resource
      */
-    protected PathRemoveHandler(final PathManagerService pathManager, final boolean services) {
+    PathRemoveHandler(final PathManagerService pathManager) {
         this.pathManager = pathManager;
-        this.services = services;
     }
 
-    static PathRemoveHandler createNamedInstance(final PathManagerService pathManager) {
-        return new PathRemoveHandler(pathManager, false);
+    /**
+     * Create the PathRemoveHandler
+     *
+     * @param pathManager the path manager, or {@code null} if interaction with the path manager is not required
+     *                    for the resource
+     * @param services    {@code true} if interaction with the path manager is required for the resource
+     *
+     * @deprecated not for use outside the kernel; may be removed at any time
+     */
+    @Deprecated
+    protected PathRemoveHandler(final PathManagerService pathManager, final boolean services) {
+        this(services ? null : pathManager);
+        assert !services || pathManager != null;
+    }
+
+    static PathRemoveHandler createNamedInstance() {
+        return new PathRemoveHandler(null);
     }
 
     static PathRemoveHandler createSpecifiedInstance(final PathManagerService pathManager) {
-        return new PathRemoveHandler(pathManager, true);
+        assert pathManager != null;
+        return new PathRemoveHandler(pathManager);
     }
 
-    static PathRemoveHandler createSpecifiedNoServicesInstance(final PathManagerService pathManager) {
-        return new PathRemoveHandler(pathManager, false);
+    static PathRemoveHandler createSpecifiedNoServicesInstance() {
+        return new PathRemoveHandler(null);
     }
 
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -82,12 +98,24 @@ public class PathRemoveHandler implements OperationStepHandler {
 
         context.removeResource(PathAddress.EMPTY_ADDRESS);
 
-        if (services) {
+        if (pathManager != null) {
+            final PathEventContextImpl pathEventContext = pathManager.checkRestartRequired(context, name, Event.REMOVED);
+
+            // Capture the existing values to restore the PathEntry and services in case of rollback
+            final String path;
+            final String relativeTo;
+
+            if (pathEventContext.isInstallServices()) {
+                pathManager.removePathEntry(name, true);
+                path = PathAddHandler.getPathValue(context, PATH_SPECIFIED, model);
+                relativeTo = PathAddHandler.getPathValue(context, RELATIVE_TO, model);
+            } else {
+                path = relativeTo = null;
+            }
+
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    final PathEventContextImpl pathEventContext = pathManager.checkRestartRequired(context, name, Event.REMOVED);
                     if (pathEventContext.isInstallServices()) {
-                        pathManager.removePathEntry(name, true);
                         pathManager.removePathService(context, name);
                     }
 
@@ -95,10 +123,7 @@ public class PathRemoveHandler implements OperationStepHandler {
                         @Override
                         public void handleRollback(OperationContext context, ModelNode operation) {
                             try {
-                                final String path = PathAddHandler.getPathValue(context, PATH_SPECIFIED, model);
-                                final String relativeTo = PathAddHandler.getPathValue(context, RELATIVE_TO, model);
                                 if (pathEventContext.isInstallServices()) {
-                                    pathManager.addPathEntry(name, path, relativeTo, false);
                                     final ServiceTarget target = context.getServiceTarget();
                                     if (relativeTo == null) {
                                         pathManager.addAbsolutePathService(target, name, path);
@@ -119,6 +144,16 @@ public class PathRemoveHandler implements OperationStepHandler {
                     });
                 }
             }, OperationContext.Stage.RUNTIME);
+
+            context.completeStep(new OperationContext.RollbackHandler() {
+                @Override
+                public void handleRollback(OperationContext context, ModelNode operation) {
+                    if (pathEventContext.isInstallServices()) {
+                        // Re-add entry to the path manager
+                        pathManager.addPathEntry(name, path, relativeTo, false);
+                    }
+                }
+            });
         }
     }
 }

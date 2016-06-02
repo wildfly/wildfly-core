@@ -942,6 +942,11 @@ final class SubsystemTestDelegate {
         }
 
         @Override
+        public ImmutableManagementResourceRegistration getParent() {
+            return null;
+        }
+
+        @Override
         public boolean isRuntimeOnly() {
             return false;
         }
@@ -1084,8 +1089,18 @@ final class SubsystemTestDelegate {
         }
 
         @Override
+        public void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities) {
+
+        }
+
+        @Override
         public Set<RuntimeCapability> getCapabilities() {
             return Collections.emptySet();
+        }
+
+        @Override
+        public Set<RuntimeCapability> getIncorporatingCapabilities() {
+            return null;
         }
 
         @Override

@@ -78,6 +78,7 @@ import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemXmlWriterRegistry;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -808,6 +809,16 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public ImmutableManagementResourceRegistration getParent() {
+            ManagementResourceRegistration deplParent = (ManagementResourceRegistration) deployments.getParent();
+            ManagementResourceRegistration subParent = (ManagementResourceRegistration) subdeployments.getParent();
+            if (deployments == subParent) {
+                return deplParent;
+            }
+            return new DeploymentManagementResourceRegistration(deplParent, subParent);
+        }
+
+        @Override
         public int getMaxOccurs() {
             return deployments.getMaxOccurs();
         }
@@ -1036,6 +1047,12 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities) {
+            deployments.registerIncorporatingCapabilities(capabilities);
+            subdeployments.registerIncorporatingCapabilities(capabilities);
+        }
+
+        @Override
         public AliasEntry getAliasEntry() {
             return deployments.getAliasEntry();
         }
@@ -1048,6 +1065,11 @@ public class ExtensionRegistry {
         @Override
         public Set<RuntimeCapability> getCapabilities() {
             return deployments.getCapabilities();
+        }
+
+        @Override
+        public Set<RuntimeCapability> getIncorporatingCapabilities() {
+            return deployments.getIncorporatingCapabilities();
         }
     }
 

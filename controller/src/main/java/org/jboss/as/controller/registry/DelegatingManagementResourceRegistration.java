@@ -95,6 +95,11 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
+    public ImmutableManagementResourceRegistration getParent() {
+        return getDelegate().getParent();
+    }
+
+    @Override
     public int getMaxOccurs() {
         return getDelegate().getMaxOccurs();
     }
@@ -321,8 +326,18 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
+    public void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities) {
+        getDelegate().registerIncorporatingCapabilities(capabilities);
+    }
+
+    @Override
     public Set<RuntimeCapability> getCapabilities() {
         return getDelegate().getCapabilities();
+    }
+
+    @Override
+    public Set<RuntimeCapability> getIncorporatingCapabilities() {
+        return getDelegate().getIncorporatingCapabilities();
     }
 
     private ManagementResourceRegistration getDelegate() {

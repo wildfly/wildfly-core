@@ -244,7 +244,15 @@ public class OperationTimeoutUnitTestCase {
     }
 
     public static class BlockingServiceHandler implements OperationStepHandler {
-        static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinition("block", new NonResolvingResourceDescriptionResolver());
+        static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("block", new NonResolvingResourceDescriptionResolver())
+                // this isn't really runtime-only but we lie and say it is to let
+                // testBlockAwaitingRuntimeLock() work. That test relies on first
+                // messing up MSC in order to how the next op that blocks waiting
+                // for MSC stability reacts, but messing up MSC also puts the process
+                // in restart-required. If this op isn't "runtime-only" the controller
+                // won't let it run then.
+                .setRuntimeOnly()
+                .build();
         @Override
         public void execute(OperationContext context, ModelNode operation) {
 

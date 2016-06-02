@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,6 +50,7 @@ import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RuntimeRequirementRegistration;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.msc.service.ServiceName;
 
@@ -57,6 +61,7 @@ import org.jboss.msc.service.ServiceName;
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
 public final class CapabilityRegistry implements ImmutableCapabilityRegistry, PossibleCapabilityRegistry, RuntimeCapabilityRegistry {
+
     private final Map<CapabilityId, RuntimeCapabilityRegistration> capabilities = new HashMap<>();
     private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirements = new HashMap<>();
     private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> runtimeOnlyRequirements = new HashMap<>();
@@ -64,6 +69,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     private final Set<CapabilityScope> knownContexts;
     private final ResolutionContextImpl resolutionContext = new ResolutionContextImpl();
     private final Map<CapabilityId, CapabilityRegistration> possibleCapabilities = new ConcurrentHashMap<>();
+    private final Set<CapabilityId> reloadCapabilities = new HashSet<>();
+    private final Set<CapabilityId> restartCapabilities = new HashSet<>();
 
     private final ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = reentrantReadWriteLock.readLock();
@@ -189,8 +196,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     }
 
     /**
-     * This memust be called with the write lock held.
-     * @param requirement
+     * This must be called with the write lock held.
+     * @param requirement the requirement
      */
     private void registerRequirement(RuntimeRequirementRegistration requirement) {
         assert writeLock.isHeldByCurrentThread();
@@ -306,6 +313,181 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                 modified = true;
             }
         }
+    }
+
+    @Override
+    public Map<CapabilityId, RuntimeStatus> getRuntimeStatus(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration) {
+        readLock.lock();
+        try {
+            Map<CapabilityId, RuntimeStatus> result;
+            Set<CapabilityId> ids = getCapabilitiesForAddress(address, resourceRegistration);
+            int size = ids.size();
+            if (size == 0) {
+                result = Collections.emptyMap();
+            } else {
+                Set<CapabilityId> examined = new HashSet<>();
+                if (size == 1) {
+                    CapabilityId id = ids.iterator().next();
+                    result = Collections.singletonMap(id, getCapabilityStatus(id, examined));
+                } else {
+                    result = new HashMap<>(size);
+                    for (CapabilityId id : ids) {
+                        result.put(id, getCapabilityStatus(id, examined));
+                    }
+                }
+            }
+            return result;
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    private RuntimeStatus getCapabilityStatus(CapabilityId id, Set<CapabilityId> examined) {
+        // This is meant for checking runtime stuff, which should only be for servers or
+        // HC runtime stuff, both of which use CapabilityScope.GLOBAL. So this assert
+        // is to check that assumption is valid, as further thought is needed if not.
+        assert id.getScope().equals(CapabilityScope.GLOBAL);
+
+        if (restartCapabilities.contains(id)) {
+            return RuntimeStatus.RESTART_REQUIRED;
+        }
+        if (reloadCapabilities.contains(id)) {
+            return RuntimeStatus.RELOAD_REQUIRED;
+        }
+        examined.add(id);
+
+        Map<String, RuntimeRequirementRegistration> dependents = requirements.get(id);
+        RuntimeStatus status = getDependentCapabilityStatus(dependents, examined);
+        if (status == RuntimeStatus.NORMAL) {
+            dependents = requirements.get(id);
+            status = getDependentCapabilityStatus(dependents, examined);
+        }
+        return status;
+    }
+
+    private RuntimeStatus getDependentCapabilityStatus(Map<String, RuntimeRequirementRegistration> dependents, Set<CapabilityId> examined) {
+        RuntimeStatus result = RuntimeStatus.NORMAL;
+        if (dependents != null) {
+            for (String dependent : dependents.keySet()) {
+                CapabilityId dependentId = new CapabilityId(dependent, CapabilityScope.GLOBAL);
+                if (!examined.contains(dependentId)) {
+                    RuntimeStatus status = getCapabilityStatus(dependentId, examined);
+                    if (status == RuntimeStatus.RESTART_REQUIRED) {
+                        result = status;
+                        break; // no need to check anything else
+                    } else if (status == RuntimeStatus.RELOAD_REQUIRED) {
+                        result = status;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public void capabilityReloadRequired(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration) {
+        writeLock.lock();
+        try {
+            reloadCapabilities.addAll(getCapabilitiesForAddress(address, resourceRegistration));
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public void capabilityRestartRequired(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration) {
+        writeLock.lock();
+        try {
+            restartCapabilities.addAll(getCapabilitiesForAddress(address, resourceRegistration));
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    private Set<CapabilityId> getCapabilitiesForAddress(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration) {
+        Set<CapabilityId> result = null;
+        PathAddress curAddress = address;
+        ImmutableManagementResourceRegistration curReg = resourceRegistration;
+        while (result == null) {
+
+            // Track the names of any incorporating capabilities associated with this address
+            Set<RuntimeCapability> incorporating = curReg.getIncorporatingCapabilities();
+            Set<String> incorporatingDynamic = null;
+            Set<String> incorporatingFull = null;
+            if (incorporating != null && !incorporating.isEmpty()) {
+                for (RuntimeCapability rc : incorporating) {
+                    if (rc.isDynamicallyNamed()) {
+                        if (incorporatingDynamic == null) {
+                            incorporatingDynamic = new HashSet<>();
+                        }
+                        incorporatingDynamic.add(rc.getName());
+                    } else {
+                        if (incorporatingFull == null) {
+                            incorporatingFull = new HashSet<>();
+                        }
+                        incorporatingFull.add(rc.getName());
+                    }
+                }
+            }
+
+            // TODO this is inefficient. But it's only called for post-boot write ops
+            // when the process is already reload-required
+            for (Map.Entry<CapabilityId, RuntimeCapabilityRegistration> entry : capabilities.entrySet()) {
+                boolean checkIncorporating = false;
+                if (incorporatingFull != null) {
+                    checkIncorporating = incorporatingFull.contains(entry.getKey().getName());
+                }
+                if (!checkIncorporating && incorporatingDynamic != null) {
+                    String name = entry.getKey().getName();
+                    int lastDot = name.lastIndexOf('.');
+                    if (lastDot > 0) {
+                        String baseName = name.substring(0, lastDot);
+                        checkIncorporating = incorporatingDynamic.contains(baseName);
+                    }
+                }
+                for (RegistrationPoint point : entry.getValue().getRegistrationPoints()) {
+                    PathAddress pointAddress = point.getAddress();
+                    if (curAddress.equals(pointAddress)
+                            || (checkIncorporating && curAddress.size() > pointAddress.size()
+                                && pointAddress.equals(curAddress.subAddress(0, pointAddress.size())))) {
+                        if (result == null) {
+                            result = new HashSet<>();
+                        }
+                        result.add(entry.getKey());
+                        break;
+                    }
+                }
+            }
+
+            if (result == null && incorporating != null) {
+                // No match, but incorporating != null means the MRR doesn't want us to keep looking higher
+                result = Collections.emptySet();
+            }
+
+            if (result == null) {
+                // This address exposed no capability, but it may represent a config chunk for
+                // a capability exposed by a parent resource, so we need to check parents.
+                //
+                // Here we check up to the first child level. The root resource for a process
+                // will not expose a capability that is configured by children, so it is incorrect
+                // to check beyond the first level. In the domain mode /host=* tree, we
+                // only check up to the 2nd child level, because the /host=x level is the root node
+                // for the HC process.
+                // We stop navigating up when the current address' final path element is subsystem=X,
+                // because above that level are kernel resources, and kernel resources do not expose
+                // capabilities that are configured by subsystem children.
+                int addrSize = curAddress.size();
+                if (addrSize > 1 && !SUBSYSTEM.equals(curAddress.getLastElement().getKey())
+                        && !(addrSize == 2 && HOST.equals(curAddress.getElement(0).getKey()))) {
+                    curAddress = curAddress.getParent();
+                    curReg = curReg.getParent();
+                    // loop continues
+                } else {
+                    result = Collections.emptySet();
+                }
+            }
+        }
+        return result;
     }
 
 
@@ -441,13 +623,14 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         }
     }
 
-    public Set<PathAddress> getPossibleProviderPoints(CapabilityId capabilityId){
+    @Override
+    public Set<PathAddress> getPossibleProviderPoints(CapabilityId capabilityId) {
         Set<PathAddress> result = new LinkedHashSet<>();
         readLock.lock();
         try {
-            capabilityId = capabilityId.getScope() == CapabilityScope.GLOBAL?capabilityId: new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL);
-            CapabilityRegistration<RuntimeCapability> reg =  possibleCapabilities.get(capabilityId);
-            if (reg!=null){
+            capabilityId = capabilityId.getScope() == CapabilityScope.GLOBAL ? capabilityId : new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL);
+            CapabilityRegistration<RuntimeCapability> reg = possibleCapabilities.get(capabilityId);
+            if (reg != null) {
                 result.addAll(reg.getRegistrationPoints().stream().map(RegistrationPoint::getAddress).collect(Collectors.toList()));
             }
 
@@ -472,7 +655,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             }
             publishedFullRegistry.writeLock.lock();
             try {
-                publishedFullRegistry.clear();
+                publishedFullRegistry.clear(true);
                 copy(this, publishedFullRegistry);
                 modified = false;
             } finally {
@@ -494,7 +677,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         try {
             publishedFullRegistry.readLock.lock();
             try {
-                clear();
+                clear(true);
                 copy(publishedFullRegistry, this);
                 modified = false;
             } finally {
@@ -522,6 +705,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         });
         copyRequirements(source.requirements, target.requirements);
         copyRequirements(source.runtimeOnlyRequirements, target.runtimeOnlyRequirements);
+        target.reloadCapabilities.addAll(source.reloadCapabilities);
+        target.restartCapabilities.addAll(source.restartCapabilities);
         if (!forServer) {
             target.knownContexts.addAll(source.knownContexts);
         }
@@ -531,12 +716,20 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
      * Clears capability registry
      */
     void clear() {
+        clear(false);
+    }
+
+    private void clear(boolean restartRequired) {
         writeLock.lock();
         try {
             capabilities.clear();
             possibleCapabilities.clear();
             requirements.clear();
             runtimeOnlyRequirements.clear();
+            reloadCapabilities.clear();
+            if (restartRequired) {
+                restartCapabilities.clear();
+            }
             modified = true;
         } finally {
             writeLock.unlock();

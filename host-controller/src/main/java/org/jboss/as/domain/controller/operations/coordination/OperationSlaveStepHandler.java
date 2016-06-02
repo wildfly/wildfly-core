@@ -158,7 +158,7 @@ class OperationSlaveStepHandler {
         final OperationEntry entry = context.getRootResourceRegistration().getOperationEntry(PathAddress.pathAddress(operation.get(OP_ADDR)), operationName);
         if(entry != null) {
             if (context.isBooting() || localHostControllerInfo.isMasterDomainController()) {
-                context.addStep(localReponse, operation, entry.getOperationHandler(), OperationContext.Stage.MODEL);
+                context.addModelStep(localReponse, operation, entry.getOperationDefinition(), entry.getOperationHandler(), false);
             } else {
                 final OperationStepHandler wrapper;
                 // For slave host controllers wrap the operation handler to synchronize missing configuration
@@ -169,7 +169,7 @@ class OperationSlaveStepHandler {
                 } else {
                     wrapper = entry.getOperationHandler();
                 }
-                context.addStep(localReponse, operation, wrapper, OperationContext.Stage.MODEL);
+                context.addModelStep(localReponse, operation, entry.getOperationDefinition(), wrapper, false);
             }
         } else {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, PathAddress.pathAddress(operation.get(OP_ADDR))));
