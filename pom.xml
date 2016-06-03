@@ -81,7 +81,7 @@
 
         <version.commons-io>2.4</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>1.3.22.Final</version.io.undertow>
+        <version.io.undertow>1.4.0.CR1</version.io.undertow>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
         <version.junit>4.12</version.junit>
         <version.log4j>1.2.16</version.log4j>
