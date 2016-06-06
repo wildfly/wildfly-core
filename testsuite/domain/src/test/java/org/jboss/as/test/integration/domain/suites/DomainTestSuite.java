@@ -43,6 +43,7 @@ import org.junit.runners.Suite;
         DeploymentRolloutFailureTestCase.class,
         DirectoryGroupingByTypeTestCase.class,
         ExtensionManagementTestCase.class,
+        FullReplaceUndeployTestCase.class,
         HcExtensionAndSubsystemManagementTestCase.class,
         IgnoreUnusedConfigurationTestCase.class,
         IgnoredResourcesTestCase.class,
