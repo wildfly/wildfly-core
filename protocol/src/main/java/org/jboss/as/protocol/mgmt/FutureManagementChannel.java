@@ -33,6 +33,7 @@ import org.xnio.IoFuture;
 import org.xnio.OptionMap;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for a connecting {@code ManagementClientChannelStrategy}.
@@ -151,6 +152,11 @@ public abstract class FutureManagementChannel extends ManagementClientChannelStr
      */
     protected Channel openChannel(final Connection connection, final String serviceType, final OptionMap options) throws IOException {
         final IoFuture<Channel> futureChannel = connection.openChannel(serviceType, options);
+        futureChannel.await(10L, TimeUnit.SECONDS);
+        if (futureChannel.getStatus() == IoFuture.Status.WAITING) {
+            futureChannel.cancel();
+            throw ProtocolLogger.ROOT_LOGGER.channelTimedOut();
+        }
         return futureChannel.get();
     }
 

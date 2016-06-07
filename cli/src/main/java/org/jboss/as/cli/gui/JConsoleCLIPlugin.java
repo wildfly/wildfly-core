@@ -134,6 +134,7 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
         if (result == IoFuture.Status.DONE) {
             channel = futureChannel.get();
         } else {
+            futureChannel.cancel();
             return false;
         }
 

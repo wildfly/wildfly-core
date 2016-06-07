@@ -23,6 +23,7 @@
 package org.jboss.as.test.integration.domain.management.util;
 
 import org.jboss.as.protocol.ProtocolChannelClient;
+import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
@@ -37,6 +38,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -224,6 +226,11 @@ class DomainTestConnection implements Closeable {
 
         Channel openChannel(final Connection connection) throws IOException {
             final IoFuture<Channel> future = connection.openChannel(DEFAULT_CHANNEL_SERVICE_TYPE, OptionMap.EMPTY);
+            future.await(10L, TimeUnit.SECONDS);
+            if (future.getStatus() == IoFuture.Status.WAITING) {
+                future.cancel();
+                throw ProtocolLogger.ROOT_LOGGER.channelTimedOut();
+            }
             final Channel channel = future.get();
             channel.addCloseHandler(new CloseHandler<Channel>() {
                 @Override
