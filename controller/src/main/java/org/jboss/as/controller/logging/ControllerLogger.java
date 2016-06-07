@@ -3416,4 +3416,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 417, value = "Cannot add more than one jvm. Add of '%s' attempted, but '%s' already exists")
     OperationFailedException cannotAddMoreThanOneJvmForServerOrHost(PathAddress requested, PathAddress existing);
+
+    @Message(id = 418, value = "A %s or a %s %s already declared has already been declared in %s %s")
+    OperationFailedRuntimeException socketBindingalreadyDeclared(String name1, String name2, String value, String parentName, String parentValue);
 }
