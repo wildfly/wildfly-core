@@ -102,7 +102,7 @@ public class RolloutPlanHeaderCallbackHandler implements ParsingStateCallbackHan
             }
 
             if(group == null) {
-                if("id".equals(name)) {
+                if("id".equals(name) || "name".equals(name)) {
                     header.setPlanRef(lastChunkIndex, value);
                 } else {
                     header.addProperty(name, value, lastChunkIndex);
