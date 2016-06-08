@@ -21,5 +21,5 @@
 
 == Start and enable
 
-    # systemd start wildfly.service
-    # systemd enable wildfly.service
+    # systemctl start wildfly.service
+    # systemctl enable wildfly.service
