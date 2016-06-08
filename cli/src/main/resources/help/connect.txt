@@ -1,6 +1,6 @@
 SYNOPSIS
 
-   connect [controller_alias | [protocol://][host][:port]]
+   connect [controller_alias | [[protocol://]host][:port]]
 
 DESCRIPTION
 
@@ -40,7 +40,7 @@ DESCRIPTION
 
 ARGUMENTS
 
-  protocol  - optional, default value is http.
+  protocol  - optional, default value is http-remoting.
 
   host      - optional, default value is localhost.
 
