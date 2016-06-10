@@ -239,11 +239,13 @@ public class ModelDescriptionConstants {
     public static final String ITERATIVE = "iterative";
     public static final String JSON_FORMATTER = "json-formatter";
     public static final String JVM = "jvm";
+    public static final String KERBEROS = "kerberos";
     public static final String KEY_PASSWORD = "key-password";
     public static final String KEYSTORE_PASSWORD = "keystore-password";
     public static final String KEYSTORE_PATH = "keystore-path";
     public static final String KEYSTORE_PROVIDER = "keystore-provider";
     public static final String KEYSTORE_RELATIVE_TO = "keystore-relative-to";
+    public static final String KEYTAB = "keytab";
     public static final String LDAP = "ldap";
     public static final String LDAP_CONNECTION = "ldap-connection";
     public static final String LOCAL = "local";
