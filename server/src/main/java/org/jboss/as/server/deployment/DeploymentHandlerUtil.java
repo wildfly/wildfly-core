@@ -296,9 +296,11 @@ public class DeploymentHandlerUtil {
 
     public static void undeploy(final OperationContext context, final ModelNode operation, final String managementName, final String runtimeName, final AbstractVaultReader vaultReader) {
         if (context.isNormalServer()) {
-            final Resource deployment = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
-            final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
-            final ManagementResourceRegistration mutableRegistration = context.getResourceRegistrationForUpdate();
+            // WFCORE-1577 -- the resource we want may not be at the op address if this is called for full-replace-deployment
+            PathAddress resourceAddress = context.getCurrentAddress().size() == 0 ? PathAddress.pathAddress(DEPLOYMENT, managementName) : PathAddress.EMPTY_ADDRESS;
+            final Resource deployment = context.readResourceForUpdate(resourceAddress);
+            final ImmutableManagementResourceRegistration registration = context.getResourceRegistration().getSubModel(resourceAddress);
+            final ManagementResourceRegistration mutableRegistration = context.getResourceRegistrationForUpdate().getSubModel(resourceAddress);
             DeploymentResourceSupport.cleanup(deployment);
             ModelNode notificationData = new ModelNode();
             notificationData.get(NAME).set(managementName);
@@ -310,7 +312,7 @@ public class DeploymentHandlerUtil {
                 }
             }
             notificationData.get(DEPLOYMENT).set(runtimeName);
-            context.emit(new Notification(DEPLOYMENT_UNDEPLOYED_NOTIFICATION, context.getCurrentAddress(), ServerLogger.ROOT_LOGGER.deploymentUndeployedNotification(managementName, runtimeName), notificationData));
+            context.emit(new Notification(DEPLOYMENT_UNDEPLOYED_NOTIFICATION, resourceAddress, ServerLogger.ROOT_LOGGER.deploymentUndeployedNotification(managementName, runtimeName), notificationData));
 
             context.addStep(new OperationStepHandler() {
                 @Override

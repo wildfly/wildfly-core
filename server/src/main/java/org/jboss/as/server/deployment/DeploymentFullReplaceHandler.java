@@ -147,9 +147,8 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         OWNER.validateAndSet(operation, deploymentModel);
 
         // ENABLED stays as is if not present in operation
-        boolean wasDeployed = true;
+        boolean wasDeployed = ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean();
         if (operation.hasDefined(ENABLED.getName())) {
-            wasDeployed = ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean();
             ENABLED.validateAndSet(operation, deploymentModel);
         }
 
