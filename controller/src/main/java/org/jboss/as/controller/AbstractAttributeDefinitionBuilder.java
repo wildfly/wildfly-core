@@ -145,6 +145,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
             this.arbitraryDescriptors = new HashMap<>(basis.getArbitraryDescriptors().size());
             this.arbitraryDescriptors.putAll(basis.getArbitraryDescriptors());
         }
+        this.referenceRecorder = basis.getReferenceRecorder();
     }
 
     /**
