@@ -196,7 +196,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
 
         //server paths
-        resourceRegistration.registerSubModel(PathResourceDefinition.createSpecifiedNoServices(pathManager));
+        resourceRegistration.registerSubModel(PathResourceDefinition.createSpecifiedNoServices());
 
         resourceRegistration.registerSubModel(new InterfaceResourceDefinition(
                 SpecifiedInterfaceAddHandler.INSTANCE,

@@ -77,7 +77,7 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
                 if(bufferIndex == -1) { // that's illegal state
                     return -1;
                 }
-                candidates.add("id=");
+                candidates.add("name=");
                 candidates.addAll(Util.getServerGroups(ctx.getModelControllerClient()));
                 return originalLine.length() - bufferIndex;
             }
@@ -237,8 +237,9 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
                 candidates.add(group);
             }
         }
-        if(Util.ID.startsWith(groupName)) {
-            candidates.add("id=");
+
+        if(Util.NAME.startsWith(groupName)) {
+            candidates.add("name=");
         } else {
             if (candidates.size() == 1) {
                 final String group = candidates.get(0);

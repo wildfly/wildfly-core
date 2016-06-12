@@ -42,6 +42,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.dmr.ModelNode;
@@ -121,9 +122,9 @@ public class PrepareStepHandler  implements OperationStepHandler {
         final String operationName =  operation.require(OP).asString();
 
         final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
-        final OperationStepHandler stepHandler = context.getRootResourceRegistration().getOperationHandler(PathAddress.pathAddress(operation.get(OP_ADDR)), operationName);
-        if (stepHandler != null) {
-            context.addStep(stepHandler, OperationContext.Stage.MODEL);
+        final OperationEntry stepEntry = context.getRootResourceRegistration().getOperationEntry(PathAddress.pathAddress(operation.get(OP_ADDR)), operationName);
+        if (stepEntry != null) {
+            context.addModelStep(stepEntry.getOperationDefinition(), stepEntry.getOperationHandler(), false);
         } else {
             PathAddress pathAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
             if (! context.isBooting()) {

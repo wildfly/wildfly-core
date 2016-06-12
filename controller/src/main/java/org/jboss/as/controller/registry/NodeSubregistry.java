@@ -416,6 +416,28 @@ final class NodeSubregistry {
         return result;
     }
 
+    Set<RuntimeCapability> getIncorporatingCapabilities(ListIterator<PathElement> iterator, String child) {
+
+        final RegistrySearchControl searchControl = new RegistrySearchControl(iterator, child);
+
+        Set<RuntimeCapability> result = null;
+        if (searchControl.getSpecifiedRegistry() != null) {
+            result = searchControl.getSpecifiedRegistry().getIncorporatingCapabilities(searchControl.getIterator());
+        }
+
+        if (searchControl.getWildCardRegistry() != null) {
+            final Set<RuntimeCapability> wildCardChildren = searchControl.getWildCardRegistry().getIncorporatingCapabilities(searchControl.getIterator());
+            if (result == null) {
+                result = wildCardChildren;
+            } else if (wildCardChildren != null) {
+                // Merge
+                result = new HashSet<RuntimeCapability>(result);
+                result.addAll(wildCardChildren);
+            }
+        }
+        return result;
+    }
+
     Set<String> getOrderedChildTypes(ListIterator<PathElement> iterator, String child) {
 
         final RegistrySearchControl searchControl = new RegistrySearchControl(iterator, child);

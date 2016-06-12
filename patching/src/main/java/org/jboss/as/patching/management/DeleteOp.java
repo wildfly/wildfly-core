@@ -136,8 +136,8 @@ class DeleteOp {
         return backupFolder;
     }
 
-    private boolean isEmptyFolder(File file) {
-        return file.list().length == 0;
+    private static boolean isEmptyFolder(File file) {
+        return file.list() != null && file.list().length == 0;
     }
 
     private boolean commit() {
@@ -178,7 +178,7 @@ class DeleteOp {
             final File source = new File(backupRoot, fileToDelete.getName());
             doRollback(source, fileToDelete);
 
-            if (backupRoot.list().length == 0) {
+            if (isEmptyFolder(backupRoot)) {
                 backupRoot.delete();
             }
         } catch (RollbackException e) {
@@ -197,7 +197,7 @@ class DeleteOp {
             for (File child : source.listFiles()) {
                 doRollback(child, new File(destination, child.getName()));
             }
-            if (source.list().length == 0) {
+            if (isEmptyFolder(source)) {
                 if (!source.delete()) {
                     throw new RollbackException(source, "unable to delete folder");
                 }

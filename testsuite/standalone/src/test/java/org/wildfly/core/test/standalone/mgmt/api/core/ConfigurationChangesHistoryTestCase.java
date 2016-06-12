@@ -128,7 +128,7 @@ public class ConfigurationChangesHistoryTestCase extends ContainerResourceMgmtTe
     public void testConfigurationChanges() throws Exception {
         final ModelNode listConfigurationChanges = Util.createOperation(ConfigurationChangeResourceDefinition.OPERATION_NAME, ADDRESS);
         List<ModelNode> changes = getManagementClient().executeForResult(listConfigurationChanges).asList();
-        assertThat(changes.size(), is(MAX_HISTORY_SIZE));
+        assertThat(changes.toString(), changes.size(), is(MAX_HISTORY_SIZE));
         for(ModelNode change : changes) {
             assertThat(change.hasDefined(OPERATION_DATE), is(true));
             assertThat(change.hasDefined(USER_ID), is(false));
@@ -167,7 +167,7 @@ public class ConfigurationChangesHistoryTestCase extends ContainerResourceMgmtTe
         getModelControllerClient().execute(update);
         final ModelNode listConfigurationChanges = Util.createOperation(ConfigurationChangeResourceDefinition.OPERATION_NAME, ADDRESS);
         List<ModelNode> changes = getManagementClient().executeForResult(listConfigurationChanges).asList();
-        assertThat(changes.size(), is(ALL_MAX_HISTORY_SIZE));
+        assertThat(changes.toString(), changes.size(), is(ALL_MAX_HISTORY_SIZE));
         for(ModelNode change : changes) {
             assertThat(change.hasDefined(OPERATION_DATE), is(true));
             assertThat(change.hasDefined(USER_ID), is(false));

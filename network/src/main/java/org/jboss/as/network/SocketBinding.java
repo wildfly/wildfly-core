@@ -182,9 +182,8 @@ public final class SocketBinding {
      * @return the multicast socket
      * @throws IOException
      */
-    // TODO JBAS-8470 automatically joingGroup
     public MulticastSocket createMulticastSocket() throws IOException {
-        return socketBindings.createMulticastSocket(name, getSocketAddress());
+        return socketBindings.createMulticastSocket(name, getMulticastSocketAddress());
     }
 
     /**

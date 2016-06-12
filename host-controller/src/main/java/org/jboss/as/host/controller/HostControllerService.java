@@ -41,6 +41,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.remoting.HttpListenerRegistryService;
@@ -88,6 +89,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     private final HostRunningModeControl runningModeControl;
     private final ControlledProcessState processState;
     private final String authCode;
+    private final CapabilityRegistry capabilityRegistry;
     private volatile FutureServiceContainer futureContainer;
     private volatile long startTime;
 
@@ -99,6 +101,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         this.processState = processState;
         this.startTime = environment.getStartTime();
         this.futureContainer = futureContainer;
+        this.capabilityRegistry = new CapabilityRegistry(false);
     }
 
     public HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
@@ -188,7 +191,8 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         serviceTarget.addService(Services.JBOSS_PRODUCT_CONFIG_SERVICE, new ValueService<ProductConfig>(productConfigValue))
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
-        DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState, bootstrapListener, hostPathManagerService);
+        DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState,
+                bootstrapListener, hostPathManagerService, capabilityRegistry);
         ContentCleanerService.addServiceOnHostController(serviceTarget, DomainModelControllerService.SERVICE_NAME, HC_EXECUTOR_SERVICE_NAME, HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
     }
 

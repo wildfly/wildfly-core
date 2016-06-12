@@ -79,8 +79,7 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
         if (targetOp == null) {
             return null;
         }
-        return new OperationEntry(handler, targetOp.getDescriptionProvider(), targetOp.isInherited(), targetOp.getType(),
-                                    targetOp.getFlags(), null);
+        return new OperationEntry(targetOp.getOperationDefinition(), handler, targetOp.isInherited());
     }
 
     @Override
@@ -205,14 +204,18 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
+    public void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities) {
+        throw alreadyRegistered();
+    }
+
+    @Override
     void getOperationDescriptions(final ListIterator<PathElement> iterator, final Map<String, OperationEntry> providers, final boolean inherited) {
         Map<String, OperationEntry> temp = new HashMap<String, OperationEntry>();
         target.getOperationDescriptions(iterator, temp, inherited);
         for (Map.Entry<String, OperationEntry> entry : providers.entrySet()) {
             OperationEntry value = entry.getValue();
             providers.put(entry.getKey(),
-                    new OperationEntry(handler, value.getDescriptionProvider(), value.isInherited(),
-                            value.getType(), value.getFlags(), value.getAccessConstraints()));
+                    new OperationEntry(value.getOperationDefinition(), handler, value.isInherited()));
         }
     }
 
@@ -316,5 +319,10 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     @Override
     Set<RuntimeCapability> getCapabilities(ListIterator<PathElement> iterator) {
         return target.getCapabilities(iterator);
+    }
+
+    @Override
+    Set<RuntimeCapability> getIncorporatingCapabilities(ListIterator<PathElement> iterator) {
+        return target.getIncorporatingCapabilities(iterator);
     }
 }
