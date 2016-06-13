@@ -70,12 +70,14 @@ public enum Namespace {
 
     DOMAIN_4_0(4, "urn:jboss:domain:4.0"),
 
-    DOMAIN_4_1(4, "urn:jboss:domain:4.1");
+    DOMAIN_4_1(4, "urn:jboss:domain:4.1"),
+
+    DOMAIN_4_2(4, "urn:jboss:domain:4.2");
 
     /**
      * The current namespace version.
      */
-    public static final Namespace CURRENT = DOMAIN_4_1;
+    public static final Namespace CURRENT = DOMAIN_4_2;
 
     public static final Namespace[] ALL_NAMESPACES = domainValues();
 
