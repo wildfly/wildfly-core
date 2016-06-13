@@ -778,6 +778,7 @@ public class GlobalOperationHandlers {
             }
         }
 
+        @Override
         protected void executeSingleTargetChild(PathAddress base, PathElement currentElement, PathAddress newRemaining, OperationContext context, boolean ignoreMissing) {
             final PathAddress next = base.append(currentElement);
             // Either require the child or a remote target
@@ -785,6 +786,10 @@ public class GlobalOperationHandlers {
             final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
             if (resource.hasChild(currentElement) || (nr != null && nr.isRemote())) {
                 safeExecute(next, newRemaining, context, nr, ignoreMissing);
+            }
+            //if we are on the wrong host no need to do anything
+            else if(!resource.hasChild(currentElement)) {
+               throw new Resource.NoSuchResourceException(currentElement);
             }
         }
 
