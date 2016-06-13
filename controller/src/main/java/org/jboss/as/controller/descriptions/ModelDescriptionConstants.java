@@ -188,6 +188,7 @@ public class ModelDescriptionConstants {
     public static final String FORCE = "force";
     public static final String FORMATTER = "formatter";
     public static final String FULL_REPLACE_DEPLOYMENT = "full-replace-deployment";
+    public static final String GENERATE_SELF_SIGNED_CERTIFICATE_HOST = "generate-self-signed-certificate-host";
     public static final String GRACEFUL_SHUTDOWN_TIMEOUT = "graceful-shutdown-timeout";
     public static final String GROUP = "group";
     public static final String GROUP_ATTRIBUTE = "group-attribute";

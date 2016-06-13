@@ -1159,6 +1159,20 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 110, value = "Unable to load a simple name for group '%s'")
     NamingException unableToLoadSimpleNameForGroup(String distinguishedName);
 
+    @Message(id = 111, value = "Keystore %s not found, it will be auto generated on first use with a self signed certificate for host %s")
+    @LogMessage(level = WARN)
+    void keystoreWillBeCreated(String file, String host);
+
+    @Message(id = 112, value = "Failed to generate self signed certificate")
+    RuntimeException failedToGenerateSelfSignedCertificate(@Cause Exception e);
+
+    @Message(id = 113, value = "Generating self signed certificate at %s. Please note that self signed certificates are not secure, and should only be used for testing purposes. Do not use this self signed certificate in production.")
+    @LogMessage(level = WARN)
+    void keystoreWillBeCreated(String file);
+
+    @Message(id = 114, value = "Failed to lazily initialize SSL context")
+    RuntimeException failedToCreateLazyInitSSLContext(@Cause  Exception e);
+
     /**
      * Information message saying the username and password must be different.
      *
@@ -1452,7 +1466,6 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "Using realm '%s' as discovered from the existing property files.")
     String discoveredRealm(final String realmName);
-
 
     //PUT YOUR NUMBERED MESSAGES ABOVE THE id=NONE ones!
 }
