@@ -71,6 +71,11 @@ public class KeystoreAttributes {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
+    public static final SimpleAttributeDefinition GENERATE_SELF_SIGNED_CERTIFICATE_HOST = new SimpleAttributeDefinitionBuilder(org.jboss.as.controller.descriptions.ModelDescriptionConstants.GENERATE_SELF_SIGNED_CERTIFICATE_HOST, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setAllowNull(true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
     /** Prevent instantiation */
     private KeystoreAttributes() {}
 }

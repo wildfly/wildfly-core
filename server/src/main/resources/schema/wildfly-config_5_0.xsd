@@ -655,6 +655,17 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="generate-self-signed-certificate-host" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If this is set and the key store does not exist then a new keystore will be created and a
+                            self signed certificate will be generated. The host name for the self signed certificate
+                            will be the value of this attribute.
+
+                            This is not intended for production use.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

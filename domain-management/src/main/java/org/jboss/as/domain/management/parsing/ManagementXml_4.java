@@ -652,7 +652,13 @@ class ManagementXml_4 extends ManagementXml {
                         }
                         break;
                     }
-
+                    case GENERATE_SELF_SIGNED_CERTIFICATE_HOST:
+                        if (extended) {
+                            KeystoreAttributes.GENERATE_SELF_SIGNED_CERTIFICATE_HOST.parseAndSetParameter(value, addOperation, reader);
+                        } else {
+                            throw unexpectedAttribute(reader, i);
+                        }
+                        break;
                     default: {
                         throw unexpectedAttribute(reader, i);
                     }
@@ -1994,6 +2000,7 @@ class ManagementXml_4 extends ManagementXml {
                 KeystoreAttributes.KEYSTORE_PASSWORD.marshallAsAttribute(ssl, writer);
                 KeystoreAttributes.ALIAS.marshallAsAttribute(ssl, writer);
                 KeystoreAttributes.KEY_PASSWORD.marshallAsAttribute(ssl, writer);
+                KeystoreAttributes.GENERATE_SELF_SIGNED_CERTIFICATE_HOST.marshallAsAttribute(ssl, writer);
             }
             writer.writeEndElement();
         }

@@ -78,7 +78,12 @@ class ProviderKeyManagerService extends AbstractKeyManagerService {
     }
 
     @Override
-    protected KeyStore loadKeyStore() {
+    protected boolean isLazy() {
+        return false;
+    }
+
+    @Override
+    protected KeyStore loadKeyStore(boolean startup) {
         return theKeyStore;
     }
 

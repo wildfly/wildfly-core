@@ -43,11 +43,11 @@ import org.jboss.msc.service.StopContext;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-abstract class AbstractKeyManagerService implements Service<KeyManager[]> {
+abstract class AbstractKeyManagerService implements Service<AbstractKeyManagerService> {
 
     private volatile char[] keystorePassword;
     private volatile char[] keyPassword;
-    private volatile KeyManager[] theKeyManagers;
+
 
     AbstractKeyManagerService(final char[] keystorePassword, final char[] keyPassword) {
         this.keystorePassword = keystorePassword;
@@ -80,19 +80,14 @@ abstract class AbstractKeyManagerService implements Service<KeyManager[]> {
     @Override
     public void start(final StartContext context) throws StartException {
         try {
-            theKeyManagers = createKeyManagers();
-        } catch (UnrecoverableKeyException e) {
-            throw DomainManagementLogger.ROOT_LOGGER.unableToStart(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw DomainManagementLogger.ROOT_LOGGER.unableToStart(e);
-        } catch (KeyStoreException e) {
+            createKeyManagers(true);
+        } catch (UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException e) {
             throw DomainManagementLogger.ROOT_LOGGER.unableToStart(e);
         }
     }
 
     @Override
     public void stop(final StopContext context) {
-        theKeyManagers = null;
     }
 
     /*
@@ -100,9 +95,19 @@ abstract class AbstractKeyManagerService implements Service<KeyManager[]> {
      */
 
     @Override
-    public KeyManager[] getValue() throws IllegalStateException, IllegalArgumentException {
-        return theKeyManagers;
+    public AbstractKeyManagerService getValue() throws IllegalStateException, IllegalArgumentException {
+        return this;
     }
+
+    public KeyManager[] getKeyManagers() {
+        try {
+            return createKeyManagers(false);
+        } catch (NoSuchAlgorithmException | UnrecoverableKeyException | KeyStoreException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected abstract boolean isLazy();
 
     /**
      * Method to create the KeyManager[]
@@ -110,20 +115,24 @@ abstract class AbstractKeyManagerService implements Service<KeyManager[]> {
      * This method returns the created KeyManager[] so that sub classes can have the opportunity to either wrap or replace this
      * call.
      *
+     * @param startup If true the keymanagers are being created on startup. If they key manager creation is lazy then it is ok to return null
      * @return The KeyManager[] based on the supplied {@link KeyStore}
      * @throws NoSuchAlgorithmException
      * @throws KeyStoreException
      * @throws UnrecoverableKeyException
      */
-    protected KeyManager[] createKeyManagers() throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException {
-        KeyStore keyStore = loadKeyStore();
+    protected KeyManager[] createKeyManagers(boolean startup) throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException {
+        KeyStore keyStore = loadKeyStore(startup);
+        if(keyStore == null && startup) {
+            return null;
+        }
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStore, keyPassword == null ? keystorePassword : keyPassword);
 
         return keyManagerFactory.getKeyManagers();
     }
 
-    protected abstract KeyStore loadKeyStore();
+    protected abstract KeyStore loadKeyStore(boolean startup);
 
     static final class ServiceUtil {
 
@@ -133,8 +142,8 @@ abstract class AbstractKeyManagerService implements Service<KeyManager[]> {
             return parentService.append(SERVICE_SUFFIX);
         }
 
-        public static ServiceBuilder<?> addDependency(final ServiceBuilder<?> sb, final Injector<KeyManager[]> injector, final ServiceName parentService) {
-            sb.addDependency(createServiceName(parentService), KeyManager[].class, injector);
+        public static ServiceBuilder<?> addDependency(final ServiceBuilder<?> sb, final Injector<AbstractKeyManagerService> injector, final ServiceName parentService) {
+            sb.addDependency(createServiceName(parentService), AbstractKeyManagerService.class, injector);
 
             return sb;
         }
