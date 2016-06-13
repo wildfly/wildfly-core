@@ -62,7 +62,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
@@ -630,9 +629,14 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                                       ServiceTarget serviceTarget) throws OperationFailedException {
 
         char[] keystorePassword = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl).asString().toCharArray();
-        final ServiceBuilder<KeyManager[]> serviceBuilder;
+        final ServiceBuilder<AbstractKeyManagerService> serviceBuilder;
 
         String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
+        String autoGenerateCertHostName = null;
+        ModelNode autoGenerateCertHostNode = KeystoreAttributes.GENERATE_SELF_SIGNED_CERTIFICATE_HOST.resolveModelAttribute(context, ssl);
+        if(autoGenerateCertHostNode.isDefined()) {
+            autoGenerateCertHostName = autoGenerateCertHostNode.asString();
+        }
 
         ModelNode pathNode = KeystoreAttributes.KEYSTORE_PATH.resolveModelAttribute(context, ssl);
         if (pathNode.isDefined() == false) {
@@ -655,7 +659,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             ModelNode aliasNode = KeystoreAttributes.ALIAS.resolveModelAttribute(context, ssl);
             String alias = aliasNode.isDefined() ? aliasNode.asString() : null;
 
-            FileKeyManagerService keyManagerService = new FileKeyManagerService(provider, path, relativeTo, keystorePassword, keyPassword, alias);
+            FileKeyManagerService keyManagerService = new FileKeyManagerService(provider, path, relativeTo, keystorePassword, keyPassword, alias, autoGenerateCertHostName);
 
             serviceBuilder = serviceTarget.addService(serviceName, keyManagerService);
 
