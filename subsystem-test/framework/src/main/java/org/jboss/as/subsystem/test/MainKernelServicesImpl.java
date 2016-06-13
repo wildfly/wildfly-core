@@ -82,7 +82,9 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
                 legacyModelVersion, successfulBoot, bootError, registerTransformers);
         this.testClass = testClass;
         //add mgmt worker
-        ManagementWorkerService.installService(container.subTarget());
+        if (container.getService(ManagementWorkerService.SERVICE_NAME) == null) {
+            ManagementWorkerService.installService(container.subTarget());
+        }
     }
 
     /**
