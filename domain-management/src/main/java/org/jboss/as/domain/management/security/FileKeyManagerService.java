@@ -27,6 +27,7 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -199,7 +200,6 @@ class FileKeyManagerService extends AbstractKeyManagerService {
 
     private void generateFileKeyStore(File path) {
         try {
-            DomainManagementLogger.SECURITY_LOGGER.keystoreWillBeCreated(path.toString());
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
             keyGen.initialize(2048, new SecureRandom());
             KeyPair pair = keyGen.generateKeyPair();
@@ -216,6 +216,7 @@ class FileKeyManagerService extends AbstractKeyManagerService {
             try (FileOutputStream stream = new FileOutputStream(path)) {
                 keyStore.store(stream, keystorePassword);
             }
+            DomainManagementLogger.SECURITY_LOGGER.keystoreHasBeenCreated(path.toString(), getSha1Fingerprint(cert, "SHA-1"), getSha1Fingerprint(cert, "SHA-256"));
 
         } catch (Exception e) {
             throw DomainManagementLogger.SECURITY_LOGGER.failedToGenerateSelfSignedCertificate(e);
@@ -250,6 +251,29 @@ class FileKeyManagerService extends AbstractKeyManagerService {
         cert = new X509CertImpl(info);
         cert.sign(privkey, SHA_256_WITH_RSA);
         return cert;
+    }
+
+    private static String getSha1Fingerprint(X509Certificate cert, String algo) throws Exception {
+        MessageDigest md = MessageDigest.getInstance(algo);
+        byte[] der = cert.getEncoded();
+        md.update(der);
+        byte[] digest = md.digest();
+        return hexify(digest);
+
+    }
+
+    private static String hexify (byte[] bytes) {
+        char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7',
+                '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        StringBuffer buf = new StringBuffer(bytes.length * 2);
+        for (int i = 0; i < bytes.length; ++i) {
+            if(i > 0) {
+                buf.append(":");
+            }
+            buf.append(hexDigits[(bytes[i] & 0xf0) >> 4]);
+            buf.append(hexDigits[bytes[i] & 0x0f]);
+        }
+        return buf.toString();
     }
 
     public Injector<PathManager> getPathManagerInjector() {
