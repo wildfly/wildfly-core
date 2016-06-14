@@ -10,4 +10,4 @@
 # This file would typically be used to setup the CLI session
 # variables (which is optional at the moment), e.g.
 #
-# set myvar=/subsystem=datasources/data-source=myDS
+# set myvar=/subsystem=datasources/data-source=ExampleDS
