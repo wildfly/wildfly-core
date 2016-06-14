@@ -3854,8 +3854,20 @@
     <xs:complexType name="jvmType">
         <xs:all minOccurs="0" maxOccurs="1">
             <xs:element name="heap" type="heapType" minOccurs="0"/>
-            <!-- XX:PermSize, XX:MaxPermSize -->
-            <xs:element name="permgen" type="bounded-memory-sizeType" minOccurs="0"/>
+            <xs:element name="permgen" type="bounded-memory-sizeType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        <![CDATA[
+                    Deprecated. Has no effect on current version servers or on any servers controlled
+                    by previous version host controllers running on JDK 8 or later, as the JVM no
+                    longer provides a separate Permanent Generation space.
+
+                    For legacy version servers running on JDK 7 or earlier, this configures the size of the
+                    server VM's Permanent Generation space (i.e. -XX:PermSize, -XX:MaxPermSize.)
+                    ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <!-- Xss -->
             <xs:element name="stack" type="memory-sizeType" minOccurs="0"/>
             <xs:element name="agent-lib" type="jvm-agentLibType" minOccurs="0"/>
