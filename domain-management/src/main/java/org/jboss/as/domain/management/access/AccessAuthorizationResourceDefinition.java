@@ -87,10 +87,12 @@ public class AccessAuthorizationResourceDefinition extends SimpleResourceDefinit
 
     static final ListAttributeDefinition STANDARD_ROLE_NAMES = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.STANDARD_ROLE_NAMES)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     static final ListAttributeDefinition ALL_ROLE_NAMES = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.ALL_ROLE_NAMES)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     public static final List<AttributeDefinition> CONFIG_ATTRIBUTES = Arrays.<AttributeDefinition>asList(PROVIDER, PERMISSION_COMBINATION_POLICY);

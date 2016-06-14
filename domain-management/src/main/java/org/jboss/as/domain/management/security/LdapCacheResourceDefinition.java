@@ -104,7 +104,8 @@ public class LdapCacheResourceDefinition extends SimpleResourceDefinition {
 
     // Current Size - int
     public static final SimpleAttributeDefinition CACHE_SIZE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CACHE_SIZE, ModelType.INT)
-            .setFlags(AttributeAccess.Flag.STORAGE_RUNTIME)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.SECONDS)
             .build();
 

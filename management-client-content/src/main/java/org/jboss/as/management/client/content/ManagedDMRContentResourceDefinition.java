@@ -87,6 +87,7 @@ public class ManagedDMRContentResourceDefinition extends SimpleResourceDefinitio
     private static AttributeDefinition getContentAttributeDefinition(final ParameterValidator contentValidator) {
         return SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CONTENT, ModelType.OBJECT)
                 .setStorageRuntime()
+                .setRuntimeServiceNotRequired()
                 .setValidator(contentValidator)
                 .build();
     }
