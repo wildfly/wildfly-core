@@ -139,6 +139,7 @@ public enum Element {
     NIC("nic"),
     NIC_MATCH("nic-match"),
     NOT("not"),
+    NOTIFICATION_REGISTRARS("notification-registrars"),
 
     OPTION("option"),
     OUTBOUND_CONNECTIONS("outbound-connections"),
@@ -159,6 +160,7 @@ public enum Element {
     PROPERTIES("properties"),
     PUBLIC_ADDRESS("public-address"),
 
+    REGISTRAR("registrar"),
     REMOTE("remote"),
     REMOTE_DESTINATION("remote-destination"),
     ROLE("role"),

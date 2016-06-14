@@ -1,46 +1,60 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
+ * JBoss, Home of Professional Open Source
+ * Copyright 2016, Red Hat, Inc., and individual contributors as indicated
+ * by the @authors tag.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.jboss.as.domain.management.parsing;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADVANCED_FILTER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHENTICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURATION_CHANGES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED_CIPHER_SUITES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED_PROTOCOLS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP_SEARCH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP_TO_PRINCIPAL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_SCOPED_ROLE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_SCOPED_ROLES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP_CONNECTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAP_GROUPS_TO_ROLES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_REMOTING_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION_REGISTRAR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRINCIPAL_TO_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REGISTRAR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLE_MAPPING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECRET;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP_SCOPED_ROLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_IDENTITY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME_FILTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME_IS_DN;
@@ -58,21 +72,26 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.controller.parsing.WriteUtils.writeAttribute;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_ACCESS_TIME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_SEARCH_TIME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.CACHE;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.JAAS;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.JKS;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.KERBEROS;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYSTORE_PROVIDER;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.KEYTAB;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.LOCAL;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.PLUG_IN;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.PROPERTY;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.SECURITY_REALM;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
 
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
@@ -84,8 +103,12 @@ import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
+import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionPropertyResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition;
+import org.jboss.as.domain.management.notification.registrar.NotificationRegistrarResourceDefinition;
+import org.jboss.as.domain.management.notification.registrar.NotificationRegistrarsRootResourceDefinition;
+import org.jboss.as.domain.management.security.AbstractPlugInAuthResourceDefinition;
 import org.jboss.as.domain.management.security.AdvancedUserSearchResourceDefintion;
 import org.jboss.as.domain.management.security.BaseLdapGroupSearchResource;
 import org.jboss.as.domain.management.security.BaseLdapUserSearchResource;
@@ -106,6 +129,7 @@ import org.jboss.as.domain.management.security.PropertyResourceDefinition;
 import org.jboss.as.domain.management.security.SSLServerIdentityResourceDefinition;
 import org.jboss.as.domain.management.security.SecretServerIdentityResourceDefinition;
 import org.jboss.as.domain.management.security.SecurityRealmResourceDefinition;
+import org.jboss.as.domain.management.security.UserIsDnResourceDefintion;
 import org.jboss.as.domain.management.security.UserResourceDefinition;
 import org.jboss.as.domain.management.security.UserSearchResourceDefintion;
 import org.jboss.dmr.ModelNode;
@@ -123,13 +147,13 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-class ManagementXml_4 extends ManagementXml {
+class ManagementXml_5 extends ManagementXml {
 
     private final Namespace namespace;
     private final ManagementXmlDelegate delegate;
 
 
-    ManagementXml_4(final Namespace namespace, final ManagementXmlDelegate delegate) {
+    ManagementXml_5(final Namespace namespace, final ManagementXmlDelegate delegate) {
         this.namespace = namespace;
         this.delegate = delegate;
     }
@@ -191,6 +215,10 @@ class ManagementXml_4 extends ManagementXml {
                 }
                 case CONFIGURATION_CHANGES: {
                     parseConfigurationChanges(reader, managementAddress, list);
+                    break;
+                }
+                case NOTIFICATION_REGISTRARS: {
+                    parseNotificationRegistrars(reader, managementAddress, list);
                     break;
                 }
                 default: {
@@ -1831,10 +1859,638 @@ class ManagementXml_4 extends ManagementXml {
         requireNoContent(reader);
     }
 
+    private void parseNotificationRegistrars(final XMLExtendedStreamReader reader, final ModelNode parentAddress,
+                                             final List<ModelNode> list) throws XMLStreamException {
+        requireNoAttributes(reader);
+
+        boolean addedRegistrars = false;
+        final ModelNode addr = parentAddress.clone().add(
+                NotificationRegistrarsRootResourceDefinition.PATH.getKey(),
+                NotificationRegistrarsRootResourceDefinition.PATH.getValue());
+
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case REGISTRAR: {
+                    if (!addedRegistrars) {
+                        list.add(Util.createAddOperation(PathAddress.pathAddress(addr)));
+                        addedRegistrars = true;
+                    }
+                    parseNotificationRegistrar(reader, addr, list);
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+    }
+
+    private void parseNotificationRegistrar(XMLExtendedStreamReader reader, ModelNode parentAddress,
+                                            List<ModelNode> list) throws XMLStreamException {
+        final int count = reader.getAttributeCount();
+        ModelNode addr = null;
+        ModelNode addOp = Util.createAddOperation();
+
+        Set<Attribute> requiredAttributes = EnumSet.of(Attribute.NAME, Attribute.CODE, Attribute.MODULE);
+        for (int i = 0; i < count; i++) {
+
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                requiredAttributes.remove(attribute);
+                switch (attribute) {
+                    case NAME: {
+                        addr = parentAddress.clone().add(NotificationRegistrarResourceDefinition.PATH.getKey(), value);
+                        addOp.get(OP_ADDR).set(addr);
+                        break;
+                    }
+                    case CODE: {
+                        NotificationRegistrarResourceDefinition.CODE.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case MODULE: {
+                        NotificationRegistrarResourceDefinition.MODULE.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
+                }
+            }
+        }
+
+        if (!requiredAttributes.isEmpty()) {
+            throw missingRequired(reader, requiredAttributes);
+        }
+        list.add(addOp);
+
+        ModelNode props = null;
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case PROPERTIES: {
+                    props = new ModelNode();
+                    while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+                        requireNamespace(reader, namespace);
+                        final Element propertyElement = Element.forName(reader.getLocalName());
+                        switch (propertyElement) {
+                            case PROPERTY:
+                                parsePropertyAttribute(reader, props);
+                                break;
+                            default:
+                                throw unexpectedElement(reader);
+                        }
+                    }
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+
+        if (props != null) {
+            addOp.get(PROPERTIES).set(props);
+        }
+    }
+
+    private void parsePropertyAttribute(final XMLExtendedStreamReader reader, final ModelNode props)
+            throws XMLStreamException {
+
+        String name = null;
+        String val = null;
+
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case NAME:
+                        name = value;
+                        break;
+                    case VALUE: {
+                        val = value;
+                        break;
+                    }
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
+                }
+            }
+        }
+
+        if (name == null) {
+            throw missingRequired(reader, Collections.singleton(Attribute.NAME));
+        }
+
+        requireNoContent(reader);
+
+        props.get(name).set(val == null ? new ModelNode() : new ModelNode(val));
+    }
+
     @Override
     public void writeManagement(final XMLExtendedStreamWriter writer, final ModelNode management, boolean allowInterfaces)
             throws XMLStreamException {
-        throw new UnsupportedOperationException();
+        boolean hasSecurityRealm = management.hasDefined(SECURITY_REALM);
+        boolean hasConnection = management.hasDefined(LDAP_CONNECTION);
+        boolean hasInterface = allowInterfaces && management.hasDefined(MANAGEMENT_INTERFACE);
+
+        // TODO - These checks are going to become a source of bugs in certain cases - what we really need is a way to allow writing to continue and
+        // if an element is empty by the time it is closed then undo the write of that element.
+
+        ModelNode accessAuthorization = management.hasDefined(ACCESS) ? management.get(ACCESS, AUTHORIZATION) : null;
+        boolean accessAuthorizationDefined = accessAuthorization != null && accessAuthorization.isDefined();
+        boolean hasServerGroupRoles = accessAuthorizationDefined && accessAuthorization.hasDefined(SERVER_GROUP_SCOPED_ROLE);
+        boolean hasConfigurationChanges = management.hasDefined(SERVICE, CONFIGURATION_CHANGES);
+        boolean hasHostRoles = accessAuthorizationDefined && (accessAuthorization.hasDefined(HOST_SCOPED_ROLE) || accessAuthorization.hasDefined(HOST_SCOPED_ROLES));
+        boolean hasRoleMapping = accessAuthorizationDefined && accessAuthorization.hasDefined(ROLE_MAPPING);
+        Map<String, Map<String, Set<String>>> configuredAccessConstraints = AccessControlXml.getConfiguredAccessConstraints(accessAuthorization);
+        boolean hasProvider = accessAuthorizationDefined && accessAuthorization.hasDefined(AccessAuthorizationResourceDefinition.PROVIDER.getName());
+        boolean hasCombinationPolicy = accessAuthorizationDefined && accessAuthorization.hasDefined(AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName());
+        ModelNode auditLog = management.hasDefined(ACCESS) ? management.get(ACCESS, AUDIT) : new ModelNode();
+        boolean hasNotificationRegistrars = management.hasDefined(SERVICE, NOTIFICATION_REGISTRAR) && management.get(SERVICE, NOTIFICATION_REGISTRAR).keys().size() > 0;
+
+        if (!hasSecurityRealm && !hasConnection && !hasInterface && !hasServerGroupRoles
+              && !hasHostRoles && !hasRoleMapping && configuredAccessConstraints.size() == 0
+                && !hasProvider && !hasCombinationPolicy && !auditLog.isDefined() && !hasNotificationRegistrars) {
+            return;
+        }
+
+        writer.writeStartElement(Element.MANAGEMENT.getLocalName());
+        if(hasConfigurationChanges) {
+            writeConfigurationChanges(writer, management.get(SERVICE, CONFIGURATION_CHANGES));
+        }
+
+        if (hasSecurityRealm) {
+            writeSecurityRealm(writer, management);
+        }
+
+        if (hasConnection) {
+            writeOutboundConnections(writer, management);
+        }
+
+        if (auditLog.isDefined()) {
+            if (delegate.writeAuditLog(writer, auditLog) == false) {
+                throw ROOT_LOGGER.unsupportedResource(AUDIT);
+            }
+        }
+
+        if (allowInterfaces && hasInterface) {
+            writeManagementInterfaces(writer, management);
+        }
+
+        if (accessAuthorizationDefined) {
+            if (delegate.writeAccessControl(writer, accessAuthorization) == false) {
+                throw ROOT_LOGGER.unsupportedResource(AUTHORIZATION);
+            }
+        }
+
+        if (hasNotificationRegistrars) {
+            writeNotificationRegistrars(writer, management.get(SERVICE, NOTIFICATION_REGISTRAR, REGISTRAR));
+        }
+
+        writer.writeEndElement();
+    }
+
+    private void writeNotificationRegistrars(XMLExtendedStreamWriter writer,
+                                             ModelNode notificationRegistrars) throws XMLStreamException {
+        writer.writeStartElement(Element.NOTIFICATION_REGISTRARS.getLocalName());
+
+        for (String key : notificationRegistrars.keys()) {
+            ModelNode registrar = notificationRegistrars.get(key);
+            writer.writeStartElement(Element.REGISTRAR.getLocalName());
+
+            writeAttribute(writer, Attribute.NAME, key);
+            NotificationRegistrarResourceDefinition.CODE.marshallAsAttribute(registrar, writer);
+            NotificationRegistrarResourceDefinition.MODULE.marshallAsAttribute(registrar, writer);
+
+            if (registrar.hasDefined(PROPERTIES)) {
+                writer.writeStartElement(Element.PROPERTIES.getLocalName());
+                ModelNode properties = registrar.get(PROPERTIES);
+
+                for (String prop : properties.keys()) {
+                    writer.writeStartElement(Element.PROPERTY.getLocalName());
+                    ModelNode property = properties.get(prop);
+                    writeAttribute(writer, Attribute.NAME, prop);
+                    if (property.isDefined()) {
+                        writeAttribute(writer, Attribute.VALUE, property.asString());
+                    }
+                    writer.writeEndElement();
+                }
+                writer.writeEndElement();
+            }
+
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
+    }
+
+    private void writeSecurityRealm(XMLExtendedStreamWriter writer, ModelNode management) throws XMLStreamException {
+        ModelNode securityRealms = management.get(SECURITY_REALM);
+        writer.writeStartElement(Element.SECURITY_REALMS.getLocalName());
+
+        for (String variableName : securityRealms.keys()) {
+            writer.writeStartElement(Element.SECURITY_REALM.getLocalName());
+            writeAttribute(writer, Attribute.NAME, variableName);
+
+            ModelNode realm = securityRealms.get(variableName);
+            if (realm.hasDefined(PLUG_IN)) {
+                writePlugIns(writer, realm.get(PLUG_IN));
+            }
+
+            if (realm.hasDefined(SERVER_IDENTITY)) {
+                writeServerIdentities(writer, realm);
+            }
+
+            if (realm.hasDefined(AUTHENTICATION)) {
+                writeAuthentication(writer, realm);
+            }
+
+            writeAuthorization(writer, realm);
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
+    }
+
+    private void writePlugIns(XMLExtendedStreamWriter writer, ModelNode plugIns) throws XMLStreamException {
+        writer.writeStartElement(Element.PLUG_INS.getLocalName());
+        for (String variable : plugIns.keys()) {
+            writer.writeEmptyElement(Element.PLUG_IN.getLocalName());
+            writer.writeAttribute(Attribute.MODULE.getLocalName(), variable);
+        }
+        writer.writeEndElement();
+    }
+
+    private void writeServerIdentities(XMLExtendedStreamWriter writer, ModelNode realm) throws XMLStreamException {
+        writer.writeStartElement(Element.SERVER_IDENTITIES.getLocalName());
+        ModelNode serverIdentities = realm.get(SERVER_IDENTITY);
+        if (serverIdentities.hasDefined(KERBEROS)) {
+            writer.writeStartElement(Element.KERBEROS.getLocalName());
+            ModelNode kerberos = serverIdentities.require(KERBEROS);
+
+            if (kerberos.hasDefined(KEYTAB)) {
+                ModelNode keytabs = kerberos.get(KEYTAB);
+                for (String current : keytabs.keys()) {
+                    ModelNode currentNode = keytabs.get(current);
+                    writer.writeEmptyElement(KEYTAB);
+                    writer.writeAttribute(Attribute.PRINCIPAL.getLocalName(), current);
+                    KeytabResourceDefinition.PATH.marshallAsAttribute(currentNode, writer);
+                    KeytabResourceDefinition.RELATIVE_TO.marshallAsAttribute(currentNode, writer);
+                    KeytabResourceDefinition.FOR_HOSTS.getAttributeMarshaller()
+                            .marshallAsAttribute(KeytabResourceDefinition.FOR_HOSTS, currentNode, true, writer);
+                    KeytabResourceDefinition.DEBUG.marshallAsAttribute(currentNode, writer);
+                }
+            }
+
+            writer.writeEndElement();
+        }
+
+        if (serverIdentities.hasDefined(SSL)) {
+            writer.writeStartElement(Element.SSL.getLocalName());
+            ModelNode ssl = serverIdentities.get(SSL);
+            SSLServerIdentityResourceDefinition.PROTOCOL.marshallAsAttribute(ssl, writer);
+            if (ssl.hasDefined(ENABLED_CIPHER_SUITES) || ssl.hasDefined(ENABLED_PROTOCOLS)) {
+                writer.writeEmptyElement(Element.ENGINE.getLocalName());
+                SSLServerIdentityResourceDefinition.ENABLED_CIPHER_SUITES.marshallAsElement(ssl, writer);
+                SSLServerIdentityResourceDefinition.ENABLED_PROTOCOLS.marshallAsElement(ssl, writer);
+            }
+
+            boolean hasProvider = ssl.hasDefined(KEYSTORE_PROVIDER)
+                    && (JKS.equals(ssl.require(KEYSTORE_PROVIDER).asString()) == false);
+            if (hasProvider || ssl.hasDefined(KeystoreAttributes.KEYSTORE_PATH.getName())) {
+                writer.writeEmptyElement(Element.KEYSTORE.getLocalName());
+                KeystoreAttributes.KEYSTORE_PROVIDER.marshallAsAttribute(ssl, writer);
+                KeystoreAttributes.KEYSTORE_PATH.marshallAsAttribute(ssl, writer);
+                KeystoreAttributes.KEYSTORE_RELATIVE_TO.marshallAsAttribute(ssl, writer);
+                KeystoreAttributes.KEYSTORE_PASSWORD.marshallAsAttribute(ssl, writer);
+                KeystoreAttributes.ALIAS.marshallAsAttribute(ssl, writer);
+                KeystoreAttributes.KEY_PASSWORD.marshallAsAttribute(ssl, writer);
+            }
+            writer.writeEndElement();
+        }
+        if (serverIdentities.hasDefined(SECRET)) {
+            ModelNode secret = serverIdentities.get(SECRET);
+            writer.writeEmptyElement(Element.SECRET.getLocalName());
+            SecretServerIdentityResourceDefinition.VALUE.marshallAsAttribute(secret, writer);
+        }
+
+        writer.writeEndElement();
+    }
+
+    private void writeLdapCacheIfDefined(XMLExtendedStreamWriter writer, ModelNode parent) throws XMLStreamException {
+        if (parent.hasDefined(CACHE)) {
+            ModelNode cacheHolder = parent.require(CACHE);
+            final ModelNode cache;
+            final String type;
+
+            if (cacheHolder.hasDefined(BY_ACCESS_TIME)) {
+                cache = cacheHolder.require(BY_ACCESS_TIME);
+                type = BY_ACCESS_TIME;
+            } else if (cacheHolder.hasDefined(BY_SEARCH_TIME)) {
+                cache = cacheHolder.require(BY_SEARCH_TIME);
+                type = BY_SEARCH_TIME;
+            } else {
+                return;
+            }
+
+            writer.writeStartElement(Element.CACHE.getLocalName());
+            if (type.equals(BY_SEARCH_TIME) == false) {
+                writer.writeAttribute(Attribute.TYPE.getLocalName(), type);
+            }
+            LdapCacheResourceDefinition.EVICTION_TIME.marshallAsAttribute(cache, writer);
+            LdapCacheResourceDefinition.CACHE_FAILURES.marshallAsAttribute(cache, writer);
+            LdapCacheResourceDefinition.MAX_CACHE_SIZE.marshallAsAttribute(cache, writer);
+            writer.writeEndElement();
+        }
+    }
+
+    private void writeAuthentication(XMLExtendedStreamWriter writer, ModelNode realm) throws XMLStreamException {
+        writer.writeStartElement(Element.AUTHENTICATION.getLocalName());
+        ModelNode authentication = realm.require(AUTHENTICATION);
+
+        if (authentication.hasDefined(TRUSTSTORE)) {
+            ModelNode truststore = authentication.require(TRUSTSTORE);
+            writer.writeEmptyElement(Element.TRUSTSTORE.getLocalName());
+            KeystoreAttributes.KEYSTORE_PROVIDER.marshallAsAttribute(truststore, writer);
+            KeystoreAttributes.KEYSTORE_PATH.marshallAsAttribute(truststore, writer);
+            KeystoreAttributes.KEYSTORE_RELATIVE_TO.marshallAsAttribute(truststore, writer);
+            KeystoreAttributes.KEYSTORE_PASSWORD.marshallAsAttribute(truststore, writer);
+        }
+
+        if (authentication.hasDefined(LOCAL)) {
+            ModelNode local = authentication.require(LOCAL);
+            writer.writeStartElement(Element.LOCAL.getLocalName());
+            LocalAuthenticationResourceDefinition.DEFAULT_USER.marshallAsAttribute(local, writer);
+            LocalAuthenticationResourceDefinition.ALLOWED_USERS.marshallAsAttribute(local, writer);
+            LocalAuthenticationResourceDefinition.SKIP_GROUP_LOADING.marshallAsAttribute(local, writer);
+            writer.writeEndElement();
+        }
+
+        if (authentication.hasDefined(KERBEROS)) {
+            ModelNode kerberos = authentication.require(KERBEROS);
+            writer.writeEmptyElement(Element.KERBEROS.getLocalName());
+            KerberosAuthenticationResourceDefinition.REMOVE_REALM.marshallAsAttribute(kerberos, writer);
+        }
+
+        if (authentication.hasDefined(JAAS)) {
+            ModelNode jaas = authentication.get(JAAS);
+            writer.writeStartElement(Element.JAAS.getLocalName());
+            JaasAuthenticationResourceDefinition.NAME.marshallAsAttribute(jaas, writer);
+            JaasAuthenticationResourceDefinition.ASSIGN_GROUPS.marshallAsAttribute(jaas, writer);
+            writer.writeEndElement();
+        } else if (authentication.hasDefined(LDAP)) {
+            ModelNode userLdap = authentication.get(LDAP);
+            writer.writeStartElement(Element.LDAP.getLocalName());
+            LdapAuthenticationResourceDefinition.CONNECTION.marshallAsAttribute(userLdap, writer);
+            LdapAuthenticationResourceDefinition.BASE_DN.marshallAsAttribute(userLdap, writer);
+            LdapAuthenticationResourceDefinition.RECURSIVE.marshallAsAttribute(userLdap, writer);
+            LdapAuthenticationResourceDefinition.USER_DN.marshallAsAttribute(userLdap, writer);
+            LdapAuthenticationResourceDefinition.ALLOW_EMPTY_PASSWORDS.marshallAsAttribute(userLdap, writer);
+            LdapAuthenticationResourceDefinition.USERNAME_LOAD.marshallAsAttribute(userLdap, writer);
+
+            writeLdapCacheIfDefined(writer, userLdap);
+
+            if (LdapAuthenticationResourceDefinition.USERNAME_FILTER.isMarshallable(userLdap)) {
+                writer.writeEmptyElement(Element.USERNAME_FILTER.getLocalName());
+                LdapAuthenticationResourceDefinition.USERNAME_FILTER.marshallAsAttribute(userLdap, writer);
+            } else if (LdapAuthenticationResourceDefinition.ADVANCED_FILTER.isMarshallable(userLdap)) {
+                writer.writeEmptyElement(Element.ADVANCED_FILTER.getLocalName());
+                LdapAuthenticationResourceDefinition.ADVANCED_FILTER.marshallAsAttribute(userLdap, writer);
+            }
+            writer.writeEndElement();
+        } else if (authentication.hasDefined(PROPERTIES)) {
+            ModelNode properties = authentication.require(PROPERTIES);
+            writer.writeEmptyElement(Element.PROPERTIES.getLocalName());
+            PropertiesAuthenticationResourceDefinition.PATH.marshallAsAttribute(properties, writer);
+            PropertiesAuthenticationResourceDefinition.RELATIVE_TO.marshallAsAttribute(properties, writer);
+            PropertiesAuthenticationResourceDefinition.PLAIN_TEXT.marshallAsAttribute(properties, writer);
+        } else if (authentication.has(USERS)) {
+            ModelNode userDomain = authentication.get(USERS);
+            ModelNode users = userDomain.hasDefined(USER) ? userDomain.require(USER) : new ModelNode().setEmptyObject();
+            writer.writeStartElement(Element.USERS.getLocalName());
+            for (String userName : users.keys()) {
+                ModelNode currentUser = users.get(userName);
+                writer.writeStartElement(Element.USER.getLocalName());
+                writer.writeAttribute(Attribute.USERNAME.getLocalName(), userName);
+                UserResourceDefinition.PASSWORD.marshallAsElement(currentUser, writer);
+                writer.writeEndElement();
+            }
+            writer.writeEndElement();
+        } else if (authentication.hasDefined(PLUG_IN)) {
+            writePlugIn_Authentication(writer, authentication.get(PLUG_IN));
+        }
+
+        writer.writeEndElement();
+    }
+
+    private void writePlugIn_Authentication(XMLExtendedStreamWriter writer, ModelNode plugIn) throws XMLStreamException {
+        writer.writeStartElement(Element.PLUG_IN.getLocalName());
+        AbstractPlugInAuthResourceDefinition.NAME.marshallAsAttribute(plugIn, writer);
+        PlugInAuthenticationResourceDefinition.MECHANISM.marshallAsAttribute(plugIn, writer);
+        if (plugIn.hasDefined(PROPERTY)) {
+            writer.writeStartElement(PROPERTIES);
+            ModelNode properties = plugIn.get(PROPERTY);
+            for (String current : properties.keys()) {
+                writer.writeEmptyElement(PROPERTY);
+                writer.writeAttribute(Attribute.NAME.getLocalName(), current);
+                PropertyResourceDefinition.VALUE.marshallAsAttribute(properties.get(current), writer);
+            }
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
+    }
+
+    private void writeAuthorization(XMLExtendedStreamWriter writer, ModelNode realm) throws XMLStreamException {
+        // A String comparison in-case it is an expression.
+        String defaultMapGroupsToRoles = Boolean.toString(SecurityRealmResourceDefinition.MAP_GROUPS_TO_ROLES.getDefaultValue().asBoolean());
+        String mapGroupsToRoles = realm.hasDefined(MAP_GROUPS_TO_ROLES) ? realm.require(MAP_GROUPS_TO_ROLES).asString() : defaultMapGroupsToRoles;
+
+        if (realm.hasDefined(AUTHORIZATION) || defaultMapGroupsToRoles.equals(mapGroupsToRoles) == false) {
+            writer.writeStartElement(Element.AUTHORIZATION.getLocalName());
+            SecurityRealmResourceDefinition.MAP_GROUPS_TO_ROLES.marshallAsAttribute(realm, writer);
+            if (realm.hasDefined(AUTHORIZATION)) {
+                ModelNode authorization = realm.require(AUTHORIZATION);
+                if (authorization.hasDefined(PROPERTIES)) {
+                    ModelNode properties = authorization.require(PROPERTIES);
+                    writer.writeEmptyElement(Element.PROPERTIES.getLocalName());
+                    PropertiesAuthorizationResourceDefinition.PATH.marshallAsAttribute(properties, writer);
+                    PropertiesAuthorizationResourceDefinition.RELATIVE_TO.marshallAsAttribute(properties, writer);
+                } else if (authorization.hasDefined(PLUG_IN)) {
+                    writePlugIn_Authorization(writer, authorization.get(PLUG_IN));
+                } else if (authorization.hasDefined(LDAP)) {
+                    writeLdapAuthorization(writer, authorization.get(LDAP));
+                }
+            }
+            writer.writeEndElement();
+        }
+    }
+
+    private void writeLdapAuthorization(XMLExtendedStreamWriter writer, ModelNode ldapNode) throws XMLStreamException {
+        writer.writeStartElement(Element.LDAP.getLocalName());
+        LdapAuthorizationResourceDefinition.CONNECTION.marshallAsAttribute(ldapNode, writer);
+        if (ldapNode.hasDefined(USERNAME_TO_DN)) {
+            ModelNode usenameToDn = ldapNode.require(USERNAME_TO_DN);
+            if (usenameToDn.hasDefined(USERNAME_IS_DN) || usenameToDn.hasDefined(USERNAME_FILTER)
+                    || usenameToDn.hasDefined(ADVANCED_FILTER)) {
+                writer.writeStartElement(Element.USERNAME_TO_DN.getLocalName());
+                if (usenameToDn.hasDefined(USERNAME_IS_DN)) {
+                    ModelNode usernameIsDn = usenameToDn.require(USERNAME_IS_DN);
+                    UserIsDnResourceDefintion.FORCE.marshallAsAttribute(usernameIsDn, writer);
+                    writeLdapCacheIfDefined(writer, usernameIsDn);
+                    writer.writeEmptyElement(Element.USERNAME_IS_DN.getLocalName());
+                } else if (usenameToDn.hasDefined(USERNAME_FILTER)) {
+                    ModelNode usernameFilter = usenameToDn.require(USERNAME_FILTER);
+                    UserSearchResourceDefintion.FORCE.marshallAsAttribute(usernameFilter, writer);
+                    writeLdapCacheIfDefined(writer, usernameFilter);
+                    writer.writeStartElement(Element.USERNAME_FILTER.getLocalName());
+                    UserSearchResourceDefintion.BASE_DN.marshallAsAttribute(usernameFilter, writer);
+                    UserSearchResourceDefintion.RECURSIVE.marshallAsAttribute(usernameFilter, writer);
+                    UserSearchResourceDefintion.USER_DN_ATTRIBUTE.marshallAsAttribute(usernameFilter, writer);
+                    UserSearchResourceDefintion.ATTRIBUTE.marshallAsAttribute(usernameFilter, writer);
+                    writer.writeEndElement();
+                } else {
+                    ModelNode advancedFilter = usenameToDn.require(ADVANCED_FILTER);
+                    AdvancedUserSearchResourceDefintion.FORCE.marshallAsAttribute(advancedFilter, writer);
+                    writeLdapCacheIfDefined(writer, advancedFilter);
+                    writer.writeStartElement(Element.ADVANCED_FILTER.getLocalName());
+                    AdvancedUserSearchResourceDefintion.BASE_DN.marshallAsAttribute(advancedFilter, writer);
+                    AdvancedUserSearchResourceDefintion.RECURSIVE.marshallAsAttribute(advancedFilter, writer);
+                    AdvancedUserSearchResourceDefintion.USER_DN_ATTRIBUTE.marshallAsAttribute(advancedFilter, writer);
+                    AdvancedUserSearchResourceDefintion.FILTER.marshallAsAttribute(advancedFilter, writer);
+                    writer.writeEndElement();
+                }
+                writer.writeEndElement();
+            }
+        }
+
+        if (ldapNode.hasDefined(GROUP_SEARCH)) {
+            ModelNode groupSearch = ldapNode.require(GROUP_SEARCH);
+
+            if (groupSearch.hasDefined(GROUP_TO_PRINCIPAL) || groupSearch.hasDefined(PRINCIPAL_TO_GROUP)) {
+                writer.writeStartElement(Element.GROUP_SEARCH.getLocalName());
+                if (groupSearch.hasDefined(GROUP_TO_PRINCIPAL)) {
+                    ModelNode groupToPrincipal = groupSearch.require(GROUP_TO_PRINCIPAL);
+                    GroupToPrincipalResourceDefinition.GROUP_NAME.marshallAsAttribute(groupToPrincipal, writer);
+                    GroupToPrincipalResourceDefinition.ITERATIVE.marshallAsAttribute(groupToPrincipal, writer);
+                    GroupToPrincipalResourceDefinition.GROUP_DN_ATTRIBUTE.marshallAsAttribute(groupToPrincipal, writer);
+                    GroupToPrincipalResourceDefinition.GROUP_NAME_ATTRIBUTE.marshallAsAttribute(groupToPrincipal, writer);
+                    writeLdapCacheIfDefined(writer, groupToPrincipal);
+                    writer.writeStartElement(Element.GROUP_TO_PRINCIPAL.getLocalName());
+                    GroupToPrincipalResourceDefinition.SEARCH_BY.marshallAsAttribute(groupToPrincipal, writer);
+                    GroupToPrincipalResourceDefinition.BASE_DN.marshallAsAttribute(groupToPrincipal, writer);
+                    GroupToPrincipalResourceDefinition.RECURSIVE.marshallAsAttribute(groupToPrincipal, writer);
+                    GroupToPrincipalResourceDefinition.PREFER_ORIGINAL_CONNECTION.marshallAsAttribute(groupToPrincipal, writer);
+                    writer.writeStartElement(Element.MEMBERSHIP_FILTER.getLocalName());
+                    GroupToPrincipalResourceDefinition.PRINCIPAL_ATTRIBUTE.marshallAsAttribute(groupToPrincipal, writer);
+                    writer.writeEndElement();
+                    writer.writeEndElement();
+                } else {
+                    ModelNode principalToGroup = groupSearch.require(PRINCIPAL_TO_GROUP);
+                    PrincipalToGroupResourceDefinition.GROUP_NAME.marshallAsAttribute(principalToGroup, writer);
+                    PrincipalToGroupResourceDefinition.ITERATIVE.marshallAsAttribute(principalToGroup, writer);
+                    PrincipalToGroupResourceDefinition.GROUP_DN_ATTRIBUTE.marshallAsAttribute(principalToGroup, writer);
+                    PrincipalToGroupResourceDefinition.GROUP_NAME_ATTRIBUTE.marshallAsAttribute(principalToGroup, writer);
+                    writeLdapCacheIfDefined(writer, principalToGroup);
+                    writer.writeStartElement(Element.PRINCIPAL_TO_GROUP.getLocalName());
+                    PrincipalToGroupResourceDefinition.GROUP_ATTRIBUTE.marshallAsAttribute(principalToGroup, writer);
+                    PrincipalToGroupResourceDefinition.PREFER_ORIGINAL_CONNECTION.marshallAsAttribute(principalToGroup, writer);
+                    PrincipalToGroupResourceDefinition.SKIP_MISSING_GROUPS.marshallAsAttribute(principalToGroup, writer);
+                    writer.writeEndElement();
+                }
+                writer.writeEndElement();
+            }
+        }
+
+        writer.writeEndElement();
+    }
+
+    private void writePlugIn_Authorization(XMLExtendedStreamWriter writer, ModelNode plugIn) throws XMLStreamException {
+        writer.writeStartElement(Element.PLUG_IN.getLocalName());
+        AbstractPlugInAuthResourceDefinition.NAME.marshallAsAttribute(plugIn, writer);
+        if (plugIn.hasDefined(PROPERTY)) {
+            writer.writeStartElement(PROPERTIES);
+            ModelNode properties = plugIn.get(PROPERTY);
+            for (String current : properties.keys()) {
+                writer.writeEmptyElement(PROPERTY);
+                writer.writeAttribute(Attribute.NAME.getLocalName(), current);
+                PropertyResourceDefinition.VALUE.marshallAsAttribute(properties.get(current), writer);
+            }
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
+    }
+
+    private void writeOutboundConnections(XMLExtendedStreamWriter writer, ModelNode management) throws XMLStreamException {
+
+        writer.writeStartElement(Element.OUTBOUND_CONNECTIONS.getLocalName());
+
+        ModelNode ldapConns = management.get(LDAP_CONNECTION);
+        for (String variable : ldapConns.keys()) {
+            ModelNode connection = ldapConns.get(variable);
+            writer.writeStartElement(Element.LDAP.getLocalName());
+            writer.writeAttribute(Attribute.NAME.getLocalName(), variable);
+            LdapConnectionResourceDefinition.URL.marshallAsAttribute(connection, writer);
+            LdapConnectionResourceDefinition.SEARCH_DN.marshallAsAttribute(connection, writer);
+            LdapConnectionResourceDefinition.SEARCH_CREDENTIAL.marshallAsAttribute(connection, writer);
+            LdapConnectionResourceDefinition.SECURITY_REALM.marshallAsAttribute(connection, writer);
+            LdapConnectionResourceDefinition.INITIAL_CONTEXT_FACTORY.marshallAsAttribute(connection, writer);
+            LdapConnectionResourceDefinition.REFERRALS.marshallAsAttribute(connection, writer);
+            LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR.getAttributeMarshaller()
+                    .marshallAsAttribute(LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR, connection, true, writer);
+
+            if (connection.hasDefined(PROPERTY)) {
+                ModelNode properties = connection.get(PROPERTY);
+                Set<String> propertySet = properties.keys();
+                if (propertySet.size() > 0) {
+                    writer.writeStartElement(PROPERTIES);
+                    for (String current : propertySet) {
+                        writer.writeEmptyElement(PROPERTY);
+                        writer.writeAttribute(Attribute.NAME.getLocalName(), current);
+                        LdapConnectionPropertyResourceDefinition.VALUE.marshallAsAttribute(properties.get(current), writer);
+                    }
+                    writer.writeEndElement();
+                }
+            }
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
+    }
+
+    private void writeManagementInterfaces(XMLExtendedStreamWriter writer, ModelNode management) throws XMLStreamException {
+        writer.writeStartElement(Element.MANAGEMENT_INTERFACES.getLocalName());
+        ModelNode managementInterfaces = management.get(MANAGEMENT_INTERFACE);
+
+        if (managementInterfaces.hasDefined(NATIVE_REMOTING_INTERFACE)) {
+            writer.writeEmptyElement(Element.NATIVE_REMOTING_INTERFACE.getLocalName());
+        }
+
+        if (managementInterfaces.hasDefined(NATIVE_INTERFACE)) {
+            if (delegate.writeNativeManagementProtocol(writer, managementInterfaces.get(NATIVE_INTERFACE)) == false) {
+                throw ROOT_LOGGER.unsupportedResource(NATIVE_INTERFACE);
+            }
+        }
+
+        if (managementInterfaces.hasDefined(HTTP_INTERFACE)) {
+            if (delegate.writeHttpManagementProtocol(writer, managementInterfaces.get(HTTP_INTERFACE)) == false) {
+                throw ROOT_LOGGER.unsupportedResource(HTTP_INTERFACE);
+            }
+        }
+
+        writer.writeEndElement();
+    }
+
+    private void writeConfigurationChanges(XMLExtendedStreamWriter writer, ModelNode configurationChanges) throws XMLStreamException {
+        writer.writeStartElement(Element.CONFIGURATION_CHANGES.getLocalName());
+        ConfigurationChangeResourceDefinition.MAX_HISTORY.marshallAsAttribute(configurationChanges, writer);
+        writer.writeEndElement();
     }
 
 }

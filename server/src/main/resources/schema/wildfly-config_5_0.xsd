@@ -220,6 +220,7 @@
                         </xs:complexType>
                     </xs:element>
                     <xs:element name="management-interfaces" type="host-management-interfacesType" minOccurs="1"/>
+                    <xs:element name="notification-registrars" type="notification-registrarsType" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -245,6 +246,7 @@
                     </xs:element>
                     <xs:element name="management-interfaces" type="server-management-interfacesType" minOccurs="0"/>
                     <xs:element name="access-control" type="server-access-controlType" minOccurs="0"/>
+                    <xs:element name="notification-registrars" type="notification-registrarsType" minOccurs="0"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -4764,5 +4766,54 @@
         <xs:sequence>
             <xs:element name="extension" type="extensionType" minOccurs="1" maxOccurs="unbounded"/>
         </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="notification-registrarsType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                   A list of notification registrar implementations.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="registrar" type="notification-registrarType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="notification-registrarType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                   A NotificationRegistrar implementation. Classes must implement
+                   org.jboss.as.controller.notification.NotificationRegistrar, and
+                   have a default constructor.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="properties" type="properties" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:choice>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of this registrar.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="code" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The fully qualified class name for the NotificationRegistrar implementation.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="module" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The module from which the NotificationRegistrar implementation should be loaded.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>
