@@ -1,13 +1,14 @@
 SYNOPSIS
 
-   echo ($name)* 
+   echo [--help | line_of_text]
 
 DESCRIPTION
 
-   Prints values for the specified variables.
-   If the command is executed w/o arguments then the command will print
-   all the existing variables with their values in the name=value format.
+   Displays a line of text passed in as an argument resolving variables and
+   expressions possibly contained in the text.
 
 ARGUMENTS
 
-   Optional whitespace-separated sequence of variable names.
+   line_of_text  - line of text, possibly containing variables and expressions.
+
+   --help        - displays command description.
