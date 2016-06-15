@@ -31,8 +31,8 @@
         <module name="javax.api"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.marshalling" export="true"/>
-        <module name="org.jboss.sasl" services="import"/>
         <module name="org.jboss.xnio" export="true"/>
         <module name="org.jboss.xnio.nio" services="import"/>
+        <module name="org.wildfly.security.elytron" services="import"/>
     </dependencies>
 </module>

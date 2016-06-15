@@ -37,12 +37,6 @@
 
     <properties>
         <test.level>INFO</test.level>
-
-        <!-- maven-compiler-plugin -->
-        <!-- Keep the management client libs on JDK 7 -->
-        <maven.compiler.target>1.7</maven.compiler.target>
-        <maven.compiler.source>1.7</maven.compiler.source>
-
     </properties>
 
     <dependencies>
@@ -72,12 +66,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.jboss.modules</groupId>
+            <artifactId>jboss-modules</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.remoting</groupId>
             <artifactId>jboss-remoting</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.sasl</groupId>
-            <artifactId>jboss-sasl</artifactId>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.threads</groupId>
