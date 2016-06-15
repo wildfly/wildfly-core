@@ -39,10 +39,7 @@ import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.remoting3.Endpoint;
-import org.jboss.remoting3.Remoting;
-import org.jboss.remoting3.remote.RemoteConnectionProviderFactory;
 import org.jboss.threads.JBossThreadFactory;
-import org.xnio.OptionMap;
 
 /**
  * Shared test configuration where all {@linkplain org.jboss.as.controller.client.ModelControllerClient}s share a common {@linkplain Endpoint} and
@@ -112,8 +109,7 @@ public class DomainControllerClientConfig implements Closeable {
     }
 
     static DomainControllerClientConfig create(final ExecutorService executorService, boolean destroyExecutor) throws IOException {
-        final Endpoint endpoint = Remoting.createEndpoint(ENDPOINT_NAME, OptionMap.EMPTY);
-        endpoint.addConnectionProvider("remote", new RemoteConnectionProviderFactory(), OptionMap.EMPTY);
+        final Endpoint endpoint = Endpoint.getCurrent();
         return new DomainControllerClientConfig(endpoint, executorService, destroyExecutor);
     }
 

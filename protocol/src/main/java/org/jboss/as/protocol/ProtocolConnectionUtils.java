@@ -26,6 +26,9 @@ import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.RemotingOptions;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.MatchRule;
 import org.xnio.IoFuture;
 import org.xnio.OptionMap;
 import org.xnio.Options;
@@ -145,12 +148,14 @@ public class ProtocolConnectionUtils {
         final CallbackHandler actualHandler = handler != null ? handler : new AnonymousCallbackHandler();
 
         String clientBindAddress = configuration.getClientBindAddress();
+        final AuthenticationConfiguration authConf = AuthenticationConfiguration.EMPTY.useCallbackHandler(actualHandler).useSslContext(configuration.getSslContext());
+        final AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, authConf);
         if (clientBindAddress == null) {
-            return endpoint.connect(configuration.getUri(), options, actualHandler, configuration.getSslContext());
+            return endpoint.connect(configuration.getUri(), options, context);
         } else {
             InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
-            InetSocketAddress destAddr = new InetSocketAddress(configuration.getUri().getHost(), configuration.getUri().getPort());
-            return endpoint.connect(configuration.getUri().getScheme(), bindAddr, destAddr, options, actualHandler, configuration.getSslContext());
+            // TODO: bind address via connection builder
+            return endpoint.connect(configuration.getUri(), options, context);
         }
     }
 

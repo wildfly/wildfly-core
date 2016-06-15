@@ -32,11 +32,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Endpoint;
-import org.jboss.remoting3.Remoting;
-import org.jboss.remoting3.remote.HttpUpgradeConnectionProviderFactory;
-import org.jboss.remoting3.remote.RemoteConnectionProviderFactory;
 import org.xnio.OptionMap;
-import org.xnio.Options;
 import org.xnio.XnioWorker;
 /**
  * An MSC service for Remoting endpoints.
@@ -62,32 +58,11 @@ public class EndpointService implements Service<Endpoint> {
         return worker;
     }
 
-    protected Endpoint createEndpoint() throws IOException {
-        return Remoting.createEndpoint(endpointName, worker.getValue(), optionMap);
-    }
-
-
     /** {@inheritDoc} */
     public synchronized void start(final StartContext context) throws StartException {
         final Endpoint endpoint;
-        try {
-            boolean ok = false;
-            endpoint = createEndpoint();
-            try {
-                // Reuse the options for the remote connection factory for now
-                endpoint.addConnectionProvider(Protocol.REMOTE.toString(), new RemoteConnectionProviderFactory(), optionMap);
-                endpoint.addConnectionProvider(Protocol.HTTP_REMOTING.toString(), new HttpUpgradeConnectionProviderFactory(), optionMap);
-                endpoint.addConnectionProvider(Protocol.HTTPS_REMOTING.toString(), new HttpUpgradeConnectionProviderFactory(),
-                        OptionMap.builder().set(Options.SSL_ENABLED, true).addAll(optionMap).getMap());
-                ok = true;
-            } finally {
-                if (! ok) {
-                    endpoint.closeAsync();
-                }
-            }
-        } catch (IOException e) {
-            throw RemotingLogger.ROOT_LOGGER.couldNotStart(e);
-        }
+        endpoint = Endpoint.getCurrent();
+        // Reuse the options for the remote connection factory for now
         this.endpoint = endpoint;
     }
 

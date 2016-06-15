@@ -26,6 +26,7 @@ package org.jboss.as.controller.test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -52,7 +53,6 @@ import org.jboss.as.controller.remote.TransactionalProtocolHandlers;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.controller.support.ChannelServer;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
-import org.jboss.as.protocol.ProtocolConnectionUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
 import org.jboss.as.protocol.mgmt.ManagementRequestHandlerFactory;
@@ -60,11 +60,13 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.OpenListener;
-import org.jboss.remoting3.security.PasswordClientCallbackHandler;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.MatchRule;
 import org.xnio.FutureResult;
 import org.xnio.IoFuture;
 import org.xnio.OptionMap;
@@ -131,7 +133,14 @@ public class TransactionalProtocolClientTestCase {
 
         final ProtocolConnectionConfiguration connectionConfig = ProtocolConnectionConfiguration.create(channelServer.getEndpoint(),
                 new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""));
-        futureConnection = ProtocolConnectionUtils.connect(connectionConfig, new PasswordClientCallbackHandler("bob", ENDPOINT_NAME, "pass".toCharArray()));
+        connectionConfig.setEndpoint(channelServer.getEndpoint());
+        //
+        futureConnection = AuthenticationContext.empty().with(
+            MatchRule.ALL,
+            AuthenticationConfiguration.EMPTY.useName("bob").usePassword("pass").useRealm(ENDPOINT_NAME)
+        ).run(
+            (PrivilegedAction<IoFuture<Connection>>) () -> connectionConfig.getEndpoint().getConnection(connectionConfig.getUri())
+        );
     }
 
     @After

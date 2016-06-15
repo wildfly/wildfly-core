@@ -45,10 +45,7 @@ class TestControllerUtils implements Closeable {
         return create(new URI(scheme, null, formatPossibleIpv6Address(host), port, null, null, null), callbackHandler);
     }
     static TestControllerUtils create(URI uri, CallbackHandler callbackHandler) throws IOException {
-        final Endpoint endpoint = Remoting.createEndpoint(ENDPOINT_NAME, OptionMap.EMPTY);
-        endpoint.addConnectionProvider("remote", new RemoteConnectionProviderFactory(), OptionMap.EMPTY);
-        endpoint.addConnectionProvider("http-remoting", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE));
-        endpoint.addConnectionProvider("https-remoting", new HttpUpgradeConnectionProviderFactory(),  OptionMap.create(Options.SSL_ENABLED, Boolean.TRUE));
+        final Endpoint endpoint = Endpoint.getCurrent();
         final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, uri);
         configuration.setCallbackHandler(callbackHandler);
         return new TestControllerUtils(endpoint, configuration, createDefaultExecutor());

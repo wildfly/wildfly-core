@@ -25,20 +25,23 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.PrivilegedAction;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
-import org.jboss.as.protocol.ProtocolConnectionUtils;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.OpenListener;
-import org.jboss.remoting3.security.PasswordClientCallbackHandler;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.threads.QueueExecutor;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.MatchRule;
+import org.xnio.IoFuture;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
@@ -108,7 +111,13 @@ public class RemoteChannelPairSetup {
         ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(channelServer.getEndpoint(),
                 new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""));
 
-        connection = ProtocolConnectionUtils.connectSync(configuration, new PasswordClientCallbackHandler("bob", ENDPOINT_NAME ,"pass".toCharArray()));
+        final IoFuture<Connection> future = AuthenticationContext.empty().with(
+            MatchRule.ALL,
+            AuthenticationConfiguration.EMPTY.useName("bob").usePassword("pass").useRealm(ENDPOINT_NAME)
+        ).run(
+            (PrivilegedAction<IoFuture<Connection>>) () -> configuration.getEndpoint().getConnection(configuration.getUri())
+        );
+        connection = future.get();
 
         clientChannel = connection.openChannel(TEST_CHANNEL, OptionMap.EMPTY).get();
         try {
