@@ -65,7 +65,8 @@ public class SubjectDoAsHandler implements HttpHandler {
 
     void handleRequest(final HttpServerExchange exchange, final Subject subject) throws Exception {
         try {
-            AccessAuditContext.doAs(subject, new PrivilegedExceptionAction<Void>() {
+            // TODO Elytron I expect this now to be broken.
+            AccessAuditContext.doAs(null, new PrivilegedExceptionAction<Void>() {
 
                 @Override
                 public Void run() throws Exception {
