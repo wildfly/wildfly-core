@@ -53,7 +53,8 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
 
 /**
  * A CallbackHandler for users within an LDAP directory.
@@ -168,7 +169,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
             }
 
 
-            VerifyPasswordCallback verifyPasswordCallback = null;
+            EvidenceVerifyCallback evidenceVerifyCallback = null;
             String username = null;
 
             for (Callback current : callbacks) {
@@ -176,8 +177,8 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                     username = ((NameCallback) current).getDefaultName();
                 } else if (current instanceof RealmCallback) {
                     // TODO - Nothing at the moment
-                } else if (current instanceof VerifyPasswordCallback) {
-                    verifyPasswordCallback = (VerifyPasswordCallback) current;
+                } else if (current instanceof EvidenceVerifyCallback) {
+                    evidenceVerifyCallback = (EvidenceVerifyCallback) current;
                 } else {
                     throw new UnsupportedCallbackException(current);
                 }
@@ -187,17 +188,25 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                 SECURITY_LOGGER.trace("No username or 0 length username supplied.");
                 throw DomainManagementLogger.ROOT_LOGGER.noUsername();
             }
-            if (verifyPasswordCallback == null) {
-                SECURITY_LOGGER.trace("No password supplied.");
+            if (evidenceVerifyCallback == null || evidenceVerifyCallback.getEvidence() == null) {
+                SECURITY_LOGGER.trace("No password to verify.");
                 throw DomainManagementLogger.ROOT_LOGGER.noPassword();
             }
-            String password = verifyPasswordCallback.getPassword();
+
+            final String password;
+
+            if (evidenceVerifyCallback.getEvidence() instanceof PasswordGuessEvidence) {
+                 char[] guess = ((PasswordGuessEvidence) evidenceVerifyCallback.getEvidence()).getGuess();
+                 password = guess != null ? new String(guess) : null;
+            } else {
+                password = null;
+            }
+
             if (password == null || (allowEmptyPassword == false && password.length() == 0)) {
                 SECURITY_LOGGER.trace("No password or 0 length password supplied.");
                 throw DomainManagementLogger.ROOT_LOGGER.noPassword();
             }
 
-            final VerifyPasswordCallback theVpc = verifyPasswordCallback;
 
             LdapConnectionHandler lch = createLdapConnectionHandler();
             try {
@@ -210,14 +219,14 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                 if (cachedCredential != null) {
                     if (cachedCredential.verify(password)) {
                         SECURITY_LOGGER.tracef("Password verified for user '%s' (using cached password)", username);
-                        verifyPasswordCallback.setVerified(true);
+                        evidenceVerifyCallback.setVerified(true);
                         sharedState.put(LdapEntry.class.getName(), ldapEntry);
                         if (username.equals(ldapEntry.getSimpleName()) == false) {
                             sharedState.put(SecurityRealmService.LOADED_USERNAME_KEY, ldapEntry.getSimpleName());
                         }
                     } else {
                         SECURITY_LOGGER.tracef("Password verification failed for user (using cached password) '%s'", username);
-                        verifyPasswordCallback.setVerified(false);
+                        evidenceVerifyCallback.setVerified(false);
                     }
                 } else {
                     try {
@@ -230,7 +239,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                         if (verificationHandler != null) {
                             verificationHandler.verifyIdentity(ldapEntry.getDistinguishedName(), password);
                             SECURITY_LOGGER.tracef("Password verified for user '%s' (using connection attempt)", username);
-                            verifyPasswordCallback.setVerified(true);
+                            evidenceVerifyCallback.setVerified(true);
                             searchResult.attach(PASSWORD_KEY, new PasswordCredential(password));
                             sharedState.put(LdapEntry.class.getName(), ldapEntry);
                             if (username.equals(ldapEntry.getSimpleName()) == false) {
@@ -240,19 +249,19 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                             SECURITY_LOGGER.tracef(
                                     "Password verification failed for user '%s', no connection for referral '%s'", username,
                                     referralUri.toString());
-                            verifyPasswordCallback.setVerified(false);
+                            evidenceVerifyCallback.setVerified(false);
                         }
                     } catch (Exception e) {
                         SECURITY_LOGGER.tracef("Password verification failed for user (using connection attempt) '%s'",
                                 username);
-                        verifyPasswordCallback.setVerified(false);
+                        evidenceVerifyCallback.setVerified(false);
                     }
                 }
             } catch (Exception e) {
                 SECURITY_LOGGER.trace("Unable to verify identity.", e);
                 throw DomainManagementLogger.ROOT_LOGGER.cannotPerformVerification(e);
             } finally {
-                if (shareConnection && lch != null && theVpc != null && theVpc.isVerified()) {
+                if (shareConnection && lch != null && evidenceVerifyCallback != null && evidenceVerifyCallback.isVerified()) {
                     sharedState.put(LdapConnectionHandler.class.getName(), lch);
                 } else {
                     lch.close();

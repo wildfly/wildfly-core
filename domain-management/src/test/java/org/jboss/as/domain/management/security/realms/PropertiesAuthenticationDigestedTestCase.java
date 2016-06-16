@@ -22,6 +22,8 @@
 
 package org.jboss.as.domain.management.security.realms;
 
+import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_DIGEST_MD5;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -39,10 +41,13 @@ import javax.security.sasl.RealmCallback;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.AuthorizingCallbackHandler;
 import org.jboss.as.domain.management.security.operations.SecurityRealmAddBuilder;
-import org.jboss.sasl.callback.DigestHashCallback;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
 import org.junit.Test;
+import org.wildfly.security.auth.callback.CredentialCallback;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.credential.PasswordCredential;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
+import org.wildfly.security.password.interfaces.DigestPassword;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 
 /**
  * A test case to test authentication against a properties file.
@@ -69,14 +74,14 @@ public class PropertiesAuthenticationDigestedTestCase extends SecurityRealmTestB
 
         NameCallback ncb = new NameCallback("Username", TEST_USERNAME);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        DigestHashCallback dhc = new DigestHashCallback("Hash");
+        CredentialCallback cc = new CredentialCallback(PasswordCredential.class, ALGORITHM_DIGEST_MD5);
 
-        cbh.handle(new Callback[] { ncb, rcb, dhc });
+        cbh.handle(new Callback[] { ncb, rcb, cc });
 
         UsernamePasswordHashUtil uph = new UsernamePasswordHashUtil();
-        String expected = uph.generateHashedHexURP(TEST_USERNAME, TEST_REALM, TEST_PASSWORD.toCharArray());
+        byte[] expected = uph.generateHashedURP(TEST_USERNAME, TEST_REALM, TEST_PASSWORD.toCharArray());
 
-        assertEquals("Expected hash", expected, dhc.getHexHash());
+        assertEquals("Expected hash", expected, ((DigestPassword) ((PasswordCredential) cc.getCredential()).getPassword()).getDigest());
     }
 
     @Test
@@ -85,11 +90,11 @@ public class PropertiesAuthenticationDigestedTestCase extends SecurityRealmTestB
 
         NameCallback ncb = new NameCallback("Username", TEST_USERNAME);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(TEST_PASSWORD);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence(TEST_PASSWORD.toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertTrue("Password Verified", vpc.isVerified());
+        assertTrue("Password Verified", evc.isVerified());
     }
 
     @Test
@@ -98,11 +103,11 @@ public class PropertiesAuthenticationDigestedTestCase extends SecurityRealmTestB
 
         NameCallback ncb = new NameCallback("Username", TEST_USERNAME);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback("BAD PASSWORD");
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence("BAD PASSWORD".toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertFalse("Password Not Verified", vpc.isVerified());
+        assertFalse("Password Not Verified", evc.isVerified());
     }
 
     @Test
@@ -111,10 +116,10 @@ public class PropertiesAuthenticationDigestedTestCase extends SecurityRealmTestB
 
         NameCallback ncb = new NameCallback("Username", "BadUser");
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        DigestHashCallback dhc = new DigestHashCallback("Hash");
+        CredentialCallback cc = new CredentialCallback(PasswordCredential.class, ALGORITHM_DIGEST_MD5);
 
         try {
-            cbh.handle(new Callback[] { ncb, rcb, dhc });
+            cbh.handle(new Callback[] { ncb, rcb, cc });
             fail("Expected exception not thrown.");
         } catch (IOException e) {
         }

@@ -22,13 +22,17 @@
 
 package org.jboss.as.domain.management.security;
 
+import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
+import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_DIGEST_MD5;
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.DIGEST_PLAIN_TEXT;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.VERIFY_PASSWORD_CALLBACK_SUPPORTED;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -52,9 +56,16 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
-import org.jboss.sasl.callback.DigestHashCallback;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
+import org.wildfly.security.auth.callback.CredentialCallback;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.credential.PasswordCredential;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
+import org.wildfly.security.password.PasswordFactory;
+import org.wildfly.security.password.spec.ClearPasswordSpec;
+import org.wildfly.security.password.spec.DigestPasswordSpec;
+import org.wildfly.security.password.spec.PasswordSpec;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
+import org.wildfly.security.util.ByteIterator;
 
 /**
  * A CallbackHandler obtaining the users and their passwords from a properties file.
@@ -167,9 +178,9 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                 userFound = users.containsKey(userName);
             } else if (current instanceof PasswordCallback && plainText) {
                 toRespondTo.add(current);
-            } else if (current instanceof DigestHashCallback && plainText == false) {
+            } else if (current instanceof CredentialCallback) {
                 toRespondTo.add(current);
-            } else if (current instanceof VerifyPasswordCallback) {
+            } else if (current instanceof EvidenceVerifyCallback && ((EvidenceVerifyCallback)current).getEvidence() instanceof PasswordGuessEvidence) {
                 toRespondTo.add(current);
             } else if (current instanceof RealmCallback) {
                 String realm = ((RealmCallback) current).getDefaultText();
@@ -199,42 +210,72 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                 }
                 String password = users.get(userName).toString();
                 ((PasswordCallback) current).setPassword(password.toCharArray());
-            } else if (current instanceof DigestHashCallback) {
+            } else if (current instanceof CredentialCallback) {
                 if (userFound == false) {
                     SECURITY_LOGGER.tracef("User '%s' not found in properties file.", userName);
                     throw new UserNotFoundException(userName);
                 }
-                String hash = users.get(userName).toString();
-                ((DigestHashCallback) current).setHexHash(hash);
-            } else if (current instanceof VerifyPasswordCallback) {
+
+                CredentialCallback cc = (CredentialCallback) current;
+                if (PasswordCredential.class.isAssignableFrom(cc.getCredentialType())) {
+                    String algorithmName = cc.getAlgorithm();
+                    final PasswordFactory passwordFactory;
+                    final PasswordSpec passwordSpec;
+                    if ((algorithmName == null || ALGORITHM_CLEAR.equals(algorithmName)) && plainText) {
+                        passwordFactory = getPasswordFactory(ALGORITHM_CLEAR);
+                        passwordSpec = new ClearPasswordSpec(((String) users.get(userName)).toCharArray());
+                    } else if ((algorithmName == null || ALGORITHM_DIGEST_MD5.equals(algorithmName)) && plainText == false) {
+                        passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
+                        byte[] hashed = ByteIterator.ofBytes(((String) users.get(users)).getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                        passwordSpec = new DigestPasswordSpec(userName, realm, hashed);
+                    } else {
+                        continue;
+                    }
+                    try {
+                        cc.setCredential(cc.getCredentialType().cast(new PasswordCredential(passwordFactory.generatePassword(passwordSpec))));
+                    } catch (InvalidKeySpecException e) {
+                        throw new IllegalStateException(e);
+                    }
+                }
+            } else if (current instanceof EvidenceVerifyCallback) {
                 if (userFound == false) {
                     SECURITY_LOGGER.tracef("User '%s' not found in properties file.", userName);
                     throw new UserNotFoundException(userName);
                 }
-                VerifyPasswordCallback vpc = (VerifyPasswordCallback) current;
+                EvidenceVerifyCallback evc = (EvidenceVerifyCallback) current;
+                PasswordGuessEvidence evidence = (PasswordGuessEvidence) evc.getEvidence();
+                char[] guess = evidence.getGuess();
                 if (plainText) {
                     String password = users.get(userName).toString();
-                    boolean verified = password.equals(vpc.getPassword());
+                    boolean verified = password.equals(new String(guess));
                     if (verified == false) {
                         SECURITY_LOGGER.tracef("Password verification failed for user '%s'", userName);
                     }
-                    vpc.setVerified(verified);
+                    evc.setVerified(verified);
                 } else {
                     UsernamePasswordHashUtil hashUtil = getHashUtil();
                     String hash;
                     synchronized (hashUtil) {
-                        hash = hashUtil.generateHashedHexURP(userName, realm, vpc.getPassword().toCharArray());
+                        hash = hashUtil.generateHashedHexURP(userName, realm, guess);
                     }
                     String expected = users.get(userName).toString();
                     boolean verified = expected.equals(hash);
                     if (verified == false) {
                         SECURITY_LOGGER.tracef("Digest verification failed for user '%s'", userName);
                     }
-                    vpc.setVerified(verified);
+                    evc.setVerified(verified);
                 }
             }
         }
 
+    }
+
+    private static PasswordFactory getPasswordFactory(final String algorithm) {
+        try {
+            return PasswordFactory.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static UsernamePasswordHashUtil getHashUtil() {
