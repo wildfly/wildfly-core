@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.PrivilegedAction;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -38,10 +37,6 @@ import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.OpenListener;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.threads.QueueExecutor;
-import org.wildfly.security.auth.client.AuthenticationConfiguration;
-import org.wildfly.security.auth.client.AuthenticationContext;
-import org.wildfly.security.auth.client.MatchRule;
-import org.xnio.IoFuture;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
@@ -53,7 +48,7 @@ import org.xnio.OptionMap;
 public class RemoteChannelPairSetup {
 
     static final String ENDPOINT_NAME = "endpoint";
-    static final String URI_SCHEME = "test123";
+    static final String URI_SCHEME = "remote";
     static final String TEST_CHANNEL = "Test-Channel";
     static final int PORT = 32123;
     static final int EXECUTOR_MAX_THREADS = 20;
@@ -111,13 +106,7 @@ public class RemoteChannelPairSetup {
         ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(channelServer.getEndpoint(),
                 new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""));
 
-        final IoFuture<Connection> future = AuthenticationContext.empty().with(
-            MatchRule.ALL,
-            AuthenticationConfiguration.EMPTY.useName("bob").usePassword("pass").useRealm(ENDPOINT_NAME)
-        ).run(
-            (PrivilegedAction<IoFuture<Connection>>) () -> configuration.getEndpoint().getConnection(configuration.getUri())
-        );
-        connection = future.get();
+        connection = configuration.getEndpoint().getConnection(configuration.getUri()).get();
 
         clientChannel = connection.openChannel(TEST_CHANNEL, OptionMap.EMPTY).get();
         try {
@@ -130,11 +119,11 @@ public class RemoteChannelPairSetup {
     public void stopChannels() throws InterruptedException {
         IoUtils.safeClose(clientChannel);
         IoUtils.safeClose(serverChannel);
-        IoUtils.safeClose(connection);
+//        IoUtils.safeClose(connection);
     }
 
     public void shutdownRemoting() throws IOException, InterruptedException {
-        channelServer.close();
+        IoUtils.safeClose(channelServer);
         executorService.shutdown();
         executorService.awaitTermination(10L, TimeUnit.SECONDS);
         executorService.shutdownNow();

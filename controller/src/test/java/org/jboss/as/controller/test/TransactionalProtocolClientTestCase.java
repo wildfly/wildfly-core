@@ -26,7 +26,6 @@ package org.jboss.as.controller.test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -64,9 +63,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.wildfly.security.auth.client.AuthenticationConfiguration;
-import org.wildfly.security.auth.client.AuthenticationContext;
-import org.wildfly.security.auth.client.MatchRule;
 import org.xnio.FutureResult;
 import org.xnio.IoFuture;
 import org.xnio.OptionMap;
@@ -79,7 +75,7 @@ import org.xnio.OptionMap;
 public class TransactionalProtocolClientTestCase {
 
     private static final String ENDPOINT_NAME = "endpoint";
-    private static final String URI_SCHEME = "test123";
+    private static final String URI_SCHEME = "remote";
     private static final String TEST_CHANNEL = "Test-Channel";
     private static final int PORT = 32123;
     private static final int CLIENTS = 10;
@@ -135,12 +131,7 @@ public class TransactionalProtocolClientTestCase {
                 new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""));
         connectionConfig.setEndpoint(channelServer.getEndpoint());
         //
-        futureConnection = AuthenticationContext.empty().with(
-            MatchRule.ALL,
-            AuthenticationConfiguration.EMPTY.useName("bob").usePassword("pass").useRealm(ENDPOINT_NAME)
-        ).run(
-            (PrivilegedAction<IoFuture<Connection>>) () -> connectionConfig.getEndpoint().getConnection(connectionConfig.getUri())
-        );
+        futureConnection = connectionConfig.getEndpoint().getConnection(connectionConfig.getUri());
     }
 
     @After
@@ -148,7 +139,6 @@ public class TransactionalProtocolClientTestCase {
         for(final Channel channel : channels) {
             channel.close();
         }
-        futureConnection.get().close();
         channelServer.close();
         channelServer = null;
     }

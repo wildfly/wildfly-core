@@ -36,8 +36,9 @@ import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.permission.PermissionVerifier;
-import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
+import org.wildfly.security.sasl.util.SaslFactories;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 import org.xnio.StreamConnection;
@@ -50,14 +51,12 @@ import org.xnio.channels.AcceptingChannel;
  */
 public class ChannelServer implements Closeable {
     private final Endpoint endpoint;
-    private final Registration registration;
+    private Registration registration;
     private final AcceptingChannel<StreamConnection> streamServer;
 
     private ChannelServer(final Endpoint endpoint,
-            final Registration registration,
-            final AcceptingChannel<StreamConnection> streamServer) {
+        final AcceptingChannel<StreamConnection> streamServer) {
         this.endpoint = endpoint;
-        this.registration = registration;
         this.streamServer = streamServer;
     }
 
@@ -72,18 +71,27 @@ public class ChannelServer implements Closeable {
         final NetworkServerProvider networkServerProvider = endpoint.getConnectionProviderInterface(configuration.getUriScheme(), NetworkServerProvider.class);
         final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
         final SimpleMapBackedSecurityRealm realm = new SimpleMapBackedSecurityRealm();
+        realm.setPasswordMap("bob", ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR, "pass".toCharArray()));
         domainBuilder.addRealm("default", realm).build();
         domainBuilder.setDefaultRealmName("default");
         domainBuilder.setPermissionMapper((permissionMappable, roles) -> PermissionVerifier.ALL);
         SecurityDomain testDomain = domainBuilder.build();
         SaslAuthenticationFactory saslAuthenticationFactory = SaslAuthenticationFactory.builder()
             .setSecurityDomain(testDomain)
-            .setMechanismConfigurationSelector(mechanismInformation -> "ANONYMOUS".equals(mechanismInformation.getMechanismName()) ? MechanismConfiguration.EMPTY : null)
-            .setFactory(new AnonymousServerFactory())
+            .setMechanismConfigurationSelector(mechanismInformation -> {
+                switch (mechanismInformation.getMechanismName()) {
+                    case "ANONYMOUS":
+                    case "PLAIN": {
+                        return MechanismConfiguration.EMPTY;
+                    }
+                    default: return null;
+                }
+            })
+            .setFactory(SaslFactories.getElytronSaslServerFactory())
             .build();
         AcceptingChannel<StreamConnection> streamServer = networkServerProvider.createServer(configuration.getBindAddress(), OptionMap.EMPTY, saslAuthenticationFactory);
 
-        return new ChannelServer(endpoint, null, streamServer);
+        return new ChannelServer(endpoint, streamServer);
     }
 
     public Endpoint getEndpoint() {
@@ -95,7 +103,7 @@ public class ChannelServer implements Closeable {
     }
 
     public void addChannelOpenListener(final String channelName, final OpenListener openListener) throws ServiceRegistrationException {
-        endpoint.registerService(channelName, new OpenListener() {
+        registration = endpoint.registerService(channelName, new OpenListener() {
             public void channelOpened(final Channel channel) {
                 if (openListener != null) {
                     openListener.channelOpened(channel);
@@ -114,7 +122,7 @@ public class ChannelServer implements Closeable {
     public void close() {
         IoUtils.safeClose(streamServer);
         IoUtils.safeClose(registration);
-        IoUtils.safeClose(endpoint);
+//        IoUtils.safeClose(endpoint);
     }
 
     public static final class Configuration {

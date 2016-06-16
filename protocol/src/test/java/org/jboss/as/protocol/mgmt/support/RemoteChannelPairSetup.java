@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.PrivilegedAction;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -40,10 +39,6 @@ import org.jboss.remoting3.OpenListener;
 import org.jboss.remoting3.Registration;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.threads.QueueExecutor;
-import org.wildfly.security.auth.client.AuthenticationConfiguration;
-import org.wildfly.security.auth.client.AuthenticationContext;
-import org.wildfly.security.auth.client.MatchRule;
-import org.xnio.IoFuture;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 import org.xnio.Options;
@@ -119,13 +114,7 @@ public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
                 new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""),
                 OptionMap.create(Options.SASL_POLICY_NOANONYMOUS, Boolean.FALSE));
 
-        final IoFuture<Connection> future = AuthenticationContext.empty().with(
-            MatchRule.ALL,
-            AuthenticationConfiguration.EMPTY.useName("TestUser").usePassword("TestUserPassword").useRealm("localhost.localdomain").allowSaslMechanisms("ANONYMOUS")
-        ).run(
-            (PrivilegedAction<IoFuture<Connection>>) () -> configuration.getEndpoint().getConnection(configuration.getUri())
-        );
-        connection = future.get();
+        connection = configuration.getEndpoint().getConnection(configuration.getUri()).get();
         clientChannel = connection.openChannel(TEST_CHANNEL, OptionMap.EMPTY).get();
         try {
             clientConnectedLatch.await();
