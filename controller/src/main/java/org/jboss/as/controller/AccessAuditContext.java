@@ -22,10 +22,11 @@
 
 package org.jboss.as.controller;
 
-import javax.security.auth.Subject;
+import java.security.PrivilegedActionException;
 
 import org.jboss.as.controller.security.ControllerPermission;
 import org.jboss.as.core.security.AccessMechanism;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -100,8 +101,8 @@ public class AccessAuditContext {
     }
 
     /**
-     * Perform work with a new {@code AccessAuditContext} as a particular {@code Subject}
-     * @param subject the {@code Subject} that the specified {@code action} will run as. May be {@code null}
+     * Perform work with a new {@code AccessAuditContext} as a particular {@code SecurityIdentity}
+     * @param securityIdentity the {@code SecurityIdentity} that the specified {@code action} will run as. May be {@code null}
      * @param action the work to perform. Cannot be {@code null}
      * @param <T> the type of teh return value
      * @return the value returned by the PrivilegedAction's <code>run</code> method
@@ -113,19 +114,19 @@ public class AccessAuditContext {
      * @exception SecurityException if the caller does not have permission
      *                  to invoke this method.
      */
-    public static <T> T doAs(final Subject subject, final java.security.PrivilegedAction<T> action) {
+    public static <T> T doAs(final SecurityIdentity securityIdentity, final java.security.PrivilegedAction<T> action) {
         final AccessAuditContext previous = contextThreadLocal.get();
         try {
             contextThreadLocal.set(new AccessAuditContext());
-            return Subject.doAs(subject, action);
+            return securityIdentity != null ? securityIdentity.runAs(action) : action.run();
         } finally {
             contextThreadLocal.set(previous);
         }
     }
 
     /**
-     * Perform work with a new {@code AccessAuditContext} as a particular {@code Subject}
-     * @param subject the {@code Subject} that the specified {@code action} will run as. May be {@code null}
+     * Perform work with a new {@code AccessAuditContext} as a particular {@code SecurityIdentity}
+     * @param subject the {@code SecurityIdentity} that the specified {@code action} will run as. May be {@code null}
      * @param action the work to perform. Cannot be {@code null}
      * @param <T> the type of teh return value
      * @return the value returned by the PrivilegedAction's <code>run</code> method
@@ -141,12 +142,18 @@ public class AccessAuditContext {
      * @exception SecurityException if the caller does not have permission
      *                  to invoke this method.
      */
-    public static <T> T doAs(Subject subject, java.security.PrivilegedExceptionAction<T> action)
+    public static <T> T doAs(SecurityIdentity securityIdentity, java.security.PrivilegedExceptionAction<T> action)
             throws java.security.PrivilegedActionException {
         final AccessAuditContext previous = contextThreadLocal.get();
         try {
             contextThreadLocal.set(new AccessAuditContext());
-            return Subject.doAs(subject, action);
+            if (securityIdentity != null) {
+                return securityIdentity.runAs(action);
+            } else try {
+                return action.run();
+            } catch (Exception e) {
+                throw new PrivilegedActionException(e);
+            }
         } finally {
             contextThreadLocal.set(previous);
         }

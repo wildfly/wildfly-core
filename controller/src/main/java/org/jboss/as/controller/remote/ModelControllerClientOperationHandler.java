@@ -49,8 +49,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
-import javax.security.auth.Subject;
-
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
@@ -70,6 +68,7 @@ import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
 import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
 import org.jboss.as.protocol.mgmt.ProtocolUtils;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Operation handlers for the remote implementation of {@link org.jboss.as.controller.client.ModelControllerClient}
@@ -83,25 +82,25 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
 
     private final ManagementChannelAssociation channelAssociation;
     private final Executor clientRequestExecutor;
-    private final Subject subject;
+    private final SecurityIdentity connectionIdentity;
     private final ResponseAttachmentInputStreamSupport responseAttachmentSupport;
 
     public ModelControllerClientOperationHandler(final ModelController controller,
                                                  final ManagementChannelAssociation channelAssociation,
                                                  final ResponseAttachmentInputStreamSupport responseAttachmentSupport,
                                                  final ExecutorService clientRequestExecutor) {
-        this(controller, channelAssociation, responseAttachmentSupport, clientRequestExecutor, new Subject());
+        this(controller, channelAssociation, responseAttachmentSupport, clientRequestExecutor, null);
     }
 
     public ModelControllerClientOperationHandler(final ModelController controller,
                                                  final ManagementChannelAssociation channelAssociation,
                                                  final ResponseAttachmentInputStreamSupport responseAttachmentSupport,
                                                  final ExecutorService clientRequestExecutor,
-                                                 final Subject subject) {
+                                                 final SecurityIdentity connectionIdentity) {
         this.controller = controller;
         this.channelAssociation = channelAssociation;
         this.responseAttachmentSupport = responseAttachmentSupport;
-        this.subject = subject;
+        this.connectionIdentity = connectionIdentity;
         this.clientRequestExecutor = clientRequestExecutor;
     }
 
@@ -145,7 +144,7 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
                     final ManagementResponseHeader response = ManagementResponseHeader.create(context.getRequestHeader());
 
                     try {
-                        AccessAuditContext.doAs(subject, new PrivilegedExceptionAction<Void>() {
+                        AccessAuditContext.doAs(connectionIdentity, new PrivilegedExceptionAction<Void>() {
                             @Override
                             public Void run() throws Exception {
                                 final CompletedCallback callback = new CompletedCallback(response, context, resultHandler);
