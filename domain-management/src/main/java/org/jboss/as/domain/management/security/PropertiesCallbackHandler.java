@@ -32,7 +32,6 @@ import static org.jboss.as.domain.management.RealmConfigurationConstants.VERIFY_
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -50,8 +49,8 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 
 import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -60,10 +59,10 @@ import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
+import org.wildfly.security.password.Password;
 import org.wildfly.security.password.PasswordFactory;
-import org.wildfly.security.password.spec.ClearPasswordSpec;
-import org.wildfly.security.password.spec.DigestPasswordSpec;
-import org.wildfly.security.password.spec.PasswordSpec;
+import org.wildfly.security.password.interfaces.ClearPassword;
+import org.wildfly.security.password.interfaces.DigestPassword;
 import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 import org.wildfly.security.util.ByteIterator;
 
@@ -219,23 +218,16 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                 CredentialCallback cc = (CredentialCallback) current;
                 if (PasswordCredential.class.isAssignableFrom(cc.getCredentialType())) {
                     String algorithmName = cc.getAlgorithm();
-                    final PasswordFactory passwordFactory;
-                    final PasswordSpec passwordSpec;
+                    final Password password;
                     if ((algorithmName == null || ALGORITHM_CLEAR.equals(algorithmName)) && plainText) {
-                        passwordFactory = getPasswordFactory(ALGORITHM_CLEAR);
-                        passwordSpec = new ClearPasswordSpec(((String) users.get(userName)).toCharArray());
+                        password = ClearPassword.createRaw(ALGORITHM_CLEAR, ((String) users.get(userName)).toCharArray());
                     } else if ((algorithmName == null || ALGORITHM_DIGEST_MD5.equals(algorithmName)) && plainText == false) {
-                        passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
-                        byte[] hashed = ByteIterator.ofBytes(((String) users.get(users)).getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
-                        passwordSpec = new DigestPasswordSpec(userName, realm, hashed);
+                        byte[] hashed = ByteIterator.ofBytes(((String) users.get(userName)).getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                        password = DigestPassword.createRaw(ALGORITHM_DIGEST_MD5, userName, realm, hashed);
                     } else {
                         continue;
                     }
-                    try {
-                        cc.setCredential(cc.getCredentialType().cast(new PasswordCredential(passwordFactory.generatePassword(passwordSpec))));
-                    } catch (InvalidKeySpecException e) {
-                        throw new IllegalStateException(e);
-                    }
+                    cc.setCredential(cc.getCredentialType().cast(new PasswordCredential(password)));
                 }
             } else if (current instanceof EvidenceVerifyCallback) {
                 if (userFound == false) {

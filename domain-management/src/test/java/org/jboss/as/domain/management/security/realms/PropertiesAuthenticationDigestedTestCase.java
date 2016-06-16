@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.management.security.realms;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_DIGEST_MD5;
 
 import static org.junit.Assert.assertEquals;
@@ -32,6 +33,7 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.Security;
 import java.util.Set;
 
 import javax.security.auth.callback.Callback;
@@ -41,7 +43,9 @@ import javax.security.sasl.RealmCallback;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.AuthorizingCallbackHandler;
 import org.jboss.as.domain.management.security.operations.SecurityRealmAddBuilder;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
 import org.wildfly.security.credential.PasswordCredential;
@@ -60,6 +64,11 @@ public class PropertiesAuthenticationDigestedTestCase extends SecurityRealmTestB
     private static final String TEST_PASSWORD = "TestPassword";
 
     protected File propertiesFile;
+
+    @BeforeClass
+    public static void installProvider() {
+        Security.insertProviderAt(new WildFlyElytronProvider(), 0);
+    }
 
     @Test
     public void testSupportedMechanism() {
@@ -81,7 +90,7 @@ public class PropertiesAuthenticationDigestedTestCase extends SecurityRealmTestB
         UsernamePasswordHashUtil uph = new UsernamePasswordHashUtil();
         byte[] expected = uph.generateHashedURP(TEST_USERNAME, TEST_REALM, TEST_PASSWORD.toCharArray());
 
-        assertEquals("Expected hash", expected, ((DigestPassword) ((PasswordCredential) cc.getCredential()).getPassword()).getDigest());
+        assertArrayEquals("Expected hash", expected, ((DigestPassword) ((PasswordCredential) cc.getCredential()).getPassword()).getDigest());
     }
 
     @Test
