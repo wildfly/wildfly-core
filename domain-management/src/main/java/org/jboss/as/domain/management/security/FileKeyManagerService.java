@@ -31,7 +31,12 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.TimeZone;
+
+import javax.security.auth.x500.X500Principal;
 
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
@@ -43,15 +48,6 @@ import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.CertificateAlgorithmId;
-import sun.security.x509.CertificateSerialNumber;
-import sun.security.x509.CertificateValidity;
-import sun.security.x509.CertificateVersion;
-import sun.security.x509.CertificateX509Key;
-import sun.security.x509.X500Name;
-import sun.security.x509.X509CertImpl;
-import sun.security.x509.X509CertInfo;
 
 /**
  * An extension to {@link AbstractKeyManagerService} so that a KeyManager[] can be provided based on a JKS file based key store.
@@ -225,32 +221,22 @@ class FileKeyManagerService extends AbstractKeyManagerService {
 
     X509Certificate generateCertificate(KeyPair pair) throws Exception {
         PrivateKey privkey = pair.getPrivate();
-        X509CertInfo info = new X509CertInfo();
+        X509CertificateBuilder builder = new X509CertificateBuilder();
         Date from = new Date();
         Date to = new Date(from.getTime() + (1000L * 60L * 60L * 24L * 365L * 10L));
-        CertificateValidity interval = new CertificateValidity(from, to);
         BigInteger sn = new BigInteger(64, new SecureRandom());
-        X500Name owner = new X500Name("CN=" + autoGenerateCertHostName);
 
-        info.set(X509CertInfo.VALIDITY, interval);
-        info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(sn));
-        info.set(X509CertInfo.SUBJECT, owner);
-        info.set(X509CertInfo.ISSUER, owner);
-        info.set(X509CertInfo.KEY, new CertificateX509Key(pair.getPublic()));
-        info.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V3));
-        AlgorithmId algo = new AlgorithmId(AlgorithmId.sha256WithRSAEncryption_oid);
-        info.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algo));
-
-        // Sign the cert to identify the algorithm that's used.
-        X509CertImpl cert = new X509CertImpl(info);
-        cert.sign(privkey, SHA_256_WITH_RSA);
-
-        // Update the algorith, and resign.
-        algo = (AlgorithmId)cert.get(X509CertImpl.SIG_ALG);
-        info.set(CertificateAlgorithmId.NAME + "." + CertificateAlgorithmId.ALGORITHM, algo);
-        cert = new X509CertImpl(info);
-        cert.sign(privkey, SHA_256_WITH_RSA);
-        return cert;
+        builder.setNotValidAfter(ZonedDateTime.ofInstant(Instant.ofEpochMilli(to.getTime()), TimeZone.getDefault().toZoneId()));
+        builder.setNotValidBefore(ZonedDateTime.ofInstant(Instant.ofEpochMilli(from.getTime()), TimeZone.getDefault().toZoneId()));
+        builder.setSerialNumber(sn);
+        X500Principal owner = new X500Principal("CN=" + autoGenerateCertHostName);
+        builder.setSubjectDn(owner);
+        builder.setIssuerDn(owner);
+        builder.setPublicKey(pair.getPublic());
+        builder.setVersion(3);
+        builder.setSignatureAlgorithmName(SHA_256_WITH_RSA);
+        builder.setSigningKey(privkey);
+        return builder.build();
     }
 
     private static String getSha1Fingerprint(X509Certificate cert, String algo) throws Exception {
