@@ -22,7 +22,6 @@
 
 package org.jboss.as.remoting.management;
 
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 import static org.jboss.msc.service.ServiceController.Mode.ON_DEMAND;
@@ -95,7 +94,6 @@ public final class ManagementRemotingServices extends RemotingServices {
                                                       final OptionMap options) {
         ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
-        installSecurityServices(context, serviceTarget, MANAGEMENT_CONNECTOR, saslServerAuthentication, sslContext, securityRealm, serverCallbackService, tmpDirPath);
         installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR, networkInterfaceBinding, port, options);
     }
 

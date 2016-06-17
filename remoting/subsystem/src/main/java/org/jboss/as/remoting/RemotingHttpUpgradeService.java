@@ -22,6 +22,7 @@
 package org.jboss.as.remoting;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 import io.undertow.server.ListenerRegistry;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
@@ -36,14 +37,10 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.UnknownURISchemeException;
-import org.jboss.remoting3.security.ServerAuthenticationProvider;
 import org.jboss.remoting3.spi.ExternalConnectionProvider;
 import org.xnio.ChannelListener;
 import org.xnio.OptionMap;
 import org.xnio.StreamConnection;
-import org.xnio.channels.AssembledConnectedSslStreamChannel;
-import org.xnio.channels.AssembledConnectedStreamChannel;
-import org.xnio.ssl.SslConnection;
 
 /**
  * Service that registers a HTTP upgrade handler to enable remoting to be used via http upgrade.
@@ -80,7 +77,6 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
     private final InjectedValue<ChannelUpgradeHandler> injectedRegistry = new InjectedValue<>();
     private final InjectedValue<ListenerRegistry> listenerRegistry = new InjectedValue<>();
     private final InjectedValue<Endpoint> injectedEndpoint = new InjectedValue<>();
-    private final InjectedValue<RemotingSecurityProvider> securityProviderValue = new InjectedValue<>();
     private final OptionMap connectorPropertiesOptionMap;
 
     private ListenerRegistry.HttpUpgradeMetadata httpUpgradeMetadata;
@@ -95,14 +91,11 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
     public static void installServices(final ServiceTarget serviceTarget, final String remotingConnectorName, final String httpConnectorName, final ServiceName endpointName, final OptionMap connectorPropertiesOptionMap) {
         final RemotingHttpUpgradeService service = new RemotingHttpUpgradeService(httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap);
 
-        final ServiceName securityProviderName = RealmSecurityProviderService.createName(remotingConnectorName);
-
         serviceTarget.addService(UPGRADE_SERVICE_NAME.append(remotingConnectorName), service)
                 .setInitialMode(ServiceController.Mode.PASSIVE)
                 .addDependency(HTTP_UPGRADE_REGISTRY.append(httpConnectorName), ChannelUpgradeHandler.class, service.injectedRegistry)
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.listenerRegistry)
                 .addDependency(endpointName, Endpoint.class, service.injectedEndpoint)
-                .addDependency(securityProviderName, RemotingSecurityProvider.class, service.securityProviderValue)
                 .install();
     }
 
@@ -110,10 +103,7 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
     @Override
     public synchronized void start(final StartContext context) throws StartException {
         final Endpoint endpoint = injectedEndpoint.getValue();
-        RemotingSecurityProvider rsp = securityProviderValue.getValue();
-        ServerAuthenticationProvider sap = rsp.getServerAuthenticationProvider();
         OptionMap.Builder builder = OptionMap.builder();
-        builder.addAll(rsp.getOptionMap());
 
         ListenerRegistry.Listener listenerInfo = listenerRegistry.getValue().getListener(httpConnectorName);
         assert listenerInfo != null;
@@ -126,16 +116,18 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
         OptionMap resultingMap = builder.getMap();
         try {
             final ExternalConnectionProvider provider = endpoint.getConnectionProviderInterface(Protocol.HTTP_REMOTING.toString(), ExternalConnectionProvider.class);
-            final ExternalConnectionProvider.ConnectionAdaptor adaptor = provider.createConnectionAdaptor(resultingMap, sap);
+            // TODO Elytron Inject the sasl server factory.
+            final Consumer<StreamConnection> adaptor = provider.createConnectionAdaptor(resultingMap, null);
 
             injectedRegistry.getValue().addProtocol(JBOSS_REMOTING, new ChannelListener<StreamConnection>() {
                 @Override
                 public void handleEvent(final StreamConnection channel) {
-                    if (channel instanceof SslConnection) {
-                        adaptor.adapt(new AssembledConnectedSslStreamChannel((SslConnection) channel, channel.getSourceChannel(), channel.getSinkChannel()));
+                    adaptor.accept(channel);
+                    /*if (channel instanceof SslConnection) {
+                        adaptor.accept(new AssembledConnectedSslStreamChannel((SslConnection) channel, channel.getSourceChannel(), channel.getSinkChannel()));
                     } else {
                         adaptor.adapt(new AssembledConnectedStreamChannel(channel, channel.getSourceChannel(), channel.getSinkChannel()));
-                    }
+                    }*/
                 }
             }, new SimpleHttpUpgradeHandshake(MAGIC_NUMBER, SEC_JBOSS_REMOTING_KEY, SEC_JBOSS_REMOTING_ACCEPT));
 

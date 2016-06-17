@@ -92,7 +92,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         if (realm != null && (cbhFactory = realm.getSecretCallbackHandlerFactory()) != null && username != null) {
             callbackHandler = cbhFactory.getCallbackHandler(username);
         } else {
-            callbackHandler = getCallbackHandler();
+            callbackHandler = null;
         }
 
         if (realm != null) {
@@ -118,7 +118,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         // now override with user specified options
         builder.addAll(this.connectionCreationOptions);
 
-        return endpoint.connect(uri, builder.getMap(), callbackHandler, sslContext);
+        return endpoint.connect(uri, null);
     }
 
     @Override

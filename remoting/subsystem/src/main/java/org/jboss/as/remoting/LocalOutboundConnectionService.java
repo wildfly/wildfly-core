@@ -69,7 +69,7 @@ public class LocalOutboundConnectionService extends AbstractOutboundConnectionSe
             throw RemotingLogger.ROOT_LOGGER.couldNotConnect(e);
         }
         final Endpoint endpoint = this.endpointInjectedValue.getValue();
-        return endpoint.connect(uri, this.connectionCreationOptions, getCallbackHandler());
+        return endpoint.connect(uri, null);
     }
 
     @Override

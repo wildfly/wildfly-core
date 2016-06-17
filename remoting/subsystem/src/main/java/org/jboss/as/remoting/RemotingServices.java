@@ -24,7 +24,6 @@ package org.jboss.as.remoting;
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.remoting.Capabilities.SSL_CONTEXT_CAPABILITY;
-import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 
 import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
@@ -35,6 +34,7 @@ import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
@@ -103,7 +103,7 @@ public class RemotingServices {
                                                          final String hostName, final EndpointService.EndpointType type, final OptionMap options) {
         EndpointService service = new EndpointService(hostName, type, options);
         serviceTarget.addService(endpointName, service)
-                .setInitialMode(ACTIVE)
+                .setInitialMode(Mode.ACTIVE)
                 .addDependency(ServiceName.JBOSS.append("serverManagement", "controller", "management", "worker"), XnioWorker.class, service.getWorker())
                 .install();
     }
@@ -168,11 +168,9 @@ public class RemotingServices {
                                                  final boolean isNetworkInterfaceBinding,
                                                  final OptionMap connectorPropertiesOptionMap) {
 
-        final ServiceName securityProviderName = RealmSecurityProviderService.createName(connectorName);
         if (isNetworkInterfaceBinding) {
             final InjectedNetworkBindingStreamServerService streamServerService = new InjectedNetworkBindingStreamServerService(connectorPropertiesOptionMap, port);
             serviceTarget.addService(serverServiceName(connectorName), streamServerService)
-                    .addDependency(securityProviderName, RemotingSecurityProvider.class, streamServerService.getSecurityProviderInjector())
                     .addDependency(endpointName, Endpoint.class, streamServerService.getEndpointInjector())
                     .addDependency(bindingName, NetworkInterfaceBinding.class, streamServerService.getInterfaceBindingInjector())
                     .addDependency(ServiceBuilder.DependencyType.OPTIONAL, SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector())
@@ -180,7 +178,6 @@ public class RemotingServices {
         } else {
             final InjectedSocketBindingStreamServerService streamServerService = new InjectedSocketBindingStreamServerService(connectorPropertiesOptionMap);
             serviceTarget.addService(serverServiceName(connectorName), streamServerService)
-                    .addDependency(securityProviderName, RemotingSecurityProvider.class, streamServerService.getSecurityProviderInjector())
                     .addDependency(endpointName, Endpoint.class, streamServerService.getEndpointInjector())
                     .addDependency(bindingName, SocketBinding.class, streamServerService.getSocketBindingInjector())
                     .addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector())
@@ -190,8 +187,6 @@ public class RemotingServices {
     }
 
     public static void removeConnectorServices(final OperationContext context, final String connectorName) {
-        final ServiceName securityProviderName = RealmSecurityProviderService.createName(connectorName);
         context.removeService(serverServiceName(connectorName));
-        context.removeService(securityProviderName);
     }
 }
