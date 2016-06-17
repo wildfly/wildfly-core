@@ -89,7 +89,7 @@ public class ChannelServer implements Closeable {
             })
             .setFactory(SaslFactories.getElytronSaslServerFactory())
             .build();
-        AcceptingChannel<StreamConnection> streamServer = networkServerProvider.createServer(configuration.getBindAddress(), OptionMap.EMPTY, saslAuthenticationFactory);
+        AcceptingChannel<StreamConnection> streamServer = networkServerProvider.createServer(configuration.getBindAddress(), OptionMap.EMPTY, saslAuthenticationFactory, null);
 
         return new ChannelServer(endpoint, streamServer);
     }

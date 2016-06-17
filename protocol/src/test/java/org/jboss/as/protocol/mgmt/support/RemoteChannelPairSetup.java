@@ -114,7 +114,7 @@ public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
                 new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""),
                 OptionMap.create(Options.SASL_POLICY_NOANONYMOUS, Boolean.FALSE));
 
-        connection = configuration.getEndpoint().getConnection(configuration.getUri()).get();
+        connection = configuration.getEndpoint().connect(configuration.getUri(), OptionMap.create(Options.SSL_ENABLED, false)).get();
         clientChannel = connection.openChannel(TEST_CHANNEL, OptionMap.EMPTY).get();
         try {
             clientConnectedLatch.await();

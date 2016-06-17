@@ -82,7 +82,7 @@ public class ChannelServer implements Closeable {
             .setFactory(new AnonymousServerFactory())
             .build();
         System.out.println(configuration.getBindAddress());
-        AcceptingChannel<StreamConnection> streamServer = networkServerProvider.createServer(configuration.getBindAddress(), OptionMap.EMPTY, saslAuthenticationFactory);
+        AcceptingChannel<StreamConnection> streamServer = networkServerProvider.createServer(configuration.getBindAddress(), OptionMap.EMPTY, saslAuthenticationFactory, null);
 
         return new ChannelServer(endpoint, null, streamServer);
     }
