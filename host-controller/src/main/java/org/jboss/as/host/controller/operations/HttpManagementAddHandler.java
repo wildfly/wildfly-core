@@ -180,8 +180,6 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         if (commonPolicy.isHttpUpgradeEnabled()) {
             ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
-            ManagementRemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, commonPolicy.getSaslServerAuthentication(),
-                    commonPolicy.getSSLContext(), securityRealm, serverCallbackService, tmpDirPath);
 
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(true), onDemand);
             final String httpConnectorName;

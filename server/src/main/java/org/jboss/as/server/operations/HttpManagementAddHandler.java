@@ -47,7 +47,6 @@ import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.network.SocketBindingManagerImpl;
 import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
-import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ExternalManagementRequestExecutor;
@@ -191,8 +190,6 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);
 
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-            RemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, commonPolicy.getSaslServerAuthentication(),
-                    commonPolicy.getSSLContext(), securityRealm, null, tmpDirPath);
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, context.getServiceRegistry(false));
             final String httpConnectorName;
             if (socketBindingServiceName != null || (secureSocketBindingServiceName == null)) {

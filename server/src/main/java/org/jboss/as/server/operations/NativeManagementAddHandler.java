@@ -34,7 +34,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseNativeInterfaceAddStepHandler;
 import org.jboss.as.controller.management.NativeInterfaceCommonPolicy;
 import org.jboss.as.network.SocketBinding;
-import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.logging.ServerLogger;
@@ -84,8 +83,6 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         }
 
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-        RemotingServices.installSecurityServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, saslServerAuthentication,
-                commonPolicy.getSSLContext(), securityRealm, null, tmpDirPath);
 
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,
