@@ -557,8 +557,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
         ServiceName keyManagerServiceName = null;
 
-        String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
-        if (ssl.hasDefined(KEYSTORE_PATH) || (JKS.equals(provider) == false)) {
+        final String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
+        if (ssl.hasDefined(KEYSTORE_PATH) || !JKS.equalsIgnoreCase(provider)) {
             keyManagerServiceName = AbstractKeyManagerService.ServiceUtil.createServiceName(SecurityRealm.ServiceUtil.createServiceName(realmName));
             addKeyManagerService(context, ssl, keyManagerServiceName, serviceTarget);
         }
@@ -674,11 +674,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         final ServiceBuilder<TrustManager[]> serviceBuilder;
         char[] keystorePassword = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl).asString()
                 .toCharArray();
-        String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
+        final String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
 
-        if (JKS.equals(provider) == false) {
-            ProviderTrustManagerService trustManagerService = new ProviderTrustManagerService(provider, keystorePassword);
-
+        if (!JKS.equalsIgnoreCase(provider)) {
+            final ProviderTrustManagerService trustManagerService = new ProviderTrustManagerService(provider, keystorePassword);
             serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
         } else {
             String path = KeystoreAttributes.KEYSTORE_PATH.resolveModelAttribute(context, ssl).asString();

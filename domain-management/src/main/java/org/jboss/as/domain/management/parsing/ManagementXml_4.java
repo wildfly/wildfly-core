@@ -1984,8 +1984,7 @@ class ManagementXml_4 extends ManagementXml {
                 SSLServerIdentityResourceDefinition.ENABLED_PROTOCOLS.marshallAsElement(ssl, writer);
             }
 
-            boolean hasProvider = ssl.hasDefined(KEYSTORE_PROVIDER)
-                    && (JKS.equals(ssl.require(KEYSTORE_PROVIDER).asString()) == false);
+            boolean hasProvider = ssl.hasDefined(KEYSTORE_PROVIDER) && !JKS.equalsIgnoreCase(ssl.require(KEYSTORE_PROVIDER).asString());
             if (hasProvider || ssl.hasDefined(KeystoreAttributes.KEYSTORE_PATH.getName())) {
                 writer.writeEmptyElement(Element.KEYSTORE.getLocalName());
                 KeystoreAttributes.KEYSTORE_PROVIDER.marshallAsAttribute(ssl, writer);
