@@ -21,7 +21,6 @@
  */
 package org.jboss.as.remoting;
 
-
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
