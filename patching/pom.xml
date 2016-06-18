@@ -162,7 +162,11 @@
             <artifactId>byteman-bmunit</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.codehaus.woodstox</groupId>
+            <artifactId>woodstox-core-asl</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>

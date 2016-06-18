@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -131,6 +132,14 @@ public class CustomCLIExecutor {
         }
         commandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigPath);
         commandBuilder.addCliArgument("--timeout="+CLI_PROC_TIMEOUT);
+
+        // propagate JVM args to the CLI
+        if (System.getProperty("cli.jvm.args") != null) {
+            StringTokenizer st = new StringTokenizer(System.getProperty("cli.jvm.args"), " ");
+            while (st.hasMoreTokens()) {
+                commandBuilder.addJavaOption(st.nextToken());
+            }
+        }
 
         // Note that this only allows for a single system property
         if (System.getProperty("cli.args") != null) {
