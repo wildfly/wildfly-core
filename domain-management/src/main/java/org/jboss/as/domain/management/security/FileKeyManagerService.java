@@ -21,15 +21,30 @@
  */
 package org.jboss.as.domain.management.security;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.Date;
+import java.util.TimeZone;
+
+import javax.security.auth.x500.X500Principal;
 
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManager.Callback;
 import org.jboss.as.controller.services.path.PathManager.Event;
 import org.jboss.as.controller.services.path.PathManager.PathEventContext;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
@@ -37,10 +52,13 @@ import org.jboss.msc.value.InjectedValue;
 /**
  * An extension to {@link AbstractKeyManagerService} so that a KeyManager[] can be provided based on a JKS file based key store.
  *
+ *
+ *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class FileKeyManagerService extends AbstractKeyManagerService {
 
+    public static final String SHA_256_WITH_RSA = "SHA256withRSA";
     private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
 
     private volatile String provider;
@@ -49,11 +67,11 @@ class FileKeyManagerService extends AbstractKeyManagerService {
     private volatile char[] keystorePassword;
     private volatile char[] keyPassword;
     private volatile String alias;
-
     private volatile FileKeystore keyStore;
+    private String autoGenerateCertHostName;
 
     FileKeyManagerService(final String provider, final String path, final String relativeTo, final char[] keystorePassword,
-                          final char[] keyPassword, final String alias) {
+                          final char[] keyPassword, final String alias, String autoGenerateCertHostName) {
         super(keystorePassword, keyPassword);
 
         this.provider = provider;
@@ -62,6 +80,7 @@ class FileKeyManagerService extends AbstractKeyManagerService {
         this.keystorePassword = keystorePassword;
         this.keyPassword = keyPassword;
         this.alias = alias;
+        this.autoGenerateCertHostName = autoGenerateCertHostName;
     }
 
     public String getProvider() {
@@ -117,45 +136,130 @@ class FileKeyManagerService extends AbstractKeyManagerService {
      */
 
     @Override
-    public void start(StartContext context) throws StartException {
-        // Do our initialisation first as the parent implementation will
-        // expect that to be complete.
-        String file = path;
-        if (relativeTo != null) {
-            PathManager pm = pathManager.getValue();
-
-            file = pm.resolveRelativePathEntry(file, relativeTo);
-            pm.registerCallback(relativeTo, new Callback() {
-
-                @Override
-                public void pathModelEvent(PathEventContext eventContext, String name) {
-                    if (eventContext.isResourceServiceRestartAllowed() == false) {
-                        eventContext.reloadRequired();
-                    }
-                }
-
-                @Override
-                public void pathEvent(Event event, PathEntry pathEntry) {
-                    // Service dependencies should trigger a stop and start.
-                }
-            }, Event.REMOVED, Event.UPDATED);
-        }
-
-        keyStore = FileKeystore.newKeyStore(provider, file, keystorePassword, keyPassword, alias);
-        keyStore.load();
-
-        super.start(context);
-    }
-
-    @Override
     public void stop(StopContext context) {
         super.stop(context);
         keyStore = null;
     }
 
     @Override
-    protected KeyStore loadKeyStore() {
-        return keyStore.getKeyStore();
+    protected boolean isLazy() {
+        return keyStore == null;
+    }
+
+    @Override
+    protected KeyStore loadKeyStore(boolean startup) {
+        try {
+            if (keyStore != null) {
+                if (keyStore.isModified()) {
+                    keyStore.load();
+                }
+                return keyStore.getKeyStore();
+            }
+            String file = path;
+            if (relativeTo != null) {
+                PathManager pm = pathManager.getValue();
+
+                file = pm.resolveRelativePathEntry(file, relativeTo);
+                pm.registerCallback(relativeTo, new Callback() {
+
+                    @Override
+                    public void pathModelEvent(PathEventContext eventContext, String name) {
+                        if (!eventContext.isResourceServiceRestartAllowed()) {
+                            eventContext.reloadRequired();
+                        }
+                    }
+
+                    @Override
+                    public void pathEvent(Event event, PathEntry pathEntry) {
+                        // Service dependencies should trigger a stop and start.
+                    }
+                }, Event.REMOVED, Event.UPDATED);
+            }
+            File path = new File(file);
+            if (!path.exists() && autoGenerateCertHostName != null) {
+                if(startup) {
+                    DomainManagementLogger.SECURITY_LOGGER.keystoreWillBeCreated(file, autoGenerateCertHostName);
+                    return null;
+                } else {
+                    generateFileKeyStore(path);
+                }
+            }
+
+            keyStore = FileKeystore.newKeyStore(provider, file, keystorePassword, keyPassword, alias);
+            keyStore.load();
+
+            return keyStore.getKeyStore();
+        } catch (StartException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private void generateFileKeyStore(File path) {
+        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            keyGen.initialize(2048, new SecureRandom());
+            KeyPair pair = keyGen.generateKeyPair();
+            X509Certificate cert = generateCertificate(pair);
+
+
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null, keystorePassword);
+
+            //Generate self signed certificate
+            X509Certificate[] chain = new X509Certificate[1];
+            chain[0] = cert;
+            keyStore.setKeyEntry(alias, pair.getPrivate(), keyPassword, chain);
+            try (FileOutputStream stream = new FileOutputStream(path)) {
+                keyStore.store(stream, keystorePassword);
+            }
+            DomainManagementLogger.SECURITY_LOGGER.keystoreHasBeenCreated(path.toString(), getSha1Fingerprint(cert, "SHA-1"), getSha1Fingerprint(cert, "SHA-256"));
+
+        } catch (Exception e) {
+            throw DomainManagementLogger.SECURITY_LOGGER.failedToGenerateSelfSignedCertificate(e);
+        }
+    }
+
+    X509Certificate generateCertificate(KeyPair pair) throws Exception {
+        PrivateKey privkey = pair.getPrivate();
+        X509CertificateBuilder builder = new X509CertificateBuilder();
+        Date from = new Date();
+        Date to = new Date(from.getTime() + (1000L * 60L * 60L * 24L * 365L * 10L));
+        BigInteger sn = new BigInteger(64, new SecureRandom());
+
+        builder.setNotValidAfter(ZonedDateTime.ofInstant(Instant.ofEpochMilli(to.getTime()), TimeZone.getDefault().toZoneId()));
+        builder.setNotValidBefore(ZonedDateTime.ofInstant(Instant.ofEpochMilli(from.getTime()), TimeZone.getDefault().toZoneId()));
+        builder.setSerialNumber(sn);
+        X500Principal owner = new X500Principal("CN=" + autoGenerateCertHostName);
+        builder.setSubjectDn(owner);
+        builder.setIssuerDn(owner);
+        builder.setPublicKey(pair.getPublic());
+        builder.setVersion(3);
+        builder.setSignatureAlgorithmName(SHA_256_WITH_RSA);
+        builder.setSigningKey(privkey);
+        return builder.build();
+    }
+
+    private static String getSha1Fingerprint(X509Certificate cert, String algo) throws Exception {
+        MessageDigest md = MessageDigest.getInstance(algo);
+        byte[] der = cert.getEncoded();
+        md.update(der);
+        byte[] digest = md.digest();
+        return hexify(digest);
+
+    }
+
+    private static String hexify (byte[] bytes) {
+        char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7',
+                '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        StringBuffer buf = new StringBuffer(bytes.length * 2);
+        for (int i = 0; i < bytes.length; ++i) {
+            if(i > 0) {
+                buf.append(":");
+            }
+            buf.append(hexDigits[(bytes[i] & 0xf0) >> 4]);
+            buf.append(hexDigits[bytes[i] & 0x0f]);
+        }
+        return buf.toString();
     }
 
     public Injector<PathManager> getPathManagerInjector() {
