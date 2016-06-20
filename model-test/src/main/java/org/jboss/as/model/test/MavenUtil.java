@@ -22,7 +22,6 @@
 package org.jboss.as.model.test;
 
 import java.io.File;
-import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
@@ -78,13 +77,13 @@ import org.eclipse.aether.util.graph.visitor.PreorderNodeListGenerator;
 import org.eclipse.aether.util.version.GenericVersionScheme;
 import org.eclipse.aether.version.InvalidVersionSpecificationException;
 import org.eclipse.aether.version.VersionScheme;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author Tomaz Cerar
  */
 class MavenUtil {
-
-    private static final String AETHER_API_NAME = File.separatorChar == '/' ? "/org/eclipse/aether/aether-api/" : "\\org\\eclipse\\aether\\aether-api\\";
 
     private final RepositorySystem REPOSITORY_SYSTEM;
     private final List<RemoteRepository> remoteRepositories;
@@ -94,7 +93,9 @@ class MavenUtil {
     private static final String PROXY_HOST = "proxyHost";
     private static final String PROXY_PORT = "proxyPort";
 
-    private static String mavenRepository;
+    private static MavenSettings mavenSettings = MavenSettings.getSettings();
+    private DefaultRepositorySystemSession session;
+    private static final Logger log = Logger.getLogger("maven.downloader");
 
     private MavenUtil(RepositorySystem repositorySystem, List<RemoteRepository> remoteRepositories) {
         this.REPOSITORY_SYSTEM = repositorySystem;
@@ -102,6 +103,7 @@ class MavenUtil {
     }
 
     static MavenUtil create(boolean useEapRepository) {
+
         return new MavenUtil(newRepositorySystem(), createRemoteRepositories(useEapRepository));
     }
 
@@ -142,7 +144,6 @@ class MavenUtil {
 
 
         File file = artifactResult.getArtifact().getFile().getAbsoluteFile();
-        System.out.println(file);
         return file.toURI().toURL();
     }
 
@@ -167,7 +168,6 @@ class MavenUtil {
         }
 
         RepositorySystemSession session = newRepositorySystemSession();
-        //TODO add more remote repositories - especially the JBoss one
 
         ArtifactRequest artifactRequest = new ArtifactRequest();
         artifactRequest.setArtifact(artifact);
@@ -182,7 +182,7 @@ class MavenUtil {
             throw new RuntimeException(e);
         }
 
-        List<URL> urls = new ArrayList<URL>();
+        List<URL> urls = new ArrayList<>();
         urls.add(artifactToUrl(artifactResult.getArtifact()));
 
         CollectRequest collectRequest = new CollectRequest();
@@ -203,9 +203,9 @@ class MavenUtil {
             urls.add(artifactToUrl(cur));
         }
 
-        System.out.println("--------------------");
-        System.out.println(nlg.getClassPath());
-        System.out.println("--------------------");
+        log.debug("--------------------");
+        log.debug(nlg.getClassPath());
+        log.debug("--------------------");
 
         return urls;
     }
@@ -239,10 +239,10 @@ class MavenUtil {
         }
 
         String remoteReposFromSysProp = System.getProperty(ChildFirstClassLoaderBuilder.MAVEN_REPOSITORY_URLS);
-        List<RemoteRepository> remoteRepositories = new ArrayList<RemoteRepository>();
+        List<RemoteRepository> remoteRepositories = new ArrayList<>();
         if (remoteReposFromSysProp == null || remoteReposFromSysProp.trim().length() == 0 || remoteReposFromSysProp.startsWith("${")) {
             if (useEapRepository) {
-                RemoteRepository.Builder repository = new RemoteRepository.Builder("product-repository", "default", "https://maven.repository.redhat.com/nexus/content/groups/product-techpreview/");
+                RemoteRepository.Builder repository = new RemoteRepository.Builder("product-repository", "default", "https://maven.repository.redhat.com/ga/");
                 if (httpsProxy != null) {
                     repository.setProxy(httpsProxy);
                 }
@@ -254,6 +254,20 @@ class MavenUtil {
                 repository.setProxy(httpProxy);
             }
             remoteRepositories.add(repository.build());
+            //add repos from users settings.xml
+            List<String> remoteRepositories1 = mavenSettings.getRemoteRepositories();
+            for (int i = 0; i < remoteRepositories1.size(); i++) {
+                String repo = remoteRepositories1.get(i);
+                RemoteRepository.Builder myRepo = new RemoteRepository.Builder("repo-" +i, "default", repo);
+                if (httpProxy != null && repo.startsWith("http")) {
+                    myRepo.setProxy(httpProxy);
+                }
+                if (httpsProxy != null && repo.startsWith("https")) {
+                    myRepo.setProxy(httpsProxy);
+                }
+                remoteRepositories.add(myRepo.build());
+            }
+
         } else {
             int i = 0;
             for (String repoUrl : remoteReposFromSysProp.split(",")) {
@@ -274,36 +288,33 @@ class MavenUtil {
     }
 
     private RepositorySystemSession newRepositorySystemSession() {
+        if (this.session != null){
+            return this.session;
+        }
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
-        //TODO make local repo more pluggable?
-        LocalRepository localRepo = new LocalRepository(determineLocalMavenRepositoryHack());
+
+        LocalRepository localRepo = new LocalRepository(mavenSettings.getLocalRepository().toString());
         session.setLocalRepositoryManager(REPOSITORY_SYSTEM.newLocalRepositoryManager(session, localRepo));
 
         //Copy these from the aether demo if they are nice to have
         session.setTransferListener(new ConsoleTransferListener());
         session.setRepositoryListener(new ConsoleRepositoryListener());
-
+        session.setTransferListener(new AbstractTransferListener() {
+            @Override
+            public void transferFailed(TransferEvent event) {
+                super.transferFailed(event);
+            }
+        });
+        this.session = session;
         return session;
-    }
-
-    private static String determineLocalMavenRepositoryHack() {
-        //TODO Uuuugly :-)
-        if (mavenRepository == null) {
-            String classPath = System.getProperty("java.class.path");
-            int end = classPath.indexOf(AETHER_API_NAME) + 1;
-            int start = classPath.lastIndexOf(File.pathSeparatorChar, end) + 1;
-            String localRepositoryRoot = classPath.substring(start, end);
-            mavenRepository = localRepositoryRoot;
-        }
-        return mavenRepository;
     }
 
     private static URL artifactToUrl(Artifact artifact) throws MalformedURLException {
         return artifact.getFile().toURI().toURL();
     }
 
-    public static RepositorySystem newRepositorySystem() {
+    static RepositorySystem newRepositorySystem() {
             /*
              * Aether's components implement
              * org.sonatype.aether.spi.locator.Service to ease manual wiring and
@@ -324,118 +335,108 @@ class MavenUtil {
         //locator.addService(TransporterFactory.class, WagonTransporterFactory.class);
         locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
 
+
         return locator.getService(RepositorySystem.class);
     }
 
-    protected static class MyErrorHandler extends DefaultServiceLocator.ErrorHandler {
+    static class MyErrorHandler extends DefaultServiceLocator.ErrorHandler {
         @Override
         public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
-            System.out.println("Could not create type: " + type + " impl: " + impl);
-            exception.printStackTrace();
+            log.error("Could not create type: " + type + " impl: " + impl, exception);
         }
     }
 
     private static class ConsoleRepositoryListener extends AbstractRepositoryListener {
 
-        private PrintStream out;
-
-        public ConsoleRepositoryListener() {
-            this(null);
+        ConsoleRepositoryListener() {
         }
 
-        public ConsoleRepositoryListener(PrintStream out) {
-            this.out = (out != null) ? out : System.out;
-        }
 
         public void artifactDeployed(RepositoryEvent event) {
-            out.println("Deployed " + event.getArtifact() + " to " + event.getRepository());
+            log.debug("Deployed " + event.getArtifact() + " to " + event.getRepository());
         }
 
         public void artifactDeploying(RepositoryEvent event) {
-            out.println("Deploying " + event.getArtifact() + " to " + event.getRepository());
+            log.debug("Deploying " + event.getArtifact() + " to " + event.getRepository());
         }
 
         public void artifactDescriptorInvalid(RepositoryEvent event) {
-            out.println("Invalid artifact descriptor for " + event.getArtifact() + ": " + event.getException().getMessage());
+            log.debug("Invalid artifact descriptor for " + event.getArtifact() + ": " ,event.getException());
         }
 
         public void artifactDescriptorMissing(RepositoryEvent event) {
-            out.println("Missing artifact descriptor for " + event.getArtifact());
+            log.debug("Missing artifact descriptor for " + event.getArtifact());
         }
 
         public void artifactInstalled(RepositoryEvent event) {
-            out.println("Installed " + event.getArtifact() + " to " + event.getFile());
+            log.debug("Installed " + event.getArtifact() + " to " + event.getFile());
         }
 
         public void artifactInstalling(RepositoryEvent event) {
-            out.println("Installing " + event.getArtifact() + " to " + event.getFile());
+            log.debug("Installing " + event.getArtifact() + " to " + event.getFile());
         }
 
         public void artifactResolved(RepositoryEvent event) {
-            out.println("Resolved artifact " + event.getArtifact() + " from " + event.getRepository());
+            log.debug("Resolved artifact " + event.getArtifact() + " from " + event.getRepository());
         }
 
         public void artifactDownloading(RepositoryEvent event) {
-            out.println("Downloading artifact " + event.getArtifact() + " from " + event.getRepository());
+            log.debug("Downloading artifact " + event.getArtifact() + " from " + event.getRepository());
         }
 
         public void artifactDownloaded(RepositoryEvent event) {
-            out.println("Downloaded artifact " + event.getArtifact() + " from " + event.getRepository());
+            log.debug("Downloaded artifact " + event.getArtifact() + " from " + event.getRepository());
         }
 
         public void artifactResolving(RepositoryEvent event) {
-            out.println("Resolving artifact " + event.getArtifact());
+            log.debug("Resolving artifact " + event.getArtifact());
         }
 
         public void metadataDeployed(RepositoryEvent event) {
-            out.println("Deployed " + event.getMetadata() + " to " + event.getRepository());
+            log.debug("Deployed " + event.getMetadata() + " to " + event.getRepository());
         }
 
         public void metadataDeploying(RepositoryEvent event) {
-            out.println("Deploying " + event.getMetadata() + " to " + event.getRepository());
+            log.debug("Deploying " + event.getMetadata() + " to " + event.getRepository());
         }
 
         public void metadataInstalled(RepositoryEvent event) {
-            out.println("Installed " + event.getMetadata() + " to " + event.getFile());
+            log.debug("Installed " + event.getMetadata() + " to " + event.getFile());
         }
 
         public void metadataInstalling(RepositoryEvent event) {
-            out.println("Installing " + event.getMetadata() + " to " + event.getFile());
+            log.debug("Installing " + event.getMetadata() + " to " + event.getFile());
         }
 
         public void metadataInvalid(RepositoryEvent event) {
-            out.println("Invalid metadata " + event.getMetadata());
+            log.debug("Invalid metadata " + event.getMetadata());
         }
 
         public void metadataResolved(RepositoryEvent event) {
-            out.println("Resolved metadata " + event.getMetadata() + " from " + event.getRepository());
+            log.debug("Resolved metadata " + event.getMetadata() + " from " + event.getRepository());
         }
 
         public void metadataResolving(RepositoryEvent event) {
-            out.println("Resolving metadata " + event.getMetadata() + " from " + event.getRepository());
+            log.debug("Resolving metadata " + event.getMetadata() + " from " + event.getRepository());
         }
 
     }
 
     private static class ConsoleTransferListener extends AbstractTransferListener {
 
-        private PrintStream out;
-        private Map<TransferResource, Long> downloads = new ConcurrentHashMap<TransferResource, Long>();
+        private Map<TransferResource, Long> downloads = new ConcurrentHashMap<>();
         private int lastLength;
 
-        public ConsoleTransferListener() {
-            this(null);
+        ConsoleTransferListener() {
+
         }
 
-        public ConsoleTransferListener(PrintStream out) {
-            this.out = (out != null) ? out : System.out;
-        }
 
         @Override
         public void transferInitiated(TransferEvent event) {
             String message = event.getRequestType() == TransferEvent.RequestType.PUT ? "Uploading" : "Downloading";
 
-            out.println(message + ": " + event.getResource().getRepositoryUrl() + event.getResource().getResourceName());
+            log.debug(message + ": " + event.getResource().getRepositoryUrl() + event.getResource().getResourceName());
         }
 
         @Override
@@ -456,8 +457,7 @@ class MavenUtil {
             lastLength = buffer.length();
             pad(buffer, pad);
             buffer.append('\r');
-
-            out.print(buffer);
+            log.trace(buffer);
         }
 
         private String getStatus(long complete, long total) {
@@ -499,7 +499,7 @@ class MavenUtil {
                     throughput = " at " + format.format(kbPerSec) + " KB/sec";
                 }
 
-                out.println(type + ": " + resource.getRepositoryUrl() + resource.getResourceName() + " (" + len + throughput
+                log.debug(type + ": " + resource.getRepositoryUrl() + resource.getResourceName() + " (" + len + throughput
                         + ")");
             }
         }
@@ -507,8 +507,8 @@ class MavenUtil {
         @Override
         public void transferFailed(TransferEvent event) {
             transferCompleted(event);
+            log.warn(event.getException());
 
-            event.getException().printStackTrace(out);
         }
 
         private void transferCompleted(TransferEvent event) {
@@ -517,14 +517,15 @@ class MavenUtil {
             StringBuilder buffer = new StringBuilder(64);
             pad(buffer, lastLength);
             buffer.append('\r');
-            out.print(buffer);
+            log.trace(buffer);
+
         }
 
         public void transferCorrupted(TransferEvent event) {
-            event.getException().printStackTrace(out);
+            log.debug(event.getException());
         }
 
-        protected long toKB(long bytes) {
+        long toKB(long bytes) {
             return (bytes + 1023) / 1024;
         }
 

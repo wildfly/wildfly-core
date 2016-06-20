@@ -28,9 +28,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
@@ -47,6 +48,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.StreamExporter;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -60,17 +62,19 @@ public class TransformerAttachmentAndInspectModelSubsystemTestCase extends Abstr
     public TransformerAttachmentAndInspectModelSubsystemTestCase() {
         super(NewExtension.SUBSYSTEM_NAME, new NewExtension());
     }
+    private static final Path LEGACY_ARCHIVE = Paths.get("target/legacy-archive.jar");
 
     @BeforeClass
-    public static void createLegacyJars() throws MalformedURLException {
+    public static void createLegacyJars() throws IOException {
         JavaArchive legacySubsystemArchive = ShrinkWrap.create(JavaArchive.class, "legacy-archive.jar");
         legacySubsystemArchive.addPackage(NewExtension.class.getPackage());
         StreamExporter exporter = legacySubsystemArchive.as(ZipExporter.class);
-        File file = new File("target/legacy-archive.jar");
-        if (file.exists()) {
-            file.delete();
-        }
-        exporter.exportTo(file);
+        Files.deleteIfExists(LEGACY_ARCHIVE);
+        exporter.exportTo(LEGACY_ARCHIVE.toFile());
+    }
+    @AfterClass
+    public static void clean() throws IOException {
+        Files.deleteIfExists(LEGACY_ARCHIVE);
     }
 
     @Override
@@ -142,6 +146,8 @@ public class TransformerAttachmentAndInspectModelSubsystemTestCase extends Abstr
         composite.get(STEPS).add(write5);
         transformAndExecuteInLegacyController(mainServices, oldVersion, composite);
         checkModels(mainServices.readWholeModel(), legacyServices.readWholeModel(), "Hello", "one", "A", "two", "B");
+        legacyServices.shutdown();
+        mainServices.shutdown();
     }
 
 

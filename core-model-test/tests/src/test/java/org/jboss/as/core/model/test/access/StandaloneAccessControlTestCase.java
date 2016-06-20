@@ -142,6 +142,7 @@ public class StandaloneAccessControlTestCase extends AbstractCoreModelTest {
                 kernelServices.executeOperation(
                         Util.getReadAttributeOperation(applicationAddress, ApplicationClassificationConfigResourceDefinition.CONFIGURED_APPLICATION.getName())));
         checkResultExists(result, new ModelNode());
+        kernelServices.shutdown();
 
     }
 

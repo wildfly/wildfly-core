@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
@@ -69,7 +70,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         //TODO initialize the path manager service like we do for subsystems?
 
         //Create the controller
-        ServiceContainer container = ServiceContainer.Factory.create("test" + counter.incrementAndGet());
+        ServiceContainer container = ServiceContainer.Factory.create("core-test" + counter.incrementAndGet());
         ServiceTarget target = container.subTarget();
 
         //Initialize the content repository
@@ -102,6 +103,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         }
 
         ModelTestModelControllerService svc = testModelControllerFactory.create(processType, runningModeControl, persister, validateOpsFilter, type, modelInitializer, extensionRegistry);
+
         ServiceBuilder<ModelController> builder = target.addService(Services.JBOSS_SERVER_CONTROLLER, svc);
         builder.addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, testModelControllerFactory.getContentRepositoryInjector(svc));
         builder.install();
@@ -146,7 +148,8 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         @Override
         public ModelTestModelControllerService create(ProcessType processType, RunningModeControl runningModeControl,
                 StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter, TestModelType type, ModelInitializer modelInitializer, ExtensionRegistry extensionRegistry) {
-            return TestModelControllerService.create(processType, runningModeControl, persister, validateOpsFilter, type, modelInitializer, extensionRegistry);
+            CapabilityRegistry cr = new CapabilityRegistry(processType.isServer());
+            return TestModelControllerService.create(processType, runningModeControl, persister, validateOpsFilter, type, modelInitializer, extensionRegistry, cr);
         }
 
         @Override

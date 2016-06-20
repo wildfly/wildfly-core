@@ -26,9 +26,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -253,6 +255,13 @@ public abstract class ModelTestLegacyControllerKernelServicesProxy {
         } catch (Exception e) {
             unwrapInvocationTargetRuntimeException(e);
             throw new RuntimeException(e);
+        }
+        if (childFirstClassLoader instanceof URLClassLoader){
+            try {
+                ((URLClassLoader)childFirstClassLoader).close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

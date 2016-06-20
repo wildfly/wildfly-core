@@ -21,33 +21,22 @@
 */
 package org.jboss.as.core.model.test.paths;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
-
 import java.util.List;
 
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.KernelServicesBuilder;
-import org.jboss.as.core.model.test.LegacyKernelServicesInitializer;
 import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.core.model.test.TransformersTestParameterized;
 import org.jboss.as.core.model.test.TransformersTestParameterized.TransformersParameter;
-import org.jboss.as.core.model.test.util.StandardServerGroupInitializers;
 import org.jboss.as.core.model.test.util.TransformersTestParameter;
-import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
-import org.jboss.as.model.test.ModelTestUtils;
-import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 @RunWith(TransformersTestParameterized.class)
@@ -61,7 +50,7 @@ public class PathsTransformersTestCase extends AbstractCoreModelTest {
     }
 
     @TransformersParameter
-    public static List<TransformersTestParameter> parameters(){
+    public static List<TransformersTestParameter> parameters() {
         return TransformersTestParameter.setupVersions();
     }
 
@@ -80,24 +69,4 @@ public class PathsTransformersTestCase extends AbstractCoreModelTest {
         checkCoreModelTransformation(mainServices, modelVersion);
     }
 
-    @Test
-    public void testRejectTransformers71x() throws Exception {
-
-        if (modelVersion.getMajor() > 1 || modelVersion.getMinor() > 3) {
-            return;
-        }
-
-        KernelServicesBuilder builder = createKernelServicesBuilder(TestModelType.DOMAIN);
-
-        // Add legacy subsystems
-        LegacyKernelServicesInitializer legacyInitializer =
-                StandardServerGroupInitializers.addServerGroupInitializers(builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion));
-
-        KernelServices mainServices = builder.build();
-
-        List<ModelNode> ops = builder.parseXmlResource("domain-expressions.xml");
-        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, new FailedOperationTransformationConfig()
-                .addFailedAttribute(PathAddress.pathAddress(PathElement.pathElement(PATH)),
-                        new FailedOperationTransformationConfig.RejectExpressionsConfig(PathResourceDefinition.PATH)));
-    }
 }
