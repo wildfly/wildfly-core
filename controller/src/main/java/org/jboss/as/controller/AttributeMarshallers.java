@@ -19,42 +19,31 @@
 package org.jboss.as.controller;
 
 import java.util.List;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 
 /**
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
 public interface AttributeMarshallers {
 
-    static class PropertiesAttributeMarshaller extends AttributeMarshaller {
-        private final String wrapperElement;
-        private final String elementName;
-        private final boolean wrapElement;
 
-        public PropertiesAttributeMarshaller(String wrapperElement, String elementName, boolean wrapElement) {
+    abstract static class MapAttributeMarshaller extends AttributeMarshaller {
+        protected final String wrapperElement;
+        protected final String elementName;
+        protected final boolean wrapElement;
+
+        public MapAttributeMarshaller(String wrapperElement, String elementName, boolean wrapElement) {
             this.wrapperElement = wrapperElement;
             this.elementName = elementName == null ? ModelDescriptionConstants.PROPERTY : elementName;
             this.wrapElement = wrapElement;
         }
 
-        public PropertiesAttributeMarshaller(String wrapperElement, boolean wrapElement) {
-            this(wrapperElement, null, wrapElement);
-        }
-
-        public PropertiesAttributeMarshaller() {
-            this(null, null, true);
-        }
-
-        @Override
-        public boolean isMarshallable(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault) {
-            return resourceModel.isDefined() && resourceModel.hasDefined(attribute.getName());
-        }
 
         @Override
         public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
@@ -65,7 +54,7 @@ public interface AttributeMarshallers {
                 return;
             }
 
-            String wrapper =  wrapperElement == null ? attribute.getName() : wrapperElement;
+            String wrapper = wrapperElement == null ? attribute.getName() : wrapperElement;
             List<ModelNode> elementList = resourceModel.asList();
             if (elementList.isEmpty()) {
                 if (wrapElement) {
@@ -90,9 +79,7 @@ public interface AttributeMarshallers {
                 writer.writeStartElement(wrapper);
             }
             for (ModelNode property : elementList) {
-                writer.writeEmptyElement(elementName);
-                writer.writeAttribute(org.jboss.as.controller.parsing.Attribute.NAME.getLocalName(), property.asProperty().getName());
-                writer.writeAttribute(org.jboss.as.controller.parsing.Attribute.VALUE.getLocalName(), property.asProperty().getValue().asString());
+                marshallSingleElement(attribute, property, marshallDefault, writer);
             }
             if (wrapElement) {
                 writer.writeEndElement();
@@ -108,7 +95,85 @@ public interface AttributeMarshallers {
         public boolean isMarshallableAsElement() {
             return true;
         }
+
+        public abstract void marshallSingleElement(AttributeDefinition attribute, ModelNode property, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException;
+
     }
 
 
+    static class PropertiesAttributeMarshaller extends MapAttributeMarshaller {
+
+        public PropertiesAttributeMarshaller(String wrapperElement, String elementName, boolean wrapElement) {
+            super(wrapperElement, elementName, wrapElement);
+        }
+
+        public PropertiesAttributeMarshaller(String wrapperElement, boolean wrapElement) {
+            this(wrapperElement, null, wrapElement);
+        }
+
+        public PropertiesAttributeMarshaller() {
+            this(null, null, true);
+        }
+
+        @Override
+        public void marshallSingleElement(AttributeDefinition attribute, ModelNode property, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            writer.writeEmptyElement(elementName);
+            writer.writeAttribute(org.jboss.as.controller.parsing.Attribute.NAME.getLocalName(), property.asProperty().getName());
+            writer.writeAttribute(org.jboss.as.controller.parsing.Attribute.VALUE.getLocalName(), property.asProperty().getValue().asString());
+        }
+    }
+
+
+    static class ObjectMapAttributeMarshaller extends MapAttributeMarshaller {
+        protected final String keyAttributeName; //name of attribute to use for "key"
+
+        public ObjectMapAttributeMarshaller(String wrapperElement, String elementName, boolean wrapElement, String keyAttributeName) {
+            super(wrapperElement, elementName, wrapElement);
+            this.keyAttributeName = keyAttributeName == null ? "key" : keyAttributeName;
+        }
+
+        public ObjectMapAttributeMarshaller(String wrapperElement, String elementName, boolean wrapElement) {
+            this(wrapperElement, elementName, wrapElement, null);
+        }
+
+        public ObjectMapAttributeMarshaller(String wrapperElement, boolean wrapElement) {
+            this(wrapperElement, null, wrapElement);
+        }
+
+        public ObjectMapAttributeMarshaller(String keyAttributeName) {
+            this(null, null, true, keyAttributeName);
+        }
+
+        public ObjectMapAttributeMarshaller() {
+            this(null, null, true);
+        }
+
+        @Override
+        public void marshallSingleElement(AttributeDefinition attribute, ModelNode property, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            ObjectMapAttributeDefinition map = ((ObjectMapAttributeDefinition) attribute);
+            AttributeDefinition[] valueTypes = map.getValueType().getValueTypes();
+            writer.writeEmptyElement(elementName);
+            Property p = property.asProperty();
+            writer.writeAttribute(keyAttributeName, p.getName());
+            for (AttributeDefinition valueType : valueTypes) {
+                valueType.getAttributeMarshaller().marshall(valueType, p.getValue(), false, writer);
+            }
+        }
+    }
+
+    static AttributeMarshaller getObjectMapAttributeMarshaller(String keyElementName) {
+        return new ObjectMapAttributeMarshaller(null, null, true, keyElementName);
+    }
+
+    static AttributeMarshaller getObjectMapAttributeMarshaller(String elementName, String keyElementName, boolean wrapElement) {
+        return new ObjectMapAttributeMarshaller(null, elementName, wrapElement, keyElementName);
+    }
+
+    static AttributeMarshaller getObjectMapAttributeMarshaller(String elementName, boolean wrapElement) {
+        return new ObjectMapAttributeMarshaller(null, elementName, wrapElement, null);
+    }
+
+    static AttributeMarshaller getObjectMapAttributeMarshaller(String wrapperElementName, boolean wrapElement, String elementName, String keyElementName) {
+        return new ObjectMapAttributeMarshaller(wrapperElementName, elementName, wrapElement, keyElementName);
+    }
 }

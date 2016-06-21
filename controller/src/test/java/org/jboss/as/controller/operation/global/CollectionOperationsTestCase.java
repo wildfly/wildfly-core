@@ -66,6 +66,7 @@ public class CollectionOperationsTestCase extends AbstractControllerTestBase {
     private static final StringListAttributeDefinition WRONG_ATTRIBUTE_NAME = new StringListAttributeDefinition.Builder("attribute.with.wrong.name")
                 .setAllowNull(true)
                 .build();
+
     private static PathAddress TEST_ADDRESS = PathAddress.pathAddress("subsystem", "test");
 
     private static ModelNode runtimeListAttributeValue = new ModelNode();
