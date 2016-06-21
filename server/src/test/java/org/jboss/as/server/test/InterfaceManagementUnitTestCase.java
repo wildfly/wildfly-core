@@ -300,7 +300,8 @@ public class InterfaceManagementUnitTestCase {
             properties.put("jboss.home.dir", System.getProperty("basedir", ".") + File.separatorChar + "target");
 
             final String hostControllerName = "hostControllerName"; // Host Controller name may not be null when in a managed domain
-            environment = new ServerEnvironment(hostControllerName, properties, new HashMap<String, String>(), null, null, ServerEnvironment.LaunchType.DOMAIN, null, new ProductConfig(Module.getBootModuleLoader(), ".", properties));
+            environment = new ServerEnvironment(hostControllerName, properties, new HashMap<String, String>(), null, null,
+                    ServerEnvironment.LaunchType.DOMAIN, null, ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), ".", properties));
             extensionRegistry =
                     new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
 
