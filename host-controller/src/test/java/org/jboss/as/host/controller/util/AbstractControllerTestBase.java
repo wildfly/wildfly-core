@@ -448,7 +448,7 @@ public abstract class AbstractControllerTestBase {
             RunningMode initialRunningMode = RunningMode.NORMAL;
             boolean backupDomainFiles = false;
             boolean useCachedDc = false;
-            ProductConfig productConfig = new ProductConfig(null, "", props);
+            ProductConfig productConfig = ProductConfig.fromFilesystemSlot(null, "", props);
             return new HostControllerEnvironment(props, isRestart, modulePath, processControllerAddress, processControllerPort,
                     hostControllerAddress, hostControllerPort, defaultJVM, domainConfig, initialDomainConfig, hostConfig, initialHostConfig,
                     initialRunningMode, backupDomainFiles, useCachedDc, productConfig);

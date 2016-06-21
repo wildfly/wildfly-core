@@ -124,7 +124,7 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
     @Override
     public AsyncFuture<ServiceContainer> run(final List<ServiceActivator> runServices) {
         final Bootstrap bootstrap = Bootstrap.Factory.newInstance();
-        final ProductConfig productConfig = new ProductConfig(Module.getBootModuleLoader(), home, properties);
+        final ProductConfig productConfig = ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), home, properties);
         // Create server environment on the server, so that the system properties are getting initialized on the right side
         final ServerEnvironment providedEnvironment = new ServerEnvironment(hostControllerName, properties,
                 WildFlySecurityManager.getSystemEnvironmentPrivileged(), null, null, ServerEnvironment.LaunchType.DOMAIN,

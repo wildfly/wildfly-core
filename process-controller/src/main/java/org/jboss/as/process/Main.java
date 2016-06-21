@@ -301,7 +301,7 @@ public final class Main {
             return true;
         } else if (CommandLineConstants.VERSION.equals(arg) || CommandLineConstants.SHORT_VERSION.equals(arg)
                 || CommandLineConstants.OLD_VERSION.equals(arg) || CommandLineConstants.OLD_SHORT_VERSION.equals(arg)) {
-            System.out.println(new ProductConfig(Module.getBootModuleLoader(), jbossHome, null).getPrettyVersionString());
+            System.out.println(ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), jbossHome, null).getPrettyVersionString());
             return true;
         }
         return false;
