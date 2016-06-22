@@ -58,16 +58,16 @@ public class CliShutdownHook {
     }
 
     public static void add(Handler handler) {
-        synchronized(handlers) {
-            if (!shuttingDown) {
+        if (!shuttingDown) {
+            synchronized (handlers) {
                 handlers.add(handler);
             }
         }
     }
 
     public static void remove(Handler handler) {
-        synchronized(handlers) {
-            if (!shuttingDown) {
+        if (!shuttingDown) {
+            synchronized (handlers) {
                 handlers.remove(handler);
             }
         }
