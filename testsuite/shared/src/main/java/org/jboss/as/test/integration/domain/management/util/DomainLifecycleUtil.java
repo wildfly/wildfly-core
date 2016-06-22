@@ -61,8 +61,8 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
 import org.wildfly.core.launcher.DomainCommandBuilder;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 
 /**
  * Utility for controlling the lifecycle of a domain.
