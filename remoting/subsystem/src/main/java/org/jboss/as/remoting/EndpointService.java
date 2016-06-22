@@ -30,8 +30,8 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Endpoint;
+import org.jboss.remoting3.EndpointBuilder;
 import org.xnio.OptionMap;
 import org.xnio.XnioWorker;
 /**
@@ -42,7 +42,7 @@ import org.xnio.XnioWorker;
 public class EndpointService implements Service<Endpoint> {
 
     protected final String endpointName;
-    protected Endpoint endpoint;
+    protected volatile Endpoint endpoint;
     protected final OptionMap optionMap;
     private final InjectedValue<XnioWorker> worker = new InjectedValue<>();
 
@@ -59,29 +59,40 @@ public class EndpointService implements Service<Endpoint> {
     }
 
     /** {@inheritDoc} */
-    public synchronized void start(final StartContext context) throws StartException {
+    public void start(final StartContext context) throws StartException {
         final Endpoint endpoint;
-        endpoint = Endpoint.getCurrent();
+        final EndpointBuilder builder = Endpoint.builder();
+        builder.setEndpointName(endpointName);
+        builder.setXnioWorker(worker.getValue());
+        try {
+            endpoint = builder.build();
+        } catch (IOException e) {
+            throw RemotingLogger.ROOT_LOGGER.couldNotStart(e);
+        }
+        // TODO: this is not really how we want to do this though; we want to set a context-sensitive default
+        Endpoint.ENDPOINT_CONTEXT_MANAGER.setGlobalDefault(endpoint);
         // Reuse the options for the remote connection factory for now
         this.endpoint = endpoint;
     }
 
     /** {@inheritDoc} */
-    public synchronized void stop(final StopContext context) {
+    public void stop(final StopContext context) {
         context.asynchronous();
+        final Endpoint endpoint = this.endpoint;
+        this.endpoint = null;
         try {
             endpoint.closeAsync();
         } finally {
-            endpoint.addCloseHandler(new CloseHandler<Endpoint>() {
-                public void handleClose(final Endpoint closed, final IOException exception) {
-                    context.complete();
-                }
+            endpoint.addCloseHandler((closed, exception) -> {
+                context.complete();
+                // TODO fix this later
+                Endpoint.ENDPOINT_CONTEXT_MANAGER.setGlobalDefault(null);
             });
         }
     }
 
     /** {@inheritDoc} */
-    public synchronized Endpoint getValue() throws IllegalStateException {
+    public Endpoint getValue() throws IllegalStateException {
         final Endpoint endpoint = this.endpoint;
         if (endpoint == null) throw RemotingLogger.ROOT_LOGGER.endpointEmpty();
         return endpoint;
