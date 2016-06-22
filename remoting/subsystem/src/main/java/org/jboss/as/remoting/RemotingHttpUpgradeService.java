@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import io.undertow.server.ListenerRegistry;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
 import org.jboss.as.network.SocketBinding;
+import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -38,6 +39,12 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.UnknownURISchemeException;
 import org.jboss.remoting3.spi.ExternalConnectionProvider;
+import org.wildfly.security.auth.permission.LoginPermission;
+import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityRealm;
+import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
 import org.xnio.ChannelListener;
 import org.xnio.OptionMap;
 import org.xnio.StreamConnection;
@@ -117,7 +124,16 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
         try {
             final ExternalConnectionProvider provider = endpoint.getConnectionProviderInterface(Protocol.HTTP_REMOTING.toString(), ExternalConnectionProvider.class);
             // TODO Elytron Inject the sasl server factory.
-            final Consumer<StreamConnection> adaptor = provider.createConnectionAdaptor(resultingMap, null);
+            RemotingLogger.ROOT_LOGGER.warn("****** All authentication is ANONYMOUS for " + getClass().getName());
+            final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
+            domainBuilder.addRealm("default", SecurityRealm.EMPTY_REALM).build();
+            domainBuilder.setDefaultRealmName("default");
+            domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
+            final SaslAuthenticationFactory.Builder authBuilder = SaslAuthenticationFactory.builder();
+            authBuilder.setSecurityDomain(domainBuilder.build());
+            authBuilder.setFactory(new AnonymousServerFactory());
+            authBuilder.setMechanismConfigurationSelector(mechanismInformation -> MechanismConfiguration.EMPTY);
+            final Consumer<StreamConnection> adaptor = provider.createConnectionAdaptor(resultingMap, authBuilder.build());
 
             injectedRegistry.getValue().addProtocol(JBOSS_REMOTING, new ChannelListener<StreamConnection>() {
                 @Override

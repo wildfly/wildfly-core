@@ -110,6 +110,7 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
             SaslAuthenticationFactory factory = saslFactoryValue.getOptionalValue();
             if (factory == null) {
                 // TODO: Just authenticate anonymously
+                RemotingLogger.ROOT_LOGGER.warn("****** All authentication is ANONYMOUS for " + getClass().getName());
                 final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
                 domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
                 domainBuilder.addRealm("default", SecurityRealm.EMPTY_REALM).build();
