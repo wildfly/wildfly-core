@@ -38,7 +38,12 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.spi.NetworkServerProvider;
+import org.wildfly.security.auth.permission.LoginPermission;
+import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityRealm;
+import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 import org.xnio.StreamConnection;
@@ -101,7 +106,22 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
                 RemotingLogger.ROOT_LOGGER.tracef("Resulting OptionMap %s", resultingMap.toString());
             }
             // TODO Elytron Add SSL Support
-            streamServer = networkServerProvider.createServer(getSocketAddress(), resultingMap, saslAuthenticationFactory.getValue(), sslContext.getOptionalValue());
+            final InjectedValue<SaslAuthenticationFactory> saslFactoryValue = this.saslAuthenticationFactory;
+            SaslAuthenticationFactory factory = saslFactoryValue.getOptionalValue();
+            if (factory == null) {
+                // TODO: Just authenticate anonymously
+                final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
+                domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
+                domainBuilder.addRealm("default", SecurityRealm.EMPTY_REALM).build();
+                domainBuilder.setDefaultRealmName("default");
+                factory = SaslAuthenticationFactory
+                    .builder()
+                    .setFactory(new AnonymousServerFactory())
+                    .setMechanismConfigurationSelector(i -> MechanismConfiguration.EMPTY)
+                    .setSecurityDomain(domainBuilder.build())
+                    .build();
+            }
+            streamServer = networkServerProvider.createServer(getSocketAddress(), resultingMap, factory, sslContext.getOptionalValue());
             SocketBindingManager sbm = socketBindingManagerValue.getOptionalValue();
             if (sbm != null) {
                 managedBinding = registerSocketBinding(sbm);
