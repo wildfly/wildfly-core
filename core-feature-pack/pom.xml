@@ -103,6 +103,11 @@
 
         <dependency>
             <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-annotations</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
             <artifactId>jul-to-slf4j-stub</artifactId>
         </dependency>
 
@@ -351,6 +356,11 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-launcher</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.client</groupId>
+            <artifactId>wildfly-client-config</artifactId>
         </dependency>
 
         <dependency>
