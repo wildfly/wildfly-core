@@ -1228,12 +1228,11 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
             if (!notificationListenerOperationsMustSucceed) {
                 Assert.fail("Adding the notification listener must fail");
             }
-        } catch (RuntimeOperationsException e) {
+        } catch (IOException | RuntimeOperationsException e) {
             if (notificationListenerOperationsMustSucceed) {
                 Assert.fail("Unexpected exception when adding the notification listener");
             } else {
-                RuntimeException exception = e.getTargetException();
-                Assert.assertTrue(exception instanceof UnsupportedOperationException);
+                Assert.assertTrue(e.getCause() instanceof UnsupportedOperationException || e.getCause().getCause() instanceof UnsupportedOperationException);
             }
         }
 
