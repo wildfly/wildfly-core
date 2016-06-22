@@ -35,6 +35,7 @@
         <module name="javax.api"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.xnio"/>
+        <module name="org.wildfly.common"/>
         <module name="sun.jdk"/>
     </dependencies>
 </module>
