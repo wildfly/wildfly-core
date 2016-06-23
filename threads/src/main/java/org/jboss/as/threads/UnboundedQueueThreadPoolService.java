@@ -32,7 +32,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.threads.JBossThreadPoolExecutor;
+import org.jboss.threads.JBossThreadPoolExecutorReuseIdleThreads;
 
 /**
  * Service responsible for creating, starting and stopping a thread pool executor with an unbounded queue.
@@ -55,7 +55,7 @@ public class UnboundedQueueThreadPoolService implements Service<ManagedJBossThre
     public synchronized void start(final StartContext context) throws StartException {
         final TimeSpec keepAliveSpec = keepAlive;
         long keepAliveTime = keepAliveSpec == null ? Long.MAX_VALUE : keepAliveSpec.getUnit().toNanos(keepAliveSpec.getDuration());
-        final JBossThreadPoolExecutor jbossExecutor = new JBossThreadPoolExecutor(maxThreads, maxThreads, keepAliveTime, TimeUnit.NANOSECONDS, new LinkedBlockingQueue<Runnable>(), threadFactoryValue.getValue());
+        final JBossThreadPoolExecutorReuseIdleThreads jbossExecutor = new JBossThreadPoolExecutorReuseIdleThreads((int)(maxThreads/2), maxThreads, keepAliveTime, TimeUnit.NANOSECONDS, new LinkedBlockingQueue<Runnable>(), threadFactoryValue.getValue());
         executor = new ManagedJBossThreadPoolExecutorService(jbossExecutor);
     }
 
