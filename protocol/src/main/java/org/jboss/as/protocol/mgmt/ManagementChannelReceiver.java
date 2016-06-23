@@ -26,7 +26,6 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.logging.ProtocolLogger;
@@ -39,10 +38,10 @@ import org.jboss.remoting3.MessageOutputStream;
  *
  * @author Emanuel Muckenhuber
  */
-public abstract class ManagementChannelReceiver implements ManagementMessageHandler, Channel.Receiver {
+public final class ManagementChannelReceiver implements Channel.Receiver {
 
     /**
-     * Create a {@code ManagementChannelReceiver} which is delegating protocol messages to
+     * Create a {@code ManagementChannelReceiver} which delegates protocol messages to
      * a {@code ManagementMessageHandler}.
      *
      * @param handler the handler
@@ -50,15 +49,15 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
      */
     public static ManagementChannelReceiver createDelegating(final ManagementMessageHandler handler) {
         assert handler != null;
-        return new ManagementChannelReceiver() {
-            @Override
-            public void handleMessage(Channel channel, DataInput input, ManagementProtocolHeader header) throws IOException {
-                handler.handleMessage(channel, input, header);
-            }
-        };
+        return new ManagementChannelReceiver(handler);
     }
 
+    private final ManagementMessageHandler handler;
     private volatile long lastMessageTime;
+
+    private ManagementChannelReceiver(final ManagementMessageHandler handler) {
+        this.handler = handler;
+    }
 
     @Override
     public void handleMessage(final Channel channel, final MessageInputStream message) {
@@ -82,7 +81,7 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
                     handleChannelReset(channel);
                 } else {
                     // Handle a message
-                    handleMessage(channel, input, header);
+                    handler.handleMessage(channel, input, header);
                 }
             } finally {
                 try {
@@ -108,6 +107,9 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
         }
     }
 
+    /**
+     * @return the time of the most recent invocation of {@link #handleMessage(Channel, MessageInputStream)}
+     */
     public long getLastMessageTime() {
         return lastMessageTime;
     }
@@ -147,21 +149,6 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
      */
     protected void handleChannelReset(Channel channel) {
         //
-    }
-
-    @Override
-    public void shutdown() {
-        //
-    }
-
-    @Override
-    public void shutdownNow() {
-        //
-    }
-
-    @Override
-    public boolean awaitCompletion(long timeout, TimeUnit unit) throws InterruptedException {
-        return false;
     }
 
     /**
