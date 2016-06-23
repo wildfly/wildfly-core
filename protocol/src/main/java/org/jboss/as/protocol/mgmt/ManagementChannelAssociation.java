@@ -84,6 +84,16 @@ public interface ManagementChannelAssociation {
      */
     <T, A> AsyncFuture<T> executeRequest(final ActiveOperation<T, A> operation, final ManagementRequest<T, A> request) throws IOException;
 
+    /**
+     * Initialize a new {@link ActiveOperation}, for subsequent use with {@link #executeRequest(ActiveOperation, ManagementRequest)}.
+     *
+     * @param attachment the attachment
+     * @param callback the completion listener
+     * @param <T> the result type
+     * @param <A> the attachment type
+     * @return the created active operation
+     * @throws IOException
+     */
     <T, A> ActiveOperation<T, A> initializeOperation(A attachment, ActiveOperation.CompletedCallback<T> callback) throws IOException;
 
     /**
@@ -95,7 +105,7 @@ public interface ManagementChannelAssociation {
     Channel getChannel() throws IOException;
 
     /**
-     * Get the attachments.
+     * Get the attachments object that can be used to share state between users of this object.
      *
      * @return the attachments
      */
