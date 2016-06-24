@@ -151,7 +151,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             final Collection<CommandArgument> allArgs = candidatesProvider.getProperties(ctx, parsedCmd.getOperationName(), parsedCmd.getAddress());
             if (allArgs.isEmpty()) {
                 final CommandLineFormat format = parsedCmd.getFormat();
-                if(format != null && format.getPropertyListEnd() != null) {
+                if (format != null && format.getPropertyListEnd() != null && format.getPropertyListEnd().length() > 0) {
                     candidates.add(format.getPropertyListEnd());
                 }
                 return buffer.length();
@@ -235,7 +235,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                             }
                         }
                         final CommandLineFormat format = parsedCmd.getFormat();
-                        if(format != null && format.getPropertyListEnd() != null) {
+                        if (format != null && format.getPropertyListEnd() != null && format.getPropertyListEnd().length() > 0) {
                             candidates.add(format.getPropertyListEnd());
                         }
                         return buffer.length();
@@ -390,7 +390,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                     if (!parsedCmd.isLastPropertyNegated()) {
                         candidates.add("=" + Util.FALSE);
                     }
-                    if (format != null && format.getPropertyListEnd() != null) {
+                    if (format != null && format.getPropertyListEnd() != null && format.getPropertyListEnd().length() > 0) {
                         candidates.add(format.getPropertyListEnd());
                         if (!allPropertiesPresent) {
                             candidates.add(format.getPropertySeparator());
@@ -402,7 +402,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             if (candidates.isEmpty()) {
                 if (chunk == null && !parsedCmd.endsOnSeparator()) {
                     final CommandLineFormat format = parsedCmd.getFormat();
-                    if(format != null && format.getPropertyListEnd() != null) {
+                    if (format != null && format.getPropertyListEnd() != null && format.getPropertyListEnd().length() > 0) {
                         candidates.add(format.getPropertyListEnd());
                     }
                 }
