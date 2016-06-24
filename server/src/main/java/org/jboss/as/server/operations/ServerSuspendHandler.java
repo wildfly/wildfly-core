@@ -23,6 +23,9 @@
 package org.jboss.as.server.operations;
 
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -88,6 +91,10 @@ public class ServerSuspendHandler implements OperationStepHandler {
                 final ServiceRegistry registry = context.getServiceRegistry(false);
                 ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(SuspendController.SERVICE_NAME);
                 final SuspendController suspendController = suspendControllerServiceController.getValue();
+
+                final CountDownLatch latch = new CountDownLatch(1);
+                final AtomicBoolean cancelled = new AtomicBoolean();
+
                 OperationListener operationListener = new OperationListener() {
                     @Override
                     public void suspendStarted() {
@@ -97,24 +104,35 @@ public class ServerSuspendHandler implements OperationStepHandler {
                     @Override
                     public void complete() {
                         suspendController.removeListener(this);
-                        context.completeStep(new RollbackHandler(suspendController));
+                        latch.countDown();
                     }
 
                     @Override
                     public void cancelled() {
                         suspendController.removeListener(this);
-                        context.setRollbackOnly();
-                        context.completeStep(new RollbackHandler(suspendController));
+                        cancelled.set(true);
+                        latch.countDown();
                     }
 
                     @Override
                     public void timeout() {
                         suspendController.removeListener(this);
-                        context.completeStep(new RollbackHandler(suspendController));
+                        latch.countDown();
                     }
                 };
                 suspendController.addListener(operationListener);
                 suspendController.suspend(timeout > 0 ?  timeout * 1000 : timeout);
+                if(timeout != 0) {
+                    try {
+                        latch.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                if(cancelled.get()) {
+                    context.setRollbackOnly();
+                }
+                context.completeStep(new RollbackHandler(suspendController));
             }
         }, OperationContext.Stage.RUNTIME);
         context.completeStep(OperationContext.ResultHandler.NOOP_RESULT_HANDLER);
