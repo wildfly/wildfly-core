@@ -26,7 +26,6 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,7 +45,6 @@ import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.MessageOutputStream;
 import org.jboss.threads.AsyncFuture;
-import org.jboss.threads.AsyncFutureTask;
 import org.xnio.Cancellable;
 
 /**
@@ -55,16 +53,6 @@ import org.xnio.Cancellable;
  * @author Emanuel Muckenhuber
  */
 public abstract class AbstractMessageHandler implements ManagementMessageHandler, CloseHandler<Channel> {
-
-    // All active operations have to use the direct executor for now. At least we need to make sure
-    // completion/cancellation/cleanup are executed before further requests are handled.
-    private static final Executor directExecutor = new Executor() {
-
-        @Override
-        public void execute(final Runnable command) {
-            command.run();
-        }
-    };
 
     private static final ActiveOperation.CompletedCallback<?> NO_OP_CALLBACK = new ActiveOperation.CompletedCallback<Object>() {
 
@@ -128,7 +116,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      */
     public void handleChannelClosed(final Channel closed, final IOException e) {
         for(final ActiveOperationImpl<?, ?> activeOperation : activeRequests.values()) {
-            if (activeOperation.channel == closed) {
+            if (activeOperation.getChannel() == closed) {
                 // Only call cancel, to also interrupt still active threads
                 activeOperation.getResultHandler().cancel();
             }
@@ -564,151 +552,8 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
     private static void updateChannelRef(final ActiveOperation<?, ?> operation, Channel channel) {
         if (operation instanceof ActiveOperationImpl) {
             final ActiveOperationImpl<?, ?> a = (ActiveOperationImpl) operation;
-            if (a.channel == null) {
-                a.channel = channel;
-            }
+            a.updateChannelRef(channel);
         }
-    }
-
-    private static final List<Cancellable> CANCEL_REQUESTED = Collections.emptyList();
-
-    /** Standard ActiveOperation implementation */
-    private class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOperation<T, A> {
-
-        private final A attachment;
-        private final Integer operationId;
-        private List<Cancellable> cancellables;
-        private volatile Channel channel;
-
-        private final ResultHandler<T> completionHandler = new ResultHandler<T>() {
-            @Override
-            public boolean done(T result) {
-                try {
-                    return ActiveOperationImpl.this.setResult(result);
-                } finally {
-                    removeActiveOperation(operationId);
-                }
-            }
-
-            @Override
-            public boolean failed(Throwable t) {
-                try {
-                    boolean failed = ActiveOperationImpl.this.setFailed(t);
-                    if(failed) {
-                        ProtocolLogger.ROOT_LOGGER.debugf(t, "active-op (%d) failed %s", operationId, attachment);
-                    }
-                    return failed;
-                } finally {
-                    removeActiveOperation(operationId);
-                }
-            }
-
-            @Override
-            public void cancel() {
-                ProtocolLogger.CONNECTION_LOGGER.debugf("Operation (%d) cancelled", operationId);
-                ActiveOperationImpl.this.cancel();
-            }
-        };
-
-        private ActiveOperationImpl(final Integer operationId, final A attachment, final CompletedCallback<T> callback,
-                                    final AbstractMessageHandler handler) {
-            super(directExecutor);
-            this.operationId = operationId;
-            this.attachment = attachment;
-            addListener(new Listener<T, Object>() {
-                @Override
-                public void handleComplete(AsyncFuture<? extends T> asyncFuture, Object attachment) {
-                    try {
-                        callback.completed(asyncFuture.get());
-                    } catch (Exception e) {
-                        //
-                    }
-
-                }
-
-                @Override
-                public void handleFailed(AsyncFuture<? extends T> asyncFuture, Throwable cause, Object attachment) {
-                    if(cause instanceof Exception) {
-                        callback.failed((Exception) cause);
-                    } else {
-                        callback.failed(new RuntimeException(cause));
-                    }
-                }
-
-                @Override
-                public void handleCancelled(AsyncFuture<? extends T> asyncFuture, Object attachment) {
-                    removeActiveOperation(operationId);
-                    callback.cancelled();
-                    ProtocolLogger.ROOT_LOGGER.debugf("cancelled operation (%d) attachment: (%s) handler: %s.", getOperationId(), getAttachment(), handler);
-                }
-            }, null);
-        }
-
-        @Override
-        public Integer getOperationId() {
-            return operationId;
-        }
-
-        @Override
-        public ResultHandler<T> getResultHandler() {
-            return completionHandler;
-        }
-
-        @Override
-        public A getAttachment() {
-            return attachment;
-        }
-
-        @Override
-        public AsyncFuture<T> getResult() {
-            return this;
-        }
-
-        @Override
-        public void asyncCancel(boolean interruptionDesired) {
-            final List<Cancellable> cancellables;
-            synchronized (this) {
-                cancellables = this.cancellables;
-                if (cancellables == CANCEL_REQUESTED) {
-                    return;
-                }
-                this.cancellables = CANCEL_REQUESTED;
-                if(cancellables == null) {
-                    setCancelled();
-                    return;
-                }
-            }
-            for (Cancellable cancellable : cancellables) {
-                cancellable.cancel();
-            }
-            setCancelled();
-        }
-
-        @Override
-        public void addCancellable(final Cancellable cancellable) {
-            // Perhaps just use the IOFuture from XNIO...
-            synchronized (this) {
-                switch (getStatus()) {
-                    case CANCELLED:
-                        break;
-                    case WAITING:
-                        final List<Cancellable> cancellables = this.cancellables;
-                        if (cancellables == CANCEL_REQUESTED) {
-                            break;
-                        } else {
-                            ((cancellables == null) ? (this.cancellables = new ArrayList<Cancellable>()) : cancellables).add(cancellable);
-                        }
-                    default:
-                        return;
-                }
-            }
-            cancellable.cancel();
-        }
-
-        public boolean cancel() {
-            return super.cancel(true);
-        }
-
     }
 
     /** Standard {@code ManagementRequestContext} implementation. */
