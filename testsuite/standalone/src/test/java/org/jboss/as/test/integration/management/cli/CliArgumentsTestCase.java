@@ -50,7 +50,7 @@ public class CliArgumentsTestCase {
         final String result = cli.executeNonInteractive();
         assertNotNull(result);
         assertTrue(result, result.contains("JBOSS_HOME"));
-        assertTrue(result, result.contains("JBoss AS release"));
+        assertTrue(result, result.contains("Release"));
         assertTrue(result, result.contains("JAVA_HOME"));
         assertTrue(result, result.contains("java.version"));
         assertTrue(result, result.contains("java.vm.vendor"));
@@ -66,7 +66,7 @@ public class CliArgumentsTestCase {
         final String result = cli.executeNonInteractive();
         assertNotNull(result);
         assertTrue(result, result.contains("JBOSS_HOME"));
-        assertTrue(result, result.contains("JBoss AS release"));
+        assertTrue(result, result.contains("Release"));
         assertTrue(result, result.contains("JAVA_HOME"));
         assertTrue(result, result.contains("java.version"));
         assertTrue(result, result.contains("java.vm.vendor"));
@@ -89,7 +89,7 @@ public class CliArgumentsTestCase {
         final String result = cli.executeNonInteractive();
         assertNotNull(result);
         assertTrue(result, result.contains("JBOSS_HOME"));
-        assertTrue(result, result.contains("JBoss AS release"));
+        assertTrue(result, result.contains("Release"));
         assertTrue(result, result.contains("JAVA_HOME"));
         assertTrue(result, result.contains("java.version"));
         assertTrue(result, result.contains("java.vm.vendor"));
@@ -110,7 +110,7 @@ public class CliArgumentsTestCase {
 
         assertNotNull(result);
         assertTrue(result, result.contains("JBOSS_HOME"));
-        assertTrue(result, result.contains("JBoss AS release"));
+        assertTrue(result, result.contains("Release"));
         assertTrue(result, result.contains("JAVA_HOME"));
         assertTrue(result, result.contains("java.version"));
         assertTrue(result, result.contains("java.vm.vendor"));
