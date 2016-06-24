@@ -276,7 +276,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
         assert support != null;
         updateChannelRef(support, channel);
         final Integer requestId = this.requestID.incrementAndGet();
-        final ActiveRequest<T, A> ar = new ActiveRequest<T, A>(support, request, channel);
+        final ActiveRequest<T, A> ar = new ActiveRequest<T, A>(support, request);
         requests.put(requestId, ar);
         final ManagementRequestHeader header = new ManagementRequestHeader(ManagementProtocol.VERSION, requestId, support.getOperationId(), request.getOperationType());
         final ActiveOperation.ResultHandler<T> resultHandler = support.getResultHandler();
@@ -811,14 +811,12 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
 
     private static class ActiveRequest<T, A> {
 
-        private final Channel channel;
         private final ActiveOperation<T, A> context;
         private final ManagementResponseHandler<T, A> handler;
 
-        ActiveRequest(ActiveOperation<T, A> context, ManagementResponseHandler<T, A> handler, Channel channel) {
+        ActiveRequest(ActiveOperation<T, A> context, ManagementResponseHandler<T, A> handler) {
             this.context = context;
             this.handler = handler;
-            this.channel = channel;
         }
 
         protected void handleFailed(final ManagementResponseHeader header) {
