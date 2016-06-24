@@ -25,14 +25,20 @@ package org.jboss.as.protocol.mgmt;
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.logging.ProtocolLogger;
@@ -40,24 +46,153 @@ import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.MessageOutputStream;
 import org.jboss.threads.AsyncFuture;
+import org.jboss.threads.AsyncFutureTask;
 import org.xnio.Cancellable;
 
 /**
- * Utility class for request/response handling
+ * Base class for {@link ManagementMessageHandler} implementations.
  *
  * @author Emanuel Muckenhuber
  */
-public abstract class AbstractMessageHandler extends ActiveOperationSupport implements ManagementMessageHandler, CloseHandler<Channel> {
+public abstract class AbstractMessageHandler implements ManagementMessageHandler, CloseHandler<Channel> {
 
+    // All active operations have to use the direct executor for now. At least we need to make sure
+    // completion/cancellation/cleanup are executed before further requests are handled.
+    private static final Executor directExecutor = new Executor() {
+
+        @Override
+        public void execute(final Runnable command) {
+            command.run();
+        }
+    };
+
+    private static final ActiveOperation.CompletedCallback<?> NO_OP_CALLBACK = new ActiveOperation.CompletedCallback<Object>() {
+
+        @Override
+        public void completed(Object result) {
+            //
+        }
+
+        @Override
+        public void failed(Exception e) {
+            //
+        }
+
+        @Override
+        public void cancelled() {
+            //
+        }
+    };
+
+    static <T> ActiveOperation.CompletedCallback<T> getDefaultCallback() {
+        //noinspection unchecked
+        return (ActiveOperation.CompletedCallback<T>) NO_OP_CALLBACK;
+    }
+
+    static <T> ActiveOperation.CompletedCallback<T> getCheckedCallback(final ActiveOperation.CompletedCallback<T> callback) {
+        if(callback == null) {
+            return getDefaultCallback();
+        }
+        return callback;
+    }
+
+    private final ConcurrentMap<Integer, ActiveOperationImpl<?, ?>> activeRequests = new ConcurrentHashMap<> (16, 0.75f, Runtime.getRuntime().availableProcessors());
+    private final ManagementBatchIdManager operationIdManager = new ManagementBatchIdManager.DefaultManagementBatchIdManager();
+
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
     private final ExecutorService executorService;
     private final AtomicInteger requestID = new AtomicInteger();
+
     private final Map<Integer, ActiveRequest<?, ?>> requests = new ConcurrentHashMap<Integer, ActiveRequest<?, ?>>(16, 0.75f, Runtime.getRuntime().availableProcessors());
+
+    // mutable variables, have to be guarded by the lock
+    private int activeCount = 0;
+    private volatile boolean shutdown = false;
+
 
     protected AbstractMessageHandler(final ExecutorService executorService) {
         if(executorService == null) {
             throw ProtocolLogger.ROOT_LOGGER.nullExecutor();
         }
         this.executorService = executorService;
+    }
+
+    /**
+     * Receive a notification that the channel was closed.
+     *
+     * This is used for the {@link ManagementClientChannelStrategy.Establishing} since it might use multiple channels.
+     *
+     * @param closed the closed resource
+     * @param e the exception which occurred during close, if any
+     */
+    public void handleChannelClosed(final Channel closed, final IOException e) {
+        for(final ActiveOperationImpl<?, ?> activeOperation : activeRequests.values()) {
+            if (activeOperation.channel == closed) {
+                // Only call cancel, to also interrupt still active threads
+                activeOperation.getResultHandler().cancel();
+            }
+        }
+    }
+
+    /**
+     * Is shutdown.
+     *
+     * @return {@code true} if the shutdown method was called, {@code false} otherwise
+     */
+    protected boolean isShutdown() {
+        return shutdown;
+    }
+
+    /**
+     * Prevent new active operations get registered.
+     */
+    @Override
+    public void shutdown() {
+        lock.lock(); try {
+            shutdown = true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void shutdownNow() {
+        shutdown();
+        cancelAllActiveOperations();
+    }
+
+    /**
+     * Await the completion of all currently active operations.
+     *
+     * @param timeout the timeout
+     * @param unit the time unit
+     * @return {@code } false if the timeout was reached and there were still active operations
+     * @throws InterruptedException
+     */
+    @Override
+    public boolean awaitCompletion(long timeout, TimeUnit unit) throws InterruptedException {
+        long deadline = unit.toMillis(timeout) + System.currentTimeMillis();
+        lock.lock(); try {
+            assert shutdown;
+            while(activeCount != 0) {
+                long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0) {
+                    break;
+                }
+                condition.await(remaining, TimeUnit.MILLISECONDS);
+            }
+            boolean allComplete = activeCount == 0;
+            if (!allComplete) {
+                ProtocolLogger.ROOT_LOGGER.debugf("ActiveOperation(s) %s have not completed within %d %s", activeRequests.keySet(), timeout, unit);
+            }
+            return allComplete;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -98,6 +233,7 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
      * @param header the management protocol header
      * @throws IOException
      */
+    @Override
     public void handleMessage(final Channel channel, final DataInput input, final ManagementProtocolHeader header) throws IOException {
         final byte type = header.getType();
         if(type == ManagementProtocol.TYPE_RESPONSE) {
@@ -205,42 +341,132 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void shutdown() {
-        super.shutdown();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void shutdownNow() {
-        shutdown();
-        cancelAllActiveOperations();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean awaitCompletion(long timeout, TimeUnit unit) throws InterruptedException {
-        return super.awaitCompletion(timeout, unit);
-    }
-
     @Override
     public void handleClose(final Channel closed, final IOException exception) {
         handleChannelClosed(closed, exception);
     }
 
     /**
-     * {@inheritDoc}
+     * Register an active operation. The operation-id will be generated.
+     *
+     * @param attachment the shared attachment
+     * @return the active operation
      */
-    @Override
+    protected <T, A> ActiveOperation<T, A> registerActiveOperation(A attachment) {
+        final ActiveOperation.CompletedCallback<T> callback = getDefaultCallback();
+        return registerActiveOperation(attachment, callback);
+    }
+
+    /**
+     * Register an active operation. The operation-id will be generated.
+     *
+     * @param attachment the shared attachment
+     * @param callback the completed callback
+     * @return the active operation
+     */
+    protected <T, A> ActiveOperation<T, A> registerActiveOperation(A attachment, ActiveOperation.CompletedCallback<T> callback) {
+        return registerActiveOperation(null, attachment, callback);
+    }
+
+    /**
+     * Register an active operation with a specific operation id.
+     *
+     * @param id the operation id
+     * @param attachment the shared attachment
+     * @return the created active operation
+     *
+     * @throws java.lang.IllegalStateException if an operation with the same id is already registered
+     */
+    protected <T, A> ActiveOperation<T, A> registerActiveOperation(final Integer id, A attachment) {
+        final ActiveOperation.CompletedCallback<T> callback = getDefaultCallback();
+        return registerActiveOperation(id, attachment, callback);
+    }
+
+    /**
+     * Register an active operation with a specific operation id.
+     *
+     * @param id the operation id
+     * @param attachment the shared attachment
+     * @param callback the completed callback
+     * @return the created active operation
+     *
+     * @throws java.lang.IllegalStateException if an operation with the same id is already registered
+     */
+    protected <T, A> ActiveOperation<T, A> registerActiveOperation(final Integer id, A attachment, ActiveOperation.CompletedCallback<T> callback) {
+        lock.lock();
+        try {
+            // Check that we still allow registration
+            // TODO WFCORE-199 distinguish client uses from server uses and limit this check to server uses
+            // Using id==null may be one way to do this, but we need to consider ops that involve multiple requests
+            // TODO WFCORE-845 consider using an IllegalStateException for this
+            //assert ! shutdown;
+            final Integer operationId;
+            if(id == null) {
+                // If we did not get an operationId, create a new one
+                operationId = operationIdManager.createBatchId();
+            } else {
+                // Check that the operationId is not already taken
+                if(! operationIdManager.lockBatchId(id)) {
+                    throw ProtocolLogger.ROOT_LOGGER.operationIdAlreadyExists(id);
+                }
+                operationId = id;
+            }
+            final ActiveOperationImpl<T, A> request = new ActiveOperationImpl<T, A>(operationId, attachment, getCheckedCallback(callback), this);
+            final ActiveOperation<?, ?> existing =  activeRequests.putIfAbsent(operationId, request);
+            if(existing != null) {
+                throw ProtocolLogger.ROOT_LOGGER.operationIdAlreadyExists(operationId);
+            }
+            ProtocolLogger.ROOT_LOGGER.tracef("Registered active operation %d", operationId);
+            activeCount++; // condition.signalAll();
+            return request;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Get an active operation.
+     *
+     * @param header the request header
+     * @return the active operation, {@code null} if if there is no registered operation
+     */
+    protected <T, A> ActiveOperation<T, A> getActiveOperation(final ManagementRequestHeader header) {
+        return getActiveOperation(header.getBatchId());
+    }
+
+    /**
+     * Get the active operation.
+     *
+     * @param id the active operation id
+     * @return the active operation, {@code null} if if there is no registered operation
+     */
+    protected <T, A> ActiveOperation<T, A> getActiveOperation(final Integer id) {
+        //noinspection unchecked
+        return (ActiveOperation<T, A>) activeRequests.get(id);
+    }
+
+    /**
+     * Cancel all currently active operations.
+     *
+     * @return a list of cancelled operations
+     */
+    protected List<Integer> cancelAllActiveOperations() {
+        final List<Integer> operations = new ArrayList<Integer>();
+        for(final ActiveOperationImpl<?, ?> activeOperation : activeRequests.values()) {
+            activeOperation.asyncCancel(false);
+            operations.add(activeOperation.getOperationId());
+        }
+        return operations;
+    }
+
+    /**
+     * Remove an active operation.
+     *
+     * @param id the operation id
+     * @return the removed active operation, {@code null} if there was no registered operation
+     */
     protected <T, A> ActiveOperation<T, A> removeActiveOperation(Integer id) {
-        final ActiveOperation<T, A> removed = super.removeActiveOperation(id);
+        final ActiveOperation<T, A> removed = removeUnderLock(id);
         if(removed != null) {
             for(final Map.Entry<Integer, ActiveRequest<?, ?>> requestEntry : requests.entrySet()) {
                 final ActiveRequest<?, ?> request = requestEntry.getValue();
@@ -250,6 +476,22 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
             }
         }
         return removed;
+    }
+
+    private <T, A> ActiveOperation<T, A> removeUnderLock(final Integer id) {
+        lock.lock(); try {
+            final ActiveOperation<?, ?> removed = activeRequests.remove(id);
+            if(removed != null) {
+                ProtocolLogger.ROOT_LOGGER.tracef("Deregistered active operation %d", id);
+                activeCount--;
+                operationIdManager.freeBatchId(id);
+                condition.signalAll();
+            }
+            //noinspection unchecked
+            return (ActiveOperation<T, A>) removed;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -307,7 +549,7 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
      * @param header the protocol header
      * @return the fallback handler
      */
-    protected <T, A> ManagementRequestHandler<T, A> getFallbackHandler(final ManagementRequestHeader header) {
+    protected static <T, A> ManagementRequestHandler<T, A> getFallbackHandler(final ManagementRequestHeader header) {
         return new ManagementRequestHandler<T, A>() {
             @Override
             public void handleRequest(final DataInput input, ActiveOperation.ResultHandler<T> resultHandler, ManagementRequestContext<A> context) throws IOException {
@@ -317,6 +559,156 @@ public abstract class AbstractMessageHandler extends ActiveOperationSupport impl
                 }
             }
         };
+    }
+
+    private static void updateChannelRef(final ActiveOperation<?, ?> operation, Channel channel) {
+        if (operation instanceof ActiveOperationImpl) {
+            final ActiveOperationImpl<?, ?> a = (ActiveOperationImpl) operation;
+            if (a.channel == null) {
+                a.channel = channel;
+            }
+        }
+    }
+
+    private static final List<Cancellable> CANCEL_REQUESTED = Collections.emptyList();
+
+    /** Standard ActiveOperation implementation */
+    private class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOperation<T, A> {
+
+        private final A attachment;
+        private final Integer operationId;
+        private List<Cancellable> cancellables;
+        private volatile Channel channel;
+
+        private final ResultHandler<T> completionHandler = new ResultHandler<T>() {
+            @Override
+            public boolean done(T result) {
+                try {
+                    return ActiveOperationImpl.this.setResult(result);
+                } finally {
+                    removeActiveOperation(operationId);
+                }
+            }
+
+            @Override
+            public boolean failed(Throwable t) {
+                try {
+                    boolean failed = ActiveOperationImpl.this.setFailed(t);
+                    if(failed) {
+                        ProtocolLogger.ROOT_LOGGER.debugf(t, "active-op (%d) failed %s", operationId, attachment);
+                    }
+                    return failed;
+                } finally {
+                    removeActiveOperation(operationId);
+                }
+            }
+
+            @Override
+            public void cancel() {
+                ProtocolLogger.CONNECTION_LOGGER.debugf("Operation (%d) cancelled", operationId);
+                ActiveOperationImpl.this.cancel();
+            }
+        };
+
+        private ActiveOperationImpl(final Integer operationId, final A attachment, final CompletedCallback<T> callback,
+                                    final AbstractMessageHandler handler) {
+            super(directExecutor);
+            this.operationId = operationId;
+            this.attachment = attachment;
+            addListener(new Listener<T, Object>() {
+                @Override
+                public void handleComplete(AsyncFuture<? extends T> asyncFuture, Object attachment) {
+                    try {
+                        callback.completed(asyncFuture.get());
+                    } catch (Exception e) {
+                        //
+                    }
+
+                }
+
+                @Override
+                public void handleFailed(AsyncFuture<? extends T> asyncFuture, Throwable cause, Object attachment) {
+                    if(cause instanceof Exception) {
+                        callback.failed((Exception) cause);
+                    } else {
+                        callback.failed(new RuntimeException(cause));
+                    }
+                }
+
+                @Override
+                public void handleCancelled(AsyncFuture<? extends T> asyncFuture, Object attachment) {
+                    removeActiveOperation(operationId);
+                    callback.cancelled();
+                    ProtocolLogger.ROOT_LOGGER.debugf("cancelled operation (%d) attachment: (%s) handler: %s.", getOperationId(), getAttachment(), handler);
+                }
+            }, null);
+        }
+
+        @Override
+        public Integer getOperationId() {
+            return operationId;
+        }
+
+        @Override
+        public ResultHandler<T> getResultHandler() {
+            return completionHandler;
+        }
+
+        @Override
+        public A getAttachment() {
+            return attachment;
+        }
+
+        @Override
+        public AsyncFuture<T> getResult() {
+            return this;
+        }
+
+        @Override
+        public void asyncCancel(boolean interruptionDesired) {
+            final List<Cancellable> cancellables;
+            synchronized (this) {
+                cancellables = this.cancellables;
+                if (cancellables == CANCEL_REQUESTED) {
+                    return;
+                }
+                this.cancellables = CANCEL_REQUESTED;
+                if(cancellables == null) {
+                    setCancelled();
+                    return;
+                }
+            }
+            for (Cancellable cancellable : cancellables) {
+                cancellable.cancel();
+            }
+            setCancelled();
+        }
+
+        @Override
+        public void addCancellable(final Cancellable cancellable) {
+            // Perhaps just use the IOFuture from XNIO...
+            synchronized (this) {
+                switch (getStatus()) {
+                    case CANCELLED:
+                        break;
+                    case WAITING:
+                        final List<Cancellable> cancellables = this.cancellables;
+                        if (cancellables == CANCEL_REQUESTED) {
+                            break;
+                        } else {
+                            ((cancellables == null) ? (this.cancellables = new ArrayList<Cancellable>()) : cancellables).add(cancellable);
+                        }
+                    default:
+                        return;
+                }
+            }
+            cancellable.cancel();
+        }
+
+        public boolean cancel() {
+            return super.cancel(true);
+        }
+
     }
 
     /** Standard {@code ManagementRequestContext} implementation. */
