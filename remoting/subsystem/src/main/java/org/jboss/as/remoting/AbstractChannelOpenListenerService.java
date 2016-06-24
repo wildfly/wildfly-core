@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
+import org.jboss.as.protocol.mgmt.support.ManagementChannelShutdownHandle;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRequestTracker;
@@ -76,7 +76,7 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
 
     protected final String channelName;
     private final OptionMap optionMap;
-    private final Set<ManagementChannelInitialization.ManagementChannelShutdownHandle> handles = Collections.synchronizedSet(new HashSet<ManagementChannelInitialization.ManagementChannelShutdownHandle>());
+    private final Set<ManagementChannelShutdownHandle> handles = Collections.synchronizedSet(new HashSet<ManagementChannelShutdownHandle>());
 
     private volatile ManagementRequestTracker trackerService;
     private volatile boolean closed = true;
@@ -124,8 +124,8 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
         // Signal all mgmt services that we are shutting down
         trackerService.prepareShutdown();
         // Copy off the set to avoid ConcurrentModificationException
-        final Set<ManagementChannelInitialization.ManagementChannelShutdownHandle> handlesCopy = copyHandles();
-        for (final ManagementChannelInitialization.ManagementChannelShutdownHandle handle : handlesCopy) {
+        final Set<ManagementChannelShutdownHandle> handlesCopy = copyHandles();
+        for (final ManagementChannelShutdownHandle handle : handlesCopy) {
             handle.shutdown();
         }
         final Runnable shutdownTask = new Runnable() {
@@ -134,7 +134,7 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
                 final long end = System.currentTimeMillis() + CHANNEL_SHUTDOWN_TIMEOUT;
                 boolean interrupted = Thread.currentThread().isInterrupted();
                 try {
-                    for (final ManagementChannelInitialization.ManagementChannelShutdownHandle handle : handlesCopy) {
+                    for (final ManagementChannelShutdownHandle handle : handlesCopy) {
                         final long remaining = end - System.currentTimeMillis();
                         try {
                             if (!interrupted && !handle.awaitCompletion(remaining, TimeUnit.MILLISECONDS)) {
@@ -172,7 +172,7 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
             channel.closeAsync();
             return;
         }
-        final ManagementChannelInitialization.ManagementChannelShutdownHandle handle = handleChannelOpened(channel);
+        final ManagementChannelShutdownHandle handle = handleChannelOpened(channel);
         trackerService.registerTracker(handle);
         handles.add(handle);
         channel.addCloseHandler(new CloseHandler<Channel>() {
@@ -188,8 +188,8 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
     @Override
     public void registrationTerminated() {
         // Copy off the set to avoid ConcurrentModificationException
-        final Set<ManagementChannelInitialization.ManagementChannelShutdownHandle> copy = copyHandles();
-        for (final ManagementChannelInitialization.ManagementChannelShutdownHandle channel : copy) {
+        final Set<ManagementChannelShutdownHandle> copy = copyHandles();
+        for (final ManagementChannelShutdownHandle channel : copy) {
             channel.shutdownNow();
         }
     }
@@ -200,7 +200,7 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
      * @param channel the opened channel
      * @return the shutdown handle
      */
-    protected abstract ManagementChannelInitialization.ManagementChannelShutdownHandle handleChannelOpened(Channel channel);
+    protected abstract ManagementChannelShutdownHandle handleChannelOpened(Channel channel);
 
     /**
      * Execute the shutdown task.
@@ -209,10 +209,10 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
      */
     protected abstract void execute(Runnable runnable);
 
-    private Set<ManagementChannelInitialization.ManagementChannelShutdownHandle> copyHandles() {
+    private Set<ManagementChannelShutdownHandle> copyHandles() {
         // Must synchronize on Collections.synchronizedSet when iterating
         synchronized (handles) {
-            return new HashSet<ManagementChannelInitialization.ManagementChannelShutdownHandle>(handles);
+            return new HashSet<ManagementChannelShutdownHandle>(handles);
         }
     }
 

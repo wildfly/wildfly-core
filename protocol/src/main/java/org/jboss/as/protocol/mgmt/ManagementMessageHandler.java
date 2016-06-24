@@ -22,7 +22,7 @@
 
 package org.jboss.as.protocol.mgmt;
 
-import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
+import org.jboss.as.protocol.mgmt.support.ManagementChannelShutdownHandle;
 import org.jboss.remoting3.Channel;
 
 import java.io.DataInput;
@@ -31,7 +31,7 @@ import java.io.IOException;
 /**
  * @author Emanuel Muckenhuber
  */
-public interface ManagementMessageHandler extends ManagementChannelInitialization.ManagementChannelShutdownHandle {
+public interface ManagementMessageHandler extends ManagementChannelShutdownHandle {
 
     /**
      * Handle a message on the channel.

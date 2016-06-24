@@ -24,8 +24,6 @@ package org.jboss.as.protocol.mgmt.support;
 
 import org.jboss.remoting3.Channel;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * Initializes a {@link org.jboss.remoting3.Channel.Receiver} for receiving
  * messages over management channels.
@@ -41,39 +39,5 @@ public interface ManagementChannelInitialization {
      * @return a handle to the receiver that can be used to coordinate a controlled shutdown
      */
     ManagementChannelShutdownHandle startReceiving(Channel channel);
-
-    /**
-     * A handle to the initialized {@link org.jboss.remoting3.Channel.Receiver} which can be used to coordinate a controlled shutdown
-     * of a receiver that allows active operations to complete before shutting down.
-     *
-     * TODO this should be redone to use callbacks to signal when all operations are completed
-     */
-    interface ManagementChannelShutdownHandle {
-
-        /**
-         * Don't allow new operations, but still allow requests for existing ones.
-         *
-         * <p>This method does not wait for previously submitted operations to be
-         * completed. Use {@link #awaitCompletion awaitCompletion} to do that.
-         * </p>
-         */
-        void shutdown();
-
-        /**
-         * This will attempt to cancel all active operations, without waiting for their completion.
-         */
-        void shutdownNow();
-
-        /**
-         * Await the completion of all currently active operations.
-         *
-         * @param timeout the timeout
-         * @param unit the time unit
-         * @return {@code false} if the timeout was reached and there were still active operations
-         * @throws InterruptedException
-         */
-        boolean awaitCompletion(long timeout, TimeUnit unit) throws InterruptedException;
-
-    }
 
 }
