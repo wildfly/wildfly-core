@@ -225,7 +225,7 @@ public interface PatchTool {
         public static PatchTool createLocalTool(final File jbossHome, final List<File> moduleRoots, final List<File> bundleRoots) throws IOException {
             final File[] resolvedPath = resolveLayeredModulePath(moduleRoots); // Resolve the patched module root for the module loader
             final ModuleLoader loader = new LocalModuleLoader(resolvedPath);
-            final ProductConfig config = new ProductConfig(loader, jbossHome.getAbsolutePath(), Collections.emptyMap());
+            final ProductConfig config = ProductConfig.fromFilesystemSlot(loader, jbossHome.getAbsolutePath(), Collections.emptyMap());
             final InstallationManager manager = InstallationManager.load(jbossHome, moduleRoots, bundleRoots, config);
             return create(manager);
         }

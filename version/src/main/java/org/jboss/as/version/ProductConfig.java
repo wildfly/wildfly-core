@@ -49,21 +49,30 @@ public class ProductConfig implements Serializable {
     private final String consoleSlot;
     private boolean isProduct;
 
+    public static ProductConfig fromFilesystemSlot(ModuleLoader loader, String home, Map<?, ?> providedProperties) {
+        return new ProductConfig(loader, getProductConfProperties(home), providedProperties);
+    }
+
+    public static ProductConfig fromKnownSlot(String slot, ModuleLoader loader, Map<?, ?> providedProperties) {
+        return new ProductConfig(loader, new ProductConfProps(slot), providedProperties);
+    }
+
+    /** @deprecated use {@link #fromFilesystemSlot(ModuleLoader, String, Map)}. May be removed at any time. */
+    @Deprecated
     public ProductConfig(ModuleLoader loader, String home, Map<?, ?> providedProperties) {
+        this(loader, getProductConfProperties(home), providedProperties);
+    }
+
+    private ProductConfig(ModuleLoader loader, ProductConfProps productConfProps, Map<?, ?> providedProperties) {
         String productName = null;
         String projectName = null;
         String productVersion = null;
         String consoleSlot = null;
 
-        FileReader reader = null;
         try {
-            reader = new FileReader(getProductConf(home));
-            Properties props = new Properties();
-            props.load(reader);
 
-            String slot = (String) props.get("slot");
-            if (slot != null) {
-                Module module = loader.loadModule(ModuleIdentifier.create("org.jboss.as.product", slot));
+            if (productConfProps.productModuleId != null) {
+                Module module = loader.loadModule(productConfProps.productModuleId);
 
                 InputStream stream = module.getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF");
                 Manifest manifest = null;
@@ -79,11 +88,9 @@ public class ProductConfig implements Serializable {
                 }
             }
 
-            setSystemProperties(props, providedProperties);
+            setSystemProperties(productConfProps.miscProperties, providedProperties);
         } catch (Exception e) {
             // Don't care
-        } finally {
-            safeClose(reader);
         }
         isProduct = productName != null && !productName.isEmpty() && projectName == null;
         name = isProduct ? productName : projectName;
@@ -104,6 +111,20 @@ public class ProductConfig implements Serializable {
         };
 
         return System.getSecurityManager() == null ? action.run() : AccessController.doPrivileged(action);
+    }
+
+    private static ProductConfProps getProductConfProperties(String home) {
+        Properties props = new Properties();
+        FileReader reader = null;
+        try {
+            reader = new FileReader(getProductConf(home));
+            props.load(reader);
+        } catch (Exception e) {
+            // Don't care
+        } finally {
+            safeClose(reader);
+        }
+        return new ProductConfProps(props);
     }
 
     /** Solely for use in unit testing */
@@ -186,6 +207,28 @@ public class ProductConfig implements Serializable {
         if (c != null) try {
             c.close();
         } catch (Throwable ignored) {}
+    }
+
+    private static class ProductConfProps {
+        private final Properties miscProperties;
+        private final ModuleIdentifier productModuleId;
+
+        private ProductConfProps(String slot) {
+            this.productModuleId = slot == null ? null : ModuleIdentifier.create("org.jboss.as.product", slot);
+            this.miscProperties = new Properties();
+        }
+
+        private ProductConfProps(Properties properties) {
+            this(properties.getProperty("slot"));
+            if (productModuleId != null) {
+                properties.remove("slot");
+            }
+            if (!properties.isEmpty()) {
+                for (String key : properties.stringPropertyNames()) {
+                    this.miscProperties.setProperty(key, properties.getProperty(key));
+                }
+            }
+        }
     }
 
 }
