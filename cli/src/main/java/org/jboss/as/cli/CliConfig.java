@@ -177,12 +177,4 @@ public interface CliConfig {
      *          otherwise - false
      */
     boolean isAccessControl();
-
-    /**
-     * When enabled, in non interactive mode, the command name and arguments are displayed prior to any
-     * command output.
-     *
-     * @return true, the commands are echoed, false, commands are not echoed.
-     */
-    boolean isEchoCommand();
 }
