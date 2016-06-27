@@ -54,6 +54,7 @@ import org.jboss.as.controller.remote.ModelControllerClientOperationHandler;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.support.RemoteChannelPairSetup;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
+import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -93,7 +94,8 @@ public class ModelControllerClientTestCase {
             channels.setupRemoting(new ManagementChannelInitialization() {
                 @Override
                 public ManagementChannelHandler startReceiving(Channel channel) {
-                    final ManagementChannelHandler support = new ManagementChannelHandler(channel, channels.getExecutorService());
+                    final ManagementClientChannelStrategy strategy = ManagementClientChannelStrategy.create(channel);
+                    final ManagementChannelHandler support = new ManagementChannelHandler(strategy, channels.getExecutorService());
                     support.addHandlerFactory(new ModelControllerClientOperationHandler(controller, support, new ResponseAttachmentInputStreamSupport(), getClientRequestExecutor()));
                     channel.receiveMessage(support.getReceiver());
                     return support;

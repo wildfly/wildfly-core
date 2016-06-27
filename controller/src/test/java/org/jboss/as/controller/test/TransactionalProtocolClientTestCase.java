@@ -52,6 +52,7 @@ import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.controller.support.ChannelServer;
 import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
+import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
 import org.jboss.as.protocol.mgmt.ManagementRequestHandlerFactory;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
@@ -110,7 +111,8 @@ public class TransactionalProtocolClientTestCase {
             @Override
             public void channelOpened(final Channel channel) {
                 final MockController controller = new MockController();
-                final ManagementChannelHandler channels = new ManagementChannelHandler(channel, remoteExecutors);
+                final ManagementClientChannelStrategy strategy = ManagementClientChannelStrategy.create(channel);
+                final ManagementChannelHandler channels = new ManagementChannelHandler(strategy, remoteExecutors);
                 final ManagementRequestHandlerFactory handlerFactory =
                         new TransactionalProtocolOperationHandler(controller, channels, new ResponseAttachmentInputStreamSupport());
                 channels.addHandlerFactory(handlerFactory);
@@ -349,7 +351,8 @@ public class TransactionalProtocolClientTestCase {
      */
     TransactionalProtocolClient createClient(final Channel channel) {
         channels.add(channel);
-        final ManagementChannelHandler channelAssociation = new ManagementChannelHandler(channel, clientExecutor);
+        final ManagementClientChannelStrategy strategy = ManagementClientChannelStrategy.create(channel);
+        final ManagementChannelHandler channelAssociation = new ManagementChannelHandler(strategy, clientExecutor);
         final TransactionalProtocolClient client = TransactionalProtocolHandlers.createClient(channelAssociation);
         channel.addCloseHandler(channelAssociation);
         channel.receiveMessage(channelAssociation.getReceiver());

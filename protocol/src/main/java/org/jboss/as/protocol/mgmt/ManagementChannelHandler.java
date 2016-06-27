@@ -61,14 +61,6 @@ public final class ManagementChannelHandler extends AbstractMessageHandler imple
     private final ManagementClientChannelStrategy strategy;
     private final Attachments attachments = new Attachments();
 
-    public ManagementChannelHandler(final Channel channel, final ExecutorService executorService) {
-        this(ManagementClientChannelStrategy.create(channel), executorService);
-    }
-
-    public ManagementChannelHandler(final Channel channel, final ExecutorService executorService, final ManagementRequestHandlerFactory... initial) {
-        this(ManagementClientChannelStrategy.create(channel), executorService, initial);
-    }
-
     public ManagementChannelHandler(final ManagementClientChannelStrategy strategy, final ExecutorService executorService) {
         this(strategy, executorService, NO_HANDLERS);
     }
