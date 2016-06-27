@@ -38,6 +38,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OWNER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PERSISTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REDEPLOY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLED_BACK;
@@ -47,6 +48,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEPLOY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -55,6 +57,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -463,15 +466,15 @@ public class FileSystemDeploymentServiceUnitTestCase {
 //        sc.responses.add(sc.responses.get(0));
         TesteeSet ts = createTestee(sc);
 
-        // These should get cleaned in start
+        ts.testee.scan();
+
+        // These should get cleaned during initial scan
         Assert.assertFalse(f1.exists());
         Assert.assertFalse(f2.exists());
         Assert.assertTrue(f3.exists());
         Assert.assertTrue(f4.exists());
         Assert.assertTrue(ok.exists());
         Assert.assertTrue(nestedOK.exists());
-
-        ts.testee.scan();
 
         // failed deployments should not be cleaned on initial scan - will retry
         Assert.assertTrue(f5.exists());
@@ -1673,6 +1676,10 @@ public class FileSystemDeploymentServiceUnitTestCase {
         Assert.assertTrue(removed.exists());
         Assert.assertTrue(nestedRemoved.exists());
 
+        // WFCORE-1579: before tampering with deployments, at least one scan must proceed so that deployment directory
+        // content is established
+        ts.testee.scan();
+
         // Simulate the CLI or console undeploying 2 deployments and removing 2
         sc.deployed.remove("undeployed");
         sc.deployed.remove("nested-undeployed");
@@ -1769,8 +1776,6 @@ public class FileSystemDeploymentServiceUnitTestCase {
             targetClass = "FileSystemProvider",
             targetMethod = "newDirectoryStream",
             targetLocation = "AT ENTRY",
-            helper = "org.jboss.as.server.deployment.scanner.ListFileHelper",
-            condition = "shouldThrowIOException($1)",
             isOverriding = true,
             action = "throw new java.io.IOException(\"Thanks Byteman\")"
     )
@@ -1843,6 +1848,70 @@ public class FileSystemDeploymentServiceUnitTestCase {
                 PathElement.pathElement(DeploymentScannerExtension.SCANNERS_PATH.getKey(), "other"));
 
         testIgnoreExternalDeployment(new ExternalDeployment(externalScanner, false));
+    }
+
+    /**
+     * Checks that deployments are redeployed after reboot (as in {@link #testArchiveRedeployedAfterReboot()}),
+     * even if deployment dir is not available during scanner start.
+     */
+    @Test
+    public void testUnreadableDeploymentDirDuringStart() throws Exception {
+        if (!tmpDir.delete()) {
+            Assert.fail("Couldn't delete tmpDir");
+        }
+
+        // start scanner with non-readable deployment dir
+        TesteeSet ts = createTestee();
+        ts.controller.addCompositeSuccessResponse(1);
+
+        // create deployment dir with archive deployment and .DEPLOYED marker - this deployment should be redeployed
+        createFile("foo.war");
+        File dodeploy = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DO_DEPLOY);
+        File deployed = createFile("foo.war" + FileSystemDeploymentService.DEPLOYED);
+
+        // run scan
+        ts.testee.scan();
+        assertFalse(dodeploy.exists());
+        assertTrue(deployed.exists());
+        assertTrue(ts.controller.deployed.containsKey("foo.war"));
+    }
+
+    /**
+     * Checks temporary inaccessible deployment dir
+     */
+    @Test
+    public void testUnreadableDeploymentDirDuringScan() throws Exception {
+        File war = createFile("foo.war");
+        File dodeploy = createFile("foo.war" + FileSystemDeploymentService.DO_DEPLOY);
+        File deployed = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DEPLOYED);
+
+        TesteeSet ts = createTestee();
+        ts.controller.addCompositeSuccessResponse(1);
+        ts.testee.scan();
+        assertEquals(1, ts.controller.deployed.size());
+        byte[] deploymentHash = ts.controller.deployed.get("foo.war");
+
+        // make the deployment dir temporary inaccessible and run a scan
+        File movedDir = new File(tmpDir.getAbsolutePath() + ".moved");
+        Files.move(tmpDir.toPath(), movedDir.toPath());
+        ts.testee.scan(); // scan should not fail
+        assertEquals(1, ts.controller.deployed.size());
+        assertEquals(deploymentHash, ts.controller.deployed.get("foo.war")); // shouldn't have been redeployed
+
+        // make the deployment dir accessible again and run a scan
+        Files.move(movedDir.toPath(), tmpDir.toPath());
+        ts.testee.scan();
+        assertEquals(1, ts.controller.deployed.size());
+        assertEquals(deploymentHash, ts.controller.deployed.get("foo.war")); // shouldn't have been redeployed
+
+        // update marker file timestamp and run a scan
+        if (!deployed.setLastModified(System.currentTimeMillis() + 1000)) {
+            Assert.fail("Couldn't update last modified flag.");
+        }
+        ts.controller.addCompositeSuccessResponse(1);
+        ts.testee.scan();
+        assertEquals(1, ts.controller.deployed.size());
+        assertNotEquals(deploymentHash, ts.controller.deployed.get("foo.war")); // should have been redeployed
     }
 
     private void testIgnoreExternalDeployment(ExternalDeployment externalDeployment) throws Exception {
@@ -2216,6 +2285,10 @@ public class FileSystemDeploymentServiceUnitTestCase {
                         deployed.put(name, added.get(name));
                     } else if (UNDEPLOY.equals(opName)) {
                         deployed.remove(address.getLastElement().getValue());
+                    } else if (REDEPLOY.equals(opName)) {
+                        byte[] newHash = randomHash();
+                        added.put(address.getLastElement().getValue(), newHash);
+                        deployed.put(address.getLastElement().getValue(), newHash);
                     } else if (FULL_REPLACE_DEPLOYMENT.equals(opName)) {
                         String name = child.require(NAME).asString();
                         // Since AS7-431 the content is no longer managed
