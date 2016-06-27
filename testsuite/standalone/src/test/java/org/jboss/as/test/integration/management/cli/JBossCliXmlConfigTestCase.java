@@ -48,6 +48,7 @@ public class JBossCliXmlConfigTestCase {
     public void testSSLElement() {
         testConfig("2.0");
         testConfig("3.0");
+        testConfig("3.1");
     }
 
     private static void testConfig(String version) {
