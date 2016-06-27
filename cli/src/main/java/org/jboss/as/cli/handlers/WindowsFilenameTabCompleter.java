@@ -131,6 +131,12 @@ public class WindowsFilenameTabCompleter extends FilenameTabCompleter {
            return 0;
        }
 
+       if (candidates.isEmpty() && buffer.length() == 2) {
+           if (buffer.endsWith(":")) {
+               candidates.add(buffer + File.separator);
+           }
+       }
+
        return result;
    }
 

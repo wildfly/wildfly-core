@@ -33,8 +33,11 @@ import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
 import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
+import org.jboss.as.cli.operation.OperationRequestAddress;
+import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
 import org.jboss.as.cli.parsing.CharacterHandler;
 import org.jboss.as.cli.parsing.DefaultParsingState;
+import org.jboss.as.cli.parsing.EscapeCharacterState;
 import org.jboss.as.cli.parsing.GlobalCharacterHandlers;
 import org.jboss.as.cli.parsing.ParsingContext;
 import org.jboss.as.cli.parsing.ParsingStateCallbackHandler;
@@ -292,12 +295,18 @@ public class ValueTypeCompleter implements CommandLineCompleter {
     private final ModelNode propDescr;
     private Instance currentInstance;
     private CommandContext ctx;
+    private final OperationRequestAddress address;
 
     public ValueTypeCompleter(ModelNode propDescr) {
+        this(propDescr, new DefaultOperationRequestAddress());
+    }
+
+    public ValueTypeCompleter(ModelNode propDescr, OperationRequestAddress address) {
         if(propDescr == null || !propDescr.isDefined()) {
             throw new IllegalArgumentException("property description is null or undefined.");
         }
         this.propDescr = propDescr;
+        this.address = address;
     }
 
     @Override
@@ -354,8 +363,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             this.logging = logging;
         }
 
-        private List<String> getFileSystemPath(ModelNode propType, String path) {
-
+        private List<String> getCandidatesFromMetadata(ModelNode propType,
+                String path) {
             List<String> candidates = null;
             if (propType.has(Util.FILESYSTEM_PATH)
                     && propType.get(Util.FILESYSTEM_PATH).asBoolean()) {
@@ -367,7 +376,29 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 // candidates only contain the last part of a path.
                 // We need to keep the radical and do the replacement after it
                 // valLength is used when computing the replacement index.
+                // On Windows, the '\' is a state, so the index is already at the end of
+                // the stream.
                 valLength = path.lastIndexOf(File.separator) + 1;
+                if (Util.isWindows()) {
+                    int i = path.lastIndexOf(File.separator);
+                    if (i >= 0) { // Take into account escape char
+                        valLength = 2;
+                    }
+                    // Must escape separator on Windows.
+                    if (candidates.size() == 1) {
+                        String candidate = candidates.get(0);
+                        if (candidate.endsWith(File.separator)) {
+                            candidate = candidate + File.separator;
+                        }
+                        candidates.set(0, candidate);
+                    }
+                }
+            } else if (propType.has(Util.RELATIVE_TO)
+                    && propType.get(Util.RELATIVE_TO).asBoolean()) {
+                DeploymentItemCompleter completer
+                        = new DeploymentItemCompleter(address);
+                candidates = new ArrayList<>();
+                valLength = completer.complete(ctx, path, offset, candidates);
             }
             return candidates;
         }
@@ -450,11 +481,14 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                     return getSimpleValues(propType, last.name, last.value.asString());
                 } else // An empty name
                 // Could be the end of a list item, propose the next one or end.
-                 if ((currentInstance instanceof ListInstance) &&
-                         !currentInstance.isComplete()) {
-                        List<String> candidates = new ArrayList<>();
-                        candidates.add("]");
-                        candidates.add(",");
+                    if ((currentInstance instanceof ListInstance)
+                            && !currentInstance.isComplete()) {
+                        List<String> candidates = new ArrayList<>(getSimpleValues(currentInstance.type,
+                                null, last.value.asString()));
+                        if (candidates.isEmpty()) {
+                            candidates.add("]");
+                            candidates.add(",");
+                        }
                         Collections.sort(candidates);
                         return candidates;
                     } else {
@@ -485,13 +519,17 @@ public class ValueTypeCompleter implements CommandLineCompleter {
 
         private Collection<String> getSimpleValues(ModelNode propType, String name,
                 String radical) {
-            propType = propType.get(name);
+            // name could be null of List properties
+            if (name != null) {
+                propType = propType.get(name);
+            }
             final List<ModelNode> allowed;
             if (!propType.has(Util.ALLOWED)) {
                 if (isBoolean(propType)) {
                     allowed = BOOLEAN_LIST;
                 } else {
-                    List<String> candidates = getFileSystemPath(propType, radical);
+                    List<String> candidates = getCandidatesFromMetadata(propType,
+                            radical);
                     if (candidates != null) {
                         return candidates;
                     }
@@ -526,7 +564,14 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                         Collections.sort(candidates);
                         return candidates;
                     } else {
-                        List<String> candidates = getFileSystemPath(propType, "");
+                        List<String> candidates = null;
+                        if (!mt.equals(ModelType.OBJECT)) {
+                            candidates = getCandidatesFromMetadata(currentInstance.type,
+                                    "");
+                        } else {
+                            candidates = getCandidatesFromMetadata(propType,
+                                    "");
+                        }
                         if (candidates != null) {
                             return candidates;
                         }
@@ -672,6 +717,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                     propBuf.append(ch);
                 }
             } else if(id.equals(TextState.ID)) {
+                propBuf.append(ctx.getCharacter());
+            } else if (id.equals(EscapeCharacterState.ID)) {
                 propBuf.append(ctx.getCharacter());
             }
         }

@@ -23,6 +23,7 @@ package org.jboss.as.cli.batch.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jboss.as.cli.Attachments;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContext.Scope;
 import org.jboss.as.cli.CommandFormatException;
@@ -39,6 +40,7 @@ import org.jboss.dmr.ModelNode;
 public class DefaultBatch implements Batch {
 
     private final List<BatchedCommand> commands = new ArrayList<BatchedCommand>();
+    private final Attachments attachments = new Attachments();
 
     /* (non-Javadoc)
      * @see org.jboss.as.cli.batch.Batch#getCommands()
@@ -127,5 +129,10 @@ public class DefaultBatch implements Batch {
             steps.add(request);
         }
         return composite;
+    }
+
+    @Override
+    public Attachments getAttachments() {
+        return attachments;
     }
 }

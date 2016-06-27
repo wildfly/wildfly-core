@@ -624,6 +624,11 @@ public class CommandExecutor {
         public ModelNode execute(ModelNode mn, String description) throws CommandLineException, IOException {
             return wrapped.execute(mn, description);
         }
+
+        @Override
+        public ModelNode execute(Operation op, String description) throws CommandLineException, IOException {
+            return wrapped.execute(op, description);
+        }
     }
 
     private final CommandContext ctx;
@@ -636,7 +641,7 @@ public class CommandExecutor {
         this.ctx = ctx;
     }
 
-    ModelNode execute(ModelNode mn, int timeout, TimeUnit unit) throws CommandLineException,
+    ModelNode execute(Operation op, int timeout, TimeUnit unit) throws CommandLineException,
             InterruptedException, ExecutionException, TimeoutException, IOException {
         ModelControllerClient client = ctx.getModelControllerClient();
         if (client == null) {
@@ -644,9 +649,9 @@ public class CommandExecutor {
         }
 
         if (timeout <= 0) { //Synchronous
-            return client.execute(mn);
+            return client.execute(op);
         } else { // Guarded execution
-            Future<ModelNode> task = client.executeAsync(mn,
+            Future<ModelNode> task = client.executeAsync(op,
                     OperationMessageHandler.DISCARD);
             try {
                 return task.get(timeout, unit);

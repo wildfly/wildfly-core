@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
+import org.jboss.as.cli.Attachments;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -42,6 +43,8 @@ import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -74,10 +77,13 @@ public class BatchRunHandler extends BaseOperationCommand {
         boolean failed = false;
         try {
             final ModelNode request = buildRequest(ctx);
-
+            OperationBuilder builder = new OperationBuilder(request, true);
+            for (String path : getAttachments(ctx).getAttachedFiles()) {
+                builder.addFileAsAttachment(new File(path));
+            }
             final ModelControllerClient client = ctx.getModelControllerClient();
             try {
-                response = client.execute(request);
+                response = client.execute(builder.build(), OperationMessageHandler.DISCARD);
             } catch(Exception e) {
                 throw new CommandFormatException("Failed to perform operation: " + e.getLocalizedMessage());
             }
@@ -172,6 +178,16 @@ public class BatchRunHandler extends BaseOperationCommand {
         }
 
         throw new CommandFormatException("Without arguments the command can be executed only in the batch mode.");
+    }
+
+    @Override
+    public Attachments getAttachments(CommandContext ctx) {
+        final BatchManager batchManager = ctx.getBatchManager();
+        if (batchManager.isBatchActive()) {
+            final Batch batch = batchManager.getActiveBatch();
+            return batch.getAttachments();
+        }
+        return new Attachments();
     }
 
     @Override
