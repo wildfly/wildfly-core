@@ -38,6 +38,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.logging.ProtocolLogger;
+import org.jboss.as.protocol.mgmt.support.ManagementChannelShutdownHandle;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.MessageOutputStream;
@@ -48,7 +49,7 @@ import org.jboss.threads.AsyncFuture;
  *
  * @author Emanuel Muckenhuber
  */
-public abstract class AbstractMessageHandler implements ManagementMessageHandler, CloseHandler<Channel> {
+public abstract class AbstractMessageHandler implements ManagementMessageHandler, ManagementChannelShutdownHandle, CloseHandler<Channel> {
 
     private static final ActiveOperation.CompletedCallback<?> NO_OP_CALLBACK = new ActiveOperation.CompletedCallback<Object>() {
 

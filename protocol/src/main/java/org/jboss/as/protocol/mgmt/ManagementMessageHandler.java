@@ -22,16 +22,18 @@
 
 package org.jboss.as.protocol.mgmt;
 
-import org.jboss.as.protocol.mgmt.support.ManagementChannelShutdownHandle;
-import org.jboss.remoting3.Channel;
-
 import java.io.DataInput;
 import java.io.IOException;
 
+import org.jboss.remoting3.Channel;
+
 /**
+ * Interface implemented by classes able to handle a management protocol message
+ * coming in from a JBoss Remoting {@link Channel}.
+ *
  * @author Emanuel Muckenhuber
  */
-public interface ManagementMessageHandler extends ManagementChannelShutdownHandle {
+public interface ManagementMessageHandler {
 
     /**
      * Handle a message on the channel.
