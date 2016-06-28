@@ -74,11 +74,12 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
                     handlePing(channel, header);
                 } else if (type == ManagementProtocol.TYPE_PONG) {
                     // Nothing to do here
-                    ProtocolLogger.ROOT_LOGGER.tracef("Received on on %s", this);
+                    ProtocolLogger.ROOT_LOGGER.tracef("Received pong on %s", this);
                 } else if (type == ManagementProtocol.TYPE_BYE_BYE) {
-                    // Close the channel
-                    ProtocolLogger.ROOT_LOGGER.tracef("Received bye bye on %s, closing", this);
-                    handleChannelReset(channel);
+                    // This signal has been a no-op for years and years, maybe since AS 7.0.0.Final!
+                    // JBoss Remoting deals with channel close itself; we don't do it at the
+                    // management protocol level
+                    ProtocolLogger.ROOT_LOGGER.tracef("Received bye bye on %s, ignoring", this);
                 } else {
                     // Handle a message
                     handler.handleMessage(channel, input, header);
@@ -129,15 +130,6 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
         } catch (IOException e) {
             ProtocolLogger.ROOT_LOGGER.errorClosingChannel(e.getMessage());
         }
-    }
-
-    /**
-     * Handle the legacy bye-bye notification.
-     *
-     * @param channel the channel the bye-bye message was received
-     */
-    protected void handleChannelReset(Channel channel) {
-        //
     }
 
     /**
