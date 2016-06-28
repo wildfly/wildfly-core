@@ -28,6 +28,7 @@ package org.jboss.as.domain.controller.operations.coordination;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURATION_CHANGES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
@@ -49,6 +50,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_LOGGER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
@@ -257,7 +259,7 @@ public class ServerOperationResolver {
                     return getServerSystemPropertyOperations(operation, address, Level.DOMAIN, domain, null, host);
                 }
                 case CORE_SERVICE: {
-                    return getServerCoreServiceOperations(operation, host);
+                    return getServerCoreServiceOperations(operation, address, host);
                 }
                 case PROFILE: {
                     return getServerProfileOperations(operation, address, domain, host);
@@ -326,8 +328,11 @@ public class ServerOperationResolver {
         return Collections.singletonMap(allServers, operation.clone());
     }
 
-    private Map<Set<ServerIdentity>, ModelNode> getServerCoreServiceOperations(ModelNode operation,
+    private Map<Set<ServerIdentity>, ModelNode> getServerCoreServiceOperations(ModelNode operation, PathAddress address,
                                                                                ModelNode host) {
+        if (address.size() >= 2 && SERVICE.equals(address.getElement(1).getKey()) && CONFIGURATION_CHANGES.equals(address.getElement(1).getValue())) {
+            return Collections.emptyMap();
+        }
         final Set<ServerIdentity> allServers = getAllRunningServers(host, localHostName, serverProxies);
         return Collections.singletonMap(allServers, operation.clone());
     }
@@ -949,6 +954,13 @@ public class ServerOperationResolver {
 //                        op.get(OP_ADDR).set(newAddr.toModelNode());
 //                    }
 //                }
+                return Collections.singletonMap(getAllRunningServers(host, localHostName, serverProxies), op);
+            } else if (address.size() >= 2 && SERVICE.equals(address.getElement(1).getKey()) && CONFIGURATION_CHANGES.equals(address.getElement(1).getValue())) {
+                if("list-changes".equals(operation.get(OP).asString())) {
+                    return Collections.emptyMap();
+                }
+                ModelNode op = operation.clone();
+                op.get(OP_ADDR).set(address.toModelNode());
                 return Collections.singletonMap(getAllRunningServers(host, localHostName, serverProxies), op);
             }
             // TODO does server need to know about other changes?
