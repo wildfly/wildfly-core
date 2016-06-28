@@ -85,6 +85,7 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
                 }
             } finally {
                 try {
+                    //noinspection StatementWithEmptyBody
                     while (message.read() != -1) {
                         // drain the message to workaround a potential remoting buffer leak
                     }
@@ -101,10 +102,7 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
             StreamUtils.safeClose(message);
             ProtocolLogger.ROOT_LOGGER.tracef("%s done handling incoming data", this);
         }
-        final Channel.Receiver next = next();
-        if(next != null) {
-            channel.receiveMessage(next);
-        }
+        channel.receiveMessage(this);
     }
 
     /**
@@ -112,15 +110,6 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
      */
     public long getLastMessageTime() {
         return lastMessageTime;
-    }
-
-    /**
-     * Get the next receiver.
-     *
-     * @return the receiver
-     */
-    protected Channel.Receiver next() {
-        return this;
     }
 
     @Override
