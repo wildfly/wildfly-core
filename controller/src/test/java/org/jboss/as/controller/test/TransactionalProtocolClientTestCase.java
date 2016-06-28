@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.test;
 
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -50,7 +51,8 @@ import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.remote.TransactionalProtocolHandlers;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.controller.support.ChannelServer;
-import org.jboss.as.protocol.ProtocolChannelClient;
+import org.jboss.as.protocol.ProtocolConnectionConfiguration;
+import org.jboss.as.protocol.ProtocolConnectionUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
 import org.jboss.as.protocol.mgmt.ManagementRequestHandlerFactory;
@@ -126,12 +128,10 @@ public class TransactionalProtocolClientTestCase {
                 //
             }
         });
-        final ProtocolChannelClient.Configuration connectionConfig = new ProtocolChannelClient.Configuration();
-        connectionConfig.setEndpoint(channelServer.getEndpoint());
-        connectionConfig.setUri(new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""));
-        //
-        final ProtocolChannelClient client = ProtocolChannelClient.create(connectionConfig);
-        futureConnection = client.connect(new PasswordClientCallbackHandler("bob", ENDPOINT_NAME, "pass".toCharArray()));
+
+        final ProtocolConnectionConfiguration connectionConfig = ProtocolConnectionConfiguration.create(channelServer.getEndpoint(),
+                new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""));
+        futureConnection = ProtocolConnectionUtils.connect(connectionConfig, new PasswordClientCallbackHandler("bob", ENDPOINT_NAME, "pass".toCharArray()));
     }
 
     @After

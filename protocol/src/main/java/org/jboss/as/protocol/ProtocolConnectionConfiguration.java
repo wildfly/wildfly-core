@@ -60,6 +60,12 @@ public class ProtocolConnectionConfiguration {
         }
     }
 
+    /**
+     * Checks that this object is in a usable state, with the minimal
+     * required properties (endpoint, optionMap, uri) set
+     *
+     * @throws IllegalArgumentException if any required properties are not set
+     */
     protected void validate() {
         if (endpoint == null) {
             throw ProtocolLogger.ROOT_LOGGER.nullVar("endpoint");
@@ -78,12 +84,15 @@ public class ProtocolConnectionConfiguration {
 
     public void setUri(URI uri) {
         this.uri = uri;
-        if("http-remoting".equals(uri.getScheme())) {
-            this.sslEnabled = false;
-            this.useStartTLS = false;
-        } else if ("https-remoting".equals(uri.getScheme())) {
-             this.sslEnabled = true;
-            this.useStartTLS = false;
+        if (uri != null) {
+            String scheme = uri.getScheme();
+            if ("http-remoting".equals(scheme)) {
+                this.sslEnabled = false;
+                this.useStartTLS = false;
+            } else if ("https-remoting".equals(scheme)) {
+                this.sslEnabled = true;
+                this.useStartTLS = false;
+            }
         }
     }
 
@@ -169,6 +178,10 @@ public class ProtocolConnectionConfiguration {
         return create(endpoint, uri, OptionMap.EMPTY);
     }
 
+    public static ProtocolConnectionConfiguration create(final Endpoint endpoint, final OptionMap options) {
+        return create(endpoint, null, options);
+    }
+
     public static ProtocolConnectionConfiguration create(final Endpoint endpoint, final URI uri, final OptionMap options) {
         final ProtocolConnectionConfiguration configuration = new ProtocolConnectionConfiguration();
         configuration.setEndpoint(endpoint);
@@ -178,19 +191,23 @@ public class ProtocolConnectionConfiguration {
     }
 
     public static ProtocolConnectionConfiguration copy(final ProtocolConnectionConfiguration old) {
-        ProtocolConnectionConfiguration configuration = new ProtocolConnectionConfiguration();
-        configuration.uri = old.uri;
-        configuration.endpoint = old.endpoint;
-        configuration.optionMap = old.optionMap;
-        configuration.connectionTimeout = old.connectionTimeout;
-        configuration.callbackHandler = old.callbackHandler;
-        configuration.saslOptions = old.saslOptions;
-        configuration.sslContext = old.sslContext;
-        configuration.clientBindAddress = old.clientBindAddress;
-        configuration.timeoutHandler = old.timeoutHandler;
-        configuration.sslEnabled = old.sslEnabled;
-        configuration.useStartTLS = old.useStartTLS;
-        return configuration;
+        return copy(old, new ProtocolConnectionConfiguration());
+    }
+
+    static ProtocolConnectionConfiguration copy(final ProtocolConnectionConfiguration old,
+                                                final ProtocolConnectionConfiguration target) {
+        target.uri = old.uri;
+        target.endpoint = old.endpoint;
+        target.optionMap = old.optionMap;
+        target.connectionTimeout = old.connectionTimeout;
+        target.callbackHandler = old.callbackHandler;
+        target.saslOptions = old.saslOptions;
+        target.sslContext = old.sslContext;
+        target.clientBindAddress = old.clientBindAddress;
+        target.timeoutHandler = old.timeoutHandler;
+        target.sslEnabled = old.sslEnabled;
+        target.useStartTLS = old.useStartTLS;
+        return target;
     }
 
 }

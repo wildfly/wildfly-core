@@ -39,7 +39,11 @@ import org.xnio.IoFuture;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ *
+ * @deprecated use the factory methods in {@link ProtocolConnectionUtils}
  */
+@Deprecated
+@SuppressWarnings("deprecation")
 public class ProtocolChannelClient implements Closeable {
 
     private final Configuration configuration;
@@ -47,6 +51,8 @@ public class ProtocolChannelClient implements Closeable {
         this.configuration = configuration;
     }
 
+    /** @deprecated use the factory methods in {@link ProtocolConnectionUtils} */
+    @Deprecated
     public static ProtocolChannelClient create(final Configuration configuration) throws IOException {
         if (configuration == null) {
             throw ProtocolLogger.ROOT_LOGGER.nullVar("configuration");
@@ -55,42 +61,47 @@ public class ProtocolChannelClient implements Closeable {
         return new ProtocolChannelClient(configuration);
     }
 
+    /** @deprecated use {@link ProtocolConnectionUtils#connect(ProtocolConnectionConfiguration, CallbackHandler)} */
+    @Deprecated
     public IoFuture<Connection> connect(CallbackHandler handler) throws IOException {
-        final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
-        config.setCallbackHandler(handler);
-        return ProtocolConnectionUtils.connect(config);
+        return ProtocolConnectionUtils.connect(configuration, handler);
     }
 
+    /** @deprecated use {@link ProtocolConnectionUtils#connect(ProtocolConnectionConfiguration, CallbackHandler, Map, SSLContext)}  */
+    @Deprecated
     public IoFuture<Connection> connect(CallbackHandler handler, Map<String, String> saslOptions, SSLContext sslContext) throws IOException {
-        final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
-        config.setCallbackHandler(handler);
-        config.setSaslOptions(saslOptions);
-        config.setSslContext(sslContext);
-        return ProtocolConnectionUtils.connect(config);
+        return ProtocolConnectionUtils.connect(configuration, handler, saslOptions, sslContext);
     }
 
+    /** @deprecated use {@link ProtocolConnectionUtils#connectSync(ProtocolConnectionConfiguration, CallbackHandler)} */
+    @Deprecated
     public Connection connectSync(CallbackHandler handler) throws IOException {
-        final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
-        config.setCallbackHandler(handler);
-        return ProtocolConnectionUtils.connectSync(config);
+        return ProtocolConnectionUtils.connectSync(configuration, handler);
     }
 
+    /** @deprecated use {@link ProtocolConnectionUtils#connectSync(ProtocolConnectionConfiguration, CallbackHandler, Map, SSLContext)}  */
+    @Deprecated
     public Connection connectSync(CallbackHandler handler, Map<String, String> saslOptions, SSLContext sslContext) throws IOException {
-        final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
-        config.setCallbackHandler(handler);
-        config.setSaslOptions(saslOptions);
-        config.setSslContext(sslContext);
-        return ProtocolConnectionUtils.connectSync(config);
+        return ProtocolConnectionUtils.connectSync(configuration, handler, saslOptions, sslContext);
     }
 
+    /**
+     * @return a copy of this object's configuration
+     *
+     */
     public Configuration getConfiguration() {
         return configuration;
     }
 
+    /**
+     * Does nothing.
+     */
     public void close() {
         //
     }
 
+    /** @deprecated use the parent class */
+    @Deprecated
     public static final class Configuration extends ProtocolConnectionConfiguration {
 
         //Flags to avoid spamming logs with warnings every time someone tries to set these

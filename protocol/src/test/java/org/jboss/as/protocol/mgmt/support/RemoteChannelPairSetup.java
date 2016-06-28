@@ -30,7 +30,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import org.jboss.as.protocol.ProtocolChannelClient;
+import org.jboss.as.protocol.ProtocolConnectionConfiguration;
+import org.jboss.as.protocol.ProtocolConnectionUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelReceiver;
 import org.jboss.as.protocol.mgmt.ManagementMessageHandler;
 import org.jboss.remoting3.Channel;
@@ -108,13 +109,12 @@ public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
     }
 
     public void startChannels() throws IOException, URISyntaxException {
-        ProtocolChannelClient.Configuration configuration = new ProtocolChannelClient.Configuration();
-        configuration.setEndpoint(channelServer.getEndpoint());
-        configuration.setUri(new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""));
-        configuration.setOptionMap(OptionMap.create(Options.SASL_POLICY_NOANONYMOUS, Boolean.FALSE));
 
-        ProtocolChannelClient client = ProtocolChannelClient.create(configuration);
-        connection = client.connectSync(new PasswordClientCallbackHandler("TestUser", "localhost.localdomain", "TestUserPassword".toCharArray()));
+        ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(channelServer.getEndpoint(),
+                new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""),
+                OptionMap.create(Options.SASL_POLICY_NOANONYMOUS, Boolean.FALSE));
+
+        connection = ProtocolConnectionUtils.connectSync(configuration, new PasswordClientCallbackHandler("TestUser", "localhost.localdomain", "TestUserPassword".toCharArray()));
         clientChannel = connection.openChannel(TEST_CHANNEL, OptionMap.EMPTY).get();
         try {
             clientConnectedLatch.await();

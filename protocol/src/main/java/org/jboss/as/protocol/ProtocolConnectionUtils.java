@@ -36,6 +36,7 @@ import static org.xnio.Options.SASL_POLICY_NOPLAINTEXT;
 import org.xnio.Property;
 import org.xnio.Sequence;
 
+import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -73,19 +74,18 @@ public class ProtocolConnectionUtils {
         return connect(configuration.getCallbackHandler(), configuration);
     }
 
-    private static IoFuture<Connection> connect(final CallbackHandler handler, final ProtocolConnectionConfiguration configuration) throws IOException {
-        final Endpoint endpoint = configuration.getEndpoint();
-        final OptionMap options = getOptions(configuration);
-        final CallbackHandler actualHandler = handler != null ? handler : new AnonymousCallbackHandler();
+    public static IoFuture<Connection> connect(final ProtocolConnectionConfiguration configuration, CallbackHandler handler) throws IOException {
+        final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
+        config.setCallbackHandler(handler);
+        return connect(config);
+    }
 
-        String clientBindAddress = configuration.getClientBindAddress();
-        if (clientBindAddress == null) {
-            return endpoint.connect(configuration.getUri(), options, actualHandler, configuration.getSslContext());
-        } else {
-            InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
-            InetSocketAddress destAddr = new InetSocketAddress(configuration.getUri().getHost(), configuration.getUri().getPort());
-            return endpoint.connect(configuration.getUri().getScheme(), bindAddr, destAddr, options, actualHandler, configuration.getSslContext());
-        }
+    public static IoFuture<Connection> connect(final ProtocolConnectionConfiguration configuration, CallbackHandler handler, Map<String, String> saslOptions, SSLContext sslContext) throws IOException {
+        final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
+        config.setCallbackHandler(handler);
+        config.setSaslOptions(saslOptions);
+        config.setSslContext(sslContext);
+        return connect(config);
     }
 
     /**
@@ -122,6 +122,36 @@ public class ProtocolConnectionUtils {
             throw ProtocolLogger.ROOT_LOGGER.failedToConnect(configuration.getUri(), future.getException());
         }
         throw ProtocolLogger.ROOT_LOGGER.couldNotConnect(configuration.getUri());
+    }
+
+    public static Connection connectSync(final ProtocolConnectionConfiguration configuration, CallbackHandler handler) throws IOException {
+        final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
+        config.setCallbackHandler(handler);
+        return connectSync(config);
+    }
+
+    public static Connection connectSync(final ProtocolConnectionConfiguration configuration, CallbackHandler handler, Map<String, String> saslOptions, SSLContext sslContext) throws IOException {
+        final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
+        config.setCallbackHandler(handler);
+        config.setSaslOptions(saslOptions);
+        config.setSslContext(sslContext);
+        return connectSync(config);
+    }
+
+    private static IoFuture<Connection> connect(final CallbackHandler handler, final ProtocolConnectionConfiguration configuration) throws IOException {
+        configuration.validate();
+        final Endpoint endpoint = configuration.getEndpoint();
+        final OptionMap options = getOptions(configuration);
+        final CallbackHandler actualHandler = handler != null ? handler : new AnonymousCallbackHandler();
+
+        String clientBindAddress = configuration.getClientBindAddress();
+        if (clientBindAddress == null) {
+            return endpoint.connect(configuration.getUri(), options, actualHandler, configuration.getSslContext());
+        } else {
+            InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
+            InetSocketAddress destAddr = new InetSocketAddress(configuration.getUri().getHost(), configuration.getUri().getPort());
+            return endpoint.connect(configuration.getUri().getScheme(), bindAddr, destAddr, options, actualHandler, configuration.getSslContext());
+        }
     }
 
     private static OptionMap getOptions(final ProtocolConnectionConfiguration configuration) {

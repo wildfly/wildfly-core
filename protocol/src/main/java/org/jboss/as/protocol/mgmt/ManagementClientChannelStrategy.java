@@ -69,7 +69,7 @@ public abstract class ManagementClientChannelStrategy implements Closeable {
     /**
      * Create a new establishing management client channel-strategy
      *
-     * @param setup the remoting setup
+     * @param baseConfig the base connection configuration
      * @param handler the {@code ManagementMessageHandler}
      * @param cbHandler a callback handler
      * @param saslOptions the sasl options
@@ -77,13 +77,38 @@ public abstract class ManagementClientChannelStrategy implements Closeable {
      * @param closeHandler a close handler
      * @return the management client channel strategy
      */
+    public static ManagementClientChannelStrategy create(final ProtocolConnectionConfiguration baseConfig,
+                                                         final ManagementMessageHandler handler,
+                                                         final CallbackHandler cbHandler,
+                                                         final Map<String, String> saslOptions,
+                                                         final SSLContext sslContext,
+                                                         final CloseHandler<Channel> closeHandler) {
+        return create(createConfiguration(baseConfig, saslOptions, cbHandler, sslContext), ManagementChannelReceiver.createDelegating(handler), closeHandler);
+    }
+
+    /**
+     * Create a new establishing management client channel strategy
+     *
+     * @param setup an existing ProtocolChannelClient whose configuration should be used as a base config
+     * @param handler the {@code ManagementMessageHandler}
+     * @param cbHandler a callback handler
+     * @param saslOptions the sasl options
+     * @param sslContext the ssl context
+     * @param closeHandler a close handler
+     * @return the management client channel strategy
+     *
+     * @deprecated use {@link #create(ProtocolConnectionConfiguration, ManagementMessageHandler, CallbackHandler, Map, SSLContext, CloseHandler)}
+     */
+    @Deprecated
     public static ManagementClientChannelStrategy create(final ProtocolChannelClient setup,
                                                    final ManagementMessageHandler handler,
                                                    final CallbackHandler cbHandler,
                                                    final Map<String, String> saslOptions,
                                                    final SSLContext sslContext,
                                                    final CloseHandler<Channel> closeHandler) {
-        return create(createConfiguration(setup.getConfiguration(), saslOptions, cbHandler, sslContext), ManagementChannelReceiver.createDelegating(handler), closeHandler);
+        @SuppressWarnings("deprecation")
+        ProtocolConnectionConfiguration setUpConfig =  setup.getConfiguration();
+        return create(createConfiguration(setUpConfig, saslOptions, cbHandler, sslContext), ManagementChannelReceiver.createDelegating(handler), closeHandler);
     }
 
     /**
