@@ -139,7 +139,7 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
      * @param header the protocol header
      * @throws IOException for any error
      */
-    protected static void handlePing(final Channel channel, final ManagementProtocolHeader header) throws IOException {
+    private static void handlePing(final Channel channel, final ManagementProtocolHeader header) throws IOException {
         final ManagementProtocolHeader response = new ManagementPongHeader(header.getVersion());
         final MessageOutputStream output = channel.writeMessage();
         try {
@@ -157,7 +157,7 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
      * @param os the output stream
      * @throws IOException
      */
-    protected static void writeHeader(final ManagementProtocolHeader header, final OutputStream os) throws IOException {
+    private static void writeHeader(final ManagementProtocolHeader header, final OutputStream os) throws IOException {
         final FlushableDataOutput output = FlushableDataOutputImpl.create(os);
         header.write(output);
     }
