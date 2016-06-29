@@ -46,6 +46,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.util.ArrayList;
@@ -681,7 +682,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
             final PathAddress addr = PathAddress.pathAddress(op.require(OP_ADDR));
             final String type = addr.size() == 0 ? "" : addr.getElement(0).getKey();
 
-            if (name.equals(ADD) || name.equals(WRITE_ATTRIBUTE_OPERATION)) {
+            if (name.equals(ADD) || name.equals(WRITE_ATTRIBUTE_OPERATION) || name.equals(UNDEFINE_ATTRIBUTE_OPERATION)) {
                 if (type.equals(EXTENSION)) {
                     extensionAdds.add(op);
                 } else if (type.equals(MANAGEMENT_CLIENT_CONTENT)) {
