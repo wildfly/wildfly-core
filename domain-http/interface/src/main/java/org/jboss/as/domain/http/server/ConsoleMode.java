@@ -224,22 +224,24 @@ public enum ConsoleMode {
         String path = moduleName.replace('.', '/');
 
         final String modulePath = WildFlySecurityManager.getPropertyPrivileged("module.path", null);
-        File[] moduleRoots = getFiles(modulePath, 0, 0);
         SortedSet<ConsoleVersion> consoleVersions = new TreeSet<>();
-        for (File root : moduleRoots) {
-            findConsoleModules(root, path, consoleVersions);
-            File layers = new File(root, "system" + File.separator + "layers");
-            File[] children = layers.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    findConsoleModules(child, path, consoleVersions);
+        if (modulePath != null) {
+            File[] moduleRoots = getFiles(modulePath, 0, 0);
+            for (File root : moduleRoots) {
+                findConsoleModules(root, path, consoleVersions);
+                File layers = new File(root, "system" + File.separator + "layers");
+                File[] children = layers.listFiles();
+                if (children != null) {
+                    for (File child : children) {
+                        findConsoleModules(child, path, consoleVersions);
+                    }
                 }
-            }
-            File addOns = new File(root, "system" + File.separator + "add-ons");
-            children = addOns.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    findConsoleModules(child, path, consoleVersions);
+                File addOns = new File(root, "system" + File.separator + "add-ons");
+                children = addOns.listFiles();
+                if (children != null) {
+                    for (File child : children) {
+                        findConsoleModules(child, path, consoleVersions);
+                    }
                 }
             }
         }
