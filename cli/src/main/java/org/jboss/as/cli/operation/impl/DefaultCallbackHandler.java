@@ -625,7 +625,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
 
     @Override
     public int getLastChunkIndex() {
-        return lastChunkIndex;
+        return lastChunkIndex - substitutedLine.length() + originalLine.length();
     }
 
     @Override
