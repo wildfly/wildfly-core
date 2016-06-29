@@ -1482,6 +1482,8 @@
                 <modular.jdk.args>-XaddExports:java.security.sasl/com.sun.security.sasl.digest=ALL-UNNAMED -XaddExports:java.security.sasl/com.sun.security.sasl=ALL-UNNAMED -XaddExports:jdk.unsupported/sun.reflect=ALL-UNNAMED -XaddExports:jdk.unsupported/sun.misc=ALL-UNNAMED</modular.jdk.args>
                 <!-- [WFCORE-1494] remove JUL workaround -->
                 <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true</modular.jdk.props>
+                <!-- There are lots of issues with checkstyle runtime on JDK9, it somewhat works but really slows down build, disabling it for now-->
+                <checkstyle.skip>true</checkstyle.skip>
             </properties>
             <build>
                     <plugins>
