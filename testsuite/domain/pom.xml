@@ -177,7 +177,7 @@
                     <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args}</argLine>
 
                     <systemPropertyVariables>
-                        <jboss.options>-ea ${surefire.system.args}</jboss.options>
+                        <jboss.options>-ea</jboss.options>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                         <module.path>${jboss.dist}/modules</module.path>
@@ -186,7 +186,7 @@
                         <management.address>${management.address}</management.address>
                         <settings.localRepository>${settings.localRepository}</settings.localRepository>
                         <cli.args>-Dmaven.repo.local=${settings.localRepository}</cli.args>
-                        <server.jvm.args>${modular.jdk.args} -Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</server.jvm.args>
+                        <server.jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</server.jvm.args>
                     </systemPropertyVariables>
                     <includes>
                          <include>org/jboss/as/test/integration/domain/autoignore/*TestCase.java</include>
@@ -240,7 +240,7 @@
                             <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args}</argLine>
 
                             <systemPropertyVariables>
-                                <jboss.options>${surefire.system.args}</jboss.options>
+                                <jboss.options>-ea</jboss.options>
                                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                 <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                                 <module.path>${jboss.dist}/modules</module.path>

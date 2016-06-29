@@ -88,5 +88,22 @@
             <artifactId>wildfly-legacy-spi</artifactId>
         </dependency>
 
+        <!-- JDK9 provide xml & xslt parsers so template tests work for subsystems
+         should probably be removed once we have proper solution on how to handle JAXP on jigsaw
+         -->
+        <dependency>
+            <groupId>org.codehaus.woodstox</groupId>
+            <artifactId>woodstox-core-asl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xalan</groupId>
+            <artifactId>xalan</artifactId>
+            <version>2.7.1.jbossorg-2</version>
+        </dependency>
+
     </dependencies>
 </project>
