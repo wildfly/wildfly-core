@@ -28,8 +28,8 @@ import java.util.Map;
 import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
 
-import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
+import org.jboss.as.protocol.ProtocolConnectionManager;
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
@@ -68,7 +68,7 @@ public abstract class ManagementClientChannelStrategy implements Closeable {
     /**
      * Create a new establishing management client channel-strategy
      *
-     * @param setup the remoting setup
+     * @param baseConfig the base connection configuration
      * @param handler the {@code ManagementMessageHandler}
      * @param cbHandler a callback handler
      * @param saslOptions the sasl options
@@ -76,13 +76,13 @@ public abstract class ManagementClientChannelStrategy implements Closeable {
      * @param closeHandler a close handler
      * @return the management client channel strategy
      */
-    public static ManagementClientChannelStrategy create(final ProtocolChannelClient setup,
-                                                   final ManagementMessageHandler handler,
-                                                   final CallbackHandler cbHandler,
-                                                   final Map<String, String> saslOptions,
-                                                   final SSLContext sslContext,
-                                                   final CloseHandler<Channel> closeHandler) {
-        return create(createConfiguration(setup.getConfiguration(), saslOptions, cbHandler, sslContext), ManagementChannelReceiver.createDelegating(handler), closeHandler);
+    public static ManagementClientChannelStrategy create(final ProtocolConnectionConfiguration baseConfig,
+                                                         final ManagementMessageHandler handler,
+                                                         final CallbackHandler cbHandler,
+                                                         final Map<String, String> saslOptions,
+                                                         final SSLContext sslContext,
+                                                         final CloseHandler<Channel> closeHandler) {
+        return create(createConfiguration(baseConfig, saslOptions, cbHandler, sslContext), ManagementChannelReceiver.createDelegating(handler), closeHandler);
     }
 
     /**
@@ -137,12 +137,54 @@ public abstract class ManagementClientChannelStrategy implements Closeable {
      * When getting the underlying channel this strategy is trying to automatically (re-)connect
      * when either the connection or channel was closed.
      */
-    private static class Establishing extends FutureManagementChannel.Establishing {
+    private static class Establishing extends FutureManagementChannel {
 
+        private final String serviceType = DEFAULT_CHANNEL_SERVICE_TYPE;
+        private final OptionMap channelOptions;
+        private final Channel.Receiver receiver;
+        private final ProtocolConnectionManager connectionManager;
         private final CloseHandler<Channel> closeHandler;
+
         private Establishing(final ProtocolConnectionConfiguration configuration, final Channel.Receiver receiver, final CloseHandler<Channel> closeHandler) {
-            super(DEFAULT_CHANNEL_SERVICE_TYPE, receiver, configuration);
+            this.receiver = receiver;
+            this.channelOptions = configuration.getOptionMap();
+            this.connectionManager = ProtocolConnectionManager.create(configuration, this);
             this.closeHandler = closeHandler;
+        }
+
+        @Override
+        public Channel getChannel() throws IOException {
+            Channel channel = super.getChannel();
+            if(channel != null) {
+                return channel;
+            }
+            // Try to connect and wait for the channel
+            connectionManager.connect();
+            // In case connect did not succeed the next getChannel() call needs to try to reconnect
+            channel = super.getChannel();
+            if(channel == null) {
+                throw ProtocolLogger.ROOT_LOGGER.channelClosed();
+            }
+            return channel;
+        }
+
+        @Override
+        public void connectionOpened(final Connection connection) throws IOException {
+            final Channel channel = openChannel(connection, serviceType, channelOptions);
+            if(setChannel(channel)) {
+                channel.receiveMessage(receiver);
+            } else {
+                channel.closeAsync();
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                super.close();
+            } finally {
+                connectionManager.shutdown();
+            }
         }
 
         @Override

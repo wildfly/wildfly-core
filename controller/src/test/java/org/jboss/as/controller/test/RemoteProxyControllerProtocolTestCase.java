@@ -57,6 +57,7 @@ import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.controller.support.RemoteChannelPairSetup;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
+import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
@@ -559,7 +560,8 @@ public class RemoteProxyControllerProtocolTestCase {
             channels.setupRemoting(new ManagementChannelInitialization() {
                 @Override
                 public ManagementChannelHandler startReceiving(Channel channel) {
-                    final ManagementChannelHandler support = new ManagementChannelHandler(channel, channels.getExecutorService());
+                    final ManagementClientChannelStrategy strategy = ManagementClientChannelStrategy.create(channel);
+                    final ManagementChannelHandler support = new ManagementChannelHandler(strategy, channels.getExecutorService());
                     support.addHandlerFactory(new TransactionalProtocolOperationHandler(proxiedController, support, responseAttachmentSupport));
                     channel.addCloseHandler(new CloseHandler<Channel>() {
                         @Override
@@ -576,7 +578,8 @@ public class RemoteProxyControllerProtocolTestCase {
             throw new RuntimeException(e);
         }
         final Channel clientChannel = channels.getClientChannel();
-        final ManagementChannelHandler support = new ManagementChannelHandler(clientChannel, channels.getExecutorService());
+        final ManagementClientChannelStrategy strategy = ManagementClientChannelStrategy.create(clientChannel);
+        final ManagementChannelHandler support = new ManagementChannelHandler(strategy, channels.getExecutorService());
         final RemoteProxyController proxyController = RemoteProxyController.create(support, PathAddress.pathAddress(), ProxyOperationAddressTranslator.HOST);
         clientChannel.addCloseHandler(new CloseHandler<Channel>() {
             @Override

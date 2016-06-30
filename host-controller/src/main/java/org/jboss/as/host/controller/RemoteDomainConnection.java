@@ -49,7 +49,6 @@ import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.discovery.RemoteDomainControllerConnectionConfiguration;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainControllerProtocol;
-import org.jboss.as.protocol.ProtocolChannelClient;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.ProtocolConnectionManager;
 import org.jboss.as.protocol.ProtocolConnectionUtils;
@@ -105,7 +104,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
 
     private final RemoteDomainConnection.HostRegistrationCallback callback;
     private final ProtocolConnectionManager connectionManager;
-    private final ProtocolChannelClient.Configuration configuration;
+    private final ProtocolConnectionConfiguration configuration;
     private final ManagementChannelHandler channelHandler;
     private final ExecutorService executorService;
     private final ScheduledExecutorService scheduledExecutorService;
@@ -114,7 +113,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
     private final RunningMode runningMode;
     private URI uri;
 
-    RemoteDomainConnection(final String localHostName, final ProtocolChannelClient.Configuration configuration,
+    RemoteDomainConnection(final String localHostName, final ProtocolConnectionConfiguration configuration,
                            final SecurityRealm realm,  final String username, final List<DiscoveryOption> discoveryOptions,
                            final ExecutorService executorService,
                            final ScheduledExecutorService scheduledExecutorService,

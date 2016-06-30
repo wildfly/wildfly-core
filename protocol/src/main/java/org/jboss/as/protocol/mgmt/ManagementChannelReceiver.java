@@ -26,7 +26,6 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.logging.ProtocolLogger;
@@ -39,10 +38,10 @@ import org.jboss.remoting3.MessageOutputStream;
  *
  * @author Emanuel Muckenhuber
  */
-public abstract class ManagementChannelReceiver implements ManagementMessageHandler, Channel.Receiver {
+public final class ManagementChannelReceiver implements Channel.Receiver {
 
     /**
-     * Create a {@code ManagementChannelReceiver} which is delegating protocol messages to
+     * Create a {@code ManagementChannelReceiver} which delegates protocol messages to
      * a {@code ManagementMessageHandler}.
      *
      * @param handler the handler
@@ -50,15 +49,15 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
      */
     public static ManagementChannelReceiver createDelegating(final ManagementMessageHandler handler) {
         assert handler != null;
-        return new ManagementChannelReceiver() {
-            @Override
-            public void handleMessage(Channel channel, DataInput input, ManagementProtocolHeader header) throws IOException {
-                handler.handleMessage(channel, input, header);
-            }
-        };
+        return new ManagementChannelReceiver(handler);
     }
 
+    private final ManagementMessageHandler handler;
     private volatile long lastMessageTime;
+
+    private ManagementChannelReceiver(final ManagementMessageHandler handler) {
+        this.handler = handler;
+    }
 
     @Override
     public void handleMessage(final Channel channel, final MessageInputStream message) {
@@ -75,17 +74,19 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
                     handlePing(channel, header);
                 } else if (type == ManagementProtocol.TYPE_PONG) {
                     // Nothing to do here
-                    ProtocolLogger.ROOT_LOGGER.tracef("Received on on %s", this);
+                    ProtocolLogger.ROOT_LOGGER.tracef("Received pong on %s", this);
                 } else if (type == ManagementProtocol.TYPE_BYE_BYE) {
-                    // Close the channel
-                    ProtocolLogger.ROOT_LOGGER.tracef("Received bye bye on %s, closing", this);
-                    handleChannelReset(channel);
+                    // This signal has been a no-op for years and years, maybe since AS 7.0.0.Final!
+                    // JBoss Remoting deals with channel close itself; we don't do it at the
+                    // management protocol level
+                    ProtocolLogger.ROOT_LOGGER.tracef("Received bye bye on %s, ignoring", this);
                 } else {
                     // Handle a message
-                    handleMessage(channel, input, header);
+                    handler.handleMessage(channel, input, header);
                 }
             } finally {
                 try {
+                    //noinspection StatementWithEmptyBody
                     while (message.read() != -1) {
                         // drain the message to workaround a potential remoting buffer leak
                     }
@@ -102,23 +103,14 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
             StreamUtils.safeClose(message);
             ProtocolLogger.ROOT_LOGGER.tracef("%s done handling incoming data", this);
         }
-        final Channel.Receiver next = next();
-        if(next != null) {
-            channel.receiveMessage(next);
-        }
-    }
-
-    public long getLastMessageTime() {
-        return lastMessageTime;
+        channel.receiveMessage(this);
     }
 
     /**
-     * Get the next receiver.
-     *
-     * @return the receiver
+     * @return the time of the most recent invocation of {@link #handleMessage(Channel, MessageInputStream)}
      */
-    protected Channel.Receiver next() {
-        return this;
+    public long getLastMessageTime() {
+        return lastMessageTime;
     }
 
     @Override
@@ -141,37 +133,13 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
     }
 
     /**
-     * Handle the legacy bye-bye notification.
-     *
-     * @param channel the channel the bye-bye message was received
-     */
-    protected void handleChannelReset(Channel channel) {
-        //
-    }
-
-    @Override
-    public void shutdown() {
-        //
-    }
-
-    @Override
-    public void shutdownNow() {
-        //
-    }
-
-    @Override
-    public boolean awaitCompletion(long timeout, TimeUnit unit) throws InterruptedException {
-        return false;
-    }
-
-    /**
      * Handle a simple ping request.
      *
      * @param channel the channel
      * @param header the protocol header
      * @throws IOException for any error
      */
-    protected static void handlePing(final Channel channel, final ManagementProtocolHeader header) throws IOException {
+    private static void handlePing(final Channel channel, final ManagementProtocolHeader header) throws IOException {
         final ManagementProtocolHeader response = new ManagementPongHeader(header.getVersion());
         final MessageOutputStream output = channel.writeMessage();
         try {
@@ -189,7 +157,7 @@ public abstract class ManagementChannelReceiver implements ManagementMessageHand
      * @param os the output stream
      * @throws IOException
      */
-    protected static void writeHeader(final ManagementProtocolHeader header, final OutputStream os) throws IOException {
+    private static void writeHeader(final ManagementProtocolHeader header, final OutputStream os) throws IOException {
         final FlushableDataOutput output = FlushableDataOutputImpl.create(os);
         header.write(output);
     }

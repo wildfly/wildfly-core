@@ -46,7 +46,7 @@ public final class ManagementChannelHandler extends AbstractMessageHandler imple
     /**
      * Optional attachment for a temp file directory.
      */
-    public static final Attachments.Key<File> TEMP_DIR = new Attachments.Key(File.class);
+    public static final Attachments.Key<File> TEMP_DIR = new Attachments.Key<File>(File.class);
 
     private static final AtomicReferenceFieldUpdater<ManagementChannelHandler, ManagementRequestHandlerFactory[]> updater = AtomicReferenceFieldUpdater.newUpdater(ManagementChannelHandler.class, ManagementRequestHandlerFactory[].class, "handlers");
     private static final ManagementRequestHandlerFactory[] NO_HANDLERS = new ManagementRequestHandlerFactory[0];
@@ -60,14 +60,6 @@ public final class ManagementChannelHandler extends AbstractMessageHandler imple
     // The management client strategy
     private final ManagementClientChannelStrategy strategy;
     private final Attachments attachments = new Attachments();
-
-    public ManagementChannelHandler(final Channel channel, final ExecutorService executorService) {
-        this(ManagementClientChannelStrategy.create(channel), executorService);
-    }
-
-    public ManagementChannelHandler(final Channel channel, final ExecutorService executorService, final ManagementRequestHandlerFactory... initial) {
-        this(ManagementClientChannelStrategy.create(channel), executorService, initial);
-    }
 
     public ManagementChannelHandler(final ManagementClientChannelStrategy strategy, final ExecutorService executorService) {
         this(strategy, executorService, NO_HANDLERS);

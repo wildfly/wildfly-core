@@ -22,14 +22,13 @@
 
 package org.jboss.as.controller.client.impl;
 
-import org.jboss.as.controller.client.logging.ControllerClientLogger;
-
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.ModelControllerClientConfiguration;
-import org.jboss.as.protocol.ProtocolChannelClient;
+import org.jboss.as.controller.client.logging.ControllerClientLogger;
+import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
@@ -116,7 +115,6 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
         }
         if (strategy == null) {
             try {
-                final ProtocolChannelClient.Configuration configuration = ProtocolConfigurationFactory.create(clientConfiguration);
 
                 // TODO move the endpoint creation somewhere else?
                 endpoint = Remoting.createEndpoint("management-client", OptionMap.EMPTY);
@@ -124,10 +122,9 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
                 endpoint.addConnectionProvider("http-remoting", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE));
                 endpoint.addConnectionProvider("https-remoting", new HttpUpgradeConnectionProviderFactory(),  OptionMap.create(Options.SSL_ENABLED, Boolean.TRUE));
 
-                configuration.setEndpoint(endpoint);
+                final ProtocolConnectionConfiguration configuration = ProtocolConfigurationFactory.create(clientConfiguration, endpoint);
 
-                final ProtocolChannelClient setup = ProtocolChannelClient.create(configuration);
-                strategy = ManagementClientChannelStrategy.create(setup, channelAssociation, clientConfiguration.getCallbackHandler(),
+                strategy = ManagementClientChannelStrategy.create(configuration, channelAssociation, clientConfiguration.getCallbackHandler(),
                         clientConfiguration.getSaslOptions(), clientConfiguration.getSSLContext(),
                         new CloseHandler<Channel>() {
                     @Override

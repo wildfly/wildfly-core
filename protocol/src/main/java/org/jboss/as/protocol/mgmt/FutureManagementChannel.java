@@ -22,18 +22,17 @@
 
 package org.jboss.as.protocol.mgmt;
 
-import org.jboss.as.protocol.ProtocolConnectionConfiguration;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
 import org.jboss.as.protocol.ProtocolConnectionManager;
-import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.as.protocol.StreamUtils;
+import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Connection;
 import org.xnio.IoFuture;
 import org.xnio.OptionMap;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for a connecting {@code ManagementClientChannelStrategy}.
@@ -46,7 +45,7 @@ public abstract class FutureManagementChannel extends ManagementClientChannelStr
     private volatile Channel channel;
     private volatile State state = State.OPEN;
 
-    public static enum State {
+    public enum State {
         OPEN,
         CLOSING,
         CLOSED,
@@ -189,60 +188,6 @@ public abstract class FutureManagementChannel extends ManagementClientChannelStr
             lock.notifyAll();
             return true;
         }
-    }
-
-    /**
-     * A connecting channel strategy.
-     */
-    static class Establishing extends FutureManagementChannel {
-
-        private final String serviceType;
-        private final OptionMap channelOptions;
-        private final Channel.Receiver receiver;
-        private final ProtocolConnectionManager connectionManager;
-
-        Establishing(final String serviceType, final Channel.Receiver receiver, final ProtocolConnectionConfiguration configuration) {
-            this.serviceType = serviceType;
-            this.receiver = receiver;
-            this.channelOptions = configuration.getOptionMap();
-            this.connectionManager = ProtocolConnectionManager.create(configuration, this);
-        }
-
-        @Override
-        public Channel getChannel() throws IOException {
-            Channel channel = super.getChannel();
-            if(channel != null) {
-                return channel;
-            }
-            // Try to connect and wait for the channel
-            connectionManager.connect();
-            // In case connect did not succeed the next getChannel() call needs to try to reconnect
-            channel = super.getChannel();
-            if(channel == null) {
-                throw ProtocolLogger.ROOT_LOGGER.channelClosed();
-            }
-            return channel;
-        }
-
-        @Override
-        public void connectionOpened(final Connection connection) throws IOException {
-            final Channel channel = openChannel(connection, serviceType, channelOptions);
-            if(setChannel(channel)) {
-                channel.receiveMessage(receiver);
-            } else {
-                channel.closeAsync();
-            }
-        }
-
-        @Override
-        public void close() throws IOException {
-            try {
-                super.close();
-            } finally {
-                connectionManager.shutdown();
-            }
-        }
-
     }
 
 }

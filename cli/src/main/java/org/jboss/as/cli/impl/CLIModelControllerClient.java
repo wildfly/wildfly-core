@@ -44,7 +44,7 @@ import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.ModelControllerClientFactory.ConnectionCloseHandler;
 import org.jboss.as.controller.client.impl.AbstractModelControllerClient;
-import org.jboss.as.protocol.ProtocolChannelClient;
+import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.ProtocolTimeoutHandler;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
@@ -122,7 +122,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
 
     private final ManagementChannelHandler channelAssociation;
     private ManagementClientChannelStrategy strategy;
-    private final ProtocolChannelClient.Configuration channelConfig;
+    private final ProtocolConnectionConfiguration channelConfig;
     private final AtomicInteger state = new AtomicInteger(CLOSED);
 
     CLIModelControllerClient(final ControllerAddress address, CallbackHandler handler, int connectionTimeout,
@@ -143,20 +143,20 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
             }
         }, executorService, this);
 
-        channelConfig = new ProtocolChannelClient.Configuration();
-        channelConfig.setClientBindAddress(clientBindAddress);
-        this.saslOptions = saslOptions;
-        channelConfig.setSaslOptions(saslOptions);
+        URI connURI;
         try {
-            channelConfig.setUri(new URI(address.getProtocol(), null, address.getHost(), address.getPort(), null, null, null));
+            connURI = new URI(address.getProtocol(), null, address.getHost(), address.getPort(), null, null, null);
         } catch (URISyntaxException e) {
             throw new IOException("Failed to create URI" , e);
         }
-        channelConfig.setOptionMap(DEFAULT_OPTIONS);
+
+        channelConfig = ProtocolConnectionConfiguration.create(endpoint, connURI, DEFAULT_OPTIONS);
+        channelConfig.setClientBindAddress(clientBindAddress);
+        this.saslOptions = saslOptions;
+        channelConfig.setSaslOptions(saslOptions);
         if(connectionTimeout > 0) {
             channelConfig.setConnectionTimeout(connectionTimeout);
         }
-        channelConfig.setEndpoint(endpoint);
         channelConfig.setTimeoutHandler(timeoutHandler);
     }
 
@@ -169,9 +169,8 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
         Channel ch = null;
         synchronized(lock) {
             if (strategy == null) {
-                final ProtocolChannelClient setup = ProtocolChannelClient.create(channelConfig);
                 final ChannelCloseHandler channelCloseHandler = new ChannelCloseHandler();
-                strategy = ManagementClientChannelStrategy.create(setup, channelAssociation, handler, saslOptions, sslContext,
+                strategy = ManagementClientChannelStrategy.create(channelConfig, channelAssociation, handler, saslOptions, sslContext,
                         channelCloseHandler);
                 channelCloseHandler.setOriginalStrategy(strategy);
             }

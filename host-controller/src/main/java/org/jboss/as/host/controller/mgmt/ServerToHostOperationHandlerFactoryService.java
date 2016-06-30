@@ -34,6 +34,7 @@ import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
+import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
 import org.jboss.as.protocol.mgmt.ManagementPongRequestHandler;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.msc.service.Service;
@@ -112,7 +113,8 @@ public class ServerToHostOperationHandlerFactoryService implements ManagementCha
 
     @Override
     public ManagementChannelHandler startReceiving(final Channel channel) {
-        final ManagementChannelHandler channelHandler = new ManagementChannelHandler(channel, executorService);
+        final ManagementClientChannelStrategy strategy = ManagementClientChannelStrategy.create(channel);
+        final ManagementChannelHandler channelHandler = new ManagementChannelHandler(strategy, executorService);
         channelHandler.getAttachments().attach(ManagementChannelHandler.TEMP_DIR, tempDir);
         final ServerToHostProtocolHandler registrationHandler = new ServerToHostProtocolHandler(serverInventory.getValue(), operationExecutor, domainController, channelHandler, registrations, expressionResolver);
         channelHandler.addHandlerFactory(new ManagementPongRequestHandler());

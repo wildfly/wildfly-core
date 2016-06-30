@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
-import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
+import org.jboss.as.protocol.mgmt.support.ManagementChannelShutdownHandle;
 
 /**
  * This class tracks active http management requests and provides listeners to coordinate the shutdown of the server. Its
@@ -38,7 +38,7 @@ import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
  *
  * @author Emanuel Muckenhuber
  */
-public class ManagementHttpRequestProcessor implements ManagementChannelInitialization.ManagementChannelShutdownHandle {
+public class ManagementHttpRequestProcessor implements ManagementChannelShutdownHandle {
 
     private volatile int state;
     private final List<ShutdownListener> listeners = new ArrayList<>();

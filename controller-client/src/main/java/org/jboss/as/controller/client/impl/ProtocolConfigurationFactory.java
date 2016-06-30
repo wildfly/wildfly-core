@@ -26,7 +26,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.jboss.as.controller.client.ModelControllerClientConfiguration;
-import org.jboss.as.protocol.ProtocolChannelClient;
+import org.jboss.as.protocol.ProtocolConnectionConfiguration;
+import org.jboss.remoting3.Endpoint;
 import org.xnio.OptionMap;
 
 /**
@@ -39,18 +40,19 @@ class ProtocolConfigurationFactory {
 
     private static final OptionMap DEFAULT_OPTIONS = OptionMap.EMPTY;
 
-    static ProtocolChannelClient.Configuration create(final ModelControllerClientConfiguration client) throws URISyntaxException {
-        final ProtocolChannelClient.Configuration configuration = new ProtocolChannelClient.Configuration();
+    static ProtocolConnectionConfiguration create(final ModelControllerClientConfiguration client, final Endpoint endpoint) throws URISyntaxException {
 
+        URI connURI;
         if(client.getProtocol() == null) {
             // WFLY-1462 for compatibility assume remoting if the standard native port is configured
             String protocol = client.getPort() == 9999 ? "remote://" : "http-remoting://";
-            configuration.setUri(new URI(protocol + formatPossibleIpv6Address(client.getHost()) +  ":" + client.getPort()));
+            connURI = new URI(protocol + formatPossibleIpv6Address(client.getHost()) +  ":" + client.getPort());
         } else  {
-            configuration.setUri(new URI(client.getProtocol() + "://" + formatPossibleIpv6Address(client.getHost()) +  ":" + client.getPort()));
+            connURI = new URI(client.getProtocol() + "://" + formatPossibleIpv6Address(client.getHost()) +  ":" + client.getPort());
         }
+        final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connURI, DEFAULT_OPTIONS);
+
         configuration.setClientBindAddress(client.getClientBindAddress());
-        configuration.setOptionMap(DEFAULT_OPTIONS);
         final long timeout = client.getConnectionTimeout();
         if(timeout > 0) {
             configuration.setConnectionTimeout(timeout);
