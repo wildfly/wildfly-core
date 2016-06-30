@@ -22,10 +22,13 @@
 
 package org.jboss.as.controller.operations.global;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALL_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_DESCRIPTION_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_ONLY;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.LOCALE;
@@ -88,22 +91,7 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
         if (describedOp == null || (context.getProcessType() == ProcessType.DOMAIN_SERVER && !describedOp.flags.contains(OperationEntry.Flag.RUNTIME_ONLY))) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.operationNotRegistered(operationName, context.getCurrentAddress()));
         } else {
-            final ModelNode result = describedOp.description;
-            Set<OperationEntry.Flag> flags = describedOp.flags;
-            boolean readOnly = flags.contains(OperationEntry.Flag.READ_ONLY);
-            result.get(READ_ONLY).set(readOnly);
-            if (!readOnly) {
-                if (flags.contains(OperationEntry.Flag.RESTART_ALL_SERVICES)) {
-                    result.get(RESTART_REQUIRED).set("all-services");
-                } else if (flags.contains(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)) {
-                    result.get(RESTART_REQUIRED).set("resource-services");
-                } else if (flags.contains(OperationEntry.Flag.RESTART_JVM)) {
-                    result.get(RESTART_REQUIRED).set("jvm");
-                }
-            }
-
-            boolean runtimeOnly = flags.contains(OperationEntry.Flag.RUNTIME_ONLY);
-            result.get(RUNTIME_ONLY).set(runtimeOnly);
+            ModelNode result = describedOp.getDescription();
 
             if (accessControl) {
                 final PathAddress address = context.getCurrentAddress();
@@ -170,11 +158,11 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
         return result;
     }
 
-    private static class DescribedOp {
+    static class DescribedOp {
         private final ModelNode description;
         private final Set<OperationEntry.Flag> flags;
 
-        private DescribedOp(OperationEntry operationEntry, Locale locale) {
+        DescribedOp(OperationEntry operationEntry, Locale locale) {
             this.description = operationEntry.getDescriptionProvider().getModelDescription(locale);
             this.flags = operationEntry.getFlags();
         }
@@ -194,6 +182,28 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
         public int hashCode() {
             int result = description.hashCode();
             result = 31 * result + flags.hashCode();
+            return result;
+        }
+
+        /**
+         * @return the description of the operation augmented of the operation's entry flags.
+         */
+        ModelNode getDescription() {
+            final ModelNode result = description.clone();
+            boolean readOnly = flags.contains(OperationEntry.Flag.READ_ONLY);
+            result.get(READ_ONLY).set(readOnly);
+            if (!readOnly) {
+                if (flags.contains(OperationEntry.Flag.RESTART_ALL_SERVICES)) {
+                    result.get(RESTART_REQUIRED).set(ALL_SERVICES);
+                } else if (flags.contains(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)) {
+                    result.get(RESTART_REQUIRED).set(RESOURCE_SERVICES);
+                } else if (flags.contains(OperationEntry.Flag.RESTART_JVM)) {
+                    result.get(RESTART_REQUIRED).set(JVM);
+                }
+            }
+
+            boolean runtimeOnly = flags.contains(OperationEntry.Flag.RUNTIME_ONLY);
+            result.get(RUNTIME_ONLY).set(runtimeOnly);
             return result;
         }
     }
