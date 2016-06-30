@@ -85,14 +85,23 @@ ARGUMENTS
  --domain-config  - optional, allowed only in the domain mode. Used to specify
                  a new file name for the domain config. The same rules as for
                  the --domain-config flag used on the command line when starting
-                 the host apply.
+                 the host apply. When making changes to the model after the
+                 reload, the changes will still be persisted to the original
+                 domain configuration file that was used to first boot up the
+                 host controller.
 
  --host-config   - optional, allowed only in the domain mode. Used to specify
                  a new file name for the host config. The same rules as for
                  the --host-config flag used on the command line when starting
-                 the host apply.
+                 the host apply. When making changes to the model after the
+                 reload, the changes will still be persisted to the original
+                 host configuration file that was used to first boot up the
+                 host controller.
 
  --server-config   - optional, allowed only in the standalone mode. Used to
                  specify a new file name for the host config. The same rules as
                  for the --host-config flag used on the command line when
-                 starting the server apply.
+                 starting the server apply. When making changes to the model
+                 after the reload, the changes will still be persisted to the
+                 original server configuration file that was used to first
+                 boot up the server.
