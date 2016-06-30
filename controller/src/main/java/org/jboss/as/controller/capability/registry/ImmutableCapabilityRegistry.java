@@ -93,4 +93,11 @@ public interface ImmutableCapabilityRegistry {
      */
 
     Set<PathAddress> getPossibleProviderPoints(CapabilityId capabilityId);
+
+    /**
+     * returns capability registration for capability id pass as parameter
+     * @param capabilityId id of capability with its scope.
+     * @return CapabilityRegistration or null if none is found
+     */
+    CapabilityRegistration getCapability(CapabilityId capabilityId);
 }

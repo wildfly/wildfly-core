@@ -167,5 +167,53 @@ public interface CapabilityScope {
             return context;
 
         }
+
+        /**
+         * Get capability scope for its name
+         * @param name of the scope
+         * @return capability scope for given name
+         */
+        public static CapabilityScope forName(String name){
+            final boolean dynamic = name.contains("="); //for example profile=default
+            final String key = dynamic ? name.substring(0, name.indexOf("=")) : name;
+            final String value = dynamic ? name.substring(name.indexOf("=") + 1) : null;
+
+            CapabilityScope context = GLOBAL;
+            switch (key) {
+                case PROFILE: {
+                    context = dynamic ? new ProfileChildCapabilityScope(value) : ProfilesCapabilityScope.INSTANCE;
+                    break;
+                }
+                case SOCKET_BINDING_GROUP: {
+                    context = dynamic ? new SocketBindingGroupChildScope(value) : SocketBindingGroupsCapabilityScope.INSTANCE;
+                    break;
+                }
+                /*case HOST: { //this is fishy part!
+                    if (address.size() >= 2) {
+                        PathElement hostElement = address.getElement(1);
+                        final String hostType = hostElement.getKey();
+                        switch (hostType) {
+                            case SUBSYSTEM:
+                            case SOCKET_BINDING_GROUP:
+                                context = HostCapabilityScope.INSTANCE;
+                                break;
+                            case SERVER_CONFIG:
+                                context = ServerConfigCapabilityScope.INSTANCE;
+                        }
+                    }
+                    break;
+                }*/
+                case SERVER_GROUP: {
+                    context = ServerGroupsCapabilityScope.INSTANCE;
+                    break;
+                }
+                case SERVER_CONFIG: {
+                    context = ServerConfigCapabilityScope.INSTANCE;
+                    break;
+                }
+            }
+
+            return context;
+        }
     }
 }
