@@ -61,7 +61,7 @@ public class WorkerService implements Service<XnioWorker> {
     public void stop(StopContext context) {
         this.stopContext = context;
         context.asynchronous();
-        worker.shutdown();
+        worker.shutdownNow();
         worker = null;
     }
 
