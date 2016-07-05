@@ -183,7 +183,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     @Override
     protected void initCoreModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
         //See server HttpManagementAddHandler
-        System.setProperty("jboss.as.test.disable.runtime", "1");
+        System.setProperty("wildfly.test.boot.disable.rollback", "1");
         if (type == TestModelType.STANDALONE) {
             initializer.initCoreModel(rootResource, rootRegistration, modelControllerResource);
 
@@ -198,7 +198,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     @Override
     public void stop(StopContext context) {
         super.stop(context);
-        System.clearProperty("jboss.as.test.disable.runtime");
+        System.clearProperty("wildfly.test.boot.disable.rollback");
     }
 
     private ServerEnvironment createStandaloneServerEnvironment() {
@@ -263,7 +263,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
             RunningMode initialRunningMode = runningModeControl.getRunningMode();
             boolean backupDomainFiles = false;
             boolean useCachedDc = false;
-            ProductConfig productConfig = new ProductConfig(null, "",  props);
+            ProductConfig productConfig = ProductConfig.fromFilesystemSlot(null, "",  props);
             return new HostControllerEnvironment(props, isRestart, modulePath, processControllerAddress, processControllerPort,
                     hostControllerAddress, hostControllerPort, defaultJVM, domainConfig, initialDomainConfig, hostConfig, initialHostConfig,
                     initialRunningMode, backupDomainFiles, useCachedDc, productConfig);

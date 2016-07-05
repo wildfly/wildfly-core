@@ -184,7 +184,6 @@ public abstract class AttributeMarshaller {
         }
     }
 
-
     /**
      * simple marshaller
      */
@@ -212,6 +211,8 @@ public abstract class AttributeMarshaller {
 
 
     public static final AttributeMarshaller OBJECT_LIST_MARSHALLER = new ObjectListMarshaller();
+
+    public static final AttributeMarshaller OBJECT_MAP_MARSHALLER = new AttributeMarshallers.ObjectMapAttributeMarshaller();
 
     public static final AttributeMarshaller PROPERTIES_MARSHALLER = new AttributeMarshallers.PropertiesAttributeMarshaller();
 

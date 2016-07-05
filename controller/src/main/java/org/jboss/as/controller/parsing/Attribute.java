@@ -88,6 +88,7 @@ public enum Attribute {
     FOR_HOSTS("for-hosts"),
     FORCE("force"),
     FORMATTER("formatter"),
+    GENERATE_SELF_SIGNED_CERTIFICATE_HOST("generate-self-signed-certificate-host"),
     GROUP("group"),
     GROUP_ATTRIBUTE("group-attribute"),
     GROUP_DN_ATTRIBUTE("group-dn-attribute"),

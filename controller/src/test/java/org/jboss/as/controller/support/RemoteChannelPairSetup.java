@@ -30,7 +30,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import org.jboss.as.protocol.ProtocolChannelClient;
+import org.jboss.as.protocol.ProtocolConnectionConfiguration;
+import org.jboss.as.protocol.ProtocolConnectionUtils;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
@@ -104,12 +105,10 @@ public class RemoteChannelPairSetup {
     }
 
     public void startClientConnetion() throws IOException, URISyntaxException {
-        ProtocolChannelClient.Configuration configuration = new ProtocolChannelClient.Configuration();
-        configuration.setEndpoint(channelServer.getEndpoint());
-        configuration.setUri(new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""));
+        ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(channelServer.getEndpoint(),
+                new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""));
 
-        ProtocolChannelClient client = ProtocolChannelClient.create(configuration);
-        connection = client.connectSync(new PasswordClientCallbackHandler("bob", ENDPOINT_NAME ,"pass".toCharArray()));
+        connection = ProtocolConnectionUtils.connectSync(configuration, new PasswordClientCallbackHandler("bob", ENDPOINT_NAME ,"pass".toCharArray()));
 
         clientChannel = connection.openChannel(TEST_CHANNEL, OptionMap.EMPTY).get();
         try {

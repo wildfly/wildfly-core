@@ -39,6 +39,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.POR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD_REQUIRED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLAN;
@@ -146,24 +147,32 @@ public class ServerRestartRequiredTestCase {
     @Test
     public void testSocketBinding() throws Exception {
         final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+            // add a custom socket binding, referencing a non-existent system property
+            final ModelNode socketBinding = new ModelNode();
+            socketBinding.add(SOCKET_BINDING_GROUP, "reload-sockets");
+            socketBinding.add(SOCKET_BINDING, "my-custom-binding");
+        try {
 
-        // add a custom socket binding, referencing a non-existent system property
-        final ModelNode socketBinding = new ModelNode();
-        socketBinding.add(SOCKET_BINDING_GROUP, "reload-sockets");
-        socketBinding.add(SOCKET_BINDING, "my-custom-binding");
+            final ModelNode socketBindingAdd = new ModelNode();
+            socketBindingAdd.get(OP).set(ADD);
+            socketBindingAdd.get(OP_ADDR).set(socketBinding);
+            socketBindingAdd.get(PORT).set(new ValueExpression("${my.custom.socket}"));
 
-        final ModelNode socketBindingAdd = new ModelNode();
-        socketBindingAdd.get(OP).set(ADD);
-        socketBindingAdd.get(OP_ADDR).set(socketBinding);
-        socketBindingAdd.get(PORT).set(new ValueExpression("${my.custom.socket}"));
+            // Don't rollback server failures, rather mark them as restart-required
+            socketBindingAdd.get(OPERATION_HEADERS).get(ROLLOUT_PLAN)
+                    .get(IN_SERIES).add().get(CONCURRENT_GROUPS).get("reload-test-group").get(MAX_FAILURE_PERCENTAGE).set(100);
 
-        // Don't rollback server failures, rather mark them as restart-required
-        socketBindingAdd.get(OPERATION_HEADERS).get(ROLLOUT_PLAN)
-                .get(IN_SERIES).add().get(CONCURRENT_GROUPS).get("reload-test-group").get(MAX_FAILURE_PERCENTAGE).set(100);
+            executeOperation(socketBindingAdd, client);
 
-        executeOperation(socketBindingAdd, client);
-
-        checkRestartOneAndTwo(client);
+            checkRestartOneAndTwo(client);
+        } finally {
+            final ModelNode socketBindingRemove = new ModelNode();
+            socketBindingRemove.get(OP).set(REMOVE);
+            socketBindingRemove.get(OP_ADDR).set(socketBinding);
+            socketBindingRemove.get(OPERATION_HEADERS).get(ROLLOUT_PLAN)
+                    .get(IN_SERIES).add().get(CONCURRENT_GROUPS).get("reload-test-group").get(MAX_FAILURE_PERCENTAGE).set(100);
+            executeOperation(socketBindingRemove, client);
+        }
     }
 
     @Test
@@ -358,10 +367,6 @@ public class ServerRestartRequiredTestCase {
         waitUntilState(client, reloadOneConfigAddress, "STARTED");
         waitUntilState(client, reloadTwoConfigAddress, "STARTED");
 
-    }
-
-    private void checkReloadOneAndTwo(final ModelControllerClient client) throws Exception {
-        checkProcessStateOneAndTwo(client, RELOAD_REQUIRED);
     }
 
     private void checkRestartOneAndTwo(final ModelControllerClient client) throws Exception {

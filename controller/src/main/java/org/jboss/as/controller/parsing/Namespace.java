@@ -72,6 +72,8 @@ public enum Namespace {
 
     DOMAIN_4_1(4, "urn:jboss:domain:4.1"),
 
+    DOMAIN_4_2(4, "urn:jboss:domain:4.2"),
+
     DOMAIN_5_0(5, "urn:jboss:domain:5.0");
 
     /**

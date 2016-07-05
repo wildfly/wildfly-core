@@ -628,8 +628,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         Set<PathAddress> result = new LinkedHashSet<>();
         readLock.lock();
         try {
-            capabilityId = capabilityId.getScope() == CapabilityScope.GLOBAL ? capabilityId : new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL);
-            CapabilityRegistration<RuntimeCapability> reg = possibleCapabilities.get(capabilityId);
+            capabilityId = capabilityId.getScope() == CapabilityScope.GLOBAL ? capabilityId : new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL); //possible registry is only in global scope
+            CapabilityRegistration<RuntimeCapability> reg =  possibleCapabilities.get(capabilityId);
             if (reg != null) {
                 result.addAll(reg.getRegistrationPoints().stream().map(RegistrationPoint::getAddress).collect(Collectors.toList()));
             }
@@ -638,6 +638,17 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             readLock.unlock();
         }
         return result;
+    }
+
+    public CapabilityRegistration getCapability(CapabilityId capabilityId){
+        readLock.lock();
+        try {
+            CapabilityRegistration<RuntimeCapability> reg = capabilities.get(capabilityId);
+            return reg != null ? new CapabilityRegistration<>(reg) : null;
+        } finally {
+            readLock.unlock();
+        }
+
     }
 
     //end ImmutableCapabilityRegistry methods

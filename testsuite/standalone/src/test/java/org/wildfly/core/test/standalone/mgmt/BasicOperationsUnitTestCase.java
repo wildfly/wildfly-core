@@ -159,6 +159,18 @@ public class BasicOperationsUnitTestCase {
     }
 
     @Test
+    public void testReadResourceWithSubsystem() throws IOException {
+        // WFCORE-857
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_RESOURCE_OPERATION);
+        operation.get(OP_ADDR).set(PathAddress.parseCLIStyleAddress("/deployment=foo.war/subsystem=*").toModelNode());
+        operation.get(RECURSIVE).set(false);
+
+        final ModelNode result = managementClient.getControllerClient().execute(operation);
+        assertEquals(FAILED, result.get(OUTCOME).asString());
+    }
+
+    @Test
     public void testReadResourceRecursiveDepthGt1RecursiveTrue() throws IOException {
         // WFCORE-76
         final ModelNode operation = new ModelNode();

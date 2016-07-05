@@ -24,17 +24,21 @@ package org.jboss.as.controller.operations.global;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALL_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXCEPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NO_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STORAGE;
@@ -216,8 +220,8 @@ public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.Abst
             for (final Map.Entry<String, OperationEntry> entry : registry.getOperationDescriptions(PathAddress.EMPTY_ADDRESS, inherited).entrySet()) {
                 if (entry.getValue().getType() == OperationEntry.EntryType.PUBLIC) {
                     if (context.getProcessType() != ProcessType.DOMAIN_SERVER || entry.getValue().getFlags().contains(OperationEntry.Flag.RUNTIME_ONLY)) {
-                        final DescriptionProvider provider = entry.getValue().getDescriptionProvider();
-                        operations.put(entry.getKey(), provider.getModelDescription(locale));
+                        ReadOperationDescriptionHandler.DescribedOp describedOp = new ReadOperationDescriptionHandler.DescribedOp(entry.getValue(), locale);
+                        operations.put(entry.getKey(), describedOp.getDescription());
                     }
                 }
             }
@@ -251,13 +255,13 @@ public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.Abst
                 if (accessType == AttributeAccess.AccessType.READ_WRITE) {
                     Set<AttributeAccess.Flag> flags = access.getFlags();
                     if (flags.contains(AttributeAccess.Flag.RESTART_ALL_SERVICES)) {
-                        attrNode.get(RESTART_REQUIRED).set("all-services");
+                        attrNode.get(RESTART_REQUIRED).set(ALL_SERVICES);
                     } else if (flags.contains(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)) {
-                        attrNode.get(RESTART_REQUIRED).set("resource-services");
+                        attrNode.get(RESTART_REQUIRED).set(RESOURCE_SERVICES);
                     } else if (flags.contains(AttributeAccess.Flag.RESTART_JVM)) {
-                        attrNode.get(RESTART_REQUIRED).set("jvm");
+                        attrNode.get(RESTART_REQUIRED).set(JVM);
                     } else {
-                        attrNode.get(RESTART_REQUIRED).set("no-services");
+                        attrNode.get(RESTART_REQUIRED).set(NO_SERVICES);
                     }
                 }
             }

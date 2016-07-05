@@ -91,7 +91,7 @@ import org.jboss.as.host.controller.mgmt.DomainControllerProtocol;
 import org.jboss.as.host.controller.mgmt.DomainRemoteFileRequestAndHandler;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.as.host.controller.mgmt.HostInfo;
-import org.jboss.as.protocol.ProtocolChannelClient;
+import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
@@ -482,11 +482,9 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                     .getMap();
 
             // Gather the required information to connect to the remote DC
-            final ProtocolChannelClient.Configuration configuration = new ProtocolChannelClient.Configuration();
-            // The URI will be set accordingly when looping through discovery options when registering with
+            // The URI will be set later when looping through discovery options when registering with
             // or reconnecting to the remote DC.
-            configuration.setEndpoint(endpointInjector.getValue());
-            configuration.setOptionMap(options);
+            final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpointInjector.getValue(), options);
 
             final SecurityRealm realm = securityRealmInjector.getOptionalValue();
             // Create the remote domain channel strategy

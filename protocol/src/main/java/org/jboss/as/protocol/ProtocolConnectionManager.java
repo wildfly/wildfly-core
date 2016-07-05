@@ -34,13 +34,13 @@ import java.io.IOException;
  *
  * @author Emanuel Muckenhuber
  */
-public class ProtocolConnectionManager {
+public final class ProtocolConnectionManager {
 
     private ConnectTask connectTask;
     private volatile boolean shutdown;
     private volatile Connection connection;
 
-    protected ProtocolConnectionManager(final ConnectTask initial) {
+    private ProtocolConnectionManager(final ConnectTask initial) {
         if(initial == null) {
             throw ProtocolLogger.ROOT_LOGGER.nullVar("connectTask");
         }
@@ -125,7 +125,7 @@ public class ProtocolConnectionManager {
      *
      * @param closed the closed connection
      */
-    protected void onConnectionClose(final Connection closed) {
+    private void onConnectionClose(final Connection closed) {
         synchronized (this) {
             if(connection == closed) {
                 connection = null;
@@ -139,6 +139,7 @@ public class ProtocolConnectionManager {
         }
     }
 
+    /** Handler for notifications that a connection has been opened */
     public interface ConnectionOpenHandler {
 
         /**
@@ -229,7 +230,7 @@ public class ProtocolConnectionManager {
         return new ProtocolConnectionManager(connectTask);
     }
 
-    static class EstablishingConnection implements ConnectTask {
+    private static class EstablishingConnection implements ConnectTask {
 
         private final ConnectTask next;
         private final ConnectionOpenHandler openHandler;
@@ -268,7 +269,7 @@ public class ProtocolConnectionManager {
         }
     }
 
-    static class EstablishedConnection implements ConnectTask {
+    private static class EstablishedConnection implements ConnectTask {
 
         private final Connection connection;
         private final ConnectionOpenHandler openHandler;
@@ -298,6 +299,10 @@ public class ProtocolConnectionManager {
         }
     }
 
+    /**
+     * A {@code ConnectTask} that can be returned from {@link ConnectTask#connectionClosed()}
+     * to terminate further attempts to connect.
+     */
     public static final ConnectTask DISCONNECTED = new ConnectTask() {
 
         @Override

@@ -28,11 +28,20 @@ import static org.jboss.as.server.services.net.LocalDestinationOutboundSocketBin
 import static org.jboss.as.server.services.net.OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.OperationContext.Stage;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.parsing.Element;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.as.network.SocketBinding;
@@ -64,6 +73,59 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
         //Check if we are a host's socket binding and install the service if we are
         PathAddress pathAddress = context.getCurrentAddress();
         return pathAddress.size() > 0 && pathAddress.getElement(0).getKey().equals(HOST);
+    }
+
+    @Override
+    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource)
+            throws OperationFailedException {
+        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+        final String socketBindingGroupName = address.getParent().getLastElement().getValue();
+        final String outboundSocketBindingName = address.getLastElement().getValue();
+
+        context.addStep(new OperationStepHandler() {
+            @Override
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                Resource resource;
+                if (!context.getProcessType().isServer()) {
+                    try {
+                        resource = context.readResourceFromRoot(context.getCurrentAddress().getParent(), false);
+                        validation(socketBindingGroupName, outboundSocketBindingName, resource, true, new ArrayList<String>());
+                    } catch (Resource.NoSuchResourceException e) {
+                        // this occurs in the case of an ignored server-group being added to a slave.
+                        // for all other cases, the parent element is always present.
+                        return;
+                    }
+                }else{
+                    resource = context.readResourceFromRoot(PathAddress.pathAddress(ModelDescriptionConstants.SOCKET_BINDING_GROUP, socketBindingGroupName), false);
+                    validation(socketBindingGroupName, outboundSocketBindingName, resource, false, new ArrayList<String>());
+                }
+            }
+
+            private void validation(final String socketBindingGroupName, final String outboundSocketBindingName, final Resource resource, final boolean recursive, List<String> validatedGroupList) {
+                Set<String> socketBindingNames = resource.getChildrenNames(ModelDescriptionConstants.SOCKET_BINDING);
+                Set<String> remoteDestinationOutboundSocketBindingNames = resource.getChildrenNames(ModelDescriptionConstants.REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING);
+                if(socketBindingNames.contains(outboundSocketBindingName) || remoteDestinationOutboundSocketBindingNames.contains(outboundSocketBindingName)){
+                    throw ControllerLogger.ROOT_LOGGER.socketBindingalreadyDeclared(Element.SOCKET_BINDING.getLocalName(),
+                            Element.OUTBOUND_SOCKET_BINDING.getLocalName(), outboundSocketBindingName,
+                            Element.SOCKET_BINDING_GROUP.getLocalName(), socketBindingGroupName);
+                }
+                validatedGroupList.add(socketBindingGroupName);
+
+                if (recursive && resource.getModel().hasDefined(ModelDescriptionConstants.INCLUDES)) {
+                    List<ModelNode> includedSocketBindingGroups = resource.getModel().get(ModelDescriptionConstants.INCLUDES).asList();
+                    for(ModelNode includedSocketBindingGroup : includedSocketBindingGroups){
+                        String includedSocketBindingGroupName = includedSocketBindingGroup.asString();
+                        if (!validatedGroupList.contains(includedSocketBindingGroupName)) {
+                            Resource includedResource = context.readResourceFromRoot(PathAddress.pathAddress(ModelDescriptionConstants.SOCKET_BINDING_GROUP, includedSocketBindingGroupName), false);
+                            validation(includedSocketBindingGroupName, outboundSocketBindingName, includedResource, recursive, validatedGroupList);
+                        }
+                    }
+                }
+            }
+
+        }, Stage.MODEL);
+
+        super.populateModel(context, operation, resource);
     }
 
     @Override

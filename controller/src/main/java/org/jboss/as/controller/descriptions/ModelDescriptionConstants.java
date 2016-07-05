@@ -52,6 +52,7 @@ public class ModelDescriptionConstants {
     public static final String ALLOW_RESOURCE_SERVICE_RESTART = "allow-resource-service-restart";
     public static final String ALLOWED_ORIGINS = "allowed-origins";
     public static final String ALL_ROLE_NAMES = "all-role-names";
+    public static final String ALL_SERVICES = "all-services";
     public static final String ALTERNATIVES = "alternatives";
     public static final String ANY = "any";
     public static final String ANY_ADDRESS = "any-address";
@@ -189,6 +190,7 @@ public class ModelDescriptionConstants {
     public static final String FORCE = "force";
     public static final String FORMATTER = "formatter";
     public static final String FULL_REPLACE_DEPLOYMENT = "full-replace-deployment";
+    public static final String GENERATE_SELF_SIGNED_CERTIFICATE_HOST = "generate-self-signed-certificate-host";
     public static final String GRACEFUL_SHUTDOWN_TIMEOUT = "graceful-shutdown-timeout";
     public static final String GROUP = "group";
     public static final String GROUP_ATTRIBUTE = "group-attribute";
@@ -298,6 +300,7 @@ public class ModelDescriptionConstants {
     public static final String NETWORK = "network";
     public static final String NILLABLE = "nillable";
     public static final String NIL_SIGNIFICANT = "nil-significant";
+    public static final String NO_SERVICES = "no-services";
     public static final String NOT = "not";
     public static final String NOTIFICATION = "notification";
     public static final String NOTIFICATION_DATA_TYPE = "data-type";
@@ -385,6 +388,7 @@ public class ModelDescriptionConstants {
     public static final String RESOLVE_EXPRESSIONS = "resolve-expressions";
     public static final String RESOURCE_ADDED_NOTIFICATION = "resource-added";
     public static final String RESOURCE_REMOVED_NOTIFICATION = "resource-removed";
+    public static final String RESOURCE_SERVICES = "resource-services";
     public static final String RESPONSE = "response";
     public static final String RESPONSE_HEADERS = "response-headers";
     public static final String RESTART = "restart";

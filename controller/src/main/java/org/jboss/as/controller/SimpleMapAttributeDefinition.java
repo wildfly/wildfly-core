@@ -39,7 +39,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
- * {@link MapAttributeDefinition} for maps with keys of {@link ModelType#STRING}.
+ * {@link MapAttributeDefinition} for maps with keys of {@link ModelType#STRING} and values of type ModelType
  *
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  * @since 7.2

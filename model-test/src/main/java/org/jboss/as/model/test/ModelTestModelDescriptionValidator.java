@@ -24,6 +24,7 @@ package org.jboss.as.model.test;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONSTRAINTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOWED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALL_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALTERNATIVES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTE_GROUP;
@@ -37,6 +38,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXPRESSIONS_ALLOWED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HEAD_COMMENT_ALLOWED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_LENGTH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_OCCURS;
@@ -49,14 +51,18 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NILLABLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NIL_SIGNIFICANT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NO_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REASON;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REPLY_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_REQUIRED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SINCE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STORAGE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TAIL_COMMENT_ALLOWED;
@@ -151,7 +157,7 @@ public class ModelTestModelDescriptionValidator {
         validAttributeKeys.put(HEAD_COMMENT_ALLOWED, BooleanDescriptorValidator.INSTANCE);
         validAttributeKeys.put(TAIL_COMMENT_ALLOWED, BooleanDescriptorValidator.INSTANCE);
         validAttributeKeys.put(STORAGE, StorageDescriptorValidator.INSTANCE);
-        validAttributeKeys.put(RESTART_REQUIRED, NullDescriptorValidator.INSTANCE); //TODO some more validation here
+        validAttributeKeys.put(RESTART_REQUIRED, RestartRequiredDescriptorValidator.INSTANCE);
         validAttributeKeys.put(DEPRECATED, DeprecatedDescriptorValidator.INSTANCE);
         validAttributeKeys.put(ACCESS_CONSTRAINTS, AccessConstraintValidator.INSTANCE);
         validAttributeKeys.put(NIL_SIGNIFICANT, BooleanDescriptorValidator.INSTANCE);
@@ -164,6 +170,9 @@ public class ModelTestModelDescriptionValidator {
         validOperationKeys.put(REPLY_PROPERTIES, NullDescriptorValidator.INSTANCE);
         validOperationKeys.put(DEPRECATED, DeprecatedDescriptorValidator.INSTANCE);
         validOperationKeys.put(ACCESS_CONSTRAINTS, AccessConstraintValidator.INSTANCE);
+        validOperationKeys.put(READ_ONLY, BooleanDescriptorValidator.INSTANCE);
+        validOperationKeys.put(RUNTIME_ONLY, BooleanDescriptorValidator.INSTANCE);
+        validOperationKeys.put(RESTART_REQUIRED, RestartRequiredDescriptorValidator.INSTANCE);
         VALID_OPERATION_KEYS = Collections.unmodifiableMap(validOperationKeys);
 
         Map<String, AttributeOrParameterArbitraryDescriptorValidator> validParameterKeys = new HashMap<String, AttributeOrParameterArbitraryDescriptorValidator>();
@@ -562,6 +571,36 @@ public class ModelTestModelDescriptionValidator {
         @Override
         public String validate(ModelNode currentNode, String descriptor) {
             return null;
+        }
+    }
+
+    private static class RestartRequiredDescriptorValidator implements ArbitraryDescriptorValidator, AttributeOrParameterArbitraryDescriptorValidator {
+        static final RestartRequiredDescriptorValidator INSTANCE = new RestartRequiredDescriptorValidator();
+
+        @Override
+        public String validate(ModelType currentType, ModelNode currentNode, String descriptor) {
+            if (currentNode.hasDefined(descriptor)) {
+                try {
+                    String value = currentNode.get(descriptor).asString();
+                    switch (value) {
+                        case JVM:
+                        case ALL_SERVICES:
+                        case RESOURCE_SERVICES:
+                        case NO_SERVICES:
+                            return null;
+                        default:
+                            return value + " is not a valid value for '" + descriptor + "'";
+                    }
+                } catch (Exception e) {
+                    return "'" + descriptor + "' does not define a valid value";
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public String validate(ModelNode currentNode, String descriptor) {
+            return validate(null, currentNode, descriptor);
         }
     }
 

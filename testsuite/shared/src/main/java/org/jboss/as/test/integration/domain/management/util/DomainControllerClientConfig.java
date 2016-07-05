@@ -22,14 +22,8 @@
 
 package org.jboss.as.test.integration.domain.management.util;
 
-import org.jboss.as.protocol.ProtocolChannelClient;
-import org.jboss.remoting3.Endpoint;
-import org.jboss.remoting3.Remoting;
-import org.jboss.remoting3.remote.RemoteConnectionProviderFactory;
-import org.jboss.threads.JBossThreadFactory;
-import org.xnio.OptionMap;
+import static java.security.AccessController.doPrivileged;
 
-import javax.security.auth.callback.CallbackHandler;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
@@ -41,7 +35,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.security.AccessController.doPrivileged;
+import javax.security.auth.callback.CallbackHandler;
+
+import org.jboss.as.protocol.ProtocolConnectionConfiguration;
+import org.jboss.remoting3.Endpoint;
+import org.jboss.remoting3.Remoting;
+import org.jboss.remoting3.remote.RemoteConnectionProviderFactory;
+import org.jboss.threads.JBossThreadFactory;
+import org.xnio.OptionMap;
 
 /**
  * Shared test configuration where all {@linkplain org.jboss.as.controller.client.ModelControllerClient}s share a common {@linkplain Endpoint} and
@@ -83,11 +84,8 @@ public class DomainControllerClientConfig implements Closeable {
      * @throws IOException
      */
     DomainTestConnection createConnection(final URI connectionURI, final CallbackHandler callbackHandler) throws IOException {
-        final ProtocolChannelClient.Configuration configuration = new ProtocolChannelClient.Configuration();
-        configuration.setEndpoint(endpoint);
-        configuration.setUri(connectionURI);
-        final ProtocolChannelClient client = ProtocolChannelClient.create(configuration);
-        return new DomainTestConnection(client, callbackHandler, executorService);
+        final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI);
+        return new DomainTestConnection(configuration, callbackHandler, executorService);
     }
 
     @Override

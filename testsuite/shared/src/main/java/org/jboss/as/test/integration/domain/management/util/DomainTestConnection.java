@@ -22,7 +22,17 @@
 
 package org.jboss.as.test.integration.domain.management.util;
 
-import org.jboss.as.protocol.ProtocolChannelClient;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.security.auth.callback.CallbackHandler;
+
+import org.jboss.as.protocol.ProtocolConnectionConfiguration;
+import org.jboss.as.protocol.ProtocolConnectionUtils;
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
@@ -32,14 +42,6 @@ import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Connection;
 import org.xnio.IoFuture;
 import org.xnio.OptionMap;
-
-import javax.security.auth.callback.CallbackHandler;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Connection utility allowing the {@linkplain DomainLifecycleUtil} to share a remoting connection between potentially
@@ -51,15 +53,15 @@ class DomainTestConnection implements Closeable {
 
     private static final String DEFAULT_CHANNEL_SERVICE_TYPE = "management";
 
-    private final ProtocolChannelClient client;
+    private final ProtocolConnectionConfiguration clientConfiguration;
     private final CallbackHandler callbackHandler;
     private final ExecutorService executorService;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     volatile Connection connection;
 
-    DomainTestConnection(final ProtocolChannelClient client, final CallbackHandler callbackHandler, final ExecutorService executorService) {
-        this.client = client;
+    DomainTestConnection(final ProtocolConnectionConfiguration clientConfiguration, final CallbackHandler callbackHandler, final ExecutorService executorService) {
+        this.clientConfiguration = clientConfiguration;
         this.callbackHandler = callbackHandler;
         this.executorService = executorService;
     }
@@ -132,7 +134,7 @@ class DomainTestConnection implements Closeable {
             if(isConnected()) {
                 return connection;
             }
-            connection = client.connectSync(callbackHandler, Collections.<String, String>emptyMap(), null);
+            connection = ProtocolConnectionUtils.connectSync(clientConfiguration, callbackHandler, Collections.emptyMap(), null);
             connection.addCloseHandler(new CloseHandler<Connection>() {
                 @Override
                 public void handleClose(Connection old, IOException exception) {
@@ -151,7 +153,7 @@ class DomainTestConnection implements Closeable {
     /**
      * Check if we are currently connected.
      *
-     * @return
+     * @return {@code true} if we are connected
      */
     protected boolean isConnected() {
         return connection != null;

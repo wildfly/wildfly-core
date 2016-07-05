@@ -123,8 +123,7 @@ public class HostModelRegistrationHandler implements OperationStepHandler {
         rootResource.registerChild(PathElement.pathElement(ModelDescriptionConstants.CORE_SERVICE, ModelDescriptionConstants.MODULE_LOADING), PlaceholderResource.INSTANCE);
 
         //Create the empty capability registry resource
-        // TODO enable once we have consensus on the API with the HAL team
-        //rootResource.registerChild(PathElement.pathElement(ModelDescriptionConstants.CORE_SERVICE, ModelDescriptionConstants.CAPABILITY_REGISTRY), PlaceholderResource.INSTANCE);
+        rootResource.registerChild(PathElement.pathElement(ModelDescriptionConstants.CORE_SERVICE, ModelDescriptionConstants.CAPABILITY_REGISTRY), PlaceholderResource.INSTANCE);
 
 
         // Wire in the platform mbean resources. We're bypassing the context.createResource API here because

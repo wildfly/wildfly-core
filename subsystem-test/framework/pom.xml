@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-subsystem-test-parent</artifactId>
-        <version>3.0.0.Alpha2-SNAPSHOT</version>
+        <version>3.0.0.Alpha4-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-subsystem-test-framework</artifactId>
@@ -86,6 +86,23 @@
         <dependency>
             <groupId>org.wildfly.legacy.test</groupId>
             <artifactId>wildfly-legacy-spi</artifactId>
+        </dependency>
+
+        <!-- JDK9 provide xml & xslt parsers so template tests work for subsystems
+         should probably be removed once we have proper solution on how to handle JAXP on jigsaw
+         -->
+        <dependency>
+            <groupId>org.codehaus.woodstox</groupId>
+            <artifactId>woodstox-core-asl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xalan</groupId>
+            <artifactId>xalan</artifactId>
+            <version>2.7.1.jbossorg-2</version>
         </dependency>
 
     </dependencies>

@@ -19,19 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.cli.impl;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
+import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.parsing.CharacterHandler;
 import org.jboss.as.cli.parsing.DefaultParsingState;
 import org.jboss.as.cli.parsing.GlobalCharacterHandlers;
@@ -48,6 +49,240 @@ import org.jboss.dmr.ModelType;
  */
 public class ValueTypeCompleter implements CommandLineCompleter {
 
+    /**
+     * Instance is the Model of the parsed Value. It contains the tree of
+     * instance references.
+     */
+    private abstract static class Instance {
+        /* A property owned by an Instance.
+         Some Property can have null name e.g.: Instance contained inside a List.
+        */
+        static class Property {
+            private String name;
+            private Instance value;
+        }
+
+        // An instance is contained in a Parent.
+        private final Instance parent;
+        private final List<Property> properties = new ArrayList<>();
+        protected Property current;
+        // An instance is compete if the terminal char has been seen.
+        // Applies to List and Complex.
+        private boolean complete;
+
+        // The type description of the instance.
+        protected ModelNode type;
+
+        static Instance newInstance(Instance parent, String c) {
+            switch (c) {
+                case "[": {
+                    return new ListInstance(parent);
+                }
+                case "{": {
+                    return new ComplexInstance(parent);
+                }
+                default: {
+                    return new SimpleInstance(parent, c);
+                }
+            }
+        }
+
+        Instance(Instance parent) {
+            this.parent = parent;
+        }
+
+        ModelNode getType() {
+            if (type == null) {
+                return null;
+            }
+            if (type.has(Util.TYPE)) {
+                ModelNode t = type.get(Util.TYPE);
+                if (!isCompliantType(t)) {
+                    return null;
+                }
+                t = type.get(Util.VALUE_TYPE);
+                if (!t.isDefined()) {
+                    return null;
+                } else {
+                    return t;
+                }
+            } else if (type.has(Util.VALUE_TYPE)) {
+                return type.get(Util.VALUE_TYPE);
+            }
+            return type;
+        }
+
+        abstract boolean isCompliantType(ModelNode t);
+
+        Instance setComplete(char c) {
+            this.complete = isTerminalChar(c);
+            if (complete) {
+                return parent == null ? this : parent;
+            } else {
+                return this;
+            }
+        }
+
+        abstract boolean isTerminalChar(char c);
+
+        boolean isComplete() {
+            return complete;
+        }
+
+        void newProperty() {
+            current = new Property();
+            properties.add(current);
+        }
+
+        public Property getLastProperty() {
+            if (properties.isEmpty()) {
+                return null;
+            }
+            return properties.get(properties.size() - 1);
+        }
+
+        public void endProperty(String content) {
+            if (current.value == null) {
+                current.value = new SimpleInstance(this, content);
+            }
+        }
+
+        private Instance newPropertyValue(String c) throws CommandFormatException {
+            if (current == null) {
+                throw new CommandFormatException("Invalid syntax");
+            }
+            current.value = Instance.newInstance(this, c);
+            // Associates the type to the instance.
+            // This depends on the nature of the current instance
+            current.value.type = retrieveType();
+            return current.value;
+        }
+
+        abstract ModelNode retrieveType();
+
+        private void setPropertyName(String name) throws CommandFormatException {
+            if (current == null) {
+                throw new CommandFormatException("Invalid syntax");
+            }
+            current.name = name;
+        }
+
+        public String asString() {
+            return null;
+        }
+
+        private boolean contains(String p) {
+            boolean found = false;
+            for (Property prop : properties) {
+                if (prop.name != null && prop.name.equals(p)
+                        && prop.value != null) {
+                    found = true;
+                    break;
+                }
+            }
+            return found;
+        }
+    }
+
+    private static class ListInstance extends Instance {
+
+        public ListInstance(Instance parent) {
+            super(parent);
+        }
+
+        @Override
+        boolean isTerminalChar(char c) {
+            return c == ']';
+        }
+
+        @Override
+        boolean isCompliantType(ModelNode t) {
+            return t.asType().equals(ModelType.LIST);
+        }
+
+        @Override
+        ModelNode retrieveType() {
+            if (type.has(Util.VALUE_TYPE)) {
+                return type.get(Util.VALUE_TYPE);
+            }
+            return null;
+        }
+
+    }
+
+    private static class ComplexInstance extends Instance {
+
+        public ComplexInstance(Instance parent) {
+            super(parent);
+        }
+
+        @Override
+        boolean isTerminalChar(char c) {
+            return c == '}';
+        }
+
+        @Override
+        public void endProperty(String content) {
+            // Last property name is null then this is a name.
+            if (current.name == null) {
+                current.name = content;
+                return;
+            }
+            super.endProperty(content);
+        }
+
+        @Override
+        boolean isCompliantType(ModelNode t) {
+            return t.asType().equals(ModelType.OBJECT);
+        }
+
+        @Override
+        ModelNode retrieveType() {
+            if (current.name != null) {
+                if (type.has(current.name)) {
+                    return type.get(current.name);
+                } else if (type.has(Util.VALUE_TYPE)) {
+                    ModelNode vt = type.get(Util.VALUE_TYPE);
+                    if (vt.has(current.name)) {
+                        return vt.get(current.name);
+                    }
+                }
+            }
+            return null;
+        }
+    }
+
+    private static class SimpleInstance extends Instance {
+
+        private final String value;
+
+        public SimpleInstance(Instance parent, String value) {
+            super(parent);
+            this.value = value;
+        }
+
+        @Override
+        public String asString() {
+            return value;
+        }
+
+        @Override
+        boolean isCompliantType(ModelNode t) {
+            ModelType mt = t.asType();
+            return !mt.equals(ModelType.OBJECT) && !mt.equals(ModelType.LIST);
+        }
+
+        @Override
+        boolean isTerminalChar(char c) {
+            return false;
+        }
+
+        @Override
+        ModelNode retrieveType() {
+            return null;
+        }
+    }
+
     private static final List<ModelNode> BOOLEAN_LIST = new ArrayList<ModelNode>(2);
     static {
         BOOLEAN_LIST.add(new ModelNode(Boolean.FALSE));
@@ -55,6 +290,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
     }
 
     private final ModelNode propDescr;
+    private Instance currentInstance;
+    private CommandContext ctx;
 
     public ValueTypeCompleter(ModelNode propDescr) {
         if(propDescr == null || !propDescr.isDefined()) {
@@ -65,15 +302,17 @@ public class ValueTypeCompleter implements CommandLineCompleter {
 
     @Override
     public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
-
-/*        int nextCharIndex = 0;
+        // The context is used deep down the completion processes by concrete class implementing
+        // public interfaces.
+        this.ctx = ctx;
+        /*        int nextCharIndex = 0;
         while (nextCharIndex < buffer.length()) {
             if (!Character.isWhitespace(buffer.charAt(nextCharIndex))) {
                 break;
             }
             ++nextCharIndex;
         }
-*/
+         */
         final ValueTypeCallbackHandler handler;
         try {
             handler = parse(buffer);
@@ -103,20 +342,34 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         private int offset;
 
         private StringBuilder propBuf = new StringBuilder();
-
-        private String prop;
-        private List<String> propStack;
-        private List<List<String>> mentionedPropStack = new ArrayList<List<String>>(2);
         private String lastEnteredState;
         private int lastStateIndex;
         private char lastStateChar;
+        private int valLength;
 
 //        ValueTypeCallbackHandler() {
 //            this(false);
 //        }
-
         ValueTypeCallbackHandler(boolean logging) {
             this.logging = logging;
+        }
+
+        private List<String> getFileSystemPath(ModelNode propType, String path) {
+
+            List<String> candidates = null;
+            if (propType.has(Util.FILESYSTEM_PATH)
+                    && propType.get(Util.FILESYSTEM_PATH).asBoolean()) {
+                CommandLineCompleter completer = Util.isWindows()
+                        ? new WindowsFilenameTabCompleter(ctx)
+                        : new DefaultFilenameTabCompleter(ctx);
+                candidates = new ArrayList<>();
+                completer.complete(ctx, path, offset, candidates);
+                // candidates only contain the last part of a path.
+                // We need to keep the radical and do the replacement after it
+                // valLength is used when computing the replacement index.
+                valLength = path.lastIndexOf(File.separator) + 1;
+            }
+            return candidates;
         }
 
         public int getCompletionIndex() {
@@ -130,7 +383,9 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 case ',':
                     return lastStateIndex + 1;
             }
-            return lastStateIndex;
+            // Some value completer compute an offset between the lastStateIndex
+            // and the returned candidates (e.g.: file paths completion
+            return lastStateIndex + valLength;
         }
 
         public Collection<String> getCandidates(ModelNode propDescr) {
@@ -140,223 +395,177 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             if(!propDescr.has(Util.VALUE_TYPE)) {
                 return Collections.emptyList();
             }
-            ModelNode propType = propDescr.get(Util.VALUE_TYPE);
-            int mentionedIndex = 0;
-            //System.out.println("\n" + propStack + " prop=" + prop + " buf=" + propBuf + " lastState=" + lastEnteredState);
-            if(propStack != null && !propStack.isEmpty()) {
-                mentionedIndex = propStack.size();
-                for(int i = 0; i < propStack.size(); ++i) {
-                    final String propName = propStack.get(i);
-                    if(!propType.has(propName)) {
-                        return Collections.emptyList();
-                    }
-                    final ModelNode propNode = propType.get(propName);
-                    if(propNode.has(Util.VALUE_TYPE)) {
-                        propType = propNode.get(Util.VALUE_TYPE);
-                        if(!propType.isDefined()) {
-                            return Collections.emptyList();
-                        }
-                    } else {
-                        return Collections.emptyList();
+
+            // Empty value, returns the first char
+            if (lastEnteredState == null) {
+                if (propDescr.has(Util.TYPE)) {
+                    final ModelType type = propDescr.get(Util.TYPE).asType();
+                            if(type.equals(ModelType.OBJECT)) {
+                        return Collections.singletonList("{");
+                            } else if(type.equals(ModelType.LIST)) {
+                        return Collections.singletonList("[");
                     }
                 }
             }
 
-            if(prop == null) {
-                if((PropertyState.ID.equals(lastEnteredState) || EqualsState.ID.equals(lastEnteredState)) && propBuf.length() > 0) {
-                    prop = propBuf.toString();
-                    propBuf.setLength(0);
-                } else {
-                    if(lastEnteredState == null) {
-                        if(propDescr.has(Util.TYPE)) {
-                            final ModelType type = propDescr.get(Util.TYPE).asType();
-                            if(type.equals(ModelType.OBJECT)) {
-                                return Collections.singletonList("{");
-                            } else if(type.equals(ModelType.LIST)) {
-                                return Collections.singletonList("[");
-                            }
-                        }
+            // Retrieves the type of the current instance.
+            ModelNode propType = null;
+            if (currentInstance != null) {
+                propType = currentInstance.getType();
+            }
+            if (propType == null) {
+                return Collections.emptyList();
+            }
+            // Retrieve the last property (if any)
+            Instance.Property last = currentInstance.getLastProperty();
+
+            // On list separator, or when no property exists,
+            // complete with the next item in the list or the next property
+            // inside an Object
+            if (lastEnteredState.equals(ListItemSeparatorState.ID)
+                    || last == null) {
+                return completeNewProperty(propType);
+            }
+
+            // At this point, we have a property that is not terminated.
+
+            // Are we completing after the equals?
+            // If yes, complete with possible values.
+            if (lastEnteredState.equals(EqualsState.ID)) {
+                ModelNode pType = propType.get(last.name);
+                if (pType.has(Util.TYPE)) {
+                    final ModelType type = pType.get(Util.TYPE).asType();
+                    if (type.equals(ModelType.OBJECT)) {
+                        return Collections.singletonList("{");
+                    } else if (type.equals(ModelType.LIST)) {
+                        return Collections.singletonList("[");
                     }
-                    final List<String> mentionedProps = getMentionedProps(mentionedIndex);
-                    if (mentionedProps == null || mentionedProps.isEmpty() || lastEnteredState.equals(ListItemSeparatorState.ID)) {
-                        final List<String> candidates = new ArrayList<String>(propType.keys());
-                        if (mentionedProps != null) {
-                            candidates.removeAll(mentionedProps);
-                        }
+                }
+                return getSimpleValues(propType, last.name, "");
+            }
+
+            // a piece of value?
+            if (last.value != null) {
+                if (last.name != null) {
+                    return getSimpleValues(propType, last.name, last.value.asString());
+                } else // An empty name
+                // Could be the end of a list item, propose the next one or end.
+                 if ((currentInstance instanceof ListInstance) &&
+                         !currentInstance.isComplete()) {
+                        List<String> candidates = new ArrayList<>();
+                        candidates.add("]");
+                        candidates.add(",");
                         Collections.sort(candidates);
                         return candidates;
                     } else {
-                        return Collections.emptyList();
-                    }
-                }
-            }
-
-            if(TextState.ID.equals(lastEnteredState)) {
-                if(!propType.has(prop)) {
-                    return Collections.emptyList();
-                }
-                propType = propType.get(prop);
-                final List<ModelNode> allowed;
-                if(!propType.has(Util.ALLOWED)) {
-                    if(isBoolean(propType)) {
-                        allowed = BOOLEAN_LIST;
-                    } else {
                         return Collections.<String>emptyList();
                     }
-                } else {
-                    allowed = propType.get(Util.ALLOWED).asList();
-                }
-                final List<String> candidates = new ArrayList<String>();
-                if(propBuf.length() > 0) {
-                    final String value = propBuf.toString();
-                    for (ModelNode candidate : allowed) {
-                        final String candidateStr = candidate.asString();
-                        if(candidateStr.startsWith(value)) {
-                            candidates.add(candidateStr);
-                        }
+            }
+
+            // A piece of name?
+            if (last.name != null) {
+                final List<String> candidates = new ArrayList<>();
+                for (String p : propType.keys()) {
+                    if (p.startsWith(last.name) && !currentInstance.contains(p)) {
+                        candidates.add(p);
                     }
-                } else {
-                    for (ModelNode candidate : allowed) {
-                        candidates.add(candidate.asString());
+                }
+                // Inline the equals.
+                if (candidates.size() == 1) {
+                    if (last.name.equals(candidates.get(0))) {
+                        candidates.set(0, last.name + "=");
                     }
                 }
                 Collections.sort(candidates);
                 return candidates;
             }
 
-            final List<String> candidates;
-            if(EqualsState.ID.equals(lastEnteredState)) {
-                final List<ModelNode> allowed;
-                if(isBoolean(propType)) {
+            return Collections.emptyList();
+        }
+
+        private Collection<String> getSimpleValues(ModelNode propType, String name,
+                String radical) {
+            propType = propType.get(name);
+            final List<ModelNode> allowed;
+            if (!propType.has(Util.ALLOWED)) {
+                if (isBoolean(propType)) {
                     allowed = BOOLEAN_LIST;
                 } else {
-                if(!propType.has(prop)) {
-                    return Collections.emptyList();
-                }
-                propType = propType.get(prop);
-                if(!propType.has(Util.ALLOWED)) {
-                    if(propType.has(Util.VALUE_TYPE)) {
-                        final ModelNode propValueType = propType.get(Util.VALUE_TYPE);
-                        try {
-                            propValueType.asType();
-                            return Collections.emptyList();
-                        } catch(IllegalArgumentException e) {
-                            if(propType.has(Util.TYPE)) {
-                                final ModelType type = propType.get(Util.TYPE).asType();
-                                if(type.equals(ModelType.OBJECT)) {
-                                    return Collections.singletonList("{");
-                                } else if(type.equals(ModelType.LIST)) {
-                                    return Collections.singletonList("[");
-                                }
-                            }
-                        }
+                    List<String> candidates = getFileSystemPath(propType, radical);
+                    if (candidates != null) {
+                        return candidates;
                     }
-                    if(isBoolean(propType)) {
-                        allowed = BOOLEAN_LIST;
-                    } else {
-                        return Collections.<String>emptyList();
-                    }
-                } else {
-                    allowed = propType.get(Util.ALLOWED).asList();
+                    return Collections.<String>emptyList();
                 }
-                }
-                candidates = new ArrayList<String>();
-                for(ModelNode candidate : allowed) {
-                    candidates.add(candidate.asString());
-                }
-            } else if(StartObjectState.ID.equals(lastEnteredState) || StartListState.ID.equals(lastEnteredState)) {
-                if(!propType.has(prop)) {
-                    return Collections.emptyList();
-                }
-                propType = propType.get(prop);
-                if(!propType.has(Util.VALUE_TYPE)) {
-                    return Collections.emptyList();
-                }
-                final ModelNode propValueType = propType.get(Util.VALUE_TYPE);
-                try {
-                    propValueType.asType();
-                    return Collections.emptyList();
-                } catch(IllegalArgumentException e) {
-                }
-                candidates = new ArrayList<String>(propValueType.keys());
             } else {
-                if(propBuf.length() > 0) {
-                    if(!propType.has(prop)) {
-                        return Collections.emptyList();
-                    }
-                    final ModelNode propNode = propType.get(prop);
-                    if(propNode.has(Util.VALUE_TYPE)) {
-                        propType = propNode.get(Util.VALUE_TYPE);
-                    } else {
-                        return Collections.emptyList();
-                    }
-                    prop = propBuf.toString();
-                    ++mentionedIndex;
-                } else if(ListItemSeparatorState.ID.equals(lastEnteredState)) {
-                    if(!propType.has(prop)) {
-                        return Collections.emptyList();
-                    }
-                    final ModelNode propNode = propType.get(prop);
-                    if(propNode.has(Util.VALUE_TYPE)) {
-                        propType = propNode.get(Util.VALUE_TYPE);
-                    } else {
-                        return Collections.emptyList();
-                    }
-                    prop = null;
-                    ++mentionedIndex;
-                }
-                candidates = new ArrayList<String>();
-                final List<String> mentionedProps = getMentionedProps(mentionedIndex);
-                final Set<String> typeProps;
-                try {
-                    typeProps = propType.keys();
-                } catch(RuntimeException t) {
-                    return Collections.emptyList();
-                }
-                for (String candidate : typeProps) {
-                    if (prop == null || candidate.startsWith(prop)) {
-                        if(mentionedProps == null) {
-                            candidates.add(candidate);
-                        } else if(!mentionedProps.contains(candidate)) {
-                            candidates.add(candidate);
-                        }
-                    }
+                allowed = propType.get(Util.ALLOWED).asList();
+            }
+            List<String> candidates = new ArrayList<>();
+            for (ModelNode candidate : allowed) {
+                String c = candidate.asString();
+                if (c.startsWith(radical)) {
+                    candidates.add(candidate.asString());
                 }
             }
             Collections.sort(candidates);
             return candidates;
         }
 
+        // Completion for a new property
+        private Collection<String> completeNewProperty(ModelNode propType) {
+            if (currentInstance instanceof ListInstance) {
+                // This is inside a list
+                try {
+                    // A list of booleans
+                    ModelType mt = propType.asType();
+                    if (mt.equals(ModelType.BOOLEAN)) {
+                        List<String> candidates = new ArrayList<>();
+                        for (ModelNode candidate : BOOLEAN_LIST) {
+                            candidates.add(candidate.asString());
+                        }
+                        Collections.sort(candidates);
+                        return candidates;
+                    } else {
+                        List<String> candidates = getFileSystemPath(propType, "");
+                        if (candidates != null) {
+                            return candidates;
+                        }
+                        // We don't know, returns an empty list.
+                        return Collections.<String>emptyList();
+                    }
+                } catch (Exception ex) {
+                    // This is an Object, returns the start character.
+                    return Collections.singletonList("{");
+                }
+            } else {
+                // This is inside an instance.
+                // 2 cases, an Object with a proper value-type that describes its structure.
+                // or a Map<String, 'propType'>;
+                if (propType.getType() == ModelType.OBJECT) {
+                    // This is inside an instance.
+                    final List<String> candidates = new ArrayList<>(propType.keys());
+                    // Remove the properties already present
+                    for (Instance.Property p : currentInstance.properties) {
+                        candidates.remove(p.name);
+                    }
+                    Collections.sort(candidates);
+                    return candidates;
+                } else {
+                    return Collections.<String>emptyList();
+                }
+            }
+        }
+
         protected boolean isBoolean(ModelNode propType) {
-            if(propType.has(Util.TYPE)) {
+            if (propType.has(Util.TYPE)) {
                 try {
                     return propType.get(Util.TYPE).asType().equals(ModelType.BOOLEAN);
-                } catch(IllegalArgumentException e) {
+                } catch (IllegalArgumentException e) {
                     // 'type', if present, is not always ModelType,
                     // it could a custom property, in which case IAE will be thrown
                 }
             }
             return false;
-        }
-
-        protected List<String> getMentionedProps(int i) {
-            List<String> mentionedProps = null;
-            if(mentionedPropStack != null && i < mentionedPropStack.size()) {
-                return mentionedPropStack.get(i);
-/*                if(propStack == null) {
-                    if(mentionedPropStack.size() == 1) {
-                        mentionedProps = mentionedPropStack.get(0);
-                    } else if(mentionedPropStack.size() > 1) {
-                        throw new IllegalStateException();
-                    }
-                } else {
-                    if(mentionedPropStack.size() != propStack.size() + 1) {
-                        throw new IllegalStateException(mentionedPropStack.size() + " " + (propStack.size() + 1) + " " + mentionedPropStack);
-                    }
-                    mentionedProps = mentionedPropStack.get(propStack.size());
-                }
-*/            }
-            return mentionedProps;
         }
 
         @Override
@@ -376,17 +585,32 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                     ++offset;
                 }
             }
-
-            if(lastEnteredState.equals(EqualsState.ID)) {
-                if(prop != null) {
-                    if(propStack == null) {
-                        propStack = new ArrayList<String>();
+            switch (lastEnteredState) {
+                case StartListState.ID:
+                case StartObjectState.ID: {
+                    if (currentInstance == null) {
+                        currentInstance = Instance.newInstance(null, ""+lastStateChar);
+                        currentInstance.type = propDescr;
+                    } else {
+                        currentInstance = currentInstance.newPropertyValue(""+lastStateChar);
                     }
-                    propStack.add(prop);
+                    break;
                 }
-                prop = propBuf.toString();
-//                enteredProperty(prop);
-                propBuf.setLength(0);
+                case PropertyState.ID: {
+                    if (currentInstance == null) {
+                        throw new CommandFormatException("Invalid syntax.");
+                    }
+                    currentInstance.newProperty();
+                    break;
+                }
+                case EqualsState.ID: {
+                    if (currentInstance == null) {
+                        throw new CommandFormatException("Invalid syntax.");
+                    }
+                    currentInstance.setPropertyName(propBuf.toString());
+                    propBuf.setLength(0);
+                    break;
+                }
             }
         }
 
@@ -406,64 +630,25 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 System.out.println(buf.toString());
             }
 
-            if(ctx.isEndOfContent()) {
-                return;
-            }
-
-            if(id.equals(TextState.ID)) {
-                propBuf.setLength(0);
-            } else if(id.equals(PropertyState.ID)) {
-                if (propStack != null && propStack.size() > 0) {
-                    final int propStackSize = propStack.size();
-                    final String mentioned = prop;
-                    if (propStackSize == 0) {
-                        prop = null;
-                    } else {
-                        prop = propStack.remove(propStackSize - 1);
+            switch (id) {
+                case TextState.ID:
+                case PropertyState.ID: {
+                    // Store the last chunk of value here.
+                    if (propBuf.length() > 0) {
+                        currentInstance.endProperty(propBuf.toString());
+                        propBuf.setLength(0);
                     }
-                    if(mentionedPropStack.size() < propStackSize + 1) {
-                        final List<List<String>> tmp = mentionedPropStack;
-                        mentionedPropStack = new ArrayList<List<String>>(propStackSize + 1);
-                        mentionedPropStack.addAll(tmp);
-                        for(int i = mentionedPropStack.size(); i <= propStackSize; ++i) {
-                            mentionedPropStack.add(null);
+                    break;
+                }
+                case StartListState.ID:
+                case StartObjectState.ID: {
+                    currentInstance = currentInstance.setComplete(ctx.getCharacter());
+                    if (ctx.getCharacter() == '}' || ctx.getCharacter() == ']') {
+                        if (!ctx.isEndOfContent()) { // Skip the '{', '['
+                            ctx.advanceLocation(1);
                         }
-                    } else if(mentionedPropStack.size() > propStackSize + 1) {
-                        mentionedPropStack.set(propStackSize + 1, null);
                     }
-                    List<String> mentionedProps = mentionedPropStack.get(propStackSize);
-                    if(mentionedProps == null) {
-                        mentionedProps = Collections.singletonList(mentioned);
-                        mentionedPropStack.set(propStackSize, mentionedProps);
-                    } else if(mentionedProps.size() == 1) {
-                        List<String> tmp = mentionedProps;
-                        mentionedProps = new ArrayList<String>();
-                        mentionedProps.add(tmp.get(0));
-                        mentionedProps.add(mentioned);
-                        mentionedPropStack.set(propStackSize, mentionedProps);
-                    } else {
-                        mentionedProps.add(mentioned);
-                    }
-                } else {
-                    if(mentionedPropStack.size() == 0) {
-                        mentionedPropStack = new ArrayList<List<String>>(1);
-                        mentionedPropStack.add(null);
-                    }
-                    List<String> mentionedProps = mentionedPropStack.get(0);
-                    if(mentionedProps == null) {
-                        mentionedProps = Collections.singletonList(prop);
-                        mentionedPropStack.set(0, mentionedProps);
-                    } else if(mentionedProps.size() == 1) {
-                        List<String> tmp = mentionedProps;
-                        mentionedProps = new ArrayList<String>();
-                        mentionedProps.add(tmp.get(0));
-                        mentionedProps.add(prop);
-                        mentionedPropStack.set(0, mentionedProps);
-                    } else {
-                        mentionedProps.add(prop);
-                    }
-
-                    prop = null;
+                    break;
                 }
             }
         }
@@ -492,7 +677,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         }
     }
 
-/*    private final class EchoCallbackHandler implements ParsingStateCallbackHandler {
+    /*    private final class EchoCallbackHandler implements ParsingStateCallbackHandler {
 
         private int offset = 0;
         private String offsetStep = "    ";
@@ -577,7 +762,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             }
         }
     }
-*/
+     */
     public interface ValueTypeCandidatesProvider {
         Collection<String> getCandidates(String chunk);
     }
@@ -626,8 +811,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
 
         public InitialValueState(final PropertyState prop) {
             super(ID);
-            enterState('{', PropertyListState.INSTANCE);
-            enterState('[', PropertyListState.INSTANCE);
+            enterState('{', StartObjectState.INSTANCE);
+            enterState('[', StartListState.INSTANCE);
             setDefaultHandler(new CharacterHandler() {
                 @Override
                 public void handle(ParsingContext ctx) throws CommandFormatException {
@@ -658,8 +843,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 public void handle(ParsingContext ctx) throws CommandFormatException {
                     ctx.leaveState();
                 }});
+                }
         }
-    }
 
     public static class StartListState extends DefaultParsingState {
         public static final String ID = "LST";
@@ -682,8 +867,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                     }
                     ctx.leaveState();
                 }});
+                }
         }
-    }
 
     public static class PropertyListState extends DefaultParsingState {
         public static final String ID = "PROPLIST";
@@ -710,16 +895,12 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                         return;
                     }
                     final char ch = ctx.getCharacter();
-                    if (ch == '}' || ch == ']') {
-                        if(ctx.getLocation() < ctx.getInput().length() - 1) {
-                            ctx.advanceLocation(1);
-                        }
-                        ctx.leaveState();
-                    } else {
-                        getHandler(ch).handle(ctx);
-                    }
-                }});
+                    getHandler(ch).handle(ctx);
+                }
+            });
             enterState(',', ListItemSeparatorState.INSTANCE);
+            leaveState(']');
+            leaveState('}');
             setIgnoreWhitespaces(true);
         }
     }
@@ -739,7 +920,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                     }
                     ctx.leaveState();
                 }});
-        }
+                }
 
         @Override
         public Collection<String> getCandidates(String chunk) {
@@ -760,14 +941,13 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 @Override
                 public void handle(ParsingContext ctx) throws CommandFormatException {
                     final char ch = ctx.getCharacter();
-                    if(ch != '{' && ch != '[') {
-                        final CharacterHandler handler = getHandler(ch);
-                        handler.handle(ctx);
-                    }
-                }});
-          enterState('{', StartObjectState.INSTANCE);
-          enterState('[', PropertyListState.INSTANCE);
-          setDefaultHandler(WordCharacterHandler.IGNORE_LB_ESCAPE_ON);
+                    final CharacterHandler handler = getHandler(ch);
+                    handler.handle(ctx);
+                }
+            });
+            enterState('{', StartObjectState.INSTANCE);
+            enterState('[', PropertyListState.INSTANCE);
+            setDefaultHandler(WordCharacterHandler.IGNORE_LB_ESCAPE_ON);
             enterState('=', EqualsState.INSTANCE);
             setReturnHandler(new CharacterHandler(){
                 @Override

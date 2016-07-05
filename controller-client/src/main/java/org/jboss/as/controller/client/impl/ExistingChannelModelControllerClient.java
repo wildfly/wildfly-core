@@ -24,6 +24,7 @@ package org.jboss.as.controller.client.impl;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
+import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 
@@ -73,7 +74,8 @@ public class ExistingChannelModelControllerClient extends AbstractModelControlle
      * @return the created client
      */
     public static ModelControllerClient createReceiving(final Channel channel, final ExecutorService executorService) {
-        final ManagementChannelHandler handler = new ManagementChannelHandler(channel, executorService);
+        final ManagementClientChannelStrategy strategy = ManagementClientChannelStrategy.create(channel);
+        final ManagementChannelHandler handler = new ManagementChannelHandler(strategy, executorService);
         final ExistingChannelModelControllerClient client = new ExistingChannelModelControllerClient(handler);
         handler.addHandlerFactory(client);
         channel.addCloseHandler(new CloseHandler<Channel>() {

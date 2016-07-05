@@ -222,6 +222,10 @@ public class AuditLogTestCase {
         slaveAuditLog.delete();
         masterServerAuditLog.delete();
         slaveServerAuditLog.delete();
+        Assert.assertFalse(masterAuditLog.exists());
+        Assert.assertFalse(masterServerAuditLog.exists());
+        Assert.assertFalse(slaveAuditLog.exists());
+        Assert.assertFalse(slaveServerAuditLog.exists());
 
         String propertyName = "test" + System.currentTimeMillis();
         ModelNode addOp = Util.createAddOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, propertyName));

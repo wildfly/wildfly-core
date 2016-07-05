@@ -27,6 +27,7 @@ import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Set;
 
@@ -1159,6 +1160,83 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 110, value = "Unable to load a simple name for group '%s'")
     NamingException unableToLoadSimpleNameForGroup(String distinguishedName);
 
+    @Message(id = 111, value = "Keystore %s not found, it will be auto generated on first use with a self signed certificate for host %s")
+    @LogMessage(level = WARN)
+    void keystoreWillBeCreated(String file, String host);
+
+    @Message(id = 112, value = "Failed to generate self signed certificate")
+    RuntimeException failedToGenerateSelfSignedCertificate(@Cause Exception e);
+
+    @Message(id = 113, value = "Generated self signed certificate at %s. Please note that self signed certificates are not secure, and should only be used for testing purposes. Do not use this self signed certificate in production.\nSHA-1 fingerprint of the generated key is %s\nSHA-256 fingerprint of the generated key is %s")
+    @LogMessage(level = WARN)
+    void keystoreHasBeenCreated(String file, String sha1, String sha256);
+
+    @Message(id = 114, value = "Failed to lazily initialize SSL context")
+    RuntimeException failedToCreateLazyInitSSLContext(@Cause  Exception e);
+
+    /* X.500 exceptions, to be removed once Elytron certificate generation is in use */
+
+    @Message(id = 115, value = "No signature algorithm name given")
+    IllegalArgumentException noSignatureAlgorithmNameGiven();
+
+    @Message(id = 116, value = "Signature algorithm name \"%s\" is not recognized")
+    IllegalArgumentException unknownSignatureAlgorithmName(String signatureAlgorithmName);
+
+    @Message(id = 117, value = "No signing key given")
+    IllegalArgumentException noSigningKeyGiven();
+
+    @Message(id = 118, value = "Signing key algorithm name \"%s\" is not compatible with signature algorithm name \"%s\"")
+    IllegalArgumentException signingKeyNotCompatWithSig(String signingKeyAlgorithm, String signatureAlgorithmName);
+
+    @Message(id = 119, value = "Not-valid-before date of %s is after not-valid-after date of %s")
+    IllegalArgumentException validAfterBeforeValidBefore(ZonedDateTime notValidBefore, ZonedDateTime notValidAfter);
+
+    @Message(id = 120, value = "No issuer DN given")
+    IllegalArgumentException noIssuerDnGiven();
+
+    @Message(id = 121, value = "No public key given")
+    IllegalArgumentException noPublicKeyGiven();
+
+    @Message(id = 122, value = "Issuer and subject unique ID are only allowed in certificates with version 2 or higher")
+    IllegalArgumentException uniqueIdNotAllowed();
+
+    @Message(id = 123, value = "X.509 encoding of public key with algorithm \"%s\" failed")
+    IllegalArgumentException invalidKeyForCert(String publicKeyAlgorithm, @Cause Exception cause);
+
+    @Message(id = 124, value = "Failed to sign certificate")
+    IllegalArgumentException certSigningFailed(@Cause Exception cause);
+
+    @Message(id = 125, value = "Certificate serial number must be positive")
+    IllegalArgumentException serialNumberTooSmall();
+
+    @Message(id = 126, value = "Certificate serial number too large (cannot exceed 20 octets)")
+    IllegalArgumentException serialNumberTooLarge();
+
+    @Message(id = 127, value = "No sequence to end")
+    IllegalStateException noSequenceToEnd();
+
+    @Message(id = 128, value = "No set to end")
+    IllegalStateException noSetToEnd();
+
+    @Message(id = 129, value = "No explicitly tagged element to end")
+    IllegalStateException noExplicitlyTaggedElementToEnd();
+
+    @Message(id = 130, value = "Invalid OID character")
+    IllegalArgumentException asnInvalidOidCharacter();
+
+    @Message(id = 131, value = "OID must have at least 2 components")
+    IllegalArgumentException asnOidMustHaveAtLeast2Components();
+
+    @Message(id = 132, value = "Invalid value for first OID component; expected 0, 1, or 2")
+    IllegalArgumentException asnInvalidValueForFirstOidComponent();
+
+    @Message(id = 133, value = "Invalid value for second OID component; expected a value between 0 and 39 (inclusive)")
+    IllegalArgumentException asnInvalidValueForSecondOidComponent();
+
+    @Message(id = 134, value = "Invalid length")
+    IllegalArgumentException asnInvalidLength();
+
+    /* End X.500 exceptions */
     /**
      * Information message saying the username and password must be different.
      *
@@ -1452,7 +1530,6 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "Using realm '%s' as discovered from the existing property files.")
     String discoveredRealm(final String realmName);
-
 
     //PUT YOUR NUMBERED MESSAGES ABOVE THE id=NONE ones!
 }

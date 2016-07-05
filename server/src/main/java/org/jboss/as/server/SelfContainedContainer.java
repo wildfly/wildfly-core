@@ -60,6 +60,8 @@ import java.util.concurrent.ExecutorService;
  */
 public final class SelfContainedContainer {
 
+    private static final String PRODUCT_SLOT = "main";
+
     public SelfContainedContainer() {
     }
 
@@ -114,7 +116,7 @@ public final class SelfContainedContainer {
     }
 
     public static ServerEnvironment determineEnvironment(Properties systemProperties, Map<String, String> systemEnvironment, ServerEnvironment.LaunchType launchType, long startTime) {
-        ProductConfig productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), systemProperties);
+        ProductConfig productConfig = ProductConfig.fromKnownSlot(PRODUCT_SLOT, Module.getBootModuleLoader(), systemProperties);
         return new ServerEnvironment(null, systemProperties, systemEnvironment, null, null, launchType, RunningMode.NORMAL, productConfig, startTime);
     }
 

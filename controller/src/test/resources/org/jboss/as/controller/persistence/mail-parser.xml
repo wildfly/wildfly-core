@@ -21,6 +21,7 @@
         <properties />
         <custom-server name="smtp" buffer-size="10">
             <property name="host" value="mail.example.com"/>
+            <property name="foo" value="bar"/>
         </custom-server>
         <custom-server name="pop3" >
             <property name="custom_prop" value="some-custom-prop-value"/>

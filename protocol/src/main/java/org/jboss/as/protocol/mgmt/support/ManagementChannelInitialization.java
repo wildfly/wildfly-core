@@ -24,53 +24,20 @@ package org.jboss.as.protocol.mgmt.support;
 
 import org.jboss.remoting3.Channel;
 
-import java.util.concurrent.TimeUnit;
-
 /**
- * Basic contract for initializing a {@code Channel.Receiver} for management channels.
+ * Initializes a {@link org.jboss.remoting3.Channel.Receiver} for receiving
+ * messages over management channels.
  *
  * @author Emanuel Muckenhuber
  */
 public interface ManagementChannelInitialization {
 
     /**
-     * Initialize the management channel and start receiving request.
+     * Initialize the channel receiver and start receiving requests.
      *
-     * This returns a {@code ManagementChannelShutdownHandle} which can be used to coordinate a controlled shutdown
-     * of management channels allowing active operations to complete before shutting down.
-     *
-     * @param channel opened channel
-     * @return the channel handler
+     * @param channel an opened channel
+     * @return a handle to the receiver that can be used to coordinate a controlled shutdown
      */
     ManagementChannelShutdownHandle startReceiving(Channel channel);
-
-    // TODO this should be redone to rather use callbacks to signal when all operations completed
-    public interface ManagementChannelShutdownHandle {
-
-        /**
-         * Don't allow new operations, but still allow requests for existing ones.
-         *
-         * <p>This method does not wait for previously submitted operations to be
-         * completed. Use {@link #awaitCompletion awaitCompletion} to do that.
-         * </p>
-         */
-        void shutdown();
-
-        /**
-         * This will attempt to cancel all active operations, without waiting for their completion.
-         */
-        void shutdownNow();
-
-        /**
-         * Await the completion of all currently active operations.
-         *
-         * @param timeout the timeout
-         * @param unit the time unit
-         * @return {@code false} if the timeout was reached and there were still active operations
-         * @throws InterruptedException
-         */
-        boolean awaitCompletion(long timeout, TimeUnit unit) throws InterruptedException;
-
-    }
 
 }

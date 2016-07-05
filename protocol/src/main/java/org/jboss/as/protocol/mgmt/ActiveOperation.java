@@ -34,8 +34,7 @@ import org.xnio.Cancellable;
  * It can be accessed using the {@link org.jboss.as.protocol.mgmt.ManagementRequestContext#getAttachment()}
  * from the request handler.
  *
- * An operation is seen as active until one of the completion
- * methods on the {@link ActiveOperation.ResultHandler} are called.
+ * An operation is seen as active until one of the methods on the {@link ActiveOperation.ResultHandler} are called.
  *
  * @param <T> the result type
  * @param <A> the attachment type
@@ -52,9 +51,9 @@ public interface ActiveOperation<T, A> {
     Integer getOperationId();
 
     /**
-     * Get the completion handler for this request.
+     * Get the result handler for this request.
      *
-     * @return the completion handler
+     * @return the result handler
      */
     ResultHandler<T> getResultHandler();
 
@@ -80,11 +79,11 @@ public interface ActiveOperation<T, A> {
     void addCancellable(final Cancellable cancellable);
 
     /**
-     * Handler for the result or to mark the operation as completed/failed.
+     * Handler for the operation result or to mark the operation as cancelled or failed.
      *
      * @param <T> the result type
      */
-    public interface ResultHandler<T> {
+    interface ResultHandler<T> {
 
         /**
          * Set the result.
@@ -109,11 +108,12 @@ public interface ActiveOperation<T, A> {
     }
 
     /**
-     * A callback indicating when an operation is complete.
+     * A callback indicating when an operation is complete. This is not part of the ActiveOperation API itself,
+     * but rather is often provided by callers that trigger instantiation of an ActiveOperation in a process.
      *
      * @param <T> the result type
      */
-    public interface CompletedCallback<T> {
+    interface CompletedCallback<T> {
 
         /**
          * The operation completed successfully.

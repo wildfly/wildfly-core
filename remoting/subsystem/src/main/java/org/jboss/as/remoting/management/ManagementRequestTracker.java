@@ -22,7 +22,7 @@
 
 package org.jboss.as.remoting.management;
 
-import static org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization.ManagementChannelShutdownHandle;
+import org.jboss.as.protocol.mgmt.support.ManagementChannelShutdownHandle;
 
 import java.util.ArrayList;
 import java.util.Collections;
