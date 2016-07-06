@@ -88,13 +88,12 @@ public final class ManagementRemotingServices extends RemotingServices {
                                                       final ServiceName endpointName,
                                                       final ServiceName networkInterfaceBinding,
                                                       final int port,
-                                                      final String saslServerAuthentication,
-                                                      final String sslContext,
                                                       final String securityRealm,
-                                                      final OptionMap options) {
+                                                      final OptionMap options,
+                                                      final ServiceName saslAuthenticationFactory,
+                                                      final ServiceName sslContext) {
         ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
-        ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
-        installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR, networkInterfaceBinding, port, options);
+        installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR, networkInterfaceBinding, port, options, saslAuthenticationFactory, sslContext);
     }
 
     /**

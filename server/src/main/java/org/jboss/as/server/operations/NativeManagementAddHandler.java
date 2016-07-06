@@ -22,9 +22,13 @@
 
 package org.jboss.as.server.operations;
 
+import static org.jboss.as.controller.management.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
+
+import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -40,6 +44,7 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -82,11 +87,14 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
             ServerLogger.ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
-        ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
+        ServiceName saslAuthenticationFactoryName = saslServerAuthentication != null ? context.getCapabilityServiceName(SASL_SERVER_AUTHENTICATION_CAPABILITY, SaslAuthenticationFactory.class) : null;
+        String sslContext = commonPolicy.getSSLContext();
+        ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, SSLContext.class) : null;
 
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,
-                    socketBindingServiceName, commonPolicy.getConnectorOptions());
+                    socketBindingServiceName, commonPolicy.getConnectorOptions(),
+                    saslAuthenticationFactoryName, sslContextName);
     }
 
 }

@@ -21,6 +21,8 @@
  */
 package org.jboss.as.remoting;
 
+import javax.net.ssl.SSLContext;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
@@ -30,8 +32,11 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.Endpoint;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
+import org.xnio.StreamConnection;
 import org.xnio.XnioWorker;
+import org.xnio.channels.AcceptingChannel;
 
 /**
  *
@@ -104,16 +109,20 @@ public class RemotingServices {
                                                                           final String connectorName,
                                                                           final ServiceName networkInterfaceBindingName,
                                                                           final int port,
-                                                                          final OptionMap connectorPropertiesOptionMap) {
-        installConnectorServices(serviceTarget, endpointName, connectorName, networkInterfaceBindingName, port, true, connectorPropertiesOptionMap);
+                                                                          final OptionMap connectorPropertiesOptionMap,
+                                                                          final ServiceName saslAuthenticationFactory,
+                                                                          final ServiceName sslContext) {
+        installConnectorServices(serviceTarget, endpointName, connectorName, networkInterfaceBindingName, port, true, connectorPropertiesOptionMap, saslAuthenticationFactory, sslContext);
     }
 
     public static void installConnectorServicesForSocketBinding(ServiceTarget serviceTarget,
                                                                 final ServiceName endpointName,
                                                                 final String connectorName,
                                                                 final ServiceName socketBindingName,
-                                                                final OptionMap connectorPropertiesOptionMap) {
-        installConnectorServices(serviceTarget, endpointName, connectorName, socketBindingName, 0, false, connectorPropertiesOptionMap);
+                                                                final OptionMap connectorPropertiesOptionMap,
+                                                                final ServiceName saslAuthenticationFactory,
+                                                                final ServiceName sslContext) {
+        installConnectorServices(serviceTarget, endpointName, connectorName, socketBindingName, 0, false, connectorPropertiesOptionMap, saslAuthenticationFactory, sslContext);
     }
 
     private static void installConnectorServices(ServiceTarget serviceTarget,
@@ -122,24 +131,32 @@ public class RemotingServices {
                                                  final ServiceName bindingName,
                                                  final int port,
                                                  final boolean isNetworkInterfaceBinding,
-                                                 final OptionMap connectorPropertiesOptionMap) {
+                                                 final OptionMap connectorPropertiesOptionMap,
+                                                 final ServiceName saslAuthenticationFactory,
+                                                 final ServiceName sslContext) {
 
+        final ServiceBuilder<AcceptingChannel<StreamConnection>> serviceBuilder;
+        final AbstractStreamServerService service;
         if (isNetworkInterfaceBinding) {
-            final InjectedNetworkBindingStreamServerService streamServerService = new InjectedNetworkBindingStreamServerService(connectorPropertiesOptionMap, port);
-            serviceTarget.addService(serverServiceName(connectorName), streamServerService)
-                    .addDependency(endpointName, Endpoint.class, streamServerService.getEndpointInjector())
+            final InjectedNetworkBindingStreamServerService streamServerService = (InjectedNetworkBindingStreamServerService) (service = new InjectedNetworkBindingStreamServerService(connectorPropertiesOptionMap, port));
+            serviceBuilder = serviceTarget.addService(serverServiceName(connectorName), streamServerService)
                     .addDependency(bindingName, NetworkInterfaceBinding.class, streamServerService.getInterfaceBindingInjector())
-                    .addDependency(ServiceBuilder.DependencyType.OPTIONAL, SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector())
-                    .install();
+                    .addDependency(ServiceBuilder.DependencyType.OPTIONAL, SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
         } else {
-            final InjectedSocketBindingStreamServerService streamServerService = new InjectedSocketBindingStreamServerService(connectorPropertiesOptionMap);
-            serviceTarget.addService(serverServiceName(connectorName), streamServerService)
+            final InjectedSocketBindingStreamServerService streamServerService = (InjectedSocketBindingStreamServerService) (service = new InjectedSocketBindingStreamServerService(connectorPropertiesOptionMap));
+            serviceBuilder = serviceTarget.addService(serverServiceName(connectorName), streamServerService)
                     .addDependency(endpointName, Endpoint.class, streamServerService.getEndpointInjector())
                     .addDependency(bindingName, SocketBinding.class, streamServerService.getSocketBindingInjector())
-                    .addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector())
-                    .install();
-
+                    .addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
         }
+        serviceBuilder.addDependency(endpointName, Endpoint.class, service.getEndpointInjector());
+        if (saslAuthenticationFactory != null) {
+            serviceBuilder.addDependency(saslAuthenticationFactory, SaslAuthenticationFactory.class, service.getSaslAuthenticationFactoryInjector());
+        }
+        if (sslContext != null) {
+            serviceBuilder.addDependency(sslContext, SSLContext.class, service.getSSLContextInjector());
+        }
+        serviceBuilder.install();
     }
 
     public static void removeConnectorServices(final OperationContext context, final String connectorName) {

@@ -28,16 +28,16 @@ package org.jboss.as.controller.management;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-final class Capabilities {
+public final class Capabilities {
 
-    static final String HTTP_MANAGEMENT_CAPABILITY = "org.wildfly.management.http-interface";
+    public static final String HTTP_MANAGEMENT_CAPABILITY = "org.wildfly.management.http-interface";
 
-    static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
+    public static final String HTTP_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.http-server-authentication";
 
-    static final String NATIVE_MANAGEMENT_CAPABILITY = "org.wildfly.management.native-interface";
+    public static final String NATIVE_MANAGEMENT_CAPABILITY = "org.wildfly.management.native-interface";
 
-    static final String SASL_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.sasl-authentication-factory";
+    public static final String SASL_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.sasl-server-authentication";
 
-    static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
+    public static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
 
 }

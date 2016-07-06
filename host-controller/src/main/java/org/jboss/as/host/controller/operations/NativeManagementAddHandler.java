@@ -22,8 +22,12 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.controller.management.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
+
+import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -37,6 +41,7 @@ import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
 
@@ -79,9 +84,13 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
             ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
+        ServiceName saslAuthenticationFactoryName = saslServerAuthentication != null ? context.getCapabilityServiceName(SASL_SERVER_AUTHENTICATION_CAPABILITY, SaslAuthenticationFactory.class) : null;
+        String sslContext = commonPolicy.getSSLContext();
+        ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, SSLContext.class) : null;
+
         NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
         ManagementRemotingServices.installDomainConnectorServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), saslServerAuthentication, commonPolicy.getSSLContext(), securityRealm, options);
+                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), securityRealm, options, saslAuthenticationFactoryName, sslContextName);
     }
 
     static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {
