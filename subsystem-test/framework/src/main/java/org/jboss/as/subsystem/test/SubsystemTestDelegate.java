@@ -660,44 +660,39 @@ final class SubsystemTestDelegate {
         }
 
         public KernelServices build() throws Exception {
-            System.setProperty("wildfly.test.boot.disable.rollback", "1");
-            try {
-                bootOperationBuilder.validateNotAlreadyBuilt();
-                List<ModelNode> bootOperations = bootOperationBuilder.build();
-                AbstractKernelServicesImpl kernelServices = AbstractKernelServicesImpl.create(testClass, mainSubsystemName, additionalInit, ModelTestOperationValidatorFilter.createValidateAll(), cloneExtensionRegistry(additionalInit), bootOperations,
-                        testParser, mainExtension, null, legacyControllerInitializers.size() > 0, true);
-                SubsystemTestDelegate.this.kernelServices.add(kernelServices);
+            bootOperationBuilder.validateNotAlreadyBuilt();
+            List<ModelNode> bootOperations = bootOperationBuilder.build();
+            AbstractKernelServicesImpl kernelServices = AbstractKernelServicesImpl.create(testClass, mainSubsystemName, additionalInit, ModelTestOperationValidatorFilter.createValidateAll(), cloneExtensionRegistry(additionalInit), bootOperations,
+                    testParser, mainExtension, null, legacyControllerInitializers.size() > 0, true);
+            SubsystemTestDelegate.this.kernelServices.add(kernelServices);
 
-                validateDescriptionProviders(additionalInit, kernelServices);
-                ImmutableManagementResourceRegistration subsystemReg = kernelServices.getRootRegistration().getSubModel(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, mainSubsystemName)));
-                ModelTestUtils.validateModelDescriptions(PathAddress.EMPTY_ADDRESS, subsystemReg);
+            validateDescriptionProviders(additionalInit, kernelServices);
+            ImmutableManagementResourceRegistration subsystemReg = kernelServices.getRootRegistration().getSubModel(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, mainSubsystemName)));
+            ModelTestUtils.validateModelDescriptions(PathAddress.EMPTY_ADDRESS, subsystemReg);
 
-                for (Map.Entry<ModelVersion, LegacyKernelServiceInitializerImpl> entry : legacyControllerInitializers.entrySet()) {
-                    LegacyKernelServiceInitializerImpl legacyInitializer = entry.getValue();
+            for (Map.Entry<ModelVersion, LegacyKernelServiceInitializerImpl> entry : legacyControllerInitializers.entrySet()) {
+                LegacyKernelServiceInitializerImpl legacyInitializer = entry.getValue();
 
-                    List<ModelNode> transformedBootOperations = new ArrayList<ModelNode>();
-                    for (ModelNode op : bootOperations) {
+                List<ModelNode> transformedBootOperations = new ArrayList<ModelNode>();
+                for (ModelNode op : bootOperations) {
 
-                        TransformedOperation transformedOp = kernelServices.transformOperation(entry.getKey(), op);
-                        if (transformedOp.getTransformedOperation() != null) {
-                            //Since rejected operations now execute on the slave to determine if it has been ignored or not
-                            //we check the reject policy simulating a reject before adding it to the list of boot operations
-                            if (!transformedOp.rejectOperation(SUCCESS)) {
-                                transformedBootOperations.add(transformedOp.getTransformedOperation());
-                            } else {
-                                System.out.println(transformedOp.getFailureDescription());
-                            }
+                    TransformedOperation transformedOp = kernelServices.transformOperation(entry.getKey(), op);
+                    if (transformedOp.getTransformedOperation() != null) {
+                        //Since rejected operations now execute on the slave to determine if it has been ignored or not
+                        //we check the reject policy simulating a reject before adding it to the list of boot operations
+                        if (!transformedOp.rejectOperation(SUCCESS)) {
+                            transformedBootOperations.add(transformedOp.getTransformedOperation());
+//                        } else {
+//                            System.out.println(transformedOp.getFailureDescription());
                         }
                     }
-
-                    LegacyControllerKernelServicesProxy legacyServices = legacyInitializer.install(kernelServices, transformedBootOperations);
-                    kernelServices.addLegacyKernelService(entry.getKey(), legacyServices);
                 }
 
-                return kernelServices;
-            } finally {
-                System.clearProperty("wildfly.test.boot.disable.rollback");
+                LegacyControllerKernelServicesProxy legacyServices = legacyInitializer.install(kernelServices, transformedBootOperations);
+                kernelServices.addLegacyKernelService(entry.getKey(), legacyServices);
             }
+
+            return kernelServices;
         }
 
         @Override

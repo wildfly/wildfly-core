@@ -158,7 +158,6 @@ public class HierarchicalCompositionTestCase extends AbstractCliTestBase {
         try {
             // create server
             cliRequest("/host=" + HOST + "/server-config=" + SERVER + ":add(group=" + SERVER_GROUP + ",socket-binding-port-offset=550)", true);
-            cliRequest("/host=" + HOST + "/server-config=" + SERVER + "/interface=public:add(inet-address=${jboss.test.host.master.address})", true);
             try {
                 // start server
                 cliRequest("/server-group=" + SERVER_GROUP + ":start-servers(blocking=true)", true);
