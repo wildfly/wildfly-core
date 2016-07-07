@@ -528,35 +528,6 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
         }
     }
 
-    public void copy(ManagedAuditLoggerImpl other) throws IOException {
-        config.lock();
-        try {
-            switch(config.status) {
-                case DISABLED:
-                case DISABLE_NEXT:
-                    break;
-                case LOGGING :
-                    for (AuditLogItem item : other.getQueuedItems()) {
-                        this.writeLogItem(item);
-                    }
-                    break;
-                case QUEUEING:
-                    this.queuedItems.addAll(other.getQueuedItems());
-                    break;
-            }
-        } finally {
-            config.unlock();
-        }
-    }
-
-    private List<AuditLogItem> getQueuedItems() throws IOException {
-        config.lock();
-        try {
-            return new ArrayList<>(this.queuedItems);
-        } finally {
-            config.unlock();
-        }
-    }
 
     /**
      * Abstract base class for core and new configuration

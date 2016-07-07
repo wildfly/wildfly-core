@@ -46,7 +46,6 @@ import static org.jboss.as.jmx.MBeanServerSignature.SET_ATTRIBUTES;
 import static org.jboss.as.jmx.MBeanServerSignature.UNREGISTER_MBEAN;
 import static org.jboss.as.jmx.SecurityActions.createCaller;
 
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.InetAddress;
@@ -96,9 +95,7 @@ import org.jboss.as.controller.access.JmxAction;
 import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
-import org.jboss.as.controller.audit.AuditLogger.Status;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
-import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
 import org.jboss.as.controller.security.InetAddressPrincipal;
 import org.jboss.as.core.security.RealmUser;
 import org.jboss.as.jmx.logging.JmxLogger;
@@ -134,21 +131,9 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
     PluggableMBeanServerImpl(MBeanServer rootMBeanServer, MBeanServerDelegate rootMBeanServerDelegate) {
         this.rootMBeanServer = new TcclMBeanServer(rootMBeanServer);
         this.rootMBeanServerDelegate = rootMBeanServerDelegate;
-        this.auditLogger = new ManagedAuditLoggerImpl("jmx-boot", false);
-        this.auditLogger.setLogBoot(true);
-        this.auditLogger.setLogReadOnly(false);
-        this.auditLogger.setLoggerStatus(Status.QUEUEING);
     }
 
     void setAuditLogger(ManagedAuditLogger auditLoggerInfo) {
-        if(auditLoggerInfo != null && auditLoggerInfo.isLogBoot()
-                && auditLoggerInfo instanceof ManagedAuditLoggerImpl
-                && auditLogger instanceof ManagedAuditLogger) {
-            try {
-                ((ManagedAuditLoggerImpl)auditLoggerInfo).copy((ManagedAuditLoggerImpl)auditLogger);
-            } catch (IOException ex) {
-            }
-        }
         this.auditLogger = auditLoggerInfo != null ? auditLoggerInfo : AuditLogger.NO_OP_LOGGER;
     }
 

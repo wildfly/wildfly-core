@@ -183,7 +183,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     @Override
     protected void initCoreModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
         //See server HttpManagementAddHandler
-        System.setProperty("wildfly.test.boot.disable.rollback", "1");
+        System.setProperty("jboss.as.test.disable.runtime", "1");
         if (type == TestModelType.STANDALONE) {
             initializer.initCoreModel(rootResource, rootRegistration, modelControllerResource);
 
@@ -198,7 +198,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     @Override
     public void stop(StopContext context) {
         super.stop(context);
-        System.clearProperty("wildfly.test.boot.disable.rollback");
+        System.clearProperty("jboss.as.test.disable.runtime");
     }
 
     private ServerEnvironment createStandaloneServerEnvironment() {

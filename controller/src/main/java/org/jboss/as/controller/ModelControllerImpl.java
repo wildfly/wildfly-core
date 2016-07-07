@@ -100,7 +100,6 @@ import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
-import org.wildfly.security.manager.WildFlySecurityManager;
 import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 
@@ -459,19 +458,11 @@ class ModelControllerImpl implements ModelController {
         EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnRuntimeFailure
                 ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL)
                 : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
-        //TODO Gigantic HACK to disable the runtime part of this for the core model testing.
-        //The core model testing currently uses RunningMode.ADMIN_ONLY, but in the real world
-        //the http interface needs to be enabled even when that happens.
-        //I don't want to wire up all the services unless I can avoid it, so for now the tests set this system property
-        //@see https://issues.jboss.org/browse/WFCORE-1509
-        EnumSet<OperationContextImpl.ContextFlag> firstBatchFlags = WildFlySecurityManager.getPropertyPrivileged("wildfly.test.boot.disable.rollback", null) == null
-                ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL)
-                : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
 
         //For the initial operations the model will not be complete, so defer the validation
         final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
-                firstBatchFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
+                contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
                 hostServerGroupTracker, null, null, notificationSupport, true, extraValidationStepHandler, true);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
@@ -566,7 +557,7 @@ class ModelControllerImpl implements ModelController {
      */
     private BootOperations organizeBootOperations(List<ModelNode> bootList, final int lockPermit, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) {
 
-        final List<ParsedBootOp> initialOps = new ArrayList<>();
+        final List<ParsedBootOp> initialOps = new ArrayList<ParsedBootOp>();
         List<ParsedBootOp> postExtensionOps = null;
         boolean invalid = false;
         boolean sawExtensionAdd = false;
@@ -577,6 +568,7 @@ class ModelControllerImpl implements ModelController {
         ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
                 ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit, extraValidationStepHandler) : null;
         boolean registeredParallelSubsystemHandler = false;
+        int subsystemIndex = 0;
         for (ModelNode bootOp : bootList) {
             final ParsedBootOp parsedOp = new ParsedBootOp(bootOp);
             if (postExtensionOps != null) {
@@ -589,20 +581,17 @@ class ModelControllerImpl implements ModelController {
                         initialOps.add(new ParsedBootOp(parsedOp, stepHandler));
                     }
                 } else {
-                    if (parsedOp.isInterfaceOperation() || parsedOp.isSocketOperation() || parsedOp.isManagementOperation()) {
-                        final OperationStepHandler stepHandler = rootRegistration.getOperationHandler(parsedOp.address, parsedOp.operationName);
-                        if (parsedOp.isManagementOperation()) {
-                            initialOps.add(new ParsedBootOp(parsedOp, stepHandler));
+                    if (parallelSubsystemHandler == null || !parallelSubsystemHandler.addSubsystemOperation(parsedOp)) {
+                        // Put any interface/socket op before the subsystem op
+                        if (registeredParallelSubsystemHandler && (parsedOp.isInterfaceOperation() || parsedOp.isSocketOperation())) {
+                            postExtensionOps.add(subsystemIndex++, parsedOp);
                         } else {
-                            initialOps.add(new ParsedBootOp(parsedOp, stepHandler));
-                        }
-                    } else {
-                        if (parallelSubsystemHandler == null || !parallelSubsystemHandler.addSubsystemOperation(parsedOp)) {
                             postExtensionOps.add(parsedOp);
-                        } else if (!registeredParallelSubsystemHandler) {
-                            postExtensionOps.add(parallelSubsystemHandler.getParsedBootOp());
-                            registeredParallelSubsystemHandler = true;
                         }
+                    } else if (!registeredParallelSubsystemHandler) {
+                        postExtensionOps.add(parallelSubsystemHandler.getParsedBootOp());
+                        subsystemIndex = postExtensionOps.size() - 1;
+                        registeredParallelSubsystemHandler = true;
                     }
                 }
             } else {
@@ -627,15 +616,9 @@ class ModelControllerImpl implements ModelController {
                 } else if (!sawExtensionAdd) {
                     // An operation prior to the first Extension Add
                     initialOps.add(new ParsedBootOp(parsedOp, stepHandler));
-                } else if(parsedOp.isInterfaceOperation() || parsedOp.isSocketOperation() || parsedOp.isManagementOperation()) {
-                    if (parsedOp.isManagementOperation()) {
-                        initialOps.add(new ParsedBootOp(parsedOp, stepHandler));
-                    } else {
-                        initialOps.add(new ParsedBootOp(parsedOp, stepHandler));
-                    }
                 } else {
                     // Start the postExtension list
-                    postExtensionOps = new ArrayList<>(32);
+                    postExtensionOps = new ArrayList<ParsedBootOp>(32);
                     if (parallelSubsystemHandler == null || !parallelSubsystemHandler.addSubsystemOperation(parsedOp)) {
                         postExtensionOps.add(parsedOp);
                     } else {
@@ -646,6 +629,8 @@ class ModelControllerImpl implements ModelController {
                 }
             }
         }
+
+
         return new BootOperations(initialOps, postExtensionOps, invalid);
     }
 

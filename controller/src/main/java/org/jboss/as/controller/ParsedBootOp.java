@@ -22,13 +22,9 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
@@ -97,23 +93,6 @@ public class ParsedBootOp {
         return address.size() > 0 && address.getElement(0).getKey().equals(SOCKET_BINDING_GROUP);
     }
 
-    boolean isManagementInterfaceOperation() {
-        return address.size() > 1
-                && MANAGEMENT_INTERFACE.equals(address.getElement(1).getKey());
-    }
-
-    boolean isManagementOperation() {
-        return address.size() > 0
-                && CORE_SERVICE.equals(address.getElement(0).getKey())
-                && !isAuditLogOperation();
-    }
-
-    boolean isAuditLogOperation() {
-        return address.size() > 1
-                && CORE_SERVICE.equals(address.getElement(0).getKey())
-                && ACCESS.equals(address.getElement(1).getKey())
-                && AUDIT.equals(address.getElement(1).getValue());
-    }
     List<ModelNode> getChildOperations() {
         return childOperations == null ? Collections.<ModelNode>emptyList() : childOperations;
     }
