@@ -625,7 +625,10 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
 
     @Override
     public int getLastChunkIndex() {
-        return lastChunkIndex - substitutedLine.length() + originalLine.length();
+        // When parsing headers, these 2 strings can be null.
+        int subsLength = substitutedLine == null ? 0 : substitutedLine.length();
+        int origLength = originalLine == null ? 0 : originalLine.length();
+        return lastChunkIndex - subsLength + origLength;
     }
 
     @Override
