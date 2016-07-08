@@ -24,11 +24,12 @@ package org.jboss.as.controller.management;
 
 import static org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition.NATIVE_MANAGEMENT_CAPABILITY;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
+import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.remoting3.RemotingOptions;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
@@ -38,7 +39,7 @@ import org.xnio.OptionMap.Builder;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public abstract class BaseNativeInterfaceAddStepHandler extends AbstractAddStepHandler {
+public abstract class BaseNativeInterfaceAddStepHandler extends ManagementInterfaceAddStepHandler {
 
     protected BaseNativeInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
         super(NATIVE_MANAGEMENT_CAPABILITY, attributeDefinitions);
@@ -56,7 +57,7 @@ public abstract class BaseNativeInterfaceAddStepHandler extends AbstractAddStepH
         }
         final OptionMap options = builder.getMap();
 
-        installServices(context, new NativeInterfaceCommonPolicy() {
+        List<ServiceName> requiredServices = installServices(context, new NativeInterfaceCommonPolicy() {
 
             @Override
             public String getSecurityRealm() {
@@ -68,13 +69,8 @@ public abstract class BaseNativeInterfaceAddStepHandler extends AbstractAddStepH
                 return options;
             }
         }, model);
+        addVerifyInstallationStep(context, requiredServices);
     }
 
-    private String asStringIfDefined(OperationContext context, AttributeDefinition attribute, ModelNode model) throws OperationFailedException {
-        ModelNode attributeValue = attribute.resolveModelAttribute(context, model);
-
-        return attributeValue.isDefined() ? attributeValue.asString() : null;
-    }
-
-    protected abstract void installServices(OperationContext context, NativeInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException;
+    protected abstract List<ServiceName> installServices(OperationContext context, NativeInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException;
 }

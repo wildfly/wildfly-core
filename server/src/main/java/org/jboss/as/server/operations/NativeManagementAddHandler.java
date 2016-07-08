@@ -22,10 +22,14 @@
 
 package org.jboss.as.server.operations;
 
+import static org.jboss.as.remoting.RemotingServices.REMOTING_BASE;
+import static org.jboss.as.remoting.management.ManagementRemotingServices.MANAGEMENT_CONNECTOR;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
 
+import java.util.Arrays;
+import java.util.List;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
@@ -60,11 +64,12 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return context.getProcessType() != ProcessType.EMBEDDED_SERVER || context.getRunningMode() != RunningMode.ADMIN_ONLY;
+        return super.requiresRuntime(context)
+                && (context.getProcessType() != ProcessType.EMBEDDED_SERVER || context.getRunningMode() != RunningMode.ADMIN_ONLY);
     }
 
     @Override
-    protected void installServices(OperationContext context, NativeInterfaceCommonPolicy commonPolicy, ModelNode model)
+    protected List<ServiceName> installServices(OperationContext context, NativeInterfaceCommonPolicy commonPolicy, ModelNode model)
             throws OperationFailedException {
         final ServiceTarget serviceTarget = context.getServiceTarget();
 
@@ -88,6 +93,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,
                     socketBindingServiceName, commonPolicy.getConnectorOptions());
+        return Arrays.asList(REMOTING_BASE.append("server", MANAGEMENT_CONNECTOR), socketBindingServiceName);
     }
 
 }
