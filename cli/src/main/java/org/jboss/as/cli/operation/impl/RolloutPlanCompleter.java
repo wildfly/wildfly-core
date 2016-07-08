@@ -80,6 +80,9 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
                 candidates.add("name=");
                 candidates.addAll(Util.getServerGroups(ctx.getModelControllerClient()));
                 return originalLine.length() - bufferIndex;
+            } else if (ctx.getParsedCommandLine().getOriginalLine().endsWith("rollout")) {
+                // In order to have the completion to be allowed to continue
+                candidates.add(" ");
             }
             return buffer.length();
         }

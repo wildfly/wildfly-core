@@ -23,6 +23,7 @@
 package org.jboss.as.test.integration.domain.management.cli;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
@@ -30,6 +31,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.CLITestSuite;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
@@ -891,6 +893,169 @@ public class CliCompletionTestCase {
 
         } finally {
             ctx.terminateSession();
+        }
+    }
+
+    @Test
+    public void testHeaders() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        testHeader("ls -l --headers=", ctx);
+        testHeader(":read-resource()", ctx);
+    }
+
+    private void testHeader(String radical, CommandContext ctx) throws Exception {
+        {
+            String cmd = radical + "{";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("allow-resource-service-restart", "blocking-timeout", "rollback-on-runtime-failure", "rollout"), candidates);
+        }
+
+        {
+            String cmd = radical + "{  ";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("allow-resource-service-restart", "blocking-timeout", "rollback-on-runtime-failure", "rollout"), candidates);
+        }
+
+        {
+            String cmd = radical + "{al";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("allow-resource-service-restart"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("="), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("false", "true"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=t";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("true"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("true;"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("blocking-timeout", "rollback-on-runtime-failure", "rollout"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("rollback-on-runtime-failure"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("="), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("false", "true"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=f";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("false"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("false;"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("blocking-timeout", "rollout"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;b";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("blocking-timeout"), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;blocking-timeout";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("="), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;blocking-timeout=";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList(), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;blocking-timeout=14";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList(), candidates);
+        }
+
+        {
+            String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;blocking-timeout=14;";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertEquals(Arrays.asList("rollout"), candidates);
         }
     }
 }
