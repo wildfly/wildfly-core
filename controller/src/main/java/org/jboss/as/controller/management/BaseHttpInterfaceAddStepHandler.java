@@ -70,7 +70,7 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
 
     @Override
     public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        final String httpServerAuthentication = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.HTTP_SERVER_AUTHENTICATION, model);
+        final String httpAuthenticationFactory = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.HTTP_AUTHENTICATION_FACTORY, model);
         final String sslContext = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SSL_CONTEXT, model);
         final String securityRealm = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SECURITY_REALM, model);
         final boolean consoleEnabled = BaseHttpInterfaceResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
@@ -98,7 +98,7 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
 
             @Override
             public String getHttpServerAuthentication() {
-                return httpServerAuthentication;
+                return httpAuthenticationFactory;
             }
 
             @Override

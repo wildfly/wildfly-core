@@ -14,7 +14,7 @@
             <native-interface sasl-server-authentication="management-sasl">
                 <socket-binding native="management-native"/>
             </native-interface>
-            <http-interface http-server-authentication="management-http" allowed-origins="http://www.example.com http://localhost">
+            <http-interface http-authentication-factory="management-http" allowed-origins="http://www.example.com http://localhost">
                 <http-upgrade enabled="true" sasl-server-authentication="managament-sasl" />
                 <socket-binding http="management-http"/>
             </http-interface>

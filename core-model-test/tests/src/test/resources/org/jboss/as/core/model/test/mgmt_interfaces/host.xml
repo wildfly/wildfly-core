@@ -16,7 +16,7 @@
             <native-interface sasl-server-authentication="management-sasl">
                 <socket interface="management" port="${jboss.management.native.port:9999}"/>
             </native-interface>
-            <http-interface http-server-authentication="management-http" allowed-origins="http://www.example.com http://localhost">
+            <http-interface http-authentication-factory="management-http" allowed-origins="http://www.example.com http://localhost">
                 <http-upgrade enabled="true" sasl-server-authentication="management-sasl" />
                 <socket interface="management" port="${jboss.management.http.port:9990}"/>
             </http-interface>

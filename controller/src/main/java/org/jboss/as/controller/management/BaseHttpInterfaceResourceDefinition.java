@@ -25,7 +25,7 @@ package org.jboss.as.controller.management;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.management.Capabilities.HTTP_MANAGEMENT_CAPABILITY;
-import static org.jboss.as.controller.management.Capabilities.HTTP_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.HTTP_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 
@@ -69,10 +69,10 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
 
     protected static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
 
-    public static final SimpleAttributeDefinition HTTP_SERVER_AUTHENTICATION = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HTTP_SERVER_AUTHENTICATION, ModelType.STRING, true)
+    public static final SimpleAttributeDefinition HTTP_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HTTP_AUTHENTICATION_FACTORY, ModelType.STRING, true)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-        .setCapabilityReference(HTTP_SERVER_AUTHENTICATION_CAPABILITY, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+        .setCapabilityReference(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
         .build();
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
@@ -132,7 +132,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
-    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_SERVER_AUTHENTICATION, SSL_CONTEXT, SECURITY_REALM, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_AUTHENTICATION_FACTORY, SSL_CONTEXT, SECURITY_REALM, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
                                                                                                      HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
 
     private final List<AccessConstraintDefinition> accessConstraints;

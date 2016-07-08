@@ -96,7 +96,7 @@ public enum Attribute {
     HANDLES_REFERRALS_FOR("handles-referrals-for"),
     HOST("host"),
     HTTP("http"),
-    HTTP_SERVER_AUTHENTICATION("http-server-authentication"),
+    HTTP_AUTHENTICATION_FACTORY("http-authentication-factory"),
     HTTP_UPGRADE_ENABLED("http-upgrade-enabled"),
     HTTPS("https"),
     ID("id"),

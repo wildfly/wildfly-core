@@ -415,8 +415,8 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
             } else {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
-                    case HTTP_SERVER_AUTHENTICATION: {
-                        HttpManagementResourceDefinition.HTTP_SERVER_AUTHENTICATION.parseAndSetParameter(value, addOp, reader);
+                    case HTTP_AUTHENTICATION_FACTORY: {
+                        HttpManagementResourceDefinition.HTTP_AUTHENTICATION_FACTORY.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
                     case SASL_PROTOCOL: {
@@ -1710,7 +1710,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
     public boolean writeHttpManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
 
         writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
-        HttpManagementResourceDefinition.HTTP_SERVER_AUTHENTICATION.marshallAsAttribute(protocol, writer);
+        HttpManagementResourceDefinition.HTTP_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
