@@ -177,29 +177,35 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     // replaces SERVER_STATE below, aliased in #ProcessStateAttributeHandler
     public static final SimpleAttributeDefinition RUNTIME_CONFIGURATION_STATE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.RUNTIME_CONFIGURATION_STATE, ModelType.STRING)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
             .build();
     public static final SimpleAttributeDefinition SERVER_STATE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.PROCESS_STATE, ModelType.STRING)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
             .build();
     public static final SimpleAttributeDefinition PROCESS_TYPE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.PROCESS_TYPE, ModelType.STRING)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
             .build();
     public static final SimpleAttributeDefinition LAUNCH_TYPE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.LAUNCH_TYPE, ModelType.STRING)
             .setValidator(new EnumValidator<LaunchType>(LaunchType.class, false, false))
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     public static final AttributeDefinition RUNNING_MODE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.RUNNING_MODE, ModelType.STRING)
             .setValidator(new EnumValidator<RunningMode>(RunningMode.class, false, false))
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     public static final AttributeDefinition SUSPEND_STATE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_STATE, ModelType.STRING)
             .setValidator(new EnumValidator<SuspendController.State>(SuspendController.State.class, false, false))
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
 

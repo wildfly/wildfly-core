@@ -71,6 +71,7 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.READ_ONLY, ModelType.BOOLEAN, true)
                 .setDefaultValue(new ModelNode(false))
                 .setStorageRuntime()
+                .setRuntimeServiceNotRequired()
                 .build();
 
     /**

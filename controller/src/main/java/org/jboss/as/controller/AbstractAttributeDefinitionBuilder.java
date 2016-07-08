@@ -415,13 +415,14 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
-     * Adds the {@link AttributeAccess.Flag#FORCE_REGISTRATION} flag.
+     * Adds the {@link AttributeAccess.Flag#RUNTIME_SERVICE_NOT_REQUIRED} flag.
      *
      * @return a builder that can be used to continue building the attribute definition
      */
-    public BUILDER forceRegistration() {
-        return addFlag(AttributeAccess.Flag.FORCE_REGISTRATION);
+    public BUILDER setRuntimeServiceNotRequired() {
+        return addFlag(AttributeAccess.Flag.RUNTIME_SERVICE_NOT_REQUIRED);
     }
+
     /**
      * Adds the {@link AttributeAccess.Flag#RESTART_ALL_SERVICES} flag and removes any conflicting flag.
      *
