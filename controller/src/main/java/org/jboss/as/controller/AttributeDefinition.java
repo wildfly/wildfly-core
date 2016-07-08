@@ -754,6 +754,53 @@ public abstract class AttributeDefinition {
     }
 
     /**
+     * Creates a returns a basic model node describing a parameter that sets this attribute, after attaching it to the
+     * given overall operation description model node.  The node describing the parameter is returned to make it easy
+     * to perform further modification.
+     *
+     * @param bundle resource bundle to use for text descriptions
+     * @param prefix prefix to prepend to the attribute name key when looking up descriptions
+     * @param operationDescription  the overall resource description
+     * @return  the attribute description node
+     */
+    public ModelNode addOperationReplyDescription(final ResourceBundle bundle, final String prefix, final ModelNode operationDescription) {
+        final ModelNode param = getNoTextDescription(true);
+        param.get(ModelDescriptionConstants.DESCRIPTION).set(getAttributeTextDescription(bundle, prefix));
+        final ModelNode result = operationDescription.get(ModelDescriptionConstants.REPLY_PROPERTIES, getName()).set(param);
+        ModelNode deprecated = addDeprecatedInfo(result);
+        if (deprecated != null) {
+            deprecated.get(ModelDescriptionConstants.REASON).set(getAttributeDeprecatedDescription(bundle, prefix));
+        }
+        return result;
+    }
+
+    /**
+     * Creates a returns a basic model node describing a parameter that sets this attribute, after attaching it to the
+     * given overall operation description model node.  The node describing the parameter is returned to make it easy
+     * to perform further modification.
+     *
+     * @param resourceDescription  the overall resource description
+     * @param operationName the operation name
+     * @param resolver provider of localized text descriptions
+     * @param locale locale to pass to the resolver
+     * @param bundle bundle to pass to the resolver
+     * @return  the attribute description node
+     */
+    public ModelNode addOperationReplyDescription(final ModelNode resourceDescription, final String operationName,
+                                                      final ResourceDescriptionResolver resolver,
+                                                      final Locale locale, final ResourceBundle bundle) {
+        final ModelNode param = getNoTextDescription(true);
+        String description = resolver.getOperationReplyValueTypeDescription(operationName, locale, bundle, getName());
+        param.get(ModelDescriptionConstants.DESCRIPTION).set(description);
+        final ModelNode result = resourceDescription.get(ModelDescriptionConstants.REPLY_PROPERTIES, getName()).set(param);
+        ModelNode deprecated = addDeprecatedInfo(result);
+        if (deprecated != null) {
+            deprecated.get(ModelDescriptionConstants.REASON).set(resolver.getOperationParameterDeprecatedDescription(operationName, getName(), locale, bundle));
+        }
+        return result;
+    }
+
+    /**
      * Gets localized text from the given {@link java.util.ResourceBundle} for the attribute.
      *
      * @param bundle the resource bundle. Cannot be {@code null}

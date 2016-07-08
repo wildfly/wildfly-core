@@ -219,9 +219,13 @@ public class StandardResourceDescriptionResolver implements ResourceDescriptionR
     @Override
     public String getOperationReplyValueTypeDescription(String operationName, Locale locale, ResourceBundle bundle, String... suffixes) {
         try {
-            return bundle.getString(getVariableBundleKey(new String[] {operationName, REPLY}, suffixes));
+            return bundle.getString(getVariableBundleKey(new String[]{operationName, REPLY}, suffixes));
         } catch (MissingResourceException e) {
-            return null;
+            try {
+                return getOperationParameterValueTypeDescription(operationName, suffixes[0], locale, bundle);
+            } catch (MissingResourceException ex) {
+                throw e;
+            }
         }
     }
 
