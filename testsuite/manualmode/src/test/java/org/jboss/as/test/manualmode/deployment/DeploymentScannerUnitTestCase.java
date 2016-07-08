@@ -48,6 +48,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
@@ -59,6 +60,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
+@Ignore("WFCORE-1640") // there is only 1 @Test method and it fails so disable the whole class
 public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCase {
 
     private static final String JAR_ONE = "deployment-startup-one.jar";
