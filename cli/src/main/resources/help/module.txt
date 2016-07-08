@@ -2,8 +2,8 @@ SYNOPSIS
 
   To add a module locally
 
-    module add --name=module_name [--slot=slot_name]
-               --resources=list_of_jars [--resource-delimiter=delimiter]
+    module add [--module-root-dir=modules_root_directory_path] --name=module_name 
+               [--slot=slot_name] --resources=list_of_jars [--resource-delimiter=delimiter]
                (--module-xml=file_path |
                 ([--dependencies=list_of_module_names]
                  [--properties=list_of_properties]
@@ -39,7 +39,11 @@ DESCRIPTION
 
 ARGUMENTS
 
- --name          - (required) the name of the module to be added or removed.
+--module-root-dir - (optional) The absolute file path to the server's modules 
+                    directory. By default the module is added to (or removed from)
+                    JBOSS_HOME/modules
+ 
+--name          - (required) the name of the module to be added or removed.
                    NOTE: slot is not a part of the module name.
 
  --slot          - (optional) specifies a slot which should be created or

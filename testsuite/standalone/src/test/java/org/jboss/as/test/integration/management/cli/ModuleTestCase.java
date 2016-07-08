@@ -26,6 +26,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.PrintWriter;
+import org.apache.commons.io.FileUtils;
 
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -50,6 +51,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
     private static final String MODULE_NAME = "org.jboss.test.cli.climoduletest";
 
     private static File jarFile;
+    private static File customModulesDirectory;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -58,13 +60,29 @@ public class ModuleTestCase extends AbstractCliTestBase {
         jarFile = new File(TestSuiteEnvironment.getTmpDir() + File.separator + "Dummy.jar");
         new ZipExporterImpl(jar).exportTo(jarFile, true);
 
+        // Create an empty directory
+        customModulesDirectory = new File(TestSuiteEnvironment.getTmpDir(),
+                System.currentTimeMillis() + "-mymodules");
+        customModulesDirectory.mkdir();
+
         AbstractCliTestBase.initCLI();
     }
 
     @AfterClass
     public static void afterClass() throws Exception {
         jarFile.delete();
+        FileUtils.deleteDirectory(customModulesDirectory);
         AbstractCliTestBase.closeCLI();
+    }
+
+    @Test
+    public void userModulesPath() throws Exception {
+        String slotName = "main";
+        testModuleFiles(false, slotName, customModulesDirectory);
+        testAdd(slotName, customModulesDirectory);
+        testModuleFiles(true, slotName, customModulesDirectory);
+        testRemove(slotName, customModulesDirectory);
+        testModuleFiles(false, slotName, customModulesDirectory);
     }
 
     @Test
@@ -115,14 +133,33 @@ public class ModuleTestCase extends AbstractCliTestBase {
                 + " --resources=" + jarFile.getAbsolutePath());
     }
 
+    private void testAdd(String slotName, File directory) throws Exception {
+        // create a module
+        cli.sendLine("module --module-root-dir=" + directory.getAbsolutePath()
+                + " add --name=" + MODULE_NAME
+                + ("main".equals(slotName) ? "" : " --slot=" + slotName)
+                + " --resources=" + jarFile.getAbsolutePath());
+    }
+
     private void testRemove(String slotName) throws Exception {
         // remove the module
         cli.sendLine("module remove --name=" + MODULE_NAME
                 + ("main".equals(slotName) ? "" : " --slot=" + slotName));
     }
 
+    private void testRemove(String slotName, File directory) throws Exception {
+        // remove the module
+        cli.sendLine("module --module-root-dir=" + directory.getAbsolutePath()
+                + " remove --name=" + MODULE_NAME
+                + ("main".equals(slotName) ? "" : " --slot=" + slotName));
+    }
+
     private void testModuleFiles(boolean ifExists, String slotName) throws Exception {
-        File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
+        testModuleFiles(ifExists, slotName, getModulePath());
+    }
+
+    private void testModuleFiles(boolean ifExists, String slotName, File modulesPath) throws Exception {
+        File testModuleRoot = new File(modulesPath, MODULE_NAME.replace('.', File.separatorChar));
         assertTrue("Invalid state of module directory: " + testModuleRoot.getAbsolutePath() +
                 (ifExists ? " does not exist" : " exists"), ifExists == testModuleRoot.exists());
 
