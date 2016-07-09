@@ -21,18 +21,18 @@ package org.jboss.as.server.deployment;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ALL;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ARCHIVE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PATH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RELATIVE_TO;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.EMPTY;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.SERVER_ADD_ATTRIBUTES;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.asString;
-import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.hasValidContentAdditionParameterDefined;
 
@@ -46,15 +46,15 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.protocol.StreamUtils;
-import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
+
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
 
 /**
  * Handles addition of a deployment to the model.
@@ -103,9 +103,13 @@ public class DeploymentAddHandler implements OperationStepHandler {
         }
 
         // TODO: JBAS-9020: for the moment overlays are not supported, so there is a single content item
-        ModelNode content = newModel.require(CONTENT_ALL.getName());
-        ModelNode contentItemNode = content.require(0);
-
+        ModelNode contentItemNode;
+        if(EMPTY.resolveModelAttribute(context, newModel).asBoolean()) {
+            contentItemNode = new ModelNode();
+        } else {
+            contentItemNode = newModel.require(CONTENT_RESOURCE.getName()).require(0);
+        }
+        newModel.remove(EMPTY.getName());
         final ModelNode opAddr = operation.get(OP_ADDR);
         final PathAddress address = PathAddress.pathAddress(opAddr);
         final String name = address.getLastElement().getValue();
@@ -114,16 +118,23 @@ public class DeploymentAddHandler implements OperationStepHandler {
 
         final DeploymentHandlerUtil.ContentItem contentItem;
         if (contentItemNode.hasDefined(CONTENT_HASH.getName())) {
-            byte[] hash = contentItemNode.require(CONTENT_HASH.getName()).asBytes();
-            contentItem = addFromHash(hash, name, address, context);
-        } else if (hasValidContentAdditionParameterDefined(contentItemNode)) {
+            contentItem = addFromHash(contentItemNode, name, address, context);
+        } else if (!contentItemNode.isDefined()) {
+            contentItem = addEmptyContentDir();
+            contentItemNode = new ModelNode();
+            contentItemNode.get(CONTENT_HASH.getName()).set(contentItem.getHash());
+            contentItemNode.get(CONTENT_ARCHIVE.getName()).set(false);
+            ModelNode content = new ModelNode();
+            content.add(contentItemNode);
+            newModel.get(CONTENT_RESOURCE.getName()).set(content);
+        } else if(hasValidContentAdditionParameterDefined(contentItemNode)) {
             contentItem = addFromContentAdditionParameter(context, contentItemNode);
             // Store a hash-based contentItemNode back to the model
             contentItemNode = new ModelNode();
             contentItemNode.get(CONTENT_HASH.getName()).set(contentItem.getHash());
-            content = new ModelNode();
+            ModelNode content = new ModelNode();
             content.add(contentItemNode);
-            newModel.get(CONTENT_ALL.getName()).set(content);
+            newModel.get(CONTENT_RESOURCE.getName()).set(content);
         } else {
             contentItem = addUnmanaged(contentItemNode);
         }
@@ -182,23 +193,16 @@ public class DeploymentAddHandler implements OperationStepHandler {
                 ? deployment.get(ModelDescriptionConstants.RUNTIME_NAME).asString() : name;
     }
 
-    DeploymentHandlerUtil.ContentItem addFromHash(byte[] hash, String deploymentName, PathAddress address, OperationContext context) throws OperationFailedException {
-        ContentReference reference = ModelContentReference.fromModelAddress(address, hash);
-        if (!contentRepository.syncContent(reference)) {
-            if (context.isBooting()) {
-                if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
-                    // The deployment content is missing, which would be a fatal boot error if we were going to actually
-                    // install services. In ADMIN-ONLY mode we allow it to give the admin a chance to correct the problem
-                    ServerLogger.ROOT_LOGGER.reportAdminOnlyMissingDeploymentContent(reference.getHexHash(), deploymentName);
+    DeploymentHandlerUtil.ContentItem addFromHash(ModelNode contentItem, String deploymentName, PathAddress address, OperationContext context) throws OperationFailedException {
+        return new DeploymentHandlerUtil.ContentItem(DeploymentHandlerUtil.addFromHash(contentRepository, contentItem, deploymentName, address, context), DeploymentHandlerUtil.isArchive(contentItem));
+    }
 
-                } else {
-                    throw ServerLogger.ROOT_LOGGER.noSuchDeploymentContentAtBoot(reference.getHexHash(), deploymentName);
-                }
-            } else {
-                throw ServerLogger.ROOT_LOGGER.noSuchDeploymentContent(reference.getHexHash());
-            }
+    DeploymentHandlerUtil.ContentItem addEmptyContentDir() throws OperationFailedException {
+        try {
+            return new DeploymentHandlerUtil.ContentItem(contentRepository.addContent(null));
+        } catch (IOException e) {
+            throw createFailureException(e.toString());
         }
-        return new DeploymentHandlerUtil.ContentItem(hash);
     }
 
     DeploymentHandlerUtil.ContentItem addFromContentAdditionParameter(OperationContext context, ModelNode contentItemNode) throws OperationFailedException {

@@ -78,6 +78,7 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
         }
         for (String name : properties.stringPropertyNames()) {
             System.setProperty(name, properties.getProperty(name));
+            System.out.println("Setting "+ name + " to " + properties.getProperty(name));
         }
     }
 

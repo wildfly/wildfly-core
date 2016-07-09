@@ -22,24 +22,33 @@ package org.jboss.as.repository;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.jboss.as.repository.PathUtil.deleteRecursively;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
+import org.jboss.as.protocol.StreamUtils;
 import org.jboss.vfs.VirtualFile;
 import org.junit.After;
 import org.junit.Before;
@@ -47,7 +56,7 @@ import org.junit.Test;
 
 /**
  *
- * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
+ * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
 public class ContentRepositoryTest {
     private static final boolean IS_WINDOWS = AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
@@ -55,39 +64,39 @@ public class ContentRepositoryTest {
 
     private ContentRepository repository;
     private final File rootDir = new File("target", "repository");
+    private final File tmpRootDir = new File("target", "tmp");
 
     public ContentRepositoryTest() {
     }
 
     @Before
-    public void createRepository() {
+    public void createRepository() throws IOException {
         if (rootDir.exists()) {
-            deleteRecursively(rootDir);
+            deleteRecursively(rootDir.toPath());
         }
         rootDir.mkdirs();
-        repository = ContentRepository.Factory.create(rootDir, 0L);
+        if (tmpRootDir.exists()) {
+            deleteRecursively(tmpRootDir.toPath());
+        }
+        tmpRootDir.mkdirs();
+        repository = ContentRepository.Factory.create(rootDir, tmpRootDir, 0L);
     }
 
     @After
-    public void destroyRepository() {
-        deleteRecursively(rootDir);
+    public void destroyRepository() throws IOException {
+        deleteRecursively(rootDir.toPath());
+        deleteRecursively(tmpRootDir.toPath());
         repository = null;
     }
 
-    private void deleteRecursively(File file) {
-        if (file.exists()) {
-            if (file.isDirectory()) {
-                for (File child : file.listFiles()) {
-                    deleteRecursively(child);
-                }
-            }
-            file.delete();
+    private String readFileContent(File file) throws Exception {
+        try (InputStream in = getFileInputStream(file)) {
+            return readFileContent(in);
         }
     }
 
-    private String readFileContent(File file) throws Exception {
-        try (InputStream in = getFileInputStream(file);
-                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+    private String readFileContent(InputStream in) throws Exception {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8];
             int length = 8;
             while ((length = in.read(buffer, 0, length)) > 0) {
@@ -107,6 +116,160 @@ public class ContentRepositoryTest {
             byte[] result = repository.addContent(stream);
             assertThat(result, is(notNullValue()));
             assertThat(HashUtil.bytesToHexString(result), is(expResult));
+        }
+    }
+
+    /**
+     * Test of explodeContent method, of class ContentRepository.
+     */
+    @Test
+    public void testExplodeContent() throws Exception {
+        byte[] archive = createArchive(Collections.singletonList("overlay.xhtml"));
+        try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
+            byte[] hash = repository.explodeContent(repository.addContent(stream));
+            String expResult = "b1f18e286615dda0643633ec31f1a17d90e48875";
+            //hash is different from the simple overlay.xhtml as we add the content folder name in the computation
+            assertThat(hash, is(notNullValue()));
+            VirtualFile content = repository.getContent(hash);
+            String contentHtml = readFileContent(content.getChild("overlay.xhtml").getPhysicalFile());
+            String expectedContentHtml = readFileContent(new File(this.getClass().getClassLoader().getResource("overlay.xhtml").toURI()));
+            assertThat(contentHtml, is(expectedContentHtml));
+            assertThat(HashUtil.bytesToHexString(hash), is(expResult));
+        }
+    }
+
+    /**
+     * Test of explodeContent method, of class ContentRepository.
+     */
+    @Test
+    public void testExplodeSubContent() throws Exception {
+        byte[] archive = createMultiLevelArchive(Collections.singletonList("overlay.xhtml"), "test/archive.zip");
+        try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
+            byte[] originalHash = repository.addContent(stream);
+            assertThat(originalHash, is(notNullValue()));
+            assertThat(HashUtil.bytesToHexString(originalHash), is("0aee80d935dd7fc73ead88df068b9b9d536770b6"));
+            byte[] hash = repository.explodeContent(originalHash);
+            //hash is different from the simple overlay.xhtml as we add the content folder name in the computation
+            assertThat(hash, is(notNullValue()));
+            assertThat(HashUtil.bytesToHexString(hash), is("f608ff32e67e7e476564dc8193972f4acd0c2141"));
+            VirtualFile content = repository.getContent(hash);
+            String contentHtml = readFileContent(content.getChild("overlay.xhtml").getPhysicalFile());
+            String expectedContentHtml = readFileContent(new File(this.getClass().getClassLoader().getResource("overlay.xhtml").toURI()));
+            assertThat(contentHtml, is(expectedContentHtml));
+            File archiveFile = content.getChild("test/archive.zip").getPhysicalFile();
+            assertTrue(archiveFile.exists());
+            new ZipFile(archiveFile);
+            byte[] fullyExplodedHash = repository.explodeSubContent(hash, "test/archive.zip");
+            assertThat(fullyExplodedHash, is(notNullValue()));
+            assertThat(HashUtil.bytesToHexString(fullyExplodedHash), is("231f4d042711f017d7f8c45aa4affcccbd4d67f4"));
+            content = repository.getContent(repository.explodeSubContent(hash, "test/archive.zip"));
+            File directory = content.getChild("test/archive.zip").getPhysicalFile();
+            assertTrue("Should not be a zip file", directory.isDirectory());
+            assertThat(contentHtml, is(expectedContentHtml));
+        }
+    }
+
+    private byte[] createMultiLevelArchive(List<String> resources, String archivePath) throws IOException {
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            try (ZipOutputStream out = new ZipOutputStream(buffer)) {
+                for (String resourcePath : resources) {
+                    ZipEntry entry = new ZipEntry(resourcePath);
+                    entry.setTime(1466068270000L);
+                    entry.setLastAccessTime(FileTime.fromMillis(1466068270000L));
+                    entry.setLastModifiedTime(FileTime.fromMillis(1466068270000L));
+                    out.putNextEntry(entry);
+                    StreamUtils.copyStream(new CarriageReturnRemovalInputStream(getResourceAsStream(resourcePath)), out);
+                    out.closeEntry();
+                }
+                ZipEntry entry = new ZipEntry(archivePath);
+                entry.setTime(1466068270000L);
+                entry.setLastAccessTime(FileTime.fromMillis(1466068270000L));
+                entry.setLastModifiedTime(FileTime.fromMillis(1466068270000L));
+                out.putNextEntry(entry);
+                StreamUtils.copyStream(new ByteArrayInputStream(createArchive(resources)), out);
+                out.closeEntry();
+            }
+            return buffer.toByteArray();
+        }
+    }
+
+    private byte[] createArchive(List<String> resources) throws IOException {
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            for (String resourcePath : resources) {
+                try (ZipOutputStream out = new ZipOutputStream(buffer)) {
+                    ZipEntry entry = new ZipEntry(resourcePath);
+                    entry.setTime(1466068270000L);
+                    entry.setLastAccessTime(FileTime.fromMillis(1466068270000L));
+                    entry.setLastModifiedTime(FileTime.fromMillis(1466068270000L));
+                    out.putNextEntry(entry);
+                    StreamUtils.copyStream(new CarriageReturnRemovalInputStream(getResourceAsStream(resourcePath)), out);
+                    out.closeEntry();
+                }
+            }
+            return buffer.toByteArray();
+        }
+    }
+
+    /**
+     * Test of explodeContent method, of class ContentRepository.
+     */
+    @Test
+    public void testChangeExplodedContent() throws Exception {
+        byte[] archive = createArchive(Collections.singletonList("overlay.xhtml"));
+        try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
+            byte[] hash = repository.explodeContent(repository.addContent(stream));
+            String expResult = "b1f18e286615dda0643633ec31f1a17d90e48875";
+            //hash is different from the simple overlay.xhtml as we add the content folder name in the computation
+            assertThat(hash, is(notNullValue()));
+            VirtualFile content = repository.getContent(hash);
+            String contentHtml = readFileContent(content.getChild("overlay.xhtml").getPhysicalFile());
+            String expectedContentHtml = readFileContent(new File(this.getClass().getClassLoader().getResource("overlay.xhtml").toURI()));
+            assertThat(contentHtml, is(expectedContentHtml));
+            assertThat(HashUtil.bytesToHexString(hash), is(expResult));
+            String updatedExpectedResult = "161a2c95b16d5ffede0721c2cec984ca51009082";
+            hash = repository.addContentToExploded(hash,
+                    Collections.singletonList(new ExplodedContent("test.jsp", new ByteArrayInputStream("this is a test".getBytes(StandardCharsets.UTF_8)))),
+                    true);
+            assertThat(hash, is(notNullValue()));
+            assertThat(HashUtil.bytesToHexString(hash), is(updatedExpectedResult));
+            InputStream addedContent = repository.readContent(hash, "test.jsp");
+            assertThat(addedContent, is(notNullValue()));
+            assertThat(readFileContent(addedContent), is("this is a test"));
+            content = repository.getContent(hash);
+            assertThat(content.getChildren().size(), is(2));
+            hash = repository.removeContentFromExploded(hash, Collections.singletonList("test.jsp"));
+            assertThat(hash, is(notNullValue()));
+            assertThat(HashUtil.bytesToHexString(hash), is(expResult));
+        }
+    }
+
+    @Test
+    public void testListContents() throws Exception {
+        byte[] archive = createArchive(Collections.singletonList("overlay.xhtml"));
+        try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
+            byte[] hash = repository.explodeContent(repository.addContent(stream));
+            String expResult = "b1f18e286615dda0643633ec31f1a17d90e48875";
+            //hash is different from the simple overlay.xhtml as we add the content folder name in the computation
+            assertThat(hash, is(notNullValue()));
+            VirtualFile content = repository.getContent(hash);
+            String contentHtml = readFileContent(content.getChild("overlay.xhtml").getPhysicalFile());
+            String expectedContentHtml = readFileContent(new File(this.getClass().getClassLoader().getResource("overlay.xhtml").toURI()));
+            assertThat(contentHtml, is(expectedContentHtml));
+            assertThat(HashUtil.bytesToHexString(hash), is(expResult));
+            String updatedExpectedResult = "161a2c95b16d5ffede0721c2cec984ca51009082";
+            hash = repository.addContentToExploded(hash,
+                    Collections.singletonList(new ExplodedContent("test.jsp",new ByteArrayInputStream("this is a test".getBytes(StandardCharsets.UTF_8)))),
+                    true);
+            assertThat(hash, is(notNullValue()));
+            assertThat(HashUtil.bytesToHexString(hash), is(updatedExpectedResult));
+            InputStream addedContent = repository.readContent(hash, "test.jsp");
+            assertThat(addedContent, is(notNullValue()));
+            assertThat(readFileContent(addedContent), is("this is a test"));
+            content = repository.getContent(hash);
+            assertThat(content.getChildren().size(), is(2));
+            hash = repository.removeContentFromExploded(hash, Collections.singletonList("test.jsp"));
+            assertThat(hash, is(notNullValue()));
+            assertThat(HashUtil.bytesToHexString(hash), is(expResult));
         }
     }
 

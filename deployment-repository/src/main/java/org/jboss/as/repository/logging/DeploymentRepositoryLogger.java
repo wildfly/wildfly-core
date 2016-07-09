@@ -26,6 +26,8 @@ import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
+import java.nio.file.Path;
+import org.jboss.as.repository.ExplodedContentException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
@@ -125,4 +127,39 @@ public interface DeploymentRepositoryLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 11, value = "Couldn't list directory files for %s")
     void localContentListError(String name);
+
+    @Message(id = 12, value = "Cannot hash current deployment content %s")
+    RuntimeException hashingError(@Cause Throwable cause, Path path);
+
+    @Message(id = 13, value = "Access denied to the content at %s in the deployment")
+    IllegalArgumentException forbiddenPath(String path);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 14, value = "Error deleting deployment %s")
+    void couldNotDeleteDeployment(@Cause Exception ex, String path);
+
+    @Message(id = 15, value = "%s is not an archive file")
+    IllegalStateException notAnArchive(String path);
+
+    @Message(id = 16, value = "Achive file %s not found")
+    ExplodedContentException archiveNotFound(String path);
+
+    @LogMessage(level = INFO)
+    @Message(id = 17, value = "Content exploded at location %s")
+    void contentExploded(String path);
+
+    @Message(id = 18, value = "Error exploding content for %s")
+    ExplodedContentException errorExplodingContent(@Cause Exception ex, String path);
+
+    @Message(id = 19, value = "Deployment is locked by another operation")
+    ExplodedContentException errorLockingDeployement();
+
+    @Message(id = 20, value = "Error accessing deployment files")
+    ExplodedContentException errorAccessingDeployement(@Cause Exception ex);
+
+    @Message(id = 21, value = "Error updating content of exploded deployment")
+    ExplodedContentException errorUpdatingDeployement(@Cause Exception ex);
+
+    @Message(id = 22, value = "Error copying files of exploded deployment to %s")
+    ExplodedContentException errorCopyingDeployement(@Cause Exception ex, String target);
 }

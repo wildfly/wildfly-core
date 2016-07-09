@@ -73,6 +73,10 @@ public class DomainTransformers {
     static final ModelVersion VERSION_3_0 = ModelVersion.create(3, 0, 0);
     //WF 10.0.0
     static final ModelVersion VERSION_4_0 = ModelVersion.create(4, 0, 0);
+    // EAP 7.0.0
+    static final ModelVersion VERSION_4_1 = ModelVersion.create(4, 1, 0);
+    // WF 11.0.0
+    static final ModelVersion VERSION_5_0 = ModelVersion.create(5, 0, 0);
 
     //All versions before WildFly 10/EAP 7, which do not understand /profile=xxx:clone
     private static final ModelVersion[] PRE_PROFILE_CLONE_VERSIONS = new ModelVersion[]{VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5};
@@ -99,6 +103,7 @@ public class DomainTransformers {
         registerChainedServerGroupTransformers(registry, CURRENT);
         registerProfileTransformers(registry, CURRENT);
         registerSocketBindingGroupTransformers(registry, CURRENT);
+        registerDeploymentTransformers(registry, CURRENT);
     }
 
     private static void registerRootTransformers(TransformerRegistry registry) {
@@ -163,6 +168,11 @@ public class DomainTransformers {
             TransformersSubRegistration domain = registry.getDomainRegistration(entry.getKey());
             TransformationDescription.Tools.register(entry.getValue(), domain);
         }
+    }
+
+    private static void registerDeploymentTransformers(TransformerRegistry registry, ModelVersion CURRENT) {
+        ChainedTransformationDescriptionBuilder builder = DeploymentTransformers.buildTransformerChain(CURRENT);
+        registerChainedTransformer(registry, builder, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5);
     }
 
     private static class ProfileCloneOperationTransformer implements OperationTransformer {

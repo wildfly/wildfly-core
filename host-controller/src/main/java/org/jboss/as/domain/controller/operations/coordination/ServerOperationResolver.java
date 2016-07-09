@@ -248,7 +248,7 @@ public class ServerOperationResolver {
                     return Collections.singletonMap(allServers, operation);
                 }
                 case DEPLOYMENT: {
-                    return Collections.emptyMap();
+                    return getServerExplodedDeploymentOperations(operation, address, domain, host);
                 }
                 case PATH: {
                     return getServerPathOperations(operation, address, host, true);
@@ -883,6 +883,24 @@ public class ServerOperationResolver {
         return result;
     }
 
+    private Map<Set<ServerIdentity>, ModelNode> getServerExplodedDeploymentOperations(ModelNode operation, PathAddress address,
+                                                                           ModelNode domain, ModelNode host) {
+        Map<Set<ServerIdentity>, ModelNode> result = null;
+        if (isExplodedDeploymentOperation(operation)) {
+            String deploymentName = address.getLastElement().getValue();
+            Set<String> groups = getServerGroupsForDeployment(deploymentName, domain);
+            Set<ServerIdentity> allServers = new HashSet<>();
+            for (String group : groups) {
+                allServers.addAll(getServersForGroup(group, host, localHostName, serverProxies));
+            }
+            result = Collections.singletonMap(allServers, operation);
+        }
+        if (result == null) {
+            result = Collections.emptyMap();
+        }
+        return result;
+    }
+
     private static Map<Set<ServerIdentity>, ModelNode> getServerRestartRequiredOperations(Set<ServerIdentity> servers) {
         return getSimpleServerOperations(servers, ServerProcessStateHandler.REQUIRE_RESTART_OPERATION);
     }
@@ -954,4 +972,10 @@ public class ServerOperationResolver {
                 || (ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION.equals(opName) && VALUE.equals(operation.require(NAME).asString())));
     }
 
+    private boolean isExplodedDeploymentOperation(ModelNode operation) {
+        String op = operation.require(OP).asString();
+        return ModelDescriptionConstants.EXPLODE.equals(op) ||
+                ModelDescriptionConstants.ADD_CONTENT.equals(op) ||
+                ModelDescriptionConstants.REMOVE_CONTENT.equals(op);
+    }
 }

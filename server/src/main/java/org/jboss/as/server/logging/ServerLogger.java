@@ -1196,4 +1196,56 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 241, value = "Shutting down in response to management operation '%s'")
     void shuttingDownInResponseToManagementRequest(String op);
 
+    @Message(id = 242, value = "Cannot explode a deployment in a self-contained server")
+    OperationFailedException cannotExplodeDeploymentOfSelfContainedServer();
+
+    @Message(id = 243, value = "Cannot explode an unmanaged deployment")
+    OperationFailedException cannotExplodeUnmanagedDeployment();
+
+    @Message(id = 244, value = "Cannot explode an already exploded deployment")
+    OperationFailedException cannotExplodeAlreadyExplodedDeployment();
+
+    @Message(id = 245, value = "Cannot explode an already deployed deployment")
+    OperationFailedException cannotExplodeEnabledDeployment();
+
+    @Message(id = 246, value = "Cannot add content to a deployment in a self-contained server")
+    OperationFailedException cannotAddContentToSelfContainedServer();
+
+    @Message(id = 247, value = "Cannot add content to an unmanaged deployment")
+    OperationFailedException cannotAddContentToUnmanagedDeployment();
+
+    @Message(id = 248, value = "Cannot add content to an unexploded deployment")
+    OperationFailedException cannotAddContentToUnexplodedDeployment();
+
+    @Message(id = 249, value = "Could not copy files from the managed content repository to the running deployment")
+    OperationFailedException couldNotCopyFiles();
+
+    @LogMessage(level = ERROR)
+    @Message(id = 250, value = "Could not copy files from the managed content repository to the running deployment for %s")
+    void couldNotCopyFiles(@Cause Exception ex, String managementName);
+
+    @Message(id = 251, value = "Cannot remove content from a deployment in a self-contained server")
+    OperationFailedException cannotRemoveContentFromSelfContainedServer();
+
+    @Message(id = 252, value = "Cannot remove content from an unmanaged deployment")
+    OperationFailedException cannotRemoveContentFromUnmanagedDeployment();
+
+    @Message(id = 253, value = "Cannot remove content from an unexploded deployment")
+    OperationFailedException cannotRemoveContentFromUnexplodedDeployment();
+
+    @Message(id = 254, value = "Could not delete files from the running deployment")
+    OperationFailedException couldNotDeleteFiles();
+
+    @LogMessage(level = ERROR)
+    @Message(id = 255, value = "Could not delete file %s from the running deployment %s")
+    void couldNotDeleteFile(@Cause Exception ex, String path, String managementName);
+
+    @Message(id = 256, value = "Cannot read content from a deployment in a self-contained server")
+    OperationFailedException cannotReadContentFromSelfContainedServer();
+
+    @Message(id = 257, value = "Cannot remove content from an unmanaged deployment")
+    OperationFailedException cannotReadContentFromUnmanagedDeployment();
+
+    @Message(id = 258, value = "Cannot remove content from an unexploded deployment")
+    OperationFailedException cannotReadContentFromUnexplodedDeployment();
 }

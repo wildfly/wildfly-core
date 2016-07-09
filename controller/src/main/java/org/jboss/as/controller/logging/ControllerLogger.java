@@ -3419,4 +3419,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 418, value = "A %s or a %s %s already declared has already been declared in %s %s")
     OperationFailedRuntimeException socketBindingalreadyDeclared(String name1, String name2, String value, String parentName, String parentValue);
+
+    @Message(id = 419, value = "Exploded deployment is not supported by some servers")
+    String explodedDeploymentNotSupported();
 }

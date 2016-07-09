@@ -34,6 +34,7 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
@@ -417,6 +418,24 @@ class DeploymentPlanBuilderImpl
         if (cleanupInFinalize) {
             cleanup();
         }
+    }
+
+    @Override
+    public DeploymentPlanBuilder explodeDeployment(String deploymentName) throws IOException {
+        DeploymentActionImpl mod = DeploymentActionImpl.getExplodeAction(deploymentName);
+        return new DeploymentPlanBuilderImpl(this, mod);
+    }
+
+    @Override
+    public DeploymentPlanBuilder addContentToDeployment(String deploymentName, Map<String, InputStream> contents) throws IOException {
+        DeploymentActionImpl mod = DeploymentActionImpl.getAddContentAction(deploymentName, contents);
+        return new DeploymentPlanBuilderImpl(this, mod);
+    }
+
+    @Override
+    public DeploymentPlanBuilder removeContenFromDeployment(String deploymentName, List<String> paths) throws IOException {
+         DeploymentActionImpl mod = DeploymentActionImpl.getRemoveContentAction(deploymentName, paths);
+        return new DeploymentPlanBuilderImpl(this, mod);
     }
 
     // Wrap the FIS in a streamEntry so that the controller-client has access to the underlying File
