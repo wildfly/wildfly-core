@@ -79,7 +79,7 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
         if (model.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE)) {
             ModelNode httpUpgrade = model.require(ModelDescriptionConstants.HTTP_UPGRADE);
             httpUpgradeEnabled = BaseHttpInterfaceResourceDefinition.ENABLED.resolveModelAttribute(context, httpUpgrade).asBoolean();
-            saslServerAuthentication =  asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SASL_SERVER_AUTHENTICATION, httpUpgrade);
+            saslServerAuthentication =  asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SASL_AUTHENTICATION_FACTORY, httpUpgrade);
         } else {
             httpUpgradeEnabled = false;
             saslServerAuthentication = null;

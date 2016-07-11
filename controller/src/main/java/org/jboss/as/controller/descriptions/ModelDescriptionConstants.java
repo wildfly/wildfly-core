@@ -452,7 +452,7 @@ public class ModelDescriptionConstants {
     public static final String RESTART_SERVERS = "restart-servers";
     public static final String RESUME_SERVERS = "resume-servers";
     public static final String RESUME = "resume";
-    public static final String SASL_SERVER_AUTHENTICATION = "sasl-server-authentication";
+    public static final String SASL_AUTHENTICATION_FACTORY = "sasl-authentication-factory";
     public static final String SASL_PROTOCOL = "sasl-protocol";
     public static final String SELECT = "select";
     public static final String SERVER_LOGGER = "server-logger";

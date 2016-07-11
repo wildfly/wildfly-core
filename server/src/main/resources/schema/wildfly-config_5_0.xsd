@@ -2071,10 +2071,10 @@
                                     </xs:documentation>
                                 </xs:annotation>
                             </xs:attribute>
-                            <xs:attribute name="sasl-server-authentication" type="xs:string" use="optional">
+                            <xs:attribute name="sasl-authentication-factory" type="xs:string" use="optional">
                                 <xs:annotation>
                                     <xs:documentation>
-                                        The SASL server authentication policy to secure connections upgraded from HTTP.
+                                        The SASL authentication policy to secure connections upgraded from HTTP.
                                     </xs:documentation>
                                 </xs:annotation>
                             </xs:attribute>
@@ -2095,7 +2095,7 @@
     <xs:complexType name="native-management-interfaceType" abstract="true">
         <xs:complexContent>
             <xs:extension base="management-interfaceType">
-                <xs:attribute name="sasl-server-authentication" type="xs:string" use="optional">
+                <xs:attribute name="sasl-authentication-factory" type="xs:string" use="optional">
                     <xs:annotation>
                         <xs:documentation>
                             The SASL server authentication policy to secure connections upgraded from HTTP.

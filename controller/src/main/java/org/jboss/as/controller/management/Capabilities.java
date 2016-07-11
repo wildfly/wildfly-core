@@ -36,7 +36,7 @@ final class Capabilities {
 
     static final String NATIVE_MANAGEMENT_CAPABILITY = "org.wildfly.management.native-interface";
 
-    static final String SASL_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.sasl-server-authentication";
+    static final String SASL_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.sasl-authentication-factory";
 
     static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
 
