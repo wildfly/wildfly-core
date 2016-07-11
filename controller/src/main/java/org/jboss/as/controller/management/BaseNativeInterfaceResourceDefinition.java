@@ -23,7 +23,7 @@
 package org.jboss.as.controller.management;
 
 import static org.jboss.as.controller.management.Capabilities.NATIVE_MANAGEMENT_CAPABILITY;
-import static org.jboss.as.controller.management.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
@@ -61,7 +61,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
     protected static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, NATIVE_INTERFACE);
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
-        .setAlternatives(ModelDescriptionConstants.SASL_SERVER_AUTHENTICATION)
+        .setAlternatives(ModelDescriptionConstants.SASL_AUTHENTICATION_FACTORY)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
         .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
@@ -83,11 +83,11 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
-    public static final SimpleAttributeDefinition SASL_SERVER_AUTHENTICATION = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_SERVER_AUTHENTICATION, ModelType.STRING, true)
+    public static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_AUTHENTICATION_FACTORY, ModelType.STRING, true)
         .setAlternatives(ModelDescriptionConstants.SECURITY_REALM)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-        .setCapabilityReference(SASL_SERVER_AUTHENTICATION_CAPABILITY, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
+        .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
         .build();
 
     public static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
@@ -96,7 +96,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setCapabilityReference(SSL_CONTEXT_CAPABILITY, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
         .build();
 
-    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SSL_CONTEXT, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL, SASL_SERVER_AUTHENTICATION };
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SSL_CONTEXT, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL, SASL_AUTHENTICATION_FACTORY };
 
     private final List<AccessConstraintDefinition> accessConstraints;
 
