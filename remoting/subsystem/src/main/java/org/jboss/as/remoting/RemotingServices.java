@@ -22,7 +22,7 @@
 package org.jboss.as.remoting;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
-import static org.jboss.as.remoting.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.remoting.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 
@@ -129,7 +129,7 @@ public class RemotingServices {
     public static void installSecurityServices(OperationContext context,
                                                ServiceTarget serviceTarget,
                                                final String connectorName,
-                                               final String saslServerAuthentication,
+                                               final String saslAuthenticationFactory,
                                                final String sslContextName,
                                                final String realmName,
                                                final ServiceName serverCallbackServiceName,
@@ -138,12 +138,12 @@ public class RemotingServices {
 
         final RealmSecurityProviderService rsps = new RealmSecurityProviderService();
         ServiceBuilder<?> builder = serviceTarget.addService(securityProviderName, rsps);
-        if (saslServerAuthentication != null) {
+        if (saslAuthenticationFactory != null) {
             // TODO This is just temporary until the sasl-server-authentication is actually used for Remoting.
-            InjectedValue<SaslAuthenticationFactory> saslAuthenticationFactory = new InjectedValue<>();
+            InjectedValue<SaslAuthenticationFactory> saslAuthenticationFactoryInjector = new InjectedValue<>();
             builder.addDependency(context.getCapabilityServiceName(
-                    buildDynamicCapabilityName(SASL_SERVER_AUTHENTICATION_CAPABILITY, saslServerAuthentication),
-                    SaslAuthenticationFactory.class), SaslAuthenticationFactory.class, saslAuthenticationFactory);
+                    buildDynamicCapabilityName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory),
+                    SaslAuthenticationFactory.class), SaslAuthenticationFactory.class, saslAuthenticationFactoryInjector);
         }
         if (sslContextName != null) {
             builder.addDependency(context.getCapabilityServiceName(
