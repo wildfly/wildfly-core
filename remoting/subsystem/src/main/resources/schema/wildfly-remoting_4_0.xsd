@@ -274,6 +274,13 @@
         <xs:attribute name="security-realm" type="xs:string" use="optional"/>
         <xs:attribute name="server-name" type="xs:string" use="optional" />
         <xs:attribute name="sasl-protocol" type="xs:string" default="remote" />
+        <xs:attribute name="sasl-authentication-factory" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to the SASL authentication factory to use for authenticating requests to this connector.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     
     <xs:complexType name="connector">
@@ -289,6 +296,13 @@
         <xs:complexContent>
             <xs:extension base="abstractConnector">
                 <xs:attribute name="socket-binding" type="name-list" use="required"/>
+                <xs:attribute name="ssl-context" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Reference to the SSLContext to use for this connector.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

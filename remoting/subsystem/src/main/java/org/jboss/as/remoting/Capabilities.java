@@ -28,6 +28,8 @@ package org.jboss.as.remoting;
  */
 final class Capabilities {
 
+    static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
+
     static final String SASL_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.sasl-authentication-factory";
 
     static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";

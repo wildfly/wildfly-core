@@ -21,14 +21,18 @@
  */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import java.io.IOException;
 import java.util.function.Consumer;
 
 import io.undertow.server.ListenerRegistry;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
+
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -84,6 +88,7 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
     private final InjectedValue<ChannelUpgradeHandler> injectedRegistry = new InjectedValue<>();
     private final InjectedValue<ListenerRegistry> listenerRegistry = new InjectedValue<>();
     private final InjectedValue<Endpoint> injectedEndpoint = new InjectedValue<>();
+    private final InjectedValue<SaslAuthenticationFactory> injectedSaslAuthenticationFactory = new InjectedValue<>();
     private final OptionMap connectorPropertiesOptionMap;
 
     private ListenerRegistry.HttpUpgradeMetadata httpUpgradeMetadata;
@@ -95,15 +100,23 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
     }
 
 
-    public static void installServices(final ServiceTarget serviceTarget, final String remotingConnectorName, final String httpConnectorName, final ServiceName endpointName, final OptionMap connectorPropertiesOptionMap) {
+    public static void installServices(final OperationContext context, final String remotingConnectorName, final String httpConnectorName, final ServiceName endpointName, final OptionMap connectorPropertiesOptionMap, final String saslAuthenticationFactory) {
+        ServiceTarget serviceTarget = context.getServiceTarget();
         final RemotingHttpUpgradeService service = new RemotingHttpUpgradeService(httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap);
 
-        serviceTarget.addService(UPGRADE_SERVICE_NAME.append(remotingConnectorName), service)
+        ServiceBuilder<RemotingHttpUpgradeService> serviceBuilder = serviceTarget.addService(UPGRADE_SERVICE_NAME.append(remotingConnectorName), service)
                 .setInitialMode(ServiceController.Mode.PASSIVE)
                 .addDependency(HTTP_UPGRADE_REGISTRY.append(httpConnectorName), ChannelUpgradeHandler.class, service.injectedRegistry)
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.listenerRegistry)
-                .addDependency(endpointName, Endpoint.class, service.injectedEndpoint)
-                .install();
+                .addDependency(endpointName, Endpoint.class, service.injectedEndpoint);
+
+        if (saslAuthenticationFactory != null) {
+            serviceBuilder.addDependency(
+                    context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory, SaslAuthenticationFactory.class),
+                    SaslAuthenticationFactory.class, service.injectedSaslAuthenticationFactory);
+        }
+
+        serviceBuilder.install();
     }
 
 
@@ -123,17 +136,25 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
         OptionMap resultingMap = builder.getMap();
         try {
             final ExternalConnectionProvider provider = endpoint.getConnectionProviderInterface(Protocol.HTTP_REMOTING.toString(), ExternalConnectionProvider.class);
-            // TODO Elytron Inject the sasl server factory.
-            RemotingLogger.ROOT_LOGGER.warn("****** All authentication is ANONYMOUS for " + getClass().getName());
-            final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
-            domainBuilder.addRealm("default", SecurityRealm.EMPTY_REALM).build();
-            domainBuilder.setDefaultRealmName("default");
-            domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
-            final SaslAuthenticationFactory.Builder authBuilder = SaslAuthenticationFactory.builder();
-            authBuilder.setSecurityDomain(domainBuilder.build());
-            authBuilder.setFactory(new AnonymousServerFactory());
-            authBuilder.setMechanismConfigurationSelector(mechanismInformation -> MechanismConfiguration.EMPTY);
-            final Consumer<StreamConnection> adaptor = provider.createConnectionAdaptor(resultingMap, authBuilder.build());
+
+            SaslAuthenticationFactory saslAuthenticationFactory = injectedSaslAuthenticationFactory.getOptionalValue();
+
+            if (saslAuthenticationFactory == null) {
+                // TODO Elytron Inject the sasl server factory.
+                RemotingLogger.ROOT_LOGGER.warn("****** All authentication is ANONYMOUS for " + getClass().getName());
+                final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
+                domainBuilder.addRealm("default", SecurityRealm.EMPTY_REALM).build();
+                domainBuilder.setDefaultRealmName("default");
+                domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
+                final SaslAuthenticationFactory.Builder authBuilder = SaslAuthenticationFactory.builder();
+                authBuilder.setSecurityDomain(domainBuilder.build());
+                authBuilder.setFactory(new AnonymousServerFactory());
+                authBuilder.setMechanismConfigurationSelector(mechanismInformation -> MechanismConfiguration.EMPTY);
+
+                saslAuthenticationFactory = authBuilder.build();
+            }
+
+            final Consumer<StreamConnection> adaptor = provider.createConnectionAdaptor(resultingMap, saslAuthenticationFactory);
 
             injectedRegistry.getValue().addProtocol(JBOSS_REMOTING, new ChannelListener<StreamConnection>() {
                 @Override

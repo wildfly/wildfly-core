@@ -92,6 +92,7 @@ public class RemotingExtension implements Extension {
     private static final ModelVersion VERSION_1_3 = ModelVersion.create(1, 3);
     private static final ModelVersion VERSION_1_4 = ModelVersion.create(1, 4, 0);
     private static final ModelVersion VERSION_2_1 = ModelVersion.create(2, 1);
+    private static final ModelVersion VERSION_3_0 = ModelVersion.create(3);
 
     private static final String IO_EXTENSION_MODULE = "org.wildfly.extension.io";
 
@@ -134,8 +135,11 @@ public class RemotingExtension implements Extension {
     private void registerTransformers(SubsystemRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
-        // Current 3.0.0 to 2.1.0
-        buildTransformers_2_1(chainedBuilder.createBuilder(registration.getSubsystemVersion(), VERSION_2_1));
+        // Current 4.0.0 to 3.0.0
+        buildTransformers_3_0(chainedBuilder.createBuilder(registration.getSubsystemVersion(), VERSION_3_0));
+
+        // 3.0.0 to 2.1.0
+        buildTransformers_2_1(chainedBuilder.createBuilder(VERSION_3_0, VERSION_2_1));
 
         // Current 3.0.0 to 2.1.0
         buildTransformers_1_4(chainedBuilder.createBuilder(VERSION_2_1, VERSION_1_4));
@@ -144,7 +148,7 @@ public class RemotingExtension implements Extension {
         buildTransformers_1_3(chainedBuilder.createBuilder(VERSION_1_4, VERSION_1_3));
 
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_3, VERSION_1_4, VERSION_2_1});
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_3, VERSION_1_4, VERSION_2_1, VERSION_3_0});
     }
 
     private void buildTransformers_1_4(ResourceTransformationDescriptionBuilder builder) {
@@ -169,6 +173,15 @@ public class RemotingExtension implements Extension {
                 .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(ConnectorCommon.SASL_PROTOCOL.getDefaultValue()), ConnectorCommon.SASL_PROTOCOL)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_PROTOCOL)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SERVER_NAME);
+    }
+
+    private void buildTransformers_3_0(ResourceTransformationDescriptionBuilder builder) {
+        builder.addChildResource(ConnectorResource.PATH).getAttributeBuilder()
+            .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY)
+            .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorResource.SSL_CONTEXT);
+
+        builder.addChildResource(HttpConnectorResource.PATH).getAttributeBuilder()
+            .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY);
     }
 
     private static ResourceTransformationDescriptionBuilder endpointTransform(ResourceTransformationDescriptionBuilder parent) {
