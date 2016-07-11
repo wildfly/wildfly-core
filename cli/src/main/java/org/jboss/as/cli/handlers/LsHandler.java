@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -23,11 +23,16 @@ package org.jboss.as.cli.handlers;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import org.jboss.as.cli.CommandArgument;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -47,6 +52,7 @@ import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
 import org.jboss.as.cli.util.SimpleTable;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.logging.Logger;
 
 /**
  *
@@ -382,6 +388,100 @@ public class LsHandler extends BaseOperationCommand {
             steps.add(Util.buildRequest(ctx, address, Util.READ_RESOURCE_DESCRIPTION));
         }
         return composite;
+    }
+
+    @Override
+    protected Map<String, CommandArgument> getArgumentsMap(CommandContext ctx) {
+        Map<String, CommandArgument> ret = new HashMap<>(super.getArgumentsMap(ctx));
+        try {
+            Map<String, CommandArgument> dyns = getDynamicOptions(ctx);
+            ret.putAll(dyns);
+        } catch (CommandFormatException ex) {
+            // XXX OK will not break CLI
+            Logger.getLogger(getClass()).trace("Exception while retreiving ls "
+                    + "description properties", ex);
+        }
+        return ret;
+    }
+
+    @Override
+    public Collection<CommandArgument> getArguments(CommandContext ctx) {
+        List<CommandArgument> args = new ArrayList<>(super.getArguments(ctx));
+        try {
+            Map<String, CommandArgument> options = getDynamicOptions(ctx);
+            for (String k : options.keySet()) {
+                args.add(options.get(k));
+            }
+        } catch (CommandFormatException ex) {
+            // XXX OK will not break CLI
+            Logger.getLogger(getClass()).trace("Exception while retreiving ls "
+                    + "description properties", ex);
+        }
+        return args;
+    }
+
+    private Map<String, CommandArgument> getDynamicOptions(CommandContext ctx) throws CommandFormatException {
+        if (ctx.getModelControllerClient() == null) {
+            return Collections.emptyMap();
+        }
+        final OperationRequestAddress address = getOperationRequestAddress(ctx);
+        if (address.endsOnType()) {
+            return Collections.emptyMap();
+        }
+        final ModelNode req = new ModelNode();
+        if (address.isEmpty()) {
+            req.get(Util.ADDRESS).setEmptyList();
+        } else {
+            final ModelNode addrNode = req.get(Util.ADDRESS);
+            for (OperationRequestAddress.Node node : address) {
+                addrNode.add(node.getType(), node.getName());
+            }
+        }
+        req.get(Util.OPERATION).set(Util.READ_RESOURCE_DESCRIPTION);
+        Map<String, CommandArgument> options = Collections.emptyMap();
+        try {
+            final ModelNode response = ctx.getModelControllerClient().execute(req);
+            if (Util.isSuccess(response)) {
+                if (response.hasDefined(Util.RESULT)) {
+                    final ModelNode result = response.get(Util.RESULT);
+                    if (result.hasDefined(Util.ATTRIBUTES)) {
+                        options = new TreeMap<>();
+                        ModelNode attributes = result.get(Util.ATTRIBUTES);
+                        for (String key : attributes.keys()) {
+                            ModelNode attribute = attributes.get(key);
+                            for (String k : attribute.keys()) {
+                                ArgumentWithoutValue wv = new ArgumentWithoutValue(new CommandHandlerWithArguments() {
+                                    @Override
+                                    public boolean isAvailable(CommandContext ctx) {
+                                        return LsHandler.this.isAvailable(ctx);
+                                    }
+
+                                    @Override
+                                    public boolean isBatchMode(CommandContext ctx) {
+                                        return LsHandler.this.isBatchMode(ctx);
+                                    }
+
+                                    @Override
+                                    public void handle(CommandContext ctx) throws CommandLineException {
+                                        LsHandler.this.handle(ctx);
+                                    }
+
+                                    @Override
+                                    public void addArgument(CommandArgument arg) {
+                                        // Noop.
+                                    }
+                                }, "--" + k);
+                                wv.addRequiredPreceding(l);
+                                options.put("--" + k, wv);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return options;
     }
 
     protected String getAsString(final ModelNode attrDescr, String name) {

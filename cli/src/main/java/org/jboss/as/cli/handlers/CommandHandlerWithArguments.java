@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -97,14 +97,19 @@ public abstract class CommandHandlerWithArguments implements CommandHandler {
 
     protected void recognizeArguments(CommandContext ctx) throws CommandFormatException {
         final Set<String> specifiedNames = ctx.getParsedCommandLine().getPropertyNames();
-        if(!args.keySet().containsAll(specifiedNames)) {
+        Map<String, CommandArgument> argsMap = getArgumentsMap(ctx);
+        if (!argsMap.keySet().containsAll(specifiedNames)) {
             Collection<String> unrecognized = new HashSet<String>(specifiedNames);
-            unrecognized.removeAll(args.keySet());
+            unrecognized.removeAll(argsMap.keySet());
             throw new CommandFormatException("Unrecognized arguments: " + unrecognized);
         }
         if(ctx.getParsedCommandLine().getOtherProperties().size() -1 > this.maxArgumentIndex) {
             throw new CommandFormatException("The command accepts " + (this.maxArgumentIndex + 1) + " unnamed argument(s) but received: "
                     + ctx.getParsedCommandLine().getOtherProperties());
         }
+    }
+
+    protected Map<String, CommandArgument> getArgumentsMap(CommandContext ctx) {
+        return args;
     }
 }
