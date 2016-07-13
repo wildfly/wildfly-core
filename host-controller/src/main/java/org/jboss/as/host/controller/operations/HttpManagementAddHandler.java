@@ -76,7 +76,7 @@ import io.undertow.server.ListenerRegistry;
  */
 public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
-    private static final String HTTP_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.http-server-authentication";
+    private static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
 
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
@@ -149,7 +149,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         String securityRealm = commonPolicy.getSecurityRealm();
         if (httpServerAuthentication != null) {
             builder.addDependency(context.getCapabilityServiceName(
-                    buildDynamicCapabilityName(HTTP_SERVER_AUTHENTICATION_CAPABILITY, httpServerAuthentication),
+                    buildDynamicCapabilityName(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, httpServerAuthentication),
                     HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, service.getHttpServerAuthenticationInjector());
         } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);
