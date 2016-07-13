@@ -61,7 +61,9 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     protected ParameterValidator validator;
     protected boolean validateNull = true;
     protected int minSize = 0;
+    private boolean minSizeSet;
     protected int maxSize = Integer.MAX_VALUE;
+    private boolean maxSizeSet;
     protected AttributeAccess.Flag[] flags;
     protected AttributeMarshaller attributeMarshaller = null;
     protected boolean resourceOnly = false;
@@ -448,27 +450,51 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
-     * Sets a maximum size for a collection-type attribute.
-     * TODO this is not used by {@link org.jboss.as.controller.SimpleAttributeDefinition} even though
-     * intuitively a user may expect it would be used.
+     * Sets a maximum size for a collection-type attribute or one whose value is a string or byte[].
+     * The value represents the maximum number of elements in the collection, or the maximum length of
+     * the string or array. <strong>It does not represent a maximum value for a numeric attribute and should
+     * not be configured for numeric attributes.</strong>
      * @param maxSize the maximum size
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setMaxSize(final int maxSize) {
         this.maxSize = maxSize;
+        this.maxSizeSet = true;
         return (BUILDER) this;
     }
 
     /**
-     * Sets a minimum size description for a collection-type attribute.
-     * TODO this is not used by {@link org.jboss.as.controller.SimpleAttributeDefinition} even though
-     * intuitively a user may expect it would be used.
+     * Gets the {@link #getMaxSize() max size} if {@link #setMaxSize(int)} has been called, otherwise {@code null}.
+     * This is a workaround needed because maxSize is protected, preventing changing its type to Integer to allow null
+     * values needed to discriminate unconfigured defaults from configured values that match the default.
+     * @return the minimum size or {@code null} if it was not explicitly set
+     */
+    Integer getConfiguredMaxSize()  {
+        return maxSizeSet ? maxSize : null;
+    }
+
+    /**
+     * Sets a minimum size description for a collection-type attribute or one whose value is a string or byte[].
+     * The value represents the minimum number of elements in the collection, or the minimum length of
+     * the string or array. <strong>It does not represent a minimum value for a numeric attribute and should
+     * not be configured for numeric attributes.</strong>
      * @param minSize the minimum size
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setMinSize(final int minSize) {
         this.minSize = minSize;
+        this.minSizeSet = true;
         return (BUILDER) this;
+    }
+
+    /**
+     * Gets the {@link #getMinSize() min size} if {@link #setMinSize(int)} has been called, otherwise {@code null}.
+     * This is a workaround needed because minSize is protected, preventing changing its type to Integer to allow null
+     * values needed to discriminate unconfigured defaults from configured values that match the default.
+     * @return the minimum size or {@code null} if it was not explicitly set
+     */
+    Integer getConfiguredMinSize()  {
+        return minSizeSet ? minSize : null;
     }
 
     /**
