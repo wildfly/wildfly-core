@@ -34,6 +34,7 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -841,9 +842,9 @@ final class SubsystemTestDelegate {
             classLoaderBuilder.addMavenResourceURL("org.wildfly.legacy.test:wildfly-legacy-spi:" + Version.LEGACY_TEST_CONTROLLER_VERSION);
 
             if (testControllerVersion != ModelTestControllerVersion.MASTER && testControllerVersion.getTestControllerVersion() != null) {
-                String groupId = testControllerVersion.getMavenGavVersion().startsWith("7.") ? "org.jboss.as" : "org.wildfly";
-                String serverArtifactId = testControllerVersion.getMavenGavVersion().startsWith("7.") ? "jboss-as-server" : "wildfly-server";
-                classLoaderBuilder.addRecursiveMavenResourceURL(groupId + ":" + serverArtifactId + ":" + testControllerVersion.getMavenGavVersion());
+                String groupId = testControllerVersion.getCoreMavenGroupId();
+                String serverArtifactId = testControllerVersion.getServerMavenArtifactId();
+                classLoaderBuilder.addRecursiveMavenResourceURL(groupId + ":" + serverArtifactId + ":" + testControllerVersion.getCoreVersion());
 
                 //TODO Even with this there are some workarounds needed in JGroupsSubsystemTransformerTestCase, InfinispanSubsystemTransformersTestCase and LoggingSubsystemTestCase
                 //Don't load modules from the scoped classloader to avoid some funky stuff going on when initializing the JAXP redirect
@@ -853,7 +854,7 @@ final class SubsystemTestDelegate {
 
                 classLoaderBuilder.addMavenResourceURL("org.wildfly.legacy.test:wildfly-legacy-subsystem-" + testControllerVersion.getTestControllerVersion() + ":" + Version.LEGACY_TEST_CONTROLLER_VERSION);
             }
-            ClassLoader legacyCl = classLoaderBuilder.build();
+            URLClassLoader legacyCl = classLoaderBuilder.build();
 
             ScopedKernelServicesBootstrap scopedBootstrap = new ScopedKernelServicesBootstrap(legacyCl);
             return scopedBootstrap.createKernelServices(mainSubsystemName, extensionClassName != null ? extensionClassName : mainExtension.getClass().getName(), additionalInit,

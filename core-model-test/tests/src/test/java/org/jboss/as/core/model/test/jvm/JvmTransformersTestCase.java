@@ -139,6 +139,7 @@ public class JvmTransformersTestCase extends AbstractCoreModelTest {
                     FIXER,
                     FIXER);
         }
+        mainServices.shutdown();
     }
 
     private FailedOperationTransformationConfig getConfig() {

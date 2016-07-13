@@ -85,7 +85,7 @@ public class LegacyControllerKernelServicesProxy extends ModelTestLegacyControll
             if (readFullModelDescription == null) {
                 readFullModelDescription = childFirstClassLoaderServices.getClass().getMethod("readFullModelDescription",
                         childFirstClassLoader.loadClass(ModelNode.class.getName()));
-                System.out.println(readFullModelDescription);
+                //System.out.println(readFullModelDescription);
             }
             return convertModelNodeFromChildCl(
                     readFullModelDescription.invoke(childFirstClassLoaderServices,

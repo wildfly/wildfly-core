@@ -25,7 +25,6 @@ package org.jboss.as.core.model.test.access;
 import java.util.List;
 
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.KernelServicesBuilder;
@@ -34,8 +33,6 @@ import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.core.model.test.TransformersTestParameterized;
 import org.jboss.as.core.model.test.TransformersTestParameterized.TransformersParameter;
 import org.jboss.as.core.model.test.util.TransformersTestParameter;
-import org.jboss.as.domain.management.CoreManagementResourceDefinition;
-import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
@@ -65,15 +62,11 @@ public class AccessAuthorizationTransformationTestCase extends AbstractCoreModel
 
     @Test
     public void testAllowNonRBAC() throws Exception {
-
         KernelServicesBuilder builder = createKernelServicesBuilder(TestModelType.DOMAIN)
                 .setXmlResource("domain-transform-no-rbac-provider.xml");
 
         LegacyKernelServicesInitializer initializer = builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion)
                 .skipReverseControllerCheck();
-        if (ModelVersion.compare(ModelVersion.create(1, 4, 0), modelVersion) > 0) {
-
-        }
 
         KernelServices mainServices = builder.build();
         Assert.assertTrue(mainServices.isSuccessfulBoot());
@@ -82,29 +75,6 @@ public class AccessAuthorizationTransformationTestCase extends AbstractCoreModel
         Assert.assertTrue(legacyServices.isSuccessfulBoot());
 
         ModelNode legacyModel = checkCoreModelTransformation(mainServices, modelVersion);
-
+        mainServices.shutdown();
     }
-
-    @Test
-    public void testRejectRBAC() throws Exception {
-        if (ModelVersion.compare(ModelVersion.create(1, 4, 0), modelVersion) > 0) {
-            return;
-        }
-
-        KernelServicesBuilder builder = createKernelServicesBuilder(TestModelType.DOMAIN)
-                .setXmlResource("domain-transform-rbac-provider.xml");
-
-        builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion)
-                .addOperationValidationExclude("write-attribute",
-                        PathAddress.pathAddress(CoreManagementResourceDefinition.PATH_ELEMENT, AccessAuthorizationResourceDefinition.PATH_ELEMENT))
-                .skipReverseControllerCheck();
-
-        KernelServices mainServices = builder.build();
-        Assert.assertTrue(mainServices.isSuccessfulBoot());
-
-        KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
-        Assert.assertFalse(legacyServices.isSuccessfulBoot());
-
-    }
-
 }

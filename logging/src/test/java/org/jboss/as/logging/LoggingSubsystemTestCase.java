@@ -266,6 +266,30 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                                 new FailedOperationTransformationConfig.NewAttributesConfig(SizeRotatingHandlerResourceDefinition.SUFFIX)));
     }
 
+    @Test
+    public void testTransformersEAP700() throws Exception {
+        testEap7Transformer(ModelTestControllerVersion.EAP_7_0_0, ModelVersion.create(3, 0, 0), readResource("/logging_3_0.xml") );
+    }
+
+    private void testEap7Transformer(final ModelTestControllerVersion controllerVersion, final ModelVersion legacyModelVersion, final String subsystemXml, final ModelFixer... modelFixers) throws Exception {
+        final KernelServicesBuilder builder = createKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance())
+                .setSubsystemXml(subsystemXml);
+
+        // Create the legacy kernel
+        builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, legacyModelVersion)
+                .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-logging:" + controllerVersion.getCoreVersion())
+                .dontPersistXml()
+                .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class)
+                .configureReverseControllerCheck(LoggingTestEnvironment.getManagementInstance(), null);
+
+        KernelServices mainServices = builder.build();
+        Assert.assertTrue(mainServices.isSuccessfulBoot());
+        KernelServices legacyServices = mainServices.getLegacyServices(legacyModelVersion);
+        Assert.assertTrue(legacyServices.isSuccessfulBoot());
+        Assert.assertNotNull(legacyServices);
+        checkSubsystemModelTransformation(mainServices, legacyModelVersion, new ChainedModelFixer(modelFixers));
+    }
+
     private void testEapTransformer(final ModelTestControllerVersion controllerVersion, final ModelVersion legacyModelVersion, final String subsystemXml, final ModelFixer... modelFixers) throws Exception {
 
         final KernelServicesBuilder builder = createKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance())

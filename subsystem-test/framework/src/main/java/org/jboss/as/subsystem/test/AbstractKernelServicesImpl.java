@@ -1,6 +1,5 @@
 package org.jboss.as.subsystem.test;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -67,7 +66,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         additionalInit.setupController(controllerInitializer);
 
         //Initialize the controller
-        ServiceContainer container = ServiceContainer.Factory.create("test" + counter.incrementAndGet());
+        ServiceContainer container = ServiceContainer.Factory.create("subsystem-test" + (legacyModelVersion != null ? "-legacy-" : "-") + counter.incrementAndGet());
         ServiceTarget target = container.subTarget();
         List<ModelNode> extraOps = controllerInitializer.initializeBootOperations();
         List<ModelNode> allOps = new ArrayList<ModelNode>();
@@ -132,16 +131,6 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
             //This is compiled against the current version of WildFly
             return SubsystemDescriptionDump.readFullModelDescription(addr, reg);
         } catch (NoSuchMethodError e) {
-            if (getControllerClassSimpleName().equals("TestModelControllerService7_1_2")) {
-                try {
-                    //Older versions use ManagementResourceRegistration in the method signature, while the newer ones above use ImmutableResourceRegistration
-                    //Call via reflection instead
-                    Method m = SubsystemDescriptionDump.class.getMethod("readFullModelDescription", PathAddress.class, ManagementResourceRegistration.class);
-                    return (ModelNode)m.invoke(null, addr, reg);
-                } catch (Exception e1) {
-                    throw new RuntimeException(e1);
-                }
-            }
             throw e;
         }
     }

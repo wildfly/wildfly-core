@@ -27,49 +27,64 @@ import java.util.Properties;
 public enum ModelTestControllerVersion {
     //AS releases
     MASTER (CurrentVersion.VERSION, false, null),
-    @Deprecated
-    V7_1_2_FINAL ("7.1.2.Final", false, "7.1.2", false),
-    @Deprecated
-    V7_1_3_FINAL ("7.1.3.Final", false, "7.1.2", false),
-    @Deprecated
-    V7_2_0_FINAL ("7.2.0.Final", false, "7.2.0" ,false),
 
     //WILDFLY RELEASES
+    @Deprecated
     WILDFLY_8_0_0_FINAL ("8.0.0.Final", false, "8.0.0", false),
+    @Deprecated
     WILDFLY_8_1_0_FINAL ("8.1.0.Final", false, "8.0.0", false),
+    @Deprecated
     WILDFLY_8_2_0_FINAL ("8.2.0.Final", false, "8.0.0", false),
-
     //EAP releases
-    @Deprecated
-    EAP_6_0_0 ("7.1.2.Final-redhat-1", true, "7.1.2", false),
-    @Deprecated
-    EAP_6_0_1 ("7.1.3.Final-redhat-4", true, "7.1.2", false),
-    @Deprecated
-    EAP_6_1_0 ("7.2.0.Final-redhat-8", true, "7.2.0", false),
-    @Deprecated
-    EAP_6_1_1 ("7.2.1.Final-redhat-10", true, "7.2.0" ,false),
 
     EAP_6_2_0 ("7.3.0.Final-redhat-14", true, "7.3.0"), //EAP 6.2 is the earliest version we support for transformers
     EAP_6_3_0 ("7.4.0.Final-redhat-19", true, "7.4.0"),
-    EAP_6_4_0 ("7.5.0.Final-redhat-21", true, "7.5.0")
+    EAP_6_4_0 ("7.5.0.Final-redhat-21", true, "7.5.0"),
+    EAP_7_0_0 ("7.0.0.GA-redhat-2", true, "10.0.0", true, "2.1.0.Final")
     ;
 
     private final String mavenGavVersion;
     private final String testControllerVersion;
     private final boolean eap;
     private final boolean validLegacyController;
+    private final String coreVersion;
+    private final String mavenGroupId;
+    private final String coreMavenGroupId;
+    private final String serverMavenArtifactId;
+    private final String hostControllerMavenArtifactId;
+
     private ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion) {
-        this.mavenGavVersion = mavenGavVersion;
-        this.testControllerVersion = testControllerVersion;
-        this.eap = eap;
-        this.validLegacyController = true;
+        this(mavenGavVersion, eap, testControllerVersion, true, null);
     }
 
     private ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, boolean validLegacyController) {
+        this(mavenGavVersion, eap, testControllerVersion, validLegacyController, null);
+    }
+    private ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, boolean validLegacyController, String coreVersion) {
         this.mavenGavVersion = mavenGavVersion;
         this.testControllerVersion = testControllerVersion;
         this.eap = eap;
         this.validLegacyController = validLegacyController;
+        this.coreVersion = coreVersion == null? mavenGavVersion : coreVersion; //full == core
+        if (eap) {
+            if (coreVersion != null) { //eap 7+ has core version defined
+                this.coreMavenGroupId = "org.wildfly.core";
+                this.mavenGroupId = "org.jboss.eap";
+                this.serverMavenArtifactId = "wildfly-server";
+                this.hostControllerMavenArtifactId = "wildfly-host-controller";
+            } else { //we have EAP6
+                this.mavenGroupId = "org.jboss.as";
+                this.coreMavenGroupId = "org.jboss.as"; //full == core
+                this.serverMavenArtifactId = "jboss-as-server";
+                this.hostControllerMavenArtifactId = "jboss-as-host-controller";
+            }
+
+        } else { //we only handle WildFly 9+ as legacy version, we don't care about AS7.x.x community releases.
+            this.coreMavenGroupId = "org.wildfly.core";
+            this.mavenGroupId = "org.wildfly";
+            this.serverMavenArtifactId = "wildfly-server";
+            this.hostControllerMavenArtifactId = "wildfly-host-controller";
+        }
     }
 
     public String getMavenGavVersion() {
@@ -86,6 +101,26 @@ public enum ModelTestControllerVersion {
 
     public boolean hasValidLegacyController() {
         return validLegacyController;
+    }
+
+    public String getCoreVersion() {
+        return coreVersion;
+    }
+
+    public String getMavenGroupId() {
+        return mavenGroupId;
+    }
+
+    public String getCoreMavenGroupId() {
+        return coreMavenGroupId;
+    }
+
+    public String getServerMavenArtifactId() {
+        return serverMavenArtifactId;
+    }
+
+    public String getHostControllerMavenArtifactId() {
+        return hostControllerMavenArtifactId;
     }
 
     public interface CurrentVersion {

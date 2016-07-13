@@ -63,7 +63,7 @@ public class DomainTransformers {
     static final ModelVersion VERSION_1_6 = ModelVersion.create(1, 6, 0);
     // EAP 6.4.0
     static final ModelVersion VERSION_1_7 = ModelVersion.create(1, 7, 0);
- // EAP 6.4.0 CP07
+    // EAP 6.4.0 CP07
     static final ModelVersion VERSION_1_8 = ModelVersion.create(1, 8, 0);
     //WF 8.0.0.Final
     static final ModelVersion VERSION_2_0 = ModelVersion.create(2, 0, 0);
@@ -73,6 +73,9 @@ public class DomainTransformers {
     static final ModelVersion VERSION_3_0 = ModelVersion.create(3, 0, 0);
     //WF 10.0.0
     static final ModelVersion VERSION_4_0 = ModelVersion.create(4, 0, 0);
+
+    //EAP7.0.0
+    static final ModelVersion VERSION_4_1 = ModelVersion.create(4, 1, 0);
 
     //All versions before WildFly 10/EAP 7, which do not understand /profile=xxx:clone
     private static final ModelVersion[] PRE_PROFILE_CLONE_VERSIONS = new ModelVersion[]{VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5};
@@ -125,7 +128,7 @@ public class DomainTransformers {
 
     private static void registerChainedManagementTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = ManagementTransformers.buildTransformerChain(currentVersion);
-        registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7, VERSION_1_8);
+        registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7, VERSION_1_8, VERSION_4_1);
     }
 
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
