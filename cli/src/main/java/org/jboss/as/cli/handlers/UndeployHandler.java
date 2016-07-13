@@ -430,10 +430,10 @@ public class UndeployHandler extends DeploymentHandler {
                     for (String group : serverGroups){
                         ModelNode groupStep = Util.configureDeploymentOperation(Util.UNDEPLOY, deploymentName, group);
                         steps.add(groupStep);
-//                      if(!keepContent) {
+                        if (!keepContent) {
                             groupStep = Util.configureDeploymentOperation(Util.REMOVE, deploymentName, group);
                             steps.add(groupStep);
-//                      }
+                        }
                     }
                 }
             } else {
