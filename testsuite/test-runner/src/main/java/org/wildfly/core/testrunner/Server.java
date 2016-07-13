@@ -89,6 +89,10 @@ public class Server {
     }
 
     protected void start() {
+        start(System.out);
+    }
+
+    protected void start(PrintStream out) {
         try {
             final Path jbossHomeDir = Paths.get(jbossHome);
             if (Files.notExists(jbossHomeDir) && !Files.isDirectory(jbossHomeDir)) {
@@ -130,7 +134,7 @@ public class Server {
                     // Redirect the output and error stream to a file
                     .setRedirectErrorStream(true)
                     .launch();
-            new Thread(new ConsoleConsumer(process.getInputStream(), System.out)).start();
+            new Thread(new ConsoleConsumer(process.getInputStream(), out)).start();
             final Process proc = process;
             shutdownThread = ProcessHelper.addShutdownHook(proc);
 

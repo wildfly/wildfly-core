@@ -2,6 +2,7 @@ package org.wildfly.core.testrunner;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,6 +20,10 @@ public class ServerController {
     private static volatile Server server;
 
     public void start(final String serverConfig, boolean adminMode) {
+        start(serverConfig, adminMode, System.out);
+    }
+
+    public void start(final String serverConfig, boolean adminMode, PrintStream out) {
         if (started.compareAndSet(false, true)) {
             server = new Server();
             if (serverConfig != null) {
@@ -26,7 +31,7 @@ public class ServerController {
             }
             server.setAdminMode(adminMode);
             try {
-                server.start();
+                server.start(out);
             } catch (final Throwable t) {
                 // failed to start
                 server = null;
@@ -37,7 +42,11 @@ public class ServerController {
     }
 
     public void start() {
-        start(null, false);
+        start(System.out);
+    }
+
+    public void start(PrintStream out) {
+        start(null, false, out);
     }
 
     public void startInAdminMode(){
