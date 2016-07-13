@@ -40,12 +40,13 @@ public class CommandContextConfiguration {
     private boolean silent;
     private Boolean errorOnInteract;
     private final boolean echoCommand;
+    private final Integer commandTimeout;
 
     private CommandContextConfiguration(String controller, String username,
             char[] password, String clientBindAddress,
             boolean disableLocalAuth, boolean initConsole, int connectionTimeout,
             InputStream consoleInput, OutputStream consoleOutput,
-            boolean echoCommand) {
+            boolean echoCommand, Integer commandTimeout) {
         this.controller = controller;
         this.username = username;
         this.password = password;
@@ -56,6 +57,11 @@ public class CommandContextConfiguration {
         this.disableLocalAuth = disableLocalAuth || username != null;
         this.connectionTimeout = connectionTimeout;
         this.echoCommand = echoCommand;
+        this.commandTimeout = commandTimeout;
+    }
+
+    public Integer getCommandTimeout() {
+        return commandTimeout;
     }
 
     public String getController() {
@@ -120,6 +126,7 @@ public class CommandContextConfiguration {
         private boolean silent;
         private Boolean errorOnInteract;
         private boolean echoCommand;
+        private Integer commandTimeout;
         public Builder() {
         }
 
@@ -128,11 +135,17 @@ public class CommandContextConfiguration {
                 this.disableLocalAuth = username != null;
             }
             final CommandContextConfiguration config = new CommandContextConfiguration(controller, username, password, clientBindAddress, disableLocalAuth,
-                    initConsole, connectionTimeout, consoleInput, consoleOutput, echoCommand);
+                    initConsole, connectionTimeout, consoleInput, consoleOutput, echoCommand, commandTimeout);
             config.silent = silent;
             config.errorOnInteract = errorOnInteract;
             return config;
         }
+
+        public Builder setCommandTimeout(Integer commandTimeout) {
+            this.commandTimeout = commandTimeout;
+            return this;
+        }
+
         public Builder setController(String controller) {
             this.controller = controller;
             return this;

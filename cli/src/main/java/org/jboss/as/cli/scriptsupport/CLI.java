@@ -229,7 +229,7 @@ public class CLI {
             handler.parse(ctx.getCurrentNodePath(), cliCommand, ctx);
             if (handler.getFormat() == OperationFormat.INSTANCE) {
                 ModelNode request = ctx.buildRequest(cliCommand);
-                ModelNode response = ctx.getModelControllerClient().execute(request);
+                ModelNode response = ctx.execute(request, cliCommand);
                 return new Result(cliCommand, request, response);
             } else {
                 ctx.handle(cliCommand);

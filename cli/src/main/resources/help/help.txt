@@ -12,6 +12,7 @@ Usage:
                      [--error-on-interact]
                      [--timeout=timeout]
                      [--echo-command]
+                     [--command-timeout=timeout]
 
  --help (-h)     - prints (this) basic description of the command line utility.
 
@@ -92,6 +93,9 @@ Usage:
 
  --echo-command  - include the prompt with the command into the output 
                    for each command executed in non-interactive mode.
+
+ --command-timeout  - The maxium amount of seconds the CLI will wait for a 
+                      command to complete.
 
 For a list of available commands execute
 

@@ -32,8 +32,10 @@ import java.nio.file.Files;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import org.jboss.as.cli.Util;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -98,6 +100,101 @@ public class CliConfigTestCase {
         assertTrue(result, result.contains("/system-property=finally2:remove()"));
     }
 
+    @Test
+    public void testConfigTimeoutCommand() throws Exception {
+        File f = createConfigFile(false, 1);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+        cli.executeInteractive();
+        testTimeout(cli, 1);
+    }
+
+    @Test
+    public void testOptionTimeoutCommand() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect")
+                .addCliArgument("--command-timeout=77");
+        cli.executeInteractive();
+        testTimeout(cli, 77);
+    }
+
+    @Test
+    public void testNegativeConfigTimeoutCommand() throws Exception {
+        File f = createConfigFile(false, -1);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+        String output = cli.executeNonInteractive();
+        assertTrue(output, output.contains("The command-timeout must be a valid positive integer"));
+    }
+
+    @Test
+    public void testNegativeOptionTimeoutCommand() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect")
+                .addCliArgument("--command-timeout=-1");
+        String output = cli.executeNonInteractive();
+        assertTrue(output, output.contains("The command-timeout must be a valid positive integer"));
+    }
+
+    @Test
+    public void testNonInteractiveCommandTimeout() throws Exception {
+        File f = createConfigFile(true, 1);
+        File script = createScript2();
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--file=" + script.getAbsolutePath())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+        final String result = cli.executeNonInteractive();
+        assertNotNull(result);
+        assertTrue(result, result.contains("Timeout exception for run-batch"));
+    }
+
+    private void testTimeout(CliProcessWrapper cli, int config) throws Exception {
+        cli.pushLineAndWaitForResults("command-timeout get");
+        String str = cli.getOutput();
+        assertEquals("Original value " + str, getValue(str), "" + config);
+        cli.clearOutput();
+        cli.pushLineAndWaitForResults("command-timeout set 99");
+        cli.clearOutput();
+        cli.pushLineAndWaitForResults("command-timeout get");
+        assertEquals(getValue(cli.getOutput()), "" + 99);
+        cli.clearOutput();
+        cli.pushLineAndWaitForResults("command-timeout reset config");
+        cli.clearOutput();
+        cli.pushLineAndWaitForResults("command-timeout get");
+        assertEquals(getValue(cli.getOutput()), "" + config);
+    }
+
+    private static String getValue(String line) {
+        int i = line.indexOf("\n");
+        if (i > 0) {
+            line = line.substring(i + 1);
+            i = line.indexOf("\n");
+            if (i > 0) {
+                // On Windows, \r\n, don't keep it in the returned value.
+                line = line.substring(0, (Util.isWindows() ? i - 1 : i));
+            }
+        }
+        return line;
+    }
+
     private static File createScript() {
          File f = new File(TestSuiteEnvironment.getTmpDir(), "test-script" +
                 System.currentTimeMillis() + ".cli");
@@ -136,7 +233,28 @@ public class CliConfigTestCase {
         return f;
     }
 
+    private static File createScript2() {
+        File f = new File(TestSuiteEnvironment.getTmpDir(), "test-script"
+                + System.currentTimeMillis() + ".cli");
+        f.deleteOnExit();
+        try (Writer stream = Files.newBufferedWriter(f.toPath(), StandardCharsets.UTF_8)) {
+            // This one should timeout in 1 sec...
+            stream.write("batch\n");
+            for (int i = 0; i < 300; i++) {
+                stream.write(":read-resource(recursive)\n");
+            }
+            stream.write("run-batch\n");
+        } catch (IOException ex) {
+            fail("Failure creating script file " + ex);
+        }
+        return f;
+    }
+
     private static File createConfigFile(Boolean enable) {
+        return createConfigFile(enable, 0);
+    }
+
+    private static File createConfigFile(Boolean enable, int timeout) {
         File f = new File(TestSuiteEnvironment.getTmpDir(), "test-jboss-cli" +
                 System.currentTimeMillis() + ".xml");
         f.deleteOnExit();
@@ -150,6 +268,11 @@ public class CliConfigTestCase {
             writer.writeStartElement("echo-command");
             writer.writeCharacters(enable.toString());
             writer.writeEndElement(); //echo-command
+            if (timeout != 0) {
+                writer.writeStartElement("command-timeout");
+                writer.writeCharacters("" + timeout);
+                writer.writeEndElement(); //command-timeout
+            }
             writer.writeEndElement(); //jboss-cli
             writer.writeEndDocument();
             writer.flush();

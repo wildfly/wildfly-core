@@ -291,6 +291,14 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         assertState("running", 0);
     }
 
+    @Test
+    public void testTimeout() throws Exception {
+        cli.sendLine("command-timeout set 60");
+        String line = "embed-server --server-config=standalone-cli.xml " + JBOSS_HOME;
+        cli.sendLine(line);
+        cli.sendLine("stop-embedded-server");
+    }
+
     /** Tests the standard cli 'deploy' command */
     @Test
     public void testFileDeploy() throws Exception {

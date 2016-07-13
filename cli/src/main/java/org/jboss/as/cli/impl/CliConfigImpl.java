@@ -82,6 +82,7 @@ class CliConfigImpl implements CliConfig {
     private static final String USE_LEGACY_OVERRIDE = "use-legacy-override";
     private static final String VALIDATE_OPERATION_REQUESTS = "validate-operation-requests";
     private static final String ECHO_COMMAND = "echo-command";
+    private static final String COMMAND_TIMEOUT = "command-timeout";
 
     private static final Logger log = Logger.getLogger(CliConfig.class);
 
@@ -183,6 +184,7 @@ class CliConfigImpl implements CliConfig {
         cliConfig.silent            = configuration.isSilent()                      ? configuration.isSilent()              : cliConfig.silent;
         cliConfig.errorOnInteract   = configuration.isErrorOnInteract() != null     ? configuration.isErrorOnInteract()     : cliConfig.errorOnInteract;
         cliConfig.echoCommand       = configuration.isEchoCommand()                 ? configuration.isEchoCommand()         : cliConfig.echoCommand;
+        cliConfig.commandTimeout    = configuration.getCommandTimeout() != null     ? configuration.getCommandTimeout()     : cliConfig.commandTimeout;
 
         return cliConfig;
     }
@@ -204,6 +206,10 @@ class CliConfigImpl implements CliConfig {
 
     private static boolean resolveBoolean(String str) throws XMLStreamException {
         return Boolean.parseBoolean(resolveString(str));
+    }
+
+    private static int resolveInteger(String str) throws XMLStreamException {
+        return Integer.parseInt(resolveString(str));
     }
 
     private CliConfigImpl() {
@@ -240,6 +246,8 @@ class CliConfigImpl implements CliConfig {
     private boolean accessControl = true;
 
     private boolean echoCommand;
+
+    private Integer commandTimeout;
 
     @Override
     public String getDefaultControllerProtocol() {
@@ -331,6 +339,11 @@ class CliConfigImpl implements CliConfig {
     @Override
     public boolean isEchoCommand() {
         return echoCommand;
+    }
+
+    @Override
+    public Integer getCommandTimeout() {
+        return commandTimeout;
     }
 
     static class SslConfig implements SSLConfig {
@@ -654,7 +667,9 @@ class CliConfigImpl implements CliConfig {
                         config.validateOperationRequests = resolveBoolean(reader.getElementText());
                     } else if (localName.equals(ECHO_COMMAND)) {
                         config.echoCommand = resolveBoolean(reader.getElementText());
-                    } else if(localName.equals(HISTORY)) {
+                    } else if (localName.equals(COMMAND_TIMEOUT)) {
+                        config.commandTimeout = resolveInteger(reader.getElementText());
+                    } else if (localName.equals(HISTORY)) {
                         readHistory(reader, expectedNs, config);
                     } else if(localName.equals(RESOLVE_PARAMETER_VALUES)) {
                         config.resolveParameterValues = resolveBoolean(reader.getElementText());
