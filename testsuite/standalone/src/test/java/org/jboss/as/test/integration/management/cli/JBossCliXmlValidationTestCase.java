@@ -57,7 +57,7 @@ public class JBossCliXmlValidationTestCase {
         schemaFactory.setErrorHandler(new ErrorHandlerImpl());
         //schemaFactory.setResourceResolver(new XMLResourceResolver());
 
-        Schema schema = schemaFactory.newSchema(resourceToURL("schema/jboss-as-cli_2_0.xsd"));
+        Schema schema = schemaFactory.newSchema(resourceToURL("schema/wildfly-cli_3_1.xsd"));
         Validator validator = schema.newValidator();
         validator.validate(new DOMSource(document));
 
