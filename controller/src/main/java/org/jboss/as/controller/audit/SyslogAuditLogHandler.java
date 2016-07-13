@@ -78,6 +78,9 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
     // This should be guarded by the config lock in the ManagedAuditLoggerImpl
     private boolean connected;
 
+    private static final String APPNAME_FILTER = "[\\P{Print}\\ ]";
+    private static final String APPNAME_REPLACE_VALUE = "_";
+
     public SyslogAuditLogHandler(String name, String formatterName, int maxFailureCount, PathManagerService pathManager) {
         super(name, formatterName, maxFailureCount);
         this.pathManager = pathManager;
@@ -91,7 +94,8 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
 
     public void setAppName(String appName) {
         assert appName != null;
-        this.appName = appName;
+        // filter any non-printing characters, or ascii spaces to -
+        this.appName = appName.replaceAll(APPNAME_FILTER, APPNAME_REPLACE_VALUE);
         //This gets updated immediately
         if (handler != null) {
             handler.setAppName(appName);
