@@ -24,7 +24,6 @@ package org.jboss.as.remoting;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.remoting.Capabilities.SSL_CONTEXT_CAPABILITY;
-import static org.jboss.as.remoting.CommonAttributes.SECURITY_REALM;
 
 import javax.net.ssl.SSLContext;
 
@@ -33,6 +32,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -71,7 +71,6 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         final String connectorName = address.getLastElement().getValue();
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
-        final String securityRealm = model.hasDefined(SECURITY_REALM) ? model.require(SECURITY_REALM).asString() : null;
         final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
 
         launchServices(context, connectorName, fullModel);
@@ -85,6 +84,9 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         final String socketName = ConnectorResource.SOCKET_BINDING.resolveModelAttribute(context, fullModel).asString();
         final ServiceName socketBindingName = context.getCapabilityServiceName(ConnectorResource.SOCKET_CAPABILITY_NAME, socketName, SocketBinding.class);
 
+        ModelNode securityRealmModel = ConnectorResource.SECURITY_REALM.resolveModelAttribute(context, fullModel);
+        final ServiceName securityRealmName = securityRealmModel.isDefined() ? SecurityRealm.ServiceUtil.createServiceName(securityRealmModel.asString()) : null;
+
         ModelNode saslAuthenticationFactoryModel = ConnectorResource.SASL_AUTHENTICATION_FACTORY.resolveModelAttribute(context, fullModel);
         final ServiceName saslAuthenticationFactoryName = saslAuthenticationFactoryModel.isDefined()
                 ? context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactoryModel.asString(), SaslAuthenticationFactory.class)
@@ -94,6 +96,6 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         final ServiceName sslContextName = sslContextModel.isDefined()
                 ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, sslContextModel.asString(), SSLContext.class) : null;
 
-        RemotingServices.installConnectorServicesForSocketBinding(target, RemotingServices.SUBSYSTEM_ENDPOINT, connectorName, socketBindingName, optionMap, saslAuthenticationFactoryName, sslContextName);
+        RemotingServices.installConnectorServicesForSocketBinding(target, RemotingServices.SUBSYSTEM_ENDPOINT, connectorName, socketBindingName, optionMap, securityRealmName, saslAuthenticationFactoryName, sslContextName);
     }
 }

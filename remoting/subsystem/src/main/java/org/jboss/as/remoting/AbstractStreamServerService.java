@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 
 import javax.net.ssl.SSLContext;
 
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.network.SocketBindingManager;
@@ -42,7 +43,6 @@ import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
-import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
@@ -57,6 +57,7 @@ import org.xnio.channels.AcceptingChannel;
  */
 public abstract class AbstractStreamServerService implements Service<AcceptingChannel<StreamConnection>>{
 
+    private final InjectedValue<SecurityRealm> securityRealm = new InjectedValue<>();
     private final InjectedValue<SaslAuthenticationFactory> saslAuthenticationFactory = new InjectedValue<>();
     private final InjectedValue<SSLContext> sslContext = new InjectedValue<>();
     private final InjectedValue<Endpoint> endpointValue = new InjectedValue<Endpoint>();
@@ -73,6 +74,10 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
     @Override
     public AcceptingChannel<StreamConnection> getValue() throws IllegalStateException, IllegalArgumentException {
         return streamServer;
+    }
+
+    public Injector<SecurityRealm> getSecurityRealmInjector() {
+        return securityRealm;
     }
 
     public Injector<SaslAuthenticationFactory> getSaslAuthenticationFactoryInjector() {
@@ -105,15 +110,21 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
             if (RemotingLogger.ROOT_LOGGER.isTraceEnabled()) {
                 RemotingLogger.ROOT_LOGGER.tracef("Resulting OptionMap %s", resultingMap.toString());
             }
-            // TODO Elytron Add SSL Support
+
+            SecurityRealm securityRealm = this.securityRealm.getOptionalValue();
+            SSLContext sslContext = this.sslContext.getOptionalValue();
+            if (sslContext == null && securityRealm != null) {
+                sslContext = securityRealm.getSSLContext();
+            }
+
             final InjectedValue<SaslAuthenticationFactory> saslFactoryValue = this.saslAuthenticationFactory;
             SaslAuthenticationFactory factory = saslFactoryValue.getOptionalValue();
             if (factory == null) {
-                // TODO: Just authenticate anonymously
+                // TODO Elytron: Just authenticate anonymously
                 RemotingLogger.ROOT_LOGGER.warn("****** All authentication is ANONYMOUS for " + getClass().getName());
                 final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
                 domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
-                domainBuilder.addRealm("default", SecurityRealm.EMPTY_REALM).build();
+                domainBuilder.addRealm("default", org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM).build();
                 domainBuilder.setDefaultRealmName("default");
                 factory = SaslAuthenticationFactory
                     .builder()
@@ -122,7 +133,7 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
                     .setSecurityDomain(domainBuilder.build())
                     .build();
             }
-            streamServer = networkServerProvider.createServer(getSocketAddress(), resultingMap, factory, sslContext.getOptionalValue());
+            streamServer = networkServerProvider.createServer(getSocketAddress(), resultingMap, factory, sslContext);
             SocketBindingManager sbm = socketBindingManagerValue.getOptionalValue();
             if (sbm != null) {
                 managedBinding = registerSocketBinding(sbm);

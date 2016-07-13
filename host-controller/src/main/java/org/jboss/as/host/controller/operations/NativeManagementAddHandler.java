@@ -22,7 +22,7 @@
 
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.management.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
@@ -35,6 +35,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseNativeInterfaceAddStepHandler;
 import org.jboss.as.controller.management.NativeInterfaceCommonPolicy;
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
@@ -84,13 +85,14 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
             ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
-        ServiceName saslAuthenticationFactoryName = saslServerAuthentication != null ? context.getCapabilityServiceName(SASL_SERVER_AUTHENTICATION_CAPABILITY, SaslAuthenticationFactory.class) : null;
+        ServiceName securityRealmName = securityRealm != null ? SecurityRealm.ServiceUtil.createServiceName(securityRealm) : null;
+        ServiceName saslAuthenticationFactoryName = saslServerAuthentication != null ? context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, SaslAuthenticationFactory.class) : null;
         String sslContext = commonPolicy.getSSLContext();
         ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, SSLContext.class) : null;
 
         NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
         ManagementRemotingServices.installDomainConnectorServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), securityRealm, options, saslAuthenticationFactoryName, sslContextName);
+                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), options, securityRealmName, saslAuthenticationFactoryName, sslContextName);
     }
 
     static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {

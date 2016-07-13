@@ -182,7 +182,10 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
         final SecurityRealm securityRealm = securityRealmValue.getOptionalValue();
         final HttpAuthenticationFactory httpServerAuthentication = httpServerAuthenticationValue.getOptionalValue();
-        final SSLContext sslContext = sslContextValue.getOptionalValue();
+        SSLContext sslContext = sslContextValue.getOptionalValue();
+        if (sslContext == null && securityRealm != null) {
+            sslContext = securityRealm.getSSLContext();
+        }
 
         InetSocketAddress bindAddress = null;
         InetSocketAddress secureBindAddress = null;

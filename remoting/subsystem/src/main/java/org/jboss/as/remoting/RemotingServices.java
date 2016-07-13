@@ -24,6 +24,7 @@ package org.jboss.as.remoting;
 import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
@@ -110,9 +111,10 @@ public class RemotingServices {
                                                                           final ServiceName networkInterfaceBindingName,
                                                                           final int port,
                                                                           final OptionMap connectorPropertiesOptionMap,
+                                                                          final ServiceName securityRealm,
                                                                           final ServiceName saslAuthenticationFactory,
                                                                           final ServiceName sslContext) {
-        installConnectorServices(serviceTarget, endpointName, connectorName, networkInterfaceBindingName, port, true, connectorPropertiesOptionMap, saslAuthenticationFactory, sslContext);
+        installConnectorServices(serviceTarget, endpointName, connectorName, networkInterfaceBindingName, port, true, connectorPropertiesOptionMap, securityRealm, saslAuthenticationFactory, sslContext);
     }
 
     public static void installConnectorServicesForSocketBinding(ServiceTarget serviceTarget,
@@ -120,9 +122,10 @@ public class RemotingServices {
                                                                 final String connectorName,
                                                                 final ServiceName socketBindingName,
                                                                 final OptionMap connectorPropertiesOptionMap,
+                                                                final ServiceName securityRealm,
                                                                 final ServiceName saslAuthenticationFactory,
                                                                 final ServiceName sslContext) {
-        installConnectorServices(serviceTarget, endpointName, connectorName, socketBindingName, 0, false, connectorPropertiesOptionMap, saslAuthenticationFactory, sslContext);
+        installConnectorServices(serviceTarget, endpointName, connectorName, socketBindingName, 0, false, connectorPropertiesOptionMap, securityRealm, saslAuthenticationFactory, sslContext);
     }
 
     private static void installConnectorServices(ServiceTarget serviceTarget,
@@ -132,6 +135,7 @@ public class RemotingServices {
                                                  final int port,
                                                  final boolean isNetworkInterfaceBinding,
                                                  final OptionMap connectorPropertiesOptionMap,
+                                                 final ServiceName securityRealm,
                                                  final ServiceName saslAuthenticationFactory,
                                                  final ServiceName sslContext) {
 
@@ -149,6 +153,9 @@ public class RemotingServices {
                     .addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
         }
         serviceBuilder.addDependency(endpointName, Endpoint.class, service.getEndpointInjector());
+        if (securityRealm != null) {
+            serviceBuilder.addDependency(securityRealm, SecurityRealm.class, service.getSecurityRealmInjector());
+        }
         if (saslAuthenticationFactory != null) {
             serviceBuilder.addDependency(saslAuthenticationFactory, SaslAuthenticationFactory.class, service.getSaslAuthenticationFactoryInjector());
         }

@@ -22,7 +22,7 @@
 
 package org.jboss.as.server.operations;
 
-import static org.jboss.as.controller.management.Capabilities.SASL_SERVER_AUTHENTICATION_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
@@ -37,6 +37,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseNativeInterfaceAddStepHandler;
 import org.jboss.as.controller.management.NativeInterfaceCommonPolicy;
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ServerEnvironment;
@@ -87,14 +88,15 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
             ServerLogger.ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
-        ServiceName saslAuthenticationFactoryName = saslServerAuthentication != null ? context.getCapabilityServiceName(SASL_SERVER_AUTHENTICATION_CAPABILITY, SaslAuthenticationFactory.class) : null;
+        ServiceName securityRealmName = securityRealm != null ? SecurityRealm.ServiceUtil.createServiceName(securityRealm) : null;
+        ServiceName saslAuthenticationFactoryName = saslServerAuthentication != null ? context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, SaslAuthenticationFactory.class) : null;
         String sslContext = commonPolicy.getSSLContext();
         ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, SSLContext.class) : null;
 
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,
                     socketBindingServiceName, commonPolicy.getConnectorOptions(),
-                    saslAuthenticationFactoryName, sslContextName);
+                    securityRealmName, saslAuthenticationFactoryName, sslContextName);
     }
 
 }

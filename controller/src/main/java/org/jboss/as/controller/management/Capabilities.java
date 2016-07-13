@@ -32,11 +32,11 @@ public final class Capabilities {
 
     public static final String HTTP_MANAGEMENT_CAPABILITY = "org.wildfly.management.http-interface";
 
-    public static final String HTTP_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.http-server-authentication";
+    public static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
 
     public static final String NATIVE_MANAGEMENT_CAPABILITY = "org.wildfly.management.native-interface";
 
-    public static final String SASL_SERVER_AUTHENTICATION_CAPABILITY = "org.wildfly.security.sasl-server-authentication";
+    public static final String SASL_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.sasl-authentication-factory";
 
     public static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
 
