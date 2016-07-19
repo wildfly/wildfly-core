@@ -87,6 +87,10 @@
             <artifactId>staxmapper</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.projectodd.vdx</groupId>
+            <artifactId>vdx-wildfly</artifactId>
+        </dependency>
 
         <!-- Test Dependencies -->
         <dependency>

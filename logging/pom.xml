@@ -170,6 +170,14 @@
         </dependency>
 
         <!-- Test dependencies -->
+
+        <!-- Would be brought in transitively by wildfly-controller normally. Required for ParseUtils -->
+        <dependency>
+            <groupId>org.projectodd.vdx</groupId>
+            <artifactId>vdx-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.codehaus.woodstox</groupId>
             <artifactId>woodstox-core-asl</artifactId>

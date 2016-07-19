@@ -39,6 +39,15 @@
     <packaging>pom</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>org.projectodd.vdx</groupId>
+            <artifactId>vdx-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectodd.vdx</groupId>
+            <artifactId>vdx-wildfly</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.undertow</groupId>

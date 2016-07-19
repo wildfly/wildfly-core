@@ -27,14 +27,19 @@ import static org.jboss.dmr.ModelType.PROPERTY;
 import static org.jboss.dmr.ModelType.STRING;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
@@ -42,6 +47,9 @@ import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.projectodd.vdx.core.ErrorType;
+import org.projectodd.vdx.core.ValidationError;
+import org.projectodd.vdx.core.XMLStreamValidationException;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -86,7 +94,12 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException unexpectedElement(final XMLExtendedStreamReader reader) {
-        return ControllerLogger.ROOT_LOGGER.unexpectedElement(reader.getName(), reader.getLocation());
+        final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.unexpectedElement(reader.getName(), reader.getLocation());
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.UNEXPECTED_ELEMENT)
+                                                        .element(reader.getName()),
+                                                ex);
     }
 
     /**
@@ -95,7 +108,13 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException unexpectedElement(final XMLExtendedStreamReader reader, Set<String> possible) {
-        return ControllerLogger.ROOT_LOGGER.unexpectedElement(reader.getName(), asStringList(possible), reader.getLocation());
+        final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.unexpectedElement(reader.getName(), asStringList(possible), reader.getLocation());
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.UNEXPECTED_ELEMENT)
+                                                        .element(reader.getName())
+                                                        .alternatives(possible),
+                                                ex);
     }
 
     /**
@@ -114,7 +133,13 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException unexpectedAttribute(final XMLExtendedStreamReader reader, final int index) {
-        return ControllerLogger.ROOT_LOGGER.unexpectedAttribute(reader.getAttributeName(index), reader.getLocation());
+        final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.unexpectedAttribute(reader.getAttributeName(index), reader.getLocation());
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.UNEXPECTED_ATTRIBUTE)
+                                                        .element(reader.getName())
+                                                        .attribute(reader.getAttributeName(index)),
+                                                ex);
     }
 
     /**
@@ -125,7 +150,14 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException unexpectedAttribute(final XMLExtendedStreamReader reader, final int index, Set<String> possibleAttributes) {
-        return ControllerLogger.ROOT_LOGGER.unexpectedAttribute(reader.getAttributeName(index), asStringList(possibleAttributes), reader.getLocation());
+        final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.unexpectedAttribute(reader.getAttributeName(index), asStringList(possibleAttributes), reader.getLocation());
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.UNEXPECTED_ATTRIBUTE)
+                                                        .element(reader.getName())
+                                                        .attribute(reader.getAttributeName(index))
+                                                        .alternatives(possibleAttributes),
+                                                ex);
     }
 
     private static StringBuilder asStringList(Set<?> attributes) {
@@ -147,7 +179,22 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException invalidAttributeValue(final XMLExtendedStreamReader reader, final int index) {
-        return ControllerLogger.ROOT_LOGGER.invalidAttributeValue(reader.getAttributeValue(index), reader.getAttributeName(index), reader.getLocation());
+        final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.invalidAttributeValue(reader.getAttributeValue(index), reader.getAttributeName(index), reader.getLocation());
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.INVALID_ATTRIBUTE_VALUE)
+                                                        .element(reader.getName())
+                                                        .attribute(reader.getAttributeName(index))
+                                                        .attributeValue(reader.getAttributeValue(index)),
+                                                ex);
+    }
+
+    private static XMLStreamException wrapMissingRequiredAttribute(final XMLStreamException ex, final XMLStreamReader reader, final Set<String> required) {
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.REQUIRED_ATTRIBUTE_MISSING)
+                                                        .element(reader.getName())
+                                                        .alternatives(required),
+                                                ex);
     }
 
     /**
@@ -158,7 +205,10 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException missingRequired(final XMLExtendedStreamReader reader, final Set<?> required) {
-        return ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(asStringList(required), reader.getLocation());
+        return wrapMissingRequiredAttribute(ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(asStringList(required),
+                                                                                                   reader.getLocation()),
+                                            reader,
+                                            required.stream().map(Object::toString).collect(Collectors.toSet()));
     }
 
     /**
@@ -177,7 +227,9 @@ public final class ParseUtils {
                 b.append(", ");
             }
         }
-        return ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(b, reader.getLocation());
+
+        return wrapMissingRequiredAttribute(ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(b, reader.getLocation()),
+                                            reader, new HashSet<>(Arrays.asList(required)));
     }
 
     /**
@@ -197,7 +249,14 @@ public final class ParseUtils {
                 b.append(", ");
             }
         }
-        return ControllerLogger.ROOT_LOGGER.missingRequiredElements(b, reader.getLocation());
+        final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.missingRequiredElements(b, reader.getLocation());
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.REQUIRED_ELEMENTS_MISSING)
+                                                        .element(reader.getName())
+                                                        .alternatives(required.stream().map(Object::toString)
+                                                                              .collect(Collectors.toSet())),
+                                                ex);
     }
 
     /**
@@ -217,7 +276,14 @@ public final class ParseUtils {
                 b.append(", ");
             }
         }
-        return ControllerLogger.ROOT_LOGGER.missingOneOf(b, reader.getLocation());
+        final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.missingOneOf(b, reader.getLocation());
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.REQUIRED_ELEMENT_MISSING)
+                                                                    .element(reader.getName())
+                                                                    .alternatives(required.stream().map(Object::toString)
+                                                                                          .collect(Collectors.toSet())),
+                                                ex);
     }
 
     /**
@@ -267,7 +333,13 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException duplicateAttribute(final XMLExtendedStreamReader reader, final String name) {
-        return ControllerLogger.ROOT_LOGGER.duplicateAttribute(name, reader.getLocation());
+        final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.duplicateAttribute(name, reader.getLocation());
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.DUPLICATE_ATTRIBUTE)
+                                                        .element(reader.getName())
+                                                        .attribute(new QName(name)),
+                                                ex);
     }
 
     /**
@@ -278,7 +350,14 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException duplicateNamedElement(final XMLExtendedStreamReader reader, final String name) {
-        return ControllerLogger.ROOT_LOGGER.duplicateNamedElement(name, reader.getLocation());
+        final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.duplicateNamedElement(name, reader.getLocation());
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.DUPLICATE_ELEMENT)
+                                                        .element(reader.getName())
+                                                        .attribute(QName.valueOf("name"))
+                                                        .attributeValue(name),
+                                                ex);
     }
 
     /**
@@ -540,7 +619,13 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException unsupportedElement(final XMLExtendedStreamReader reader, String supportedElement) {
-        return ControllerLogger.ROOT_LOGGER.unsupportedElement(
+        XMLStreamException ex = ControllerLogger.ROOT_LOGGER.unsupportedElement(
                 new QName(reader.getNamespaceURI(), reader.getLocalName(),reader.getPrefix()), reader.getLocation(), supportedElement);
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.UNSUPPORTED_ELEMENT)
+                                                        .element(reader.getName())
+                                                        .alternatives(new HashSet<String>() {{add(supportedElement);}}),
+                                                ex);
     }
 }
