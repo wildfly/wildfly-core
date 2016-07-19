@@ -93,7 +93,7 @@
         <version.junit>4.12</version.junit>
         <version.log4j>1.2.17</version.log4j>
         <version.org.apache.ds>2.0.0-M15</version.org.apache.ds> <!-- TODO Elytron - Bump to M17 -->
-        <version.org.apache.httpcomponents.httpclient>4.5.2</version.org.apache.httpcomponents.httpclient>
+        <version.org.apache.httpcomponents.httpclient>4.5.2.redhat-1</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.4</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.maven>3.3.9</version.org.apache.maven>
         <version.org.apache.xerces>2.11.0.SP5</version.org.apache.xerces>
