@@ -21,15 +21,8 @@
  */
 package org.jboss.as.remoting;
 
-import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
-import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
-import static org.jboss.as.remoting.Capabilities.SSL_CONTEXT_CAPABILITY;
-
-import javax.net.ssl.SSLContext;
-import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
@@ -37,9 +30,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
-import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
 import org.xnio.XnioWorker;
 
@@ -124,40 +115,6 @@ public class RemotingServices {
                                                                 final ServiceName socketBindingName,
                                                                 final OptionMap connectorPropertiesOptionMap) {
         installConnectorServices(serviceTarget, endpointName, connectorName, socketBindingName, 0, false, connectorPropertiesOptionMap);
-    }
-
-    public static void installSecurityServices(OperationContext context,
-                                               ServiceTarget serviceTarget,
-                                               final String connectorName,
-                                               final String saslAuthenticationFactory,
-                                               final String sslContextName,
-                                               final String realmName,
-                                               final ServiceName serverCallbackServiceName,
-                                               final ServiceName tmpDirService) {
-        final ServiceName securityProviderName = RealmSecurityProviderService.createName(connectorName);
-
-        final RealmSecurityProviderService rsps = new RealmSecurityProviderService();
-        ServiceBuilder<?> builder = serviceTarget.addService(securityProviderName, rsps);
-        if (saslAuthenticationFactory != null) {
-            // TODO This is just temporary until the sasl-server-authentication is actually used for Remoting.
-            InjectedValue<SaslAuthenticationFactory> saslAuthenticationFactoryInjector = new InjectedValue<>();
-            builder.addDependency(context.getCapabilityServiceName(
-                    buildDynamicCapabilityName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory),
-                    SaslAuthenticationFactory.class), SaslAuthenticationFactory.class, saslAuthenticationFactoryInjector);
-        }
-        if (sslContextName != null) {
-            builder.addDependency(context.getCapabilityServiceName(
-                    buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContextName),
-                    SSLContext.class), SSLContext.class, rsps.getSSLContextInjector());
-        }
-        if (realmName != null) {
-            SecurityRealm.ServiceUtil.addDependency(builder, rsps.getSecurityRealmInjectedValue(), realmName, false);
-        }
-        if (serverCallbackServiceName != null) {
-            builder.addDependency(serverCallbackServiceName, CallbackHandler.class, rsps.getServerCallbackValue());
-        }
-        builder.addDependency(tmpDirService, String.class, rsps.getTmpDirValue());
-        builder.install();
     }
 
     private static void installConnectorServices(ServiceTarget serviceTarget,
