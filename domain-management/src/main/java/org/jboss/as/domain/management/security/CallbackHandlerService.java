@@ -31,6 +31,7 @@ import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.security.auth.server.SecurityRealm;
 
 /**
  * The interface to be implemented by all services supplying callback handlers.
@@ -76,6 +77,13 @@ public interface CallbackHandlerService {
      * @return A CallbackHandler instance.
      */
     CallbackHandler getCallbackHandler(final Map<String, Object> sharedState);
+
+    /**
+     * Get an Elytron {@link SecurityRealm} that is backed by this callback handler.
+     *
+     * @return an Elytron {@link SecurityRealm} that is backed by this callback handler.
+     */
+    SecurityRealm getElytronSecurityRealm();
 
     public static final class ServiceUtil {
 

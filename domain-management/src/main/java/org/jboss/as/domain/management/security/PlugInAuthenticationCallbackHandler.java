@@ -303,6 +303,12 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
 
     }
 
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        // TODO Elytron Add support for legacy plug-in
+        return null;
+    }
+
     private static PasswordFactory getPasswordFactory(final String algorithm) {
         try {
             return PasswordFactory.getInstance(algorithm);

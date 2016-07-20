@@ -88,6 +88,7 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
     private final InjectedValue<ChannelUpgradeHandler> injectedRegistry = new InjectedValue<>();
     private final InjectedValue<ListenerRegistry> listenerRegistry = new InjectedValue<>();
     private final InjectedValue<Endpoint> injectedEndpoint = new InjectedValue<>();
+    private final InjectedValue<org.jboss.as.domain.management.SecurityRealm> injectedSecurityRealm = new InjectedValue<>();
     private final InjectedValue<SaslAuthenticationFactory> injectedSaslAuthenticationFactory = new InjectedValue<>();
     private final OptionMap connectorPropertiesOptionMap;
 
@@ -100,7 +101,8 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
     }
 
 
-    public static void installServices(final OperationContext context, final String remotingConnectorName, final String httpConnectorName, final ServiceName endpointName, final OptionMap connectorPropertiesOptionMap, final String saslAuthenticationFactory) {
+    public static void installServices(final OperationContext context, final String remotingConnectorName, final String httpConnectorName, final ServiceName endpointName,
+            final OptionMap connectorPropertiesOptionMap, final String securityRealm, final String saslAuthenticationFactory) {
         ServiceTarget serviceTarget = context.getServiceTarget();
         final RemotingHttpUpgradeService service = new RemotingHttpUpgradeService(httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap);
 
@@ -109,6 +111,12 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
                 .addDependency(HTTP_UPGRADE_REGISTRY.append(httpConnectorName), ChannelUpgradeHandler.class, service.injectedRegistry)
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.listenerRegistry)
                 .addDependency(endpointName, Endpoint.class, service.injectedEndpoint);
+
+        if (securityRealm != null) {
+            serviceBuilder.addDependency(
+                    org.jboss.as.domain.management.SecurityRealm.ServiceUtil.createServiceName(securityRealm),
+                    org.jboss.as.domain.management.SecurityRealm.class, service.injectedSecurityRealm);
+        }
 
         if (saslAuthenticationFactory != null) {
             serviceBuilder.addDependency(
@@ -138,6 +146,11 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
             final ExternalConnectionProvider provider = endpoint.getConnectionProviderInterface(Protocol.HTTP_REMOTING.toString(), ExternalConnectionProvider.class);
 
             SaslAuthenticationFactory saslAuthenticationFactory = injectedSaslAuthenticationFactory.getOptionalValue();
+
+            org.jboss.as.domain.management.SecurityRealm securityRealm = null;
+            if (saslAuthenticationFactory == null && (securityRealm = injectedSecurityRealm.getOptionalValue()) != null) {
+                saslAuthenticationFactory = securityRealm.getSaslAuthenticationFactory();
+            }
 
             if (saslAuthenticationFactory == null) {
                 // TODO Elytron Inject the sasl server factory.

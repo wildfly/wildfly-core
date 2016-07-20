@@ -111,6 +111,12 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
     }
 
     @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        // TODO Elytron Add support for calling out to JAAS
+        return null;
+    }
+
+    @Override
     public boolean isReadyForHttpChallenge() {
         // Can't check so assume it is ready.
         return true;

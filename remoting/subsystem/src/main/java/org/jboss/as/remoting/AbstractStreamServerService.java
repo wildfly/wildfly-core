@@ -119,6 +119,10 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
 
             final InjectedValue<SaslAuthenticationFactory> saslFactoryValue = this.saslAuthenticationFactory;
             SaslAuthenticationFactory factory = saslFactoryValue.getOptionalValue();
+            if (factory == null && securityRealm != null) {
+                factory = securityRealm.getSaslAuthenticationFactory();
+            }
+
             if (factory == null) {
                 // TODO Elytron: Just authenticate anonymously
                 RemotingLogger.ROOT_LOGGER.warn("****** All authentication is ANONYMOUS for " + getClass().getName());

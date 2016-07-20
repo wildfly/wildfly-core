@@ -27,10 +27,12 @@ import static org.jboss.as.domain.management.RealmConfigurationConstants.SUBJECT
 
 import java.io.IOException;
 import java.security.Principal;
+import java.security.Provider;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -40,6 +42,7 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.AuthorizeCallback;
+import javax.security.sasl.SaslServerFactory;
 
 import org.jboss.as.core.security.RealmGroup;
 import org.jboss.as.core.security.RealmRole;
@@ -58,6 +61,14 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedSetValue;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.WildFlyElytronProvider;
+import org.wildfly.security.auth.permission.LoginPermission;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
+import org.wildfly.security.sasl.util.SecurityProviderSaslServerFactory;
 
 /**
  * The service representing the security realm, this service will be injected into any management interfaces
@@ -80,6 +91,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
     private final String name;
     private final boolean mapGroupsToRoles;
     private final Map<AuthMechanism, CallbackHandlerService> registeredServices = new HashMap<AuthMechanism, CallbackHandlerService>();
+    private SaslAuthenticationFactory saslAuthenticationFactory = null;
+    private HttpAuthenticationFactory httpAuthenticationFactory = null;
 
     public SecurityRealmService(String name, boolean mapGroupsToRoles) {
         this.name = name;
@@ -100,11 +113,73 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
             }
             registeredServices.put(mechanism, current);
         }
+
+        /*
+         * Create the Elytron authentication factories.
+         */
+
+        final Map<AuthMechanism, MechanismConfiguration> configurationMap = new HashMap<>();
+
+        SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
+        for (Entry<AuthMechanism, CallbackHandlerService> currentRegistration : registeredServices.entrySet()) {
+            org.wildfly.security.auth.server.SecurityRealm elytronRealm = currentRegistration.getValue().getElytronSecurityRealm();
+            if (elytronRealm != null) {
+                final AuthMechanism mechanism = currentRegistration.getKey();
+                domainBuilder.addRealm(mechanism.toString(), elytronRealm).build();
+                configurationMap.put(mechanism,
+                        MechanismConfiguration.builder()
+                            .setRealmMapper((n, p, e) -> mechanism.toString())
+                            .build());
+            }
+        }
+        domainBuilder.addRealm("EMPTY", org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM).build();
+        domainBuilder.setDefaultRealmName("EMPTY");
+        domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
+
+        SecurityDomain securityDomain = domainBuilder.build();
+
+        SaslAuthenticationFactory.Builder saslBuilder = SaslAuthenticationFactory.builder();
+        saslBuilder.setSecurityDomain(securityDomain);
+
+        SaslServerFactory saslServerFactory = new SecurityProviderSaslServerFactory(() -> new Provider[] {new WildFlyElytronProvider()});
+        saslServerFactory = new FilterMechanismSaslServerFactory(saslServerFactory, (s) -> {
+            AuthMechanism mechanism = toAuthMechanism("SASL", s);
+            return mechanism != null && configurationMap.containsKey(mechanism);
+        });
+
+        saslBuilder.setFactory(saslServerFactory);
+        saslBuilder.setMechanismConfigurationSelector((mi) -> {
+            AuthMechanism mechanism = toAuthMechanism(mi.getMechanismType(), mi.getMechanismName());
+            if (mechanism != null) {
+                return configurationMap.get(mechanism);
+            }
+            return null;
+        });
+        saslAuthenticationFactory = saslBuilder.build();
     }
+
+    private AuthMechanism toAuthMechanism(String mechanismType, String mechanismName) {
+        switch (mechanismType) {
+            case "SASL":
+                switch (mechanismName) {
+                    case "DIGEST-MD5":
+                        return AuthMechanism.DIGEST;
+                }
+                break;
+            case "HTTP":
+
+                break;
+        }
+
+        return null;
+    }
+
 
     public void stop(StopContext context) {
         ROOT_LOGGER.debugf("Stopping '%s' Security Realm Service", name);
         registeredServices.clear();
+        saslAuthenticationFactory = null;
+        httpAuthenticationFactory = null;
     }
 
     public SecurityRealmService getValue() throws IllegalStateException, IllegalArgumentException {
@@ -259,6 +334,16 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         KeytabIdentityFactoryService kifs = keytabFactory.getOptionalValue();
 
         return kifs != null ? kifs.getSubjectIdentity(protocol, forHost) : null;
+    }
+
+    @Override
+    public SaslAuthenticationFactory getSaslAuthenticationFactory() {
+        return saslAuthenticationFactory;
+    }
+
+    @Override
+    public HttpAuthenticationFactory getHttpAuthenticationFactory() {
+        return httpAuthenticationFactory;
     }
 
     /*

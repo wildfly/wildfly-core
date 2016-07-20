@@ -98,6 +98,12 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
         return new LocalCallbackHander(sharedState);
     }
 
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        // TODO Elytron Implement local authentication support.
+        return null;
+    }
+
     /*
      * Service Methods
      */

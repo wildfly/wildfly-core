@@ -30,6 +30,8 @@ import javax.net.ssl.SSLContext;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 
 /**
  * Interface to the security realm.
@@ -89,6 +91,20 @@ public interface SecurityRealm {
      * @return A {@link SubjectIdentity} for the server identity or {@code null} if none are available.
      */
     SubjectIdentity getSubjectIdentity(final String protocol, final String forHost);
+
+    /**
+     * Get a {@link SaslAuthenticationFactory} backed by this {@link SecurityRealm}.
+     *
+     * @return a {@link SaslAuthenticationFactory} backed by this {@link SecurityRealm}.
+     */
+    SaslAuthenticationFactory getSaslAuthenticationFactory();
+
+    /**
+     * Get a {@link HttpAuthenticationFactory} backed by this {@link SecurityRealm}.
+     *
+     * @return a {@link HttpAuthenticationFactory} backed by this {@link SecurityRealm}.
+     */
+    HttpAuthenticationFactory getHttpAuthenticationFactory();
 
     public static final class ServiceUtil {
 

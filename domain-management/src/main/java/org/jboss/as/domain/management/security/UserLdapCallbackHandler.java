@@ -108,6 +108,12 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
         return new LdapCallbackHandler(sharedState);
     }
 
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        // TODO Elytron Add back LDAP support.
+        return null;
+    }
+
     /*
      *  Service Methods
      */

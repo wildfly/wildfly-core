@@ -66,8 +66,10 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
 
         final String connectorRef = HttpConnectorResource.CONNECTOR_REF.resolveModelAttribute(context, model).asString();
 
+        ModelNode securityRealmModel = HttpConnectorResource.SECURITY_REALM.resolveModelAttribute(context, model);
+        final String securityRealm = securityRealmModel.isDefined() ? securityRealmModel.asString() : null;
         ModelNode saslAuthenticationFactoryModel = HttpConnectorResource.SASL_AUTHENTICATION_FACTORY.resolveModelAttribute(context, model);
         final String saslAuthenticationFactory = saslAuthenticationFactoryModel.isDefined() ? saslAuthenticationFactoryModel.asString() : null;
-        RemotingHttpUpgradeService.installServices(context, connectorName, connectorRef, RemotingServices.SUBSYSTEM_ENDPOINT, optionMap, saslAuthenticationFactory);
+        RemotingHttpUpgradeService.installServices(context, connectorName, connectorRef, RemotingServices.SUBSYSTEM_ENDPOINT, optionMap, securityRealm, saslAuthenticationFactory);
     }
 }

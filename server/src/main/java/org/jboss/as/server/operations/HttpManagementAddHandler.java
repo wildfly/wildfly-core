@@ -199,7 +199,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             }
 
             RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
-                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), commonPolicy.getSaslServerAuthentication());
+                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), securityRealm, commonPolicy.getSaslServerAuthentication());
         }
     }
 

@@ -128,6 +128,12 @@ public class KerberosCallbackHandler implements Service<CallbackHandlerService>,
         };
     }
 
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        // TODO Elytron Add legacy Kerberos support.
+        return null;
+    }
+
     public static final class ServiceUtil {
 
         private ServiceUtil() {
