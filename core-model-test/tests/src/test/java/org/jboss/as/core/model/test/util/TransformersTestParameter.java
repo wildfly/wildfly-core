@@ -34,8 +34,6 @@ import org.jboss.as.model.test.ModelTestControllerVersion;
  */
 public class TransformersTestParameter extends ClassloaderParameter {
 
-    private static final String TEST_OLD_LEGACY = "jboss.test.transformers.core.old";
-
     private final ModelVersion modelVersion;
     private final ModelTestControllerVersion testControllerVersion;
 
@@ -58,13 +56,14 @@ public class TransformersTestParameter extends ClassloaderParameter {
 
     public static List<TransformersTestParameter> setupVersions(){
         List<TransformersTestParameter> data = new ArrayList<TransformersTestParameter>();
-        data.add(new TransformersTestParameter(ModelVersion.create(4, 0, 0), ModelTestControllerVersion.MASTER));
+        data.add(new TransformersTestParameter(ModelVersion.CURRENT, ModelTestControllerVersion.MASTER));
 
         //EAP releases - these will only get tested if the EAPRepositoryReachableUtil.TEST_TRANSFORMERS_EAP system property is set AND the EAP repostitory is available
         //we only test EAP 6.2/AS7.3 and newer
         data.add(new TransformersTestParameter(ModelVersion.create(1, 5, 0), ModelTestControllerVersion.EAP_6_2_0));
         data.add(new TransformersTestParameter(ModelVersion.create(1, 6, 0), ModelTestControllerVersion.EAP_6_3_0));
         data.add(new TransformersTestParameter(ModelVersion.create(1, 7, 0), ModelTestControllerVersion.EAP_6_4_0));
+        data.add(new TransformersTestParameter(ModelVersion.create(1, 8, 0), ModelTestControllerVersion.EAP_6_4_7));
 
         return data;
     }
