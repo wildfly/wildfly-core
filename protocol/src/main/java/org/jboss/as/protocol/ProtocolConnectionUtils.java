@@ -149,7 +149,7 @@ public class ProtocolConnectionUtils {
 
         String clientBindAddress = configuration.getClientBindAddress();
         final AuthenticationConfiguration authConf = AuthenticationConfiguration.EMPTY.useCallbackHandler(actualHandler).useSslContext(configuration.getSslContext());
-        final AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, authConf);
+        final AuthenticationContext context = AuthenticationContext.captureCurrent().with(MatchRule.ALL, authConf);
         if (clientBindAddress == null) {
             return endpoint.connect(configuration.getUri(), options, context);
         } else {

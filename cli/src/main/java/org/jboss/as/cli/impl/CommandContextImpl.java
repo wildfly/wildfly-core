@@ -1812,11 +1812,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         final byte[] bytes = CodePointIterator.ofString(digest).hexDecode().drain();
                         cc.setCredential(new PasswordCredential(DigestPassword.createRaw(DigestPassword.ALGORITHM_DIGEST_MD5, username, realm, bytes)));
                     } else {
-                        error("Unexpected Callback " + current.getClass().getName());
                         throw new UnsupportedCallbackException(current);
                     }
                 } else {
-                    error("Unexpected Callback " + current.getClass().getName());
                     throw new UnsupportedCallbackException(current);
                 }
             }
