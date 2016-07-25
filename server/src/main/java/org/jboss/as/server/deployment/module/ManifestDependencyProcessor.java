@@ -103,6 +103,9 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
                 }
                 if(annotations) {
                     deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, dependencyId);
+                    if(dependencyLoader == deploymentModuleLoader) {
+                        phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(dependencyId));
+                    }
                 }
 
                 final ModuleDependency dependency = new ModuleDependency(dependencyLoader, dependencyId, optional, export, services, true);
