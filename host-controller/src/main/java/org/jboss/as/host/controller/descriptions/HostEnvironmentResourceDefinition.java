@@ -40,6 +40,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.services.path.PathInfoHandler;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -157,6 +158,22 @@ public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition 
         for (AttributeDefinition attribute : HOST_ENV_ATTRIBUTES) {
             resourceRegistration.registerReadOnlyAttribute(attribute, osh);
         }
+    }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration);
+        PathInfoHandler.registerOperation(resourceRegistration,
+                PathInfoHandler.Builder.of(null)
+                        .addAttribute(HOME_DIR, null)
+                        .addAttribute(DOMAIN_BASE_DIR, null)
+                        .addAttribute(DOMAIN_CONFIG_DIR, null)
+                        .addAttribute(DOMAIN_CONTENT_DIR, null)
+                        .addAttribute(DOMAIN_DATA_DIR, null)
+                        .addAttribute(DOMAIN_LOG_DIR, null)
+                        .addAttribute(DOMAIN_SERVERS_DIR, null)
+                        .addAttribute(DOMAIN_TEMP_DIR, null)
+                        .build());
     }
 
 
