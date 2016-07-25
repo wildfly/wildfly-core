@@ -47,6 +47,8 @@ import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.ContentConflictsException;
 import org.jboss.as.patching.PatchInfo;
 import org.jboss.as.patching.PatchingException;
+import org.jboss.as.patching.VerbosePatchInfo;
+import org.jboss.as.patching.installation.PatchableTarget.TargetInfo;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.ContentType;
@@ -149,14 +151,46 @@ public abstract class PatchOperationTarget {
         @Override
         protected ModelNode info(String streamName) throws PatchingException {
             final PatchInfo info = tool.getPatchInfo(streamName);
-            final ModelNode result = new ModelNode();
-            result.get(OUTCOME).set(SUCCESS);
-            result.get(RESULT, Constants.CUMULATIVE).set(info.getCumulativePatchID());
-            result.get(RESULT, Constants.PATCHES).setEmptyList();
+            final ModelNode response = new ModelNode();
+            response.get(OUTCOME).set(SUCCESS);
+            final ModelNode result = response.get(RESULT);
+            result.get(Constants.VERSION).set(info.getVersion());
+            result.get(Constants.CUMULATIVE).set(info.getCumulativePatchID());
+            result.get(Constants.PATCHES).setEmptyList();
             for(final String patch : info.getPatchIDs()) {
-                result.get(RESULT, Constants.PATCHES).add(patch);
+                result.get(Constants.PATCHES).add(patch);
             }
-            return result;
+            if(info instanceof VerbosePatchInfo) {
+                final VerbosePatchInfo vInfo = (VerbosePatchInfo) info;
+                if(vInfo.hasLayers()) {
+                    final ModelNode layersNode = result.get(Constants.LAYER);
+                    for(String name : vInfo.getLayerNames()) {
+                        final TargetInfo layerInfo = vInfo.getLayerInfo(name);
+                        final ModelNode layerNode = layersNode.get(name);
+                        layerNode.get(Constants.CUMULATIVE).set(layerInfo.getCumulativePatchID());
+                        final ModelNode patchesNode = layerNode.get(Constants.PATCHES).setEmptyList();
+                        if(!layerInfo.getPatchIDs().isEmpty()) {
+                            for(String patchId : layerInfo.getPatchIDs()) {
+                                patchesNode.add(patchId);
+                            }
+                        }
+                    }
+                }
+                if(vInfo.hasAddOns()) {
+                    final ModelNode layerNode = result.get(Constants.ADD_ON);
+                    for(String name : vInfo.getAddOnNames()) {
+                        final TargetInfo layerInfo = vInfo.getAddOnInfo(name);
+                        layerNode.get(name, Constants.CUMULATIVE).set(layerInfo.getCumulativePatchID());
+                        final ModelNode patchesNode = layerNode.get(Constants.PATCHES).setEmptyList();
+                        if(!layerInfo.getPatchIDs().isEmpty()) {
+                            for(String patchId : layerInfo.getPatchIDs()) {
+                                patchesNode.add(patchId);
+                            }
+                        }
+                    }
+                }
+            }
+            return response;
         }
 
         @Override
