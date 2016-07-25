@@ -65,6 +65,7 @@ import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
@@ -129,6 +130,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 configurationMap.put(mechanism,
                         MechanismConfiguration.builder()
                             .setRealmMapper((n, p, e) -> mechanism.toString())
+                            .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName(name).build())
                             .build());
             }
         }
