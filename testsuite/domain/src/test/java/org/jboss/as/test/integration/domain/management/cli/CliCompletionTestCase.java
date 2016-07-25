@@ -1058,4 +1058,32 @@ public class CliCompletionTestCase {
             assertEquals(Arrays.asList("rollout"), candidates);
         }
     }
+
+    @Test
+    public void testLs() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        {
+            String cmd = "ls ";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertFalse(candidates.toString(), candidates.isEmpty());
+            assertFalse(candidates.toString(), candidates.contains("--storage"));
+        }
+
+        {
+            String cmd = "ls -l ";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length() - 1, candidates);
+            assertFalse(candidates.toString(), candidates.isEmpty());
+            assertTrue(candidates.toString(), candidates.contains("--storage"));
+            assertTrue(candidates.toString(), candidates.contains("--max"));
+            assertTrue(candidates.toString(), candidates.contains("--min"));
+            assertTrue(candidates.toString(), candidates.contains("--description"));
+            assertTrue(candidates.toString(), candidates.contains("--nillable"));
+        }
+    }
 }
