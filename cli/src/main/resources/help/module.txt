@@ -3,7 +3,8 @@ SYNOPSIS
   To add a module locally
 
     module add [--module-root-dir=modules_root_directory_path] --name=module_name 
-               [--slot=slot_name] --resources=list_of_jars [--resource-delimiter=delimiter]
+               [--slot=slot_name] [--resources=list_of_jars]
+               [--absolute-resources=list_of_jars] [--resource-delimiter=delimiter]
                (--module-xml=file_path |
                 ([--dependencies=list_of_module_names]
                  [--properties=list_of_properties]
@@ -21,9 +22,10 @@ DESCRIPTION
 
   When a module is added, the corresponding to the module name directory
   structure will be created in the module repository. The JAR files
-  specified as resources will be copied to the module's directory. Unless
-  module.xml file was specified as an argument, it will be automatically
-  generated.
+  specified as resources will be copied to the module's directory,
+  the JAR files specified as absolute resources will be referenced
+  with absolute paths. Unless module.xml file was specified as an argument,
+  it will be automatically generated.
 
   When a module is removed, its module.xml and other resources will be removed
   from the module repository as well as its directory structure up to the point
@@ -50,11 +52,18 @@ ARGUMENTS
                    removed. If this argument is not specified, "main" slot is
                    assumed.
 
- --resources     - (used with add, required unless module-xml is used) a list of
-                   filesystem paths (usually jar files) separated by a
-                   filesystem-specific path separator, i.e.
-                   java.io.File.pathSeparatorChar. The file(s) specified will be
-                   copied to the created module's directory.
+ --resources     - (used with add, resources and/or absolute-resources is required
+                   unless module-xml is used) a list of filesystem paths
+                   (usually jar files) separated by a filesystem-specific
+                   path separator, i.e. java.io.File.pathSeparatorChar.
+                   The file(s) specified will be copied to the created module's directory.
+
+ --absolute-resources - (used with add, resources and/or absolute-resources required
+                       unless module-xml is used) a list of filesystem paths
+                       (usually jar files) separated by a filesystem-specific
+                       path separator, i.e. java.io.File.pathSeparatorChar.
+                       The file(s) specified will *NOT* be copied to the created
+                       module's directory and will be referenced with absolute path(s).
 
  --resource-delimiter - (used with add and resources, optional)
                        A user-defined path separator for the resources argument.

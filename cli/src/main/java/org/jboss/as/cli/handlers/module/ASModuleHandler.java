@@ -27,8 +27,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -115,6 +115,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     private final ArgumentWithValue name;
     private final ArgumentWithValue mainClass;
     private final ArgumentWithValue resources;
+    private final ArgumentWithValue absoluteResources;
     private final ArgumentWithListValue dependencies;
     private final ArgumentWithListValue props;
     private final ArgumentWithValue moduleArg;
@@ -168,6 +169,39 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         mainClass = new AddModuleArgument("--main-class");
 
         resources = new AddModuleArgument("--resources", new CommandLineCompleter(){
+            @Override
+            public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
+                final int lastSeparator = buffer.lastIndexOf(PATH_SEPARATOR);
+                if(lastSeparator >= 0) {
+                    return lastSeparator + 1 + pathCompleter.complete(ctx, buffer.substring(lastSeparator + 1), cursor, candidates);
+                }
+                return pathCompleter.complete(ctx, buffer, cursor, candidates);
+            }}) {
+            @Override
+            public String getValue(ParsedCommandLine args) {
+                String value = super.getValue(args);
+                if(value != null) {
+                    if(value.length() >= 0 && value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
+                        value = value.substring(1, value.length() - 1);
+                    }
+                    value = pathCompleter.translatePath(value);
+                }
+                return value;
+            }
+            @Override
+            protected ParsingState initParsingState() {
+                final ExpressionBaseState state = new ExpressionBaseState("EXPR", true, false);
+                if(Util.isWindows()) {
+                    // to not require escaping FS name separator
+                    state.setDefaultHandler(WordCharacterHandler.IGNORE_LB_ESCAPE_OFF);
+                } else {
+                    state.setDefaultHandler(WordCharacterHandler.IGNORE_LB_ESCAPE_ON);
+                }
+                return state;
+            }
+        };
+
+        absoluteResources = new AddModuleArgument("--absolute-resources", new CommandLineCompleter(){
             @Override
             public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
                 final int lastSeparator = buffer.lastIndexOf(PATH_SEPARATOR);
@@ -279,7 +313,11 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         final String moduleName = name.getValue(parsedCmd, true);
 
         // resources required only if we are generating module.xml
-        final String resourcePaths = resources.getValue(parsedCmd, !moduleArg.isPresent(parsedCmd));
+        if(!moduleArg.isPresent(parsedCmd) && !(resources.isPresent(parsedCmd) || absoluteResources.isPresent(parsedCmd))) {
+            throw new CommandFormatException("You must specify at least one resource: use --resources or --absolute-resources parameter");
+        }
+        final String resourcePaths = resources.getValue(parsedCmd);
+        final String absoluteResourcePaths = absoluteResources.getValue(parsedCmd);
 
         String pathDelimiter = PATH_SEPARATOR;
         if (resourceDelimiter.isPresent(parsedCmd)) {
@@ -295,6 +333,16 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
                 throw new CommandLineException("Failed to locate " + f.getAbsolutePath());
             }
             resourceFiles[i] = f;
+        }
+
+        final String[] absoluteResourceArr = (absoluteResourcePaths == null) ? new String[0] : absoluteResourcePaths.split(pathDelimiter);
+        File[] absoluteResourceFiles = new File[absoluteResourceArr.length];
+        for(int i = 0; i < absoluteResourceArr.length; ++i) {
+            final File f = new File(pathCompleter.translatePath(absoluteResourceArr[i]));
+            if(!f.exists()) {
+                throw new CommandLineException("Failed to locate " + f.getAbsolutePath());
+            }
+            absoluteResourceFiles[i] = f;
         }
 
         final File moduleDir = getModulePath(getModulesDir(ctx), moduleName, slot.getValue(parsedCmd));
@@ -323,6 +371,16 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
             copy(f, new File(moduleDir, f.getName()));
             if(config != null) {
                 config.addResource(new ResourceRoot(f.getName()));
+            }
+        }
+
+        for(File f : absoluteResourceFiles) {
+            if(config != null) {
+                try {
+                    config.addResource(new ResourceRoot(f.getCanonicalPath()));
+                } catch (IOException ioe) {
+                    throw new CommandLineException("Failed to read path: " + f.getAbsolutePath(), ioe);
+                }
             }
         }
 
@@ -362,11 +420,11 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
                 config.setMainClass(mainCls);
             }
 
-            FileWriter moduleWriter = null;
+            FileOutputStream fos = null;
             final File moduleFile = new File(moduleDir, "module.xml");
             try {
-                moduleWriter = new FileWriter(moduleFile);
-                XMLExtendedStreamWriter xmlWriter = create(XMLOutputFactory.newInstance().createXMLStreamWriter(moduleWriter));
+                fos = new FileOutputStream(moduleFile);
+                XMLExtendedStreamWriter xmlWriter = create(XMLOutputFactory.newInstance().createXMLStreamWriter(fos, StandardCharsets.UTF_8.name()));
                 config.writeContent(xmlWriter, null);
                 xmlWriter.flush();
             } catch (IOException e) {
@@ -374,9 +432,9 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
             } catch (XMLStreamException e) {
                 throw new CommandLineException("Failed to write to " + moduleFile.getAbsolutePath(), e);
             } finally {
-                if(moduleWriter != null) {
+                if(fos != null) {
                     try {
-                        moduleWriter.close();
+                        fos.close();
                     } catch (IOException e) {}
                 }
             }
