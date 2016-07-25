@@ -374,6 +374,7 @@ public class ModelDescriptionConstants {
     public static final String RELATIVE_TO = "relative-to";
     public static final String RELEASE_CODENAME = "release-codename";
     public static final String RELEASE_VERSION = "release-version";
+    public static final String RELOAD = "reload";
     public static final String RELOAD_REQUIRED = "reload-required";
     public static final String REMOVE = "remove";
     public static final String REMOTE = "remote";
