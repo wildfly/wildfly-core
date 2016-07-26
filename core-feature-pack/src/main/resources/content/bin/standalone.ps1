@@ -32,8 +32,8 @@ if ($global:DEBUG_MODE){
 $backgroundProcess = Get-Env LAUNCH_JBOSS_IN_BACKGROUND 'false'
 $runInBackGround = $global:RUN_IN_BACKGROUND -or ($backgroundProcess -eq 'true')
 
-Display-Environment
-
 $PROG_ARGS = Get-Java-Arguments -entryModule "org.jboss.as.standalone" -serverOpts $SERVER_OPTS
+
+Display-Environment $global:FINAL_JAVA_OPTS
 
 Start-WildFly-Process -programArguments $PROG_ARGS -runInBackground $runInBackGround
