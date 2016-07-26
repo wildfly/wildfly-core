@@ -19,6 +19,9 @@ set "SERVER_OPTS=%*"
 if NOT "x%DEBUG%" == "x" (
   set "DEBUG_MODE=%DEBUG%
 )
+if NOT "x%DEBUG_PORT%" == "x" (
+  set "DEBUG_PORT=%DEBUG_PORT%
+)
 
 rem Get the program name before using shift as the command modify the variable ~nx0
 if "%OS%" == "Windows_NT" (
