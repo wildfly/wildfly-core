@@ -22,9 +22,11 @@
 
 package org.jboss.as.domain.management.security;
 
+import static org.jboss.as.domain.management.RealmConfigurationConstants.LOCAL_DEFAULT_USER;
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.SUBJECT_CALLBACK_SUPPORTED;
 
+import java.io.File;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.Provider;
@@ -55,6 +57,7 @@ import org.jboss.as.domain.management.CallbackHandlerFactory;
 import org.jboss.as.domain.management.SubjectIdentity;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -68,8 +71,11 @@ import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.sasl.localuser.LocalUserServer;
 import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
+import org.wildfly.security.sasl.util.PropertiesSaslServerFactory;
 import org.wildfly.security.sasl.util.SecurityProviderSaslServerFactory;
+import org.wildfly.security.sasl.util.SortedMechanismSaslServerFactory;
 
 /**
  * The service representing the security realm, this service will be injected into any management interfaces
@@ -88,6 +94,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
     private final InjectedValue<CallbackHandlerFactory> secretCallbackFactory = new InjectedValue<CallbackHandlerFactory>();
     private final InjectedValue<KeytabIdentityFactoryService> keytabFactory = new InjectedValue<KeytabIdentityFactoryService>();
     private final InjectedSetValue<CallbackHandlerService> callbackHandlerServices = new InjectedSetValue<CallbackHandlerService>();
+
+    private final InjectedValue<String> tmpDirPath = new InjectedValue<>();
 
     private final String name;
     private final boolean mapGroupsToRoles;
@@ -119,6 +127,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
          * Create the Elytron authentication factories.
          */
 
+        final Map<String, String> mechanismConfiguration = new HashMap<>();
         final Map<AuthMechanism, MechanismConfiguration> configurationMap = new HashMap<>();
 
         SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
@@ -132,8 +141,17 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                             .setRealmMapper((n, p, e) -> mechanism.toString())
                             .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName(name).build())
                             .build());
+                for (Entry<String, String> currentOption : currentRegistration.getValue().getConfigurationOptions().entrySet()) {
+                    switch (currentOption.getKey()) {
+                        case LOCAL_DEFAULT_USER:
+                            mechanismConfiguration.put(LocalUserServer.DEFAULT_USER, currentOption.getValue());
+                            break;
+                    }
+                }
             }
         }
+        mechanismConfiguration.put(LocalUserServer.LEGACY_LOCAL_USER_CHALLENGE_PATH, getAuthDir(tmpDirPath.getValue()));
+
         domainBuilder.addRealm("EMPTY", org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM).build();
         domainBuilder.setDefaultRealmName("EMPTY");
         domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
@@ -148,6 +166,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
             AuthMechanism mechanism = toAuthMechanism("SASL", s);
             return mechanism != null && configurationMap.containsKey(mechanism);
         });
+        saslServerFactory = new PropertiesSaslServerFactory(saslServerFactory, mechanismConfiguration);
+        saslServerFactory = new SortedMechanismSaslServerFactory(saslServerFactory, SecurityRealmService::compare);
 
         saslBuilder.setFactory(saslServerFactory);
         saslBuilder.setMechanismConfigurationSelector((mi) -> {
@@ -166,6 +186,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 switch (mechanismName) {
                     case "DIGEST-MD5":
                         return AuthMechanism.DIGEST;
+                    case "JBOSS-LOCAL-USER":
+                        return AuthMechanism.LOCAL;
                 }
                 break;
             case "HTTP":
@@ -174,6 +196,44 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         }
 
         return null;
+    }
+
+    private static int compare(String nameOne, String nameTwo) {
+        return toPriority(nameTwo) - toPriority(nameOne);
+    }
+
+    private static int toPriority(String name) {
+        switch (name) {
+            case "JBOSS-LOCAL-USER":
+                return 10;
+            default:
+                return 0;
+        }
+    }
+
+    private String getAuthDir(final String path) throws StartException {
+        File authDir = new File(path, "auth");
+        if (authDir.exists()) {
+            if (!authDir.isDirectory()) {
+                throw ROOT_LOGGER.unableToCreateTempDirForAuthTokensFileExists();
+            }
+        } else if (!authDir.mkdirs()) {
+            //there is a race if multiple services are starting for the same
+            //security realm
+            if(!authDir.isDirectory()) {
+                throw ROOT_LOGGER.unableToCreateAuthDir(authDir.getAbsolutePath());
+            }
+        } else {
+            // As a precaution make perms user restricted for directories created (if the OS allows)
+            authDir.setWritable(false, false);
+            authDir.setWritable(true, true);
+            authDir.setReadable(false, false);
+            authDir.setReadable(true, true);
+            authDir.setExecutable(false, false);
+            authDir.setExecutable(true, true);
+        }
+
+        return authDir.getAbsolutePath();
     }
 
 
@@ -370,6 +430,10 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
     public InjectedSetValue<CallbackHandlerService> getCallbackHandlerService() {
         return callbackHandlerServices;
+    }
+
+    public Injector<String> getTmpDirPathInjector() {
+        return tmpDirPath;
     }
 
     public SSLContext getSSLContext() {

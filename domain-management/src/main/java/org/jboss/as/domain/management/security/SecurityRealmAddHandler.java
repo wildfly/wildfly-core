@@ -138,6 +138,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         final SecurityRealmService securityRealmService = new SecurityRealmService(realmName, mapGroupsToRoles);
         final ServiceName realmServiceName = SecurityRealm.ServiceUtil.createServiceName(realmName);
         ServiceBuilder<?> realmBuilder = serviceTarget.addService(realmServiceName, securityRealmService);
+        final ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
 
         final boolean shareLdapConnections = shareLdapConnection(context, authentication, authorization);
         ModelNode authTruststore = null;
@@ -200,6 +201,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             addSSLServices(context, ssl, authTruststore, realmName, serviceTarget, realmBuilder, securityRealmService.getSSLContextInjector());
         }
 
+        realmBuilder.addDependency(tmpDirPath, String.class, securityRealmService.getTmpDirPathInjector());
         realmBuilder.setInitialMode(Mode.ACTIVE);
         realmBuilder.install();
     }

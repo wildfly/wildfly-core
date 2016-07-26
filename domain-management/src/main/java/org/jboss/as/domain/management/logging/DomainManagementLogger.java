@@ -1236,6 +1236,14 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 134, value = "Invalid length")
     IllegalArgumentException asnInvalidLength();
 
+    // Was WFLYRMT-13
+    @Message(id = 135, value = "Unable to create tmp dir for auth tokens as file already exists.")
+    StartException unableToCreateTempDirForAuthTokensFileExists();
+
+    // Was WFLYRMT-14
+    @Message(id = 136, value = "Unable to create auth dir %s.")
+    StartException unableToCreateAuthDir(String dir);
+
     /* End X.500 exceptions */
     /**
      * Information message saying the username and password must be different.
