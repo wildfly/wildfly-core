@@ -20,9 +20,16 @@
  */
 package org.jboss.as.domain.http.server.cors;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import static io.undertow.server.handlers.ResponseCodeHandler.HANDLE_200;
+import static org.jboss.as.domain.http.server.cors.CorsHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static org.jboss.as.domain.http.server.cors.CorsHeaders.ACCESS_CONTROL_ALLOW_HEADERS;
+import static org.jboss.as.domain.http.server.cors.CorsHeaders.ACCESS_CONTROL_ALLOW_METHODS;
+import static org.jboss.as.domain.http.server.cors.CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static org.jboss.as.domain.http.server.cors.CorsHeaders.ACCESS_CONTROL_MAX_AGE;
+import static org.jboss.as.domain.http.server.cors.CorsHeaders.ACCESS_CONTROL_REQUEST_HEADERS;
+import static org.jboss.as.domain.http.server.cors.CorsHeaders.ACCESS_CONTROL_REQUEST_METHOD;
+import static org.jboss.as.domain.http.server.cors.CorsUtil.isPreflightedRequest;
+import static org.jboss.as.domain.http.server.cors.CorsUtil.matchOrigin;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -30,11 +37,9 @@ import io.undertow.util.HeaderMap;
 import io.undertow.util.HeaderValues;
 import io.undertow.util.Headers;
 import io.undertow.util.Methods;
-
-import static io.undertow.server.handlers.ResponseCodeHandler.HANDLE_200;
-import static org.jboss.as.domain.http.server.cors.CorsHeaders.*;
-import static org.jboss.as.domain.http.server.cors.CorsUtil.isPreflightedRequest;
-import static org.jboss.as.domain.http.server.cors.CorsUtil.matchOrigin;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  * Undertow handler for CORS headers.
