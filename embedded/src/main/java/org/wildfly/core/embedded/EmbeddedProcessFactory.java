@@ -54,6 +54,7 @@ public class EmbeddedProcessFactory {
     private static final String SYSPROP_KEY_MODULE_PATH = "module.path";
     private static final String SYSPROP_KEY_LOGMANAGER = "java.util.logging.manager";
     private static final String SYSPROP_KEY_JBOSS_HOME_DIR = "jboss.home.dir";
+    private static final String SYSPROP_KEY_JBOSS_PREV_HOME_DIR = "jboss.prev.home.dir";
     private static final String SYSPROP_KEY_JBOSS_MODULES_DIR = "jboss.modules.dir";
     private static final String SYSPROP_VALUE_JBOSS_LOGMANAGER = "org.jboss.logmanager.LogManager";
 
@@ -353,10 +354,13 @@ public class EmbeddedProcessFactory {
 
     private static void resetEmbeddedServerProperties(final String jbossHomeDir, final ProcessType embeddedServerType) {
         assert jbossHomeDir != null;
-        String oldJbossHomeDir = WildFlySecurityManager.getPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, null);
+        String oldJbossHomeDir = WildFlySecurityManager.getPropertyPrivileged(SYSPROP_KEY_JBOSS_PREV_HOME_DIR, null);
         String jbossBaseDir;
         boolean shouldReset = oldJbossHomeDir != null && !jbossHomeDir.equals(oldJbossHomeDir);
         WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, jbossHomeDir);
+        // store this for the next server start, if we need it. This avoids having to mess with the environment restorer, if we were
+        // started with JBOSS_HOME etc.
+        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_PREV_HOME_DIR, jbossHomeDir);
         switch (embeddedServerType) {
             case STANDALONE_SERVER:
                 jbossBaseDir = jbossHomeDir + File.separator + "standalone";
