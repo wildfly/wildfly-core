@@ -82,7 +82,6 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
         APPLY_EXTENSIONS.protect();
     }
 
-    private final Set<String> appliedExtensions = new HashSet<String>();
     private final ExtensionRegistry extensionRegistry;
     private final LocalHostControllerInfo localHostInfo;
     private final IgnoredDomainResourceRegistry ignoredResourceRegistry;
@@ -122,7 +121,7 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
             rootResource.removeChild(entry.getPathElement());
         }
         final Map<String, Resource> installedExtensions = new HashMap<>();
-
+        final Set<String> appliedExtensions = new HashSet<String>(extensionRegistry.getExtensionModuleNames());
         for (final ModelNode resourceDescription : domainModel.asList()) {
             final PathAddress resourceAddress = PathAddress.pathAddress(resourceDescription.require(ReadMasterDomainModelUtil.DOMAIN_RESOURCE_ADDRESS));
             if (ignoredResourceRegistry.isResourceExcluded(resourceAddress)) {
@@ -132,8 +131,7 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
             final Resource resource = getResource(resourceAddress, rootResource, context);
             if (resourceAddress.size() == 1 && resourceAddress.getElement(0).getKey().equals(EXTENSION)) {
                 final String module = resourceAddress.getElement(0).getValue();
-                if (!appliedExtensions.contains(module)) {
-                    appliedExtensions.add(module);
+                if (appliedExtensions.add(module)) {
                     initializeExtension(module, rootRegistration);
                     installedExtensions.put(module, resource);
                 }
@@ -179,7 +177,6 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
                 for (Map.Entry<String, Resource> entry : installedExtensions.entrySet()) {
                     String module = entry.getKey();
                     extensionRegistry.removeExtension(entry.getValue(), module, rootRegistration);
-                    appliedExtensions.remove(module);
                 }
             }
         });

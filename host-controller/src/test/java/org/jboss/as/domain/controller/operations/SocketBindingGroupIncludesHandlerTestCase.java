@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.jboss.as.controller.Cancellable;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -514,11 +515,12 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
                                     }
 
                                     @Override
-                                    public void fetchDomainWideConfiguration() {
+                                    public void register() throws IOException {
                                     }
 
                                     @Override
-                                    public void register() throws IOException {
+                                    public Cancellable pollForConnect() {
+                                        return null;
                                     }
 
                                     @Override
