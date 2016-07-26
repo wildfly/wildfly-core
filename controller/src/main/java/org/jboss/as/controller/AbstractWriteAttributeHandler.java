@@ -96,7 +96,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
 
         if (requiresRuntime(context)) {
             final ModelNode updatedValue = newValue;
-            context.addStep(new OperationStepHandler() {
+            context.addStep(operation, new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                     final ModelNode resolvedValue = attributeDefinition != null ? attributeDefinition.resolveModelAttribute(context, submodel) : updatedValue.resolve();
