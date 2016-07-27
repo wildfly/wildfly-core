@@ -37,7 +37,7 @@ public class PropertiesPatternMatchingTestCase {
         String extractedUsername = matcher.group(1);
         String extractedPassword = matcher.group(2);
 
-        assertEquals("Extraced Username", username, extractedUsername);
+        assertEquals("Extracted Username", username, extractedUsername);
         assertEquals("Extracted Password", password, extractedPassword);
     }
 

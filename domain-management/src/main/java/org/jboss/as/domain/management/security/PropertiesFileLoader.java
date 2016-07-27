@@ -233,8 +233,6 @@ public class PropertiesFileLoader {
                             writeProperty(bw, key, matcher.group(2));
                             toSave.remove(key);
                             toSave.remove(key + DISABLE_SUFFIX_KEY);
-                        } else {
-                            write(bw, line, true);
                         }
                     } else {
                         write(bw, line, true);
