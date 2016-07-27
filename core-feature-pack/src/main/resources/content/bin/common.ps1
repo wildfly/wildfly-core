@@ -34,7 +34,7 @@ $global:SECMGR = Get-Env-Boolean SECMGR $false
 $global:DEBUG_MODE=Get-Env DEBUG $false
 $global:DEBUG_PORT=Get-Env DEBUG_PORT 8787
 $global:RUN_IN_BACKGROUND=$false
-$global:GC_LOG=$false
+$global:GC_LOG=Get-Env GC_LOG $false
 #module opts that are passed to jboss modules
 $global:MODULE_OPTS = @()
 
@@ -62,7 +62,14 @@ Function String-To-Array($value) {
 }
 
 Function Display-Environment {
-$JAVA_OPTS = Get-Java-Opts
+Param(
+   [string[]]$javaOpts
+) #end param
+
+if (-Not $javaOpts){
+	$javaOpts = Get-Java-Opts
+}
+
 # Display our environment
 Write-Host "================================================================================="
 Write-Host ""
@@ -74,7 +81,7 @@ Write-Host "  JAVA: $JAVA"
 Write-Host ""
 Write-Host "  MODULE_OPTS: $MODULE_OPTS"
 Write-Host ""
-Write-Host "  JAVA_OPTS: $JAVA_OPTS"
+Write-Host "  JAVA_OPTS: $javaOpts"
 Write-Host ""
 Write-Host "================================================================================="
 Write-Host ""
@@ -127,6 +134,21 @@ Param(
   $PROG_ARGS += "-Djboss.home.dir=$JBOSS_HOME"
   $PROG_ARGS += "-Djboss.server.base.dir=$global:JBOSS_BASE_DIR"
   $PROG_ARGS += "-Djboss.server.config.dir=$global:JBOSS_CONFIG_DIR"
+
+  if ($global:GC_LOG){
+    if ($PROG_ARGS -notcontains "-verbose:gc"){
+        Rotate-GC-Logs
+        $PROG_ARGS += "-verbose:gc"
+        $PROG_ARGS += "-XX:+PrintGCDetails"
+        $PROG_ARGS += "-XX:+PrintGCDateStamps"
+        $PROG_ARGS += "-XX:+UseGCLogFileRotation"
+        $PROG_ARGS += "-XX:NumberOfGCLogFiles=5"
+        $PROG_ARGS += "-XX:GCLogFileSize=3M"
+        $PROG_ARGS += "-XX:-TraceClassUnloading"
+        $PROG_ARGS += "-Xloggc:$JBOSS_LOG_DIR\gc.log"
+    }
+  }
+  $global:FINAL_JAVA_OPTS = $PROG_ARGS
 
   $PROG_ARGS += "-jar"
   $PROG_ARGS += "$JBOSS_HOME\jboss-modules.jar"
