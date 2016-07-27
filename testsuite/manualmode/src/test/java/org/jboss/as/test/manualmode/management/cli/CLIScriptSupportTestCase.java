@@ -57,6 +57,9 @@ public class CLIScriptSupportTestCase {
 
     @Test
     public void testConnectStatus() {
+        // Replace default adrress with contextual one for the embedded server to use
+        // the right one.
+        System.setProperty("jboss.bind.address.management", TestSuiteEnvironment.getServerAddress());
 
         // Offline instance
         CLI cli = CLI.newInstance();
@@ -84,7 +87,8 @@ public class CLIScriptSupportTestCase {
                     null));
 
             // Make a valid connect
-            cli2.connect();
+            cli2.connect(TestSuiteEnvironment.getServerAddress(),
+                    TestSuiteEnvironment.getServerPort(), null, null);
             try {
                 executeCommand(cli2, "version");
             } finally {
