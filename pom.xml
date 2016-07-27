@@ -53,6 +53,7 @@
     </scm>
 
     <properties>
+	    <bogosity>total</bogosity>
         <!-- Release Info -->
         <wildfly.core.release.version>${project.version}</wildfly.core.release.version>
         <wildfly.core.release.codename>Kenny</wildfly.core.release.codename>
