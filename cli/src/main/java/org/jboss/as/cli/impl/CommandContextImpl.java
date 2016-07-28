@@ -289,6 +289,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private static JaasConfigurationWrapper jaasConfigurationWrapper; // we want this wrapper to be only created once
 
+    private final boolean echoCommand;
     /**
      * Version mode - only used when --version is called from the command line.
      *
@@ -310,6 +311,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         resolveParameterValues = config.isResolveParameterValues();
         SILENT = config.isSilent();
         ERROR_ON_INTERACT = config.isErrorOnInteract();
+        echoCommand = config.isEchoCommand();
         username = null;
         password = null;
         disableLocalAuth = false;
@@ -338,6 +340,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
         SILENT = config.isSilent();
         ERROR_ON_INTERACT = config.isErrorOnInteract();
+        echoCommand = config.isEchoCommand();
 
         resolveParameterValues = config.isResolveParameterValues();
         cliPrintStream = configuration.getConsoleOutput() == null ? new CLIPrintStream() : new CLIPrintStream(configuration.getConsoleOutput());
@@ -713,6 +716,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     }
 
     private StringBuilder lineBuffer;
+    private StringBuilder origLineBuffer;
 
     @Override
     public void handle(String line) throws CommandLineException {
@@ -726,17 +730,27 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 break;
             }
         }
+        String echoLine = line;
         if(line.charAt(i) == '\\') {
             if(lineBuffer == null) {
                 lineBuffer = new StringBuilder();
+                origLineBuffer = new StringBuilder();
             }
             lineBuffer.append(line, 0, i);
             lineBuffer.append(' ');
+            origLineBuffer.append(line, 0, i);
+            origLineBuffer.append('\n');
             return;
         } else if(lineBuffer != null) {
             lineBuffer.append(line);
+            origLineBuffer.append(line);
+            echoLine = origLineBuffer.toString();
             line = lineBuffer.toString();
             lineBuffer = null;
+        }
+
+        if (echoCommand && !INTERACT && redirection == null) {
+            printLine(getPrompt() + echoLine);
         }
 
         resetArgs(line);

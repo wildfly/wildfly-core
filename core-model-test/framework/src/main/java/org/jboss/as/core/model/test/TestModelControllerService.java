@@ -99,11 +99,13 @@ import org.jboss.as.server.RuntimeExpressionResolver;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerEnvironment.LaunchType;
 import org.jboss.as.server.ServerEnvironmentResourceDescription;
+import org.jboss.as.server.ServerEnvironmentService;
 import org.jboss.as.server.ServerPathManagerService;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.controller.resources.VersionModelInitializer;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.version.ProductConfig;
+import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -116,7 +118,7 @@ import org.jboss.msc.value.InjectedValue;
  */
 class TestModelControllerService extends ModelTestModelControllerService {
 
-    private final InjectedValue<ContentRepository> injectedContentRepository = new InjectedValue<ContentRepository>();
+    private final InjectedValue<ContentRepository> injectedContentRepository = new InjectedValue<>();
     private final TestModelType type;
     private final RunningModeControl runningModeControl;
     private final PathManagerService pathManagerService;
@@ -130,9 +132,9 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
     TestModelControllerService(ProcessType processType, RunningModeControl runningModeControl, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
             TestModelType type, ModelInitializer modelInitializer, TestDelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState, ExtensionRegistry extensionRegistry,
-            AbstractVaultReader vaultReader) {
+            AbstractVaultReader vaultReader, CapabilityRegistry capabilityRegistry) {
         super(processType, runningModeControl, null, persister, validateOpsFilter, rootResourceDefinition, processState,
-                new RuntimeExpressionResolver(vaultReader), Controller80x.INSTANCE);
+                new RuntimeExpressionResolver(vaultReader), capabilityRegistry);
         this.type = type;
         this.runningModeControl = runningModeControl;
         this.pathManagerService = type == TestModelType.STANDALONE ? new ServerPathManagerService() : new HostPathManagerService();
@@ -140,7 +142,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
         this.rootResourceDefinition = rootResourceDefinition;
         this.processState = processState;
         this.extensionRegistry = extensionRegistry;
-        this.capabilityRegistry = new CapabilityRegistry(processType.isServer()); //maybe get this as paramter?
+        this.capabilityRegistry = capabilityRegistry;
         this.vaultReader = vaultReader;
 
         if (type == TestModelType.STANDALONE) {
@@ -154,9 +156,9 @@ class TestModelControllerService extends ModelTestModelControllerService {
     }
 
     static TestModelControllerService create(ProcessType processType, RunningModeControl runningModeControl, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
-            TestModelType type, ModelInitializer modelInitializer, ExtensionRegistry extensionRegistry) {
+            TestModelType type, ModelInitializer modelInitializer, ExtensionRegistry extensionRegistry, CapabilityRegistry capabilityRegistry) {
         return new TestModelControllerService(processType, runningModeControl, persister, validateOpsFilter, type, modelInitializer,
-                new TestDelegatingResourceDefinition(type), new ControlledProcessState(true), extensionRegistry, new TestVaultReader());
+                new TestDelegatingResourceDefinition(type), new ControlledProcessState(true), extensionRegistry, new TestVaultReader(), capabilityRegistry);
     }
 
     InjectedValue<ContentRepository> getContentRepositoryInjector(){
@@ -170,29 +172,20 @@ class TestModelControllerService extends ModelTestModelControllerService {
             initializer.setRootResourceDefinitionDelegate();
         }
         super.start(context);
+        //todo super hack
+        if (type == TestModelType.STANDALONE){
+            ServerEnvironmentService.addService(((ServerInitializer)initializer).environment, context.getChildTarget());
+        }
+
     }
 
     @Override
     protected void initCoreModel(ManagementModel managementModel, Resource modelControllerResource) {
-        super.initCoreModel(managementModel, modelControllerResource);
         if (modelInitializer != null) {
             modelInitializer.populateModel(managementModel);
         }
-    }
-
-    @Override
-    protected void initCoreModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
-        //See server HttpManagementAddHandler
         System.setProperty("jboss.as.test.disable.runtime", "1");
-        if (type == TestModelType.STANDALONE) {
-            initializer.initCoreModel(rootResource, rootRegistration, modelControllerResource);
-
-        } else if (type == TestModelType.HOST){
-            initializer.initCoreModel(rootResource, rootRegistration, modelControllerResource);
-
-        } else if (type == TestModelType.DOMAIN){
-            initializer.initCoreModel(rootResource, rootRegistration, modelControllerResource);
-        }
+        initializer.initCoreModel(managementModel.getRootResource(), managementModel.getRootResourceRegistration(), modelControllerResource);
     }
 
     @Override
@@ -224,8 +217,8 @@ class TestModelControllerService extends ModelTestModelControllerService {
             throw new RuntimeException(e);
         }
         props.put(ServerEnvironment.JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
-
-        return new ServerEnvironment(null, props, new HashMap<String, String>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), null);
+        ProductConfig pc =  new ProductConfig("Test", Version.AS_VERSION, "main");
+        return new ServerEnvironment(null, props, new HashMap<String, String>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), pc);
     }
 
     private HostControllerEnvironment createHostControllerEnvironment() {

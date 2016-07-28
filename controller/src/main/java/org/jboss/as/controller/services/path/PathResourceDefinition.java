@@ -71,8 +71,8 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.READ_ONLY, ModelType.BOOLEAN, true)
                 .setDefaultValue(new ModelNode(false))
                 .setStorageRuntime()
+                .setRuntimeServiceNotRequired()
                 .build();
-
     /**
      * A path attribute definition
      */
@@ -193,6 +193,9 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
                     org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_INSTANCE, true);
             interfaces.registerOperationHandler(org.jboss.as.controller.operations.global.ReadAttributeGroupHandler.RESOLVE_DEFINITION,
                     org.jboss.as.controller.operations.global.ReadAttributeGroupHandler.RESOLVE_INSTANCE, true);
+        }
+        if( this.pathManager != null ) {
+            PathInfoHandler.registerOperation(interfaces, PathInfoHandler.Builder.of(pathManager).addAttribute(PATH_SPECIFIED, RELATIVE_TO).build());
         }
     }
 

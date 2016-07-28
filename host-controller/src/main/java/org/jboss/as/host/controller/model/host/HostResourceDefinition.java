@@ -161,11 +161,13 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             .setAllowNull(true)
             .setMinSize(1)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     public static final SimpleAttributeDefinition UUID = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.UUID, ModelType.STRING, false)
             .setValidator(new StringLengthValidator(1, true))
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     public static final SimpleAttributeDefinition ORGANIZATION_IDENTIFIER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ORGANIZATION, ModelType.STRING, true)
@@ -175,15 +177,18 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition DOMAIN_ORGANIZATION_IDENTIFIER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DOMAIN_ORGANIZATION, ModelType.STRING, true)
             .setValidator(new StringLengthValidator(1, true))
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     // the current runtime configuration state, replaces HOST_STATE
     public static final SimpleAttributeDefinition RUNTIME_CONFIGURATION_STATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RUNTIME_CONFIGURATION_STATE, ModelType.STRING)
             .setMinSize(1)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     public static final SimpleAttributeDefinition HOST_STATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST_STATE, ModelType.STRING)
             .setMinSize(1)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     public static final SimpleAttributeDefinition DIRECTORY_GROUPING = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DIRECTORY_GROUPING, ModelType.STRING, true).
             addFlag(AttributeAccess.Flag.RESTART_ALL_SERVICES).
@@ -194,6 +199,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition MASTER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MASTER, ModelType.BOOLEAN, true)
             .setDefaultValue(new ModelNode(false))
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setResourceOnly()
             .build();
 

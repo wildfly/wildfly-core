@@ -74,11 +74,13 @@ public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition 
     public static final SimpleAttributeDefinition FAILURE_COUNT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FAILURE_COUNT, ModelType.INT)
         .setAllowNull(false)
         .setStorageRuntime()
+        .setRuntimeServiceNotRequired()
         .build();
 
     public static final SimpleAttributeDefinition DISABLED_DUE_TO_FAILURE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DISABLED_DUE_TO_FAILURE, ModelType.BOOLEAN)
         .setAllowNull(false)
         .setStorageRuntime()
+        .setRuntimeServiceNotRequired()
         .build();
 
 

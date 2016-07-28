@@ -270,6 +270,12 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
                 return false;
             }
 
+            @Override
+            public boolean isUsingCachedDc() {
+                return false;
+            }
+
+
         });
 
         for (IgnoreDomainResourceTypeResource resource : ignoredResources) {

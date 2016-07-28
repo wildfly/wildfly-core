@@ -19,14 +19,16 @@ class CompilationResourceDefinition extends SimpleResourceDefinition {
     //metrics
     static SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.NAME, ModelType.STRING, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     static SimpleAttributeDefinition COMPILATION_TIME_MONITORING_SUPPORTED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COMPILATION_TIME_MONITORING_SUPPORTED, ModelType.BOOLEAN, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     static SimpleAttributeDefinition TOTAL_COMPILATION_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_COMPILATION_TIME, ModelType.LONG, true)
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .build();
     protected static final List<String> COMPILATION_READ_ATTRIBUTES = Arrays.asList(
             NAME.getName(),

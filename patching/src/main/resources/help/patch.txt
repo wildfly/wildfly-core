@@ -72,7 +72,7 @@ ACTION: info
 
     patch info
       [--host=<host>]
-      [(--patch-id=<id> [--verbose] [--patch-stream=<patch-stream-name>]) | --streams]
+      [([--patch-id=<id>] [--verbose] [--patch-stream=<patch-stream-name>]) | --streams]
       [--distribution=<target-distribution>]
       [--module-path=<modules-dir>]
       [--bundle-path=<bundles-dir>]

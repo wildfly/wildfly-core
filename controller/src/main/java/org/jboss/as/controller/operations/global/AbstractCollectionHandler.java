@@ -19,6 +19,7 @@
 package org.jboss.as.controller.operations.global;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.containsEnhancedSyntax;
 import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.extractAttributeName;
 
@@ -29,11 +30,9 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -81,28 +80,60 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
             attributeName = extractAttributeName(attributeName);
         }
         final AttributeAccess attributeAccess = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
-        if (attributeAccess == null) {
-            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
-        } else if (requiredReadWriteAccess && attributeAccess.getAccessType() != AttributeAccess.AccessType.READ_WRITE) {
-            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.attributeNotWritable(attributeName));
-        }
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
 
-        Resource resource = requiredReadWriteAccess ? context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS) : context.readResource(PathAddress.EMPTY_ADDRESS);
-        final ModelNode resourceModel = resource.getModel().clone();
-        final ModelNode model;
-        if (useEnhancedSyntax){
-            model = EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeExpression,resourceModel);
-        }else {
-            model = resourceModel.get(attributeName);
-        }
-        updateModel(context, operationModel, attributeAccess.getAttributeDefinition(),  model);
-        if (requiredReadWriteAccess) {
-            //debugf("Value '%s' for key '%s' being replaced by value '%s'.", oldValue, key, value);
-            ModelNode writeOperation = Util.createOperation(WriteAttributeHandler.DEFINITION, address);
-            writeOperation.get(NAME.getName()).set(useEnhancedSyntax?attributeExpression:attributeName);
-            writeOperation.get(ModelDescriptionConstants.VALUE).set(model);
-            context.addStep(writeOperation, WriteAttributeHandler.INSTANCE, OperationContext.Stage.MODEL, true);
+        final ModelNode readResponse = new ModelNode();
+
+        // prepare write operation
+        ModelNode writeOperation = Util.createOperation(WriteAttributeHandler.DEFINITION, address);
+        writeOperation.get(NAME.getName()).set(useEnhancedSyntax ? attributeExpression : attributeName);
+        ModelNode writeOperationValue = writeOperation.get(ModelDescriptionConstants.VALUE); // value will be set in modification step
+
+        if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
+
+            // Steps need to be performed before any other steps, so they are added in opposite order
+            // with addFirst=true parameter.
+
+            // 2. modify value and register writing step
+            context.addStep((context1, operation1) -> {
+                updateModel(context, operationModel, attributeAccess.getAttributeDefinition(), readResponse.get(RESULT));
+
+                // add write step
+                if (requiredReadWriteAccess) {
+                    writeOperationValue.set(readResponse.get(RESULT));
+                    context.addStep(writeOperation, WriteAttributeHandler.INSTANCE, OperationContext.Stage.MODEL, true);
+                }
+            }, OperationContext.Stage.MODEL, true);
+
+            // 1. read current attribute value
+            ModelNode readAttributeOperation = Util.getReadAttributeOperation(address, useEnhancedSyntax ? attributeExpression : attributeName);
+            context.addStep(readResponse, readAttributeOperation, ReadAttributeHandler.INSTANCE, OperationContext.Stage.MODEL, true);
+        } else {
+            assert attributeAccess.getStorageType() == AttributeAccess.Storage.RUNTIME;
+
+            // For Storage.RUNTIME attributes, attributes need to be registered with reader and writer step handlers,
+            // which must postpone reading / writing to RUNTIME stage (by registering new RUNTIME steps which will
+            // perform actual reading / writing).
+
+            // Steps need to be performed before any other steps, so they are added in opposite order
+            // with addFirst=true parameter.
+
+            // 3. write modified value
+            if (requiredReadWriteAccess) {
+                context.addStep(readResponse, writeOperation, WriteAttributeHandler.INSTANCE, OperationContext.Stage.MODEL, true);
+            }
+
+            // 2. modify value
+            context.addStep((context1, operation1) -> {
+                context.addStep((context2, operation2) -> {
+                    updateModel(context2, operationModel, attributeAccess.getAttributeDefinition(), readResponse.get(RESULT));
+                    writeOperationValue.set(readResponse.get(RESULT));
+                }, OperationContext.Stage.RUNTIME);
+            }, OperationContext.Stage.MODEL, true);
+
+            // 1. read current attribute value
+            ModelNode readAttributeOperation = Util.getReadAttributeOperation(address, useEnhancedSyntax ? attributeExpression : attributeName);
+            context.addStep(readResponse, readAttributeOperation, ReadAttributeHandler.INSTANCE, OperationContext.Stage.MODEL, true);
         }
     }
 

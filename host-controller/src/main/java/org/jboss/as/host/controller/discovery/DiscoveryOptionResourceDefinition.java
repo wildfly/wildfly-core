@@ -55,12 +55,14 @@ public class DiscoveryOptionResourceDefinition extends SimpleResourceDefinition 
     public static final SimpleAttributeDefinition CODE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CODE, ModelType.STRING)
         .setValidator(new StringLengthValidator(1))
         .setStorageRuntime()
+        .setRuntimeServiceNotRequired()
         .build();
 
     public static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MODULE, ModelType.STRING, true)
         .setDefaultValue(new ModelNode(DEFAULT_MODULE))
         .setValidator(new StringLengthValidator(1))
         .setStorageRuntime()
+        .setRuntimeServiceNotRequired()
         .build();
 
     public static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(ModelDescriptionConstants.PROPERTIES, true)
@@ -68,6 +70,7 @@ public class DiscoveryOptionResourceDefinition extends SimpleResourceDefinition 
         .setCorrector(MapAttributeDefinition.LIST_TO_MAP_CORRECTOR)
         .setAllowExpression(true)
         .setStorageRuntime()
+        .setRuntimeServiceNotRequired()
         .build();
 
     public static final AttributeDefinition[] DISCOVERY_ATTRIBUTES = new AttributeDefinition[] {CODE, MODULE, PROPERTIES};

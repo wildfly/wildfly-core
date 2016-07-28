@@ -34,17 +34,20 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.PatchInfo;
 import org.jboss.as.patching.PatchingException;
+import org.jboss.as.patching.VerbosePatchInfo;
 import org.jboss.as.patching.ZipUtils;
-import org.jboss.as.patching.installation.Identity;
+import org.jboss.as.patching.installation.AddOn;
 import org.jboss.as.patching.installation.InstallationManager;
 import org.jboss.as.patching.installation.InstallationManagerImpl;
 import org.jboss.as.patching.installation.InstalledIdentity;
+import org.jboss.as.patching.installation.Layer;
 import org.jboss.as.patching.installation.PatchableTarget;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.BundledPatch;
@@ -97,24 +100,19 @@ public class PatchToolImpl implements PatchTool {
     @Override
     public PatchInfo getPatchInfo(String streamName) throws PatchingException {
         try {
-            final Identity identity = streamName == null ? manager.getDefaultIdentity().getIdentity() : manager.getInstalledIdentity(streamName, null).getIdentity();
-            final PatchableTarget.TargetInfo info = identity.loadTargetInfo();
-            return new PatchInfo() {
-                @Override
-                public String getVersion() {
-                    return identity.getVersion();
-                }
-
-                @Override
-                public String getCumulativePatchID() {
-                    return info.getCumulativePatchID();
-                }
-
-                @Override
-                public List<String> getPatchIDs() {
-                    return info.getPatchIDs();
-                }
-            };
+            final InstalledIdentity installedIdentity = streamName == null ? manager.getDefaultIdentity() : manager.getInstalledIdentity(streamName, null);
+            final PatchableTarget.TargetInfo info = installedIdentity.getIdentity().loadTargetInfo();
+            final VerbosePatchInfo.Builder infoBuilder = VerbosePatchInfo.builder()
+                    .setVersion(installedIdentity.getIdentity().getVersion())
+                    .setCumulativePatchId(info.getCumulativePatchID())
+                    .setPatchIds(info.getPatchIDs());
+            for(Layer layer : installedIdentity.getLayers()) {
+                infoBuilder.addLayerInfo(layer.getName(), layer.loadTargetInfo());
+            }
+            for(AddOn addon : installedIdentity.getAddOns()) {
+                infoBuilder.addAddOnInfo(addon.getName(), addon.loadTargetInfo());
+            }
+           return infoBuilder.build();
         } catch (IOException e) {
             // why throw a rethrowException(e) ?
             throw new RuntimeException(e);

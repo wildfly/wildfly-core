@@ -64,9 +64,19 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -81,6 +91,7 @@ import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -95,9 +106,11 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @ServerSetup(ServerReload.SetupTask.class)
 @RunWith(WildflyTestRunner.class)
 public class BasicOperationsUnitTestCase {
+    private static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder().appendInstant().appendZoneId().toFormatter(Locale.ENGLISH);
+    private static final ZoneId ZONE_ID = ZoneId.of(Calendar.getInstance().getTimeZone().getID());
 
     @Inject
-    private ManagementClient managementClient;
+    private static ManagementClient managementClient;
 
     @Test
     public void testSocketBindingsWildcards() throws IOException {
@@ -124,16 +137,89 @@ public class BasicOperationsUnitTestCase {
     }
 
     @Test
-    public void testReadResourceRecursiveDepthRecursiveUndefined() throws Exception {
+    public void testPathInfo() throws IOException {
+        ModelNode address = new ModelNode();
+        address.add(SUBSYSTEM, "logging");
+        address.add("periodic-rotating-file-handler", "FILE");
+        address.protect();
+
+        ModelNode operation = new ModelNode();
+        operation.get(OP).set("resolve-path");
+        operation.get(OP_ADDR).set(address);
+
+        ModelNode result = managementClient.getControllerClient().execute(operation);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        assertTrue(result.hasDefined(RESULT));
+        Path logFile = Paths.get(Operations.readResult(result).asString());
+        Assert.assertTrue("The log file was not created.", Files.exists(logFile));
+
+        operation = new ModelNode();
+        operation.get(OP).set("path-info");
+        operation.get(OP_ADDR).set(address);
+        result = managementClient.getControllerClient().execute(operation);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        assertTrue(result.hasDefined(RESULT));
+        long size = result.get(RESULT).get("file").get("path").get("used-space").asLong();
+        BasicFileAttributes attributes = Files.getFileAttributeView(logFile, BasicFileAttributeView.class).readAttributes();
+        Assert.assertEquals("The log file has not the correct size.", attributes.size(), size);
+        Assert.assertEquals("The log file has not the last modified time.", DATE_FORMAT.format(attributes.lastModifiedTime().toInstant().atZone(ZONE_ID)), result.get(RESULT).get("file").get("path").get("last-modified").asString());
+        Assert.assertEquals("The log file has not the creation time.", DATE_FORMAT.format(attributes.creationTime().toInstant().atZone(ZONE_ID)), result.get(RESULT).get("file").get("path").get("creation-time").asString());
+
+        address = new ModelNode();
+        address.add("path", "jboss.server.base.dir");
+        address.protect();
+        operation = new ModelNode();
+        operation.get(OP).set("path-info");
+        operation.get(OP_ADDR).set(address);
+        result = managementClient.getControllerClient().execute(operation);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        assertTrue(result.hasDefined(RESULT));
+        assertTrue(Operations.readResult(result).get("path").get("used-space").asDouble() > 0.0D);
+        assertTrue(Operations.readResult(result).get("path").get("last-modified").isDefined());
+        assertTrue(Operations.readResult(result).get("path").get("creation-time").isDefined());
+        assertTrue(Operations.readResult(result).get("path").get("resolved-path").isDefined());
+
+        address = new ModelNode();
+        address.add("core-service", "server-environment");
+        address.protect();
+        operation = new ModelNode();
+        operation.get(OP).set("path-info");
+        operation.get(OP_ADDR).set(address);
+        result = managementClient.getControllerClient().execute(operation);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        assertTrue(result.hasDefined(RESULT));
+        assertTrue(Operations.readResult(result).get("content-dir").get("used-space").asDouble() == 0.0D);
+        assertTrue(Operations.readResult(result).get("content-dir").get("last-modified").isDefined());
+        assertTrue(Operations.readResult(result).get("content-dir").get("creation-time").isDefined());
+        assertTrue(Operations.readResult(result).get("content-dir").get("resolved-path").isDefined());
+        assertTrue(Operations.readResult(result).get("data-dir").get("used-space").asDouble() > 0.0D);
+        assertTrue(Operations.readResult(result).get("data-dir").get("last-modified").isDefined());
+        assertTrue(Operations.readResult(result).get("data-dir").get("creation-time").isDefined());
+        assertTrue(Operations.readResult(result).get("data-dir").get("resolved-path").isDefined());
+        assertTrue(Operations.readResult(result).get("temp-dir").get("used-space").asDouble() > 0.0D);
+        assertTrue(Operations.readResult(result).get("temp-dir").get("last-modified").isDefined());
+        assertTrue(Operations.readResult(result).get("temp-dir").get("creation-time").isDefined());
+        assertTrue(Operations.readResult(result).get("temp-dir").get("resolved-path").isDefined());
+        assertTrue(Operations.readResult(result).get("log-dir").get("used-space").asDouble() > 0.0D);
+        assertTrue(Operations.readResult(result).get("log-dir").get("last-modified").isDefined());
+        assertTrue(Operations.readResult(result).get("log-dir").get("creation-time").isDefined());
+        assertTrue(Operations.readResult(result).get("log-dir").get("resolved-path").isDefined());
+
+    }
+
+    @Test
+    public void testReadResourceRecursiveDepthRecursiveUndefined() throws IOException {
         // WFCORE-76
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_RESOURCE_OPERATION);
         operation.get(OP_ADDR).setEmptyList();
         operation.get(RECURSIVE_DEPTH).set(1);
 
-        final ModelNode result = managementClient.executeForResult(operation);
+        final ModelNode result = managementClient.getControllerClient().execute(operation);
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertTrue(result.hasDefined(RESULT));
 
-        final ModelNode logging = result.get(SUBSYSTEM, "logging");
+        final ModelNode logging = result.get(RESULT, SUBSYSTEM, "logging");
         assertTrue(logging.hasDefined("logger"));
         final ModelNode rootLogger = result.get(RESULT, SUBSYSTEM, "logging", "root-logger");
         assertFalse(rootLogger.hasDefined("ROOT"));
@@ -459,7 +545,7 @@ public class BasicOperationsUnitTestCase {
         }
     }
 
-    private int countSystemProperties() throws IOException {
+    private static int countSystemProperties() throws IOException {
         ModelNode readProperties = Operations.createOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS.toModelNode());
         readProperties.get(CHILD_TYPE).set(SYSTEM_PROPERTY);
         ModelNode response = managementClient.getControllerClient().execute(readProperties);
@@ -467,7 +553,7 @@ public class BasicOperationsUnitTestCase {
         return properties.asList().size();
     }
 
-    private void validateSystemProperty(Map<String, String> properties, String propertyName, boolean exist, int origPropCount) throws IOException, MgmtOperationException {
+    private static void validateSystemProperty(Map<String, String> properties, String propertyName, boolean exist, int origPropCount) throws IOException, MgmtOperationException {
         ModelNode readProperties = Operations.createOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS.toModelNode());
         readProperties.get(CHILD_TYPE).set(SYSTEM_PROPERTY);
         ModelNode response = managementClient.getControllerClient().execute(readProperties);

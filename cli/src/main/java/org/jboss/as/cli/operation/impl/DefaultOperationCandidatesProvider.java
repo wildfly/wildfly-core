@@ -78,6 +78,13 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
                 return buffer.length();
             }
             int result = SimpleTabCompleter.BOOLEAN.complete(ctx, buffer.substring(parsedOp.getLastChunkIndex()), cursor, candidates);
+            // Special case when the value is already complete, add a separator.
+            if (candidates.size() == 1) {
+                if (candidates.get(0).equals(buffer.substring(parsedOp.getLastChunkIndex()))) {
+                    candidates.clear();
+                    candidates.add(buffer.substring(parsedOp.getLastChunkIndex()) + ";");
+                }
+            }// No value...
             if(result < 0) {
                 return result;
             }

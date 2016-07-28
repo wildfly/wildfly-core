@@ -379,6 +379,9 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerReadWriteAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler, final OperationStepHandler writeHandler) {
         assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
+        if (!isAttributeRegistrationAllowed(definition)) {
+            return;
+        }
         final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
         AttributeAccess.Storage storage = (flags != null && flags.contains(AttributeAccess.Flag.STORAGE_RUNTIME)) ? Storage.RUNTIME : Storage.CONFIGURATION;
         AttributeAccess aa = new AttributeAccess(AccessType.READ_WRITE, storage, readHandler, writeHandler, definition, flags);
@@ -389,6 +392,9 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerReadOnlyAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler) {
         assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
+        if (!isAttributeRegistrationAllowed(definition)) {
+            return;
+        }
         final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
         AttributeAccess.Storage storage = (flags != null && flags.contains(AttributeAccess.Flag.STORAGE_RUNTIME)) ? Storage.RUNTIME : Storage.CONFIGURATION;
         AttributeAccess aa = new AttributeAccess(AccessType.READ_ONLY, storage, readHandler, null, definition, flags);
@@ -452,21 +458,27 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
         assert assertMetricValues(definition); //The real message will be in an assertion thrown by assertMetricValues
         checkPermission();
-        if (isMetricRegistrationAllowed(definition)) {
+        if (isAttributeRegistrationAllowed(definition)) {
             AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition, definition.getFlags());
             storeAttribute(definition, aa);
         }
     }
 
     /**
-     * Metrics are registered in the MMR only for normal server.
-     * Registration can also be forced if the AttributeDefinitions has the FORCE_REGISTRATION flag.
+     * Metrics and runtime attributes are always registered in the MMR only for normal server.
+     * If they are flagged with {@link AttributeAccess.Flag#STORAGE_RUNTIME} and
+     * {@link AttributeAccess.Flag#RUNTIME_SERVICE_NOT_REQUIRED}, they are registered regardless of the process type.
      */
-    private boolean isMetricRegistrationAllowed(AttributeDefinition definition) {
-        if (definition.getFlags().contains(AttributeAccess.Flag.FORCE_REGISTRATION)) {
+    private boolean isAttributeRegistrationAllowed(AttributeDefinition definition) {
+        if (processType ==  null) {
             return true;
         }
-        if (processType ==  null) {
+        boolean runtime = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME);
+        if (!runtime) {
+            return true;
+        }
+        boolean runtimeServiceNotRequired = definition.getFlags().contains(AttributeAccess.Flag.RUNTIME_SERVICE_NOT_REQUIRED);
+        if (runtimeServiceNotRequired) {
             return true;
         }
         return processType.isServer();

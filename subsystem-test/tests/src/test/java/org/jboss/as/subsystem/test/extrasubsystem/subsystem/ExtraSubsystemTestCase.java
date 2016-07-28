@@ -32,6 +32,7 @@ import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -173,7 +174,7 @@ public class ExtraSubsystemTestCase extends AbstractSubsystemTest {
         describeOp.get(OP_ADDR).set(
                 PathAddress.pathAddress(
                         PathElement.pathElement(SUBSYSTEM, DependencySubsystemExtension.SUBSYSTEM_NAME)).toModelNode());
-        ArrayList<ModelNode> allOps = new ArrayList<ModelNode>();
+        ArrayList<ModelNode> allOps = new ArrayList<>();
         allOps.addAll(checkResultAndGetContents(servicesA.executeOperation(describeOp)).asList());
         describeOp.get(OP_ADDR).set(
                 PathAddress.pathAddress(
@@ -201,10 +202,8 @@ public class ExtraSubsystemTestCase extends AbstractSubsystemTest {
         }
 
         @Override
-        public void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource,
-                ManagementResourceRegistration rootRegistration) {
+        protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
             dependency.initialize(extensionRegistry.getExtensionContext(DependencySubsystemExtension.EXTENSION_NAME, rootRegistration, ExtensionRegistryType.SLAVE));
         }
-
     }
 }

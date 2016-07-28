@@ -29,7 +29,6 @@ import org.jboss.as.cli.parsing.DefaultParsingState;
 import org.jboss.as.cli.parsing.ParserUtil;
 import org.jboss.as.cli.parsing.operation.HeaderListState;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -47,14 +46,14 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Bartosz Spyrko-Smietanko
  */
-public class DeployCompletionTest {
+public class DeployCompletionTestCase {
     private DefaultParsingState headerParsingInitialState;
     final DefaultCallbackHandler headerParsingCallback;
 
     private MockCommandContext ctx;
     private CommandCompleter cmdCompleter;
 
-    public DeployCompletionTest() throws Exception {
+    public DeployCompletionTestCase() throws Exception {
         ctx = new MockCommandContext() {
             @Override
             public boolean isDomainMode() {
@@ -100,7 +99,6 @@ public class DeployCompletionTest {
     }
 
     @Test
-    @Ignore("Will not work until WFCORE-1572 is resolved")
     public void testDontListDeprecatedIdArgumentWhenNoArgumentsAreStarted() throws Exception {
         ArrayList<String> candidates = complete("deploy --headers={rollout ");
 
@@ -124,7 +122,7 @@ public class DeployCompletionTest {
     private ArrayList<String> complete(String buffer) {
         ArrayList<String> candidates = new ArrayList<>();
 
-        cmdCompleter.complete(ctx, buffer, 0, candidates);
+        cmdCompleter.complete(ctx, buffer, buffer.length(), candidates);
         return candidates;
     }
 

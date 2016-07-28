@@ -32,6 +32,7 @@ import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -42,6 +43,7 @@ import java.util.regex.Pattern;
 
 import org.eclipse.aether.collection.DependencyCollectionException;
 import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.jboss.logging.Logger;
 import org.jboss.modules.filter.ClassFilter;
 import org.xnio.IoUtils;
 
@@ -69,7 +71,8 @@ public class ChildFirstClassLoaderBuilder {
     private final Set<Pattern> parentFirst = new LinkedHashSet<Pattern>();
     private final Set<Pattern> childFirst = new LinkedHashSet<Pattern>();
     private ClassFilter parentExclusionFilter;
-    Map<URL, Set<String>> singleClassesByUrl = new HashMap<URL, Set<String>>();
+    Map<URL, Set<String>> singleClassesByUrl = new HashMap<>();
+    private static final Logger log = Logger.getLogger(ChildFirstClassLoaderBuilder.class);
 
     public ChildFirstClassLoaderBuilder(boolean useEapRepository) {
         this.mavenUtil = MavenUtil.create(useEapRepository);
@@ -84,7 +87,7 @@ public class ChildFirstClassLoaderBuilder {
             if (!cache.exists()) {
                 throw new IllegalStateException("Could not create cache file");
             }
-            System.out.println("To optimize this test use the " + ROOT_PROPERTY + " and " + CACHE_FOLDER_PROPERTY + " system properties to take advantage of cached classpaths");
+            log.info("To optimize this test use the " + ROOT_PROPERTY + " and " + CACHE_FOLDER_PROPERTY + " system properties to take advantage of cached classpaths");
         } else if (root != null && cacheFolderName != null){
             if (cacheFolderName.indexOf('/') != -1 && cacheFolderName.indexOf('\\') != -1){
                 throw new IllegalStateException("Please use either '/' or '\\' as a file separator");
@@ -182,25 +185,25 @@ public class ChildFirstClassLoaderBuilder {
         final String name = "maven-" + escape(artifactGav);
         final File file = new File(cache, name);
         if (file.exists()) {
-            System.out.println("Using cached maven url for " + artifactGav + " from " + file.getAbsolutePath());
+            log.trace("Using cached maven url for " + artifactGav + " from " + file.getAbsolutePath());
             final ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)));
             try {
                 classloaderURLs.add((URL)in.readObject());
             } catch (Exception e) {
-                System.out.println("Error loading cached maven url for " + artifactGav + " from " + file.getAbsolutePath());
+                log.warn("Error loading cached maven url for " + artifactGav + " from " + file.getAbsolutePath());
                 throw e;
             } finally {
                 IoUtils.safeClose(in);
             }
         } else {
-            System.out.println("No cached maven url for " + artifactGav + " found. " + file.getAbsolutePath() + " does not exist.");
+            log.trace("No cached maven url for " + artifactGav + " found. " + file.getAbsolutePath() + " does not exist.");
             final URL url = mavenUtil.createMavenGavURL(artifactGav);
             classloaderURLs.add(url);
             final ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
             try {
                 out.writeObject(url);
             } catch (Exception e) {
-                System.out.println("Error writing cached maven url for " + artifactGav + " to " + file.getAbsolutePath());
+                log.warn("Error writing cached maven url for " + artifactGav + " to " + file.getAbsolutePath());
                 throw e;
             } finally {
                 IoUtils.safeClose(out);
@@ -214,25 +217,25 @@ public class ChildFirstClassLoaderBuilder {
         final String name = "maven-recursive-" + escape(artifactGav);
         final File file = new File(cache, name);
         if (file.exists()) {
-            System.out.println("Using cached recursive maven urls for " + artifactGav + " from " + file.getAbsolutePath());
+            log.trace("Using cached recursive maven urls for " + artifactGav + " from " + file.getAbsolutePath());
             final ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)));
             try {
                 classloaderURLs.addAll((List<URL>)in.readObject());
             } catch (Exception e) {
-                System.out.println("Error loading cached recursive maven urls for " + artifactGav + " from " + file.getAbsolutePath());
+                log.warn("Error loading cached recursive maven urls for " + artifactGav + " from " + file.getAbsolutePath());
                 throw e;
             } finally {
                 IoUtils.safeClose(in);
             }
         } else {
-            System.out.println("No cached recursive maven urls for " + artifactGav + " found. " + file.getAbsolutePath() + " does not exist.");
+            log.trace("No cached recursive maven urls for " + artifactGav + " found. " + file.getAbsolutePath() + " does not exist.");
             final List<URL> urls = mavenUtil.createMavenGavRecursiveURLs(artifactGav, excludes);
             classloaderURLs.addAll(urls);
             final ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
             try {
                 out.writeObject(urls);
             } catch (Exception e) {
-                System.out.println("Error writing cached recursive maven urls for " + artifactGav + " to " + file.getAbsolutePath());
+                log.warn("Error writing cached recursive maven urls for " + artifactGav + " to " + file.getAbsolutePath());
                 throw e;
             } finally {
                 IoUtils.safeClose(out);
@@ -261,7 +264,7 @@ public class ChildFirstClassLoaderBuilder {
         return artifactGav.replaceAll(":", "-x-");
     }
 
-    public ClassLoader build() {
+    public URLClassLoader build() {
         //Put the singleClassesByUrl classes into classloaderURLs
         for (Map.Entry<URL, Set<String>> entry : singleClassesByUrl.entrySet()) {
             if (classloaderURLs.contains(entry.getKey())) {
@@ -289,7 +292,6 @@ public class ChildFirstClassLoaderBuilder {
                 throw new IllegalStateException(e);
             }
         }
-
         ClassLoader parent = this.getClass().getClassLoader() != null ? this.getClass().getClassLoader() : null;
         return new ChildFirstClassLoader(parent, parentFirst, childFirst, parentExclusionFilter, classloaderURLs.toArray(new URL[classloaderURLs.size()]));
     }

@@ -169,8 +169,25 @@ public class WriteAttributeHandler implements OperationStepHandler {
 
     private void doExecuteInternal(OperationContext context, ModelNode operation, AttributeAccess attributeAccess, String attributeName, ModelNode currentValue, boolean useEnhancedSyntax, String attributeExpression) throws OperationFailedException {
         if (useEnhancedSyntax){
-            operation = getEnhancedSyntaxResolvedOperation(operation, currentValue, attributeName, attributeExpression);
+            if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
+                operation = getEnhancedSyntaxResolvedOperation(operation, currentValue, attributeName, attributeExpression);
+            } else {
+                assert attributeAccess.getStorageType() == AttributeAccess.Storage.RUNTIME;
+
+                // Resolution must be postponed to RUNTIME stage for Storage.RUNTIME attributes.
+
+                final ModelNode originalOperation = operation; // final vars so they can be accessed from lambda
+                final ModelNode resolvedOperation = operation.clone();
+                operation = resolvedOperation;
+
+                context.addStep((context1, operation1) -> {
+                    ModelNode resolved = getEnhancedSyntaxResolvedOperation(originalOperation, currentValue, attributeName, attributeExpression);
+                    resolvedOperation.get(ModelDescriptionConstants.NAME).set(resolved.get(ModelDescriptionConstants.NAME));
+                    resolvedOperation.get(ModelDescriptionConstants.VALUE).set(resolved.get(ModelDescriptionConstants.VALUE));
+                }, OperationContext.Stage.RUNTIME);
+            }
         }
+
         OperationStepHandler writeHandler = attributeAccess.getWriteHandler();
         ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(writeHandler.getClass());
         try {

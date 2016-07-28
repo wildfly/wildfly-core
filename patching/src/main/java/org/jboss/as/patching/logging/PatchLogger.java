@@ -37,6 +37,7 @@ import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.validation.PatchingArtifact;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
@@ -245,4 +246,8 @@ public interface PatchLogger extends BasicLogger {
 
     @Message(id = 49, value = "Some backup files were not removed.")
     IOException failedToDeleteBackup();
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 50, value = "%s cumulative patch ID is: %s, one-off patches include: %s")
+    void logPatchingInfo(String identityName, String cp, String patches);
 }

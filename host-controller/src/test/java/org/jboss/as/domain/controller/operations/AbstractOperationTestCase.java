@@ -170,6 +170,12 @@ public abstract class AbstractOperationTestCase {
         public boolean isBackupDc() {
             return false;
         }
+
+        @Override
+        public boolean isUsingCachedDc() {
+            return false;
+        }
+
     };
 
     MockOperationContext getOperationContext() {

@@ -38,7 +38,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelType;
 
@@ -51,19 +50,26 @@ public class ExtensionSubsystemResourceDefinition extends SimpleResourceDefiniti
     public static final ListAttributeDefinition XML_NAMESPACES = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.XML_NAMESPACES)
             .setAllowNull(false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setElementValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, false))
             .build();
 
     public static final SimpleAttributeDefinition MAJOR_VERSION = new SimpleAttributeDefinitionBuilder(MANAGEMENT_MAJOR_VERSION, ModelType.INT, true)
-            .setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .build();
 
     public static final SimpleAttributeDefinition MINOR_VERSION = new SimpleAttributeDefinitionBuilder(MANAGEMENT_MINOR_VERSION, ModelType.INT, true)
             .setValidator(new IntRangeValidator(0, Integer.MAX_VALUE, true, false))
-            .setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .build();
 
     public static final SimpleAttributeDefinition MICRO_VERSION = new SimpleAttributeDefinitionBuilder(MANAGEMENT_MICRO_VERSION, ModelType.INT, true)
             .setValidator(new IntRangeValidator(0, Integer.MAX_VALUE, true, false))
-            .setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .build();
 
     ExtensionSubsystemResourceDefinition() {
         super(new Parameters(PathElement.pathElement(SUBSYSTEM), ControllerResolver.getResolver(EXTENSION, SUBSYSTEM)).setRuntime());

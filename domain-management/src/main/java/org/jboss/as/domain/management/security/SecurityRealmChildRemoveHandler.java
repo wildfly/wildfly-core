@@ -42,6 +42,9 @@ public class SecurityRealmChildRemoveHandler extends SecurityRealmParentRestartH
 
     @Override
     protected void updateModel(OperationContext context, ModelNode operation) throws OperationFailedException {
+        // verify that the resource exist before removing it
+        context.readResource(PathAddress.EMPTY_ADDRESS, false);
+
         context.removeResource(PathAddress.EMPTY_ADDRESS);
 
         if (validateAuthentication && !context.isBooting()) {

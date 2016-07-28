@@ -45,7 +45,7 @@ public class DeploymentAddHandlerTestCase {
         final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository, null);
         final ModelNode operation = new ModelNode();
         //operation.get("address").setEmptyList().get(0).get("deployment").set("test.war");
-        operation.get("address").get(0).setExpression("deployment", "test.war");
+        operation.get("address").get(0).set("deployment", "test.war");
         operation.get("content").get(0).get("archive").set(true);
         operation.get("content").get(0).get("path").set("test.war");
         operation.get("content").add("muck");
