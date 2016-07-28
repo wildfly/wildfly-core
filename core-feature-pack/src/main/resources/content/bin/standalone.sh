@@ -7,7 +7,7 @@
 # By default debug mode is disabled.
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
-GC_LOG="${GC_LOG:-false}"
+GC_LOG="$GC_LOG"
 SERVER_OPTS=""
 while [ "$#" -gt 0 ]
 do
