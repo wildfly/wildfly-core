@@ -38,6 +38,7 @@ import io.undertow.util.HexConverter;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
@@ -66,6 +67,7 @@ import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.password.interfaces.DigestPassword;
+import org.wildfly.security.util.ByteIterator;
 
 /**
  * {@link IdentityManager} implementation to wrap the current security realms.
@@ -231,7 +233,7 @@ public class RealmIdentityManager implements IdentityManager {
         } else {
             org.wildfly.security.credential.PasswordCredential passwordCredential = (org.wildfly.security.credential.PasswordCredential) (((CredentialCallback)callbacks[2]).getCredential());
             DigestPassword digestPassword = passwordCredential.getPassword(DigestPassword.class);
-            ha1 = digestPassword.getDigest();
+            ha1 = ByteIterator.ofBytes(digestPassword.getDigest()).hexEncode().drainToString().getBytes(StandardCharsets.US_ASCII);
         }
 
         try {
