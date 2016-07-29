@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.management.MBeanServerConnection;
 import javax.swing.ImageIcon;
 import javax.swing.JInternalFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
@@ -62,6 +63,7 @@ import com.sun.tools.jconsole.JConsolePlugin;
  */
 public class JConsoleCLIPlugin extends JConsolePlugin {
 
+    private static final String MSG_CANNOT_ESTABLISH_CONNECTION = "Cannot establish a remote connection to the application server";
     private static final int DEFAULT_MAX_THREADS = 6;
     private static final String LABEL = "WildFly CLI";
 
@@ -118,7 +120,11 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
 
         if (mbeanServerConn instanceof RemotingMBeanServerConnection) {
             final CommandContext cmdCtx = CommandContextFactory.getInstance().newCommandContext();
-            isConnected = connectUsingRemoting(cmdCtx, (RemotingMBeanServerConnection)mbeanServerConn);
+            if(connectUsingRemoting(cmdCtx, (RemotingMBeanServerConnection)mbeanServerConn)) {
+                 init(cmdCtx);
+            } else {
+                 JOptionPane.showInternalMessageDialog(jconsolePanel, MSG_CANNOT_ESTABLISH_CONNECTION);
+            }
         } else {
             //show dialog
             dialog.start();
