@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deployment.service;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -50,13 +52,18 @@ public class ServiceActivatorProcessor implements DeploymentUnitProcessor {
      */
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
+        final DeploymentUnit parentDeploymentUnit = deploymentUnit.getParent()==null?deploymentUnit:deploymentUnit.getParent();
         final ServicesAttachment servicesAttachment = deploymentUnit.getAttachment(Attachments.SERVICES);
+        Set<String> serviceActivatorAttachment = parentDeploymentUnit.getAttachment(Attachments.DEPLOYMENT_SERVICE_ACTIVATORS);
         if(servicesAttachment == null || servicesAttachment.getServiceImplementations(ServiceActivator.class.getName()).isEmpty())
             return; // Skip it if it has not been marked
 
         final Module module = deploymentUnit.getAttachment(Attachments.MODULE);
         if (module == null)
             return; // Skip deployments with no module
+
+        if (serviceActivatorAttachment == null)
+            serviceActivatorAttachment = new HashSet<String>();
 
         ServiceRegistry serviceRegistry = phaseContext.getServiceRegistry();
         if(WildFlySecurityManager.isChecking()) {
@@ -66,16 +73,20 @@ public class ServiceActivatorProcessor implements DeploymentUnitProcessor {
         }
         final ServiceActivatorContext serviceActivatorContext = new ServiceActivatorContextImpl(phaseContext.getServiceTarget(), serviceRegistry);
 
-        final ClassLoader current = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+        final ClassLoader current  = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
         try {
             WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(module.getClassLoader());
-            for (ServiceActivator serviceActivator : module.loadService(ServiceActivator.class)) {
+            for(ServiceActivator serviceActivator : module.loadService(ServiceActivator.class)) {
                 try {
-                    serviceActivator.activate(serviceActivatorContext);
+                    if(!serviceActivatorAttachment.contains(serviceActivator.getClass().toString())) {
+                        serviceActivator.activate(serviceActivatorContext);
+                        serviceActivatorAttachment.add(serviceActivator.getClass().toString());
+                    }
                 } catch (ServiceRegistryException e) {
-                    throw new DeploymentUnitProcessingException(e);
+                     throw new DeploymentUnitProcessingException(e);
                 }
             }
+            parentDeploymentUnit.putAttachment(Attachments.DEPLOYMENT_SERVICE_ACTIVATORS, serviceActivatorAttachment);
         } finally {
             WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(current);
         }
