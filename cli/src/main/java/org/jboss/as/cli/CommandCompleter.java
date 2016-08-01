@@ -109,7 +109,7 @@ public class CommandCompleter implements CommandLineCompleter {
         } catch(CommandSubstitutionException e) {
             final String cmd = e.getExpression();
             if(buffer.endsWith(cmd)) {
-                int i = doComplete(ctx, cmd, 0, candidates);
+                int i = doComplete(ctx, cmd, cmd.length(), candidates);
                 if(i < 0) {
                     return -1;
                 }

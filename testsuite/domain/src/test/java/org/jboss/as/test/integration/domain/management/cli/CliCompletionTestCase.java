@@ -67,7 +67,7 @@ public class CliCompletionTestCase {
                 String cmd = ":read-resource(";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("recursive"));
                 assertTrue(candidates.toString(), candidates.contains("recursive-depth"));
             }
@@ -76,7 +76,7 @@ public class CliCompletionTestCase {
                 String cmd = ":read-resource(recursive";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains(","));
                 assertTrue(candidates.toString(), candidates.contains(")"));
                 assertTrue(candidates.toString(), candidates.contains("=false"));
@@ -87,7 +87,7 @@ public class CliCompletionTestCase {
                 String cmd = ":read-resource(recursive,";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("recursive-depth"));
             }
 
@@ -95,7 +95,7 @@ public class CliCompletionTestCase {
                 String cmd = ":reload-servers(blocking";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("=false"));
                 assertTrue(candidates.toString(), candidates.contains(")"));
                 assertFalse(candidates.toString(), candidates.contains(","));
@@ -117,7 +117,7 @@ public class CliCompletionTestCase {
                 String cmd = " ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.isEmpty());
                 assertFalse(candidates.toString(), candidates.contains(Util.NOT_OPERATOR));
             }
@@ -126,7 +126,7 @@ public class CliCompletionTestCase {
                 String cmd = ":read-resource(";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("recursive"));
                 assertTrue(candidates.toString(), candidates.contains("recursive-depth"));
                 assertTrue(candidates.toString(), candidates.contains(Util.NOT_OPERATOR));
@@ -136,7 +136,7 @@ public class CliCompletionTestCase {
                 String cmd = ":read-resource(" + Util.NOT_OPERATOR;
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("recursive"));
                 assertFalse(candidates.toString(), candidates.contains("recursive-depth"));
             }
@@ -145,7 +145,7 @@ public class CliCompletionTestCase {
                 String cmd = ":read-resource(" + Util.NOT_OPERATOR + "recursive";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains(","));
                 assertTrue(candidates.toString(), candidates.contains(")"));
@@ -155,7 +155,7 @@ public class CliCompletionTestCase {
                 String cmd = ":read-resource(" + Util.NOT_OPERATOR + "recursive," + Util.NOT_OPERATOR + "resolve-expressions,";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.contains("recursive"));
             }
 
@@ -163,7 +163,7 @@ public class CliCompletionTestCase {
                 String cmd = ":reload-servers(" + Util.NOT_OPERATOR + "blocking";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains(")"));
             }
@@ -183,7 +183,7 @@ public class CliCompletionTestCase {
                 String cmd = ":reload-servers(blocking){rollout main-server-group(";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 4);
                 assertTrue(candidates.toString(), candidates.contains("rolling-to-servers"));
                 assertTrue(candidates.toString(), candidates.contains("max-failed-servers"));
@@ -195,7 +195,7 @@ public class CliCompletionTestCase {
                 String cmd = ":reload-servers(blocking){rollout main-server-group(rolling-to-servers";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains(","));
                 assertTrue(candidates.toString(), candidates.contains("=false"));
@@ -205,7 +205,7 @@ public class CliCompletionTestCase {
                 String cmd = ":reload-servers(blocking){rollout main-server-group(rolling-to-servers,";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("max-failed-servers"));
                 assertTrue(candidates.toString(), candidates.contains("max-failure-percentage"));
@@ -215,7 +215,7 @@ public class CliCompletionTestCase {
                 String cmd = ":reload-servers(blocking){rollout main-server-group(rolling-to-servers,max-failed-servers=1,max-failure-percentage=2";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains(")"));
             }
@@ -224,7 +224,7 @@ public class CliCompletionTestCase {
                 String cmd = ":reload-servers(blocking){rollout main-server-group(max-failed-servers=1,max-failure-percentage=2,rolling-to-servers";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("=false"));
                 assertTrue(candidates.toString(), candidates.contains(")"));
@@ -234,7 +234,7 @@ public class CliCompletionTestCase {
                 String cmd = ":reload-servers(blocking){rollout main-server-group(" + Util.NOT_OPERATOR;
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("rolling-to-servers"));
             }
@@ -243,7 +243,7 @@ public class CliCompletionTestCase {
                 String cmd = ":reload-servers(blocking){rollout main-server-group(" + Util.NOT_OPERATOR + "rolling-to-servers";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("rolling-to-servers,"));
             }
@@ -252,7 +252,7 @@ public class CliCompletionTestCase {
                 String cmd = ":reload-servers(blocking){rollout main-server-group(max-failed-servers=1,max-failure-percentage=2," + Util.NOT_OPERATOR + "rolling-to-servers";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains(")"));
                 assertTrue(candidates.toString(), candidates.contains("=false"));
@@ -274,7 +274,7 @@ public class CliCompletionTestCase {
                 String cmd = "batch --file";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.isEmpty());
                 assertTrue(candidates.toString(), candidates.contains("--file="));
             }
@@ -283,7 +283,7 @@ public class CliCompletionTestCase {
                 String cmd = "cd --no-validation";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--no-validation "));
             }
@@ -292,7 +292,7 @@ public class CliCompletionTestCase {
                 String cmd = "clear";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("clear"));
             }
@@ -301,7 +301,7 @@ public class CliCompletionTestCase {
                 String cmd = "clear ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--help"));
             }
@@ -310,7 +310,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-operation --node";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--node="));
             }
@@ -319,7 +319,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-operation --node=toto";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -327,7 +327,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-operation --headers";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--headers="));
             }
@@ -336,7 +336,7 @@ public class CliCompletionTestCase {
                 String cmd = "ls --resolve-expressions";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--resolve-expressions "));
             }
@@ -345,7 +345,7 @@ public class CliCompletionTestCase {
                 String cmd = "ls -";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("--help"));
             }
 
@@ -353,7 +353,7 @@ public class CliCompletionTestCase {
                 String cmd = "ls --resolve-expressions";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.contains("--help"));
             }
 
@@ -361,7 +361,7 @@ public class CliCompletionTestCase {
                 String cmd = "reload ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.isEmpty());
                 assertFalse(candidates.toString(), candidates.contains(Util.NOT_OPERATOR));
             }
@@ -372,7 +372,7 @@ public class CliCompletionTestCase {
                 String cmd = "reload " + Util.NOT_OPERATOR;
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -380,7 +380,7 @@ public class CliCompletionTestCase {
                 String cmd = "reload --admin-only";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--admin-only="));
             }
@@ -389,7 +389,7 @@ public class CliCompletionTestCase {
                 String cmd = "reload --admin-only=";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("true"));
                 assertTrue(candidates.toString(), candidates.contains("false"));
@@ -399,7 +399,7 @@ public class CliCompletionTestCase {
                 String cmd = "reload --admin-only=true --server-config=jss --use-current-server-config=true --headers={";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.isEmpty());
             }
 
@@ -418,7 +418,7 @@ public class CliCompletionTestCase {
                 String cmd = "batch -l";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -426,7 +426,7 @@ public class CliCompletionTestCase {
                 String cmd = "batch --file";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--file="));
             }
@@ -435,7 +435,7 @@ public class CliCompletionTestCase {
                 String cmd = "undeploy -l";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -443,7 +443,7 @@ public class CliCompletionTestCase {
                 String cmd = "history --disable";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -451,7 +451,7 @@ public class CliCompletionTestCase {
                 String cmd = "history --clear";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -459,7 +459,7 @@ public class CliCompletionTestCase {
                 String cmd = "history --enable";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -467,7 +467,7 @@ public class CliCompletionTestCase {
                 String cmd = "history --disable --cl";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -475,7 +475,7 @@ public class CliCompletionTestCase {
                 String cmd = "deploy -l";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -483,7 +483,7 @@ public class CliCompletionTestCase {
                 String cmd = "undeploy -l";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -502,7 +502,7 @@ public class CliCompletionTestCase {
                 String cmd = "command add --node-type=/subsystem=logging/logger ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("--command-name"));
                 assertTrue(candidates.toString(), candidates.contains("--property-id"));
@@ -512,7 +512,7 @@ public class CliCompletionTestCase {
                 String cmd = "command add --node-type=/subsystem=logging/logger --command-name";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--command-name="));
             }
@@ -521,7 +521,7 @@ public class CliCompletionTestCase {
                 String cmd = "command add --node-type=/subsystem=logging/logger --command-name=";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("logger"));
             }
@@ -530,7 +530,7 @@ public class CliCompletionTestCase {
                 String cmd = "command add --node-type=/subsystem=logging/logger --command-name=logger";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains(" "));
             }
@@ -539,7 +539,7 @@ public class CliCompletionTestCase {
                 String cmd = "command add --node-type=/subsystem=logging/logger --command-name=logger ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--property-id"));
             }
@@ -548,7 +548,7 @@ public class CliCompletionTestCase {
                 String cmd = "command add --node-type=/subsystem=logging/logger --command-name=logger --property-id";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--property-id="));
             }
@@ -559,7 +559,7 @@ public class CliCompletionTestCase {
                 String cmd = "prop ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("--name"));
                 assertTrue(candidates.toString(), candidates.contains("add"));
             }
@@ -568,7 +568,7 @@ public class CliCompletionTestCase {
                 String cmd = "prop add ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("--name"));
             }
 
@@ -576,7 +576,7 @@ public class CliCompletionTestCase {
                 String cmd = "prop add --name";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("--name="));
             }
 
@@ -584,7 +584,7 @@ public class CliCompletionTestCase {
                 String cmd = "prop add --name=toto ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("--value"));
             }
 
@@ -592,7 +592,7 @@ public class CliCompletionTestCase {
                 String cmd = "prop add --name=toto --value";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("--value="));
             }
 
@@ -600,7 +600,7 @@ public class CliCompletionTestCase {
                 String cmd = "deploy ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.contains("--url"));
                 assertTrue(candidates.toString(), candidates.contains("--name"));
             }
@@ -609,7 +609,7 @@ public class CliCompletionTestCase {
                 String cmd = "deploy ccc ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.contains("--url"));
                 assertTrue(candidates.toString(), candidates.contains("--name"));
             }
@@ -618,7 +618,7 @@ public class CliCompletionTestCase {
                 String cmd = "deploy --name=ccc ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.contains("--url"));
                 assertFalse(candidates.toString(), candidates.contains("--name"));
             }
@@ -627,7 +627,7 @@ public class CliCompletionTestCase {
                 String cmd = "rollout-plan ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.contains("--commands"));
                 assertFalse(candidates.toString(), candidates.contains("--properties"));
             }
@@ -636,7 +636,7 @@ public class CliCompletionTestCase {
                 String cmd = "rollout-plan --help ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("--commands"));
                 assertTrue(candidates.toString(), candidates.contains("--properties"));
@@ -646,7 +646,7 @@ public class CliCompletionTestCase {
                 String cmd = "rollout-plan --name=csac ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--content"));
             }
@@ -655,7 +655,7 @@ public class CliCompletionTestCase {
                 String cmd = "rollout-plan csac ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("--name"));
                 assertTrue(candidates.toString(), candidates.contains("--help"));
@@ -665,7 +665,7 @@ public class CliCompletionTestCase {
                 String cmd = "run-batch --verbose";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--verbose "));
             }
@@ -676,7 +676,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-attribute " + Util.NOT_OPERATOR;
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -684,7 +684,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-attribute --node";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--node="));
             }
@@ -693,7 +693,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-attribute --node=. ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() > 1);
                 assertTrue(candidates.toString(), candidates.contains("name"));
             }
@@ -702,7 +702,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-attribute --verbose";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--verbose "));
             }
@@ -711,7 +711,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-attribute na";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("name"));
                 assertTrue(candidates.toString(), candidates.contains("namespaces"));
@@ -721,7 +721,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-attribute name";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("namespaces"));
             }
@@ -730,7 +730,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-attribute name=";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -738,7 +738,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-operation --node";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--node="));
             }
@@ -747,7 +747,7 @@ public class CliCompletionTestCase {
                 String cmd = "read-operation --node=. ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() > 1);
                 assertTrue(candidates.toString(), candidates.contains("read-resource"));
             }
@@ -756,7 +756,7 @@ public class CliCompletionTestCase {
                 String cmd = "reload --admin-only";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--admin-only="));
             }
@@ -765,7 +765,7 @@ public class CliCompletionTestCase {
                 String cmd = "reload --admin-only=";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains(Util.TRUE));
                 assertTrue(candidates.toString(), candidates.contains(Util.FALSE));
@@ -775,7 +775,7 @@ public class CliCompletionTestCase {
                 String cmd = "set toto ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
 
@@ -783,7 +783,7 @@ public class CliCompletionTestCase {
                 String cmd = "unset toto ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
             }
         } finally {
@@ -801,7 +801,7 @@ public class CliCompletionTestCase {
                 String cmd = "deployment-overlay ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.isEmpty());
                 assertFalse(candidates.toString(), candidates.contains("--name"));
             }
@@ -810,7 +810,7 @@ public class CliCompletionTestCase {
                 String cmd = "deployment-overlay add ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("--name"));
                 assertTrue(candidates.toString(), candidates.contains("--headers"));
@@ -820,7 +820,7 @@ public class CliCompletionTestCase {
                 String cmd = "deployment-overlay add --name=toto ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.isEmpty());
                 assertTrue(candidates.toString(), candidates.contains("--content"));
             }
@@ -829,7 +829,7 @@ public class CliCompletionTestCase {
                 String cmd = "deployment-overlay remove ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("--name"));
                 assertTrue(candidates.toString(), candidates.contains("--headers"));
@@ -839,7 +839,7 @@ public class CliCompletionTestCase {
                 String cmd = "deployment-overlay remove --name=toto ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.isEmpty());
                 assertTrue(candidates.toString(), candidates.contains("--content"));
             }
@@ -848,7 +848,7 @@ public class CliCompletionTestCase {
                 String cmd = "deployment-overlay link --name=toto ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.isEmpty());
                 assertFalse(candidates.toString(), candidates.contains("--content"));
             }
@@ -857,7 +857,7 @@ public class CliCompletionTestCase {
                 String cmd = "deployment-overlay redeploy-affected ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertFalse(candidates.toString(), candidates.isEmpty());
                 assertTrue(candidates.toString(), candidates.contains("--name"));
             }
@@ -866,7 +866,7 @@ public class CliCompletionTestCase {
                 String cmd = "deployment-overlay redeploy-affected --name=toto ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 1);
                 assertTrue(candidates.toString(), candidates.contains("--headers"));
             }
@@ -875,7 +875,7 @@ public class CliCompletionTestCase {
                 String cmd = "deployment-overlay list-content --name=toto ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() == 2);
                 assertTrue(candidates.toString(), candidates.contains("--headers"));
                 assertTrue(candidates.toString(), candidates.contains("-l"));
@@ -885,7 +885,7 @@ public class CliCompletionTestCase {
                 String cmd = "deployment-overlay list-links --name=toto ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length() - 1, candidates);
+                        cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() >= 2);
                 assertTrue(candidates.toString(), candidates.contains("--headers"));
                 assertTrue(candidates.toString(), candidates.contains("-l"));
@@ -910,7 +910,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("allow-resource-service-restart", "blocking-timeout", "rollback-on-runtime-failure", "rollout"), candidates);
         }
 
@@ -918,7 +918,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{  ";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("allow-resource-service-restart", "blocking-timeout", "rollback-on-runtime-failure", "rollout"), candidates);
         }
 
@@ -926,7 +926,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{al";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("allow-resource-service-restart"), candidates);
         }
 
@@ -934,7 +934,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("="), candidates);
         }
 
@@ -942,7 +942,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("false", "true"), candidates);
         }
 
@@ -950,7 +950,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=t";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("true"), candidates);
         }
 
@@ -958,7 +958,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("true;"), candidates);
         }
 
@@ -966,7 +966,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("blocking-timeout", "rollback-on-runtime-failure", "rollout"), candidates);
         }
 
@@ -974,7 +974,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("rollback-on-runtime-failure"), candidates);
         }
 
@@ -982,7 +982,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("="), candidates);
         }
 
@@ -990,7 +990,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("false", "true"), candidates);
         }
 
@@ -998,7 +998,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=f";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("false"), candidates);
         }
 
@@ -1006,7 +1006,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("false;"), candidates);
         }
 
@@ -1014,7 +1014,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("blocking-timeout", "rollout"), candidates);
         }
 
@@ -1022,7 +1022,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;b";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("blocking-timeout"), candidates);
         }
 
@@ -1030,7 +1030,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;blocking-timeout";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("="), candidates);
         }
 
@@ -1038,7 +1038,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;blocking-timeout=";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList(), candidates);
         }
 
@@ -1046,7 +1046,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;blocking-timeout=14";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList(), candidates);
         }
 
@@ -1054,7 +1054,7 @@ public class CliCompletionTestCase {
             String cmd = radical + "{allow-resource-service-restart=true;rollback-on-runtime-failure=false;blocking-timeout=14;";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertEquals(Arrays.asList("rollout"), candidates);
         }
     }
@@ -1068,7 +1068,7 @@ public class CliCompletionTestCase {
             String cmd = "ls ";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertFalse(candidates.toString(), candidates.isEmpty());
             assertFalse(candidates.toString(), candidates.contains("--storage"));
         }
@@ -1077,13 +1077,57 @@ public class CliCompletionTestCase {
             String cmd = "ls -l ";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length() - 1, candidates);
+                    cmd.length(), candidates);
             assertFalse(candidates.toString(), candidates.isEmpty());
             assertTrue(candidates.toString(), candidates.contains("--storage"));
             assertTrue(candidates.toString(), candidates.contains("--max"));
             assertTrue(candidates.toString(), candidates.contains("--min"));
             assertTrue(candidates.toString(), candidates.contains("--description"));
             assertTrue(candidates.toString(), candidates.contains("--nillable"));
+        }
+    }
+
+    @Test
+    public void testCommandsCompletion3() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        try {
+            {
+                String cmd = "echo-dmr /serv";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("server-group="));
+            }
+            {
+                String cmd = "if (true) of /serv";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("server-group="));
+            }
+            {
+                ctx.handle("batch");
+                ctx.handle(":read-resource()");
+                try {
+                    String cmd = "edit-batch-line 1 /serv";
+                    List<String> candidates = new ArrayList<>();
+                    ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertTrue(candidates.toString(), candidates.size() == 1);
+                    assertTrue(candidates.toString(), candidates.contains("server-group="));
+                } finally {
+                    if (ctx.isBatchMode()) {
+                        ctx.handle("discard-batch");
+                    }
+                }
+            }
+
+        } finally {
+            ctx.terminateSession();
         }
     }
 }

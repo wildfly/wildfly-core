@@ -90,7 +90,7 @@ public class BatchEditLineHandler extends CommandHandlerWithHelp {
                         cmd = originalLine.substring(cmdStart);
                     }
 
-                    int cmdResult = ctx.getDefaultCommandCompleter().complete(ctx, cmd, 0, candidates);
+                    int cmdResult = ctx.getDefaultCommandCompleter().complete(ctx, cmd, cmd.length(), candidates);
                     if(cmdResult < 0) {
                         return cmdResult;
                     }
