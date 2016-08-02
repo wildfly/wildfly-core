@@ -63,6 +63,7 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.CanonicalPathHandler;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
 import io.undertow.server.handlers.PathHandler;
+import io.undertow.server.handlers.SetHeaderHandler;
 import io.undertow.server.handlers.cache.CacheHandler;
 import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
@@ -240,10 +241,6 @@ public class ManagementHttpServer {
         }
 
         ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(consoleHandler);
-        HttpHandler domainApiHandler = InExecutorHandler.wrap(
-                managementExecutor,
-                new DomainApiCheckHandler(modelController, controlledProcessStateService, allowedOrigins)
-        );
         pathHandler.addPrefixPath("/", rootConsoleRedirectHandler);
         if (consoleHandler != null) {
             HttpHandler readinessHandler = new RedirectReadinessHandler(securityRealm, consoleHandler.getHandler(),
@@ -251,12 +248,17 @@ public class ManagementHttpServer {
             pathHandler.addPrefixPath(consoleHandler.getContext(), readinessHandler);
         }
 
-        HttpHandler readinessHandler = new DmrFailureReadinessHandler(securityRealm, secureDomainAccess(domainApiHandler, securityRealm), ErrorContextHandler.ERROR_CONTEXT);
+        HttpHandler domainApiHandler = InExecutorHandler.wrap(
+                managementExecutor,
+                new DomainApiCheckHandler(modelController, controlledProcessStateService, allowedOrigins)
+        );
+        HttpHandler readinessHandler = wrapXFrameOptions(new DmrFailureReadinessHandler(securityRealm,
+                secureDomainAccess(domainApiHandler, securityRealm), ErrorContextHandler.ERROR_CONTEXT));
         pathHandler.addPrefixPath(DomainApiCheckHandler.PATH, readinessHandler);
         pathHandler.addExactPath("management-upload", readinessHandler);
 
         if (securityRealm != null) {
-            pathHandler.addPrefixPath(LogoutHandler.PATH, new LogoutHandler(securityRealm.getName()));
+            pathHandler.addPrefixPath(LogoutHandler.PATH, wrapXFrameOptions(new LogoutHandler(securityRealm.getName())));
         }
     }
 
@@ -315,6 +317,10 @@ public class ManagementHttpServer {
 
     private static AuthenticationMechanism wrap(final AuthenticationMechanism toWrap, final AuthMechanism mechanism) {
         return new AuthenticationMechanismWrapper(toWrap, mechanism);
+    }
+
+    private static HttpHandler wrapXFrameOptions(final HttpHandler toWrap) {
+        return new SetHeaderHandler(toWrap, "X-Frame-Options", "SAMEORIGIN");
     }
 
     /**
