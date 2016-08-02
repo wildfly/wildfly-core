@@ -23,7 +23,6 @@ package org.jboss.as.cli.completion.mock;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -31,27 +30,8 @@ import java.util.stream.Collectors;
  */
 public class MockOperation {
 
-    public static class Property {
-        private final String name;
-        private final int index;
-
-        public Property(String name, int index) {
-            this.name = name;
-            this.index = index;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-    }
-
     private final String name;
-
-    private List<Property> properties = Collections.emptyList();
+    private List<String> parameterNames = Collections.emptyList();
 
     public MockOperation(String name) {
         this.name = name;
@@ -61,15 +41,11 @@ public class MockOperation {
         return name;
     }
 
+    public List<String> getPropertyNames() {
+        return parameterNames;
+    }
+
     public void setPropertyNames(List<String> parameterNames) {
-        properties = parameterNames.stream().map(n->new Property(n, -1)).collect(Collectors.toList());
-    }
-
-    public void setProperties(List<Property> properties) {
-        this.properties = properties;
-    }
-
-    public List<Property> getProperties() {
-        return properties;
+        this.parameterNames = parameterNames;
     }
 }
