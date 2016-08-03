@@ -114,13 +114,13 @@ public class MockOperationCandidatesProvider implements OperationCandidatesProvi
             return Collections.emptyList();
         }
 
-        final List<MockOperation.Property> properties = operation.getProperties();
-        final List<CommandArgument> result = new ArrayList<CommandArgument>(properties.size());
-        for(final MockOperation.Property p : properties) {
+        final List<String> names = operation.getPropertyNames();
+        final List<CommandArgument> result = new ArrayList<CommandArgument>(names.size());
+        for(final String name : names) {
             result.add(new CommandArgument(){
                 @Override
                 public String getFullName() {
-                    return p.getName();
+                    return name;
                 }
 
                 @Override
@@ -130,13 +130,13 @@ public class MockOperationCandidatesProvider implements OperationCandidatesProvi
 
                 @Override
                 public int getIndex() {
-                    return p.getIndex();
+                    return -1;
                 }
 
                 @Override
                 public boolean isPresent(ParsedCommandLine args)
                         throws CommandFormatException {
-                    return args.hasProperty(p.getName());
+                    return args.hasProperty(name);
                 }
 
                 @Override
@@ -150,15 +150,15 @@ public class MockOperationCandidatesProvider implements OperationCandidatesProvi
 
                 @Override
                 public String getValue(ParsedCommandLine args) throws CommandFormatException {
-                    return args.getPropertyValue(p.getName());
+                    return args.getPropertyValue(name);
                 }
 
                 @Override
                 public String getValue(ParsedCommandLine args, boolean required) throws CommandFormatException {
                     if(!isPresent(args)) {
-                        throw new CommandFormatException("Property '" + p.getName() + "' is missing required value.");
+                        throw new CommandFormatException("Property '" + name + "' is missing required value.");
                     }
-                    return args.getPropertyValue(p.getName());
+                    return args.getPropertyValue(name);
                 }
 
                 @Override
@@ -166,7 +166,7 @@ public class MockOperationCandidatesProvider implements OperationCandidatesProvi
                     if(!isPresent(args)) {
                         return false;
                     }
-                    if(p.getName().equals(args.getLastParsedPropertyName())) {
+                    if(name.equals(args.getLastParsedPropertyName())) {
                         return false;
                     }
                     return true;
