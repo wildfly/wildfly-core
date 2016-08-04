@@ -72,6 +72,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import javax.security.auth.Subject;
 
@@ -101,6 +102,7 @@ import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -161,6 +163,7 @@ abstract class AbstractOperationContext implements OperationContext {
     /** Currently executing step */
     Step activeStep;
     Caller caller;
+    private final Supplier<SecurityIdentity> securityIdentitySupplier;
     /** Whether operation execution has begun; i.e. whether completeStep() has been called */
     private boolean executing;
     /** First response node provided to addStep  */
@@ -195,7 +198,8 @@ abstract class AbstractOperationContext implements OperationContext {
                              final NotificationSupport notificationSupport,
                              final ModelControllerImpl controller,
                              final boolean skipModelValidation,
-                             final OperationStepHandler extraValidationStepHandler) {
+                             final OperationStepHandler extraValidationStepHandler,
+                             final Supplier<SecurityIdentity> securityIdentitySupplier) {
         this.processType = processType;
         this.runningMode = runningMode;
         this.transactionControl = transactionControl;
@@ -220,6 +224,7 @@ abstract class AbstractOperationContext implements OperationContext {
         this.callEnvironment = new Environment(processState, processType);
         modifiedResourcesForModelValidation = skipModelValidation == false ?  new HashSet<PathAddress>() : null;
         this.extraValidationStepHandler = extraValidationStepHandler;
+        this.securityIdentitySupplier = securityIdentitySupplier;
     }
 
     /**
@@ -555,14 +560,13 @@ abstract class AbstractOperationContext implements OperationContext {
             try {
                 AccessAuditContext accessContext = SecurityActions.currentAccessAuditContext();
                 Caller caller = getCaller();
-                Subject subject = SecurityActions.getSubject(caller);
                 auditLogger.log(
                         isReadOnly(),
                         resultAction,
                         caller == null ? null : caller.getName(),
                         accessContext == null ? null : accessContext.getDomainUuid(),
                         accessContext == null ? null : accessContext.getAccessMechanism(),
-                        getSubjectInetAddress(subject),
+                        getSubjectInetAddress(null), // TODO Elytron - Get this address some other way.
                         getModel(),
                         controllerOperations);
                 auditLogged = true;
@@ -603,12 +607,11 @@ abstract class AbstractOperationContext implements OperationContext {
             try {
                 AccessAuditContext accessContext = SecurityActions.currentAccessAuditContext();
                 Caller currentCaller = getCaller();
-                Subject subject = SecurityActions.getSubject(currentCaller);
                 configurationChangesCollector.addConfigurationChanges(new ConfigurationChange(resultAction,
                         currentCaller == null ? null : currentCaller.getName(),
                         accessContext == null ? null : accessContext.getDomainUuid(),
                         accessContext == null ? null : accessContext.getAccessMechanism(),
-                        getSubjectInetAddress(subject),
+                        getSubjectInetAddress(null), // TODO Elytron Get this address some other way.
                         controllerOperations));
             } catch (Exception e) {
                 ControllerLogger.MGMT_OP_LOGGER.failedToUpdateAuditLog(e);
@@ -1200,10 +1203,16 @@ abstract class AbstractOperationContext implements OperationContext {
     @Override
     public Caller getCaller() {
         // TODO Consider threading but in general no harm in multiple instances being created rather than adding synchronization.
-        Caller response = SecurityActions.getCaller(caller); // This allows for a change of Subject whilst the same OperationContext is in use.
+        Caller response = SecurityActions.getCaller(caller, getSecurityIdentity()); // This allows for a change of SecurityIDentity whilst the same OperationContext is in use.
         caller = response;
 
         return response;
+    }
+
+    @Override
+    public SecurityIdentity getSecurityIdentity() {
+        // We don't cache the result as the identity could be switched mid-call.
+        return securityIdentitySupplier.get();
     }
 
     @Override

@@ -22,10 +22,9 @@
 
 package org.jboss.as.domain.management.security;
 
-import static org.jboss.as.domain.management.ModelDescriptionConstants.GROUPS;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.IDENTITY;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.MAPPED_ROLES;
-import static org.jboss.as.domain.management.ModelDescriptionConstants.REALM;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.ROLES;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.USERNAME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.WHOAMI;
@@ -40,13 +39,15 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Authorizer;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.rbac.RunAsRoleMapper;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.ModelDescriptionConstants;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.authz.Attributes;
+import org.wildfly.security.authz.Roles;
 
 /**
  * The OperationStepHandler for the whoami operation.
@@ -85,41 +86,42 @@ public class WhoAmIOperation implements OperationStepHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         boolean verbose = VERBOSE.resolveModelAttribute(context, operation).asBoolean();
 
-        Caller caller = context.getCaller();
-        if (caller == null) {
+        SecurityIdentity securityIdentity = context.getSecurityIdentity();
+        if (securityIdentity == null) {
             throw new OperationFailedException(DomainManagementLogger.ROOT_LOGGER.noSecurityContextEstablished());
         }
 
         ModelNode result = context.getResult();
         ModelNode identity = result.get(IDENTITY);
-        identity.get(USERNAME).set(caller.getName());
-        String realm = caller.getRealm();
-        if (realm != null) {
-            identity.get(REALM).set(realm);
-        }
+        identity.get(USERNAME).set(securityIdentity.getPrincipal().getName());
+        // TODO Elytron - We don't currently expose the equivalent of a realm.
+        //String realm = caller.getRealm();
+        //if (realm != null) {
+        //    identity.get(REALM).set(realm);
+        //}
 
         if (verbose) {
-            Set<String> groupSet = caller.getAssociatedGroups();
-            if (groupSet.size() > 0) {
-                ModelNode groups = result.get(GROUPS);
-                for (String current : groupSet) {
-                    groups.add(current);
-                }
+            Roles roles = securityIdentity.getRoles();
+            if (roles.isEmpty() == false) {
+                ModelNode rolesModel = result.get(ROLES);
+                roles.forEach(s -> rolesModel.add(s));
             }
 
-            Set<String> roleSet = caller.getAssociatedRoles();
-            if (roleSet.size() > 0) {
-                ModelNode roles = result.get(ROLES);
-                for (String current : roleSet) {
-                    roles.add(current);
-                }
+            Attributes attributes = securityIdentity.getAttributes();
+            if (attributes.isEmpty() == false) {
+                ModelNode attributesModel = result.get(ATTRIBUTES);
+                attributes.entries().forEach(e -> {
+                    ModelNode entry = attributesModel.get(e.getKey());
+                    e.forEach(s -> entry.add(s));
+                });
             }
 
+            // TODO Elytron Complete RBAC integration.
             Set<String> mappedRoles = authorizer == null ? null : authorizer.getCallerRoles(context.getCaller(), context.getCallEnvironment(), RunAsRoleMapper.getOperationHeaderRoles(operation));
             if (mappedRoles != null) {
-                ModelNode roles = result.get(MAPPED_ROLES);
+                ModelNode rolesModel = result.get(MAPPED_ROLES);
                 for (String current : mappedRoles) {
-                    roles.add(current);
+                    rolesModel.add(current);
                 }
             }
         }

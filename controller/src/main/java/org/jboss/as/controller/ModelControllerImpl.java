@@ -100,6 +100,8 @@ import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.manager.action.GetAccessControlContextAction;
 
 
@@ -293,8 +295,14 @@ class ModelControllerImpl implements ModelController {
             }
         };
 
+        // TODO ELytron - Hacky SecurityDomain
+        final SecurityDomain hackySecurityDomain = SecurityDomain.builder()
+                .setDefaultRealmName("Empty")
+                .addRealm("Empty", SecurityRealm.EMPTY_REALM).build()
+                .build();
+
         // Use a read-only context
-        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), txControl, processState, false, model, delegateContext, this, operationId);
+        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), txControl, processState, false, model, delegateContext, this, operationId, hackySecurityDomain::getAnonymousSecurityIdentity);
         context.addStep(response, operation, prepareStep, OperationContext.Stage.MODEL);
         context.executeOperation();
 
@@ -381,6 +389,12 @@ class ModelControllerImpl implements ModelController {
             return handleExternalRequestDuringBoot();
         }
 
+        // TODO ELytron - Hacky SecurityDomain
+        final SecurityDomain hackySecurityDomain = SecurityDomain.builder()
+                .setDefaultRealmName("Empty")
+                .addRealm("Empty", SecurityRealm.EMPTY_REALM).build()
+                .build();
+
         for (;;) {
             responseStreams = null;
             // Create a random operation-id
@@ -389,7 +403,7 @@ class ModelControllerImpl implements ModelController {
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
                     bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessContext, notificationSupport,
-                    false, extraValidationStepHandler, partialModel);
+                    false, extraValidationStepHandler, partialModel, hackySecurityDomain::getAnonymousSecurityIdentity);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
                 //noinspection deprecation
@@ -455,6 +469,11 @@ class ModelControllerImpl implements ModelController {
 
         final Integer operationID = random.nextInt();
 
+        final SecurityDomain bootSecurityDomain = SecurityDomain.builder()
+                .setDefaultRealmName("Empty")
+                .addRealm("Empty", SecurityRealm.EMPTY_REALM).build()
+                .build();
+
         EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnRuntimeFailure
                 ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL)
                 : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
@@ -463,7 +482,7 @@ class ModelControllerImpl implements ModelController {
         final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
                 contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
-                hostServerGroupTracker, null, null, notificationSupport, true, extraValidationStepHandler, true);
+                hostServerGroupTracker, null, null, notificationSupport, true, extraValidationStepHandler, true, bootSecurityDomain::getAnonymousSecurityIdentity);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
@@ -482,7 +501,7 @@ class ModelControllerImpl implements ModelController {
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
                             bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, true,
-                            extraValidationStepHandler, partialModel);
+                            extraValidationStepHandler, partialModel, bootSecurityDomain::getAnonymousSecurityIdentity);
 
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {
                 if (parsedOp.handler == null) {
@@ -512,7 +531,7 @@ class ModelControllerImpl implements ModelController {
                         EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                         contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
                                 bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, false,
-                                extraValidationStepHandler, partialModel);
+                                extraValidationStepHandler, partialModel, bootSecurityDomain::getAnonymousSecurityIdentity);
                 validateContext.addModifiedResourcesForModelValidation(validateAddresses);
                 resultAction = validateContext.executeOperation();
             }

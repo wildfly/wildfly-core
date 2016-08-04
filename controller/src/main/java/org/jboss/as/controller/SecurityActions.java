@@ -28,9 +28,8 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import javax.security.auth.Subject;
-
 import org.jboss.as.controller.access.Caller;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -43,13 +42,9 @@ class SecurityActions {
     private SecurityActions() {
     }
 
-    static Caller getCaller(final Caller currentCaller) {
+    static Caller getCaller(final Caller currentCaller, final SecurityIdentity securityIdentity) {
         AccessControlContext acc = AccessController.getContext();
-        return createCallerActions().getCaller(acc, currentCaller);
-    }
-
-    static Subject getSubject(final Caller caller) {
-        return createCallerActions().getSubject(caller);
+        return createCallerActions().getCaller(acc, currentCaller, securityIdentity);
     }
 
     static AccessAuditContext currentAccessAuditContext() {
@@ -97,55 +92,36 @@ class SecurityActions {
 
     private interface CallerActions {
 
-        Caller getCaller(AccessControlContext acc, Caller currentCaller);
+        Caller getCaller(AccessControlContext acc, Caller currentCaller, SecurityIdentity securityIdentity);
 
-        Subject getSubject(Caller caller);
 
         CallerActions NON_PRIVILEGED = new CallerActions() {
 
             @Override
-            public Caller getCaller(AccessControlContext acc, Caller currentCaller) {
-                Subject subject = Subject.getSubject(acc);
+            public Caller getCaller(AccessControlContext acc, Caller currentCaller, SecurityIdentity securityIdentity) {
                 // This is deliberately checking the Subject is the exact same instance.
-                if (currentCaller == null || subject != currentCaller.getSubject()) {
-                    if (subject != null) {
-                        subject.setReadOnly();
-                    }
-                    return Caller.createCaller(subject);
+                if (currentCaller == null || securityIdentity != currentCaller.getSecurityIdentity()) {
+                    return Caller.createCaller(securityIdentity);
                 }
 
                 return currentCaller;
             }
 
-            @Override
-            public Subject getSubject(Caller caller) {
-                return caller.getSubject();
-            }
         };
 
         CallerActions PRIVILEGED = new CallerActions() {
 
             @Override
-            public Caller getCaller(final AccessControlContext acc, final Caller currentCaller) {
+            public Caller getCaller(final AccessControlContext acc, final Caller currentCaller, final SecurityIdentity securityIdentity) {
                 return doPrivileged(new PrivilegedAction<Caller>() {
 
                     @Override
                     public Caller run() {
-                        return NON_PRIVILEGED.getCaller(acc, currentCaller);
+                        return NON_PRIVILEGED.getCaller(acc, currentCaller, securityIdentity);
                     }
                 });
             }
 
-            @Override
-            public Subject getSubject(final Caller caller) {
-                return doPrivileged(new PrivilegedAction<Subject>() {
-
-                    @Override
-                    public Subject run() {
-                        return NON_PRIVILEGED.getSubject(caller);
-                    }
-                });
-            }
         };
 
     }

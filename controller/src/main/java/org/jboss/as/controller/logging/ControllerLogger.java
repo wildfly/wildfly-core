@@ -3054,11 +3054,11 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 314, value = "Users with multiple roles are not allowed")
     SecurityException illegalMultipleRoles();
 
-    @Message(id = 315, value = "An unexpected number of AccountPrincipals %d have been found in the current Subject.")
-    IllegalStateException unexpectedAccountPrincipalCount(int count);
+    //@Message(id = 315, value = "An unexpected number of AccountPrincipals %d have been found in the current Subject.")
+    //IllegalStateException unexpectedAccountPrincipalCount(int count);
 
-    @Message(id = 316, value = "Different realms '%s' '%s' found in single Subject")
-    IllegalStateException differentRealmsInSubject(String realmOne, String realmTwo);
+    //@Message(id = 316, value = "Different realms '%s' '%s' found in single Subject")
+    //IllegalStateException differentRealmsInSubject(String realmOne, String realmTwo);
 
     @Message(id = 317, value = "There is no handler called '%s'")
     IllegalStateException noHandlerCalled(String name);

@@ -104,7 +104,8 @@ class SecurityActions {
             public Caller createCaller(AccessControlContext acc) {
                 Subject subject = Subject.getSubject(acc);
 
-                return Caller.createCaller(subject);
+                // TODO Elytron JMX Integration
+                return Caller.createCaller(null);
             }
         };
 

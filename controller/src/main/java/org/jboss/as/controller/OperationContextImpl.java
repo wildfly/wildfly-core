@@ -61,6 +61,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.as.controller.access.Action;
@@ -121,6 +122,7 @@ import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.Value;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Operation context implementation.
@@ -213,9 +215,10 @@ final class OperationContextImpl extends AbstractOperationContext {
                          final NotificationSupport notificationSupport,
                          final boolean skipModelValidation,
                          final OperationStepHandler extraValidationStepHandler,
-                         final boolean partialModel) {
+                         final boolean partialModel,
+                         final Supplier<SecurityIdentity> securityIdentitySupplier) {
         super(processType, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport,
-                modelController, skipModelValidation, extraValidationStepHandler);
+                modelController, skipModelValidation, extraValidationStepHandler, securityIdentitySupplier);
         this.operationId = operationId;
         this.operationName = operationName;
         this.operationAddress = operationAddress.isDefined()
