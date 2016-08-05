@@ -24,12 +24,14 @@ package org.jboss.as.server;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
@@ -43,6 +45,7 @@ import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.threads.AsyncFuture;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * The application server bootstrap interface.  Get a new instance via {@link Factory#newInstance()}.
@@ -91,6 +94,7 @@ public interface Bootstrap {
         private final CapabilityRegistry capabilityRegistry;
         private final ManagedAuditLogger auditLogger;
         private final DelegatingConfigurableAuthorizer authorizer;
+        private final Supplier<SecurityIdentity> securityIdentitySupplier;
         private ModuleLoader moduleLoader = Module.getBootModuleLoader();
         private ConfigurationPersisterFactory configurationPersisterFactory;
         private long startTime;
@@ -101,7 +105,8 @@ public interface Bootstrap {
             this.runningModeControl = serverEnvironment.getRunningModeControl();
             this.auditLogger = serverEnvironment.createAuditLogger();
             this.authorizer = new DelegatingConfigurableAuthorizer();
-            this.extensionRegistry = new ExtensionRegistry(serverEnvironment.getLaunchType().getProcessType(), runningModeControl, this.auditLogger, authorizer, RuntimeHostControllerInfoAccessor.SERVER);
+            this.securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
+            this.extensionRegistry = new ExtensionRegistry(serverEnvironment.getLaunchType().getProcessType(), runningModeControl, this.auditLogger, authorizer, securityIdentitySupplier, RuntimeHostControllerInfoAccessor.SERVER);
             this.capabilityRegistry = new CapabilityRegistry(true);
             this.startTime = serverEnvironment.getStartTime();
         }
@@ -157,6 +162,15 @@ public interface Bootstrap {
          */
         public DelegatingConfigurableAuthorizer getAuthorizer() {
             return authorizer;
+        }
+
+        /**
+         * Get the {@link SecurityIdentity} supplier.
+         *
+         * @return the {@link SecurityIdentity} supplier.
+         */
+        public Supplier<SecurityIdentity> getSecurityIdentitySupplier() {
+            return securityIdentitySupplier;
         }
 
         /**

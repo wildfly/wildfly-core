@@ -116,7 +116,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             .addParameter(ATTR)
             .build();
 
-    private final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
+    private final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
     private volatile IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
     private volatile TestInitializer initializer;
     private volatile Resource rootResource;

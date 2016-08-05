@@ -24,8 +24,6 @@ package org.jboss.as.controller;
 
 import static java.security.AccessController.doPrivileged;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import org.jboss.as.controller.access.Caller;
@@ -43,8 +41,7 @@ class SecurityActions {
     }
 
     static Caller getCaller(final Caller currentCaller, final SecurityIdentity securityIdentity) {
-        AccessControlContext acc = AccessController.getContext();
-        return createCallerActions().getCaller(acc, currentCaller, securityIdentity);
+        return createCallerActions().getCaller(currentCaller, securityIdentity);
     }
 
     static AccessAuditContext currentAccessAuditContext() {
@@ -92,13 +89,13 @@ class SecurityActions {
 
     private interface CallerActions {
 
-        Caller getCaller(AccessControlContext acc, Caller currentCaller, SecurityIdentity securityIdentity);
+        Caller getCaller(Caller currentCaller, SecurityIdentity securityIdentity);
 
 
         CallerActions NON_PRIVILEGED = new CallerActions() {
 
             @Override
-            public Caller getCaller(AccessControlContext acc, Caller currentCaller, SecurityIdentity securityIdentity) {
+            public Caller getCaller(Caller currentCaller, SecurityIdentity securityIdentity) {
                 // This is deliberately checking the Subject is the exact same instance.
                 if (currentCaller == null || securityIdentity != currentCaller.getSecurityIdentity()) {
                     return Caller.createCaller(securityIdentity);
@@ -112,12 +109,12 @@ class SecurityActions {
         CallerActions PRIVILEGED = new CallerActions() {
 
             @Override
-            public Caller getCaller(final AccessControlContext acc, final Caller currentCaller, final SecurityIdentity securityIdentity) {
+            public Caller getCaller(final Caller currentCaller, final SecurityIdentity securityIdentity) {
                 return doPrivileged(new PrivilegedAction<Caller>() {
 
                     @Override
                     public Caller run() {
-                        return NON_PRIVILEGED.getCaller(acc, currentCaller, securityIdentity);
+                        return NON_PRIVILEGED.getCaller(currentCaller, securityIdentity);
                     }
                 });
             }

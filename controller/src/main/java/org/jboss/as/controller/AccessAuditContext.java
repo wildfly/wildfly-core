@@ -26,6 +26,7 @@ import java.security.PrivilegedActionException;
 
 import org.jboss.as.controller.security.ControllerPermission;
 import org.jboss.as.core.security.AccessMechanism;
+import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -38,12 +39,30 @@ public class AccessAuditContext {
 
     private static ThreadLocal<AccessAuditContext> contextThreadLocal = new ThreadLocal<AccessAuditContext>();
 
+    private final SecurityIdentity securityIdentity;
     private String domainUuid;
     private AccessMechanism accessMechanism;
     private boolean domainRollout;
 
-    private AccessAuditContext() {
+    private AccessAuditContext(final SecurityIdentity securityIdentity, final AccessAuditContext previous) {
         // This can only be instantiated as part of the doAs call.
+        this.securityIdentity = securityIdentity;
+        if (previous != null) {
+            domainUuid = previous.domainUuid;
+            accessMechanism = previous.accessMechanism;
+            domainRollout = previous.domainRollout;
+        }
+    }
+
+    /**
+     * Get the {@link SecurityIdentity} associated with this {@link AccessAuditContext}.
+     *
+     * This provides a way for the {@link SecurityIdentity} to be passed without the underlying {@link SecurityDomain} being known.
+     *
+     * @return the {@link SecurityIdentity} associated with this {@link AccessAuditContext}.
+     */
+    public SecurityIdentity getSecurityIdentity() {
+        return securityIdentity;
     }
 
     /**
@@ -117,7 +136,7 @@ public class AccessAuditContext {
     public static <T> T doAs(final SecurityIdentity securityIdentity, final java.security.PrivilegedAction<T> action) {
         final AccessAuditContext previous = contextThreadLocal.get();
         try {
-            contextThreadLocal.set(new AccessAuditContext());
+            contextThreadLocal.set(new AccessAuditContext(securityIdentity, previous));
             return securityIdentity != null ? securityIdentity.runAs(action) : action.run();
         } finally {
             contextThreadLocal.set(previous);
@@ -146,7 +165,7 @@ public class AccessAuditContext {
             throws java.security.PrivilegedActionException {
         final AccessAuditContext previous = contextThreadLocal.get();
         try {
-            contextThreadLocal.set(new AccessAuditContext());
+            contextThreadLocal.set(new AccessAuditContext(securityIdentity, previous));
             if (securityIdentity != null) {
                 return securityIdentity.runAs(action);
             } else try {

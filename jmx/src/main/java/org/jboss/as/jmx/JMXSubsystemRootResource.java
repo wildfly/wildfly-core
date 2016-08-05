@@ -26,6 +26,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 
+import java.util.function.Supplier;
+
 import javax.management.MBeanServer;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
@@ -51,6 +53,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  *
@@ -76,20 +79,22 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
 
     private final ManagedAuditLogger auditLogger;
     private final JmxAuthorizer authorizer;
+    private final Supplier<SecurityIdentity> securityIdentitySupplier;
     private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-    private JMXSubsystemRootResource(ManagedAuditLogger auditLogger, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
+    private JMXSubsystemRootResource(ManagedAuditLogger auditLogger, JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
         super(new Parameters(PATH_ELEMENT, JMXExtension.getResourceDescriptionResolver(JMXExtension.SUBSYSTEM_NAME))
-                .setAddHandler(new JMXSubsystemAdd(auditLogger, authorizer, hostInfoAccessor))
-                .setRemoveHandler(new JMXSubsystemRemove(auditLogger, authorizer, hostInfoAccessor))
+                .setAddHandler(new JMXSubsystemAdd(auditLogger, authorizer, securityIdentitySupplier, hostInfoAccessor))
+                .setRemoveHandler(new JMXSubsystemRemove(auditLogger, authorizer, securityIdentitySupplier, hostInfoAccessor))
                 .setAccessConstraints(JMXExtension.JMX_SENSITIVITY_DEF));
         this.auditLogger = auditLogger;
         this.authorizer = authorizer;
+        this.securityIdentitySupplier = securityIdentitySupplier;
         this.hostInfoAccessor = hostInfoAccessor;
     }
 
-    public static JMXSubsystemRootResource create(ManagedAuditLogger auditLogger, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
-        return new JMXSubsystemRootResource(auditLogger, authorizer, hostInfoAccessor);
+    public static JMXSubsystemRootResource create(ManagedAuditLogger auditLogger, JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
+        return new JMXSubsystemRootResource(auditLogger, authorizer, securityIdentitySupplier, hostInfoAccessor);
     }
 
     @Override
@@ -106,8 +111,8 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerSubModel(new ExposeModelResourceResolved(auditLogger, authorizer, hostInfoAccessor));
-        resourceRegistration.registerSubModel(new ExposeModelResourceExpression(auditLogger, authorizer, hostInfoAccessor));
+        resourceRegistration.registerSubModel(new ExposeModelResourceResolved(auditLogger, authorizer, securityIdentitySupplier, hostInfoAccessor));
+        resourceRegistration.registerSubModel(new ExposeModelResourceExpression(auditLogger, authorizer, securityIdentitySupplier, hostInfoAccessor));
         resourceRegistration.registerSubModel(RemotingConnectorResource.INSTANCE);
         resourceRegistration.registerSubModel(new JmxAuditLoggerResourceDefinition(auditLogger));
     }

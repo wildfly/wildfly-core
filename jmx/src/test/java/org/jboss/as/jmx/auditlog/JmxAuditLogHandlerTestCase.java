@@ -680,7 +680,7 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
         Assert.assertEquals("core", bootRecord.get("type").asString());
         Assert.assertEquals(readOnly, bootRecord.get("r/o").asBoolean());
         Assert.assertEquals(booting, bootRecord.get("booting").asBoolean());
-        Assert.assertFalse(bootRecord.get("user").isDefined());
+        Assert.assertEquals("anonymous", bootRecord.get("user").asString());
         Assert.assertFalse(bootRecord.get("domainUUID").isDefined());
         Assert.assertFalse(bootRecord.get("access").isDefined());
         Assert.assertFalse(bootRecord.get("remote-address").isDefined());
@@ -786,7 +786,7 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
 
 
         ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.STANDALONE_SERVER,
-                new RunningModeControl(RunningMode.NORMAL), auditLogger, null, RuntimeHostControllerInfoAccessor.SERVER);
+                new RunningModeControl(RunningMode.NORMAL), auditLogger, null, null, RuntimeHostControllerInfoAccessor.SERVER);
         extensionRegistry.setPathManager(pathManagerService);
         extensionRegistry.setWriterRegistry(new NullConfigurationPersister());
         JMXExtension extension = new JMXExtension();
