@@ -58,20 +58,23 @@ public class ManagementSecurityIdentitySupplier implements Supplier<SecurityIden
         AccessAuditContext accessAuditContext = SecurityActions.currentAccessAuditContext();
         if (accessAuditContext != null) {
             securityIdentity = accessAuditContext.getSecurityIdentity();
-            if (configuredSecurityDomain != null) {
-                ServerAuthenticationContext serverAuthenticationContext = SecurityActions.createServerAuthenticationContext(configuredSecurityDomain);
-                try {
-                    if (serverAuthenticationContext.importIdentity(securityIdentity)) {
-                        return serverAuthenticationContext.getAuthorizedIdentity();
+            if (securityIdentity != null) {
+                if (configuredSecurityDomain != null) {
+                    ServerAuthenticationContext serverAuthenticationContext = SecurityActions.createServerAuthenticationContext(configuredSecurityDomain);
+                    try {
+                        if (serverAuthenticationContext.importIdentity(securityIdentity)) {
+                            return serverAuthenticationContext.getAuthorizedIdentity();
+                        }
+                    } catch (RealmUnavailableException | IllegalStateException e) {
+                        // TODO Elytron Not much we can do but we need to log this as it means the real identity has been lost
+                        // and we have no way to recover it.
+                        // Final fallback for when we have no security ready.
+                        return anonymousSecurityDomain.getAnonymousSecurityIdentity();
                     }
-                } catch (RealmUnavailableException | IllegalStateException e) {
-                    // TODO Elytron Not much we can do but we need to log this as it means the real identity has been lost and we have no way to recover it.
-                    // Final fallback for when we have no security ready.
-                    return anonymousSecurityDomain.getAnonymousSecurityIdentity();
+                } else {
+                    // TODO Elytron - For this fall though we want to check that the identity was from a wrapped realm.
+                    return securityIdentity;
                 }
-            } else {
-                // TODO Elytron - For this fall though we want to check that the identity was from a wrapped realm.
-                return securityIdentity;
             }
         }
 
