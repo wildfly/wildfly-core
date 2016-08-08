@@ -83,7 +83,10 @@ public final class Caller {
      * @return The name of the realm used for authentication.
      */
     public String getRealm() {
-        // TODO Elytron - We don't have an equivalent way to access the realm.
+        if (UNDEFINED.equals(realm) && securityIdentity!= null && securityIdentity.getAttributes().size("realm") > 0) {
+            realm = securityIdentity.getAttributes().get("realm", 0);
+        }
+
         return realm;
     }
 
