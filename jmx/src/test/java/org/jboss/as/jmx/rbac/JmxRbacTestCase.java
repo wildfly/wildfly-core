@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -114,7 +113,7 @@ import org.xnio.IoUtils;
  */
 public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
     volatile DelegatingConfigurableAuthorizer authorizer;
-    volatile Supplier<SecurityIdentity> securityIdentitySupplier;
+    volatile ManagementSecurityIdentitySupplier securityIdentitySupplier;
     volatile MBeanServer server;
 
     private static final String TEST_USER = "test";
@@ -541,7 +540,7 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
 
 
     @Override
-    protected Supplier<SecurityIdentity> getSecurityIdentitySupplier() {
+    protected ManagementSecurityIdentitySupplier getSecurityIdentitySupplier() {
         if (securityIdentitySupplier == null) {
             securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
         }
@@ -634,7 +633,8 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
         }
 
         registration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
-        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(getAuthorizer(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
+        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(getAuthorizer(), getSecurityIdentitySupplier(),
+                getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
             public boolean isServer() {
                 return true;
             }

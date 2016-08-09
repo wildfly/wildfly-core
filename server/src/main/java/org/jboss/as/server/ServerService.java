@@ -38,7 +38,6 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootContext;
@@ -52,6 +51,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -126,7 +126,6 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.JBossThreadFactory;
-import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -164,7 +163,7 @@ public final class ServerService extends AbstractControllerService {
     private ServerService(final Bootstrap.Configuration configuration, final ControlledProcessState processState,
                           final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final ServerDelegatingResourceDefinition rootResourceDefinition,
                           final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
-                          final DelegatingConfigurableAuthorizer authorizer, final Supplier<SecurityIdentity> securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
+                          final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
         super(getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStep, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
         this.configuration = configuration;
@@ -203,7 +202,7 @@ public final class ServerService extends AbstractControllerService {
     public static void addService(final ServiceTarget serviceTarget, final Bootstrap.Configuration configuration,
                                   final ControlledProcessState processState, final BootstrapListener bootstrapListener,
                                   final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
-                                  final DelegatingConfigurableAuthorizer authorizer, final Supplier<SecurityIdentity> securityIdentitySupplier) {
+                                  final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier) {
 
         final ThreadGroup threadGroup = new ThreadGroup("ServerService ThreadGroup");
         final String namePattern = "ServerService Thread Pool -- %t";
@@ -264,6 +263,7 @@ public final class ServerService extends AbstractControllerService {
                             }
                         },
                         authorizer,
+                        securityIdentitySupplier,
                         super.getAuditLogger(),
                         getMutableRootResourceRegistrationProvider(),
                         super.getBootErrorCollector(),

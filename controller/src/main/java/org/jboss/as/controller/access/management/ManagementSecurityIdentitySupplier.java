@@ -17,6 +17,7 @@
  */
 package org.jboss.as.controller.access.management;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.AccessAuditContext;
@@ -43,11 +44,15 @@ public class ManagementSecurityIdentitySupplier implements Supplier<SecurityIden
             .addRealm("Empty", SecurityRealm.EMPTY_REALM).build()
             .build();
 
-    private volatile SecurityDomain configuredSecurityDomain = null;
+    private volatile Supplier<SecurityDomain> configuredSecurityDomainSupplier;
+    private volatile List<Supplier<SecurityDomain>> inflowSecurityDomainSuppliers;
 
     @Override
     public SecurityIdentity get() {
         SecurityIdentity securityIdentity = null;
+
+        SecurityDomain configuredSecurityDomain = configuredSecurityDomainSupplier != null ? configuredSecurityDomainSupplier.get() : null;
+
         if (configuredSecurityDomain != null) {
             securityIdentity = configuredSecurityDomain.getCurrentSecurityIdentity();
             if (AnonymousPrincipal.getInstance().equals(securityIdentity.getPrincipal()) == false) {
@@ -78,12 +83,36 @@ public class ManagementSecurityIdentitySupplier implements Supplier<SecurityIden
             }
         }
 
+        if (inflowSecurityDomainSuppliers != null && configuredSecurityDomain != null) {
+            for (Supplier<SecurityDomain> inflowSupplier : inflowSecurityDomainSuppliers) {
+                SecurityDomain current = inflowSupplier.get();
+                if (current != null) {
+                    securityIdentity = current.getCurrentSecurityIdentity();
+                    if (AnonymousPrincipal.getInstance().equals(securityIdentity.getPrincipal()) == false) {
+                        ServerAuthenticationContext serverAuthenticationContext = SecurityActions.createServerAuthenticationContext(configuredSecurityDomain);
+
+                        try {
+                            if (serverAuthenticationContext.importIdentity(securityIdentity)) {
+                                return serverAuthenticationContext.getAuthorizedIdentity();
+                            }
+                        } catch (RealmUnavailableException | IllegalStateException e) {
+                            // Ignored, we may have more domains to attempt to inflow from and a final fall back to anonymous below.
+                        }
+                    }
+                }
+            }
+        }
+
         // Final fallback for when we have no security ready.
         return anonymousSecurityDomain.getAnonymousSecurityIdentity();
     }
 
-    public void setConfiguredSecurityDomain(final SecurityDomain configuredSecurityDomain) {
+    public void setConfiguredSecurityDomainSupplier(Supplier<SecurityDomain> configuredSecurityDomainSupplier) {
+        this.configuredSecurityDomainSupplier = configuredSecurityDomainSupplier;
+    }
 
+    public void setInflowSecurityDomainSuppliers(List<Supplier<SecurityDomain>> inflowSecurityDomainSuppliers) {
+        this.inflowSecurityDomainSuppliers = inflowSecurityDomainSuppliers;
     }
 
 }

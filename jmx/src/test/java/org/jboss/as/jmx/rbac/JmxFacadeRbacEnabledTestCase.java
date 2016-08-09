@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -122,7 +121,7 @@ import org.wildfly.security.auth.server.ServerAuthenticationContext;
  */
 public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
     volatile DelegatingConfigurableAuthorizer authorizer;
-    volatile Supplier<SecurityIdentity> securityIdentitySupplier;
+    volatile ManagementSecurityIdentitySupplier securityIdentitySupplier;
     volatile MBeanServer server;
 
     private static final String TEST_USER = "test";
@@ -743,7 +742,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
     }
 
     @Override
-    protected Supplier<SecurityIdentity> getSecurityIdentitySupplier() {
+    protected ManagementSecurityIdentitySupplier getSecurityIdentitySupplier() {
         if (securityIdentitySupplier == null) {
             securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
         }
@@ -827,7 +826,8 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         }
 
         rootRegistration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
-        rootRegistration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(getAuthorizer(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
+        rootRegistration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(getAuthorizer(), getSecurityIdentitySupplier(),
+                getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
             public boolean isServer() {
                 return true;
             }

@@ -51,6 +51,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -763,7 +764,8 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
         }
 
         registration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
-        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(new DelegatingConfigurableAuthorizer(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
+        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
+                getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
             public boolean isServer() {
                 return true;
             }

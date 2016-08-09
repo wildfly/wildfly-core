@@ -61,6 +61,7 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -652,6 +653,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
             final PathManagerService pathManager = new HostPathManagerService();
             final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
+            final ManagementSecurityIdentitySupplier securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
             final HostRegistrations hostRegistrations = null;
             final DomainHostExcludeRegistry domainHostExcludeRegistry = new DomainHostExcludeRegistry();
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider = new MutableRootResourceRegistrationProvider() {
@@ -662,7 +664,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             };
             DomainRootDefinition domain = new DomainRootDefinition(domainController, hostControllerEnvironment, configurationPersister,
                     repository, repository, isMaster, hostControllerInfo, extensionRegistry, ignoredDomainResourceRegistry,
-                    pathManager, authorizer, hostRegistrations, domainHostExcludeRegistry, rootResourceRegistrationProvider);
+                    pathManager, authorizer, securityIdentitySupplier, hostRegistrations, domainHostExcludeRegistry, rootResourceRegistrationProvider);
             getDelegatingResourceDefiniton().setDelegate(domain);
 
             final String hostName = hostControllerEnvironment.getHostName();
@@ -680,7 +682,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             hostResourceDefinition = new HostResourceDefinition(hostName, hostControllerConfigurationPersister,
                     hostControllerEnvironment, runningModeControl, repository, hostControllerInfo, serverInventory, remoteFileRepository,
                     repository, domainController, extensionRegistry, vaultReader, ignoredDomainResourceRegistry, processState,
-                    pathManager, authorizer, auditLogger, bootErrorCollector);
+                    pathManager, authorizer, securityIdentitySupplier, auditLogger, bootErrorCollector);
         }
 
         protected Resource initModel(final ManagementModel managementModel) {

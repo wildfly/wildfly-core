@@ -38,6 +38,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -237,6 +238,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
     private final ControlledProcessState processState;
     private final PathManagerService pathManager;
     private final DelegatingConfigurableAuthorizer authorizer;
+    private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
     private final ManagedAuditLogger auditLogger;
     private final BootErrorCollector bootErrorCollector;
 
@@ -256,6 +258,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
                                   final ControlledProcessState processState,
                                   final PathManagerService pathManager,
                                   final DelegatingConfigurableAuthorizer authorizer,
+                                  final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                   final ManagedAuditLogger auditLogger,
                                   final BootErrorCollector bootErrorCollector) {
         super(PathElement.pathElement(HOST, hostName), HostModelUtil.getResourceDescriptionResolver());
@@ -274,6 +277,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         this.processState = processState;
         this.pathManager = pathManager;
         this.authorizer = authorizer;
+        this.securityIdentitySupplier = securityIdentitySupplier;
         this.auditLogger = auditLogger;
         this.bootErrorCollector = bootErrorCollector;
     }
@@ -418,7 +422,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
                 return null;
             }
         };
-        hostRegistration.registerSubModel(CoreManagementResourceDefinition.forHost(authorizer, auditLogger, pathManager, environmentNameReader, bootErrorCollector, nativeManagement, httpManagement));
+        hostRegistration.registerSubModel(CoreManagementResourceDefinition.forHost(authorizer, securityIdentitySupplier, auditLogger, pathManager, environmentNameReader, bootErrorCollector, nativeManagement, httpManagement));
 
         // Other core services
         hostRegistration.registerSubModel(new ServiceContainerResourceDefinition());

@@ -67,7 +67,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -175,7 +174,6 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossThreadFactory;
-import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -256,7 +254,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
         final ManagedAuditLogger auditLogger = createAuditLogger(environment);
         final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
-        final Supplier<SecurityIdentity> securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
+        final ManagementSecurityIdentitySupplier securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
         final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
         final ProcessType processType = environment.getProcessType();
         final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, securityIdentitySupplier, hostControllerInfoAccessor);
@@ -298,7 +296,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final ExtensionRegistry extensionRegistry,
                                          final ManagedAuditLogger auditLogger,
                                          final DelegatingConfigurableAuthorizer authorizer,
-                                         final Supplier<SecurityIdentity> securityIdentitySupplier,
+                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                          final CapabilityRegistry capabilityRegistry,
                                          final DomainHostExcludeRegistry domainHostExcludeRegistry) {
         super(environment.getProcessType(), runningModeControl, null, processState,
@@ -1009,7 +1007,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 HostModelUtil.createHostRegistry(hostName, root, hostControllerConfigurationPersister, environment, runningModeControl,
                         localFileRepository, hostControllerInfo, new DelegatingServerInventory(), remoteFileRepository, contentRepository,
                         this, hostExtensionRegistry, extensionRegistry, vaultReader, ignoredRegistry, processState, pathManager, authorizer,
-                        getAuditLogger(), getBootErrorCollector());
+                        securityIdentitySupplier, getAuditLogger(), getBootErrorCollector());
     }
 
 
@@ -1037,7 +1035,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             final PathManagerService pathManager) {
 
         DomainRootDefinition domainRootDefinition = new DomainRootDefinition(this, environment, configurationPersister, contentRepo, fileRepository, isMaster, hostControllerInfo,
-                extensionRegistry, ignoredDomainResourceRegistry, pathManager, authorizer, this, domainHostExcludeRegistry, getMutableRootResourceRegistrationProvider());
+                extensionRegistry, ignoredDomainResourceRegistry, pathManager, authorizer, securityIdentitySupplier, this, domainHostExcludeRegistry, getMutableRootResourceRegistrationProvider());
         rootResourceDefinition.setDelegate(domainRootDefinition, root);
     }
 

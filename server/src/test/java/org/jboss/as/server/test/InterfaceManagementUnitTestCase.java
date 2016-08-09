@@ -332,7 +332,7 @@ public class InterfaceManagementUnitTestCase {
         public void start(StartContext context) throws StartException {
             rootResourceDefinition.setDelegate(new ServerRootResourceDefinition(MockRepository.INSTANCE,
                     persister, environment, processState, null, null, extensionRegistry, false, MOCK_PATH_MANAGER, null,
-                    authorizer, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector(), capabilityRegistry));
+                    authorizer, securityIdentitySupplier, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector(), capabilityRegistry));
             super.start(context);
         }
     }

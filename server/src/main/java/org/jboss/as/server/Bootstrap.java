@@ -24,7 +24,6 @@ package org.jboss.as.server;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 
 import javax.xml.namespace.QName;
 
@@ -94,7 +93,7 @@ public interface Bootstrap {
         private final CapabilityRegistry capabilityRegistry;
         private final ManagedAuditLogger auditLogger;
         private final DelegatingConfigurableAuthorizer authorizer;
-        private final Supplier<SecurityIdentity> securityIdentitySupplier;
+        private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
         private ModuleLoader moduleLoader = Module.getBootModuleLoader();
         private ConfigurationPersisterFactory configurationPersisterFactory;
         private long startTime;
@@ -169,7 +168,7 @@ public interface Bootstrap {
          *
          * @return the {@link SecurityIdentity} supplier.
          */
-        public Supplier<SecurityIdentity> getSecurityIdentitySupplier() {
+        public ManagementSecurityIdentitySupplier getSecurityIdentitySupplier() {
             return securityIdentitySupplier;
         }
 

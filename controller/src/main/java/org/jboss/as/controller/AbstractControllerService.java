@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.function.Supplier;
 
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
@@ -59,7 +58,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -118,7 +116,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     protected final ProcessType processType;
     protected final DelegatingConfigurableAuthorizer authorizer;
-    private final Supplier<SecurityIdentity> securityIdentitySupplier;
+    protected final ManagementSecurityIdentitySupplier securityIdentitySupplier;
     private final RunningModeControl runningModeControl;
     private final ResourceDefinition rootResourceDefinition;
     private final ControlledProcessState processState;
@@ -148,7 +146,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ConfigurationPersister configurationPersister,
                                         final ControlledProcessState processState, final DescriptionProvider rootDescriptionProvider,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
-                                        final ManagedAuditLogger auditLogger, DelegatingConfigurableAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier) {
+                                        final ManagedAuditLogger auditLogger, DelegatingConfigurableAuthorizer authorizer, ManagementSecurityIdentitySupplier securityIdentitySupplier) {
         this(processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
                 prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, new CapabilityRegistry(processType.isServer()));
 
@@ -173,7 +171,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
-                                        final Supplier<SecurityIdentity> securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
+                                        final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
         this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
     }
@@ -254,7 +252,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                       final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                       final ResourceDefinition rootResourceDefinition, final DescriptionProvider rootDescriptionProvider,
                                       final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
-                                      final DelegatingConfigurableAuthorizer authorizer, final Supplier<SecurityIdentity> securityIdentitySupplier,
+                                      final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                       final CapabilityRegistry capabilityRegistry) {
         assert rootDescriptionProvider == null: "description provider cannot be used anymore";
         assert rootResourceDefinition != null: "Null root resource definition";
