@@ -47,7 +47,7 @@ class MemoryResourceDefinition extends SimpleResourceDefinition {
     //metrics
     private static SimpleAttributeDefinition OBJECT_PENDING_FINALIZATION_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.OBJECT_PENDING_FINALIZATION_COUNT, ModelType.INT, false)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
@@ -60,7 +60,7 @@ class MemoryResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_MAX
     )
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .setAllowNull(false)
             .build();
 
@@ -71,12 +71,13 @@ class MemoryResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_COMMITTED,
             PlatformMBeanConstants.MEMORY_MAX)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .setAllowNull(false)
             .build();
 
     private static AttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.VERBOSE, ModelType.BOOLEAN, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static final List<SimpleAttributeDefinition> METRICS = Arrays.asList(

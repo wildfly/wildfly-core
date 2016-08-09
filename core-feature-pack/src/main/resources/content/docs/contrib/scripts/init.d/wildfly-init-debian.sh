@@ -13,10 +13,10 @@
 # Default-Start:        2 3 4 5
 # Default-Stop:         0 1 6
 # Short-Description:    WildFly Application Server
-# Description:          Provide WildFly startup/shutdown script
+# Description:          WildFly startup/shutdown script
 ### END INIT INFO
 
-NAME=wildfly
+NAME=$(readlink -f ${0} | xargs basename)
 DESC="WildFly Application Server"
 DEFAULT="/etc/default/$NAME"
 
@@ -32,6 +32,7 @@ if [ -r /etc/default/locale ]; then
 	export LANG
 fi
 
+# Source function library.
 . /lib/lsb/init-functions
 
 if [ -r /etc/default/rcS ]; then
@@ -59,7 +60,7 @@ fi
 
 # Location of wildfly
 if [ -z "$JBOSS_HOME" ]; then
-	JBOSS_HOME="/opt/wildfly"
+	JBOSS_HOME="/opt/$NAME"
 fi
 export JBOSS_HOME
 
@@ -142,7 +143,7 @@ fi
 export JBOSS_CONSOLE_LOG
 
 # Location to set the pid file
-JBOSS_PIDFILE="/var/run/$NAME/$NAME.pid"
+JBOSS_PIDFILE="/var/run/wildfly/$NAME.pid"
 export JBOSS_PIDFILE
 
 # Launch wildfly in background
@@ -178,7 +179,6 @@ case "$1" in
 		fi
 
 		count=0
-		launched=0
 		until [ $count -gt $STARTUP_WAIT ]
 		do
 			sleep 1
@@ -187,23 +187,30 @@ case "$1" in
 				markerfiletimestamp=$(grep -o '[0-9]*' "$JBOSS_MARKERFILE") > /dev/null
 				if [ "$markerfiletimestamp" -gt "$currenttime" ] ; then
 					grep -i 'success:' "$JBOSS_MARKERFILE" > /dev/null
-					if [ $? -eq 0 ] ; then
-						launched=1
-						break
+					if [ $? -eq 0 ]; then
+						log_end_msg 0
+						exit 0
+					fi
+					grep -i 'error:' "$JBOSS_MARKERFILE" > /dev/null
+					if [ $? -eq 0 ]; then
+						log_end_msg 255
+						log_warning_msg "$DESC started with errors, please see server log for details."
+						exit 0
 					fi
 				fi
 			fi
 		done
+
 		if check_status; then
-			log_end_msg 0
+			log_end_msg 255
+			log_warning_msg "$DESC hasn't started within the timeout allowed."
+			exit 0
 		else
 			log_end_msg 1
+			log_failure_msg "$DESC failed to start within the timeout allowed."
+			exit 1
 		fi
 
-		if [ $launched -eq 0 ]; then
-			log_warning_msg "$DESC hasn't started within the timeout allowed"
-			log_warning_msg "please review file \"$JBOSS_CONSOLE_LOG\" to see the status of the service"
-		fi
 	elif [ $status_start -eq 1 ]; then
 		log_failure_msg "$DESC is not running but the pid file exists"
 		exit 1
@@ -217,22 +224,22 @@ case "$1" in
 	if [ $status_stop -eq 0 ]; then
 		read kpid < "$JBOSS_PIDFILE"
 		log_daemon_msg "Stopping $DESC" "$NAME"
-		
+
 		children_pids=$(pgrep -P $kpid)
 
 		start-stop-daemon --stop --quiet --pidfile "$JBOSS_PIDFILE" \
 		--user "$JBOSS_USER" --retry=TERM/$SHUTDOWN_WAIT/KILL/5 \
 		>/dev/null 2>&1
-		
+
 		if [ $? -eq 2 ]; then
 			log_failure_msg "$DESC can't be stopped"
 			exit 1
 		fi
-		
+
 		for child in $children_pids; do
 			/bin/kill -9 $child >/dev/null 2>&1
 		done
-		
+
 		log_end_msg 0
 	elif [ $status_stop -eq 1 ]; then
 		log_action_msg "$DESC is not running but the pid file exists, cleaning up"

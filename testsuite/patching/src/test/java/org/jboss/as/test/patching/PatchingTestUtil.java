@@ -279,12 +279,15 @@ public class PatchingTestUtil {
     }
 
     public static void resetInstallationState(final File home, final File... layerDirs) {
-        final File installation = new File(home, Constants.INSTALLATION);
-        IoUtils.recursiveDelete(installation);
+        resetPatchStreams(home);
         for (final File root : layerDirs) {
             final File overlays = new File(root, Constants.OVERLAYS);
             IoUtils.recursiveDelete(overlays);
         }
+    }
+
+    protected static void resetPatchStreams(final File home) {
+        IoUtils.recursiveDelete(new File(home, Constants.INSTALLATION));
     }
 
     static ContentModification updateModulesJar(final File installation, final File patchDir) throws IOException {

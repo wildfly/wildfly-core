@@ -45,7 +45,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class ShippedConfigurationsModelTestCase extends AbstractCoreModelTest {

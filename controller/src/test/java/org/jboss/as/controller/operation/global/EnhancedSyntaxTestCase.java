@@ -19,11 +19,18 @@
 package org.jboss.as.controller.operation.global;
 
 import static org.jboss.as.controller.SimpleAttributeDefinitionBuilder.create;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+
+import java.util.List;
+import java.util.Map;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CompositeOperationHandler;
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
@@ -59,12 +66,17 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
             .setAllowDuplicates(false)
             .setAllowNull(true)
             .build();
-    private static final PropertiesAttributeDefinition MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder("map-attribute", true)
+
+    private static final StringListAttributeDefinition RUNTIME_LIST_ATTRIBUTE = new StringListAttributeDefinition.Builder("runtime-list-attribute")
             .setAllowNull(true)
-           // .setStorageRuntime()
+            .setStorageRuntime()
             .build();
 
-    private static final PropertiesAttributeDefinition MAP_ATTRIBUTE2 = new PropertiesAttributeDefinition.Builder("my-map-attribute2", true)
+    private static final PropertiesAttributeDefinition MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder("map-attribute", true)
+            .setAllowNull(true)
+            .build();
+
+    private static final PropertiesAttributeDefinition RUNTIME_MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder("runtime-map-attribute", true)
             .setAllowNull(true)
             .setStorageRuntime()
             .build();
@@ -75,7 +87,7 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
     private static final AttributeDefinition ATTR_2 = create("attr2", ModelType.BOOLEAN)
             .setAllowNull(false)
             .build();
-    private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE = ObjectTypeAttributeDefinition.Builder.of("complex-attribute", ATTR_1, ATTR_2, MAP_ATTRIBUTE).build();
+    private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE = ObjectTypeAttributeDefinition.Builder.of("complex-attribute", ATTR_1, ATTR_2, MAP_ATTRIBUTE, RUNTIME_MAP_ATTRIBUTE).build();
     private static final ObjectListAttributeDefinition OBJECT_LIST = ObjectListAttributeDefinition.Builder.of("object-list", COMPLEX_ATTRIBUTE).setAllowNull(true).build();
     private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE2 = ObjectTypeAttributeDefinition.Builder.of("complex-attribute2", OBJECT_LIST).build();
     private static final AttributeDefinition NORMAL_LOOKING_EXTENDED = new SimpleAttributeDefinitionBuilder("normal.looking.extended", ModelType.STRING, true).build();
@@ -83,7 +95,8 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
     private static PathAddress TEST_ADDRESS = PathAddress.pathAddress("subsystem", "test");
 
-    private static ModelNode runtimeMap2AttributeValue = new ModelNode();
+    private static ModelNode runtimeListAttributeValue;
+    private static ModelNode runtimeMapAttributeValue;
 
     @Override
     protected void initModel(ManagementModel managementModel) {
@@ -92,6 +105,8 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
         GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
         // register the global notifications so there is no warning that emitted notifications are not described by the resource.
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
+
+        rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
 
         ResourceDefinition profileDefinition = createDummyProfileResourceDefinition();
         rootRegistration.registerSubModel(profileDefinition);
@@ -105,8 +120,9 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
                     @Override
                     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
                         LIST_ATTRIBUTE.validateAndSet(operation, model);
+                        RUNTIME_LIST_ATTRIBUTE.validateAndSet(operation, model);
                         MAP_ATTRIBUTE.validateAndSet(operation, model);
-                        MAP_ATTRIBUTE2.validateAndSet(operation, model);
+                        RUNTIME_MAP_ATTRIBUTE.validateAndSet(operation, model);
                         COMPLEX_ATTRIBUTE.validateAndSet(operation, model);
                         OBJECT_LIST.validateAndSet(operation, model);
                         COMPLEX_ATTRIBUTE2.validateAndSet(operation, model);
@@ -116,22 +132,39 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
                 })
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addReadWriteAttribute(LIST_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(LIST_ATTRIBUTE))
-                .addReadWriteAttribute(MAP_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(MAP_ATTRIBUTE))
-                .addReadWriteAttribute(MAP_ATTRIBUTE2, new OperationStepHandler() {
+                .addReadWriteAttribute(RUNTIME_LIST_ATTRIBUTE, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        context.getResult().set(runtimeMap2AttributeValue);
+                        context.addStep((context1, operation1) -> context.getResult().set(runtimeListAttributeValue),
+                                OperationContext.Stage.RUNTIME);
                     }
-                }, new AbstractWriteAttributeHandler() {
+                }, new AbstractWriteAttributeHandler(RUNTIME_LIST_ATTRIBUTE) {
                     @Override
                     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
-                        runtimeMap2AttributeValue = operation.get(VALUE);
+                        runtimeListAttributeValue = operation.get(VALUE);
                         return false;
                     }
 
                     @Override
                     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
+                    }
+                })
+                .addReadWriteAttribute(MAP_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(MAP_ATTRIBUTE))
+                .addReadWriteAttribute(RUNTIME_MAP_ATTRIBUTE, new OperationStepHandler() {
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        context.addStep((context1, operation1) -> context.getResult().set(runtimeMapAttributeValue),
+                                OperationContext.Stage.RUNTIME);
+                    }
+                }, new AbstractWriteAttributeHandler(RUNTIME_MAP_ATTRIBUTE) {
+                    @Override
+                    protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
+                        runtimeMapAttributeValue = operation.get(VALUE);
+                        return false;
+                    }
 
+                    @Override
+                    protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
                     }
                 }).addReadWriteAttribute(COMPLEX_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(COMPLEX_ATTRIBUTE))
                 .addReadWriteAttribute(OBJECT_LIST, null, new ModelOnlyWriteAttributeHandler(OBJECT_LIST))
@@ -156,6 +189,8 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
     @Before
     public void setup() throws OperationFailedException {
         executeCheckNoFailure(createOperation("add", TEST_ADDRESS));
+        runtimeListAttributeValue = new ModelNode();
+        runtimeMapAttributeValue = new ModelNode();
     }
 
     @After
@@ -522,6 +557,176 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
         result = executeForResult(readOp);
         Assert.assertEquals(2, result.asList().size());
+    }
+
+    @Test
+    public void testRuntimeMapAttributeRead() throws Exception {
+        ModelNode op = createOperation("map-put", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_MAP_ATTRIBUTE.getName());
+        op.get("key").set("map-key");
+        op.get("value").set("map-value");
+        executeCheckNoFailure(op);
+
+        // :map-get(name=runtime-map-attribute, key=map-key)
+        op = createOperation("map-get", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_MAP_ATTRIBUTE.getName());
+        op.get("key").set("map-key");
+        Assert.assertEquals("map-value", executeForResult(op).asString());
+
+        // :read-attribute(name=runtime-map-attribute)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_MAP_ATTRIBUTE.getName());
+        Assert.assertEquals("{\"map-key\" => \"map-value\"}", executeForResult(op).asString());
+
+        // :read-attribute(name=runtime-map-attribute.map-key)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_MAP_ATTRIBUTE.getName() + ".map-key");
+        Assert.assertEquals("map-value", executeForResult(op).asString());
+
+        op.get("name").set(RUNTIME_MAP_ATTRIBUTE.getName() + ".wrong-key");
+        executeForFailure(op);
+    }
+
+    @Test
+    public void testRuntimeMapAttributeWrite() throws Exception {
+        // :write-attribute(name=runtime-map-attribute.map-key)
+        ModelNode op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_MAP_ATTRIBUTE.getName() + ".map-key");
+        op.get("value").set("map-value");
+        executeCheckNoFailure(op);
+
+        Map<String, String> map = PropertiesAttributeDefinition.unwrapModel(ExpressionResolver.TEST_RESOLVER, runtimeMapAttributeValue);
+        Assert.assertEquals(1, map.size());
+        Assert.assertEquals("map-value", map.get("map-key"));
+
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_MAP_ATTRIBUTE.getName() + ".map-key2");
+        op.get("value").set("map-value2");
+        executeCheckNoFailure(op);
+
+        map = PropertiesAttributeDefinition.unwrapModel(ExpressionResolver.TEST_RESOLVER, runtimeMapAttributeValue);
+        Assert.assertEquals(2, map.size());
+        Assert.assertEquals("map-value", map.get("map-key"));
+        Assert.assertEquals("map-value2", map.get("map-key2"));
+    }
+
+    @Test
+    public void testRuntimeListAttributeRead() throws Exception {
+        ModelNode op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_LIST_ATTRIBUTE.getName());
+        op.get("value").set("list-value");
+        executeCheckNoFailure(op);
+
+        op = createOperation("list-get", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_LIST_ATTRIBUTE.getName());
+        op.get("index").set(0);
+        Assert.assertEquals("list-value", executeForResult(op).asString());
+
+        // :read-attribute(name=runtime-list-attribute)
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_LIST_ATTRIBUTE.getName());
+        Assert.assertEquals("[\"list-value\"]", executeForResult(op).asString());
+
+        // :read-attribute(name=runtime-list-attribute[0])
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_LIST_ATTRIBUTE.getName() + "[0]");
+        Assert.assertEquals("list-value", executeForResult(op).asString());
+
+        // :read-attribute(name=runtime-list-attribute[1])
+        op.get("name").set(RUNTIME_LIST_ATTRIBUTE.getName() + "[1]"); // index out of range
+        Assert.assertEquals(ModelType.UNDEFINED, executeForResult(op).getType());
+    }
+
+    @Test
+    public void testRuntimeListAttributeWrite() throws Exception {
+        ModelNode op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_LIST_ATTRIBUTE.getName());
+        op.get("value").set("list-value");
+        executeCheckNoFailure(op);
+
+        List<String> list = StringListAttributeDefinition.unwrapValue(ExpressionResolver.TEST_RESOLVER, runtimeListAttributeValue);
+        Assert.assertEquals(1, list.size());
+        Assert.assertEquals("list-value", list.get(0));
+
+        // :write-attribute(name=runtime-list-attribute[-1])
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_LIST_ATTRIBUTE.getName() + "[-1]");
+        op.get("value").set("list-value2");
+        executeCheckNoFailure(op);
+
+        list = StringListAttributeDefinition.unwrapValue(ExpressionResolver.TEST_RESOLVER, runtimeListAttributeValue);
+        Assert.assertEquals(2, list.size());
+        Assert.assertEquals("list-value", list.get(0));
+        Assert.assertEquals("list-value2", list.get(1));
+
+        // :write-attribute(name=runtime-list-attribute[0])
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(RUNTIME_LIST_ATTRIBUTE.getName() + "[0]");
+        op.get("value").set("list-value3");
+        executeCheckNoFailure(op);
+
+        list = StringListAttributeDefinition.unwrapValue(ExpressionResolver.TEST_RESOLVER, runtimeListAttributeValue);
+        Assert.assertEquals(2, list.size());
+        Assert.assertEquals("list-value3", list.get(0));
+        Assert.assertEquals("list-value2", list.get(1));
+    }
+
+    @Test
+    public void testCompositeListWrite() throws Exception {
+        performCompositeListWrite(LIST_ATTRIBUTE.getName());
+        performCompositeListWrite(RUNTIME_LIST_ATTRIBUTE.getName());
+    }
+
+    private void performCompositeListWrite(String attrName) throws Exception {
+        ModelNode compositeOp = createOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+
+        ModelNode op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(attrName + "[-1]");
+        op.get("value").set("list-value");
+        compositeOp.get(STEPS).add(op);
+
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(attrName + "[-1]");
+        op.get("value").set("list-value2");
+        compositeOp.get(STEPS).add(op);
+
+        executeCheckNoFailure(compositeOp);
+
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(attrName);
+        ModelNode result = executeForResult(op);
+        Assert.assertEquals(2, result.asList().size());
+        Assert.assertEquals("list-value", result.asList().get(0).asString());
+        Assert.assertEquals("list-value2", result.asList().get(1).asString());
+    }
+
+    @Test
+    public void testCompositeMapWrite() throws Exception {
+        performCompositeMapWrite(MAP_ATTRIBUTE.getName());
+        performCompositeMapWrite(RUNTIME_MAP_ATTRIBUTE.getName());
+    }
+
+    private void performCompositeMapWrite(String attrName) throws Exception {
+        ModelNode compositeOp = createOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+
+        ModelNode op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(attrName + ".map-key");
+        op.get("value").set("map-value");
+        compositeOp.get(STEPS).add(op);
+
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(attrName + ".map-key2");
+        op.get("value").set("map-value2");
+        compositeOp.get(STEPS).add(op);
+
+        executeCheckNoFailure(compositeOp);
+
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(attrName);
+        ModelNode result = executeForResult(op);
+        Assert.assertEquals(2, result.keys().size());
+        Assert.assertEquals("map-value", result.get("map-key").asString());
+        Assert.assertEquals("map-value2", result.get("map-key2").asString());
     }
 
 }

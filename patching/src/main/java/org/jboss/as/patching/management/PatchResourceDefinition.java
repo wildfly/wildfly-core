@@ -62,12 +62,15 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
 
     static final AttributeDefinition VERSION = SimpleAttributeDefinitionBuilder.create("version", ModelType.STRING)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     static final AttributeDefinition CUMULATIVE_PATCH_ID = SimpleAttributeDefinitionBuilder.create(Constants.CUMULATIVE, ModelType.STRING)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     static final AttributeDefinition PATCHES = PrimitiveListAttributeDefinition.Builder.of(Constants.PATCHES, ModelType.STRING)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     // Patch operation

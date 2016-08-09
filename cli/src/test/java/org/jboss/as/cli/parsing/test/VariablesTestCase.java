@@ -67,6 +67,7 @@ public class VariablesTestCase {
         ctx.setVariable(NODE_NAME_VAR_NAME, NODE_NAME_VAR_VALUE);
         ctx.setVariable(OP_VAR_NAME, OP_VAR_VALUE);
         ctx.setVariable(OP_PROP_VAR_NAME, OP_PROP_VAR_VALUE);
+        ctx.setVariable("myvar", "/subsystem=logging");
     }
 
     @After
@@ -75,6 +76,7 @@ public class VariablesTestCase {
         ctx.setVariable(NODE_NAME_VAR_NAME, null);
         ctx.setVariable(OP_VAR_NAME, null);
         ctx.setVariable(OP_PROP_VAR_NAME, null);
+        ctx.setVariable("myVar", null);
     }
 
     @Test
@@ -218,6 +220,13 @@ public class VariablesTestCase {
         final List<String> props = parsed.getOtherProperties();
         assertEquals(1, props.size());
         assertEquals("v=\\$" + OP_VAR_NAME, props.get(0));
+    }
+
+    @Test
+    public void testLastChunkIndex() throws Exception {
+        final ParsedCommandLine parsed = parse("$myvar:re");
+        assertEquals("re", parsed.getOperationName());
+        assertEquals(7, parsed.getLastChunkIndex());
     }
 
     private void assertFailedToParse(String line) {

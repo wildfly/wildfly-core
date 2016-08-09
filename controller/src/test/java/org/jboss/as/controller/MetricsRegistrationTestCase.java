@@ -57,17 +57,19 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Tests cases for metrics registration.
+ * Tests cases for attributes registration.
  *
- * Depending on the server environment (process type and running mode), resource metrics
- * may not be actually registered on the MMR (even if registerMetric is always called).
+ * Depending on the server environment (process type and running mode), resource attributes
+ * may not be actually registered on the MMR.
  */
 public class MetricsRegistrationTestCase {
 
     private static final PathElement ELEMENT = PathElement.pathElement("testing", "resource");
     private static final PathAddress ADDRESS = PathAddress.pathAddress(ELEMENT);
     private static final String TEST_METRIC = "test-metric";
-    private static final String FORCED_TEST_METRIC = "forced-test-metric";
+    private static final String TEST_METRIC_2 = "test-metric-2";
+    private static final String TEST_RUNTIME_ATTRIBUTE = "test-runtime-attribute";
+    private static final String TEST_RUNTIME_ATTRIBUTE_2 = "test-runtime-attribute-2";
 
     private static final Executor executor = Executors.newCachedThreadPool();
 
@@ -80,46 +82,85 @@ public class MetricsRegistrationTestCase {
         ModelNode description = getResult(client.execute(Util.getReadResourceDescriptionOperation(ADDRESS)));
         assertEquals(description.toJSONString(false), metricIsRegistered, description.hasDefined(ATTRIBUTES, TEST_METRIC));
         if (metricIsRegistered) {
-            checkTestMetric(TEST_METRIC, 1000);
+            checkAttribute(TEST_METRIC, 1000);
         }
-        // forced test metric is always registered
-        assertTrue(description.hasDefined(ATTRIBUTES, FORCED_TEST_METRIC));
-        checkTestMetric(FORCED_TEST_METRIC, 2000);
+        // metric that does not require runtime service is always registered
+        assertTrue(description.hasDefined(ATTRIBUTES, TEST_METRIC_2));
+        checkAttribute(TEST_METRIC_2, 2000);
+    }
+
+    private void checkRuntimeAttributeRegistration(ProcessType processType, boolean attributeIsRegistered) throws Exception {
+        setupController(processType, new TestResourceDefinition());
+        ModelNode rrd = Util.getReadResourceDescriptionOperation(ADDRESS);
+        ModelNode description = getResult(client.execute(rrd));
+        assertEquals(description.toJSONString(false), attributeIsRegistered, description.hasDefined(ATTRIBUTES, TEST_RUNTIME_ATTRIBUTE));
+        if (attributeIsRegistered) {
+            checkAttribute(TEST_RUNTIME_ATTRIBUTE, 3000);
+        }
+        // runtime attribute that does not required runtime service is always registered
+        assertTrue(description.hasDefined(ATTRIBUTES, TEST_RUNTIME_ATTRIBUTE_2));
+        checkAttribute(TEST_RUNTIME_ATTRIBUTE_2, 4000);
     }
 
     @Test
-    public void registerMetricOnEmbeddedServerRegistersTheMetric() throws Exception {
+    public void registerMetricOnEmbeddedServerRegistersIt() throws Exception {
         checkMetricRegistration(ProcessType.EMBEDDED_SERVER, true);
     }
 
     @Test
-    public void registerMetricOnStandaloneServerRegistersTheMetric() throws Exception {
+    public void registerMetricOnStandaloneServerRegistersIt() throws Exception {
         checkMetricRegistration(ProcessType.STANDALONE_SERVER, true);
     }
 
     @Test
-    public void registerMetricOnDomainServerRegistersTheMetric() throws Exception {
+    public void registerMetricOnDomainServerRegistersIt() throws Exception {
         checkMetricRegistration(ProcessType.DOMAIN_SERVER, true);
     }
 
     @Test
-    public void registerMetricOnHostControllerDoesNotRegisterTheMetric() throws Exception {
+    public void registerMetricOnHostControllerDoesNotRegisterIt() throws Exception {
         checkMetricRegistration(ProcessType.HOST_CONTROLLER, false);
     }
+
     @Test
-    public void registerMetricOnEmbeddedHostControllerDoesNotRegisterTheMetric() throws Exception {
+    public void registerMetricOnEmbeddedHostControllerDoesNotRegisterIt() throws Exception {
         checkMetricRegistration(ProcessType.EMBEDDED_HOST_CONTROLLER, false);
     }
 
-    private void checkTestMetric(String metric, int expectedValue) throws Exception {
-        ModelNode result = getResult(client.execute(Util.getReadAttributeOperation(ADDRESS, metric)));
+    @Test
+    public void registerRuntimeAttributeOnEmbeddedServerRegistersIt() throws Exception {
+        checkRuntimeAttributeRegistration(ProcessType.EMBEDDED_SERVER, true);
+    }
+
+    @Test
+    public void registerRuntimeAttributeOnStandaloneServerRegistersIt() throws Exception {
+        checkRuntimeAttributeRegistration(ProcessType.STANDALONE_SERVER, true);
+    }
+
+    @Test
+    public void registerRuntimeAttributeOnDomainServerRegistersIt() throws Exception {
+        checkRuntimeAttributeRegistration(ProcessType.DOMAIN_SERVER, true);
+    }
+
+    @Test
+    public void registerRuntimeAttributeOnHostControllerDoesNotRegisterIt() throws Exception {
+        checkRuntimeAttributeRegistration(ProcessType.HOST_CONTROLLER, false);
+    }
+
+    @Test
+    public void registerRuntimeAttributeOnEmbeddedHostControllerDoesNotRegisterIt() throws Exception {
+        checkRuntimeAttributeRegistration(ProcessType.EMBEDDED_HOST_CONTROLLER, false);
+    }
+
+    private void checkAttribute(String attributeName, int expectedValue) throws Exception {
+        ModelNode result = getResult(client.execute(Util.getReadAttributeOperation(ADDRESS, attributeName)));
         assertEquals(expectedValue, result.asInt());
 
         ModelNode rr = Util.createEmptyOperation(READ_RESOURCE_OPERATION, ADDRESS);
         rr.get(INCLUDE_RUNTIME).set(true);
         result = getResult(client.execute(rr));
-        Assert.assertTrue(result.hasDefined(metric));
-        assertEquals(expectedValue, result.get(metric).asInt());
+        Assert.assertTrue(result.hasDefined(attributeName));
+        assertEquals(expectedValue, result.get(attributeName).asInt());
     }
 
     private ModelNode getResult(ModelNode result) {
@@ -127,6 +168,11 @@ public class MetricsRegistrationTestCase {
         return result.get(RESULT);
     }
 
+    private void checkOperation(String operationName, int expectedValue) throws Exception {
+        ModelNode op = Util.getEmptyOperation(operationName, ADDRESS.toModelNode());
+        ModelNode result = getResult(client.execute(op));
+        assertEquals(expectedValue, result.asInt());
+    }
 
     @After
     public void shutdownServiceContainer() {
@@ -199,10 +245,18 @@ public class MetricsRegistrationTestCase {
                 .setStorageRuntime()
                 .setUndefinedMetricValue(new ModelNode(0))
                 .build();
-        // metric is always registered
-        private static final SimpleAttributeDefinition FORCED_METRIC = new SimpleAttributeDefinitionBuilder(FORCED_TEST_METRIC, ModelType.INT)
-                .forceRegistration()
+        // metric 2 does not require runtime service
+        private static final SimpleAttributeDefinition METRIC_2 = new SimpleAttributeDefinitionBuilder(TEST_METRIC_2, ModelType.INT)
+                .setRuntimeServiceNotRequired()
                 .setUndefinedMetricValue(new ModelNode(0))
+                .build();
+        private static final SimpleAttributeDefinition RUNTIME_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(TEST_RUNTIME_ATTRIBUTE, ModelType.INT)
+                .setStorageRuntime()
+                .build();
+        // runtime attribute 2 does not require runtime service
+        private static final SimpleAttributeDefinition RUNTIME_ATTRIBUTE_2 = new SimpleAttributeDefinitionBuilder(TEST_RUNTIME_ATTRIBUTE_2, ModelType.INT)
+                .setStorageRuntime()
+                .setRuntimeServiceNotRequired()
                 .build();
 
         public TestResourceDefinition() {
@@ -210,10 +264,13 @@ public class MetricsRegistrationTestCase {
                     new ModelOnlyAddStepHandler(), new ModelOnlyRemoveStepHandler());
         }
 
+
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             resourceRegistration.registerMetric(METRIC, (context, operation) -> context.getResult().set(1000));
-            resourceRegistration.registerMetric(FORCED_METRIC, (context, operation) -> context.getResult().set(2000));
+            resourceRegistration.registerMetric(METRIC_2, (context, operation) -> context.getResult().set(2000));
+            resourceRegistration.registerReadOnlyAttribute(RUNTIME_ATTRIBUTE, ((context, operation) -> context.getResult().set(3000)));
+            resourceRegistration.registerReadOnlyAttribute(RUNTIME_ATTRIBUTE_2, ((context, operation) -> context.getResult().set(4000)));
         }
     }
 }

@@ -118,7 +118,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition STATUS = SimpleAttributeDefinitionBuilder.create(ServerStatusHandler.ATTRIBUTE_NAME, ModelType.STRING)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .setValidator(new EnumValidator<ServerStatus>(ServerStatus.class, false, false))
             .build();
 

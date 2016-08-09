@@ -93,26 +93,17 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             if(parsedCmd.getLastHeaderName() != null) {
                 if(buffer.endsWith(parsedCmd.getLastHeaderName())) {
                     result = parsedCmd.getLastChunkIndex();
-                    for(String name : headers.keySet()) {
+                    for (String name : headers.keySet()) {
+                        if (name.equals(parsedCmd.getLastHeaderName())) {
+                            result = completeHeader(headers, ctx, parsedCmd, buffer, cursor, candidates);
+                            break;
+                        }
                         if(!parsedCmd.hasHeader(name) && name.startsWith(parsedCmd.getLastHeaderName())) {
                             candidates.add(name);
                         }
                     }
                 } else {
-                    final OperationRequestHeader header = headers.get(parsedCmd.getLastHeaderName());
-                    if(header == null) {
-                        return -1;
-                    }
-                    final CommandLineCompleter headerCompleter = header.getCompleter();
-                    if(headerCompleter == null) {
-                        return -1;
-                    }
-
-                    int valueResult = headerCompleter.complete(ctx, buffer.substring(parsedCmd.getLastChunkIndex()), cursor, candidates);
-                    if(valueResult < 0) {
-                        return -1;
-                    }
-                    result = parsedCmd.getLastChunkIndex() + valueResult;
+                    result = completeHeader(headers, ctx, parsedCmd, buffer, cursor, candidates);
                 }
             } else {
                 if(!parsedCmd.hasHeaders()) {
@@ -529,5 +520,25 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             }
         }
         return maxIndex;
+    }
+
+    private int completeHeader(Map<String, OperationRequestHeader> headers,
+            CommandContext ctx, ParsedCommandLine parsedCmd, String buffer,
+            int cursor, List<String> candidates) {
+        final OperationRequestHeader header = headers.get(parsedCmd.getLastHeaderName());
+        if (header == null) {
+            return -1;
+        }
+        final CommandLineCompleter headerCompleter = header.getCompleter();
+        if (headerCompleter == null) {
+            return -1;
+        }
+
+        int valueResult = headerCompleter.complete(ctx,
+                buffer.substring(parsedCmd.getLastChunkIndex()), cursor, candidates);
+        if (valueResult < 0) {
+            return -1;
+        }
+        return parsedCmd.getLastChunkIndex() + valueResult;
     }
 }

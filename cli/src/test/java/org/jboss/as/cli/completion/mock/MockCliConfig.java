@@ -118,4 +118,9 @@ public class MockCliConfig implements CliConfig {
     public boolean isAccessControl() {
         return false;
     }
+
+    @Override
+    public boolean isEchoCommand() {
+        return false;
+    }
 }

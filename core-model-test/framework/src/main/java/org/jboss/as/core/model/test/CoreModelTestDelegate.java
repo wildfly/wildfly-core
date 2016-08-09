@@ -728,10 +728,10 @@ public class CoreModelTestDelegate {
                 classLoaderBuilder.addMavenResourceURL("org.wildfly.legacy.test:wildfly-legacy-spi:" + Version.LEGACY_TEST_CONTROLLER_VERSION);
 
                 if (testControllerVersion != ModelTestControllerVersion.MASTER) {
-                    String groupId = testControllerVersion.getMavenGavVersion().startsWith("7.") ? "org.jboss.as" : "org.wildfly";
-                    String hostControllerArtifactId = testControllerVersion.getMavenGavVersion().startsWith("7.") ? "jboss-as-host-controller" : "wildfly-host-controller";
+                    String groupId = testControllerVersion.getCoreMavenGroupId();
+                    String hostControllerArtifactId = testControllerVersion.getHostControllerMavenArtifactId();
 
-                    classLoaderBuilder.addRecursiveMavenResourceURL(groupId + ":" + hostControllerArtifactId + ":" + testControllerVersion.getMavenGavVersion());
+                    classLoaderBuilder.addRecursiveMavenResourceURL(groupId + ":" + hostControllerArtifactId + ":" + testControllerVersion.getCoreVersion());
                     classLoaderBuilder.addMavenResourceURL("org.wildfly.legacy.test:wildfly-legacy-core-" + testControllerVersion.getTestControllerVersion() + ":" + Version.LEGACY_TEST_CONTROLLER_VERSION);
 
                 }

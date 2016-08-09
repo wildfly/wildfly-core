@@ -77,6 +77,7 @@ public class PlatformMBeanConstants {
 
     static SimpleAttributeDefinition OBJECT_NAME = SimpleAttributeDefinitionBuilder.create("object-name", ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
 
@@ -105,21 +106,25 @@ public class PlatformMBeanConstants {
     public static final String INIT = "init";
     static SimpleAttributeDefinition MEMORY_INIT = SimpleAttributeDefinitionBuilder.create(INIT, ModelType.LONG, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .build();
     public static final String USED = "used";
     static SimpleAttributeDefinition MEMORY_USED = SimpleAttributeDefinitionBuilder.create(USED, ModelType.LONG, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .build();
     public static final String COMMITTED = "committed";
     static SimpleAttributeDefinition MEMORY_COMMITTED = SimpleAttributeDefinitionBuilder.create(COMMITTED, ModelType.LONG, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .build();
     public static final String MAX = "max";
     static SimpleAttributeDefinition MEMORY_MAX = SimpleAttributeDefinitionBuilder.create(MAX, ModelType.LONG, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .build();
 
@@ -278,9 +283,11 @@ public class PlatformMBeanConstants {
     //read attributes
     static AttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.NAME, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     static AttributeDefinition VALID = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VALID, ModelType.BOOLEAN, false)
                     .setStorageRuntime()
+                    .setRuntimeServiceNotRequired()
                     .build();
 
     private PlatformMBeanConstants() {

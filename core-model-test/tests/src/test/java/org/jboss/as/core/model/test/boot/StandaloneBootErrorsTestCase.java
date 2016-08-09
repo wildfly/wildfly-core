@@ -98,5 +98,6 @@ public class StandaloneBootErrorsTestCase extends AbstractBootErrorTestCase {
         Assert.assertThat(error.asString(), error.hasDefined(FAILURE_DESCRIPTION), is(true));
         Assert.assertThat(error.asString(), error.get(FAILURE_DESCRIPTION).asString(), containsString("testhost"));
         Assert.assertThat(error.asString(), error.hasDefined(FAILED_SERVICES), is(false));
+        kernelServices.shutdown();
     }
 }

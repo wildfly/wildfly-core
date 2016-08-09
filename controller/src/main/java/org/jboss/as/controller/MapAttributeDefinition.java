@@ -140,6 +140,15 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
         return result;
     }
 
+        @Override
+    public ModelNode addOperationReplyDescription(ModelNode resourceDescription, String operationName,
+                                                      ResourceDescriptionResolver resolver, Locale locale, ResourceBundle bundle) {
+        final ModelNode result = super.addOperationReplyDescription(resourceDescription, operationName, resolver, locale, bundle);
+        //TODO WFCORE-1178: use reply value types description instead of parameter value type
+        addOperationParameterValueTypeDescription(result, operationName, resolver, locale, bundle);
+        return result;
+    }
+
     protected abstract void addOperationParameterValueTypeDescription(ModelNode result, String operationName, ResourceDescriptionResolver resolver, Locale locale, ResourceBundle bundle);
 
     @Override

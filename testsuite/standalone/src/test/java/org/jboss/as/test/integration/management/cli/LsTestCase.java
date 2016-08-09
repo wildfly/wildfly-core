@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2014, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -28,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -42,7 +43,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Alexey Loubyansky
  */
 @RunWith(WildflyTestRunner.class)
-public class LsTestCase {
+public class LsTestCase extends AbstractCliTestBase {
 
     private CommandContext ctx;
 
@@ -50,6 +51,7 @@ public class LsTestCase {
     public void before() throws Exception {
         ctx = CLITestUtil.getCommandContext();
         ctx.connectController();
+        AbstractCliTestBase.initCLI();
     }
 
     @After
@@ -76,5 +78,39 @@ public class LsTestCase {
         assertEquals(ModelType.LIST, address.getType());
         assertTrue(address.asList().isEmpty());
         assertFalse(request.hasDefined("steps"));
+    }
+
+    @Test
+    public void testSimple() throws Exception {
+        cli.sendLine("ls");
+        String out = cli.readOutput();
+        assertFalse(out.contains("Unrecognized arguments:"));
+        cli.sendLine("ls --headers={allow-resource-service-restart=true;}");
+        out = cli.readOutput();
+        assertFalse(out.contains("Unrecognized arguments:"));
+        cli.sendLine("ls -l");
+        out = cli.readOutput();
+        assertFalse(out.contains("Unrecognized arguments:"));
+        cli.sendLine("ls --resolve-expressions");
+        out = cli.readOutput();
+        assertFalse(out.contains("Unrecognized arguments:"));
+    }
+
+    @Test
+    public void testDescriptionAttributes() throws Exception {
+        {
+            cli.sendLine("ls -l --storage --nillable");
+            String out = cli.readOutput();
+            assertTrue(out.contains("STORAGE"));
+            assertFalse(out.contains("Unrecognized arguments:"));
+            assertTrue(out.contains("NILLABLE"));
+        }
+
+        {
+            cli.sendLine("ls --storage");
+            String out = cli.readOutput();
+            assertFalse(out.contains("Unrecognized arguments:"));
+            assertFalse(out.contains("STORAGE"));
+        }
     }
 }

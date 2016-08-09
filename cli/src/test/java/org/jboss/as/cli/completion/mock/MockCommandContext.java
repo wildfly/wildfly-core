@@ -77,6 +77,8 @@ public class MockCommandContext implements CommandContext {
     private boolean silent;
     private ConnectionInfoBeanMock connInfo =  new ConnectionInfoBeanMock();
 
+    private String buffer;
+
     public MockCommandContext() {
         connInfo.setUsername("test");
         set(Scope.CONTEXT, "connection_info", connInfo);
@@ -84,6 +86,7 @@ public class MockCommandContext implements CommandContext {
 
     public void parseCommandLine(String buffer, boolean validate) throws CommandFormatException {
         try {
+            this.buffer = buffer;
             parsedCmd.parse(prefix, buffer, validate);
         } catch (CommandFormatException e) {
             if(!parsedCmd.endsOnAddressOperationNameSeparator() || !parsedCmd.endsOnSeparator()) {
@@ -92,13 +95,16 @@ public class MockCommandContext implements CommandContext {
         }
     }
 
-    /* (non-Javadoc)
-     * @see org.jboss.as.cli.CommandContext#getCommandArguments()
-     */
     @Override
     public String getArgumentsString() {
-        // TODO Auto-generated method stub
-        return null;
+        // just for test like CommandCompletionTestCase
+        // mock method to support completion of commands and ops spread across multiple lines like in CommandContextImpl
+        if (buffer == null) {
+            return null;
+        } else {
+            int index = buffer.indexOf("\\n");
+            return index == -1 ? null : buffer.substring(0, index);
+        }
     }
 
     /* (non-Javadoc)

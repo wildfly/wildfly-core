@@ -55,6 +55,7 @@ import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.dmr.ModelNode;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -83,6 +84,12 @@ public class ServerGroupScopedRolesTestCase extends AbstractCoreModelTest {
                 .validateDescription()
                 .build();
     }
+
+    @After
+    public void cleanMeUp(){
+        kernelServices.shutdown();
+    }
+
 
     @Test
     public void testReadServerGroupScopedRole() {

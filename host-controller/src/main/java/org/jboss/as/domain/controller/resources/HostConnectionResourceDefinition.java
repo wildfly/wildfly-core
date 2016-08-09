@@ -57,26 +57,32 @@ public class HostConnectionResourceDefinition extends SimpleResourceDefinition {
 
     private static final AttributeDefinition CONNECTION_DEF = SimpleAttributeDefinitionBuilder.create(HostConnectionInfo.CONNECTED, ModelType.BOOLEAN, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static final AttributeDefinition TIMESTAMP_DEF = SimpleAttributeDefinitionBuilder.create(HostConnectionInfo.TIMESTAMP, ModelType.LONG, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static final AttributeDefinition EVENT_TYPE_DEF = SimpleAttributeDefinitionBuilder.create(HostConnectionInfo.TYPE, ModelType.STRING, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static final AttributeDefinition ADDRESS_DEF = SimpleAttributeDefinitionBuilder.create(HostConnectionInfo.ADDRESS, ModelType.STRING, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static final ObjectTypeAttributeDefinition EVENT = ObjectTypeAttributeDefinition.Builder.of("event", EVENT_TYPE_DEF, ADDRESS_DEF, TIMESTAMP_DEF)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static final ObjectListAttributeDefinition EVENT_LIST = ObjectListAttributeDefinition.Builder.of(HostConnectionInfo.EVENTS, EVENT)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static final OperationDefinition PRUNE_EXPIRED_DEF = new SimpleOperationDefinitionBuilder("prune-expired", RESOLVER)

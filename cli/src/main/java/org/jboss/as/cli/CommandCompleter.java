@@ -83,7 +83,15 @@ public class CommandCompleter implements CommandLineCompleter {
 
         final DefaultCallbackHandler parsedCmd = (DefaultCallbackHandler) ctx.getParsedCommandLine();
         try {
-            parsedCmd.parse(ctx.getCurrentNodePath(), buffer, false, ctx);
+            // WFCORE-1627 parse current position if cursor moves
+            if (ctx.getArgumentsString() == null && buffer.length() > cursor) {
+                parsedCmd.parse(ctx.getCurrentNodePath(), buffer.substring(0, cursor), false, ctx);
+            } else if (ctx.getArgumentsString() != null && buffer.length() - ctx.getArgumentsString().length() > cursor) {
+                // multiple lines
+                parsedCmd.parse(ctx.getCurrentNodePath(), buffer.substring(0, ctx.getArgumentsString().length() + cursor), false, ctx);
+            } else {
+                parsedCmd.parse(ctx.getCurrentNodePath(), buffer, false, ctx);
+            }
         } catch(UnresolvedVariableException e) {
             final String variable = e.getExpression();
             if(buffer.endsWith(variable)) {

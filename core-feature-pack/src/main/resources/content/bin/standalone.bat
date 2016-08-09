@@ -12,12 +12,20 @@ rem         standalone.bat --debug 9797
 
 rem By default debug mode is disable.
 set DEBUG_MODE=false
-set DEBUG_PORT=8787
+set DEBUG_PORT_VAR=8787
+set GC_LOG_VAR=false
 rem Set to all parameters by default
 set "SERVER_OPTS=%*"
 
 if NOT "x%DEBUG%" == "x" (
   set "DEBUG_MODE=%DEBUG%
+)
+if NOT "x%DEBUG_PORT%" == "x" (
+  set "DEBUG_PORT_VAR=%DEBUG_PORT%
+)
+
+if NOT "x%GC_LOG%" == "x" (
+  set "GC_LOG_VAR=%GC_LOG%
 )
 
 rem Get the program name before using shift as the command modify the variable ~nx0
@@ -59,7 +67,7 @@ set DEBUG_ARG="%2"
 if not %DEBUG_ARG% == "" (
    if x%DEBUG_ARG:-=%==x%DEBUG_ARG% (
       shift
-      set DEBUG_PORT=%DEBUG_ARG%
+      set DEBUG_PORT_VAR=%DEBUG_ARG%
    )
    shift
    goto READ-ARGS
@@ -105,7 +113,7 @@ rem Set debug settings if not already set
 if "%DEBUG_MODE%" == "true" (
    echo "%JAVA_OPTS%" | findstr /I "\-agentlib:jdwp" > nul
   if errorlevel == 1 (
-     set "JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,address=%DEBUG_PORT%,server=y,suspend=n"
+     set "JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,address=%DEBUG_PORT_VAR%,server=y,suspend=n"
   ) else (
      echo Debug already enabled in JAVA_OPTS, ignoring --debug argument
   )
@@ -141,28 +149,30 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
   )
 )
 
-rem EAP6-121 feature disabled
-rem if not "%PRESERVE_JAVA_OPTS%" == "true" (
-  rem Add rotating GC logs, if supported, and not already defined
-  rem echo "%JAVA_OPTS%" | findstr /I "\-verbose:gc" > nul
-  rem if errorlevel == 1 (
-    rem Back up any prior logs
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.0" "%JBOSS_LOG_DIR%\backupgc.log.0" > nul 2>&1
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.1" "%JBOSS_LOG_DIR%\backupgc.log.1" > nul 2>&1
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.2" "%JBOSS_LOG_DIR%\backupgc.log.2" > nul 2>&1
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.3" "%JBOSS_LOG_DIR%\backupgc.log.3" > nul 2>&1
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.4" "%JBOSS_LOG_DIR%\backupgc.log.4" > nul 2>&1
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.*.current" "%JBOSS_LOG_DIR%\backupgc.log.current" > nul 2>&1
-    rem "%JAVA%" -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -Xloggc:%XLOGGC% -XX:-TraceClassUnloading -version > nul 2>&1
-    rem if not errorlevel == 1 (
-      rem if not exist "%JBOSS_LOG_DIR" > nul 2>&1 (
-        rem mkdir "%JBOSS_LOG_DIR%"
-      rem )
-     rem set XLOGGC="%JBOSS_LOG_DIR%\gc.log"
-     rem set "JAVA_OPTS=-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading %JAVA_OPTS%"
-    rem )
-  rem )
-rem )
+
+if not "%PRESERVE_JAVA_OPTS%" == "true" (
+    if "%GC_LOG_VAR%" == "true" (
+      rem Add rotating GC logs, if supported, and not already defined
+      echo "%JAVA_OPTS%" | findstr /I "\-verbose:gc" > nul
+      if errorlevel == 1 (
+        rem Back up any prior logs
+        move /y "%JBOSS_LOG_DIR%\gc.log.1" "%JBOSS_LOG_DIR%\backupgc.log.1" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.0" "%JBOSS_LOG_DIR%\backupgc.log.0" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.2" "%JBOSS_LOG_DIR%\backupgc.log.2" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.3" "%JBOSS_LOG_DIR%\backupgc.log.3" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.4" "%JBOSS_LOG_DIR%\backupgc.log.4" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.*.current" "%JBOSS_LOG_DIR%\backupgc.log.current" > nul 2>&1
+        "%JAVA%" -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -Xloggc:%XLOGGC% -XX:-TraceClassUnloading -version > nul 2>&1
+        if not errorlevel == 1 (
+          if not exist "%JBOSS_LOG_DIR" > nul 2>&1 (
+            mkdir "%JBOSS_LOG_DIR%"
+          )
+         set XLOGGC="%JBOSS_LOG_DIR%\gc.log"
+         set "JAVA_OPTS=-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -Xloggc:%XLOGGC% -XX:-TraceClassUnloading %JAVA_OPTS%"
+        )
+       )
+    )
+)
 
 rem Find jboss-modules.jar, or we can't continue
 if exist "%JBOSS_HOME%\jboss-modules.jar" (

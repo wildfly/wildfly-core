@@ -289,13 +289,13 @@
             <![CDATA[
                 The configuration of a Remoting connector.
 
-                The "socket-binding" attribute specifies the name (or names) of the socket binding(s) to attach to.
+                The "socket-binding" attribute specifies the name of the socket binding to attach to.
             ]]>
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="abstractConnector">
-                <xs:attribute name="socket-binding" type="name-list" use="required"/>
+                <xs:attribute name="socket-binding" type="xs:string" use="required"/>
                 <xs:attribute name="ssl-context" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>

@@ -81,14 +81,10 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
         final File configDir = environment.getDomainConfigurationDir();
         ConfigurationFile domainConfigurationFile = null;
         if (slave) {
-            if (environment.isBackupDomainFiles()) {
-                // --backup
+            // in either case of --backup and/or --cached-dc, we persist with the same persister
+            if (environment.isBackupDomainFiles() || environment.isUseCachedDc()) {
                 domainConfigurationFile = getBackupDomainConfigurationFile();
                 domainPersister = ConfigurationPersisterFactory.createRemoteBackupDomainXmlConfigurationPersister(configDir, executorService, extensionRegistry);
-            } else if(environment.isUseCachedDc()) {
-                // --cached-dc
-                domainConfigurationFile = getBackupDomainConfigurationFile();
-                domainPersister = ConfigurationPersisterFactory.createCachedRemoteDomainXmlConfigurationPersister(configDir, executorService, extensionRegistry);
             } else {
                 domainPersister = ConfigurationPersisterFactory.createTransientDomainXmlConfigurationPersister(executorService, extensionRegistry);
             }

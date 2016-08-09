@@ -144,8 +144,9 @@ public interface Console {
                                     co.getBuffer(), co.getCursor(), candidates);
                             co.setOffset(offset);
                             co.setCompletionCandidates(candidates);
-                            if (co.getCompletionCandidates().size() == 1 &&
-                                    co.getCompletionCandidates().get(0).getCharacters().startsWith(co.getBuffer()))
+                            String buffer = cmdCtx.getArgumentsString() == null ? co.getBuffer() : ctx.getArgumentsString() + co.getBuffer();
+                            if (co.getCompletionCandidates().size() == 1
+                                    && co.getCompletionCandidates().get(0).getCharacters().startsWith(buffer))
                                 co.doAppendSeparator(true);
                             else
                                 co.doAppendSeparator(false);

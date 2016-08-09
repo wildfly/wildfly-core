@@ -39,8 +39,13 @@ public class CommandContextConfiguration {
     private final int connectionTimeout;
     private boolean silent;
     private Boolean errorOnInteract;
+    private final boolean echoCommand;
 
-    private CommandContextConfiguration(String controller, String username, char[] password, String clientBindAddress, boolean disableLocalAuth, boolean initConsole, int connectionTimeout, InputStream consoleInput, OutputStream consoleOutput) {
+    private CommandContextConfiguration(String controller, String username,
+            char[] password, String clientBindAddress,
+            boolean disableLocalAuth, boolean initConsole, int connectionTimeout,
+            InputStream consoleInput, OutputStream consoleOutput,
+            boolean echoCommand) {
         this.controller = controller;
         this.username = username;
         this.password = password;
@@ -50,6 +55,7 @@ public class CommandContextConfiguration {
         this.initConsole = initConsole;
         this.disableLocalAuth = disableLocalAuth || username != null;
         this.connectionTimeout = connectionTimeout;
+        this.echoCommand = echoCommand;
     }
 
     public String getController() {
@@ -96,6 +102,10 @@ public class CommandContextConfiguration {
         return errorOnInteract;
     }
 
+    public boolean isEchoCommand() {
+        return echoCommand;
+    }
+
     public static class Builder {
         private String controller;
         private String username;
@@ -109,7 +119,7 @@ public class CommandContextConfiguration {
         private boolean disableLocalAuthUnset = true;
         private boolean silent;
         private Boolean errorOnInteract;
-
+        private boolean echoCommand;
         public Builder() {
         }
 
@@ -118,13 +128,18 @@ public class CommandContextConfiguration {
                 this.disableLocalAuth = username != null;
             }
             final CommandContextConfiguration config = new CommandContextConfiguration(controller, username, password, clientBindAddress, disableLocalAuth,
-                    initConsole, connectionTimeout, consoleInput, consoleOutput);
+                    initConsole, connectionTimeout, consoleInput, consoleOutput, echoCommand);
             config.silent = silent;
             config.errorOnInteract = errorOnInteract;
             return config;
         }
         public Builder setController(String controller) {
             this.controller = controller;
+            return this;
+        }
+
+        public Builder setEchoCommand(boolean echoCommand) {
+            this.echoCommand = echoCommand;
             return this;
         }
 

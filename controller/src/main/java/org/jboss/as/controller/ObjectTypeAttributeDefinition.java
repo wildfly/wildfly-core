@@ -126,6 +126,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         return result;
     }
 
+    @Override
     public ModelNode addOperationParameterDescription(final ModelNode resourceDescription, final String operationName,
                                                       final ResourceDescriptionResolver resolver,
                                                       final Locale locale, final ResourceBundle bundle) {
@@ -134,6 +135,16 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         return result;
     }
 
+    @Override
+    public ModelNode addOperationReplyDescription(final ModelNode resourceDescription, final String operationName,
+                                                      final ResourceDescriptionResolver resolver,
+                                                      final Locale locale, final ResourceBundle bundle) {
+        final ModelNode result = super.addOperationReplyDescription(resourceDescription, operationName, resolver, locale, bundle);
+        addValueTypeDescription(result, getName(), bundle, true, resolver, locale);
+        return result;
+    }
+
+    @Override
     public ModelNode addResourceAttributeDescription(final ModelNode resourceDescription, final ResourceDescriptionResolver resolver,
                                                      final Locale locale, final ResourceBundle bundle) {
         final ModelNode result = super.addResourceAttributeDescription(resourceDescription, resolver, locale, bundle);

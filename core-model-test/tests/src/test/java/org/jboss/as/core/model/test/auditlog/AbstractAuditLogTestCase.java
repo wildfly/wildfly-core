@@ -57,6 +57,7 @@ public abstract class AbstractAuditLogTestCase extends AbstractCoreModelTest {
                 .setXml(marshalled)
                 .build();
             Assert.assertTrue(kernelServices.isSuccessfulBoot());
+        kernelServices.shutdown();
     }
 
     KernelServicesBuilder createKernelServicesBuilder() {

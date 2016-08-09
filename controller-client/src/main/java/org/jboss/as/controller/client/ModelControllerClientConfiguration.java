@@ -120,8 +120,6 @@ public interface ModelControllerClientConfiguration extends Closeable {
         private SSLContext sslContext;
         private String protocol;
         private int connectionTimeout = 0;
-        private ExecutorService executorService;
-        private Boolean shutdownExecutorOnClose;
 
         public Builder() {
         }
@@ -213,50 +211,13 @@ public interface ModelControllerClientConfiguration extends Closeable {
         }
 
         /**
-         * Sets the executor service to use for asynchronous tasks. If not set a default
-         * executor will be used.
-         *
-         * @param executorService the executor. May be {@code null}
-         * @return a builder to allow continued configuration
-         */
-        public Builder setExecutorService(ExecutorService executorService) {
-            this.executorService = executorService;
-            return this;
-        }
-
-        /**
-         * Sets whether the configuration's {@link ModelControllerClientConfiguration#getExecutor() executor}
-         * should be shut down when the {@link #close()} method is called. If not set the behavior
-         * depends on whether an executor was provided to {@link #setExecutorService(ExecutorService)}.
-         * If yes, then the executor will not be shut down; if no, then the default executor will be
-         * shut down.
-         *
-         * @param shutdown {@code true} if the executor should be shut down in the close method.
-         * @return a builder to allow continued configuration
-         */
-        public Builder setShutdownExecutorOnClose(boolean shutdown) {
-            this.shutdownExecutorOnClose = shutdown;
-            return this;
-        }
-
-        /**
          * Builds the configuration object based on this builder's settings.
          *
          * @return the configuration
          */
         public ModelControllerClientConfiguration build() {
-            ExecutorService theExec = executorService;
-            Boolean shutdown = shutdownExecutorOnClose;
-            if (theExec == null) {
-                theExec = Factory.createDefaultExecutor();
-                if (shutdown == null) {
-                    shutdown = Boolean.TRUE;
-                }
-            } else if (shutdown == null) {
-                shutdown = Boolean.FALSE;
-            }
-            return new ClientConfigurationImpl(hostName, port, handler, saslOptions, sslContext,
-                    theExec, shutdown, connectionTimeout, protocol, clientBindAddress);
+           return new ClientConfigurationImpl(hostName, port, handler, saslOptions, sslContext,
+                   Factory.createDefaultExecutor(), true, connectionTimeout, protocol, clientBindAddress);
         }
 
     }

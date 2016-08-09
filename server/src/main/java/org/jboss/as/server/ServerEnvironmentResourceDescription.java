@@ -41,6 +41,7 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.services.path.PathInfoHandler;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -109,6 +110,18 @@ public class ServerEnvironmentResourceDescription extends SimpleResourceDefiniti
         for (AttributeDefinition attribute : SERVER_ENV_ATTRIBUTES) {
             resourceRegistration.registerReadOnlyAttribute(attribute, osh);
         }
+    }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration);
+        PathInfoHandler.registerOperation(resourceRegistration,
+                PathInfoHandler.Builder.of(null)
+                        .addAttribute(CONTENT_DIR, null)
+                        .addAttribute(DATA_DIR, null)
+                        .addAttribute(TEMP_DIR, null)
+                        .addAttribute(LOG_DIR, null)
+                        .build());
     }
 
 

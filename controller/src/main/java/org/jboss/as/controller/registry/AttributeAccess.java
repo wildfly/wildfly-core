@@ -140,9 +140,11 @@ public final class AttributeAccess {
          */
         ALIAS,
         /**
-         * Force the registration of the attribute regardless of the actual process type.
+         * An attribute which does not require runtime MSC services to be read or written.
+         * This flag can be used in conjunction with STORAGE_RUNTIME to specify that a runtime
+         * attribute can work in the absence of runtime services.
          */
-        FORCE_REGISTRATION
+         RUNTIME_SERVICE_NOT_REQUIRED
     }
 
     private final AccessType access;

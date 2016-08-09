@@ -32,6 +32,7 @@ import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.ROTATE_
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.services.path.PathInfoHandler;
 import org.jboss.as.controller.services.path.ResolvePathHandler;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.logmanager.handlers.PeriodicSizeRotatingFileHandler;
@@ -49,9 +50,12 @@ class PeriodicSizeRotatingHandlerResourceDefinition extends AbstractFileHandlerD
     static final AttributeDefinition[] ATTRIBUTES = Logging.join(DEFAULT_ATTRIBUTES, AUTOFLUSH, APPEND, MAX_BACKUP_INDEX, ROTATE_SIZE, ROTATE_ON_BOOT, SUFFIX, NAMED_FORMATTER, FILE);
 
     public PeriodicSizeRotatingHandlerResourceDefinition(final ResolvePathHandler resolvePathHandler) {
-        super(PERIODIC_SIZE_ROTATING_HANDLER_PATH, false, PeriodicSizeRotatingFileHandler.class, resolvePathHandler, ATTRIBUTES);
+        this(resolvePathHandler, null);
     }
 
+    public PeriodicSizeRotatingHandlerResourceDefinition(final ResolvePathHandler resolvePathHandler, final PathInfoHandler diskUsagePathHandler) {
+        super(PERIODIC_SIZE_ROTATING_HANDLER_PATH, false, PeriodicSizeRotatingFileHandler.class, resolvePathHandler, diskUsagePathHandler, ATTRIBUTES);
+    }
 
 
     @Override

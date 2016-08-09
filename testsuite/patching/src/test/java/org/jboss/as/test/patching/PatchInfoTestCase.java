@@ -179,14 +179,22 @@ public class PatchInfoTestCase extends PatchInfoTestBase {
     }
 
     @Test
-    public void testCPAndOneOffs() throws Exception {
+    public void testCPAndOneOffsOnline() throws Exception {
+        doTestCPAndOneOffs(false);
+    }
 
+    @Test
+    public void testCPAndOneOffsOffline() throws Exception {
+        doTestCPAndOneOffs(true);
+    }
+
+    private void doTestCPAndOneOffs(boolean offline) throws Exception {
         byte[] targetHash = HashUtils.hashFile(moduleDir);
         targetHash = applyCP("cp1", "base-cp1", targetHash);
         targetHash = applyOneOff("oneOff1", "base-oneOff1", targetHash);
         targetHash = applyOneOff("oneOff2", "base-oneOff2", targetHash);
 
-        readPatchInfo(false);
+        readPatchInfo(false, offline);
         Map<String,String> table = reader.readTable();
         assertNotNull(table);
         assertEquals(3, table.size());
@@ -195,7 +203,7 @@ public class PatchInfoTestCase extends PatchInfoTestBase {
         assertEquals("cp1", table.get(CUMULATIVE_PATCH_ID));
         assertNull(reader.readTable());
 
-        readPatchInfo(true);
+        readPatchInfo(true, offline);
         table = reader.readTable();
         assertNotNull(table);
         assertEquals(3, table.size());
@@ -213,27 +221,36 @@ public class PatchInfoTestCase extends PatchInfoTestBase {
     }
 
     private void readPatchInfo(boolean verbose) throws Exception {
+        readPatchInfo(verbose, false);
+    }
+
+    private void readPatchInfo(boolean verbose, boolean offline) throws Exception {
 
         String line = "patch info";
         if(verbose) {
             line += " --verbose";
         }
 
-        controller.start();
-
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
         System.setProperty("aesh.terminal", "org.jboss.aesh.terminal.TestTerminal");
         final CommandContext ctx = CommandContextFactory.getInstance().newCommandContext(null, null, null, System.in, bytesOs);
 
-        final ModelControllerClient client = ModelControllerClient.Factory.create(TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort());
-        ctx.bindClient(client);
+        if(!offline) {
+            controller.start();
+            final ModelControllerClient client = ModelControllerClient.Factory.create(TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort());
+            ctx.bindClient(client);
+        } else {
+            line += " --distribution=" + PatchingTestUtil.AS_DISTRIBUTION;
+        }
 
         bytesOs.reset();
         try {
            ctx.handle(line);
         } finally {
             ctx.terminateSession();
-            controller.stop();
+            if(!offline) {
+                controller.stop();
+            }
         }
         reader.refresh();
     }

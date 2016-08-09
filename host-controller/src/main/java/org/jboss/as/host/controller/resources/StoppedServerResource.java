@@ -49,7 +49,7 @@ public class StoppedServerResource extends SimpleResourceDefinition {
 
     private static final PathElement SERVER = PathElement.pathElement(ModelDescriptionConstants.RUNNING_SERVER);
 
-    private static final OperationDefinition RELOAD = new SimpleOperationDefinitionBuilder("reload", HostResolver.getResolver("host.server"))
+    private static final OperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.RELOAD, HostResolver.getResolver("host.server"))
             .setPrivateEntry()
             .build();
 

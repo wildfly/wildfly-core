@@ -85,6 +85,7 @@ public class CorsHttpHandler implements HttpHandler {
         if (headers.contains(Headers.ORIGIN)) {
             if(matchOrigin(exchange, allowedOrigins) != null) {
                 exchange.getResponseHeaders().addAll(ACCESS_CONTROL_ALLOW_ORIGIN, headers.get(Headers.ORIGIN));
+                exchange.getResponseHeaders().add(Headers.VARY, Headers.ORIGIN_STRING);
             }
         }
         HeaderValues requestedMethods = headers.get(ACCESS_CONTROL_REQUEST_METHOD);

@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.jboss.as.patching.installation.PatchableTarget.TargetInfo;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.validation.PatchingFileRenamingCollector;
 import org.jboss.as.patching.validation.PatchingGarbageLocator;
@@ -62,17 +63,36 @@ public class InstallationManagerService implements Service<InstallationManager> 
             this.manager = load(jbossHome, productConfig);
 
             final File cleanupMaker = new File(manager.getInstalledImage().getInstallationMetadata(), "cleanup-patching-dirs");
-            if (cleanupMaker.exists()) {
-                try {
-                    for(InstalledIdentity installedIdentity : getValue().getInstalledIdentities()) {
+            boolean cleanup = cleanupMaker.exists();
+            for(InstalledIdentity installedIdentity : manager.getInstalledIdentities()) {
+                final Identity identity = manager.getDefaultIdentity().getIdentity();
+                final TargetInfo patchingInfo = identity.loadTargetInfo();
+                final StringBuilder buf = new StringBuilder();
+                for(String id : patchingInfo.getPatchIDs()) {
+                    if(buf.length() > 0) {
+                        buf.append(", ");
+                    }
+                    buf.append(id);
+                }
+                if(buf.length() == 0) {
+                    buf.append("none");
+                }
+                PatchLogger.ROOT_LOGGER.logPatchingInfo(identity.getName(), patchingInfo.getCumulativePatchID(), buf.toString());
+                if(cleanup) {
+                    try {
                         final PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(installedIdentity);
                         garbageLocator.deleteInactiveContent();
+                    } catch (Exception e) {
+                        PatchLogger.ROOT_LOGGER.debugf(e, "failed to garbage collect changes");
+                        cleanup = false;
                     }
-                    cleanupMaker.delete();
-                } catch (Exception e) {
-                    PatchLogger.ROOT_LOGGER.debugf(e, "failed to garbage collect changes");
                 }
             }
+
+            if(cleanup) {
+                cleanupMaker.delete();
+            }
+
             final File renamingMaker = new File(manager.getInstalledImage().getInstallationMetadata(), "cleanup-renaming-files");
             if (renamingMaker.exists()) {
                 try {

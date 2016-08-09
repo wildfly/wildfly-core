@@ -59,9 +59,9 @@ public class AbstractPatchingTestCase {
             ok = true;
         } finally {
             if (!ok) {
-                // Reset installation state
-                final File home = new File(PatchingTestUtil.AS_DISTRIBUTION);
-                PatchingTestUtil.resetInstallationState(home, BASE_MODULE_DIRECTORY);
+                PatchingTestUtil.resetInstallationState(new File(PatchingTestUtil.AS_DISTRIBUTION), BASE_MODULE_DIRECTORY);
+            } else {
+                PatchingTestUtil.resetPatchStreams(new File(PatchingTestUtil.AS_DISTRIBUTION));
             }
         }
     }

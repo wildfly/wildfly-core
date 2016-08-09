@@ -51,6 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLHandshakeException;
 import javax.security.sasl.SaslException;
 
+import org.jboss.as.controller.Cancellable;
 import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -114,6 +115,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.RemotingOptions;
 import org.jboss.threads.AsyncFuture;
@@ -280,8 +282,13 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                            // If the cause is one of the irrecoverable ones, unwrap and throw it on
                            rethrowIrrecoverableConnectionFailures(e);
 
-                           // Something else; we can retry if time remains
                            HostControllerLogger.ROOT_LOGGER.cannotConnect(masterURI, e);
+                           // if we're using isCachedDC, just try once then allow the poll to run in the background.
+                           // this will allow us to start up without having to wait for retries to be exhausted.
+                           if (hostControllerEnvironment.isUseCachedDc()) {
+                               throw e;
+                           }
+                           // Something else; we can retry if time remains
                            ex = e;
                        }
                    }
@@ -301,12 +308,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                }
 
                HostControllerLogger.ROOT_LOGGER.connectedToMaster(masterURI);
-
-               // Setup the transaction protocol handler
-               handler.addHandlerFactory(new TransactionalProtocolOperationHandler(controller, handler, responseAttachmentSupport));
-               // Use the existing channel strategy
-               masterProxy = ExistingChannelModelControllerClient.createAndAdd(handler);
-               txMasterProxy = TransactionalProtocolHandlers.createClient(handler);
+               setupHandler();
                break;
 
            } catch (Exception e) {
@@ -325,13 +327,15 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     }
 
     @Override
-    public void fetchDomainWideConfiguration() {
-        try {
-            //TODO implement fetchDomainWideConfiguration
-            throw new UnsupportedOperationException();
-        } finally {
-            StreamUtils.safeClose(connection);
-        }
+    public synchronized Cancellable pollForConnect() {
+        final Future<Connection> future = connection.reconnect();
+        setupHandler();
+        return new Cancellable() {
+            @Override
+            public boolean cancel() {
+                return future.cancel(true);
+            }
+        };
     }
 
     /** {@inheritDoc} */
@@ -775,6 +779,14 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
             }
         }
     };
+
+    private void setupHandler() {
+        // Setup the transaction protocol handler
+        handler.addHandlerFactory(new TransactionalProtocolOperationHandler(controller, handler, responseAttachmentSupport));
+        // Use the existing channel strategy
+        masterProxy = ExistingChannelModelControllerClient.createAndAdd(handler);
+        txMasterProxy = TransactionalProtocolHandlers.createClient(handler);
+    }
 
     private class FutureClient extends AsyncFutureTask<MasterDomainControllerClient>{
 
