@@ -31,7 +31,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>3.0.0.Alpha4-SNAPSHOT</version>
+    <version>3.0.0.Alpha5-SNAPSHOT</version>
 
     <name>WildFly: Core Parent Aggregator</name>
     <description>WildFly: Core Parent Aggregator</description>
@@ -81,7 +81,7 @@
 
         <version.commons-io>2.4</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>1.4.0.CR4</version.io.undertow>
+        <version.io.undertow>1.4.0.Final</version.io.undertow>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
         <version.junit>4.12</version.junit>
         <version.log4j>1.2.16</version.log4j>
@@ -120,7 +120,7 @@
         <version.org.jboss.staxmapper>1.2.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.stdio>1.0.2.GA</version.org.jboss.stdio>
         <version.org.jboss.threads>2.2.1.Final</version.org.jboss.threads>
-        <version.org.jboss.xnio>3.4.0.Beta2</version.org.jboss.xnio>
+        <version.org.jboss.xnio>3.4.0.Final</version.org.jboss.xnio>
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.mockito>1.9.5</version.org.mockito>

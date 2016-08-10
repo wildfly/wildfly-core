@@ -34,7 +34,7 @@ $global:SECMGR = Get-Env-Boolean SECMGR $false
 $global:DEBUG_MODE=Get-Env DEBUG $false
 $global:DEBUG_PORT=Get-Env DEBUG_PORT 8787
 $global:RUN_IN_BACKGROUND=$false
-$global:GC_LOG=Get-Env GC_LOG $false
+$GC_LOG=Get-Env GC_LOG
 #module opts that are passed to jboss modules
 $global:MODULE_OPTS = @()
 
@@ -135,9 +135,12 @@ Param(
   $PROG_ARGS += "-Djboss.server.base.dir=$global:JBOSS_BASE_DIR"
   $PROG_ARGS += "-Djboss.server.config.dir=$global:JBOSS_CONFIG_DIR"
 
-  if ($global:GC_LOG){
+  if ($GC_LOG -eq $true){
     if ($PROG_ARGS -notcontains "-verbose:gc"){
         Rotate-GC-Logs
+		if (-not(Test-Path $JBOSS_LOG_DIR)) {
+			$dir = New-Item $JBOSS_LOG_DIR -type directory -ErrorAction SilentlyContinue
+		}
         $PROG_ARGS += "-verbose:gc"
         $PROG_ARGS += "-XX:+PrintGCDetails"
         $PROG_ARGS += "-XX:+PrintGCDateStamps"
@@ -280,7 +283,7 @@ Function Rotate-GC-Logs {
 }
 
 Function Check-For-GC-Log {
-	if ($global:GC_LOG){
+	if (GC_LOG){
 		$args = (,'-verbose:gc',"-Xloggc:$JBOSS_LOG_DIR/gc.log","-XX:+PrintGCDetails","-XX:+PrintGCDateStamps","-XX:+UseGCLogFileRotation","-XX:NumberOfGCLogFiles=5","-XX:GCLogFileSize=3M","-XX:-TraceClassUnloading",'-version')
 		$OutputVariable = (&$JAVA $args )  | Out-String
 	}

@@ -12,21 +12,15 @@ rem         standalone.bat --debug 9797
 
 rem By default debug mode is disable.
 set DEBUG_MODE=false
-set DEBUG_PORT_VAR=8787
-set GC_LOG_VAR=false
+set DEBUG_PORT=8787
 rem Set to all parameters by default
 set "SERVER_OPTS=%*"
+
 
 if NOT "x%DEBUG%" == "x" (
   set "DEBUG_MODE=%DEBUG%
 )
-if NOT "x%DEBUG_PORT%" == "x" (
-  set "DEBUG_PORT_VAR=%DEBUG_PORT%
-)
 
-if NOT "x%GC_LOG%" == "x" (
-  set "GC_LOG_VAR=%GC_LOG%
-)
 
 rem Get the program name before using shift as the command modify the variable ~nx0
 if "%OS%" == "Windows_NT" (
@@ -67,7 +61,7 @@ set DEBUG_ARG="%2"
 if not %DEBUG_ARG% == "" (
    if x%DEBUG_ARG:-=%==x%DEBUG_ARG% (
       shift
-      set DEBUG_PORT_VAR=%DEBUG_ARG%
+      set DEBUG_PORT=%DEBUG_ARG%
    )
    shift
    goto READ-ARGS
@@ -108,12 +102,20 @@ if exist "%STANDALONE_CONF%" (
    echo Config file not found "%STANDALONE_CONF%"
 )
 
+if NOT "x%DEBUG_PORT%" == "x" (
+  set "DEBUG_PORT=%DEBUG_PORT%
+)
+
+if NOT "x%GC_LOG%" == "x" (
+  set "GC_LOG=%GC_LOG%
+)
+
 
 rem Set debug settings if not already set
 if "%DEBUG_MODE%" == "true" (
    echo "%JAVA_OPTS%" | findstr /I "\-agentlib:jdwp" > nul
   if errorlevel == 1 (
-     set "JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,address=%DEBUG_PORT_VAR%,server=y,suspend=n"
+     set "JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,address=%DEBUG_PORT%,server=y,suspend=n"
   ) else (
      echo Debug already enabled in JAVA_OPTS, ignoring --debug argument
   )
@@ -151,7 +153,7 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
 
 
 if not "%PRESERVE_JAVA_OPTS%" == "true" (
-    if "%GC_LOG_VAR%" == "true" (
+    if "%GC_LOG%" == "true" (
       rem Add rotating GC logs, if supported, and not already defined
       echo "%JAVA_OPTS%" | findstr /I "\-verbose:gc" > nul
       if errorlevel == 1 (

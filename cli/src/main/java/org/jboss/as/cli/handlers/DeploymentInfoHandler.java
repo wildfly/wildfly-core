@@ -227,7 +227,7 @@ public class DeploymentInfoHandler extends BaseOperationCommand {
                     }
                 }
             } else if(serverGroupName.indexOf('*') >= 0) {
-                  throw new CommandFormatException("Wildcards are not permited here, please give a valid server-group name.");
+                  throw new CommandFormatException("Wildcards are not allowed here, please give a valid server-group name.");
             } else {
                 request.get(Util.OPERATION).set(Util.COMPOSITE);
                 request.get(Util.ADDRESS).setEmptyList();
