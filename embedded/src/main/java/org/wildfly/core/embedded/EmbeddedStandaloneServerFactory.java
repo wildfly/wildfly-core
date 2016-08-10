@@ -268,7 +268,7 @@ public class EmbeddedStandaloneServerFactory {
                 }
 
                 // Determine the ServerEnvironment
-                ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED, startTime);
+                ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED, startTime).getServerEnvironment();
 
                 bootstrap = Bootstrap.Factory.newInstance();
 

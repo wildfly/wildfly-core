@@ -59,6 +59,15 @@ public class SystemExiter {
         }, status);
     }
 
+    public static void safeAbort() {
+        logAndExit(new ExitLogger() {
+            @Override
+            public void logExit() {
+                // no-op
+            }
+        }, 0);
+    }
+
     /** @deprecated use {@link #logAndExit(ExitLogger, int)} or {@link #abort(int)} */
     @Deprecated
     public static void exit(final int status) {
