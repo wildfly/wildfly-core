@@ -39,8 +39,8 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.persistence.ConfigurationFile;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.services.path.PathInfoHandler;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -135,11 +135,16 @@ public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition 
     }
 
     private static AttributeDefinition createAttributeDefinition(String name, ModelType type) {
-        return SimpleAttributeDefinitionBuilder.create(name, type).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+        return SimpleAttributeDefinitionBuilder.create(name, type)
+                .setStorageRuntime()
+                .setRuntimeServiceNotRequired()
+                .build();
     }
 
     private static AttributeDefinition createAttributeDefinition(String name, ModelType type, AccessConstraintDefinition... accessConstraints) {
-        SimpleAttributeDefinitionBuilder builder = SimpleAttributeDefinitionBuilder.create(name, type).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME);
+        SimpleAttributeDefinitionBuilder builder = SimpleAttributeDefinitionBuilder.create(name, type)
+                .setStorageRuntime()
+                .setRuntimeServiceNotRequired();
         if (accessConstraints != null) {
             for (AccessConstraintDefinition acd : accessConstraints) {
                 builder = builder.addAccessConstraint(acd);
@@ -153,6 +158,22 @@ public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition 
         for (AttributeDefinition attribute : HOST_ENV_ATTRIBUTES) {
             resourceRegistration.registerReadOnlyAttribute(attribute, osh);
         }
+    }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration);
+        PathInfoHandler.registerOperation(resourceRegistration,
+                PathInfoHandler.Builder.of(null)
+                        .addAttribute(HOME_DIR, null)
+                        .addAttribute(DOMAIN_BASE_DIR, null)
+                        .addAttribute(DOMAIN_CONFIG_DIR, null)
+                        .addAttribute(DOMAIN_CONTENT_DIR, null)
+                        .addAttribute(DOMAIN_DATA_DIR, null)
+                        .addAttribute(DOMAIN_LOG_DIR, null)
+                        .addAttribute(DOMAIN_SERVERS_DIR, null)
+                        .addAttribute(DOMAIN_TEMP_DIR, null)
+                        .build());
     }
 
 

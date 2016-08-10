@@ -14,7 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -367,14 +366,29 @@ public final class PersistentResourceXMLDescription {
 
     private void marshallAttributes(XMLExtendedStreamWriter writer, ModelNode model, Collection<AttributeDefinition> attributes, String group) throws XMLStreamException {
         boolean started = false;
-        boolean possibleElements = attributes.stream().filter(attributeDefinition -> attributeDefinition.getParser().isParseAsElement()).count() > 0;
 
         //we sort attributes to make sure that attributes that marshall to elements are last
-        for (AttributeDefinition ad : attributes.stream().sorted((o1, o2) -> o1.getParser().isParseAsElement() ? 1 : -1).collect(Collectors.toList())) {
+        List<AttributeDefinition> sortedAds = new ArrayList<>(attributes.size());
+        List<AttributeDefinition> elementAds = null;
+        for (AttributeDefinition ad : attributes) {
+            if (ad.getParser().isParseAsElement()) {
+                if (elementAds == null) {
+                    elementAds = new ArrayList<>();
+                }
+                elementAds.add(ad);
+            } else {
+                sortedAds.add(ad);
+            }
+        }
+        if (elementAds != null) {
+            sortedAds.addAll(elementAds);
+        }
+
+        for (AttributeDefinition ad : sortedAds) {
             AttributeMarshaller marshaller = attributeMarshallers.getOrDefault(ad.getName(), ad.getAttributeMarshaller());
             if (marshaller.isMarshallable(ad, model, marshallDefaultValues)) {
                 if (!started && group != null) {
-                    if (possibleElements) {
+                    if (elementAds != null) {
                         writer.writeStartElement(group);
                     } else {
                         writer.writeEmptyElement(group);
@@ -385,7 +399,7 @@ public final class PersistentResourceXMLDescription {
             }
 
         }
-        if (possibleElements && started) {
+        if (elementAds != null && started) {
             writer.writeEndElement();
         }
     }

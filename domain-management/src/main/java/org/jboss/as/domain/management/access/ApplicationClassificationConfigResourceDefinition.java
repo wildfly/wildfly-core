@@ -61,6 +61,7 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
 
     public static SimpleAttributeDefinition DEFAULT_APPLICATION = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_APPLICATION, ModelType.BOOLEAN, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     public static SimpleAttributeDefinition CONFIGURED_APPLICATION = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CONFIGURED_APPLICATION, ModelType.BOOLEAN, true)

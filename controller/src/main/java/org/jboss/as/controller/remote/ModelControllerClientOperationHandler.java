@@ -33,7 +33,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
@@ -45,6 +47,9 @@ import java.io.IOException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -78,6 +83,7 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  */
 public class ModelControllerClientOperationHandler implements ManagementRequestHandlerFactory {
 
+    private static final Set<String> PREPARED_RESPONSE_OPERATIONS = new HashSet<>(Arrays.asList(RELOAD, SHUTDOWN));
     private final ModelController controller;
 
     private final ManagementChannelAssociation channelAssociation;
@@ -127,7 +133,6 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
     }
 
     class ExecuteRequestHandler implements ManagementRequestHandler<ModelNode, Void> {
-
         @Override
         public void handleRequest(final DataInput input, final ActiveOperation.ResultHandler<ModelNode> resultHandler,
                                   final ManagementRequestContext<Void> context) throws IOException {
@@ -238,7 +243,7 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
             final String op = operation.get(OP).asString();
             final int size = address.size();
             if (size == 0) {
-                if ("reload".equals(op)) {
+                if (PREPARED_RESPONSE_OPERATIONS.contains(op)) {
                     return true;
                 } else if (COMPOSITE.equals(op)) {
                     // TODO
@@ -248,7 +253,7 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
                 }
             } else if (size == 1) {
                 if (HOST.equals(address.getLastElement().getKey())) {
-                    return "reload".equals(op);
+                    return PREPARED_RESPONSE_OPERATIONS.contains(op);
                 }
             }
             return false;

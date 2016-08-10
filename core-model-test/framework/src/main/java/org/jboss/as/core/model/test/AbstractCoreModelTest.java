@@ -52,6 +52,7 @@ public abstract class AbstractCoreModelTest {
     @After
     public void cleanup() throws Exception {
         delegate.cleanup();
+        delegate.setCurrentTransformerClassloaderParameter(null);
     }
 
     CoreModelTestDelegate getDelegate() {

@@ -50,10 +50,16 @@ import org.wildfly.extension.io.IOExtension;
 class RemotingSubsystemTestUtil {
 
     static final AdditionalInitialization DEFAULT_ADDITIONAL_INITIALIZATION =
-            AdditionalInitialization.withCapabilities(buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
+            AdditionalInitialization.withCapabilities(
+                    buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
                     RemotingEndpointResource.WORKER.getDefaultValue().asString()),
                     // This one is specified in one of the test configs
-                    buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, "default-remoting"));
+                    buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, "default-remoting"),
+                    buildDynamicCapabilityName("org.wildfly.network.outbound-socket-binding", "dummy-outbound-socket"),
+                    buildDynamicCapabilityName("org.wildfly.network.outbound-socket-binding", "other-outbound-socket")
+
+
+                    );
 
     static final AdditionalInitialization HC_ADDITIONAL_INITIALIZATION =
             new AdditionalInitialization.ManagementAdditionalInitialization() {

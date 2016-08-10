@@ -73,6 +73,7 @@ public class LogStreamExtension implements Extension {
 
     public static final AttributeDefinition LOG_FILE = SimpleAttributeDefinitionBuilder.create("log-file", ModelType.INT)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setAllowNull(true)
             .build();
 

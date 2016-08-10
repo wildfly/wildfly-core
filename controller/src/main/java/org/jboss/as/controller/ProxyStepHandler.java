@@ -187,7 +187,8 @@ public class ProxyStepHandler implements OperationStepHandler {
             // operation failed before it could commit
             ModelNode responseNode = finalResult.getResponseNode();
             ControllerLogger.MGMT_OP_LOGGER.tracef("Remote operation %s failed before commit with response %s", operation, responseNode);
-            context.getResult().set(responseNode.get(RESULT));
+            ModelNode result = responseNode.get(RESULT);
+            context.getResult().set(result);
             ModelNode failureDesc = responseNode.get(FAILURE_DESCRIPTION);
             RuntimeException stdFailure = translateFailureDescription(failureDesc);
             if (stdFailure != null) {
@@ -214,10 +215,13 @@ public class ProxyStepHandler implements OperationStepHandler {
         try {
 
             ModelNode preparedResponse = preparedResultRef.get();
-            ModelNode preparedResult =  preparedResponse.get(RESULT);
+            ModelNode preparedResult = preparedResponse.get(RESULT);
             if (preparedResponse.hasDefined(FAILURE_DESCRIPTION)) {
                 context.getFailureDescription().set(preparedResponse.get(FAILURE_DESCRIPTION));
                 if (preparedResult.isDefined()) {
+                    if (context.getCurrentAddress().isMultiTarget()) {
+                        untranslateResultAddress(context.getCurrentAddress(), preparedResult);
+                    }
                     context.getResult().set(preparedResult);
                 }
             }
@@ -248,7 +252,11 @@ public class ProxyStepHandler implements OperationStepHandler {
                         OperationResponse finalResponse = finalResultRef.get();
                         if (finalResponse != null) {
                             ModelNode responseNode = finalResponse.getResponseNode();
-                            ModelNode finalResult =  responseNode.get(RESULT);
+                            ModelNode finalResult = responseNode.get(RESULT);
+                            PathAddress currentAddress = context.getCurrentAddress();
+                            if (currentAddress.isMultiTarget()) {
+                                untranslateResultAddress(currentAddress, finalResult);
+                            }
                             if (responseNode.hasDefined(FAILURE_DESCRIPTION)) {
                                 context.getFailureDescription().set(responseNode.get(FAILURE_DESCRIPTION));
                                 if (finalResult.isDefined()) {
@@ -303,6 +311,17 @@ public class ProxyStepHandler implements OperationStepHandler {
             }
             return result;
         }
+    }
+
+    private void untranslateResultAddress(final PathAddress opAddress, final ModelNode result) {
+        for (ModelNode m : result.asList()) {
+            if (m.hasDefined(OP_ADDR)) {
+                PathAddress resultAddr = PathAddress.pathAddress(m.get(OP_ADDR));
+                PathAddress untranslated = ProxyOperationAddressTranslator.SERVER.restoreAddress(opAddress, resultAddr);
+                m.get(OP_ADDR).set(untranslated.toModelNode());
+            }
+        }
+
     }
 
     private boolean isWFCORE621Needed(ModelNode operation, PathAddress address) {

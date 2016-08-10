@@ -87,6 +87,7 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
         AttributeDefinition ad = SimpleListAttributeDefinition.Builder.of("module-roots",
                 new SimpleAttributeDefinitionBuilder("module-root", ModelType.STRING).build())
                 .setStorageRuntime()
+                .setRuntimeServiceNotRequired()
                 .setDeprecated(ModelVersion.create(1, 4, 0))
                 .build();
         resourceRegistration.registerReadOnlyAttribute(ad, new ListModuleRootsHandler());

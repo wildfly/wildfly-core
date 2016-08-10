@@ -53,53 +53,58 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
 
     private static AttributeDefinition MEMORY_MANAGER_NAMES = new StringListAttributeDefinition.Builder(PlatformMBeanConstants.MEMORY_MANAGER_NAMES)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static AttributeDefinition TYPE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TYPE, ModelType.STRING, false)
             .setValidator(new EnumValidator<MemoryType>(MemoryType.class, false))
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static AttributeDefinition USAGE_THRESHOLD = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.USAGE_THRESHOLD, ModelType.LONG, true)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .setValidator(new IntRangeValidator(0))
             .build();
 
     private static AttributeDefinition USAGE_THRESHOLD_EXCEEDED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.USAGE_THRESHOLD_EXCEEDED, ModelType.BOOLEAN, true)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static AttributeDefinition USAGE_THRESHOLD_SUPPORTED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.USAGE_THRESHOLD_SUPPORTED, ModelType.BOOLEAN, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static AttributeDefinition USAGE_THRESHOLD_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.USAGE_THRESHOLD_COUNT, ModelType.LONG, true)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
     private static AttributeDefinition COLLECTION_USAGE_THRESHOLD_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_USAGE_THRESHOLD_COUNT, ModelType.LONG, true)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
     private static AttributeDefinition COLLECTION_USAGE_THRESHOLD = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_USAGE_THRESHOLD, ModelType.LONG, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .setValidator(new IntRangeValidator(0))
             .build();
 
     private static AttributeDefinition COLLECTION_USAGE_THRESHOLD_SUPPORTED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_USAGE_THRESHOLD_SUPPORTED, ModelType.BOOLEAN, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     private static AttributeDefinition COLLECTION_USAGE_THRESHOLD_EXCEEDED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_USAGE_THRESHOLD_EXCEEDED, ModelType.BOOLEAN, true)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .build();
 
 
@@ -121,7 +126,7 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_COMMITTED,
             PlatformMBeanConstants.MEMORY_MAX)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .setAllowNull(false)
             .build();
 
@@ -132,7 +137,7 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_COMMITTED,
             PlatformMBeanConstants.MEMORY_MAX)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .build();
 
 

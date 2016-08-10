@@ -46,22 +46,24 @@ class OperatingSystemResourceDefinition extends SimpleResourceDefinition {
 
     private static SimpleAttributeDefinition AVAILABLE_PROCESSORS = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.AVAILABLE_PROCESSORS, ModelType.INT, false)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
             .build();
 
     private static SimpleAttributeDefinition SYSTEM_LOAD_AVERAGE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.SYSTEM_LOAD_AVERAGE, ModelType.DOUBLE, false)
             .setMeasurementUnit(MeasurementUnit.PERCENTAGE)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .build();
 
 
     private static AttributeDefinition ARCH = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.ARCH, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     private static AttributeDefinition VERSION = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.VERSION, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static final List<SimpleAttributeDefinition> METRICS = Arrays.asList(

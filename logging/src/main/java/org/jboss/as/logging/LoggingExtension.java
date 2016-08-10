@@ -22,6 +22,7 @@
 
 package org.jboss.as.logging;
 
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -44,7 +45,9 @@ import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.services.path.PathInfoHandler;
 import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.controller.services.path.ResolvePathHandler;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -228,9 +231,14 @@ public class LoggingExtension implements Extension {
                                    final LoggingResourceDefinition subsystemResourceDefinition, final boolean registerTransformers, final PathManager pathManager) {
         // Only register if the path manager is not null, e.g. is a server
         ResolvePathHandler resolvePathHandler = null;
+        PathInfoHandler diskUsagePathHandler = null;
         if (pathManager != null) {
             resolvePathHandler = ResolvePathHandler.Builder.of(pathManager)
                     .setParentAttribute(CommonAttributes.FILE)
+                    .build();
+            diskUsagePathHandler = PathInfoHandler.Builder.of(pathManager)
+                    .setParentAttribute(CommonAttributes.FILE)
+                    .addAttribute(PathResourceDefinition.PATH, PathResourceDefinition.RELATIVE_TO)
                     .build();
             final LogFileResourceDefinition logFileResourceDefinition = new LogFileResourceDefinition(pathManager);
             registration.registerSubModel(logFileResourceDefinition);
@@ -248,13 +256,13 @@ public class LoggingExtension implements Extension {
         final ConsoleHandlerResourceDefinition consoleHandlerResourceDefinition = new ConsoleHandlerResourceDefinition(includeLegacyAttributes);
         registration.registerSubModel(consoleHandlerResourceDefinition);
 
-        final FileHandlerResourceDefinition fileHandlerResourceDefinition = new FileHandlerResourceDefinition(resolvePathHandler, includeLegacyAttributes);
+        final FileHandlerResourceDefinition fileHandlerResourceDefinition = new FileHandlerResourceDefinition(resolvePathHandler, diskUsagePathHandler, includeLegacyAttributes);
         registration.registerSubModel(fileHandlerResourceDefinition);
 
-        final PeriodicHandlerResourceDefinition periodicHandlerResourceDefinition = new PeriodicHandlerResourceDefinition(resolvePathHandler, includeLegacyAttributes);
+        final PeriodicHandlerResourceDefinition periodicHandlerResourceDefinition = new PeriodicHandlerResourceDefinition(resolvePathHandler, diskUsagePathHandler, includeLegacyAttributes);
         registration.registerSubModel(periodicHandlerResourceDefinition);
 
-        final PeriodicSizeRotatingHandlerResourceDefinition periodicSizeRotatingHandlerResourceDefinition = new PeriodicSizeRotatingHandlerResourceDefinition(resolvePathHandler);
+        final PeriodicSizeRotatingHandlerResourceDefinition periodicSizeRotatingHandlerResourceDefinition = new PeriodicSizeRotatingHandlerResourceDefinition(resolvePathHandler, diskUsagePathHandler);
         registration.registerSubModel(periodicSizeRotatingHandlerResourceDefinition);
 
         final SizeRotatingHandlerResourceDefinition sizeRotatingHandlerResourceDefinition = new SizeRotatingHandlerResourceDefinition(resolvePathHandler, includeLegacyAttributes);

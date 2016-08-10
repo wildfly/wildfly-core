@@ -21,18 +21,16 @@
 */
 package org.jboss.as.model.test;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.AbstractControllerService;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
@@ -71,6 +69,7 @@ import org.junit.Assert;
  * xxxx/test-controller-xxx jars instead (see the constructor javadocs for more information)
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author Tomaz Cerar
  */
 //TODO find better way to support legacy ModelTestModelControllerService without need for having all old methods still present on AbstractControllerService
 public abstract class ModelTestModelControllerService extends AbstractControllerService {
@@ -83,59 +82,6 @@ public abstract class ModelTestModelControllerService extends AbstractController
     private volatile ManagementResourceRegistration rootRegistration;
     private volatile Throwable error;
     private volatile boolean bootSuccess;
-
-    /**
-     * This is the constructor to use for the legacy controller using core-model-test/test-controller-7.1.x and subsystem-test/test-controller-7.1.x
-     */
-    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
-                           final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
-                           final DescriptionProvider rootDescriptionProvider, ControlledProcessState processState, Controller71x version) {
-        // Fails in core-model-test transformation testing if ExpressionResolver.TEST_RESOLVER is used because not present in 7.1.x
-        super(processType, runningModeControl, persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, getExpressionResolverFor71());
-        this.persister = persister;
-        this.transformerRegistry = transformerRegistry;
-        this.validateOpsFilter = validateOpsFilter;
-        this.runningModeControl = runningModeControl;
-    }
-
-    /**
-     * This is the constructor to use for core-model/test-controller-7.2.x
-     */
-    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
-            final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
-            final DelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState, Controller72x version) {
-        super(processType, runningModeControl, persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER);
-        this.persister = persister;
-        this.transformerRegistry = transformerRegistry;
-        this.validateOpsFilter = validateOpsFilter;
-        this.runningModeControl = runningModeControl;
-    }
-
-    private static ExpressionResolver getExpressionResolverFor71() {
-        try {
-            Field defaultExpressionResolver = ExpressionResolver.class.getDeclaredField("DEFAULT");
-            return (ExpressionResolver) defaultExpressionResolver.get(null);
-        } catch (NoSuchFieldException ex) {
-        } catch (IllegalAccessException ex) {}
-        return ExpressionResolver.TEST_RESOLVER;
-    }
-
-    /**
-     * This is the constructor to use for subsystem-test/test-controller-7.2.x
-     */
-    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
-            final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
-            final DescriptionProvider rootDescriptionProvider, ControlledProcessState processState, Controller72x version) {
-        super(processType, runningModeControl, persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootDescriptionProvider, null, ExpressionResolver.TEST_RESOLVER);
-        this.persister = persister;
-        this.transformerRegistry = transformerRegistry;
-        this.validateOpsFilter = validateOpsFilter;
-        this.runningModeControl = runningModeControl;
-    }
-
 
     /**
      * This is the constructor to use for core-model/test-controller-7.3.x
@@ -253,6 +199,37 @@ public abstract class ModelTestModelControllerService extends AbstractController
         this.validateOpsFilter = validateOpsFilter;
         this.runningModeControl = runningModeControl;
     }
+
+    /**
+     * This is the constructor to use for 2.x core model tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+            final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+            final DelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState,
+            ExpressionResolver expressionResolver, CapabilityRegistry capabilityRegistry) {
+        super(processType, runningModeControl, persister,
+                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null,
+                expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), capabilityRegistry);
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
+     * This is the constructor to use for 10.x subsystem tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final ResourceDefinition resourceDefinition, ControlledProcessState processState,
+                                              final CapabilityRegistry capabilityRegistry) {
+        super(processType, runningModeControl, persister,
+         processState == null ? new ControlledProcessState(true) : processState, resourceDefinition, null, ExpressionResolver.TEST_RESOLVER, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), capabilityRegistry);
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
     public boolean isSuccessfulBoot() {
         return bootSuccess;
     }
@@ -295,6 +272,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
         GlobalOperationHandlers.registerGlobalOperations(rootRegistration, ProcessType.STANDALONE_SERVER);
 
         rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
+        //we don't register notifications as eap 6.2 and 6.3 dont support it, this is done in each legacy controller separatly
     }
 
     @SuppressWarnings("deprecation")
@@ -415,21 +393,13 @@ public abstract class ModelTestModelControllerService extends AbstractController
         return rootResource;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     protected ModelNode internalExecute(final ModelNode operation, final OperationMessageHandler handler,
                                         final ModelController.OperationTransactionControl control,
                                         final OperationAttachments attachments, final OperationStepHandler prepareStep) {
         return super.internalExecute(operation, handler, control, attachments, prepareStep);
     }
-
-    public static final DescriptionProvider DESC_PROVIDER = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription(Locale locale) {
-            ModelNode model = new ModelNode();
-            model.get(DESCRIPTION).set("The test model controller");
-            return model;
-        }
-    };
 
     public static class DelegatingResourceDefinition implements ResourceDefinition {
         private volatile ResourceDefinition delegate;
@@ -497,18 +467,6 @@ public abstract class ModelTestModelControllerService extends AbstractController
 
     //These are here to overload the constuctor used for the different legacy controllers
 
-    public static class Controller71x {
-        public static Controller71x INSTANCE = new Controller71x();
-        private Controller71x() {
-        }
-    }
-
-    public static class Controller72x {
-        public static Controller72x INSTANCE = new Controller72x();
-        private Controller72x() {
-        }
-    }
-
     public static class Controller73x {
         public static Controller73x INSTANCE = new Controller73x();
         private Controller73x() {
@@ -530,6 +488,12 @@ public abstract class ModelTestModelControllerService extends AbstractController
     public static class Controller90x {
         public static Controller90x INSTANCE = new Controller90x();
         private Controller90x() {
+        }
+    }
+
+    public static class Controller10x {
+        public static Controller10x INSTANCE = new Controller10x();
+        private Controller10x() {
         }
     }
 

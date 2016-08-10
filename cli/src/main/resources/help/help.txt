@@ -11,6 +11,7 @@ Usage:
                      [--no-local-auth]
                      [--error-on-interact]
                      [--timeout=timeout]
+                     [--echo-command]
 
  --help (-h)     - prints (this) basic description of the command line utility.
 
@@ -89,6 +90,8 @@ Usage:
  --bind          - specifies to which address the CLI is going to be bound.
                    If none is provided then the CLI will choose one automatically as needed.
 
+ --echo-command  - include the prompt with the command into the output 
+                   for each command executed in non-interactive mode.
 
 For a list of available commands execute
 

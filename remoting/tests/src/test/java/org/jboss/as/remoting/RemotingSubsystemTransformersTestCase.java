@@ -119,6 +119,29 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         checkRejectEndpointConfiguration(mainServices, oldVersion);
     }
 
+
+    @Test
+    public void testTransformersEAP700() throws Exception {
+        KernelServicesBuilder builder = createKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION)
+                .setSubsystemXmlResource("remoting-with-expressions-and-good-legacy-protocol.xml");
+        ModelVersion oldVersion = ModelVersion.create(3, 0, 0);
+
+
+        ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.EAP_7_0_0;
+        // Add legacy subsystems
+        builder.createLegacyKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION, controllerVersion, oldVersion)
+                .addMavenResourceURL("org.wildfly.core:wildfly-remoting:" + controllerVersion.getCoreVersion())
+                .skipReverseControllerCheck();
+        //.configureReverseControllerCheck(createAdditionalInitialization(), null);
+        KernelServices mainServices = builder.build();
+        assertTrue(mainServices.isSuccessfulBoot());
+        KernelServices legacyServices = mainServices.getLegacyServices(oldVersion);
+        assertNotNull(legacyServices);
+        assertTrue(legacyServices.isSuccessfulBoot());
+
+        checkSubsystemModelTransformation(mainServices, oldVersion, null, false);
+    }
+
     private void checkRejectOutboundConnectionProtocolNotRemote(KernelServices mainServices, ModelVersion version, String type, String name) throws OperationFailedException {
         ModelNode operation = new ModelNode();
         operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);

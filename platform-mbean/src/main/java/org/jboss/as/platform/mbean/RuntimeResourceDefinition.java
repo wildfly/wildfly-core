@@ -49,61 +49,75 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
     private static AttributeDefinition UPTIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.UPTIME, ModelType.LONG, false)
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .setStorageRuntime()
-            .forceRegistration()
+            .setRuntimeServiceNotRequired()
             .build();
 
     private static AttributeDefinition START_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.START_TIME, ModelType.LONG, false)
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
 
     //todo convert to proper list! new StringListAttributeDefinition.Builder(PlatformMBeanConstants.SYSTEM_PROPERTIES)
      private static AttributeDefinition SYSTEM_PROPERTIES = new SimpleMapAttributeDefinition.Builder(PlatformMBeanConstants.SYSTEM_PROPERTIES,true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SYSTEM_PROPERTY)
             .build();
 
     private static AttributeDefinition INPUT_ARGUMENTS = new StringListAttributeDefinition.Builder(PlatformMBeanConstants.INPUT_ARGUMENTS)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.JVM)
             .setAllowNull(true)
             .build();
 
     private static AttributeDefinition VM_NAME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.VM_NAME, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     private static AttributeDefinition VM_VENDOR = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.VM_VENDOR, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     private static AttributeDefinition VM_VERSION = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.VM_VERSION, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     private static AttributeDefinition SPEC_NAME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.SPEC_NAME, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     private static AttributeDefinition SPEC_VENDOR = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.SPEC_VENDOR, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     private static AttributeDefinition SPEC_VERSION = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.SPEC_VERSION, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     private static AttributeDefinition MANAGEMENT_SPEC_VERSION = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.MANAGEMENT_SPEC_VERSION, ModelType.STRING, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .build();
     private static AttributeDefinition CLASS_PATH = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.CLASS_PATH, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.JVM)
             .build();
     private static AttributeDefinition LIBRARY_PATH = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.LIBRARY_PATH, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.JVM)
             .build();
     private static AttributeDefinition BOOT_CLASS_PATH_SUPPORTED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.BOOT_CLASS_PATH_SUPPORTED, ModelType.BOOLEAN, false)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.JVM)
             .build();
     private static AttributeDefinition BOOT_CLASS_PATH = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.BOOT_CLASS_PATH, ModelType.STRING, true)
             .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.JVM)
             .build();
 

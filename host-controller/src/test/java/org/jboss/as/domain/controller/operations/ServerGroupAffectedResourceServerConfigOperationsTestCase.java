@@ -48,6 +48,7 @@ import java.util.concurrent.TimeoutException;
 
 import javax.security.auth.callback.CallbackHandler;
 
+import org.jboss.as.controller.Cancellable;
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessState.State;
@@ -521,6 +522,11 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
             return false;
         }
 
+        @Override
+        public boolean isUsingCachedDc() {
+            return false;
+        }
+
     }
 
     private static class ServerInventoryMock implements ServerInventory {
@@ -910,11 +916,12 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
                                     }
 
                                     @Override
-                                    public void fetchDomainWideConfiguration() {
+                                    public void register() throws IOException {
                                     }
 
                                     @Override
-                                    public void register() throws IOException {
+                                    public Cancellable pollForConnect() {
+                                        return null;
                                     }
 
                                     @Override

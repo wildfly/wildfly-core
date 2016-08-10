@@ -82,6 +82,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         this.extensionRegistry = extensionRegistry;
         this.runningModeControl = runningModeControl;
         this.registerTransformers = registerTransformers;
+
     }
 
     static TestModelControllerService create(final Extension mainExtension, final ControllerInitializer controllerInitializer,
@@ -115,6 +116,8 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         additionalInit.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration,
                 managementModel.getCapabilityRegistry());
         rootRegistration.registerOperationHandler(TransformerAttachmentGrabber.DESC, new TransformerAttachmentGrabber());
+        // register the global notifications so there is no warning that emitted notifications are not described by the resource.
+        GlobalNotifications.registerGlobalNotifications(managementModel.getRootResourceRegistration(), processType);
     }
 
     /** @deprecated only for legacy version support */
@@ -129,7 +132,6 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
 
         rootRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, null));
 
-        GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
         controllerInitializer.setTestModelControllerAccessor(this);
         controllerInitializer.initializeModel(rootResource, rootRegistration);
     }

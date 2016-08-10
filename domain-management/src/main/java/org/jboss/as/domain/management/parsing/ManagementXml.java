@@ -46,8 +46,10 @@ public abstract class ManagementXml {
             case 2:
             case 3:
                 return new ManagementXml_Legacy(namespace, delegate);
-            default:
+            case 4:
                 return new ManagementXml_4(namespace, delegate);
+            default:
+                return new ManagementXml_5(namespace, delegate);
         }
     }
 

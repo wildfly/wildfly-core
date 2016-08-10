@@ -154,6 +154,8 @@ public class CliLauncher {
                     }
                 } else if (arg.equals("--no-local-auth")) {
                     ctxBuilder.setDisableLocalAuth(true);
+                } else if (arg.equals("--echo-command")) {
+                    ctxBuilder.setEchoCommand(true);
                 } else if (arg.equals("--error-on-interact")) {
                     ctxBuilder.setErrorOnInteract(true);
                     errorOnInteract = true;

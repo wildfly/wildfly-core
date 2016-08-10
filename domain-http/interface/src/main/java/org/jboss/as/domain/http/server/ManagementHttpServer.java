@@ -99,6 +99,7 @@ import io.undertow.server.handlers.BlockingHandler;
 import io.undertow.server.handlers.CanonicalPathHandler;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
 import io.undertow.server.handlers.PathHandler;
+import io.undertow.server.handlers.SetHeaderHandler;
 import io.undertow.server.handlers.cache.CacheHandler;
 import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
@@ -225,14 +226,14 @@ public class ManagementHttpServer {
     }
 
     private static void addDmrRedinessHandler(PathHandler pathHandler, HttpHandler domainApiHandler, Builder builder) {
-        HttpHandler readinessHandler = new DmrFailureReadinessHandler(builder.securityRealm, domainApiHandler, ErrorContextHandler.ERROR_CONTEXT);
+        HttpHandler readinessHandler = wrapXFrameOptions(new DmrFailureReadinessHandler(builder.securityRealm, domainApiHandler, ErrorContextHandler.ERROR_CONTEXT));
         pathHandler.addPrefixPath(DomainApiCheckHandler.PATH, readinessHandler);
         pathHandler.addExactPath("management-upload", readinessHandler);
     }
 
     private static void addLogoutHandler(PathHandler pathHandler, Builder builder) {
         if (builder.securityRealm != null) {
-            pathHandler.addPrefixPath(LogoutHandler.PATH, new LogoutHandler(builder.securityRealm.getName()));
+            pathHandler.addPrefixPath(LogoutHandler.PATH, wrapXFrameOptions(new LogoutHandler(builder.securityRealm.getName())));
         }
     }
 
@@ -280,6 +281,7 @@ public class ManagementHttpServer {
                 associateIdentity(new DomainApiCheckHandler(builder.modelController, builder.controlledProcessStateService,
                         builder.allowedOrigins), builder)
         );
+
         pathHandler.addPrefixPath("/", rootConsoleRedirectHandler);
         if (consoleHandler != null) {
             addRedirectRedinessHandler(pathHandler, consoleHandler, builder);
@@ -387,6 +389,10 @@ public class ManagementHttpServer {
                 .build();
 
         return domainHandler;
+    }
+
+    private static HttpHandler wrapXFrameOptions(final HttpHandler toWrap) {
+        return new SetHeaderHandler(toWrap, "X-Frame-Options", "SAMEORIGIN");
     }
 
     public static Builder builder() {
@@ -527,7 +533,6 @@ public class ManagementHttpServer {
                 throw ROOT_LOGGER.managementHttpServerAlreadyBuild();
             }
         }
-
     }
 
     /**

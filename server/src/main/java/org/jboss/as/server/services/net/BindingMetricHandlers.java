@@ -81,7 +81,7 @@ public final class BindingMetricHandlers {
         public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.BOOLEAN)
                 .setAllowNull(true)
                 .setStorageRuntime()
-                .forceRegistration()
+                .setRuntimeServiceNotRequired()
                 .build();
         public static final OperationStepHandler INSTANCE = new BoundHandler();
 
@@ -107,7 +107,7 @@ public final class BindingMetricHandlers {
         public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.STRING)
                 .setAllowNull(true)
                 .setStorageRuntime()
-                .forceRegistration()
+                .setRuntimeServiceNotRequired()
                 .build();
         public static final OperationStepHandler INSTANCE = new BoundAddressHandler();
 
@@ -136,7 +136,7 @@ public final class BindingMetricHandlers {
                 .setAllowNull(true)
                 .setValidator(new IntRangeValidator(1, Integer.MAX_VALUE, true, false))
                 .setStorageRuntime()
-                .forceRegistration()
+                .setRuntimeServiceNotRequired()
                 .build();
 
         public static final OperationStepHandler INSTANCE = new BoundPortHandler();

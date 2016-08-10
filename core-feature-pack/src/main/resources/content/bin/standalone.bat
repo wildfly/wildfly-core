@@ -16,9 +16,11 @@ set DEBUG_PORT=8787
 rem Set to all parameters by default
 set "SERVER_OPTS=%*"
 
+
 if NOT "x%DEBUG%" == "x" (
   set "DEBUG_MODE=%DEBUG%
 )
+
 
 rem Get the program name before using shift as the command modify the variable ~nx0
 if "%OS%" == "Windows_NT" (
@@ -100,6 +102,14 @@ if exist "%STANDALONE_CONF%" (
    echo Config file not found "%STANDALONE_CONF%"
 )
 
+if NOT "x%DEBUG_PORT%" == "x" (
+  set "DEBUG_PORT=%DEBUG_PORT%
+)
+
+if NOT "x%GC_LOG%" == "x" (
+  set "GC_LOG=%GC_LOG%
+)
+
 
 rem Set debug settings if not already set
 if "%DEBUG_MODE%" == "true" (
@@ -141,28 +151,30 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
   )
 )
 
-rem EAP6-121 feature disabled
-rem if not "%PRESERVE_JAVA_OPTS%" == "true" (
-  rem Add rotating GC logs, if supported, and not already defined
-  rem echo "%JAVA_OPTS%" | findstr /I "\-verbose:gc" > nul
-  rem if errorlevel == 1 (
-    rem Back up any prior logs
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.0" "%JBOSS_LOG_DIR%\backupgc.log.0" > nul 2>&1
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.1" "%JBOSS_LOG_DIR%\backupgc.log.1" > nul 2>&1
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.2" "%JBOSS_LOG_DIR%\backupgc.log.2" > nul 2>&1
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.3" "%JBOSS_LOG_DIR%\backupgc.log.3" > nul 2>&1
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.4" "%JBOSS_LOG_DIR%\backupgc.log.4" > nul 2>&1
-    rem move /y "%JBOSS_LOG_DIR%\gc.log.*.current" "%JBOSS_LOG_DIR%\backupgc.log.current" > nul 2>&1
-    rem "%JAVA%" -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -Xloggc:%XLOGGC% -XX:-TraceClassUnloading -version > nul 2>&1
-    rem if not errorlevel == 1 (
-      rem if not exist "%JBOSS_LOG_DIR" > nul 2>&1 (
-        rem mkdir "%JBOSS_LOG_DIR%"
-      rem )
-     rem set XLOGGC="%JBOSS_LOG_DIR%\gc.log"
-     rem set "JAVA_OPTS=-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading %JAVA_OPTS%"
-    rem )
-  rem )
-rem )
+
+if not "%PRESERVE_JAVA_OPTS%" == "true" (
+    if "%GC_LOG%" == "true" (
+      rem Add rotating GC logs, if supported, and not already defined
+      echo "%JAVA_OPTS%" | findstr /I "\-verbose:gc" > nul
+      if errorlevel == 1 (
+        rem Back up any prior logs
+        move /y "%JBOSS_LOG_DIR%\gc.log.1" "%JBOSS_LOG_DIR%\backupgc.log.1" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.0" "%JBOSS_LOG_DIR%\backupgc.log.0" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.2" "%JBOSS_LOG_DIR%\backupgc.log.2" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.3" "%JBOSS_LOG_DIR%\backupgc.log.3" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.4" "%JBOSS_LOG_DIR%\backupgc.log.4" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.*.current" "%JBOSS_LOG_DIR%\backupgc.log.current" > nul 2>&1
+        "%JAVA%" -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -Xloggc:%XLOGGC% -XX:-TraceClassUnloading -version > nul 2>&1
+        if not errorlevel == 1 (
+          if not exist "%JBOSS_LOG_DIR" > nul 2>&1 (
+            mkdir "%JBOSS_LOG_DIR%"
+          )
+         set XLOGGC="%JBOSS_LOG_DIR%\gc.log"
+         set "JAVA_OPTS=-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -Xloggc:%XLOGGC% -XX:-TraceClassUnloading %JAVA_OPTS%"
+        )
+       )
+    )
+)
 
 rem Find jboss-modules.jar, or we can't continue
 if exist "%JBOSS_HOME%\jboss-modules.jar" (

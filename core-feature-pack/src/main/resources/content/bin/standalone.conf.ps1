@@ -72,4 +72,5 @@ $JAVA_OPTS += "-Djboss.modules.system.pkgs=$JBOSS_MODULES_SYSTEM_PKGS"
 # Uncomment this to run with a security manager enabled
 # $SECMGR=$true
 
+# Uncomment this out to control garbage collection logging
 # $GC_LOG=$true

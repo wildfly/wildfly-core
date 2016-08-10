@@ -36,6 +36,10 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -141,6 +145,15 @@ public abstract class AbstractDeploymentUnitTestCase {
             return "ok".equals(result.get(RESULT).asString());
         }
         return false;
+    }
+
+    protected void createDeployment(final Path file, final String dependency) throws IOException {
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
+        final String dependencies = "Dependencies: " + dependency;
+        archive.add(new StringAsset(dependencies), "META-INF/MANIFEST.MF");
+        try (OutputStream out = Files.newOutputStream(file, StandardOpenOption.CREATE_NEW)) {
+            archive.as(ZipExporter.class).exportTo(out);
+        }
     }
 
     protected void createDeployment(final File file, final String dependency) throws IOException {

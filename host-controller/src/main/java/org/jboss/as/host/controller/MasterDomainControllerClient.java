@@ -27,6 +27,7 @@ package org.jboss.as.host.controller;
 
 import java.io.IOException;
 
+import org.jboss.as.controller.Cancellable;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -57,12 +58,6 @@ public interface MasterDomainControllerClient extends ModelControllerClient {
     void unregister();
 
     /**
-     * Connect to the remote domain controller and fetch the
-     * domain wide configuration, but do not register as a member of the domain.
-     */
-    void fetchDomainWideConfiguration();
-
-    /**
      * Gets a {@link HostFileRepository} capable of retrieving files from the
      * master domain controller.
      *
@@ -74,8 +69,16 @@ public interface MasterDomainControllerClient extends ModelControllerClient {
      * Pulls down missing data from the domain controller and applies it to the local model as a result of a change to a/an added server-config
      *
      * @param context the operation context
-     * @param domain the original domain model before the change
+     * @param original the original domain model before the change
      * @throws OperationFailedException
      */
     void fetchAndSyncMissingConfiguration(OperationContext context, Resource original) throws OperationFailedException;
+
+    /**
+     * Repeatedly try to connect to the domain controller until successful. Should only
+     * be called after a call to {@link #register()} has failed.
+     *
+     * @return handle to allow polling to be cancelled
+     */
+    Cancellable pollForConnect();
 }

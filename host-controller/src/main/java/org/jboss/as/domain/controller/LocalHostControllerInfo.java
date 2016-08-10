@@ -61,6 +61,14 @@ public interface LocalHostControllerInfo {
     boolean isBackupDc();
 
     /**
+     * Whether we were started with --cached-dc using a cached copy of the domain model (configuration/domain.cached-remote.xml)
+     *
+     * @return {@code true} if we were started with a cached copy of the domain model
+     *
+     */
+    boolean isUsingCachedDc();
+
+    /**
      * Gets the name of the interface on which the host listens for native management requests.
      *
      * @return the logical interface name

@@ -289,7 +289,7 @@ public interface ProcessLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = Message.NONE, value = "Keep a copy of the persistent domain configuration even if this host is not the Domain Controller")
+    @Message(id = Message.NONE, value = "Keep a copy of the persistent domain configuration even if this host is not the Domain Controller. If ignore-unused-configuration is unset in host.xml, then the complete domain configuration will be stored, otherwise the configured value of ignore-unused-configuration will be used.")
     String argBackup();
 
     /**
@@ -297,7 +297,7 @@ public interface ProcessLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = Message.NONE, value = "If this host is not the Domain Controller and cannot contact the Domain Controller at boot, boot using a locally cached copy of the domain configuration (see --backup)")
+    @Message(id = Message.NONE, value = "If this host is not the Domain Controller and cannot contact the Domain Controller at boot, a locally cached copy of the domain configuration is used for boot (if available, see --backup.) The Domain Controller is background polled until it becomes available. Note that starting a host with --cached-dc when the Domain Controller is available will cache a copy of the domain configuration even if --backup is not used.")
     String argCachedDc();
 
     /**
