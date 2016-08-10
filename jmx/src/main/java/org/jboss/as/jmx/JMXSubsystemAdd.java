@@ -25,6 +25,8 @@ package org.jboss.as.jmx;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -35,6 +37,7 @@ import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -45,21 +48,23 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
 
     private final ManagedAuditLogger auditLoggerInfo;
     private final JmxAuthorizer authorizer;
+    private final Supplier<SecurityIdentity> securityIdentitySupplier;
     private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-    JMXSubsystemAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
+    JMXSubsystemAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier,  RuntimeHostControllerInfoAccessor hostInfoAccessor) {
         super(JMXSubsystemRootResource.JMX_CAPABILITY, JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY);
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
+        this.securityIdentitySupplier = securityIdentitySupplier;
         this.hostInfoAccessor = hostInfoAccessor;
     }
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        launchServices(context, Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS)), auditLoggerInfo, authorizer, hostInfoAccessor);
+        launchServices(context, Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS)), auditLoggerInfo, authorizer, securityIdentitySupplier, hostInfoAccessor);
     }
 
     static void launchServices(OperationContext context, ModelNode model, ManagedAuditLogger auditLoggerInfo,
-                               JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) throws OperationFailedException {
+                               JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostInfoAccessor) throws OperationFailedException {
 
         // Add the MBean service
         String resolvedDomain = getDomainName(context, model, CommonAttributes.RESOLVED);
@@ -89,7 +94,7 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
             jmxEffect = new JmxEffect(hostName, serverGroup);
         }
         MBeanServerService.addService(context.getServiceTarget(), resolvedDomain, expressionsDomain, legacyWithProperPropertyFormat,
-                            coreMBeanSensitivity, auditLoggerInfo, authorizer, jmxEffect, context.getProcessType(), isMasterHc);
+                            coreMBeanSensitivity, auditLoggerInfo, authorizer, securityIdentitySupplier, jmxEffect, context.getProcessType(), isMasterHc);
     }
 
     /**

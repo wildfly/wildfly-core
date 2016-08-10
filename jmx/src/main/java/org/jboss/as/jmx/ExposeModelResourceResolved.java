@@ -21,6 +21,8 @@
 */
 package org.jboss.as.jmx;
 
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -30,6 +32,7 @@ import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * The resource for the legacy behaviour where all attributes are read as resolved and
@@ -53,8 +56,8 @@ public class ExposeModelResourceResolved extends ExposeModelResource {
 
     private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-    ExposeModelResourceResolved(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
-        super(PATH_ELEMENT, auditLoggerInfo, authorizer, hostInfoAccessor, DOMAIN_NAME, PROPER_PROPERTY_FORMAT);
+    ExposeModelResourceResolved(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
+        super(PATH_ELEMENT, auditLoggerInfo, authorizer, securityIdentitySupplier, hostInfoAccessor, DOMAIN_NAME, PROPER_PROPERTY_FORMAT);
         this.hostInfoAccessor = hostInfoAccessor;
     }
 

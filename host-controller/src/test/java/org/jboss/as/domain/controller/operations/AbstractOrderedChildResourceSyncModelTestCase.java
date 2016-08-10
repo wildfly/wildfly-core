@@ -85,7 +85,7 @@ import org.junit.Assert;
  */
 public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractControllerTestBase {
 
-    private final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
+    private final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
     private volatile IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
 
     static final PathElement HOST_ELEMEMT = PathElement.pathElement(HOST, "slave");

@@ -103,7 +103,8 @@ public class StandardRoleMapper implements RoleMapper {
 
         boolean traceEnabled = ACCESS_LOGGER.isTraceEnabled();
 
-        if (caller.hasSubject()) {
+        // TODOD Elytron, we now always have an identity - need to revisit how in-vm calls are represented.
+        if (caller.hasSecurityIdentity()) {
             Map<String, AuthorizerConfiguration.RoleMapping> rolesToCheck;
             if (authorizerConfiguration.isMapUsingRealmRoles()) {
                 rolesToCheck = new HashMap<String, AuthorizerConfiguration.RoleMapping>(authorizerConfiguration.getRoleMappings());

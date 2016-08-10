@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
@@ -101,7 +102,7 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
         }
 
         registration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
-        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(new DelegatingConfigurableAuthorizer(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
+        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
             public boolean isServer() {
                 return true;
             }

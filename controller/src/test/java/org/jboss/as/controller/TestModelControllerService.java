@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.ControlledProcessState.State;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
@@ -73,7 +74,7 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry) {
         super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
-                        AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), capabilityRegistry);
+                        AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry);
         this.processState = processState;
         this.capabilityRegistry = capabilityRegistry;
     }

@@ -34,6 +34,7 @@ import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
@@ -62,7 +63,7 @@ public class PlatformMBeanTestModelControllerService extends AbstractControllerS
     protected PlatformMBeanTestModelControllerService() {
         super(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.NORMAL), new NullConfigurationPersister(), new ControlledProcessState(true),
         ResourceBuilder.Factory.create(PathElement.pathElement("root"),new NonResolvingResourceDescriptionResolver()).build(), null, ExpressionResolver.TEST_RESOLVER,
-        AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new CapabilityRegistry(true));
+        AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), new CapabilityRegistry(true));
     }
 
     @Override

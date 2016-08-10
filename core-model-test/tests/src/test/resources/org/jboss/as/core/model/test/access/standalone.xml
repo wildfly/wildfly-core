@@ -18,12 +18,22 @@
                   <user alias="inc-one" name="UserThree" />
                   <group name="GroupThree" />
                </include>
+               <!-- TODO Elytron A Supercalifragilisticexpialidocious hack until we have in-vm permissions sorted. -->
+               <exclude>
+                   <user name="anonymous" />
+               </exclude>
             </role>
             <role name="Maintainer">
                <exclude>
                   <user alias="excl-one" name="UserFour" />
                   <group name="GroupFour" />
                </exclude>
+            </role>
+            <!-- TODO Elytron A Supercalifragilisticexpialidocious hack until we have in-vm permissions sorted. -->
+            <role name="SuperUser">
+                <include>
+                    <user name="anonymous" />
+                </include>
             </role>
          </role-mapping>
          <constraints>

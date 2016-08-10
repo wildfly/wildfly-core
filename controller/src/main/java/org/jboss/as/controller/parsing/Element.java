@@ -98,6 +98,7 @@ public enum Element {
     HTTP_INTERFACE("http-interface"),
     HTTP_UPGRADE("http-upgrade"),
 
+    IDENTITY("identity"),
     IGNORED_RESOURCE("ignored-resources"),
     IN_MEMORY_HANDLER("in-memory-handler"),
     INCLUDE("include"),

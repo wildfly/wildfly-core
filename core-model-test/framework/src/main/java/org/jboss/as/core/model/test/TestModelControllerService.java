@@ -471,6 +471,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     pathManagerService,
                     null,
                     authorizer,
+                    securityIdentitySupplier,
                     AuditLogger.NO_OP_LOGGER,
                     getMutableRootResourceRegistrationProvider(),
                     getBootErrorCollector(), capabilityRegistry));
@@ -519,6 +520,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                             processState,
                             pathManagerService,
                             authorizer,
+                            securityIdentitySupplier,
                             AuditLogger.NO_OP_LOGGER,
                             getBootErrorCollector()));
         }
@@ -554,6 +556,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     processState,
                     pathManagerService,
                     authorizer,
+                    securityIdentitySupplier,
                     AuditLogger.NO_OP_LOGGER,
                     getBootErrorCollector());
 
@@ -604,7 +607,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
             } else {
 
             domainDefinition = new DomainRootDefinition(domainController, env, persister, injectedContentRepository.getValue(),
-                    hostFileRepository, true, info, extensionRegistry, null, pathManagerService, authorizer, null,
+                    hostFileRepository, true, info, extensionRegistry, null, pathManagerService, authorizer, securityIdentitySupplier, null,
                     domainHostExcludeRegistry, getMutableRootResourceRegistrationProvider());
             }
             domainDefinition.initialize(rootRegistration);

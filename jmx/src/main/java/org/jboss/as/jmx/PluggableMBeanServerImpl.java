@@ -60,6 +60,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Supplier;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -101,6 +102,7 @@ import org.jboss.as.core.security.RealmUser;
 import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.as.server.jmx.MBeanServerPlugin;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -121,6 +123,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
     private final Set<MBeanServerPlugin> delegates = new CopyOnWriteArraySet<MBeanServerPlugin>();
 
     private volatile JmxAuthorizer authorizer;
+    private volatile Supplier<SecurityIdentity> securityIdentitySupplier;
     private volatile JmxEffect jmxEffect;
 
     /**
@@ -139,6 +142,10 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
 
     void setAuthorizer(JmxAuthorizer authorizer) {
         this.authorizer = authorizer;
+    }
+
+    void setSecurityIdentitySupplier(Supplier<SecurityIdentity> securityIdentitySupplier) {
+        this.securityIdentitySupplier = securityIdentitySupplier;
     }
 
     void setNonFacadeMBeansSensitive(boolean sensitive) {
@@ -1197,7 +1204,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             JmxTarget target = new JmxTarget(methodName, name, isNonFacadeMBeansSensitive(), jmxEffect, jmxEffect);
             JmxAction action = new JmxAction(methodName, impact, attributeName);
             //TODO populate the 'environment' variable
-            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(createCaller(), null, action, target);
+            SecurityIdentity securityIdentity = securityIdentitySupplier != null ? securityIdentitySupplier.get() : null;
+            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(createCaller(securityIdentity), null, action, target);
             if (authorizationResult.getDecision() != Decision.PERMIT) {
                 if (exception) {
                     throw JmxLogger.ROOT_LOGGER.unauthorized();
@@ -1218,7 +1226,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             JmxTarget target = new JmxTarget(methodName, objectName, isNonFacadeMBeansSensitive(), jmxEffect, jmxEffect);
             JmxAction action = new JmxAction(methodName, JmxAction.Impact.CLASSLOADING);
             //TODO populate the 'environment' variable
-            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(createCaller(), null, action, target);
+            SecurityIdentity securityIdentity = securityIdentitySupplier != null ? securityIdentitySupplier.get() : null;
+            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(createCaller(securityIdentity), null, action, target);
             if (authorizationResult.getDecision() != Decision.PERMIT) {
                 throw JmxLogger.ROOT_LOGGER.unauthorized();
             }

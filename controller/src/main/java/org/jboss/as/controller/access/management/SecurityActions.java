@@ -20,19 +20,19 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.jmx;
+package org.jboss.as.controller.access.management;
 
 import static java.security.AccessController.doPrivileged;
 
 import java.security.PrivilegedAction;
 
 import org.jboss.as.controller.AccessAuditContext;
-import org.jboss.as.controller.access.Caller;
-import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.ServerAuthenticationContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
- * Security actions for the 'org.jboss.as.jmx' package.
+ * Security actions for the 'org.jboss.as.controller.access.management' package.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
@@ -45,18 +45,18 @@ class SecurityActions {
         return createAccessAuditContextActions().currentContext();
     }
 
-    static Caller createCaller(SecurityIdentity securityIdentity) {
-
-        return createCallerActions().createCaller(securityIdentity);
+    static ServerAuthenticationContext createServerAuthenticationContext(final SecurityDomain securityDomain) {
+        return createElytronActions().createServerAuthenticationContext(securityDomain);
     }
 
     private static AccessAuditContextActions createAccessAuditContextActions() {
         return WildFlySecurityManager.isChecking() ? AccessAuditContextActions.PRIVILEGED : AccessAuditContextActions.NON_PRIVILEGED;
     }
 
-    private static CallerActions createCallerActions() {
-        return WildFlySecurityManager.isChecking() ? CallerActions.PRIVILEGED : CallerActions.NON_PRIVILEGED;
+    private static ElytronActions createElytronActions() {
+        return WildFlySecurityManager.isChecking() ? ElytronActions.PRIVILEGED : ElytronActions.NON_PRIVILEGED;
     }
+
 
     private interface AccessAuditContextActions {
 
@@ -64,7 +64,6 @@ class SecurityActions {
 
         AccessAuditContextActions NON_PRIVILEGED = new AccessAuditContextActions() {
 
-            @SuppressWarnings("deprecation")
             @Override
             public AccessAuditContext currentContext() {
                 return AccessAuditContext.currentAccessAuditContext();
@@ -90,35 +89,26 @@ class SecurityActions {
 
     }
 
-    private interface CallerActions {
+    private interface ElytronActions {
 
-        Caller createCaller(SecurityIdentity securityIdentity);
+        ServerAuthenticationContext createServerAuthenticationContext(final SecurityDomain securityDomain);
 
-
-        CallerActions NON_PRIVILEGED = new CallerActions() {
-
-            @Override
-            public Caller createCaller(SecurityIdentity securityIdentity) {
-                return Caller.createCaller(securityIdentity);
-            }
-
-        };
-
-        CallerActions PRIVILEGED = new CallerActions() {
+        ElytronActions NON_PRIVILEGED = new ElytronActions() {
 
             @Override
-            public Caller createCaller(final SecurityIdentity securityIdentity) {
-                return doPrivileged(new PrivilegedAction<Caller>() {
-
-                    @Override
-                    public Caller run() {
-                        return NON_PRIVILEGED.createCaller(securityIdentity);
-                    }
-                });
+            public ServerAuthenticationContext createServerAuthenticationContext(final SecurityDomain securityDomain) {
+                return securityDomain.createNewAuthenticationContext();
             }
-
         };
 
+        ElytronActions PRIVILEGED = new ElytronActions() {
+
+            @Override
+            public ServerAuthenticationContext createServerAuthenticationContext(final SecurityDomain securityDomain) {
+                return doPrivileged((PrivilegedAction<ServerAuthenticationContext>) (() -> NON_PRIVILEGED
+                        .createServerAuthenticationContext(securityDomain)));
+            }
+        };
     }
 
 }
