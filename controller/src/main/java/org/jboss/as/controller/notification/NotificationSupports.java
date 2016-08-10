@@ -60,14 +60,20 @@ class NotificationSupports {
         }
 
         @Override
+        public void emitSync(Notification... notifications) {
+            fireNotifications(registry, notifications);
+        }
+
+        @Override
         public NotificationHandlerRegistration getNotificationRegistry() {
             return registry;
         }
     }
 
-    static class NonBlockingNotificationSupport implements  NotificationSupport {
+    static class NonBlockingNotificationSupport implements NotificationSupport {
 
         private final NotificationHandlerRegistration registry;
+
         private final ExecutorService executor;
 
         /**
@@ -109,6 +115,11 @@ class NotificationSupports {
                     }
                 }
             });
+        }
+
+        @Override
+        public void emitSync(Notification... notifications) {
+            fireNotifications(registry, notifications);
         }
 
         @Override

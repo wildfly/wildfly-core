@@ -201,12 +201,17 @@ public class WriteAttributeHandler implements OperationStepHandler {
         if (oldValue.equals(newValue)) {
             return;
         }
+        Notification notification = formatAttributeValueWrittenNotification(address, attributeName, oldValue, newValue);
+        context.emit(notification);
+    }
+
+    public static Notification formatAttributeValueWrittenNotification(PathAddress address, String attributeName, ModelNode oldValue, ModelNode newValue) {
         ModelNode data = new ModelNode();
         data.get(NAME.getName()).set(attributeName);
         data.get(GlobalNotifications.OLD_VALUE).set(oldValue);
         data.get(GlobalNotifications.NEW_VALUE).set(newValue);
         Notification notification = new Notification(ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION, address, ControllerLogger.ROOT_LOGGER.attributeValueWritten(attributeName, oldValue, newValue), data);
-        context.emit(notification);
+        return notification;
     }
 
     private ModelNode getEnhancedSyntaxResolvedOperation(ModelNode originalOperation, ModelNode currentModel, String attributeName, String attributeExpression) throws OperationFailedException {

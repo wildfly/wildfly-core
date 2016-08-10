@@ -22,11 +22,16 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_CONFIGURATION_STATE;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -42,8 +47,10 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.operations.global.WriteAttributeHandler;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -81,6 +88,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
      * @see #BOOT_STACK_SIZE_PROPERTY
      */
     public static final int DEFAULT_BOOT_STACK_SIZE = 2 * 1024 * 1024;
+
+    private static final String STOPPED = "stopped";
 
     private static int getBootStackSize() {
         String prop = WildFlySecurityManager.getPropertyPrivileged(BOOT_STACK_SIZE_PROPERTY, null);
@@ -126,6 +135,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final ManagedAuditLogger auditLogger;
     private final BootErrorCollector bootErrorCollector;
     private final CapabilityRegistry capabilityRegistry;
+
+    private volatile EmitControlledProcessStateNotificationListener propertyChangeListener;
 
     /**
      * Construct a new instance.
@@ -280,6 +291,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         final ExecutorService executorService = injectedExecutorService.getOptionalValue();
 
         final NotificationSupport notificationSupport = NotificationSupport.Factory.create(executorService);
+
         WritableAuthorizerConfiguration authorizerConfig = authorizer.getWritableAuthorizerConfiguration();
         authorizerConfig.reset();
         ManagementResourceRegistration rootResourceRegistration = ManagementResourceRegistration.Factory.forProcessType(processType).createRegistration(rootResourceDefinition, authorizerConfig, capabilityRegistry);
@@ -293,6 +305,11 @@ public abstract class AbstractControllerService implements Service<ModelControll
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
         this.controller = controller;
+
+        //Signal that we are starting
+        propertyChangeListener = new EmitControlledProcessStateNotificationListener(notificationSupport);
+        processState.getService().addPropertyChangeListener(propertyChangeListener);
+        processState.setStarting();
 
         final long bootStackSize = getBootStackSize();
         final Thread bootThread = new Thread(null, new Runnable() {
@@ -473,6 +490,11 @@ public abstract class AbstractControllerService implements Service<ModelControll
         capabilityRegistry.publish();
         controller = null;
 
+        // Latch to avoid race condition where context.complete() gets called in the async task before
+        // processState.setStopped() has queued its notifications on the injected executor service. Otherwise there is
+        // a chance of the executor service getting shut down before the notifications are emitted.
+        final CountDownLatch latch = new CountDownLatch(1);
+
         Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -482,7 +504,13 @@ public abstract class AbstractControllerService implements Service<ModelControll
                     try {
                         authorizer.shutdown();
                     } finally {
-                        context.complete();
+                        try {
+                            latch.await();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } finally {
+                            context.complete();
+                        }
                     }
                 }
             }
@@ -500,6 +528,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 executorShutdown.start();
             }
         } finally {
+            processState.setStopped();
+            this.processState.getService().removePropertyChangeListener(propertyChangeListener);
+            latch.countDown();
+
             context.asynchronous();
         }
     }
@@ -685,5 +717,62 @@ public abstract class AbstractControllerService implements Service<ModelControll
         }
     }
 
+    /**
+     * Handles the notifications from calling processState.setXXX()
+     */
+    private class EmitControlledProcessStateNotificationListener implements PropertyChangeListener {
+        private final NotificationSupport notificationSupport;
+        private final PathAddress addr;
+        public EmitControlledProcessStateNotificationListener(NotificationSupport notificationSupport) {
+            this.notificationSupport = notificationSupport;
+
+            ModelControllerServiceInitializationParams initParams = getModelControllerServiceInitializationParams();
+
+            if ((processType == ProcessType.HOST_CONTROLLER || processType == ProcessType.EMBEDDED_HOST_CONTROLLER) &&
+                    initParams != null && initParams.getHostName() != null) {
+                addr = PathAddress.pathAddress(HOST, initParams.getHostName());
+            } else {
+                addr = PathAddress.EMPTY_ADDRESS;
+            }
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            if ("currentState".equals(evt.getPropertyName())) {
+                ControlledProcessState.State oldState = (ControlledProcessState.State) evt.getOldValue();
+                ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
+                emitEvent(oldState, newState);
+            }
+        }
+
+        void emitEvent(ControlledProcessState.State oldState, ControlledProcessState.State newState) {
+            Notification notification =
+                    WriteAttributeHandler.formatAttributeValueWrittenNotification(
+                            addr,
+                            RUNTIME_CONFIGURATION_STATE,
+                            createStateStringNode(oldState),
+                            createStateStringNode(newState));
+            //Force these notifications to be emitted synchronously to avoid the situation where e.g. if we are shutting down,
+            //if the queue in the asynch notification support takes long to poll the notifications, services etc. installing
+            //the notification handlers may already have been stopped, causing the handlers to be unregistered,
+            //so we can miss these lifecycle notifications.
+            //Another option would have been to rewrite the use of the executor in NonBlockingNotificationSupport to
+            //query for all the handlers before placing the notification on the queue, but if the handler was installed by
+            //a service it might have some dependencies which will be invalid once the service has been stopped.
+            notificationSupport.emitSync(notification);
+        }
+
+        private ModelNode createStateStringNode(ControlledProcessState.State state) {
+            final String stateString = fixRunning(state.toString());
+            return new ModelNode(stateString);
+        }
+
+        private String fixRunning(String state) {
+            //The raw value of ControlledProcessState is used for host-state and server-state. It uses 'running',
+            //however in the new runtime-configuration-state, 'running' has been renamed to 'ok'
+            return "running".equals(state) ? "ok" : state;
+        }
+
+    }
 }
 

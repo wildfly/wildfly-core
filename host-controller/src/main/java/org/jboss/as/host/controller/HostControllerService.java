@@ -111,7 +111,8 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
 
     @Override
     public void start(StartContext context) throws StartException {
-        processState.setStarting();
+        //Moved to AbstractControllerService.start()
+        //processState.setStarting();
         final ProductConfig config = environment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion);
@@ -199,7 +200,8 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     @Override
     public void stop(StopContext context) {
         String prettyVersion = environment.getProductConfig().getPrettyVersionString();
-        processState.setStopping();
+        //Moved to AbstractControllerService.start()
+        //processState.setStopping();
         ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, Integer.valueOf((int) (context.getElapsedTime() / 1000000L)));
         BootstrapListener.deleteStartupMarker(environment.getDomainTempDir());
     }

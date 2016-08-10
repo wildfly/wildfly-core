@@ -303,6 +303,11 @@ public class ModelControllerMBeanServerPlugin extends BaseMBeanServerPlugin {
                 return false;
             }
 
+            ObjectName sourceName = ObjectNameAddressUtil.createObjectName(domain, notification.getSource());
+            if (!name.equals(sourceName)) {
+                return false;
+            }
+
             if (filter == null) {
                 return true;
             } else {

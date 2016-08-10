@@ -379,7 +379,8 @@ public class EmbeddedStandaloneServerFactory {
 
         private synchronized void establishModelControllerClient(ControlledProcessState.State state) {
             ModelControllerClient newClient = null;
-            if (state != ControlledProcessState.State.STOPPING && serviceContainer != null) {
+            if (state != ControlledProcessState.State.STOPPING && state != ControlledProcessState.State.STOPPED
+                    && serviceContainer != null) {
                 @SuppressWarnings("unchecked")
                 final Value<ModelController> controllerService = (Value<ModelController>) serviceContainer.getService(Services.JBOSS_SERVER_CONTROLLER);
                 if (controllerService != null) {
@@ -393,6 +394,9 @@ public class EmbeddedStandaloneServerFactory {
 
         private synchronized ModelControllerClient getActiveModelControllerClient() {
             switch (currentProcessState) {
+                case STOPPED: {
+                    throw EmbeddedLogger.ROOT_LOGGER.processIsStopped();
+                }
                 case STOPPING: {
                     throw EmbeddedLogger.ROOT_LOGGER.processIsStopping();
                 }

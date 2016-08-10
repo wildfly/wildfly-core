@@ -91,7 +91,8 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
     @Override
     public synchronized void start(final StartContext context) throws StartException {
 
-        processState.setStarting();
+        //Moved to AbstractControllerService.start()
+        //processState.setStarting();
 
         final Bootstrap.Configuration configuration = this.configuration;
         final ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
@@ -199,7 +200,8 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
 
     @Override
     public synchronized void stop(final StopContext context) {
-        processState.setStopping();
+        //Moved to AbstractControllerService.stop()
+        //processState.setStopping();
         CurrentServiceContainer.setServiceContainer(null);
         String prettyVersion = configuration.getServerEnvironment().getProductConfig().getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, Integer.valueOf((int) (context.getElapsedTime() / 1000000L)));

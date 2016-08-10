@@ -158,6 +158,13 @@ public class ExtensionSetup {
         support.addTestModule(TestAliasReadResourceDescriptionAddressExtension.MODULE_NAME, moduleXml, content);
     }
 
+    public static void initializeProcessStateNotificationExtension(final DomainTestSupport support) throws IOException {
+        final InputStream moduleXml = getModuleXml("process-state-notification-module.xml");
+        StreamExporter exporter = createResourceRoot(NotificationDomainTestExtension.class);
+        Map<String, StreamExporter> content = Collections.singletonMap("process-state-notification.jar", exporter);
+        support.addTestModule(NotificationDomainTestExtension.MODULE_NAME, moduleXml, content);
+    }
+
     static StreamExporter createResourceRoot(Class<? extends Extension> extension, Package... additionalPackages) throws IOException {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
         archive.addPackage(extension.getPackage());

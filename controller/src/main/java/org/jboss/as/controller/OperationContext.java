@@ -34,6 +34,8 @@ import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.notification.Notification;
+import org.jboss.as.controller.notification.NotificationFilter;
+import org.jboss.as.controller.notification.NotificationHandler;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -789,6 +791,31 @@ public interface OperationContext extends ExpressionResolver {
      * @param notification the notification to emit
      */
     void emit(final Notification notification);
+
+    /**
+     * Register the given NotificationHandler to receive notifications emitted by the resource at the given source address.
+     * The {@link org.jboss.as.controller.notification.NotificationHandler#handleNotification(org.jboss.as.controller.notification.Notification)}
+     * method will only be called on the registered handler if the filter's
+     * {@link org.jboss.as.controller.notification.NotificationFilter#isNotificationEnabled(org.jboss.as.controller.notification.Notification)}
+     * returns {@code true} for the given notification.
+     * <br />
+     *
+     * @param source the path address of the resource that emit notifications.
+     * @param handler the notification handler
+     * @param filter the notification filter. Use {@link org.jboss.as.controller.notification.NotificationFilter#ALL} to let the handler always handle notifications
+     */
+    void registerNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter);
+
+    /**
+     * Unregister the given NotificationHandler to stop receiving notifications emitted by the resource at the given source address.
+     *
+     * The source, handler and filter must match the values that were used during registration to be effectively unregistered.
+     *
+     * @param source the path address of the resource that emit notifications.
+     * @param handler the notification handler
+     * @param filter the notification filter
+     */
+    void unregisterNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter);
 
     /**
      * Gets the caller environment for the current request.

@@ -45,6 +45,13 @@ public interface NotificationSupport {
      */
     void emit(final Notification... notifications);
 
+    /**
+     * Emit {@link Notification}(s) synchronously, regardless of whether this implementation is asynch or not.
+     *
+     * @param notifications the notifications to emit
+     */
+    void emitSync(final Notification... notifications);
+
     class Factory {
         private Factory() {
         }
