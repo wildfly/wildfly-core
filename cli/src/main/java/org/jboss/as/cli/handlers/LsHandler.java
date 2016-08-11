@@ -408,10 +408,7 @@ public class LsHandler extends BaseOperationCommand {
     public Collection<CommandArgument> getArguments(CommandContext ctx) {
         List<CommandArgument> args = new ArrayList<>(super.getArguments(ctx));
         try {
-            Map<String, CommandArgument> options = getDynamicOptions(ctx);
-            for (String k : options.keySet()) {
-                args.add(options.get(k));
-            }
+            args.addAll(getDynamicOptions(ctx).values());
         } catch (CommandFormatException ex) {
             // XXX OK will not break CLI
             Logger.getLogger(getClass()).trace("Exception while retreiving ls "
