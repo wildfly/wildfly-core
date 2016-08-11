@@ -361,12 +361,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         examined.add(id);
 
         Map<String, RuntimeRequirementRegistration> dependents = requirements.get(id);
-        RuntimeStatus status = getDependentCapabilityStatus(dependents, id, examined);
-        if (status == RuntimeStatus.NORMAL) {  // TODO why are we checking the same thing twice?
-            dependents = requirements.get(id);
-            status = getDependentCapabilityStatus(dependents, id, examined);
-        }
-        return status;
+        return getDependentCapabilityStatus(dependents, id, examined);
     }
 
     private RuntimeStatus getDependentCapabilityStatus(Map<String, RuntimeRequirementRegistration> dependents, CapabilityId requiror, Set<CapabilityId> examined) {
