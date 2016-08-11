@@ -15,7 +15,7 @@ DESCRIPTION
 
   jboss-cli.sh controller=controller-host.net
 
-  In this case, the default port will be 9990 and the default protocol will be http.
+  In this case, the default port will be 9990 and the default protocol will be http-remoting.
 
   Note, specifying controller argument will only set the default host and port
   values for the connect command but will not automatically connect to the
