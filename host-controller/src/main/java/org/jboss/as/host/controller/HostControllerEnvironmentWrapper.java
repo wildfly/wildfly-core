@@ -20,7 +20,7 @@ package org.jboss.as.host.controller;
  * @author wangc
  *
  */
-public class HostControllerEnvironmentWrapper {
+public final class HostControllerEnvironmentWrapper {
 
     enum HostControllerEnvironmentStatus {
         NORMAL, // expected abort
@@ -35,11 +35,11 @@ public class HostControllerEnvironmentWrapper {
         this.hostControllerEnvironmentStatus = hostControllerEnvironmentStatus;
     }
 
-    protected HostControllerEnvironmentWrapper(HostControllerEnvironment hostControllerEnvironment) {
+    HostControllerEnvironmentWrapper(HostControllerEnvironment hostControllerEnvironment) {
         this(hostControllerEnvironment, null);
     }
 
-    protected HostControllerEnvironmentWrapper(HostControllerEnvironmentStatus hostControllerEnvironmentStatus) {
+    HostControllerEnvironmentWrapper(HostControllerEnvironmentStatus hostControllerEnvironmentStatus) {
         this(null, hostControllerEnvironmentStatus);
     }
 
