@@ -251,7 +251,9 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                         }
                     }
                 }
-                int valueResult = valueCompleter.complete(ctx, chunk == null ? "" : chunk, 0, candidates);
+                int valueResult = valueCompleter.complete(ctx,
+                        chunk == null ? "" : chunk,
+                        chunk == null ? 0 : chunk.length(), candidates);
                 if (valueResult < 0) {
                     return valueResult;
                 } else {

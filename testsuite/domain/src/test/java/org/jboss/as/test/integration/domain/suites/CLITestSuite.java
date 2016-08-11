@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import org.jboss.as.test.integration.domain.management.cli.BasicOpsTestCase;
+import org.jboss.as.test.integration.domain.management.cli.CliCompletionTestCase;
 import org.jboss.as.test.integration.domain.management.cli.CloneProfileTestCase;
 import org.jboss.as.test.integration.domain.management.cli.HierarchicalCompositionTestCase;
 import org.jboss.as.test.integration.domain.management.cli.UndeployWildcardDomainTestCase;
@@ -46,6 +47,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     BasicOpsTestCase.class,
+    CliCompletionTestCase.class,
     CloneProfileTestCase.class,
     UndeployWildcardDomainTestCase.class,
     HierarchicalCompositionTestCase.class,
