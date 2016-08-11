@@ -20,7 +20,7 @@ package org.jboss.as.server;
  * @author wangc
  *
  */
-public class ServerEnvironmentWrapper {
+public final class ServerEnvironmentWrapper {
 
     enum ServerEnvironmentStatus {
         NORMAL, // expected abort
@@ -35,11 +35,11 @@ public class ServerEnvironmentWrapper {
         this.serverEnvironmentStatus = serverEnvironmentStatus;
     }
 
-    protected ServerEnvironmentWrapper(ServerEnvironment serverEnvironment) {
+    ServerEnvironmentWrapper(ServerEnvironment serverEnvironment) {
         this(serverEnvironment, null);
     }
 
-    protected ServerEnvironmentWrapper(ServerEnvironmentStatus serverEnvironmentStatus) {
+    ServerEnvironmentWrapper(ServerEnvironmentStatus serverEnvironmentStatus) {
         this(null, serverEnvironmentStatus);
     }
 
