@@ -44,6 +44,7 @@ import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
+import org.jboss.as.controller.operations.validation.BytesValidator;
 import org.jboss.as.controller.operations.validation.MinMaxValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.NillableOrExpressionParameterValidator;
@@ -101,7 +102,8 @@ public abstract class AttributeDefinition {
     protected AttributeDefinition(AbstractAttributeDefinitionBuilder<?, ?> toCopy) {
         this(toCopy.getName(), toCopy.getXmlName(), toCopy.getDefaultValue(), toCopy.getType(),
                 toCopy.isAllowNull(), toCopy.isAllowExpression(), toCopy.getMeasurementUnit(), toCopy.getCorrector(),
-                wrapValidator(toCopy.getValidator(), toCopy.isAllowNull(), toCopy.isValidateNull(), toCopy.isAllowExpression(), toCopy.getType()),
+                wrapValidator(toCopy.getValidator(), toCopy.isAllowNull(), toCopy.isValidateNull(), toCopy.isAllowExpression(),
+                        toCopy.getType(), toCopy.getConfiguredMinSize(), toCopy.getConfiguredMaxSize()),
                 toCopy.isValidateNull(), toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
@@ -117,7 +119,7 @@ public abstract class AttributeDefinition {
                                   Boolean nilSignificant, AttributeParser parser, final AttributeAccess.Flag... flags) {
 
         this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
-                wrapValidator(validator, allowNull, validateNull, allowExpression, type), validateNull, alternatives, requires,
+                wrapValidator(validator, allowNull, validateNull, allowExpression, type, null, null), validateNull, alternatives, requires,
                 attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
                 nilSignificant, parser, null, null, null, null, null, wrapFlags(flags));
     }
@@ -173,11 +175,20 @@ public abstract class AttributeDefinition {
     }
 
     private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
-                                                    boolean validateNull, boolean allowExpression, ModelType type) {
+                                                    boolean validateNull, boolean allowExpression, ModelType type,
+                                                    Integer minSize, Integer maxSize) {
         NillableOrExpressionParameterValidator result = null;
         if (toWrap == null) {
             if (type == ModelType.STRING) {
-                toWrap = new StringLengthValidator(1, Integer.MAX_VALUE, allowNull, allowExpression);
+                // If sizing was specified, use it. If unspecified use defaults we've used since early AS 7
+                int min = minSize == null ? 1 : minSize;
+                int max = maxSize == null ? Integer.MAX_VALUE : maxSize;
+                toWrap = new StringLengthValidator(min, max, allowNull, allowExpression);
+            } else if (type == ModelType.BYTES) {
+                // If sizing was specified, use it. If unspecified use defaults equivalent to no min or max
+                int min = minSize == null ? 0 : minSize;
+                int max = maxSize == null ? Integer.MAX_VALUE : maxSize;
+                toWrap = new BytesValidator(min, max, false); // don't need to allow null here; the wrapper will deal with null
             } else {
                 toWrap = new ModelTypeValidator(type);
             }

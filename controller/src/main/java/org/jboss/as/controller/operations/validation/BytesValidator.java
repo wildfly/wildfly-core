@@ -34,15 +34,33 @@ import org.jboss.dmr.ModelType;
  */
 public class BytesValidator extends ModelTypeValidator implements MinMaxValidator{
 
-    public static final BytesValidator createSha1(final boolean nullable) {
+    public static BytesValidator createSha1(final boolean nullable) {
         return new BytesValidator(20, 20, nullable);
     }
 
     private final int min;
     private final int max;
 
+    /**
+     * Creates a BytesValidator that allows potentially more than one type.
+     * @param min the minimum length of the byte[]
+     * @param max the maximum length of the byte[]
+     * @param nullable whether an undefined value is allowed
+     */
     public BytesValidator(final int min, final int max, final boolean nullable) {
         super(ModelType.BYTES, nullable);
+        this.min = min;
+        this.max = max;
+    }
+
+    /**
+     * Creates a BytesValidator
+     * @param min the minimum length of the byte[]
+     * @param max the maximum length of the byte[]
+     * @param otherValidTypes additional valid types (i.e one of those whose value can convert to a byte[].) May be {@code null}
+     */
+    public BytesValidator(final int min, final int max, final ModelType... otherValidTypes) {
+        super(false, false, false, ModelType.BYTES, otherValidTypes);
         this.min = min;
         this.max = max;
     }
