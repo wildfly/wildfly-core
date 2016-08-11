@@ -350,7 +350,7 @@ public class DeployHandler extends DeploymentHandler {
             }
 
             if(Util.isDeploymentInRepository(name, client)) {
-                replaceDeployment(ctx, f, deploymentUrl, name, runtimeName, disabled);
+                replaceDeployment(ctx, f, deploymentUrl, name, runtimeName, disabled, unmanaged);
                 return;
             } else if(ctx.isDomainMode()) {
                 // add deployment to the repository (disabled in domain (i.e. not associated with any sg))
@@ -763,7 +763,7 @@ public class DeployHandler extends DeploymentHandler {
         return request;
     }
 
-    protected void replaceDeployment(CommandContext ctx, final File f, final URL url, String name, final String runtimeName, boolean disabled) throws CommandFormatException {
+    protected void replaceDeployment(CommandContext ctx, final File f, final URL url, String name, final String runtimeName, boolean disabled, boolean unmanaged) throws CommandFormatException {
         // replace
         final ModelNode request = new ModelNode();
         request.get(Util.OPERATION).set(Util.FULL_REPLACE_DEPLOYMENT);
@@ -779,9 +779,14 @@ public class DeployHandler extends DeploymentHandler {
             }
             content.get(Util.URL).set(url.toExternalForm());
         } else {
-            content.get(Util.INPUT_STREAM_INDEX).set(0);
+            if (unmanaged) {
+                content.get(Util.PATH).set(f.getAbsolutePath());
+                content.get(Util.ARCHIVE).set(f.isFile());
+            } else {
+                content.get(Util.INPUT_STREAM_INDEX).set(0);
+            }
         }
-        execute(ctx, request, f, false);
+        execute(ctx, request, f, unmanaged);
     }
 
     protected void addRequiresDeployment() throws CommandFormatException {
