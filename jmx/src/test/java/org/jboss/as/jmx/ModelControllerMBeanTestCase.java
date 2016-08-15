@@ -184,6 +184,15 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
         checkSameMBeans(filteredInstances, filteredNames);
         assertContainsNames(filteredNames, EXPR_SOCKET_BINDING_GROUP_NAME, EXPR_SERVER_SOCKET_BINDING_NAME);
 
+        // WFCORE-1716 Test with a property list pattern where the non-wildcard keys are for items later in the address
+        filteredInstances = connection.queryMBeans(createObjectName(LEGACY_DOMAIN + ":socket-binding=*,*"),
+        null);
+        filteredNames = connection.queryNames(createObjectName(LEGACY_DOMAIN + ":socket-binding=*,*"), null);
+        Assert.assertEquals(1, filteredInstances.size());
+        Assert.assertEquals(1, filteredNames.size());
+        checkSameMBeans(filteredInstances, filteredNames);
+        assertContainsNames(filteredNames, LEGACY_SERVER_SOCKET_BINDING_NAME);
+
         // WFCORE-1257 -- Test with QueryExp
 
         // First a numeric query (port) = (12345)
