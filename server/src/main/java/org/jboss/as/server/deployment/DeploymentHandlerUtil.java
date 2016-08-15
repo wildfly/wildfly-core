@@ -312,7 +312,8 @@ public class DeploymentHandlerUtil {
                 }
             }
             notificationData.get(DEPLOYMENT).set(runtimeName);
-            context.emit(new Notification(DEPLOYMENT_UNDEPLOYED_NOTIFICATION, resourceAddress, ServerLogger.ROOT_LOGGER.deploymentUndeployedNotification(managementName, runtimeName), notificationData));
+            PathAddress pathAddress = context.getCurrentAddress().size() == 0 ? PathAddress.pathAddress(DEPLOYMENT, managementName) : context.getCurrentAddress();
+            context.emit(new Notification(DEPLOYMENT_UNDEPLOYED_NOTIFICATION, pathAddress, ServerLogger.ROOT_LOGGER.deploymentUndeployedNotification(managementName, runtimeName), notificationData));
 
             context.addStep(new OperationStepHandler() {
                 @Override
