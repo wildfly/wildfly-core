@@ -24,14 +24,18 @@ package org.jboss.as.test.integration.domain.autoignore;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_CONTROLLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD_REQUIRED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
@@ -51,6 +55,7 @@ import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
@@ -117,10 +122,16 @@ public class AutoIgnoredResourcesDomainTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
+        setupDomain(false);
+    }
+
+    public static void setupDomain(boolean slaveIsBackupDC) throws Exception {
         //Make all the configs read-only so we can stop and start when we like to reset
         DomainTestSupport.Configuration config = DomainTestSupport.Configuration.create(AutoIgnoredResourcesDomainTestCase.class.getSimpleName(),
                 "domain-configs/domain-auto-ignore.xml", "host-configs/host-auto-ignore-master.xml", "host-configs/host-auto-ignore-slave.xml",
                 true, true, true);
+        if (slaveIsBackupDC)
+            config.getSlaveConfiguration().setBackupDC(true);
         testSupport = DomainTestSupport.create(config);
         // Start!
         testSupport.start();
@@ -285,7 +296,6 @@ public class AutoIgnoredResourcesDomainTestCase {
         checkSystemProperties(4); //Composite added a property
         Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
     }
-
 
 
     @Test
@@ -507,7 +517,82 @@ public class AutoIgnoredResourcesDomainTestCase {
     }
 
     /////////////////////////////////////////////////////////////////
+    // These tests check how ignoring unused resources works in conjunction with --backup when
+    // ignore-unused-configuration is undefined/true/false
+
+    @Test
+    public void test60_RestartDomainAndReloadReadOnlyConfig() throws Exception {
+        //Clean up after ourselves for the next round of tests /////////////
+        restartDomainAndReloadReadOnlyConfig();
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // ignore-unused-configuration is undefined and --backup not set
+    // the behavior is as if the ignore-unused-configuration attribute had a value of 'true'
+    @Test
+    public void test61_IgnoreUnusedConfigurationAttrUndefined() throws Exception {
+        undefineIgnoreUnsusedConfiguration();
+        test00_CheckInitialBootExclusions();
+    }
+
+    @Test
+    public void test62_RestartDomainAndReloadReadOnlyConfig() throws Exception {
+        //Clean up after ourselves for the next round of tests /////////////
+        // start with --backup
+        restartDomainAndReloadReadOnlyConfig(true);
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // ignore-unused-configuration=true and --backup set
+    // the behavior is as if the ignore-unused-configuration attribute had a value of 'true'
+    @Test
+    public void test63_IgnoreUnusedConfigurationAttrTrueBackup() throws Exception {
+        test00_CheckInitialBootExclusions();
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // ignore-unused-configuration is undefined and --backup set
+    // the behavior is as if the ignore-unused-configuration attribute had a value of 'false'
+    @Test
+    public void test64_IgnoreUnusedConfigurationAttrUndefinedBackup() throws Exception {
+        undefineIgnoreUnsusedConfiguration();
+        checkFullConfiguration();
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // ignore-unused-configuration=false and --backup set
+    @Test
+    public void test65_IgnoreUnusedConfigurationAttrFalseBackup() throws Exception {
+        setIgnoreUnusedConfiguration(false);
+        checkFullConfiguration();
+    }
+
+    @Test
+    public void test66_RestartDomainAndReloadReadOnlyConfig() throws Exception {
+        //Clean up after ourselves for the next round of tests /////////////
+        restartDomainAndReloadReadOnlyConfig();
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // ignore-unused-configuration=false and --backup not set
+    @Test
+    public void test67_IgnoreUnusedConfigurationAttrFalse() throws Exception {
+        setIgnoreUnusedConfiguration(false);
+        checkFullConfiguration();
+    }
+
+
+    /////////////////////////////////////////////////////////////////
     // Private stuff
+
+    private void checkFullConfiguration() throws Exception {
+        checkSlaveProfiles(ROOT_PROFILE1, ROOT_PROFILE2, PROFILE1, PROFILE2, PROFILE3);
+        checkSlaveExtensions(EXTENSION_JMX, EXTENSION_LOGGING, EXTENSION_REMOTING, EXTENSION_IO, EXTENSION_RC);
+        checkSlaveServerGroups(GROUP1, GROUP2);
+        checkSlaveSocketBindingGroups(ROOT_SOCKETS1, ROOT_SOCKETS2, SOCKETS1, SOCKETS2, SOCKETS3, SOCKETSA);
+        checkSystemProperties(0);
+        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+    }
 
 
     private ModelNode createDcLockTakenComposite(ModelNode op) {
@@ -534,24 +619,55 @@ public class AutoIgnoredResourcesDomainTestCase {
         Assert.assertEquals(size, getChildrenOfTypeOnSlave(SYSTEM_PROPERTY).asList().size());
     }
 
-    private void checkSlaveProfiles(String...profiles) throws Exception {
+    private void checkSlaveProfiles(String... profiles) throws Exception {
         checkEqualContents(getChildrenOfTypeOnSlave(PROFILE).asList(), profiles);
     }
 
 
-    private void checkSlaveExtensions(String...extensions) throws Exception {
+    private void checkSlaveExtensions(String... extensions) throws Exception {
         if (true) {
             return; // Automatically ignoring extensions is disabled atm
         }
         checkEqualContents(getChildrenOfTypeOnSlave(EXTENSION).asList(), extensions);
     }
 
-    private void checkSlaveServerGroups(String...groups) throws Exception {
+    private void checkSlaveServerGroups(String... groups) throws Exception {
         checkEqualContents(getChildrenOfTypeOnSlave(SERVER_GROUP).asList(), groups);
     }
 
-    private void checkSlaveSocketBindingGroups(String...groups) throws Exception {
+    private void checkSlaveSocketBindingGroups(String... groups) throws Exception {
         checkEqualContents(getChildrenOfTypeOnSlave(SOCKET_BINDING_GROUP).asList(), groups);
+    }
+
+    private void undefineIgnoreUnsusedConfiguration() throws Exception {
+        // undefine ignore-unused-configuration
+        ModelNode slaveModel = validateResponse(masterClient.execute(Operations.createReadAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER)), true);
+        slaveModel.get(REMOTE).remove(IGNORE_UNUSED_CONFIG);
+        ModelNode op = Operations.createWriteAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER, slaveModel);
+        validateResponse(masterClient.execute(op));
+
+        // reload slave
+        Assert.assertEquals(RELOAD_REQUIRED, getSlaveHostStatus());
+        reloadSlaveHost();
+
+        // verify that ignore-unused-configuration is undefined
+        op = Operations.createReadAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER);
+        Assert.assertFalse(validateResponse(masterClient.execute(op), true).get(REMOTE).hasDefined(IGNORE_UNUSED_CONFIG));
+    }
+
+    private void setIgnoreUnusedConfiguration(boolean ignoreUnusedConfiguration) throws Exception {
+        ModelNode slaveModel = validateResponse(masterClient.execute(Operations.createReadAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER)), true);
+        slaveModel.get(REMOTE).get(IGNORE_UNUSED_CONFIG).set(ignoreUnusedConfiguration);
+        ModelNode op = Operations.createWriteAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER, slaveModel);
+        validateResponse(masterClient.execute(op));
+
+        // reload slave
+        Assert.assertEquals(RELOAD_REQUIRED, getSlaveHostStatus());
+        reloadSlaveHost();
+
+        // verify value of ignore-unused-configuration
+        op = Operations.createReadAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER);
+        Assert.assertEquals(ignoreUnusedConfiguration, validateResponse(masterClient.execute(op), true).get(REMOTE).get(IGNORE_UNUSED_CONFIG).asBoolean());
     }
 
     private ModelNode getChildrenOfTypeOnSlave(String type) throws Exception {
@@ -575,7 +691,7 @@ public class AutoIgnoredResourcesDomainTestCase {
         return SLAVE_ROOT_ADDRESS.clone().add(SERVER, serverName);
     }
 
-    private void checkEqualContents(List<ModelNode> values, String...expected) {
+    private void checkEqualContents(List<ModelNode> values, String... expected) {
         HashSet<String> actualSet = new HashSet<String>();
         for (ModelNode value : values) {
             actualSet.add(value.asString());
@@ -590,12 +706,28 @@ public class AutoIgnoredResourcesDomainTestCase {
         Assert.assertEquals("STARTED", validateResponse(slaveClient.execute(op), true).asString());
     }
 
+    private String getSlaveHostStatus() throws Exception {
+        ModelNode op = Util.getReadAttributeOperation(PathAddress.pathAddress(SLAVE_ROOT_ADDRESS), HOST_STATE);
+        ModelNode result = slaveClient.execute(op);
+        return validateResponse(result).asString();
+    }
+
+    private void reloadSlaveHost() throws Exception {
+        domainSlaveLifecycleUtil.executeAwaitConnectionClosed(Operations.createOperation("reload", SLAVE_ROOT_ADDRESS));
+        domainSlaveLifecycleUtil.connect();
+        domainSlaveLifecycleUtil.awaitServers(System.currentTimeMillis());
+    }
+
     private void restartDomainAndReloadReadOnlyConfig() throws Exception {
+        restartDomainAndReloadReadOnlyConfig(false);
+    }
+
+    private void restartDomainAndReloadReadOnlyConfig(boolean slaveIsBackupDC) throws Exception {
         DomainTestSupport.stopHosts(TimeoutUtil.adjust(30000), domainSlaveLifecycleUtil, domainMasterLifecycleUtil);
         testSupport.stop();
 
         //Totally reinitialize the domain client
-        setupDomain();
+        setupDomain(slaveIsBackupDC);
         setup();
         //Check we're back to where we were
         test00_CheckInitialBootExclusions();
