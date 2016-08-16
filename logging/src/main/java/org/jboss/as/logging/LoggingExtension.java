@@ -23,6 +23,8 @@
 package org.jboss.as.logging;
 
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -64,6 +66,7 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.stdio.StdioContext;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * @author Emanuel Muckenhuber
@@ -72,6 +75,8 @@ import org.jboss.stdio.StdioContext;
 public class LoggingExtension implements Extension {
 
     private static final String RESOURCE_NAME = LoggingExtension.class.getPackage().getName() + ".LocalDescriptions";
+
+    private static final String SKIP_LOG_MANAGER_PROPERTY = "org.wildfly.logging.skipLogManagerCheck";
 
     public static final String SUBSYSTEM_NAME = "logging";
 
@@ -144,10 +149,22 @@ public class LoggingExtension implements Extension {
 
     @Override
     public void initialize(final ExtensionContext context) {
-        // The logging subsystem requires JBoss Log Manager to be used
-        // Testing the log manager must use the FQCN as the classes may be loaded via different class loaders
-        if (!java.util.logging.LogManager.getLogManager().getClass().getName().equals(org.jboss.logmanager.LogManager.class.getName())) {
-            throw LoggingLogger.ROOT_LOGGER.extensionNotInitialized();
+        // The logging subsystem requires JBoss Log Manager to be used. Note this can be overridden and may fail late
+        // instead of early. The reason to allow for the comparison to be overridden is some environments may wrap
+        // the log manager. As long as the delegate log manager is JBoss Log Manager we should be okay.
+        if (getBooleanProperty(SKIP_LOG_MANAGER_PROPERTY)) {
+            LoggingLogger.ROOT_LOGGER.debugf("System property %s was set to true. Skipping the log manager check.", SKIP_LOG_MANAGER_PROPERTY);
+            // Since we're overriding we will check the log manager system property and log a warning if the value is
+            // not org.jboss.logmanager.LogManager.
+            final String logManagerName = WildFlySecurityManager.getPropertyPrivileged("java.util.logging.manager", null);
+            if (!org.jboss.logmanager.LogManager.class.getName().equals(logManagerName)) {
+                LoggingLogger.ROOT_LOGGER.unknownLogManager(logManagerName);
+            }
+        } else {
+            // Testing the log manager must use the FQCN as the classes may be loaded via different class loaders
+            if (!java.util.logging.LogManager.getLogManager().getClass().getName().equals(org.jboss.logmanager.LogManager.class.getName())) {
+                throw LoggingLogger.ROOT_LOGGER.extensionNotInitialized();
+            }
         }
         final WildFlyLogContextSelector contextSelector = WildFlyLogContextSelector.Factory.create();
         LogContext.setLogContextSelector(contextSelector);
@@ -327,6 +344,18 @@ public class LoggingExtension implements Extension {
 
     private static void setParser(final ExtensionParsingContext context, final Namespace namespace, final XMLElementReader<List<ModelNode>> parser) {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, namespace.getUriString(), parser);
+    }
+
+    private static boolean getBooleanProperty(final String property) {
+        if (WildFlySecurityManager.isChecking()) {
+            return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+                @Override
+                public Boolean run() {
+                    return Boolean.getBoolean(property);
+                }
+            });
+        }
+        return Boolean.getBoolean(property);
     }
 
     public static class LoggingChildResourceComparator implements Comparator<PathElement> {

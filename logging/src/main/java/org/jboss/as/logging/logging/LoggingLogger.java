@@ -926,4 +926,15 @@ public interface LoggingLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 88, value = "Could not determine %s had any children resources.")
     void errorDeterminingChildrenExist(@Cause Throwable cause, String childType);
+
+    /**
+     * Logs a warning message indicating the log manager does not appear to the {@link org.jboss.logmanager.LogManager}.
+     *
+     * @param logManagerName the log manager system property value
+     */
+    @LogMessage(level = WARN)
+    @Message(id = 89, value = "The log manager check was skipped and the log manager system property, " +
+            "\"java.util.logging.manager\", does not appear to be set to \"org.jboss.logmanager.LogManager\". The " +
+            "current value is \"%s\". Some behavior of the logged output such as MDC and NDC may not work as expected.")
+    void unknownLogManager(String logManagerName);
 }
