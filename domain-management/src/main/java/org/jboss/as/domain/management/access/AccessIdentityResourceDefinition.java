@@ -69,9 +69,8 @@ import org.wildfly.security.auth.server.SecurityDomain;
 public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
     private static final String SECURITY_DOMAIN_CAPABILITY = "org.wildfly.security.security-domain";
-    private static final RuntimeCapability<Void> SECURITY_DOMAIN_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of(SECURITY_DOMAIN_CAPABILITY).build();
     private static final String MANAGEMENT_IDENTITY_CAPABILITY = "org.wildfly.management.identity";
-    private static final RuntimeCapability<Void> MANAGEMENT_IDENTITY_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of(MANAGEMENT_IDENTITY_CAPABILITY)
+    private static final RuntimeCapability<Void> MANAGEMENT_IDENTITY_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of(MANAGEMENT_IDENTITY_CAPABILITY, Void.class)
             .build();
 
     public static final PathElement PATH_ELEMENT = PathElement.pathElement(ACCESS, IDENTITY);
@@ -157,15 +156,16 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
             final FutureTask<SecurityDomain> configuredSecurityDomainFuture = toFutureTask(securityDomainInjected);
             futureTasks.add(configuredSecurityDomainFuture);
             futureTasks.addAll(inflowSecurityDomainFutures);
+
+            service.setGetSecurityDomainFutures(futureTasks);
+            serviceBuilder.install();
+
             securityIdentitySupplier.setConfiguredSecurityDomainSupplier(() -> toSecurityDomain(configuredSecurityDomainFuture));
 
             if (inflowSecurityDomainFutures.size() > 0) {
                 securityIdentitySupplier.setInflowSecurityDomainSuppliers(inflowSecurityDomainFutures.stream()
                         .map(f -> (Supplier<SecurityDomain>) (() -> toSecurityDomain(f))).collect(Collectors.toList()));
             }
-
-            service.setGetSecurityDomainFutures(futureTasks);
-            serviceBuilder.install();
         }
 
         @Override
