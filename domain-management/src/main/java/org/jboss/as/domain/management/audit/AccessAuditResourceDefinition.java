@@ -79,7 +79,7 @@ public class AccessAuditResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new InMemoryAuditLogHandlerResourceDefinition(auditLogger));
         resourceRegistration.registerSubModel(AuditLogLoggerResourceDefinition.createDefinition(auditLogger));
         if (!environmentReader.isServer()){
-            resourceRegistration.registerSubModel(AuditLogLoggerResourceDefinition.createHostServerDefinition(auditLogger));
+            resourceRegistration.registerSubModel(AuditLogLoggerResourceDefinition.createHostServerDefinition());
         }
     }
 
