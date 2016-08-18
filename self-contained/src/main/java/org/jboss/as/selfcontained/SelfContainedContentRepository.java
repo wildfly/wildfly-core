@@ -31,8 +31,8 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.vfs.VirtualFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -45,6 +45,7 @@ import java.util.Set;
  * @see org.jboss.as.selfcontained.ContentProvider
  *
  * @author Bob McWhirter
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class SelfContainedContentRepository implements ContentRepository, Service<ContentRepository> {
 
@@ -72,7 +73,7 @@ public class SelfContainedContentRepository implements ContentRepository, Servic
     }
 
     @Override
-    public VirtualFile getContent(byte[] hash) {
+    public File getContent(byte[] hash) {
         // A single-element array is the sentinal
         if ( hash.length == 1 ) {
             return this.contentProviderInjector.getValue().getContent( hash[0] );

@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.deployment;
 
+import java.io.File;
 import java.security.PermissionCollection;
 import java.util.Map;
 import java.util.Set;
@@ -48,10 +49,10 @@ import org.jboss.jandex.Index;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 @SuppressWarnings("deprecation")
 public final class Attachments {
@@ -90,7 +91,7 @@ public final class Attachments {
     /**
      * The deployment contents
      */
-    public static final AttachmentKey<VirtualFile> DEPLOYMENT_CONTENTS = AttachmentKey.create(VirtualFile.class);
+    public static final AttachmentKey<File> DEPLOYMENT_CONTENTS = AttachmentKey.create(File.class);
 
     /**
      * <strong>Deprecated</strong>. The attached object does nothing; this key is only retained for
@@ -162,11 +163,6 @@ public final class Attachments {
     public static final AttachmentKey<ExtensionInfo> EXTENSION_INFORMATION = AttachmentKey.create(ExtensionInfo.class);
 
     /**
-     * The server deployment repository
-     */
-    public static final AttachmentKey<DeploymentMountProvider> SERVER_DEPLOYMENT_REPOSITORY = AttachmentKey.create(DeploymentMountProvider.class);
-
-    /**
      * An annotation index for a (@link ResourceRoot). This is attached to the {@link ResourceRoot}s of the deployment that contain
      * the annotations
      */
@@ -206,8 +202,6 @@ public final class Attachments {
     public static final AttachmentKey<AttachmentList<ModuleIdentifier>> ADDITIONAL_ANNOTATION_INDEXES = AttachmentKey.createList(ModuleIdentifier.class);
 
     public static final AttachmentKey<Map<ModuleIdentifier, CompositeIndex>> ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE = AttachmentKey.create(Map.class);
-
-    public static final AttachmentKey<Map<String, MountedDeploymentOverlay>> DEPLOYMENT_OVERLAY_LOCATIONS = AttachmentKey.create(Map.class);
 
     /**
      * Support for getting and creating resource models on a deployment's resource.

@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
+ * Copyright (c) 2015, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -20,13 +20,28 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.server.deployment;
+package org.wildfly.loaders.deployment;
+
+import java.security.PrivilegedAction;
 
 /**
- * @author Stuart Douglas
- */
-public enum MountType {
-    ZIP,
-    EXPANDED,
-    REAL;
+* @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+*/
+final class PropertyReadAction implements PrivilegedAction<String> {
+
+    private final String key;
+    private final String defVal;
+
+    PropertyReadAction(final String key) {
+        this(key, null);
+    }
+
+    PropertyReadAction(final String key, final String defVal) {
+        this.key = key;
+        this.defVal = defVal;
+    }
+
+    public String run() {
+        return System.getProperty(key, defVal);
+    }
 }

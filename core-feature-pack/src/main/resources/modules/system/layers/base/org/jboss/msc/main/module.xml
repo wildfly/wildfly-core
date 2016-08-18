@@ -43,6 +43,5 @@
 
         <module name="javax.inject.api" optional="true"/>
         <module name="org.jboss.threads" optional="true"/>
-        <module name="org.jboss.vfs" optional="true"/>
     </dependencies>
 </module>

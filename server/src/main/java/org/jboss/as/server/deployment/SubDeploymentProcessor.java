@@ -40,6 +40,7 @@ import org.jboss.msc.service.ServiceTarget;
  * Deployment processor responsible to creating deployment unit services for sub-deployment.
  *
  * @author John Bailey
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class SubDeploymentProcessor implements DeploymentUnitProcessor {
 
@@ -49,7 +50,7 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
         final ResourceRoot deploymentResourceRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
 
         if(deploymentUnit.getParent() != null && ExplodedDeploymentMarker.isExplodedDeployment(deploymentUnit.getParent())) {
-            if (deploymentResourceRoot.getRoot().isDirectory()) {
+            if (deploymentResourceRoot.getLoader().getRoot().isDirectory()) {
                 ExplodedDeploymentMarker.markAsExplodedDeployment(deploymentUnit);
             }
         }
@@ -60,7 +61,7 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
             if (childRoot == deploymentResourceRoot || !SubDeploymentMarker.isSubDeployment(childRoot)) {
                 continue;
             }
-            final Resource resource = DeploymentResourceSupport.getOrCreateSubDeployment(childRoot.getRootName(), deploymentUnit);
+            final Resource resource = DeploymentResourceSupport.getOrCreateSubDeployment(childRoot.getLoader().getRootName(), deploymentUnit);
             final ImmutableManagementResourceRegistration registration = deploymentUnit.getAttachment(DeploymentResourceSupport.REGISTRATION_ATTACHMENT);
             final ManagementResourceRegistration mutableRegistration =  deploymentUnit.getAttachment(DeploymentResourceSupport.MUTABLE_REGISTRATION_ATTACHMENT);
             final CapabilityServiceSupport capabilityServiceSupport = deploymentUnit.getAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT);
@@ -69,7 +70,7 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
             final SubDeploymentUnitService service = new SubDeploymentUnitService(childRoot, deploymentUnit, registration,
                     mutableRegistration, resource, capabilityServiceSupport, vaultReader, pathManager);
 
-            final ServiceName serviceName = Services.deploymentUnitName(deploymentUnit.getName(), childRoot.getRootName());
+            final ServiceName serviceName = Services.deploymentUnitName(deploymentUnit.getName(), childRoot.getLoader().getRootName());
 
             serviceTarget.addService(serviceName, service)
                     .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, service.getDeployerChainsInjector())
@@ -89,7 +90,7 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
             if (!SubDeploymentMarker.isSubDeployment(childRoot)) {
                 continue;
             }
-            final ServiceName serviceName = Services.deploymentUnitName(deploymentUnit.getName(), childRoot.getRootName());
+            final ServiceName serviceName = Services.deploymentUnitName(deploymentUnit.getName(), childRoot.getLoader().getRootName());
             final ServiceController<?> serviceController = serviceRegistry.getService(serviceName);
             if (serviceController != null) {
                 serviceController.setMode(ServiceController.Mode.REMOVE);

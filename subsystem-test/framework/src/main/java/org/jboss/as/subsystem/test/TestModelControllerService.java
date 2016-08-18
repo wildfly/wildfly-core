@@ -56,7 +56,6 @@ import org.jboss.as.server.ServerEnvironment.LaunchType;
 import org.jboss.as.server.controller.resources.ServerDeploymentResourceDefinition;
 import org.jboss.as.subsystem.test.ControllerInitializer.TestControllerAccessor;
 import org.jboss.dmr.ModelNode;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -189,7 +188,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         }
 
         @Override
-        public VirtualFile getContent(byte[] hash) {
+        public File getContent(byte[] hash) {
             return null;
         }
 

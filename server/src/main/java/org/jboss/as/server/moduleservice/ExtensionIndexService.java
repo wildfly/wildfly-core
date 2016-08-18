@@ -38,11 +38,9 @@ import java.util.jar.Manifest;
 
 import org.jboss.as.server.deployment.module.ExtensionInfo;
 import org.jboss.as.server.deployment.module.ModuleDependency;
+import org.jboss.as.server.Utils;
 import org.jboss.logging.Logger;
 import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleSpec;
-import org.jboss.modules.ResourceLoaderSpec;
-import org.jboss.modules.ResourceLoaders;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
@@ -51,11 +49,11 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.vfs.VFSUtils;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  *
  * TODO: this needs to be updated when libraries are deployed the server with extension name in the manifest
  */
@@ -127,7 +125,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                             extensionJarSet.add(extensionJar);
 
                         } finally {
-                            VFSUtils.safeClose(jarFile);
+                            Utils.safeClose(jarFile);
                         }
                     } catch (IOException e) {
                         log.debugf("Failed to process JAR manifest for %s: %s", jar, e);
@@ -279,11 +277,6 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
             s1 = e1 + 1;
             s2 = e2 + 1;
         }
-    }
-
-    private static void addResourceRoot(final ModuleSpec.Builder specBuilder, String name, JarFile jarFile) {
-        specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(ResourceLoaders.createJarResourceLoader(name,
-                jarFile)));
     }
 
     static class ExtensionJar {

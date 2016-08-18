@@ -22,94 +22,64 @@
 
 package org.jboss.as.server.deployment.module;
 
-import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
+import org.jboss.as.server.Utils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
-import org.jboss.as.server.deployment.DeploymentMountProvider;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.ExplodedDeploymentMarker;
-import org.jboss.as.server.deployment.MountExplodedMarker;
-import org.jboss.as.server.deployment.MountType;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VFSUtils;
-import org.jboss.vfs.VirtualFile;
+import org.wildfly.loaders.deployment.ResourceLoader;
+import org.wildfly.loaders.deployment.ResourceLoaders;
 
 /**
- * Deployment processor responsible for mounting and attaching the resource root for this deployment.
+ * Deployment processor responsible for creating the resource root for this deployment.
  *
  * @author John Bailey
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
+public final class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
 
-    public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
+    public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
-        if(deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT) != null) {
+        if (deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT) != null) {
             return;
         }
-        final DeploymentMountProvider deploymentMountProvider = deploymentUnit.getAttachment(Attachments.SERVER_DEPLOYMENT_REPOSITORY);
-        if(deploymentMountProvider == null) {
-            throw ServerLogger.ROOT_LOGGER.noDeploymentRepositoryAvailable();
-        }
-
-        final String deploymentName = deploymentUnit.getName();
-        final VirtualFile deploymentContents = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_CONTENTS);
-
-        // internal deployments do not have any contents, so there is nothing to mount
-        if (deploymentContents == null)
-            return;
-
-        final VirtualFile deploymentRoot;
-        final MountHandle mountHandle;
-        if (deploymentContents.isDirectory()) {
-            // use the contents directly
-            deploymentRoot = deploymentContents;
+        final File deployment = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_CONTENTS);
+        if (deployment.isDirectory()) {
             // nothing was mounted
-            mountHandle = null;
             ExplodedDeploymentMarker.markAsExplodedDeployment(deploymentUnit);
-
-        } else {
-            // The mount point we will use for the repository file
-            deploymentRoot = VFS.getChild("content/" + deploymentName);
-
-            boolean failed = false;
-            Closeable handle = null;
-            try {
-                final boolean mountExploded = MountExplodedMarker.isMountExploded(deploymentUnit);
-                final MountType type;
-                if(mountExploded) {
-                    type = MountType.EXPANDED;
-                } else if (deploymentName.endsWith(".xml")) {
-                    type = MountType.REAL;
-                } else {
-                    type = MountType.ZIP;
-                }
-                handle = deploymentMountProvider.mountDeploymentContent(deploymentContents, deploymentRoot, type);
-                mountHandle = new MountHandle(handle);
-            } catch (IOException e) {
-                failed = true;
-                throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
-            } finally {
-                if(failed) {
-                    VFSUtils.safeClose(handle);
-                }
-            }
         }
-        final ResourceRoot resourceRoot = new ResourceRoot(deploymentRoot, mountHandle);
+        ResourceLoader loader;
+        try {
+            final String deploymentName = deploymentUnit.getName();
+            loader = ResourceLoaders.newResourceLoader(deploymentName, deployment, true);
+        } catch (IOException e) {
+            throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
+        }
+        final ResourceRoot resourceRoot = new ResourceRoot(loader);
         ModuleRootMarker.mark(resourceRoot);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_ROOT, resourceRoot);
         deploymentUnit.putAttachment(Attachments.MODULE_SPECIFICATION, new ModuleSpecification());
     }
 
-    public void undeploy(DeploymentUnit context) {
-        final ResourceRoot resourceRoot = context.removeAttachment(Attachments.DEPLOYMENT_ROOT);
+    public void undeploy(final DeploymentUnit du) {
+        // clean up deployment root
+        final ResourceRoot resourceRoot = du.removeAttachment(Attachments.DEPLOYMENT_ROOT);
         if (resourceRoot != null) {
-            final Closeable mountHandle = resourceRoot.getMountHandle();
-            VFSUtils.safeClose(mountHandle);
+            Utils.safeClose(resourceRoot.getLoader());
+        }
+        // clean up all additional resource roots
+        final List<ResourceRoot> childRoots = du.getAttachmentList(Attachments.RESOURCE_ROOTS);
+        if (childRoots != null) {
+            for (final ResourceRoot childRoot : childRoots) {
+                Utils.safeClose(childRoot.getLoader());
+            }
         }
     }
 }

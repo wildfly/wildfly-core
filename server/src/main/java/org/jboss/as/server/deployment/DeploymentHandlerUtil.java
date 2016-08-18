@@ -29,6 +29,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNE
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
 
+import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -52,7 +53,6 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * Utility methods used by operation handlers involved with deployment.
@@ -60,6 +60,7 @@ import org.jboss.vfs.VirtualFile;
  * This class is part of the runtime operation and should not have any reference to dmr.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DeploymentHandlerUtil {
 
@@ -182,9 +183,8 @@ public class DeploymentHandlerUtil {
                 registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), vaultReader, overlays);
         final ServiceController<DeploymentUnit> deploymentUnitController = serviceTarget.addService(deploymentUnitServiceName, service)
                 .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, service.getDeployerChainsInjector())
-                .addDependency(DeploymentMountProvider.SERVICE_NAME, DeploymentMountProvider.class, service.getServerDeploymentRepositoryInjector())
                 .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.getPathManagerInjector())
-                .addDependency(contentsServiceName, VirtualFile.class, service.getContentsInjector())
+                .addDependency(contentsServiceName, File.class, service.contentsInjector)
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
 

@@ -38,7 +38,6 @@ import org.jboss.modules.ModuleLoader;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author Thomas.Diesler@jboss.com
- *
  * @deprecated use {@link EmbeddedProcessFactory}
  */
 @Deprecated

@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.deployment.module;
 
+import static org.jboss.as.server.deployment.module.Utils.getLoaderPath;
 import static java.util.jar.Attributes.Name.EXTENSION_NAME;
 import static java.util.jar.Attributes.Name.IMPLEMENTATION_VENDOR_ID;
 import static java.util.jar.Attributes.Name.IMPLEMENTATION_VERSION;
@@ -42,6 +43,7 @@ import org.jboss.as.server.deployment.Services;
  * A processor which reads the Extension-Name attribute from a manifest
  *
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class ManifestExtensionNameProcessor implements DeploymentUnitProcessor {
 
@@ -56,7 +58,7 @@ public final class ManifestExtensionNameProcessor implements DeploymentUnitProce
 
         final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
 
-        if (!deploymentRoot.getRoot().getName().endsWith(".jar")) {
+        if (!deploymentRoot.getLoader().getRootName().endsWith(".jar")) {
             return;
         }
         // we are only interested in the root manifest
@@ -67,7 +69,7 @@ public final class ManifestExtensionNameProcessor implements DeploymentUnitProce
         }
         final Attributes mainAttributes = manifest.getMainAttributes();
         final String extensionName = mainAttributes.getValue(EXTENSION_NAME);
-        ServerLogger.DEPLOYMENT_LOGGER.debugf("Found Extension-Name manifest entry %s in %s", extensionName, deploymentRoot.getRoot().getPathName());
+        ServerLogger.DEPLOYMENT_LOGGER.debugf("Found Extension-Name manifest entry %s in %s", extensionName, getLoaderPath(deploymentRoot.getLoader()));
         if (extensionName == null) {
             // no entry
             return;

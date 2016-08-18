@@ -431,8 +431,7 @@ public class JBossEntityResolver implements EntityResolver, LSResourceResolver {
 
             URL url = new URL(systemId);
             if (warnOnNonFileURLs
-                    && url.getProtocol().equalsIgnoreCase("file") == false
-                    && url.getProtocol().equalsIgnoreCase("vfszip") == false) {
+                    && url.getProtocol().equalsIgnoreCase("file") == false) {
                 log.warn("Trying to resolve systemId as a non-file URL: " + systemId);
             }
 

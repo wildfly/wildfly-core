@@ -92,7 +92,6 @@ import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.staxmapper.XMLElementWriter;
-import org.jboss.vfs.VirtualFile;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -581,7 +580,7 @@ public abstract class AbstractControllerTestBase {
         }
 
         @Override
-        public VirtualFile getContent(byte[] hash) {
+        public File getContent(byte[] hash) {
             return null;
         }
 

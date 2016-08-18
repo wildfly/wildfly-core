@@ -49,7 +49,6 @@ import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.as.server.deployment.MountType;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.module.ExtensionListEntry;
 import org.jboss.as.server.deployment.module.ResourceRoot;
@@ -69,7 +68,6 @@ import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.StartException;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -699,7 +697,7 @@ public interface ServerLogger extends BasicLogger {
     IllegalArgumentException missingModulePrefix(ModuleIdentifier identifier, String prefix);
 
     @Message(id = 100, value = "Failed to read '%s'")
-    DeploymentUnitProcessingException failedToReadVirtualFile(VirtualFile file, @Cause IOException cause);
+    DeploymentUnitProcessingException failedToReadVirtualFile(String file, @Cause IOException cause);
 
     @Message(id = 101, value = "Deployment root is required")
     IllegalArgumentException deploymentRootRequired();
@@ -710,8 +708,8 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 103, value = "No Module Identifier attached to deployment '%s'")
     DeploymentUnitProcessingException noModuleIdentifier(String deploymentUnitName);
 
-    @Message(id = 104, value = "Failed to create VFSResourceLoader for root [%s]")
-    DeploymentUnitProcessingException failedToCreateVFSResourceLoader(String resourceRoot, @Cause IOException cause);
+    // @Message(id = 104, value = "Failed to create VFSResourceLoader for root [%s]")
+    // DeploymentUnitProcessingException failedToCreateVFSResourceLoader(String resourceRoot, @Cause IOException cause);
 
     @Message(id = 105, value = "Failed to get file from remote repository")
     RuntimeException failedToGetFileFromRemoteRepository(@Cause Throwable cause);
@@ -734,8 +732,8 @@ public interface ServerLogger extends BasicLogger {
     // @Message(id = 111, value = "Only 'hash' is allowed for deployment full replacement for a domain mode server: %s")
     // IllegalStateException onlyHashAllowedForDeploymentFullReplaceInDomainServer(ModelNode contentItemNode);
 
-    @Message(id = 112, value = "Unknown mount type %s")
-    IllegalArgumentException unknownMountType(MountType mountType);
+    // @Message(id = 112, value = "Unknown mount type %s")
+    // IllegalArgumentException unknownMountType(MountType mountType);
 
     /**
      * Creates an exception indicating a failure to create a temp file provider.
@@ -825,6 +823,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 137, value = "No deployment content with hash %s is available in the deployment content repository for deployment '%s'. This is a fatal boot error. To correct the problem, either restart with the --admin-only switch set and use the CLI to install the missing content or remove it from the configuration, or remove the deployment from the xml configuration file and restart.")
     OperationFailedException noSuchDeploymentContentAtBoot(String contentHash, String deploymentName);
 
+    // @Message(id = 138, value = "VFS is not available from the configured module loader")
+    // IllegalStateException vfsNotAvailable();
+
     /** Label for DEBUG log listing of the server's system properties */
     @Message(id = Message.NONE, value = "Configured system properties:")
     String configuredSystemPropertiesLabel();
@@ -837,9 +838,6 @@ public interface ServerLogger extends BasicLogger {
      * nt properties */
     @Message(id = Message.NONE, value = "Configured system environment:")
     String configuredSystemEnvironmentLabel();
-
-    @Message(id = 138, value = "VFS is not available from the configured module loader")
-    IllegalStateException vfsNotAvailable();
 
     @Message(id = 139, value = "Server controller service was removed")
     ServiceNotFoundException serverControllerServiceRemoved();
@@ -901,35 +899,35 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 158, value = "Failed to instantiate a %s")
     DeploymentUnitProcessingException failedToInstantiateClassFileTransformer(String clazz, @Cause Exception cause);
 
-    @Message(id = 159, value = "No deployment repository available.")
-    DeploymentUnitProcessingException noDeploymentRepositoryAvailable();
+    // @Message(id = 159, value = "No deployment repository available.")
+    // DeploymentUnitProcessingException noDeploymentRepositoryAvailable();
 
     @Message(id = 160, value = "Failed to mount deployment content")
     DeploymentUnitProcessingException deploymentMountFailed(@Cause IOException cause);
 
     @Message(id = 161, value = "Failed to get manifest for deployment %s")
-    DeploymentUnitProcessingException failedToGetManifest(VirtualFile file, @Cause IOException cause);
+    DeploymentUnitProcessingException failedToGetManifest(String deploymentName, @Cause IOException cause);
 
     // @Message(id = 162, value = "Invalid dependency: %s")
     // RuntimeException invalidDependency(String dependency);
 
     @Message(id = 163, value = "Cannot merge resource root for a different file. This: %s mergee: %s")
-    IllegalArgumentException cannotMergeResourceRoot(VirtualFile file, VirtualFile mergee);
+    IllegalArgumentException cannotMergeResourceRoot(String file, String mergee);
 
-    @Message(id = 164, value = "Failed to create temp file provider")
-    RuntimeException failedToCreateTempFileProvider(@Cause IOException cause);
+    // @Message(id = 164, value = "Failed to create temp file provider")
+    // RuntimeException failedToCreateTempFileProvider(@Cause IOException cause);
 
-    @Message(id = 165, value = "Resource is too large to be a valid class file")
-    IOException resourceTooLarge();
+    // @Message(id = 165, value = "Resource is too large to be a valid class file")
+    // IOException resourceTooLarge();
 
     @Message(id = 166, value = "Sub deployment %s in jboss-deployment-structure.xml was not found. Available sub deployments: %s")
     DeploymentUnitProcessingException subdeploymentNotFound(String path, StringBuilder subdeployments);
 
-    @Message(id = 167, value = "No jboss-deployment-structure.xml file found at %s")
-    DeploymentUnitProcessingException deploymentStructureFileNotFound(File file);
+    // @Message(id = 167, value = "No jboss-deployment-structure.xml file found at %s")
+    // DeploymentUnitProcessingException deploymentStructureFileNotFound(File file);
 
     @Message(id = 168, value = "Error loading jboss-deployment-structure.xml from %s")
-    DeploymentUnitProcessingException errorLoadingDeploymentStructureFile(String path, @Cause XMLStreamException cause);
+    DeploymentUnitProcessingException errorLoadingDeploymentStructureFile(String path, @Cause Exception cause);
 
     @Message(id = 169, value = "Sub deployment '%s' is listed twice in jboss-deployment-structure.xml")
     XMLStreamException duplicateSubdeploymentListing(String name);
@@ -937,8 +935,8 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 170, value = "Additional module name '%s' is not valid. Names must start with 'deployment.'")
     XMLStreamException invalidModuleName(String name);
 
-    @Message(id = 171, value = "External resource roots not supported, resource roots may not start with a '/' : %s")
-    XMLStreamException externalResourceRootsNotSupported(String path);
+    // @Message(id = 171, value = "External resource roots not supported, resource roots may not start with a '/' : %s")
+    // XMLStreamException externalResourceRootsNotSupported(String path);
 
     @Message(id = 172, value = "Unexpected end of document")
     XMLStreamException unexpectedEndOfDocument(@Param Location location);
@@ -1026,7 +1024,7 @@ public interface ServerLogger extends BasicLogger {
     OperationFailedException noSuchDeploymentOverlayContent(String hash);
 
     @Message(id = 200, value = "Failed to read file %s")
-    OperationFailedException failedToLoadFile(VirtualFile file, @Cause IOException e);
+    OperationFailedException failedToLoadFile(File file, @Cause IOException e);
 
     @Message(id = 201, value = "Cannot have more than one of %s")
     OperationFailedException cannotHaveMoreThanOneManagedContentItem(Set<String> managedAttributes);
@@ -1109,9 +1107,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 223, value="Illegal permission actions '%s'")
     IllegalArgumentException illegalPermissionActions(String actions);
 
-    @LogMessage(level = ERROR)
-    @Message(id = 224, value="Could not mount overlay %s as parent %s is not a directory")
-    void couldNotMountOverlay(String path, VirtualFile parent);
+    // @LogMessage(level = ERROR)
+    // @Message(id = 224, value="Could not mount overlay %s as parent %s is not a directory")
+    // void couldNotMountOverlay(String path, VirtualFile parent);
 
     @Message(id = 225, value="Unable to create temporary directory")
     RuntimeException unableToCreateSelfContainedDir();
@@ -1195,5 +1193,11 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 241, value = "Shutting down in response to management operation '%s'")
     void shuttingDownInResponseToManagementRequest(String op);
+
+    @Message(id = 242, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+
+    @Message(id = 243, value = "Error creating resource loader for classpath item '%s'")
+    DeploymentUnitProcessingException errorCreatingResourceLoader(String classpathItem, @Cause IOException cause);
 
 }

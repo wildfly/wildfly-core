@@ -27,41 +27,26 @@ import java.util.List;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.SimpleAttachable;
-import org.jboss.vfs.VirtualFile;
+import org.wildfly.loaders.deployment.ResourceLoader;
 
 /**
  * @author John E. Bailey
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class ResourceRoot extends SimpleAttachable {
 
-
-    private final String rootName;
-    private final VirtualFile root;
-    private final MountHandle mountHandle;
+    private final ResourceLoader loader;
     private final List<FilterSpecification> exportFilters = new ArrayList<FilterSpecification>();
     private boolean usePhysicalCodeSource;
 
-    public ResourceRoot(final VirtualFile root, final MountHandle mountHandle) {
-        this(root.getName(), root, mountHandle);
+    public ResourceRoot(final ResourceLoader loader) {
+        if (loader == null) throw new NullPointerException();
+        this.loader = loader;
     }
 
-    public ResourceRoot(final String rootName, final VirtualFile root, final MountHandle mountHandle) {
-        this.rootName = rootName;
-        this.root = root;
-        this.mountHandle = mountHandle;
-    }
-
-    public String getRootName() {
-        return rootName;
-    }
-
-    public VirtualFile getRoot() {
-        return root;
-    }
-
-    public MountHandle getMountHandle() {
-        return mountHandle;
+    public ResourceLoader getLoader() {
+        return loader;
     }
 
     public List<FilterSpecification> getExportFilters() {
@@ -72,14 +57,14 @@ public final class ResourceRoot extends SimpleAttachable {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("ResourceRoot [");
-        if (root != null)
-            builder.append("root=").append(root);
+        builder.append("loader=").append(loader.getRootName());
         builder.append("]");
         return builder.toString();
     }
 
     public void setUsePhysicalCodeSource(final boolean usePhysicalCodeSource) {
         this.usePhysicalCodeSource = usePhysicalCodeSource;
+        loader.setUsePhysicalCodeSource(usePhysicalCodeSource);
     }
 
     public boolean isUsePhysicalCodeSource() {
@@ -92,11 +77,12 @@ public final class ResourceRoot extends SimpleAttachable {
      * @param additionalResourceRoot The root to merge
      */
     public void merge(final ResourceRoot additionalResourceRoot) {
-        if(!additionalResourceRoot.getRoot().equals(root)) {
-            throw ServerLogger.ROOT_LOGGER.cannotMergeResourceRoot(root, additionalResourceRoot.getRoot());
+        if (!additionalResourceRoot.getLoader().getPath().equals(loader.getPath())) {
+            throw ServerLogger.ROOT_LOGGER.cannotMergeResourceRoot(loader.getPath(), additionalResourceRoot.getLoader().getPath());
         }
         usePhysicalCodeSource = additionalResourceRoot.usePhysicalCodeSource;
-        if(additionalResourceRoot.getExportFilters().isEmpty()) {
+        loader.setUsePhysicalCodeSource(usePhysicalCodeSource);
+        if (additionalResourceRoot.getExportFilters().isEmpty()) {
             //new root has no filters, so we don't want our existing filters to break anything
             //see WFLY-1527
             this.exportFilters.clear();

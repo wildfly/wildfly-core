@@ -22,16 +22,18 @@
 
 package org.jboss.as.selfcontained;
 
+import java.io.File;
+
 import org.jboss.msc.service.ServiceName;
-import org.jboss.vfs.VirtualFile;
 
 /** External content-provider for self-contained servers.
  *
  * @author Bob McWhirter
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface ContentProvider {
 
     ServiceName NAME = ServiceName.JBOSS.append( "self-contained", "content-provider" );
 
-    VirtualFile getContent(int index);
+    File getContent(int index);
 }

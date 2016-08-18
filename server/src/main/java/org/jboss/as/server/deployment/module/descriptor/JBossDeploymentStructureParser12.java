@@ -22,7 +22,11 @@
 
 package org.jboss.as.server.deployment.module.descriptor;
 
-import java.io.Closeable;
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static org.wildfly.loaders.deployment.Utils.normalizePath;
+import static org.wildfly.loaders.deployment.Utils.resourceOrPathExists;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,13 +46,10 @@ import javax.xml.stream.XMLStreamReader;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
-import org.jboss.as.server.deployment.MountedDeploymentOverlay;
 import org.jboss.as.server.deployment.jbossallxml.JBossAllXMLParser;
 import org.jboss.as.server.deployment.module.FilterSpecification;
 import org.jboss.as.server.deployment.module.ModuleDependency;
-import org.jboss.as.server.deployment.module.MountHandle;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.deployment.module.TempFileProviderService;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -57,14 +58,12 @@ import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VirtualFile;
-
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import org.wildfly.loaders.deployment.ResourceLoader;
+import org.wildfly.loaders.deployment.ResourceLoaders;
 
 /**
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseResult> {
 
@@ -747,20 +746,19 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
         while (reader.hasNext()) {
             switch (reader.nextTag()) {
                 case XMLStreamConstants.END_ELEMENT: {
+                    final String normalizedPath = "".equals(path) ? "" : normalizePath(path);
+                    final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
+                    final ResourceLoader rootLoader = deploymentRoot.getLoader();
                     try {
-                        final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
-                        final VirtualFile deploymentRootFile = deploymentRoot.getRoot();
-                        final VirtualFile child = deploymentRootFile.getChild(path);
-                        Map<String, MountedDeploymentOverlay> overlays = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_OVERLAY_LOCATIONS);
-                        MountedDeploymentOverlay overlay = overlays.get(path);
-                        Closeable closable = null;
-                        if(overlay != null) {
-                            overlay.remountAsZip(false);
-                        } else if(child.isFile()) {
-                            closable = VFS.mountZip(child, child, TempFileProviderService.provider());
+                        ResourceLoader loader = normalizedPath.equals("") ? rootLoader : deploymentRoot.getLoader().getChild(normalizedPath);
+                        if (loader == null) {
+                            if (!resourceOrPathExists(deploymentRoot.getLoader(), normalizedPath)) {
+                                ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(path);
+                                return;
+                            }
+                            loader = ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), normalizedPath, true);
                         }
-                        final MountHandle mountHandle = new MountHandle(closable);
-                        final ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);
+                        final ResourceRoot resourceRoot = new ResourceRoot(loader);
                         for (final FilterSpecification filter : resourceFilters) {
                             resourceRoot.getExportFilters().add(filter);
                         }

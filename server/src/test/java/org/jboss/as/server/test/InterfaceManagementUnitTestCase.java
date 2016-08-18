@@ -89,7 +89,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.staxmapper.XMLElementWriter;
-import org.jboss.vfs.VirtualFile;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -491,7 +490,7 @@ public class InterfaceManagementUnitTestCase {
         }
 
         @Override
-        public VirtualFile getContent(byte[] hash) {
+        public File getContent(byte[] hash) {
             return null;
         }
 

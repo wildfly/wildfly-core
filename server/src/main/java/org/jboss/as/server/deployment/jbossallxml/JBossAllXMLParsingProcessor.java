@@ -23,8 +23,6 @@
 package org.jboss.as.server.deployment.jbossallxml;
 
 import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -44,10 +42,10 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ResourceRoot;
+import org.jboss.modules.Resource;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLMapper;
-import org.jboss.vfs.VirtualFile;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
@@ -56,6 +54,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
  * DUP that parses jboss-all.xml and attaches the results to the deployment
  *
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class JBossAllXMLParsingProcessor implements DeploymentUnitProcessor {
 
@@ -72,15 +71,14 @@ public class JBossAllXMLParsingProcessor implements DeploymentUnitProcessor {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final ResourceRoot root = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
 
-        VirtualFile descriptor = null;
+        Resource descriptor = null;
         for (final String loc : DEPLOYMENT_STRUCTURE_DESCRIPTOR_LOCATIONS) {
-            final VirtualFile file = root.getRoot().getChild(loc);
-            if (file.exists()) {
-                descriptor = file;
+            descriptor = root.getLoader().getResource(loc);
+            if (descriptor != null) {
                 break;
             }
         }
-        if(descriptor == null) {
+        if (descriptor == null) {
             return;
         }
         final XMLMapper mapper = XMLMapper.Factory.create();
@@ -114,43 +112,32 @@ public class JBossAllXMLParsingProcessor implements DeploymentUnitProcessor {
         }
     }
 
-    private void parse(final VirtualFile file,final XMLMapper mapper, final JBossAllXmlParseContext context) throws DeploymentUnitProcessingException {
-        final FileInputStream fis;
-        final File realFile;
-        try {
-            realFile = file.getPhysicalFile();
-            fis = new FileInputStream(realFile);
-        } catch (IOException e) {
-            //should never happen as we check for existence
-            throw new DeploymentUnitProcessingException(e);
-        }
-        try {
-            parse(fis, realFile, mapper, context);
-        } finally {
-            safeClose(fis);
-        }
-    }
-
     private void setIfSupported(final XMLInputFactory inputFactory, final String property, final Object value) {
         if (inputFactory.isPropertySupported(property)) {
             inputFactory.setProperty(property, value);
         }
     }
 
-    private void parse(final InputStream source, final File file,final XMLMapper mapper, final JBossAllXmlParseContext context) throws DeploymentUnitProcessingException {
+    private void parse(final Resource file, final XMLMapper mapper, final JBossAllXmlParseContext context) throws DeploymentUnitProcessingException {
+        InputStream is = null;
         try {
-
+            is = file.openStream();
             final XMLInputFactory inputFactory = INPUT_FACTORY;
             setIfSupported(inputFactory, XMLInputFactory.IS_VALIDATING, Boolean.FALSE);
             setIfSupported(inputFactory, XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
-            final XMLStreamReader streamReader = inputFactory.createXMLStreamReader(source);
+            final XMLStreamReader streamReader = inputFactory.createXMLStreamReader(is);
             try {
                 mapper.parseDocument(context, streamReader);
             } finally {
                 safeClose(streamReader);
             }
+        } catch (IOException e) {
+            //should never happen as we check for existence
+            throw new DeploymentUnitProcessingException(e);
         } catch (XMLStreamException e) {
-            throw ServerLogger.ROOT_LOGGER.errorLoadingJBossXmlFile(file.getPath(), e);
+            throw ServerLogger.ROOT_LOGGER.errorLoadingJBossXmlFile(file.getName(), e);
+        } finally {
+            safeClose(is);
         }
     }
 

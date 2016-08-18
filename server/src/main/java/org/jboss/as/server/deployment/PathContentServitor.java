@@ -21,6 +21,8 @@
  */
 package org.jboss.as.server.deployment;
 
+import java.io.File;
+
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.msc.service.AbstractService;
@@ -31,19 +33,18 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-class PathContentServitor extends AbstractService<VirtualFile> {
+class PathContentServitor extends AbstractService<File> {
     private final String unresolvedPath;
     private final String relativeTo;
     private final InjectedValue<PathManager> pathManagerValue = new InjectedValue<PathManager>();
     private volatile PathManager.Callback.Handle callbackHandle;
 
-    static ServiceController<VirtualFile> addService(final ServiceTarget serviceTarget, final ServiceName serviceName, final String path, final String relativeTo) {
+    static ServiceController<File> addService(final ServiceTarget serviceTarget, final ServiceName serviceName, final String path, final String relativeTo) {
         final PathContentServitor service = new PathContentServitor(path, relativeTo);
         return serviceTarget.addService(serviceName, service)
                 .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.pathManagerValue)
@@ -56,8 +57,8 @@ class PathContentServitor extends AbstractService<VirtualFile> {
     }
 
     @Override
-    public VirtualFile getValue() throws IllegalStateException, IllegalArgumentException {
-        return VFS.getChild(resolvePath());
+    public File getValue() throws IllegalStateException, IllegalArgumentException {
+        return new File(resolvePath());
     }
 
     private String resolvePath() {

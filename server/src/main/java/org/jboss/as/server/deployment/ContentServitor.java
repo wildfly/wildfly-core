@@ -21,18 +21,19 @@
  */
 package org.jboss.as.server.deployment;
 
+import java.io.File;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.msc.service.AbstractService;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-class ContentServitor extends AbstractService<VirtualFile> {
+class ContentServitor extends AbstractService<File> {
     private final InjectedValue<ContentRepository> contentRepositoryInjectedValue = new InjectedValue<ContentRepository>();
     private final byte[] hash;
 
@@ -41,7 +42,7 @@ class ContentServitor extends AbstractService<VirtualFile> {
         this.hash = hash;
     }
 
-    static ServiceController<VirtualFile> addService(final ServiceTarget serviceTarget, final ServiceName serviceName, final byte[] hash) {
+    static ServiceController<File> addService(final ServiceTarget serviceTarget, final ServiceName serviceName, final byte[] hash) {
         final ContentServitor service = new ContentServitor(hash);
         return serviceTarget.addService(serviceName, service)
             .addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.contentRepositoryInjectedValue)
@@ -49,7 +50,7 @@ class ContentServitor extends AbstractService<VirtualFile> {
     }
 
     @Override
-    public VirtualFile getValue() throws IllegalStateException, IllegalArgumentException {
+    public File getValue() throws IllegalStateException, IllegalArgumentException {
         return contentRepositoryInjectedValue.getValue().getContent(hash);
     }
 }

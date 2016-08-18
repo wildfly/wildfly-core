@@ -22,7 +22,9 @@
 
 package org.jboss.as.server.deployment.module.descriptor;
 
-import java.io.Closeable;
+import static org.wildfly.loaders.deployment.Utils.normalizePath;
+import static org.wildfly.loaders.deployment.Utils.resourceOrPathExists;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -41,23 +43,21 @@ import javax.xml.stream.XMLStreamReader;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
-import org.jboss.as.server.deployment.MountedDeploymentOverlay;
 import org.jboss.as.server.deployment.jbossallxml.JBossAllXMLParser;
 import org.jboss.as.server.deployment.module.FilterSpecification;
 import org.jboss.as.server.deployment.module.ModuleDependency;
-import org.jboss.as.server.deployment.module.MountHandle;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.deployment.module.TempFileProviderService;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.vfs.VFS;
-import org.jboss.vfs.VirtualFile;
+import org.wildfly.loaders.deployment.ResourceLoader;
+import org.wildfly.loaders.deployment.ResourceLoaders;
 
 /**
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class JBossDeploymentStructureParser10 implements XMLElementReader<ParseResult> {
 
@@ -504,35 +504,30 @@ public class JBossDeploymentStructureParser10 implements XMLElementReader<ParseR
         }
         if (name == null)
             name = path;
-        List<FilterSpecification> resourceFilters = new ArrayList<FilterSpecification>();
+        List<FilterSpecification> resourceFilters = new ArrayList<>();
         final Set<Element> encountered = EnumSet.noneOf(Element.class);
         while (reader.hasNext()) {
             switch (reader.nextTag()) {
                 case XMLStreamConstants.END_ELEMENT: {
-                    if (path.startsWith("/")) {
-                        throw ServerLogger.ROOT_LOGGER.externalResourceRootsNotSupported(path);
-                    } else {
-                        try {
-                            final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
-                            final VirtualFile deploymentRootFile = deploymentRoot.getRoot();
-                            VirtualFile child = deploymentRootFile.getChild(path);
-                            Map<String, MountedDeploymentOverlay> overlays = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_OVERLAY_LOCATIONS);
-                            MountedDeploymentOverlay overlay = overlays.get(path);
-                            Closeable closable = null;
-                            if(overlay != null) {
-                                overlay.remountAsZip(false);
-                            } else if(child.isFile()) {
-                                closable = VFS.mountZip(child, child, TempFileProviderService.provider());
+                    final String normalizedPath = "".equals(path) ? "" : normalizePath(path);
+                    final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
+                    final ResourceLoader rootLoader = deploymentRoot.getLoader();
+                    try {
+                        ResourceLoader loader = normalizedPath.equals("") ? rootLoader : deploymentRoot.getLoader().getChild(normalizedPath);
+                        if (loader == null) {
+                            if (!resourceOrPathExists(deploymentRoot.getLoader(), normalizedPath)) {
+                                ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(path);
+                                return;
                             }
-                            final MountHandle mountHandle = new MountHandle(closable);
-                            ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);
-                            for (FilterSpecification filter : resourceFilters) {
-                                resourceRoot.getExportFilters().add(filter);
-                            }
-                            specBuilder.addResourceRoot(resourceRoot);
-                        } catch (IOException e) {
-                            throw new XMLStreamException(e);
+                            loader = ResourceLoaders.newResourceLoader(name, deploymentRoot.getLoader(), normalizedPath, true);
                         }
+                        final ResourceRoot resourceRoot = new ResourceRoot(loader);
+                        for (final FilterSpecification filter : resourceFilters) {
+                            resourceRoot.getExportFilters().add(filter);
+                        }
+                        specBuilder.addResourceRoot(resourceRoot);
+                    } catch (IOException e) {
+                        throw new XMLStreamException(e);
                     }
                     return;
                 }

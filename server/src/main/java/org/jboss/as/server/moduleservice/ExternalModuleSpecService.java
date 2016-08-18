@@ -22,27 +22,27 @@
 package org.jboss.as.server.moduleservice;
 
 import org.jboss.as.server.deployment.module.ModuleDependency;
+import org.jboss.as.server.Utils;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleSpec;
 import org.jboss.modules.ResourceLoaderSpec;
-import org.jboss.modules.ResourceLoaders;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.vfs.VFSUtils;
+import org.wildfly.loaders.deployment.ResourceLoader;
+import org.wildfly.loaders.deployment.ResourceLoaders;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.jar.JarFile;
 
 /**
  * Service that manages the module spec for external modules (i.e. modules that reside outside of the application server).
  *
  * @author Stuart Douglas
- *
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ExternalModuleSpecService implements Service<ModuleDefinition> {
 
@@ -52,7 +52,7 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
 
     private volatile ModuleDefinition moduleDefinition;
 
-    private volatile JarFile jarFile;
+    private volatile ResourceLoader loader;
 
     public ExternalModuleSpecService(ModuleIdentifier moduleIdentifier, File file) {
         this.moduleIdentifier = moduleIdentifier;
@@ -61,13 +61,13 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
 
     @Override
     public synchronized void start(StartContext context) throws StartException {
+        final ModuleSpec.Builder specBuilder = ModuleSpec.build(moduleIdentifier);
         try {
-            this.jarFile = new JarFile(file);
+            loader = ResourceLoaders.newResourceLoader(file, false);
+            specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(loader));
         } catch (IOException e) {
             throw new StartException(e);
         }
-        final ModuleSpec.Builder specBuilder = ModuleSpec.build(moduleIdentifier);
-        addResourceRoot(specBuilder, jarFile);
         //TODO: We need some way of configuring module dependencies for external archives
         ModuleIdentifier javaee = ModuleIdentifier.create("javaee.api");
         specBuilder.addDependency(DependencySpec.createModuleDependencySpec(javaee));
@@ -83,19 +83,14 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
 
     @Override
     public synchronized void stop(StopContext context) {
-        VFSUtils.safeClose(jarFile);
-        jarFile = null;
+        Utils.safeClose(loader);
+        loader = null;
         moduleDefinition = null;
     }
 
     @Override
     public ModuleDefinition getValue() throws IllegalStateException, IllegalArgumentException {
         return moduleDefinition;
-    }
-
-    private static void addResourceRoot(final ModuleSpec.Builder specBuilder, final JarFile file) {
-        specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(ResourceLoaders.createJarResourceLoader(
-                    file.getName(), file)));
     }
 
 }

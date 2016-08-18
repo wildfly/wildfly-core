@@ -22,16 +22,12 @@
 package org.jboss.as.server.deployment.module.descriptor;
 
 import java.io.Closeable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -61,8 +57,9 @@ import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
+import org.jboss.modules.Resource;
 import org.jboss.staxmapper.XMLMapper;
-import org.jboss.vfs.VirtualFile;
+import org.wildfly.loaders.deployment.ResourceLoader;
 
 /**
  * Parses <code>jboss-deployment-structure.xml</code>, and merges the result with the deployment.
@@ -80,6 +77,7 @@ import org.jboss.vfs.VirtualFile;
  *
  * @author Stuart Douglas
  * @author Marius Bogoevici
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DeploymentStructureDescriptorParser implements DeploymentUnitProcessor {
 
@@ -133,10 +131,10 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             }
         }
 
-        VirtualFile deploymentFile = null;
+        Resource deploymentFile = null;
         for (final String loc : DEPLOYMENT_STRUCTURE_DESCRIPTOR_LOCATIONS) {
-            final VirtualFile file = deploymentRoot.getRoot().getChild(loc);
-            if (file.exists()) {
+            final Resource file = deploymentRoot.getLoader().getResource(loc);
+            if (file != null) {
                 deploymentFile = file;
                 break;
             }
@@ -147,7 +145,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         }
         if (deploymentUnit.getParent() != null) {
             if(deploymentFile != null) {
-                ServerLogger.DEPLOYMENT_LOGGER.jbossDeploymentStructureIgnored(deploymentFile.getPathName());
+                ServerLogger.DEPLOYMENT_LOGGER.jbossDeploymentStructureIgnored(deploymentFile.getName());
             }
             if(result != null) {
                 ServerLogger.DEPLOYMENT_LOGGER.jbossDeploymentStructureNamespaceIgnored(deploymentUnit.getName());
@@ -155,96 +153,81 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             return;
         }
 
-        try {
-            if(deploymentFile != null) {
-                result = parse(deploymentFile.getPhysicalFile(), deploymentUnit, moduleLoader);
-            }
+        if(deploymentFile != null) {
+            result = parse(deploymentFile, deploymentUnit, moduleLoader);
+        }
 
-            final ModuleSpecification moduleSpec = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-            if (result.getEarSubDeploymentsIsolated() != null) {
-                // set the ear subdeployment isolation value overridden via the jboss-deployment-structure.xml
-                moduleSpec.setSubDeploymentModulesIsolated(result.getEarSubDeploymentsIsolated());
+        final ModuleSpecification moduleSpec = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
+        if (result.getEarSubDeploymentsIsolated() != null) {
+            // set the ear subdeployment isolation value overridden via the jboss-deployment-structure.xml
+            moduleSpec.setSubDeploymentModulesIsolated(result.getEarSubDeploymentsIsolated());
+        }
+        if(result.getEarExclusionsCascadedToSubDeployments() != null) {
+            // set the ear cascade exclusions to sub-deployments flag as configured in jboss-deployment-structure.xml
+            moduleSpec.setExclusionsCascadedToSubDeployments(result.getEarExclusionsCascadedToSubDeployments());
+        }
+        // handle the the root deployment
+        final ModuleStructureSpec rootDeploymentSpecification = result.getRootDeploymentSpecification();
+        if (rootDeploymentSpecification != null) {
+            handleDeployment(phaseContext, deploymentUnit, moduleSpec, rootDeploymentSpecification);
+        }
+        // handle sub deployments
+        final Map<String, ResourceRoot> subDeploymentMap = new HashMap<String, ResourceRoot>();
+        final List<ResourceRoot> resourceRoots = deploymentUnit.getAttachmentList(Attachments.RESOURCE_ROOTS);
+        for (final ResourceRoot root : resourceRoots) {
+            if (SubDeploymentMarker.isSubDeployment(root)) {
+                subDeploymentMap.put(getLoaderPath(root.getLoader()), root);
             }
-            if(result.getEarExclusionsCascadedToSubDeployments() != null) {
-                // set the ear cascade exclusions to sub-deployments flag as configured in jboss-deployment-structure.xml
-                moduleSpec.setExclusionsCascadedToSubDeployments(result.getEarExclusionsCascadedToSubDeployments());
-            }
-            // handle the the root deployment
-            final ModuleStructureSpec rootDeploymentSpecification = result.getRootDeploymentSpecification();
-            if (rootDeploymentSpecification != null) {
-                handleDeployment(phaseContext, deploymentUnit, moduleSpec, rootDeploymentSpecification);
-            }
-            // handle sub deployments
-            final Map<String, ResourceRoot> subDeploymentMap = new HashMap<String, ResourceRoot>();
-            final List<ResourceRoot> resourceRoots = deploymentUnit.getAttachmentList(Attachments.RESOURCE_ROOTS);
-            for (final ResourceRoot root : resourceRoots) {
-                if (SubDeploymentMarker.isSubDeployment(root)) {
-                    subDeploymentMap.put(root.getRoot().getPathNameRelativeTo(deploymentRoot.getRoot()), root);
-                }
-            }
+        }
 
-            for (final Entry<String, ModuleStructureSpec> entry : result.getSubDeploymentSpecifications().entrySet()) {
-                final String path = entry.getKey();
-                final ModuleStructureSpec spec = entry.getValue();
-                if (!subDeploymentMap.containsKey(path)) {
-                    throw subDeploymentNotFound(path, subDeploymentMap.keySet());
-                }
-                final ResourceRoot subDeployment = subDeploymentMap.get(path);
-                subDeployment.putAttachment(SUB_DEPLOYMENT_STRUCTURE, spec);
+        for (final Entry<String, ModuleStructureSpec> entry : result.getSubDeploymentSpecifications().entrySet()) {
+            final String path = entry.getKey();
+            final ModuleStructureSpec spec = entry.getValue();
+            if (!subDeploymentMap.containsKey(path)) {
+                throw subDeploymentNotFound(path, subDeploymentMap.keySet());
+            }
+            final ResourceRoot subDeployment = subDeploymentMap.get(path);
+            subDeployment.putAttachment(SUB_DEPLOYMENT_STRUCTURE, spec);
 
-                // cascade the exclusions if configured
-                if(moduleSpec.isExclusionsCascadedToSubDeployments() && rootDeploymentSpecification != null) {
-                    for(ModuleIdentifier exclusion : rootDeploymentSpecification.getExclusions()) {
-                        spec.getExclusions().add(exclusion);
-                    }
+            // cascade the exclusions if configured
+            if(moduleSpec.isExclusionsCascadedToSubDeployments() && rootDeploymentSpecification != null) {
+                for(ModuleIdentifier exclusion : rootDeploymentSpecification.getExclusions()) {
+                    spec.getExclusions().add(exclusion);
                 }
             }
+        }
 
-            // handle additional modules
-            for (final ModuleStructureSpec additionalModule : result.getAdditionalModules()) {
-                for (final ModuleIdentifier identifier : additionalModule.getAnnotationModules()) {
-                    //additional modules don't support annotation imports
-                    ServerLogger.DEPLOYMENT_LOGGER.annotationImportIgnored(identifier, additionalModule.getModuleIdentifier());
-                }
-                //log a warning if the resource root is wrong
-                final List<ResourceRoot> additionalModuleResourceRoots = new ArrayList<ResourceRoot>(additionalModule.getResourceRoots());
-                final ListIterator<ResourceRoot> itr = additionalModuleResourceRoots.listIterator();
-                while (itr.hasNext()) {
-                    final ResourceRoot resourceRoot = itr.next();
-                    if(!resourceRoot.getRoot().exists()) {
-                        ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(resourceRoot.getRoot().getPathName());
-                        itr.remove();
-                    }
-                }
-                final AdditionalModuleSpecification additional = new AdditionalModuleSpecification(additionalModule.getModuleIdentifier(), additionalModuleResourceRoots);
-                additional.addAliases(additionalModule.getAliases());
-                additional.addSystemDependencies(additionalModule.getModuleDependencies());
-                deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_MODULES, additional);
-                for (final ResourceRoot root : additionalModuleResourceRoots) {
-                    ResourceRootIndexer.indexResourceRoot(root);
-                }
+        // handle additional modules
+        for (final ModuleStructureSpec additionalModule : result.getAdditionalModules()) {
+            for (final ModuleIdentifier identifier : additionalModule.getAnnotationModules()) {
+                //additional modules don't support annotation imports
+                ServerLogger.DEPLOYMENT_LOGGER.annotationImportIgnored(identifier, additionalModule.getModuleIdentifier());
             }
-
-        } catch (IOException e) {
-            throw new DeploymentUnitProcessingException(e);
+            //log a warning if the resource root is wrong
+            final List<ResourceRoot> additionalModuleResourceRoots = new ArrayList<>(additionalModule.getResourceRoots());
+            final AdditionalModuleSpecification additional = new AdditionalModuleSpecification(additionalModule.getModuleIdentifier(), additionalModuleResourceRoots);
+            additional.addAliases(additionalModule.getAliases());
+            additional.addSystemDependencies(additionalModule.getModuleDependencies());
+            deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_MODULES, additional);
+            for (final ResourceRoot root : additionalModuleResourceRoots) {
+                ResourceRootIndexer.indexResourceRoot(root);
+            }
         }
     }
 
     private void handleDeployment(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit, final ModuleSpecification moduleSpec, final ModuleStructureSpec rootDeploymentSpecification) throws DeploymentUnitProcessingException {
-        final Map<VirtualFile, ResourceRoot> resourceRoots = resourceRoots(deploymentUnit);
+        final Map<String, ResourceRoot> resourceRoots = resourceRoots(deploymentUnit);
         moduleSpec.addUserDependencies(rootDeploymentSpecification.getModuleDependencies());
         moduleSpec.addExclusions(rootDeploymentSpecification.getExclusions());
         moduleSpec.addAliases(rootDeploymentSpecification.getAliases());
         moduleSpec.addModuleSystemDependencies(rootDeploymentSpecification.getSystemDependencies());
         for (final ResourceRoot additionalResourceRoot : rootDeploymentSpecification.getResourceRoots()) {
 
-            final ResourceRoot existingRoot = resourceRoots.get(additionalResourceRoot.getRoot());
+            final ResourceRoot existingRoot = resourceRoots.get(getLoaderPath(additionalResourceRoot.getLoader()));
             if (existingRoot != null) {
                 //we already have to the resource root
                 //so now we want to merge it
                 existingRoot.merge(additionalResourceRoot);
-            } else if (!additionalResourceRoot.getRoot().exists()) {
-                ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(additionalResourceRoot.getRoot().getPathName());
             } else {
                 deploymentUnit.addToAttachmentList(Attachments.RESOURCE_ROOTS, additionalResourceRoot);
                 //compute the annotation index for the root
@@ -269,12 +252,26 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         }
     }
 
-    private Map<VirtualFile, ResourceRoot> resourceRoots(final DeploymentUnit deploymentUnit) {
-        final Map<VirtualFile, ResourceRoot> resourceRoots = new HashMap<VirtualFile, ResourceRoot>();
+    private Map<String, ResourceRoot> resourceRoots(final DeploymentUnit deploymentUnit) {
+        final Map<String, ResourceRoot> resourceRoots = new HashMap<>();
         for (final ResourceRoot root : DeploymentUtils.allResourceRoots(deploymentUnit)) {
-            resourceRoots.put(root.getRoot(), root);
+            resourceRoots.put(getLoaderPath(root.getLoader()), root);
         }
         return resourceRoots;
+    }
+
+    private static String getLoaderPath(final ResourceLoader loader) {
+        if (loader == null) return null;
+        ResourceLoader currentLoader = loader;
+        ResourceLoader parentLoader;
+        String fullPath = currentLoader.getPath();
+        while (currentLoader != null) {
+            parentLoader = currentLoader.getParent();
+            if (parentLoader == null || parentLoader.getPath() == null || parentLoader.getPath().equals("")) break;
+            fullPath = parentLoader.getPath() + "/" + fullPath;
+            currentLoader = parentLoader;
+        }
+        return fullPath;
     }
 
     private DeploymentUnitProcessingException subDeploymentNotFound(final String path, final Collection<String> subDeployments) {
@@ -299,34 +296,21 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         context.removeAttachment(Attachments.EXCLUDED_SUBSYSTEMS);
     }
 
-    private ParseResult parse(final File file, final DeploymentUnit deploymentUnit, final ModuleLoader moduleLoader) throws DeploymentUnitProcessingException {
-        final FileInputStream fis;
-        try {
-            fis = new FileInputStream(file);
-        } catch (FileNotFoundException e) {
-            throw ServerLogger.ROOT_LOGGER.deploymentStructureFileNotFound(file);
-        }
-        try {
-            return parse(fis, file, deploymentUnit, moduleLoader);
-        } finally {
-            safeClose(fis);
-        }
-    }
-
     private void setIfSupported(final XMLInputFactory inputFactory, final String property, final Object value) {
         if (inputFactory.isPropertySupported(property)) {
             inputFactory.setProperty(property, value);
         }
     }
 
-    private ParseResult parse(final InputStream source, final File file, final DeploymentUnit deploymentUnit, final ModuleLoader moduleLoader)
+    private ParseResult parse(final Resource file, final DeploymentUnit deploymentUnit, final ModuleLoader moduleLoader)
             throws DeploymentUnitProcessingException {
+        InputStream is = null;
         try {
-
+            is = file.openStream();
             final XMLInputFactory inputFactory = INPUT_FACTORY;
             setIfSupported(inputFactory, XMLInputFactory.IS_VALIDATING, Boolean.FALSE);
             setIfSupported(inputFactory, XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
-            final XMLStreamReader streamReader = inputFactory.createXMLStreamReader(source);
+            final XMLStreamReader streamReader = inputFactory.createXMLStreamReader(is);
             try {
                 final ParseResult result = new ParseResult(moduleLoader, deploymentUnit);
                 mapper.parseDocument(result, streamReader);
@@ -334,8 +318,10 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             } finally {
                 safeClose(streamReader);
             }
-        } catch (XMLStreamException e) {
-            throw ServerLogger.ROOT_LOGGER.errorLoadingDeploymentStructureFile(file.getPath(), e);
+        } catch (Exception e) {
+            throw ServerLogger.ROOT_LOGGER.errorLoadingDeploymentStructureFile(file.getName(), e);
+        } finally {
+            safeClose(is);
         }
     }
 

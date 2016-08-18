@@ -26,6 +26,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CON
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 import org.jboss.as.controller.OperationContext;
@@ -37,10 +39,10 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.vfs.VirtualFile;
 
 /**
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ReadContentHandler implements OperationStepHandler {
 
@@ -59,7 +61,7 @@ public class ReadContentHandler implements OperationStepHandler {
             resource = resource.getChild(element);
         }
         byte[] content = resource.getModel().get(CONTENT).asBytes();
-        final VirtualFile file = contentRepository.getContent(content);
+        final File file = contentRepository.getContent(content);
         try {
             context.getResult().set(readFile(file));
         } catch (IOException e) {
@@ -68,10 +70,10 @@ public class ReadContentHandler implements OperationStepHandler {
     }
 
 
-    public static String readFile(VirtualFile file) throws IOException {
+    public static String readFile(File file) throws IOException {
         BufferedInputStream stream = null;
         try {
-            stream = new BufferedInputStream(file.openStream());
+            stream = new BufferedInputStream(new FileInputStream(file));
             byte[] buff = new byte[1024];
             StringBuilder builder = new StringBuilder();
             int read = -1;

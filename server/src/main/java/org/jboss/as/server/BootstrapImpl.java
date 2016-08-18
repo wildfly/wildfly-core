@@ -32,10 +32,6 @@ import javax.management.ObjectName;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoadException;
-import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
@@ -51,6 +47,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * The bootstrap implementation.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class BootstrapImpl implements Bootstrap {
 
@@ -92,15 +89,9 @@ final class BootstrapImpl implements Bootstrap {
             WildFlySecurityManager.setPropertyPrivileged("org.jboss.resolver.warning", "true");
         }
 
-        final ModuleLoader moduleLoader = configuration.getModuleLoader();
         final Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = configuration.getConfigurationPersisterFactory();
         assert configurationPersisterFactory != null : "configurationPersisterFactory is null";
 
-        try {
-            Module.registerURLStreamHandlerFactoryModule(moduleLoader.loadModule(ModuleIdentifier.create("org.jboss.vfs")));
-        } catch (ModuleLoadException e) {
-            throw ServerLogger.ROOT_LOGGER.vfsNotAvailable();
-        }
         final FutureServiceContainer future = new FutureServiceContainer(container);
         final ServiceTarget tracker = container.subTarget();
         final ControlledProcessState processState = new ControlledProcessState(true);

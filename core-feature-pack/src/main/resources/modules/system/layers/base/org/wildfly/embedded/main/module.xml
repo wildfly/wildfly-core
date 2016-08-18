@@ -49,7 +49,6 @@
         <module name="org.jboss.modules"/>
         <module name="org.jboss.staxmapper"/>
         <module name="org.jboss.stdio"/>
-        <module name="org.jboss.vfs"/>
         <module name="org.jboss.as.protocol"/>
         <module name="org.jboss.as.version"/>
         <module name="org.jboss.threads"/>
