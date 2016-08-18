@@ -51,6 +51,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
+import org.jboss.as.controller.operations.validation.BytesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -103,7 +104,7 @@ public class WriteAttributeOperationTestCase extends AbstractControllerTestBase 
             .setAllowNull(true)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setAllowExpression(true)
-            .setMaxSize(1)
+            .setMaxSize(7)
             .build();
 
     protected static final SimpleAttributeDefinition INT_ATT = new SimpleAttributeDefinitionBuilder(INT_ATT_NAME, ModelType.INT)
@@ -117,7 +118,7 @@ public class WriteAttributeOperationTestCase extends AbstractControllerTestBase 
             .setAllowNull(true)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setAllowExpression(true)
-            .setMaxSize(1)
+            .setValidator(new BytesValidator(0, 7, ModelType.STRING))
             .build();
 
     protected static final SimpleAttributeDefinition BIGINT_ATT = new SimpleAttributeDefinitionBuilder(BIGINT_ATT_NAME, ModelType.BIG_INTEGER)
@@ -398,17 +399,17 @@ public class WriteAttributeOperationTestCase extends AbstractControllerTestBase 
     }
 
     @Test
-    public void testWriteReloadBytesAttributeExpressionOverValue() throws Exception {
+    public void testWriteReloadStringAttributeExpressionOverValue() throws Exception {
         ModelNode operation = createOperation(READ_ATTRIBUTE_OPERATION, "profile", "profilType", "subsystem", "subsystem1");
         operation.get(NAME).set(STRING_ATT_NAME);
         ModelNode result = executeForResult(operation);
         assertThat(result, is(notNullValue()));
         assertThat(result.getType(), is(ModelType.STRING));
-        assertThat(new String(result.asBytes(), UTF_8), is("wildfly"));
+        assertThat(result.asString(), is("wildfly"));
 
         ModelNode rewrite = createOperation(WRITE_ATTRIBUTE_OPERATION, "profile", "profilType", "subsystem", "subsystem1");
         rewrite.get(NAME).set(STRING_ATT_NAME);
-        rewrite.get(VALUE).set("${bytes-value}");
+        rewrite.get(VALUE).set("${string-value}");
         result = executeCheckNoFailure(rewrite);
         assertThat(result, is(notNullValue()));
         assertThat(result.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RELOAD).isDefined(), is(false));
@@ -416,6 +417,31 @@ public class WriteAttributeOperationTestCase extends AbstractControllerTestBase 
 
         operation = createOperation(READ_ATTRIBUTE_OPERATION, "profile", "profilType", "subsystem", "subsystem1");
         operation.get(NAME).set(STRING_ATT_NAME);
+        result = executeForResult(operation);
+        assertThat(result, is(notNullValue()));
+        assertThat(result.getType(), is(ModelType.EXPRESSION));
+        assertThat(result.asExpression().resolveString(), is("wildfly"));
+    }
+
+    @Test
+    public void testWriteReloadBytesAttributeExpressionOverValue() throws Exception {
+        ModelNode operation = createOperation(READ_ATTRIBUTE_OPERATION, "profile", "profilType", "subsystem", "subsystem1");
+        operation.get(NAME).set(BYTES_ATT_NAME);
+        ModelNode result = executeForResult(operation);
+        assertThat(result, is(notNullValue()));
+        assertThat(result.getType(), is(ModelType.BYTES));
+        assertThat(new String(result.asBytes(), UTF_8), is("wildfly"));
+
+        ModelNode rewrite = createOperation(WRITE_ATTRIBUTE_OPERATION, "profile", "profilType", "subsystem", "subsystem1");
+        rewrite.get(NAME).set(BYTES_ATT_NAME);
+        rewrite.get(VALUE).set("${bytes-value}");
+        result = executeCheckNoFailure(rewrite);
+        assertThat(result, is(notNullValue()));
+        assertThat(result.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RELOAD).isDefined(), is(false));
+        assertThat(result.get(RESPONSE_HEADERS, PROCESS_STATE).isDefined(), is(false));
+
+        operation = createOperation(READ_ATTRIBUTE_OPERATION, "profile", "profilType", "subsystem", "subsystem1");
+        operation.get(NAME).set(BYTES_ATT_NAME);
         result = executeForResult(operation);
         assertThat(result, is(notNullValue()));
         assertThat(result.getType(), is(ModelType.EXPRESSION));

@@ -422,7 +422,7 @@ public class EmbeddedHostControllerFactory {
             // this used to be set in the embedded-hc specific env setup, WFCORE-938 will add support for --admin-only=false
             cmds.add("--admin-only");
 
-            return Main.determineEnvironment(cmds.toArray(new String[cmds.size()]), startTime, ProcessType.EMBEDDED_HOST_CONTROLLER);
+            return Main.determineEnvironment(cmds.toArray(new String[cmds.size()]), startTime, ProcessType.EMBEDDED_HOST_CONTROLLER).getHostControllerEnvironment();
         }
     }
 }

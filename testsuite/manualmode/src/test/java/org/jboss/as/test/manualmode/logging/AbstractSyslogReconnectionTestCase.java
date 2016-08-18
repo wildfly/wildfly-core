@@ -156,6 +156,8 @@ public abstract class AbstractSyslogReconnectionTestCase extends AbstractLogging
             tcpServer.setThread(null);
             tcpServer.getConfig().removeAllEventHandlers();
         }
+        // wait for 1 second to stop syslog server instances properly
+        Thread.sleep(1 * ADJUSTED_SECOND);
     }
 
     protected void makeLog() throws Exception {

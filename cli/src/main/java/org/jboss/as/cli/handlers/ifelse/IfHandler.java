@@ -92,7 +92,8 @@ public class IfHandler extends CommandHandlerWithHelp {
                         return -1;
                     }
                     int cmdResult = OperationRequestCompleter.INSTANCE.complete(ctx, parsedLine, cmd, 0, candidates);
-*/                    int cmdResult = ctx.getDefaultCommandCompleter().complete(ctx, cmd, 0, candidates);
+*/
+                    int cmdResult = ctx.getDefaultCommandCompleter().complete(ctx, cmd, cmd.length(), candidates);
                     if(cmdResult < 0) {
                         return cmdResult;
                     }

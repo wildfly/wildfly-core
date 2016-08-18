@@ -21,6 +21,8 @@
  */
 package org.jboss.as.controller;
 
+import static org.junit.Assert.fail;
+
 import java.util.List;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -29,6 +31,7 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.MinMaxValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
+import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Assert;
@@ -112,6 +115,88 @@ public class SimpleAttributeDefinitionUnitTestCase {
         Assert.assertNull(max);
     }
 
+    /** For WFCORE-1590 scenarios */
+    @Test
+    public void testMinMaxSize() {
+
+        ModelNode toValidate = new ModelNode();
+        ModelNode paramVal = toValidate.get("test");
+
+        // Test that explicitly configured validator controls.
+        // This isn't some sort of ideal behavior, so if we can make setMin/MaxSize take precedence
+        // that's fine and this part of the test can be changed. This is more a sanity check
+        // that the current code is doing what's expected.
+        SimpleAttributeDefinition ad = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING)
+                .setValidator(new StringLengthValidator(2, 3, false, false))
+                .setMinSize(1)
+                .setMaxSize(4)
+                .build();
+
+        paramVal.set("a");
+        validate(ad, toValidate, true);
+        paramVal.set("ab");
+        validate(ad, toValidate, false);
+        paramVal.set("abc");
+        validate(ad, toValidate, false);
+        paramVal.set("abcd");
+        validate(ad, toValidate, true);
+
+        // Test that setMin/MaxSize control in the absence of explicit validation
+        ad = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING)
+                .setMinSize(2)
+                .setMaxSize(3)
+                .build();
+
+        paramVal.set("a");
+        validate(ad, toValidate, true);
+        paramVal.set("ab");
+        validate(ad, toValidate, false);
+        paramVal.set("abc");
+        validate(ad, toValidate, false);
+        paramVal.set("abcd");
+        validate(ad, toValidate, true);
+
+        // Test that default min is 1
+        ad = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING)
+                .setMaxSize(3)
+                .build();
+
+        paramVal.set("");
+        validate(ad, toValidate, true);
+        paramVal.set("a");
+        validate(ad, toValidate, false);
+        paramVal.set("ab");
+        validate(ad, toValidate, false);
+        paramVal.set("abc");
+        validate(ad, toValidate, false);
+        paramVal.set("abcd");
+        validate(ad, toValidate, true);
+
+        // Test that default max is big
+        ad = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING)
+                .build();
+
+        paramVal.set("");
+        validate(ad, toValidate, true);
+        paramVal.set("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+                "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+                "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
+        validate(ad, toValidate, false);
+    }
+
+    private static void validate(AttributeDefinition ad, ModelNode operation, boolean expectFail) {
+        try {
+            ad.validateOperation(operation);
+            if (expectFail) {
+                fail("Didn't fail validation");
+            }
+        } catch (OperationFailedException ofe) {
+            if (!expectFail) {
+                fail("Failed validation " + ofe.toString());
+            }
+        }
+    }
+
     @Test
     public void testRejectComplexExpressions() throws OperationFailedException {
 
@@ -136,14 +221,14 @@ public class SimpleAttributeDefinitionUnitTestCase {
 
         try {
             ad.validateAndSet(op, new ModelNode());
-            Assert.fail("Did not reject " + type);
+            fail("Did not reject " + type);
         } catch (IllegalStateException ok) {
             // good
         }
 
         try {
             ad.validateOperation(op);
-            Assert.fail("Did not reject " + type);
+            fail("Did not reject " + type);
         } catch (IllegalStateException ok) {
             // good
         }
