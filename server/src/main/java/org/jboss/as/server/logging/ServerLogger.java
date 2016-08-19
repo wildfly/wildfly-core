@@ -1272,4 +1272,13 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 264, value = "Cannot specify both admin-only and start-mode")
     OperationFailedException cannotSpecifyBothAdminOnlyAndStartMode();
+
+    ////////////////////////////////////////////////
+    //Messages without IDs
+
+    @Message(id = Message.NONE, value = "Notification emitted when the process state changes")
+    String processStateChangeNotificationDescription();
+
+    @Message(id = Message.NONE, value = "The attribute '%s' has changed from '%s' to '%s'")
+    String jmxAttributeChange(String name, String oldState, String stateString);
 }
