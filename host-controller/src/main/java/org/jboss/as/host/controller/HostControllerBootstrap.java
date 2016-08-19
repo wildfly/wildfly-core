@@ -27,8 +27,10 @@ import java.util.concurrent.CountDownLatch;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.jboss.as.server.jmx.RunningStateJmx;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.extension.core.management.client.Process.Type;
 
 /**
  * Bootstrap of the HostController process.
@@ -61,7 +63,8 @@ public class HostControllerBootstrap {
         final ControlledProcessState processState = new ControlledProcessState(true);
         shutdownHook.setControlledProcessState(processState);
         ServiceTarget target = serviceContainer.subTarget();
-        ControlledProcessStateService.addService(target, processState);
+        ControlledProcessStateService controlledProcessStateService = ControlledProcessStateService.addService(target, processState).getValue();
+        RunningStateJmx.registerMBean(controlledProcessStateService, null, runningModeControl, Type.from(environment.getProcessType().name()));
         final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState);
         target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
     }

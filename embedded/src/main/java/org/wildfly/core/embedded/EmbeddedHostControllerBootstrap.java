@@ -30,9 +30,10 @@ import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostControllerService;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.server.FutureServiceContainer;
+import org.jboss.as.server.jmx.RunningStateJmx;
 import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.extension.core.management.client.Process.Type;
 
 /**
  * Bootstrap of the Embedded HostController process.
@@ -62,7 +63,8 @@ public class EmbeddedHostControllerBootstrap {
             shutdownHook.setControlledProcessState(processState);
             ServiceTarget target = serviceContainer.subTarget();
 
-            final ServiceController<ControlledProcessStateService> serviceController = ControlledProcessStateService.addService(target, processState);
+            final ControlledProcessStateService controlledProcessStateService = ControlledProcessStateService.addService(target, processState).getValue();
+            RunningStateJmx.registerMBean(controlledProcessStateService, null, runningModeControl, Type.from(environment.getProcessType().name()));
             final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, futureContainer);
             target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
             return futureContainer;

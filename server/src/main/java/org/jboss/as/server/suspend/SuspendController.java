@@ -61,8 +61,13 @@ public class SuspendController implements Service<SuspendController> {
 
     private final ServerActivityCallback listener = () -> activityPaused();
 
-    public SuspendController(boolean startSuspended) {
+    public SuspendController() {
+        this.startSuspended = false;
+    }
+
+    public void setStartSuspended(boolean startSuspended) {
         this.startSuspended = startSuspended;
+        state = State.SUSPENDED;
     }
 
     public synchronized void suspend(long timeoutMillis) {

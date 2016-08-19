@@ -88,7 +88,7 @@ public class RequestControllerSubsystemTestCase extends AbstractSubsystemBaseTes
 
             @Override
             protected void addExtraServices(ServiceTarget target) {
-                SuspendController suspendController = new SuspendController(false);
+                SuspendController suspendController = new SuspendController();
                 suspendController.getModelControllerInjectedValue().setValue(new ImmediateValue<>(new ModelController() {
                     @Override
                     public ModelNode execute(ModelNode operation, OperationMessageHandler handler, OperationTransactionControl control, OperationAttachments attachments) {

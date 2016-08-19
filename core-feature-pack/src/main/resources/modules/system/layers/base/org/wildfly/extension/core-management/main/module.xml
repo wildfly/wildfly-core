@@ -30,15 +30,17 @@
     </properties>
 
     <resources>
-        <artifact name="${org.wildfly.core:wildfly-core-management}"/>
+        <artifact name="${org.wildfly.core:wildfly-core-management-subsystem}" />
     </resources>
 
     <dependencies>
         <module name="javax.api"/>
         <module name="org.jboss.as.controller"/>
+        <module name="org.jboss.as.server" />
         <module name="org.jboss.logging"/>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.msc"/>
         <module name="org.jboss.staxmapper"/>
+        <module name="org.wildfly.extension.core-management-client"/>
     </dependencies>
 </module>
