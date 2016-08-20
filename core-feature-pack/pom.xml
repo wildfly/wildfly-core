@@ -329,6 +329,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.wildfly.security.elytron-web</groupId>
+            <artifactId>undertow-server</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-self-contained</artifactId>
         </dependency>

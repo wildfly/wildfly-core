@@ -124,15 +124,16 @@
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.mockito>1.9.5</version.org.mockito>
-        <version.org.picketbox>4.9.7.Final</version.org.picketbox>
+        <version.org.picketbox>5.0.0.Alpha2</version.org.picketbox>
         <version.org.slf4j>1.7.7.jbossorg-1</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.eclipse.aether>1.1.0</version.org.eclipse.aether>
         <version.org.wildfly.build-tools>1.1.6.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.common>1.2.0.Beta1</version.org.wildfly.common>
         <version.org.wildfly.legacy.test>2.0.2.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.security.elytron>1.0.3.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.1.0.Beta7</version.org.wildfly.security.elytron>
         <version.org.wildfly.checkstyle-config>1.0.4.Final</version.org.wildfly.checkstyle-config>
+        <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta2</version.org.wildfly.security.elytron-web.undertow-server>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
         <!-- Non-default maven plugin versions and configuration -->
         <version.org.zanata.plugin>3.1.1</version.org.zanata.plugin>
@@ -1407,6 +1408,18 @@
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>*</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.security.elytron-web</groupId>
+                <artifactId>undertow-server</artifactId>
+                <version>${version.org.wildfly.security.elytron-web.undertow-server}</version>
                 <exclusions>
                     <exclusion>
                         <artifactId>*</artifactId>
