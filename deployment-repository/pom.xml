@@ -36,6 +36,41 @@
 
     <name>WildFly: Deployment Repository</name>
 
+    <properties>
+        <byteman.host>127.0.0.1</byteman.host>
+        <byteman.port>9091</byteman.port>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+<!--                <configuration>
+                    <argLine>-javaagent:${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar}</argLine>
+                    <systemPropertyVariables>
+                        <org.jboss.byteman.contrib.bmunit.agent.inhibit>true</org.jboss.byteman.contrib.bmunit.agent.inhibit>
+                        <org.jboss.byteman.transform.all>true</org.jboss.byteman.transform.all>
+                        <org.jboss.byteman.debug>true</org.jboss.byteman.debug>
+                        <org.jboss.byteman.contrib.bmunit.agent.host>${byteman.host}</org.jboss.byteman.contrib.bmunit.agent.host>
+                        <org.jboss.byteman.contrib.bmunit.agent.port>${byteman.port}</org.jboss.byteman.contrib.bmunit.agent.port>
+                    </systemPropertyVariables>
+                </configuration>-->
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -86,6 +121,26 @@
         <dependency>
             <groupId>org.jboss.logmanager</groupId>
             <artifactId>jboss-logmanager</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-submit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-install</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-bmunit</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

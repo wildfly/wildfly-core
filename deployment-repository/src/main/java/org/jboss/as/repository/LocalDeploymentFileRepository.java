@@ -22,6 +22,8 @@
 package org.jboss.as.repository;
 
 import java.io.File;
+import java.io.IOException;
+import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
 
 /**
  *
@@ -55,28 +57,14 @@ public class LocalDeploymentFileRepository implements DeploymentFileRepository {
     public void deleteDeployment(ContentReference reference) {
         File deployment = getDeploymentRoot(reference);
         if (deployment != deploymentRoot) {
-            deleteRecursively(deployment);
-            if (isEmptyDirectory(deployment.getParentFile())) {
-                deployment.getParentFile().delete();
-            }
-        }
-    }
-
-    private void deleteRecursively(File file) {
-        if (file.exists()) {
-            if (file.isDirectory() && file.list() != null) {
-                for (String name : file.list()) {
-                    deleteRecursively(new File(file, name));
+            try {
+                PathUtil.deleteRecursively(deployment.toPath());
+                if (deployment.getParentFile().list() != null && deployment.getParentFile().list().length == 0) {
+                    deployment.getParentFile().delete();
                 }
+            } catch (IOException ex) {
+                DeploymentRepositoryLogger.ROOT_LOGGER.couldNotDeleteDeployment(ex, deployment.getAbsolutePath());
             }
-            file.delete();
         }
-    }
-    private boolean isEmptyDirectory(File dir) {
-        if(dir != null && dir.isDirectory()) {
-            String[] children = dir.list();
-            return children != null && children.length == 0;
-        }
-        return false;
     }
 }

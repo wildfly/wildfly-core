@@ -3446,4 +3446,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 420, value = "'%s' is an invalid value for parameter %s. Values must have a minimum length of %d bytes")
     String invalidMinBytesLength(String str, String parameterName, int min);
 
+
+    @Message(id = 421, value = "Exploded deployment is not supported by some servers")
+    String explodedDeploymentNotSupported();
 }

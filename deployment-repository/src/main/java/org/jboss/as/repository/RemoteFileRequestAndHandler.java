@@ -98,26 +98,23 @@ public abstract class RemoteFileRequestAndHandler {
                     if (!file.getParentFile().exists() && !file.getParentFile().mkdirs()) {
                         throw new CannotCreateLocalDirectoryException(localPath.getParentFile());
                     }
-                    long totalRead = 0;
-                    OutputStream fileOut = null;
-                    try {
-                        fileOut = new BufferedOutputStream(new FileOutputStream(file));
-                        final byte[] buffer = new byte[8192];
-                        while (totalRead < length) {
-                            int len = Math.min((int) (length - totalRead), buffer.length);
-                            input.readFully(buffer, 0, len);
-                            fileOut.write(buffer, 0, len);
-                            totalRead += len;
+                    if(length == 0L) {
+                        file.mkdir();
+                    } else {
+                        long totalRead = 0;
+                        try (OutputStream fileOut = new BufferedOutputStream(new FileOutputStream(file))) {
+                            final byte[] buffer = new byte[8192];
+                            while (totalRead < length) {
+                                int len = Math.min((int) (length - totalRead), buffer.length);
+                                input.readFully(buffer, 0, len);
+                                fileOut.write(buffer, 0, len);
+                                totalRead += len;
+                            }
                         }
-                    } finally {
-                        if (fileOut != null) {
-                            fileOut.close();
+                        if (totalRead != length) {
+                            throw new DidNotReadEntireFileException((length - totalRead));
                         }
                     }
-                    if (totalRead != length) {
-                        throw new DidNotReadEntireFileException((length - totalRead));
-                    }
-
                     expectHeader(input, protocol.fileEnd());
                 }
             }
@@ -172,19 +169,24 @@ public abstract class RemoteFileRequestAndHandler {
     }
 
     private List<File> getChildFiles(final File base) {
-        final List<File> childFiles = new ArrayList<File>();
+        final List<File> childFiles = new ArrayList<>();
         getChildFiles(base, childFiles);
         return childFiles;
     }
 
     private void getChildFiles(final File base, final List<File> childFiles) {
         for (File child : base.listFiles()) {
-            if (child.isFile()) {
+            childFiles.add(child);
+            if (child.isFile() || isEmpty(child)) {
                 childFiles.add(child);
             } else {
                 getChildFiles(child, childFiles);
             }
         }
+    }
+
+    private boolean isEmpty(File file) {
+        return file.isDirectory() && (file.list() == null || file.list().length == 0);
     }
 
     private String getRelativePath(final File parent, final File child) {
@@ -196,7 +198,13 @@ public abstract class RemoteFileRequestAndHandler {
         output.writeByte(protocol.paramFilePath());
         output.writeUTF(getRelativePath(localPath, file));
         output.writeByte(protocol.paramFileSize());
-        output.writeLong(file.length());
+        if (file.isDirectory()) {
+            output.writeLong(0L);
+            output.writeByte(protocol.fileEnd());
+            return;
+        } else {
+            output.writeLong(file.length());
+        }
         InputStream inputStream = null;
         try {
             inputStream = new FileInputStream(file);

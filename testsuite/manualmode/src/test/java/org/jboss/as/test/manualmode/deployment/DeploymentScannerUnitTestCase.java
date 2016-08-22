@@ -40,6 +40,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.protocol.StreamUtils;
+import org.jboss.as.repository.PathUtil;
 import org.jboss.as.server.deployment.DeploymentUndeployHandler;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
@@ -78,7 +79,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
     public void before() throws IOException {
         deployDir = Files.createTempDirectory("deployment-test-" + UUID.randomUUID());
         if (Files.exists(deployDir)) {
-            FileUtils.deleteDirectory(deployDir.toFile());
+            PathUtil.deleteRecursively(deployDir);
         }
         Files.createDirectories(deployDir);
     }

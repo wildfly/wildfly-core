@@ -20,7 +20,7 @@ package org.jboss.as.server.deployment;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ALL;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
@@ -83,7 +83,7 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                     } else {
                         runtimeName = null;
                     }
-                    final ModelNode contentNode = CONTENT_ALL.resolveModelAttribute(context, model);
+                    final ModelNode contentNode = CONTENT_RESOURCE.resolveModelAttribute(context, model);
                     context.completeStep(new OperationContext.ResultHandler() {
                         @Override
                         public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {

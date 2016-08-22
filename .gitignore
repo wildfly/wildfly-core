@@ -19,6 +19,7 @@ target
 nbactions.xml
 nb-configuration.xml
 catalog.xml
+nbproject
 #
 maven-ant-tasks.jar
 test-output
@@ -49,4 +50,3 @@ local-repo-eap
 #OS X index files
 .DS_Store
 testsuite-core/standalone/cli_output
-/cli/nbproject/
