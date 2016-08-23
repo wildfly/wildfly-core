@@ -33,32 +33,31 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
+import javax.inject.Inject;
 import javax.management.InstanceNotFoundException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.OpenMBeanParameterInfo;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
-import org.junit.Assert;
-
 import org.jboss.as.jmx.model.ModelControllerMBeanHelper;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -165,20 +164,11 @@ public class ModelControllerMBeanTestCase {
             //Upload the content
             byte[] hash = (byte[]) connection.invoke(RESOLVED_ROOT_MODEL_NAME, "uploadDeploymentBytes", new Object[]{bytes}, new String[]{byte.class.getName()});
 
-            //Do all this to create the composite type
-            CompositeType contentType = null;
-            MBeanInfo info = connection.getMBeanInfo(RESOLVED_ROOT_MODEL_NAME);
-            for (MBeanOperationInfo op : info.getOperations()) {
-                if ("addDeployment".equals(op.getName())) {
-                    contentType = (CompositeType) ((ArrayType<CompositeType>) ((OpenMBeanParameterInfo) op.getSignature()[2]).getOpenType()).getElementOpenType();
-                    break;
-                }
-            }
-            Map<String, Object> values = new HashMap<>();
-            for (String key : contentType.keySet()) {
-                values.put(key, null);
-            }
-            values.put("hash", hash);
+            String[] names = {"hash"};
+            String[] descriptions = { "the content hash" };
+            OpenType<?>[] types = { new ArrayType<>(SimpleType.BYTE, true)};
+            CompositeType contentType = new CompositeType("contents", "the contents", names, descriptions, types);
+            Map<String, Object> values = Collections.singletonMap("hash", hash);
             CompositeData contents = new CompositeDataSupport(contentType, values);
 
             //Deploy it
