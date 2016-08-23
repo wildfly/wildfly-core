@@ -24,10 +24,14 @@ package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
+import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
 
 import java.util.concurrent.Executor;
 
 import io.undertow.server.ListenerRegistry;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -84,11 +88,12 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
+        return super.requiresRuntime(context)
+                && (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
     }
 
     @Override
-    protected void installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
+    protected List<ServiceName> installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
         populateHostControllerInfo(hostControllerInfo, context, model);
 
         ServiceTarget serviceTarget = context.getServiceTarget();
@@ -172,11 +177,9 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
             RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
                     ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions());
+            return Arrays.asList(UndertowHttpManagementService.SERVICE_NAME, HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         }
-    }
-
-    private ConsoleMode consoleMode(boolean consoleEnabled, boolean adminOnly) {
-        return consoleEnabled ? adminOnly ?  ConsoleMode.ADMIN_ONLY : ConsoleMode.CONSOLE : ConsoleMode.NO_CONSOLE;
+        return Collections.singletonList(UndertowHttpManagementService.SERVICE_NAME);
     }
 
     @Override

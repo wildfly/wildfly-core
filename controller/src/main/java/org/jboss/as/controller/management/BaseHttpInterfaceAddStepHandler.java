@@ -26,13 +26,12 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
 
 import java.util.List;
-
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.remoting3.RemotingOptions;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
@@ -42,7 +41,7 @@ import org.xnio.OptionMap.Builder;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHandler {
+public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfaceAddStepHandler {
 
     protected BaseHttpInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
         super(HTTP_MANAGEMENT_CAPABILITY, attributeDefinitions);
@@ -82,7 +81,7 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
         }
         final OptionMap options = builder.getMap();
 
-        installServices(context, new HttpInterfaceCommonPolicy() {
+        List<ServiceName> requiredServices = installServices(context, new HttpInterfaceCommonPolicy() {
 
             @Override
             public boolean isHttpUpgradeEnabled() {
@@ -109,15 +108,9 @@ public abstract class BaseHttpInterfaceAddStepHandler extends AbstractAddStepHan
                 return allowedOrigins;
             }
         }, model);
-
+        addVerifyInstallationStep(context, requiredServices);
     }
 
-    private String asStringIfDefined(OperationContext context, AttributeDefinition attribute, ModelNode model) throws OperationFailedException {
-        ModelNode attributeValue = attribute.resolveModelAttribute(context, model);
-
-        return attributeValue.isDefined() ? attributeValue.asString() : null;
-    }
-
-    protected abstract void installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException;
+    protected abstract List<ServiceName> installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException;
 
 }
