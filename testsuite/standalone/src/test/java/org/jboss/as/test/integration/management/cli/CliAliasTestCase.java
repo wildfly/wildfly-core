@@ -18,6 +18,7 @@
 package org.jboss.as.test.integration.management.cli;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -169,6 +170,7 @@ public class CliAliasTestCase {
      * @throws Exception
      */
     @Test
+    @Ignore("WFCORE-1729")
     public void testAliasPersistence() throws Exception {
         final File aliasFile = temporaryUserHome.newFile(".aesh_aliases");
         CliProcessWrapper cli = new CliProcessWrapper()
