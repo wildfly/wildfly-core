@@ -424,4 +424,16 @@ public interface DeploymentScannerLogger extends BasicLogger {
 
     @Message(id = 40, value = "Could not find relative-to path entry for %s")
     OperationFailedException pathEntryNotFound(String pathName);
+
+    @LogMessage(level = WARN)
+    @Message(id = 41, value = "%s is not readable")
+    void directoryIsNotReadable(String path);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 42, value = "Boot-time scan failed due to inaccessible deployment directory: %s")
+    void bootTimeScanFailed(String dir);
+
+    @LogMessage(level = WARN)
+    @Message(id = 43, value = "Deployment directory scan failed due to inaccessible deployment directory: %s")
+    void scanFailed(String dir);
 }

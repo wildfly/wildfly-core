@@ -77,8 +77,9 @@ public class WritePathAttributeHandler extends ReloadRequiredWriteAttributeHandl
                     } else if (!Files.isDirectory(fullPath)) {
                         ROOT_LOGGER.isNotADirectory(fullPath.toString());
                     } else if (!Files.isReadable(fullPath)) {
+                        ROOT_LOGGER.directoryIsNotReadable(fullPath.toString());
+                    } else if (!Files.isWritable(fullPath)) {
                         ROOT_LOGGER.directoryIsNotWritable(fullPath.toString());
-
                     }
                 }
             }, Stage.RUNTIME);
