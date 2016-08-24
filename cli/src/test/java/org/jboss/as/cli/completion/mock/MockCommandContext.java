@@ -22,6 +22,7 @@
 package org.jboss.as.cli.completion.mock;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
 import java.util.HashMap;
@@ -452,5 +453,25 @@ public class MockCommandContext implements CommandContext {
     @Override
     public void releaseOutput() {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setCommandTimeout(int numSeconds) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public int getCommandTimeout() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void resetTimeout(TIMEOUT_RESET_VALUE value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public ModelNode execute(ModelNode mn, String msg) throws CommandLineException, IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

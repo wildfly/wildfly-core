@@ -22,6 +22,7 @@
 package org.jboss.as.cli;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
 
@@ -555,4 +556,46 @@ public interface CommandContext {
      * @throws java.lang.IllegalStateException if output isn't currently being captured
      */
     void releaseOutput();
+
+    /**
+     * Set the command timeout to a number of seconds.
+     * Value equals to 0 means no timeout.
+     *
+     * @param numSeconds The timeout value.
+     */
+    void setCommandTimeout(int numSeconds);
+
+    /**
+     * Returns the command execution timeout value.
+     * Value equals to 0 means no timeout.
+     *
+     * @return The timeout value.
+     */
+    int getCommandTimeout();
+
+    /**
+     * The command timeout reset value.
+     */
+    enum TIMEOUT_RESET_VALUE {
+        CONFIG,
+        DEFAULT;
+    }
+
+    /**
+     * Reset the timeout value.
+     *
+     * @param value The enumerated timeout reset value.
+     */
+    void resetTimeout(TIMEOUT_RESET_VALUE value);
+
+    /**
+     * Execute an operation. This call is guarded by the command timeout.
+     * @param mn The operation.
+     * @param description Operation description, used in exception message.
+     * @return The response.
+     * @throws CommandLineException If an exception occurs.
+     * @throws java.io.IOException If an IOException occurs.
+     */
+    ModelNode execute(ModelNode mn, String description)
+            throws CommandLineException, IOException;
 }

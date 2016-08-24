@@ -35,7 +35,7 @@ import org.jboss.as.cli.accesscontrol.AccessRequirementBuilder;
 import org.jboss.as.cli.accesscontrol.PerNodeOperationAccess;
 import org.jboss.as.cli.embedded.EmbeddedProcessLaunch;
 import org.jboss.as.cli.impl.ArgumentWithValue;
-import org.jboss.as.cli.impl.CLIModelControllerClient;
+import org.jboss.as.cli.impl.AwaiterModelControllerClient;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -173,10 +173,10 @@ public class ReloadHandler extends BaseOperationCommand {
             return;
         }
 
-        if(!(client instanceof CLIModelControllerClient)) {
+        if (!(client instanceof AwaiterModelControllerClient)) {
             throw new CommandLineException("Unsupported ModelControllerClient implementation " + client.getClass().getName());
         }
-        final CLIModelControllerClient cliClient = (CLIModelControllerClient) client;
+        final AwaiterModelControllerClient cliClient = (AwaiterModelControllerClient) client;
 
         final ModelNode op = this.buildRequestWithoutHeaders(ctx);
         try {
@@ -186,8 +186,8 @@ public class ReloadHandler extends BaseOperationCommand {
             }
         } catch(IOException e) {
             // if it's not connected it's assumed the reload is in process
-            if(cliClient.isConnected()) {
-                StreamUtils.safeClose(cliClient);
+            if (cliClient.isConnected()) {
+                StreamUtils.safeClose(client);
                 throw new CommandLineException("Failed to execute :reload", e);
             }
         }

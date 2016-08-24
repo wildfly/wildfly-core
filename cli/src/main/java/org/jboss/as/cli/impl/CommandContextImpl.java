@@ -48,6 +48,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.KeyManager;
@@ -127,6 +131,7 @@ import org.jboss.as.cli.handlers.ReadOperationHandler;
 import org.jboss.as.cli.handlers.ReloadHandler;
 import org.jboss.as.cli.handlers.SetVariableHandler;
 import org.jboss.as.cli.handlers.ShutdownHandler;
+import org.jboss.as.cli.handlers.CommandTimeoutHandler;
 import org.jboss.as.cli.handlers.UndeployHandler;
 import org.jboss.as.cli.handlers.UnsetVariableHandler;
 import org.jboss.as.cli.handlers.VersionHandler;
@@ -290,6 +295,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private static JaasConfigurationWrapper jaasConfigurationWrapper; // we want this wrapper to be only created once
 
     private final boolean echoCommand;
+
+    private static final short DEFAULT_TIMEOUT = 0;
+    private int timeout = DEFAULT_TIMEOUT;
+    private int configTimeout;
+
     /**
      * Version mode - only used when --version is called from the command line.
      *
@@ -312,6 +322,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         SILENT = config.isSilent();
         ERROR_ON_INTERACT = config.isErrorOnInteract();
         echoCommand = config.isEchoCommand();
+        configTimeout = config.getCommandTimeout() == null ? DEFAULT_TIMEOUT : config.getCommandTimeout();
+        setCommandTimeout(configTimeout);
         username = null;
         password = null;
         disableLocalAuth = false;
@@ -341,7 +353,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         SILENT = config.isSilent();
         ERROR_ON_INTERACT = config.isErrorOnInteract();
         echoCommand = config.isEchoCommand();
-
+        configTimeout = config.getCommandTimeout() == null ? DEFAULT_TIMEOUT : config.getCommandTimeout();
+        setCommandTimeout(configTimeout);
         resolveParameterValues = config.isResolveParameterValues();
         cliPrintStream = configuration.getConsoleOutput() == null ? new CLIPrintStream() : new CLIPrintStream(configuration.getConsoleOutput());
         initStdIO();
@@ -526,6 +539,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new ReadOperationHandler(this), "read-operation");
         cmdRegistry.registerHandler(new VersionHandler(), "version");
         cmdRegistry.registerHandler(new ConnectionInfoHandler(), "connection-info");
+
+        // command-timeout
+        cmdRegistry.registerHandler(new CommandTimeoutHandler(), "command-timeout");
 
         // variables
         cmdRegistry.registerHandler(new SetVariableHandler(), "set");
@@ -717,6 +733,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private StringBuilder lineBuffer;
     private StringBuilder origLineBuffer;
+    private CommandExecutor executor = new CommandExecutor(this);
 
     @Override
     public void handle(String line) throws CommandLineException {
@@ -791,7 +808,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             }
                         }
                     } else {
-                        handler.handle(this);
+                        execute(() -> {
+                            executor.execute(handler, timeout, TimeUnit.SECONDS);
+                            return null;
+                        }, line);
                     }
                 } else {
                     throw new CommandLineException("Unexpected command '" + line + "'. Type 'help --commands' for the list of supported commands.");
@@ -809,6 +829,51 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             // during the tab-completion of the next command
             cmdLine = null;
             clear(Scope.REQUEST);
+        }
+    }
+
+    // Method called for if condition and low level operation to be guarded by a timeout.
+    @Override
+    public ModelNode execute(ModelNode mn, String description) throws CommandLineException, IOException {
+        if (client == null) {
+            throw new CommandLineException("The connection to the controller "
+                    + "has not been established.");
+        }
+        try {
+            return execute(() -> {
+                return executor.execute(mn, timeout, TimeUnit.SECONDS);
+            }, description);
+        } catch (CommandLineException ex) {
+            if (ex.getCause() instanceof IOException) {
+                throw (IOException) ex.getCause();
+            } else {
+                throw ex;
+            }
+        }
+    }
+
+    // Single execute method to handle exceptions.
+    private <T> T execute(Callable<T> c, String msg) throws CommandLineException {
+        try {
+            return c.call();
+        } catch (IOException ex) {
+            throw new CommandLineException("IO exception for " + msg, ex);
+        } catch (TimeoutException ex) {
+            throw new CommandLineException("Timeout exception for " + msg, ex);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new CommandLineException("Interrupt exception for " + msg, ex);
+        } catch (ExecutionException ex) {
+            Throwable cause = ex.getCause() == null ? ex : ex.getCause();
+            if (cause instanceof CommandLineException) {
+                throw (CommandLineException) cause;
+            }
+            throw new CommandLineException("Execution exception for " + msg
+                    + ": " + cause.getMessage(), cause);
+        } catch (CommandLineException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new CommandLineException("Exception for " + msg, ex);
         }
     }
 
@@ -852,6 +917,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             if (shutdownHook != null) {
                 CliShutdownHook.remove(shutdownHook);
             }
+            executor.cancel();
             terminate = TERMINATED;
         }
     }
@@ -2102,5 +2168,33 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     @Override
     public void releaseOutput() {
         cliPrintStream.releaseOutput();
+    }
+
+    @Override
+    public final void setCommandTimeout(int numSeconds) {
+        if (numSeconds < 0) {
+            throw new IllegalArgumentException("The command-timeout must be a "
+                    + "valid positive integer:" + numSeconds);
+        }
+        this.timeout = numSeconds;
+    }
+
+    @Override
+    public final int getCommandTimeout() {
+        return timeout;
+    }
+
+    @Override
+    public final void resetTimeout(TIMEOUT_RESET_VALUE value) {
+        switch (value) {
+            case CONFIG: {
+                timeout = configTimeout;
+                break;
+            }
+            case DEFAULT: {
+                timeout = DEFAULT_TIMEOUT;
+                break;
+            }
+        }
     }
 }

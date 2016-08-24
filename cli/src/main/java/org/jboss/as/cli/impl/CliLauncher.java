@@ -156,6 +156,9 @@ public class CliLauncher {
                     ctxBuilder.setDisableLocalAuth(true);
                 } else if (arg.equals("--echo-command")) {
                     ctxBuilder.setEchoCommand(true);
+                } else if (arg.startsWith("--command-timeout=")) {
+                    ctxBuilder.
+                            setCommandTimeout(Integer.parseInt(arg.substring(18)));
                 } else if (arg.equals("--error-on-interact")) {
                     ctxBuilder.setErrorOnInteract(true);
                     errorOnInteract = true;

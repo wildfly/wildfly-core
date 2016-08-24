@@ -77,7 +77,7 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
         }
 
         try {
-            final ModelNode result = client.execute(request);
+            final ModelNode result = ctx.execute(request, "Operation request");
             if(Util.isSuccess(result)) {
                 ctx.printLine(result.toString());
             } else {
@@ -88,7 +88,9 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
         } catch (CancellationException e) {
             throw new CommandLineException("The result couldn't be retrieved (perhaps the task was cancelled", e);
         } catch (IOException e) {
-            ctx.disconnectController();
+            if (e.getCause() != null && !(e.getCause() instanceof InterruptedException)) {
+                ctx.disconnectController();
+            }
             throw new CommandLineException("Communication error", e);
         } catch (RuntimeException e) {
             throw new CommandLineException("Failed to execute operation.", e);

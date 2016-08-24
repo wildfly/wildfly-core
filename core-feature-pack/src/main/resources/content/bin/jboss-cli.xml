@@ -47,4 +47,8 @@
 
     <!-- Include the prompt with the command into the output for each command executed in non-interactive mode -->
     <echo-command>false</echo-command>
+    
+    <!-- Uncomment to set the command timeout. Element value is in seconds -->
+    <!-- <command-timeout>30</command-timeout> -->
+    
 </jboss-cli>
