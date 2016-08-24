@@ -71,6 +71,4 @@ public interface SubsystemInformation {
         );
     }
 
-
-    boolean isDeprecated();
 }

@@ -528,7 +528,6 @@ public class ExtensionRegistry {
             checkNewSubystem(extension.extensionModuleName, name);
             SubsystemInformationImpl info = extension.getSubsystemInfo(name);
             info.setVersion(version);
-            info.setDeprecated(deprecated);
             subsystemsInfo.put(name, info);
             if (deprecated){
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
@@ -615,8 +614,6 @@ public class ExtensionRegistry {
     private class SubsystemInformationImpl implements SubsystemInformation {
 
         private ModelVersion version;
-        private boolean deprecated = false;
-        private volatile boolean hostCapable;
         private final List<String> parsingNamespaces = new ArrayList<String>();
 
         @Override
@@ -650,14 +647,6 @@ public class ExtensionRegistry {
 
         private void setVersion(ModelVersion version) {
             this.version = version;
-        }
-
-        public boolean isDeprecated() {
-            return deprecated;
-        }
-
-        private void setDeprecated(boolean deprecated) {
-            this.deprecated = deprecated;
         }
     }
 
