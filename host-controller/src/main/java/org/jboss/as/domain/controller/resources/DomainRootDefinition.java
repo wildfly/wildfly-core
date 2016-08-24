@@ -334,7 +334,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         //TODO socket-binding-group currently lives in controller and the child RDs live in domain so they currently need passing in from here
         resourceRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
 
-        //TODO perhaps all these desriptions and the validator log messages should be moved into management-client-content?
+        //TODO perhaps all these descriptions and the validator log messages should be moved into management-client-content?
         resourceRegistration.registerSubModel(
                 new ManagedDMRContentTypeResourceDefinition(contentRepo, ROLLOUT_PLAN,
                 PathElement.pathElement(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS), new RolloutPlanValidator(), DomainResolver.getResolver(ROLLOUT_PLANS), DomainResolver.getResolver(ROLLOUT_PLAN)));
