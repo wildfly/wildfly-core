@@ -78,7 +78,9 @@ public interface SubsystemRegistration {
      * @param version the model version range
      * @param resourceTransformer the subsystem resource transformer
      * @return the transformers registry
+     * @deprecated use {@link org.jboss.as.controller.transform.SubsystemTransformerRegistration}
      */
+    @Deprecated
     TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer);
 
     /**
@@ -102,7 +104,9 @@ public interface SubsystemRegistration {
      * @param operationTransformer the subsystem operation transformer
      * @param placeholder whether or not the transformers are placeholders
      * @return the transformers registry
+     * @deprecated use {@link org.jboss.as.controller.transform.SubsystemTransformerRegistration}
      */
+    @Deprecated
     TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean placeholder);
 
     /**
@@ -111,7 +115,9 @@ public interface SubsystemRegistration {
      * @param version the model version
      * @param combinedTransformer the combined transformer
      * @return the subsystem registration
+     * @deprecated use {@link org.jboss.as.controller.transform.SubsystemTransformerRegistration}
      */
+    @Deprecated
     TransformersSubRegistration registerModelTransformers(ModelVersionRange version, CombinedTransformer combinedTransformer);
 
     /**
