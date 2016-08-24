@@ -338,6 +338,27 @@ public class Util {
         return false;
     }
 
+    public static boolean isEnabledDeployment(String name,
+            ModelControllerClient client, String serverGroup) throws
+            OperationFormatException, IOException, CommandFormatException {
+        DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        if (serverGroup != null) {
+            builder.addNode(Util.SERVER_GROUP, serverGroup);
+        }
+        builder.addNode(Util.DEPLOYMENT, name);
+        builder.setOperationName(Util.READ_ATTRIBUTE);
+        builder.addProperty(Util.NAME, Util.ENABLED);
+        ModelNode request = builder.buildRequest();
+        ModelNode outcome = client.execute(request);
+        if (isSuccess(outcome)) {
+            if (!outcome.hasDefined(RESULT)) {
+                throw new CommandFormatException("No result for " + name);
+            }
+            return outcome.get(RESULT).asBoolean();
+        }
+        return false;
+    }
+
     public static List<String> getAllEnabledServerGroups(String deploymentName, ModelControllerClient client) {
 
         List<String> serverGroups = getServerGroups(client);

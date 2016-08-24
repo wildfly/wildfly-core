@@ -31,6 +31,7 @@ import java.util.Map;
 import org.jboss.as.test.integration.domain.management.cli.BasicOpsTestCase;
 import org.jboss.as.test.integration.domain.management.cli.CliCompletionTestCase;
 import org.jboss.as.test.integration.domain.management.cli.CloneProfileTestCase;
+import org.jboss.as.test.integration.domain.management.cli.DeployAllDomainTestCase;
 import org.jboss.as.test.integration.domain.management.cli.HierarchicalCompositionTestCase;
 import org.jboss.as.test.integration.domain.management.cli.UndeployWildcardDomainTestCase;
 import org.jboss.as.test.integration.domain.management.cli.WildCardReadsTestCase;
@@ -51,7 +52,8 @@ import org.junit.runners.Suite;
     CloneProfileTestCase.class,
     UndeployWildcardDomainTestCase.class,
     HierarchicalCompositionTestCase.class,
-    WildCardReadsTestCase.class
+    WildCardReadsTestCase.class,
+    DeployAllDomainTestCase.class
 })
 public class CLITestSuite {
 
