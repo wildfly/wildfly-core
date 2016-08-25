@@ -34,6 +34,7 @@ import org.jboss.as.cli.operation.OperationCandidatesProvider;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.Operation;
 import org.jboss.dmr.ModelNode;
 
 
@@ -597,5 +598,16 @@ public interface CommandContext {
      * @throws java.io.IOException If an IOException occurs.
      */
     ModelNode execute(ModelNode mn, String description)
+            throws CommandLineException, IOException;
+
+    /**
+     * Execute an operation. This call is guarded by the command timeout.
+     * @param op The operation.
+     * @param description Operation description, used in exception message.
+     * @return The response.
+     * @throws CommandLineException If an exception occurs.
+     * @throws java.io.IOException If an IOException occurs.
+     */
+    ModelNode execute(Operation op, String description)
             throws CommandLineException, IOException;
 }

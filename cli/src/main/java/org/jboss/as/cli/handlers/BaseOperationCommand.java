@@ -22,11 +22,13 @@
 package org.jboss.as.cli.handlers;
 
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import org.jboss.as.cli.Attachments;
 
 import org.jboss.as.cli.CliEvent;
 import org.jboss.as.cli.CliEventListener;
@@ -49,7 +51,7 @@ import org.jboss.as.cli.operation.impl.HeadersCompleter;
 import org.jboss.as.cli.parsing.ParserUtil;
 import org.jboss.as.cli.util.SimpleTable;
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
@@ -226,11 +228,15 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
     protected void doHandle(CommandContext ctx) throws CommandLineException {
 
         final ModelNode request = buildRequest(ctx);
-
+        Attachments attachments = getAttachments(ctx);
+        OperationBuilder builder = new OperationBuilder(request, true);
+        for (String path : attachments.getAttachedFiles()) {
+            builder.addFileAsAttachment(new File(path));
+        }
         final ModelControllerClient client = ctx.getModelControllerClient();
         final OperationResponse operationResponse;
         try {
-            operationResponse = client.executeOperation(Operation.Factory.create(request), OperationMessageHandler.DISCARD);
+            operationResponse = client.executeOperation(builder.build(), OperationMessageHandler.DISCARD);
         } catch (Exception e) {
             throw new CommandLineException("Failed to perform operation", e);
         }
@@ -250,6 +256,10 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
     public ModelNode buildRequest(CommandContext ctx) throws CommandFormatException {
         recognizeArguments(ctx);
         return buildRequestWOValidation(ctx);
+    }
+
+    protected Attachments getAttachments(CommandContext ctx) {
+        return Attachments.IMMUTABLE_ATTACHMENTS;
     }
 
     protected ModelNode buildRequestWOValidation(CommandContext ctx) throws CommandFormatException {

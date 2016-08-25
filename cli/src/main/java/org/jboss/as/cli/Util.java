@@ -68,8 +68,10 @@ public class Util {
     public static final String ALLOWED = "allowed";
     public static final String ALLOW_RESOURCE_SERVICE_RESTART = "allow-resource-service-restart";
     public static final String ARCHIVE = "archive";
+    public static final String ATTACHED_STREAMS = "attached-streams";
     public static final String ATTRIBUTES = "attributes";
     public static final String BLOCKING_TIMEOUT = "blocking-timeout";
+    public static final String BROWSE_CONTENT = "browse-content";
     public static final String BYTES = "bytes";
     public static final String CHILDREN = "children";
     public static final String CHILD_TYPE = "child-type";
@@ -84,6 +86,7 @@ public class Util {
     public static final String DEPLOYMENT = "deployment";
     public static final String DEPLOYMENT_NAME = "deployment-name";
     public static final String DEPLOYMENT_OVERLAY = "deployment-overlay";
+    public static final String DEPTH = "depth";
     public static final String DESCRIPTION = "description";
     public static final String DOMAIN_FAILURE_DESCRIPTION = "domain-failure-description";
     public static final String DOMAIN_RESULTS = "domain-results";
@@ -139,6 +142,7 @@ public class Util {
     public static final String READ_RESOURCE = "read-resource";
     public static final String READ_RESOURCE_DESCRIPTION = "read-resource-description";
     public static final String REDEPLOY = "redeploy";
+    public static final String RELATIVE_TO = "relative-to";
     public static final String RELEASE_CODENAME = "release-codename";
     public static final String RELEASE_VERSION = "release-version";
     public static final String RELOAD = "reload";
@@ -1066,9 +1070,23 @@ public class Util {
         return response.get(Util.RESULT).asString();
     }
 
-    public static ModelNode toOperationRequest(CommandContext ctx, ParsedCommandLine parsedLine)
+    public static ModelNode toOperationRequest(CommandContext ctx,
+            ParsedCommandLine parsedLine, Attachments attachments)
             throws CommandFormatException {
-        if(parsedLine.getFormat() != OperationFormat.INSTANCE) {
+        return toOperationRequest(ctx, parsedLine, attachments, true);
+    }
+
+    public static ModelNode toOperationRequest(CommandContext ctx,
+            ParsedCommandLine parsedLine)
+            throws CommandFormatException {
+        return toOperationRequest(ctx, parsedLine, new Attachments(), false);
+    }
+
+    private static ModelNode toOperationRequest(CommandContext ctx,
+            ParsedCommandLine parsedLine, Attachments attachments,
+            boolean description)
+            throws CommandFormatException {
+        if (parsedLine.getFormat() != OperationFormat.INSTANCE) {
             throw new OperationFormatException("The line does not follow the operation request format");
         }
         ModelNode request = new ModelNode();
@@ -1084,7 +1102,7 @@ public class Util {
                 } else if (iterator.hasNext()) {
                     throw new OperationFormatException(
                             "The node name is not specified for type '"
-                                    + node.getType() + "'");
+                            + node.getType() + "'");
                 }
             }
         }
@@ -1094,6 +1112,24 @@ public class Util {
             throw new OperationFormatException("The operation name is missing or the format of the operation request is wrong.");
         }
         request.get(Util.OPERATION).set(operationName);
+        ModelNode outcome = null;
+        if (description) {
+            outcome = (ModelNode) ctx.get(Scope.REQUEST, DESCRIPTION_RESPONSE);
+            if (outcome == null) {
+                outcome = retrieveDescription(ctx, request);
+                if (outcome == null) {
+                    return null;
+                } else {
+                    ctx.set(Scope.REQUEST, DESCRIPTION_RESPONSE, outcome);
+                }
+            }
+            if (!outcome.has(Util.RESULT)) {
+                throw new CommandFormatException("Failed to perform "
+                        + Util.READ_OPERATION_DESCRIPTION + " to validate the request: result is not available.");
+            } else {
+                outcome = outcome.get(Util.RESULT).get(Util.REQUEST_PROPERTIES);
+            }
+        }
 
         for (String propName : parsedLine.getPropertyNames()) {
             String value = parsedLine.getPropertyValue(propName);
@@ -1103,6 +1139,17 @@ public class Util {
                 throw new OperationFormatException("The argument value is not specified for " + propName + ": '" + value + "'");
             }
             final ModelNode toSet = ArgumentValueConverter.DEFAULT.fromString(ctx, value);
+            if (outcome != null) {
+                try {
+                    applyReplacements(propName, toSet, outcome.get(propName), outcome.get(propName).get("type").asType(), attachments);
+                } catch (Throwable ex) {
+                    //ex.printStackTrace();
+                    //System.err.println("OUTCOME " + outcome);
+                    //System.err.println("FAILED " + ex);
+                    //System.err.println("FAULTY " + propName + " " + outcome.get(propName));
+                    throw ex;
+                }
+            }
             request.get(propName).set(toSet);
         }
 
@@ -1240,5 +1287,75 @@ public class Util {
                 }
             }
         }
+    }
+
+    static void applyReplacements(String name, ModelNode value,
+            ModelNode description, ModelType mt, Attachments attachments) {
+        if (value == null || !value.isDefined()) {
+            return;
+        }
+        switch (mt) {
+            case INT:
+                // Server side can accept invalid content.
+                if (!value.getType().equals(ModelType.STRING)) {
+                    break;
+                }
+                if (isFileAttachment(description)) {
+                    value.set(attachments.addFileAttachment(value.asString()));
+                }
+                break;
+            case LIST: {
+                // Server side can accept invalid content.
+                if (!mt.equals(value.getType())) {
+                    break;
+                }
+                ModelNode valueType = description.get("value-type");
+                if (valueType.isDefined()) {
+                    ModelType valueTypeType = valueType.getType();
+                    // of Objects
+                    if (ModelType.OBJECT.equals(valueTypeType)) {
+                        for (int i = 0; i < value.asInt(); i++) {
+                            applyReplacements("value-type", value.get(i),
+                                    valueType, ModelType.OBJECT, attachments);
+                        }
+                    // of INT
+                    } else if (ModelType.INT.equals(valueType.asType())) {
+                        if (isFileAttachment(description)) {
+                            for (int i = 0; i < value.asInt(); i++) {
+                                value.get(i).set(attachments.addFileAttachment(value.get(i).asString()));
+                            }
+                        }
+
+                    }
+                }
+                break;
+            }
+            case OBJECT: {
+                // Server side can accept invalid content.
+                if (!mt.equals(value.getType())) {
+                    break;
+                }
+                ModelNode valueType = description.get("value-type");
+                // This is a value-type value, use the description
+                if (!valueType.isDefined()) {
+                    valueType = description;
+                }
+                for (String k : value.keys()) {
+                    if (value.get(k).isDefined()) {
+                        applyReplacements(k, value.get(k), valueType.get(k),
+                                valueType.get(k).get("type").asType(), attachments);
+                    }
+                }
+                break;
+            }
+            default:
+        }
+    }
+
+    private static boolean isFileAttachment(ModelNode mn) {
+        return mn.has(FILESYSTEM_PATH)
+                && mn.get(FILESYSTEM_PATH).asBoolean()
+                && mn.has(ATTACHED_STREAMS)
+                && mn.get(ATTACHED_STREAMS).asBoolean();
     }
 }
