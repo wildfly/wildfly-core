@@ -171,7 +171,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                         return -1;
                     }
                     final String path = buffer.substring(i + 1);
-                    int pathResult = pathCompleter.complete(ctx, path, 0, candidates);
+                    int pathResult = pathCompleter.complete(ctx, path, path.length(), candidates);
                     if (pathResult < 0) {
                         return -1;
                     }

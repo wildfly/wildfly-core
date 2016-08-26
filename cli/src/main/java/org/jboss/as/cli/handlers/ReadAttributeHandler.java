@@ -65,7 +65,7 @@ public class ReadAttributeHandler extends BaseOperationCommand {
                     @Override
                     public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
                         try {
-                        final OperationRequestAddress address = getAddress(ctx);
+                        final OperationRequestAddress address = getAddress(ctx, true);
                         final ModelNode req = new ModelNode();
                         if(address.isEmpty()) {
                             req.get(Util.ADDRESS).setEmptyList();
@@ -111,7 +111,7 @@ public class ReadAttributeHandler extends BaseOperationCommand {
                 ModelNode op = new ModelNode();
                 op.get("operation").set("read-operation-description");
                 op.get("name").set("read-attribute");
-                OperationRequestAddress address = getAddress(ctx);
+                OperationRequestAddress address = getAddress(ctx, true);
                 if(address.isEmpty()) {
                     op.get(Util.ADDRESS).setEmptyList();
                 } else {
@@ -151,7 +151,7 @@ public class ReadAttributeHandler extends BaseOperationCommand {
             ModelNode op = new ModelNode();
             op.get("operation").set("read-operation-description");
             op.get("name").set("read-attribute");
-            OperationRequestAddress address = getAddress(ctx);
+            OperationRequestAddress address = getAddress(ctx, false);
             if (address.isEmpty()) {
                 op.get(Util.ADDRESS).setEmptyList();
             } else {
@@ -194,7 +194,7 @@ public class ReadAttributeHandler extends BaseOperationCommand {
             throw new CommandFormatException("Required argument " + this.name.getFullName() + " is not specified.");
         }
 
-        final OperationRequestAddress address = getAddress(ctx);
+        final OperationRequestAddress address = getAddress(ctx, false);
         ModelNode req = Util.buildRequest(ctx, address, Util.READ_ATTRIBUTE);
         req.get(Util.NAME).set(name);
         if( resolve.isPresent(parsedCmd)){
@@ -311,17 +311,24 @@ public class ReadAttributeHandler extends BaseOperationCommand {
         return buf;
     }
 
-    protected OperationRequestAddress getAddress(CommandContext ctx) throws CommandFormatException {
+    protected OperationRequestAddress getAddress(CommandContext ctx, boolean completion) throws CommandFormatException {
         final ParsedCommandLine args = ctx.getParsedCommandLine();
         final OperationRequestAddress address;
-        if (node.isPresent(args) && node.isValueComplete(args)) {
+        if (node.isPresent(args)) {
             address = new DefaultOperationRequestAddress(ctx.getCurrentNodePath());
             CommandLineParser.CallbackHandler handler = new DefaultCallbackHandler(address);
 
             // this is for correct parsing of escaped characters
             String nodePath = args.getSubstitutedLine();
             int nodeArgInd = nodePath.indexOf(" --node=");
-            if(nodeArgInd < 0) {
+            if (nodeArgInd < 0) {
+                if (completion) {
+                    // Under completion.
+                    nodeArgInd = nodePath.indexOf(" --node");
+                    if (nodeArgInd >= 0) {
+                        return new DefaultOperationRequestAddress(ctx.getCurrentNodePath());
+                    }
+                }
                 throw new CommandFormatException("Couldn't locate ' --node=' in the line: '" + nodePath + "'");
             }
 

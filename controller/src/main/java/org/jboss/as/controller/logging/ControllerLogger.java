@@ -3419,4 +3419,31 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 418, value = "A %s or a %s %s already declared has already been declared in %s %s")
     OperationFailedRuntimeException socketBindingalreadyDeclared(String name1, String name2, String value, String parentName, String parentValue);
+
+    /**
+     * A message indicating the {@code value} parameter is invalid and must have a maximum bytes length, represented by the
+     * {@code length} parameter.
+     *
+     * @param value the invalid value.
+     * @param name the name of the parameter.
+     * @param length the maximum length.
+     *
+     * @return the message.
+     */
+    @Message(id = 419, value = "'%s' is an invalid value for parameter %s. Values must have a maximum length of %d bytes")
+    String invalidMaxBytesLength(String str, String parameterName, int max);
+
+    /**
+     * A message indicating the {@code value} parameter is invalid and must have a minimum bytes length, represented by the
+     * {@code length} parameter.
+     *
+     * @param value the invalid value.
+     * @param name the name of the parameter.
+     * @param length the minimum length.
+     *
+     * @return the message.
+     */
+    @Message(id = 420, value = "'%s' is an invalid value for parameter %s. Values must have a minimum length of %d bytes")
+    String invalidMinBytesLength(String str, String parameterName, int min);
+
 }

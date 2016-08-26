@@ -59,10 +59,10 @@ public class StringBytesLengthValidator extends ModelTypeValidator implements Mi
         if (value.isDefined() && value.getType() != ModelType.EXPRESSION) {
             String str = value.asString();
             if (str.getBytes().length < min) {
-                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMinLength(str, parameterName, min));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMinBytesLength(str, parameterName, min));
             }
             else if (str.getBytes().length > max) {
-                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMaxLength(str, parameterName, max));
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidMaxBytesLength(str, parameterName, max));
             }
         }
     }

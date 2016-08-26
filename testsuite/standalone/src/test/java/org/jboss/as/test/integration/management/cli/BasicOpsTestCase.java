@@ -69,6 +69,34 @@ public class BasicOpsTestCase {
     }
 
     @Test
+    public void testReadAttribute() throws Exception {
+        CLIWrapper cli = new CLIWrapper(true);
+        {
+            cli.sendLine("read-attribute namespaces");
+            String output = cli.readOutput();
+            assertFalse(output.contains("Unknown attribute 'namespaces'"));
+        }
+        {
+            cli.sendLine("read-attribute --node=subsystem=request-controller namespaces", true);
+            String output = cli.readOutput();
+            assertTrue(output.contains("Unknown attribute 'namespaces'"));
+        }
+
+        {
+            cli.sendLine("read-attribute active-requests --node=subsystem=request-controller");
+            String output = cli.readOutput();
+            assertFalse(output.contains("Unknown attribute 'active-requests'"));
+        }
+
+        {
+            cli.sendLine("read-attribute --node=subsystem=request-controller active-requests");
+            String output = cli.readOutput();
+            assertFalse(output.contains("Unknown attribute 'active-requests'"));
+        }
+        cli.quit();
+    }
+
+    @Test
     public void testImplicitValues() throws Exception {
         try (CLIWrapper cli = new CLIWrapper(true)) {
 

@@ -25,10 +25,12 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -344,9 +346,11 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
     private RuntimeStatus getCapabilityStatus(CapabilityId id, Set<CapabilityId> examined) {
         // This is meant for checking runtime stuff, which should only be for servers or
-        // HC runtime stuff, both of which use CapabilityScope.GLOBAL. So this assert
-        // is to check that assumption is valid, as further thought is needed if not.
-        assert id.getScope().equals(CapabilityScope.GLOBAL);
+        // HC runtime stuff, both of which use CapabilityScope.GLOBAL or HostCapabilityScope. So this assert
+        // is to check that assumption is valid, as further thought is needed if not (e.g. see WFCORE-1710).
+        // The id.getScope().getName().equals(HOST) check is a bit of a hack into HostCapabilityScope's
+        // internals, but oh well.
+        assert id.getScope().equals(CapabilityScope.GLOBAL) || id.getScope().getName().equals(HOST);
 
         if (restartCapabilities.contains(id)) {
             return RuntimeStatus.RESTART_REQUIRED;
@@ -357,26 +361,26 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         examined.add(id);
 
         Map<String, RuntimeRequirementRegistration> dependents = requirements.get(id);
-        RuntimeStatus status = getDependentCapabilityStatus(dependents, examined);
-        if (status == RuntimeStatus.NORMAL) {
-            dependents = requirements.get(id);
-            status = getDependentCapabilityStatus(dependents, examined);
-        }
-        return status;
+        return getDependentCapabilityStatus(dependents, id, examined);
     }
 
-    private RuntimeStatus getDependentCapabilityStatus(Map<String, RuntimeRequirementRegistration> dependents, Set<CapabilityId> examined) {
+    private RuntimeStatus getDependentCapabilityStatus(Map<String, RuntimeRequirementRegistration> dependents, CapabilityId requiror, Set<CapabilityId> examined) {
         RuntimeStatus result = RuntimeStatus.NORMAL;
         if (dependents != null) {
             for (String dependent : dependents.keySet()) {
-                CapabilityId dependentId = new CapabilityId(dependent, CapabilityScope.GLOBAL);
-                if (!examined.contains(dependentId)) {
-                    RuntimeStatus status = getCapabilityStatus(dependentId, examined);
-                    if (status == RuntimeStatus.RESTART_REQUIRED) {
-                        result = status;
-                        break; // no need to check anything else
-                    } else if (status == RuntimeStatus.RELOAD_REQUIRED) {
-                        result = status;
+                CapabilityScope requirorScope = requiror.getScope();
+                List<CapabilityScope> toCheck = requirorScope == CapabilityScope.GLOBAL
+                        ? Collections.singletonList(requirorScope)
+                        : Arrays.asList(requirorScope, CapabilityScope.GLOBAL);
+                for (CapabilityScope scope : toCheck) {
+                    CapabilityId dependentId = new CapabilityId(dependent, scope);
+                    if (!examined.contains(dependentId)) {
+                        RuntimeStatus status = getCapabilityStatus(dependentId, examined);
+                        if (status == RuntimeStatus.RESTART_REQUIRED) {
+                            return status; // no need to check anything else
+                        } else if (status == RuntimeStatus.RELOAD_REQUIRED) {
+                            result = status;
+                        }
                     }
                 }
             }
