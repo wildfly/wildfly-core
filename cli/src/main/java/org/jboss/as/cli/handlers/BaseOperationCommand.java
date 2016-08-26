@@ -53,6 +53,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 
 /**
  *
@@ -265,6 +266,9 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
             return;
         }
         final ModelNode headersNode = headers.toModelNode(ctx);
+        if (headersNode != null && headersNode.getType() != ModelType.OBJECT) {
+            throw new CommandFormatException("--headers option has wrong value '"+headersNode+"'");
+        }
         final ModelNode opHeaders = request.get(Util.OPERATION_HEADERS);
         opHeaders.set(headersNode);
     }
