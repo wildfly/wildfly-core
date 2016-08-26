@@ -19,25 +19,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.cli.batch;
+package org.jboss.as.cli.handlers;
 
-import org.jboss.as.cli.handlers.ResponseHandler;
-import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
 
 /**
- *
- * @author Alexey Loubyansky
+ * Called by batch once composite response is received.
+ * @author jdenise@redhat.com
  */
-public interface BatchedCommand {
-
-    String getCommand();
-
-    ModelNode getRequest();
-
-    ModelNode getDescriptionResponse();
-
-    CommandContext getCommandContext();
-
-    ResponseHandler getResponseHandler();
+public interface ResponseHandler {
+    /**
+     * Handle the passed step.
+     * @param step The current step.
+     * @param response The operation that contains the step.
+     * @throws CommandLineException
+     */
+    void handleResponse(ModelNode step, OperationResponse response) throws CommandLineException;
 }

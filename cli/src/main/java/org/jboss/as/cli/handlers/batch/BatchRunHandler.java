@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -45,6 +45,7 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -73,8 +74,9 @@ public class BatchRunHandler extends BaseOperationCommand {
 
         final boolean v = verbose.isPresent(ctx.getParsedCommandLine());
 
-        final ModelNode response;
+        final OperationResponse response;
         boolean failed = false;
+        boolean hasFile = file.getValue(ctx.getParsedCommandLine()) != null;
         try {
             final ModelNode request = buildRequest(ctx);
             OperationBuilder builder = new OperationBuilder(request, true);
@@ -83,30 +85,54 @@ public class BatchRunHandler extends BaseOperationCommand {
             }
             final ModelControllerClient client = ctx.getModelControllerClient();
             try {
-                response = client.execute(builder.build(), OperationMessageHandler.DISCARD);
+                response = client.executeOperation(builder.build(), OperationMessageHandler.DISCARD);
             } catch(Exception e) {
                 throw new CommandFormatException("Failed to perform operation: " + e.getLocalizedMessage());
             }
-            if (!Util.isSuccess(response)) {
-                throw new CommandFormatException(Util.getFailureDescription(response));
+            if (!Util.isSuccess(response.getResponseNode())) {
+                throw new CommandFormatException(Util.getFailureDescription(response.getResponseNode()));
             }
+
+            ModelNode steps = response.getResponseNode().get(Util.RESULT);
+            if (steps.isDefined()) {
+                // Dispatch to non null response handlers.
+                final Batch batch = ctx.getBatchManager().getActiveBatch();
+                int i = 1;
+                for (BatchedCommand cmd : batch.getCommands()) {
+                    ModelNode step = steps.get("step-" + i);
+                    if (step.isDefined()) {
+                        if (cmd.getResponseHandler() != null) {
+                            cmd.getResponseHandler().handleResponse(step, response);
+                        }
+                    }
+                }
+            }
+
         } catch(CommandLineException e) {
             failed = true;
-            throw new CommandLineException("The batch failed with the following error "
-                    + "(you are remaining in the batch editing mode to have a chance to correct the error)", e);
-        } finally{
-            if(!failed) {
-                if(ctx.getBatchManager().isBatchActive()) {
+            if (hasFile) {
+                throw new CommandLineException("The batch failed with the following error: ", e);
+            } else {
+                throw new CommandLineException("The batch failed with the following error "
+                        + "(you are remaining in the batch editing mode to have a chance to correct the error)", e);
+            }
+        } finally {
+            // There is a change in behavior between the file and the added command
+            // With a file, the batch is discarded, whatever the result.
+            if (hasFile) {
+                ctx.getBatchManager().discardActiveBatch();
+            } else if (!failed) {
+                if (ctx.getBatchManager().isBatchActive()) {
                     ctx.getBatchManager().discardActiveBatch();
                 }
             }
         }
 
         if(v) {
-            ctx.printLine(response.toString());
+            ctx.printLine(response.getResponseNode().toString());
         } else {
             ctx.printLine("The batch executed successfully");
-            super.handleResponse(ctx, response, true);
+            super.handleResponse(ctx, response.getResponseNode(), true);
         }
     }
 
@@ -165,7 +191,6 @@ public class BatchRunHandler extends BaseOperationCommand {
             } catch(CommandLineException e) {
                 throw new CommandFormatException("Failed to create batch from " + f.getAbsolutePath(), e);
             } finally {
-                batchManager.discardActiveBatch();
                 if(baseDir != null) {
                     ctx.setCurrentDir(currentDir);
                 }

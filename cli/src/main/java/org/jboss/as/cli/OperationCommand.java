@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -21,6 +21,7 @@
  */
 package org.jboss.as.cli;
 
+import org.jboss.as.cli.handlers.ResponseHandler;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -29,8 +30,38 @@ import org.jboss.dmr.ModelNode;
  */
 public interface OperationCommand extends CommandHandler {
 
+    static class HandledRequest {
+
+        private final ModelNode request;
+        private final ResponseHandler handler;
+
+        public HandledRequest(ModelNode request, ResponseHandler handler) {
+            this.request = request;
+            this.handler = handler;
+        }
+
+        /**
+         * @return the request
+         */
+        public ModelNode getRequest() {
+            return request;
+        }
+
+        /**
+         * @return the handler
+         */
+        public ResponseHandler getResponseHandler() {
+            return handler;
+        }
+    }
+
     ModelNode buildRequest(CommandContext ctx) throws CommandFormatException;
+
     default ModelNode buildRequest(CommandContext ctx, Attachments attachments) throws CommandFormatException {
         return buildRequest(ctx);
+    }
+
+    default HandledRequest buildHandledRequest(CommandContext ctx, Attachments attachments) throws CommandFormatException {
+        return new HandledRequest(buildRequest(ctx, attachments), null);
     }
 }
