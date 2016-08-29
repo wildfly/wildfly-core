@@ -53,6 +53,7 @@ import org.hamcrest.CoreMatchers;
 import org.jboss.as.protocol.StreamUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -149,6 +150,7 @@ public class ContentRepositoryTest {
      * Test of explodeContent method, of class ContentRepository.
      */
     @Test
+    @Ignore("WFCORE-1748")
     public void testExplodeSubContent() throws Exception {
         byte[] archive = createMultiLevelArchive(Collections.singletonList("overlay.xhtml"), "test/archive.zip");
         try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
