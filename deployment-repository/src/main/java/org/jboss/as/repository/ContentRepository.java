@@ -149,7 +149,7 @@ public interface ContentRepository {
         throw new UnsupportedOperationException();
     }
 
-    default List<String> listContent(byte[] deploymentHash, String path, ContentFilter filter) throws ExplodedContentException {
+    default List<ContentRepositoryElement> listContent(byte[] deploymentHash, String path, ContentFilter filter) throws ExplodedContentException {
         return Collections.emptyList();
     }
 

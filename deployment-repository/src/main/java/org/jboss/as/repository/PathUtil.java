@@ -175,8 +175,8 @@ public class PathUtil {
      * @return the list of files / directory.
      * @throws IOException
      */
-    public static List<String> listFiles(final Path rootPath, final ContentFilter filter) throws IOException {
-        List<String> result = new ArrayList<>();
+    public static List<ContentRepositoryElement> listFiles(final Path rootPath, final ContentFilter filter) throws IOException {
+        List<ContentRepositoryElement> result = new ArrayList<>();
         if (Files.exists(rootPath)) {
             Files.walkFileTree(rootPath, new FileVisitor<Path>() {
                 @Override
@@ -187,7 +187,7 @@ public class PathUtil {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     if (filter.acceptFile(rootPath, file)) {
-                        result.add(formatPath(rootPath.relativize(file)));
+                        result.add(ContentRepositoryElement.createFile(formatPath(rootPath.relativize(file)), Files.size(file)));
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -202,7 +202,7 @@ public class PathUtil {
                     if (filter.acceptDirectory(rootPath, dir)) {
                         String directoryPath = formatDirectoryPath(rootPath.relativize(dir));
                         if(! "/".equals(directoryPath)) {
-                            result.add(directoryPath);
+                            result.add(ContentRepositoryElement.createFolder(directoryPath));
                         }
                     }
                     return FileVisitResult.CONTINUE;

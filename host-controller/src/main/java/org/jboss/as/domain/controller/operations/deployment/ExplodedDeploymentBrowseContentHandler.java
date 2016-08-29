@@ -15,6 +15,9 @@
  */
 package org.jboss.as.domain.controller.operations.deployment;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIRECTORY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILE_SIZE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ARCHIVE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.DEPLOYMENT_CONTENT_PATH;
@@ -32,6 +35,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.repository.ContentFilter;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.repository.ContentRepositoryElement;
 import org.jboss.as.repository.ExplodedContentException;
 import org.jboss.dmr.ModelNode;
 
@@ -71,8 +75,14 @@ public class ExplodedDeploymentBrowseContentHandler implements OperationStepHand
         int depth = DEPTH.resolveModelAttribute(context, operation).asInt();
         boolean explodable = ARCHIVE.resolveModelAttribute(context, operation).asBoolean();
         try {
-            for (String contentPath : contentRepository.listContent(deploymentHash, path, ContentFilter.Factory.createContentFilter(depth, explodable))) {
-                context.getResult().add(contentPath);
+            for (ContentRepositoryElement content : contentRepository.listContent(deploymentHash, path, ContentFilter.Factory.createContentFilter(depth, explodable))) {
+                ModelNode contentNode = new ModelNode();
+                contentNode.get(PATH).set(content.getPath());
+                contentNode.get(DIRECTORY).set(content.isFolder());
+                if(!content.isFolder()) {
+                    contentNode.get(FILE_SIZE).set(content.getSize());
+                }
+                context.getResult().add(contentNode);
             }
         } catch (ExplodedContentException ex) {
             throw new OperationFailedException(ex.getMessage());

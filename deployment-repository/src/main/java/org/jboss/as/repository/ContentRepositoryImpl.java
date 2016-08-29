@@ -548,7 +548,7 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
     }
 
     @Override
-    public List<String> listContent(byte[] deploymentHash, String path, ContentFilter filter) throws ExplodedContentException {
+    public List<ContentRepositoryElement> listContent(byte[] deploymentHash, String path, ContentFilter filter) throws ExplodedContentException {
         try {
             if (!lock(deploymentHash)) {
                 throw DeploymentRepositoryLogger.ROOT_LOGGER.errorLockingDeployment();

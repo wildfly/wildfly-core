@@ -184,6 +184,7 @@ public class ModelDescriptionConstants {
     public static final String FAILURE_DESCRIPTION = "failure-description";
     public static final String FILE = "file";
     public static final String FILE_HANDLER = "file-handler";
+    public static final String FILE_SIZE = "file-size";
     public static final String FILESYSTEM_PATH = "filesystem-path";
     public static final String FILTER = "filter";
     //public final static String FILTER_CONJUNCT = "conjunct";

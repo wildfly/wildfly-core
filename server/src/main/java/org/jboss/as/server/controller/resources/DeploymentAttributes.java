@@ -321,6 +321,14 @@ public class DeploymentAttributes {
     /** Attributes indicating unmanaged deployments in the content attribute */
     public static final Map<String, AttributeDefinition> UNMANAGED_CONTENT_ATTRIBUTES = createAttributeMap(CONTENT_PATH, CONTENT_RELATIVE_TO, CONTENT_ARCHIVE);
 
+    /** Return type for the browse-content operations */
+    private static final ObjectTypeAttributeDefinition BROWSE_CONTENT_REPLY = ObjectTypeAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
+                SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DIRECTORY, ModelType.BOOLEAN, false).build(),
+                SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PATH, ModelType.STRING, false).build(),
+                SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.FILE_SIZE, ModelType.LONG, true).setMeasurementUnit(MeasurementUnit.BYTES).build())
+            .setAllowNull(false)
+            .build();
+
     /** All attributes of the content attribute */
     @SuppressWarnings("unchecked")
     public static final Map<String, AttributeDefinition> ALL_CONTENT_ATTRIBUTES = createAttributeMap(MANAGED_CONTENT_ATTRIBUTES, UNMANAGED_CONTENT_ATTRIBUTES);
@@ -350,6 +358,7 @@ public class DeploymentAttributes {
             .build();
     public static final OperationDefinition DEPLOYMENT_BROWSE_CONTENT_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.BROWSE_CONTENT, DEPLOYMENT_RESOLVER)
             .setParameters(DEPLOYMENT_CONTENT_PATH, ARCHIVE, DEPTH)
+            .setReplyParameters(BROWSE_CONTENT_REPLY)
             .withFlags(Flag.READ_ONLY)
             .build();
 
@@ -363,7 +372,7 @@ public class DeploymentAttributes {
             .build();
 
     /** Return type for the upload-deployment-xxx operaions */
-    private static SimpleAttributeDefinition UPLOAD_HASH_REPLY = SimpleAttributeDefinitionBuilder.create(CONTENT_HASH)
+    private static final SimpleAttributeDefinition UPLOAD_HASH_REPLY = SimpleAttributeDefinitionBuilder.create(CONTENT_HASH)
             .setAllowNull(false)
             .build();
 
