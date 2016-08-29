@@ -18,12 +18,12 @@
 package org.jboss.as.test.integration.management.cli;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.junit.Ignore;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -46,7 +46,7 @@ import static org.junit.Assert.fail;
 @RunWith(WildflyTestRunner.class)
 public class CliAliasTestCase {
 
-    private static final String VALID_ALIAS_NAME = "TMP123_DEBUG456__ALIAS_VALID789_";
+    private static final String VALID_ALIAS_NAME = "DEBUG123_ALIAS";
     private static final String VALID_ALIAS_COMMAND = "'/subsystem=undertow:read-resource'";
 
     @Rule
@@ -54,7 +54,6 @@ public class CliAliasTestCase {
 
     @Before
     public final void setupUserHome() {
-        //Fix for http://bugs.java.com/view_bug.do?bug_id=6519127 under Windows
         System.setProperty("user.home", temporaryUserHome.getRoot().toPath().toString());
     }
 
@@ -170,7 +169,6 @@ public class CliAliasTestCase {
      * @throws Exception
      */
     @Test
-    @Ignore("WFCORE-1729")
     public void testAliasPersistence() throws Exception {
         final File aliasFile = temporaryUserHome.newFile(".aesh_aliases");
         CliProcessWrapper cli = new CliProcessWrapper()
@@ -180,12 +178,43 @@ public class CliAliasTestCase {
         try {
             cli.executeInteractive();
             cli.pushLineAndWaitForResults("alias " + VALID_ALIAS_NAME + "=" + VALID_ALIAS_COMMAND);
-            cli.ctrlCAndWaitForClose();
+            cli.pushLineAndWaitForResults("quit");
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
             cli.destroyProcess();
         }
+        assertAliasSaved(aliasFile);
+    }
+
+    /**
+     * Regression test for <a href="https://issues.jboss.org/browse/WFCORE-1853">WFCORE-1853</a>:
+     * Using Ctrl+C can result in aesh aliases not being saved on Windows
+     *
+     * @throws Exception
+     */
+    @Ignore("WFCORE-1853")
+    @Test
+    public void testAliasPersistenceCtrlC() throws Exception {
+        final File aliasFile = temporaryUserHome.newFile(".aesh_aliases");
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
+        try {
+            cli.executeInteractive();
+            cli.pushLineAndWaitForResults("alias " + VALID_ALIAS_NAME + "=" + VALID_ALIAS_COMMAND);
+            cli.ctrlCAndWaitForClose(); //see: WFCORE-1853
+        } catch (Exception ex) {
+            fail(ex.getLocalizedMessage());
+        } finally {
+            cli.destroyProcess();
+        }
+        assertAliasSaved(aliasFile);
+    }
+
+    private void assertAliasSaved(File aliasFile) throws IOException {
+        assertTrue("No .aesh_aliases file found", aliasFile.exists());
         List<String> aliasesInFile = Files.readAllLines(aliasFile.toPath(), Charset.defaultCharset());
         boolean found = false;
         for (String line : aliasesInFile) {
