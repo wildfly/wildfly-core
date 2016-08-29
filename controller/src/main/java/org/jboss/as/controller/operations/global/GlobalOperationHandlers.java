@@ -61,6 +61,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.UnauthorizedException;
+import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.ResourceNotAddressableException;
@@ -482,9 +483,13 @@ public class GlobalOperationHandlers {
             }
         }
 
-        protected abstract void executeSingleTargetChild(PathAddress base, PathElement currentElement, PathAddress newRemaining, OperationContext context, boolean ignoreMissing);
+        protected abstract void executeSingleTargetChild(PathAddress base, PathElement currentElement,
+                                                         PathAddress newRemaining, OperationContext context, boolean ignoreMissing);
 
-        protected abstract void executeMultiTargetChildren(PathAddress base, PathElement currentElement, PathAddress newRemaining, OperationContext context, ImmutableManagementResourceRegistration registration, boolean ignoreMissing);
+        protected abstract void executeMultiTargetChildren(PathAddress base, PathElement currentElement,
+                                                           PathAddress newRemaining, OperationContext context,
+                                                           ImmutableManagementResourceRegistration registration,
+                                                           boolean ignoreMissing);
 
         /**
          * If not authorized, this will throw an exception for {@link ModelAddressResolver} for use with the
@@ -878,9 +883,11 @@ public class GlobalOperationHandlers {
 
             final Set<PathElement> children = context.getResourceRegistration().getChildAddresses(base);
             if (children == null || children.isEmpty()) {
-                return;
+                throw new NoSuchResourceTypeException(base.append(currentElement));
             }
 
+            boolean foundValid = false;
+            PathAddress invalid = null;
             for (final PathElement path : children) {
                 if (childType != null && !childType.equals(path.getKey())) {
                     continue;
@@ -892,7 +899,32 @@ public class GlobalOperationHandlers {
                 }
                 final PathAddress next = base.append(path);
                 final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
-                execute(next, newRemaining, context, nr, ignoreMissing);
+                try {
+                    execute(next, newRemaining, context, nr, ignoreMissing);
+                    foundValid = true;
+                } catch (NoSuchResourceTypeException e) {
+                    if (!foundValid) {
+                        PathAddress failedAddr = e.getPathAddress();
+                        // Store the failed address for error reporting, but only if
+                        // 1) this is the first failure, or
+                        // 2) The size of the failed address is larger than the currently
+                        //    cached one, indicating there is some path that has a larger number
+                        //    of valid elements than the currently cached path. So we want to
+                        //    report that larger path
+                        if (invalid == null || failedAddr.size() > invalid.size()) {
+                            PathAddress newBase = base.append(currentElement);
+                            invalid = newBase.append(failedAddr.subAddress(newBase.size()));
+                        }
+                    }
+                }
+            }
+
+            if (!foundValid) {
+                if (invalid == null) {
+                    // No children matched currentElement
+                    invalid = base.append(currentElement);
+                }
+                throw new NoSuchResourceTypeException(invalid);
             }
         }
 
@@ -900,7 +932,11 @@ public class GlobalOperationHandlers {
         protected void executeSingleTargetChild(PathAddress base, PathElement currentElement, PathAddress newRemaining, OperationContext context, boolean ignoreMissing) {
             final PathAddress next = base.append(currentElement);
             final ImmutableManagementResourceRegistration nr = context.getResourceRegistration().getSubModel(next);
-            execute(next, newRemaining, context, nr, ignoreMissing);
+            if (nr != null) {
+                execute(next, newRemaining, context, nr, ignoreMissing);
+            } else {
+                throw new NoSuchResourceTypeException(next);
+            }
         }
 
         @Override
@@ -1093,4 +1129,16 @@ public class GlobalOperationHandlers {
     }
 
 
+    private static final class NoSuchResourceTypeException extends OperationFailedRuntimeException {
+        private final PathAddress pathAddress;
+
+        private NoSuchResourceTypeException(PathAddress pathAddress) {
+            super(ControllerLogger.ROOT_LOGGER.noSuchResourceType(pathAddress));
+            this.pathAddress = pathAddress;
+        }
+
+        private PathAddress getPathAddress() {
+            return pathAddress;
+        }
+    }
 }
