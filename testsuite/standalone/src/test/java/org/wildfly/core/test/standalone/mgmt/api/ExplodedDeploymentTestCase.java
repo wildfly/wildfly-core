@@ -26,6 +26,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -182,6 +183,7 @@ public class ExplodedDeploymentTestCase {
                 try {
                     OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
                     Assert.assertTrue(Operations.isSuccessfulOutcome(response.getResponseNode()));
+                    Assert.assertTrue(Operations.readResult(response.getResponseNode()).hasDefined(UUID));
                     List<OperationResponse.StreamEntry> streams = response.getInputStreams();
                     Assert.assertThat(streams, is(notNullValue()));
                     Assert.assertThat(streams.size(), is(1));
@@ -333,6 +335,7 @@ public class ExplodedDeploymentTestCase {
                 try {
                     OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
                     Assert.assertTrue(Operations.isSuccessfulOutcome(response.getResponseNode()));
+                    Assert.assertTrue(Operations.readResult(response.getResponseNode()).hasDefined(UUID));
                     List<OperationResponse.StreamEntry> streams = response.getInputStreams();
                     Assert.assertThat(streams, is(notNullValue()));
                     Assert.assertThat(streams.size(), is(1));

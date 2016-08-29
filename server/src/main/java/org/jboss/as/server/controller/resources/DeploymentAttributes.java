@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_UNDEPLOYED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WEB_URL;
 
 import java.util.Arrays;
@@ -346,6 +347,7 @@ public class DeploymentAttributes {
             .build();
     public static final OperationDefinition DEPLOYMENT_READ_CONTENT_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.READ_CONTENT, DEPLOYMENT_RESOLVER)
             .setParameters(DEPLOYMENT_CONTENT_PATH)
+            .setReplyParameters(new SimpleAttributeDefinitionBuilder(UUID, ModelType.STRING, false).build())
             .withFlags(Flag.READ_ONLY)
             .build();
     public static final OperationDefinition DEPLOYMENT_BROWSE_CONTENT_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.BROWSE_CONTENT, DEPLOYMENT_RESOLVER)
