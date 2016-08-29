@@ -1336,6 +1336,14 @@ public interface DomainManagementLogger extends BasicLogger {
     String sureToSetPassword();
 
     /**
+     * A general description of the utility usage.
+     *
+     * @return a {@link String} for the message.
+     */
+    @Message(id = Message.NONE, value = "The add-user script is a utility for adding new users to the properties files for out-of-the-box authentication. It can be used to manage users in ManagementRealm and ApplicationRealm.")
+    String usageDescription();
+
+    /**
      * Instructions for the {@link org.jboss.as.domain.management.security.adduser.AddUser.CommandLineArgument#USAGE} command line argument.
      * @return the message.
      */

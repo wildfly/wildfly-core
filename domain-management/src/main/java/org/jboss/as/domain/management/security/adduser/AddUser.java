@@ -495,6 +495,7 @@ public class AddUser {
         public static String usage() {
             if (USAGE == null) {
                 final StringBuilder sb = new StringBuilder();
+                sb.append(DomainManagementLogger.ROOT_LOGGER.usageDescription()).append(NEW_LINE).append(NEW_LINE);
                 sb.append(DomainManagementLogger.ROOT_LOGGER.argUsage()).append(NEW_LINE);
                 for (CommandLineArgument arg : CommandLineArgument.values()) {
                     if (arg != ROLE) { // Deprecated
