@@ -57,8 +57,8 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-<!--                <configuration>
-                    <argLine>-javaagent:${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar}</argLine>
+                 <configuration>
+                    <argLine>-javaagent:${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar} ${surefire.system.args}</argLine>
                     <systemPropertyVariables>
                         <org.jboss.byteman.contrib.bmunit.agent.inhibit>true</org.jboss.byteman.contrib.bmunit.agent.inhibit>
                         <org.jboss.byteman.transform.all>true</org.jboss.byteman.transform.all>
@@ -66,7 +66,7 @@
                         <org.jboss.byteman.contrib.bmunit.agent.host>${byteman.host}</org.jboss.byteman.contrib.bmunit.agent.host>
                         <org.jboss.byteman.contrib.bmunit.agent.port>${byteman.port}</org.jboss.byteman.contrib.bmunit.agent.port>
                     </systemPropertyVariables>
-                </configuration>-->
+                </configuration>
             </plugin>
         </plugins>
     </build>
