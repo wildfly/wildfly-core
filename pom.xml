@@ -108,7 +108,7 @@
         <version.org.jboss.marshalling.jboss-marshalling>1.4.11.Final</version.org.jboss.marshalling.jboss-marshalling>
         <!-- this is test only dependancy -->
         <version.org.jboss.metadata.jboss-metadata-common>10.0.0.Final</version.org.jboss.metadata.jboss-metadata-common>
-        <version.org.jboss.modules.jboss-modules>1.6.0.Beta1</version.org.jboss.modules.jboss-modules>
+        <version.org.jboss.modules.jboss-modules>1.6.0.Beta2</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.2.6.Final</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>4.0.21.Final</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>2.0.1.Final</version.org.jboss.remotingjmx.remoting-jmx>
