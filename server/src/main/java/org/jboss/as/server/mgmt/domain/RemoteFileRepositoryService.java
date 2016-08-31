@@ -33,6 +33,7 @@ import org.jboss.as.repository.ContentFilter;
 
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.repository.ContentRepositoryElement;
 import org.jboss.as.repository.DeploymentFileRepository;
 import org.jboss.as.repository.ExplodedContent;
 import org.jboss.as.repository.ExplodedContentException;
@@ -203,7 +204,7 @@ public class RemoteFileRepositoryService implements CompositeContentRepository, 
     }
 
     @Override
-    public List<String> listContent(byte[] deploymentHash, String path, ContentFilter filter) throws ExplodedContentException {
+    public List<ContentRepositoryElement> listContent(byte[] deploymentHash, String path, ContentFilter filter) throws ExplodedContentException {
         return contentRepository.listContent(deploymentHash, path, filter);
     }
 }

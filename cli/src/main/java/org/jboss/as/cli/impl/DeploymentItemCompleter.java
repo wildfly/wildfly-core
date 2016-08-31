@@ -21,6 +21,7 @@
  */
 package org.jboss.as.cli.impl;
 
+
 import java.io.IOException;
 import java.util.List;
 import org.jboss.as.cli.CommandContext;
@@ -102,7 +103,7 @@ public class DeploymentItemCompleter implements CommandLineCompleter {
                 ModelNode result = response.get(Util.RESULT);
                 if (result.getType() == ModelType.LIST) {
                     for (int i = 0; i < result.asInt(); i++) {
-                        String path = result.get(i).asString();
+                        String path = result.get(i).get(Util.PATH).asString();
                         if (path.startsWith(subpath) && !path.equals(subpath)) {
                             candidates.add(path);
                         }
