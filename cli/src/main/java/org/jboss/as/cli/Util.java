@@ -36,8 +36,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import org.jboss.as.cli.CommandContext.Scope;
 
+import org.jboss.as.cli.CommandContext.Scope;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.OperationRequestAddress.Node;
@@ -1116,18 +1116,18 @@ public class Util {
         if (description) {
             outcome = (ModelNode) ctx.get(Scope.REQUEST, DESCRIPTION_RESPONSE);
             if (outcome == null) {
-                outcome = retrieveDescription(ctx, request);
-                if (outcome == null) {
-                    return null;
-                } else {
+                outcome = retrieveDescription(ctx, request, false);
+                if (outcome != null) {
                     ctx.set(Scope.REQUEST, DESCRIPTION_RESPONSE, outcome);
                 }
             }
-            if (!outcome.has(Util.RESULT)) {
-                throw new CommandFormatException("Failed to perform "
-                        + Util.READ_OPERATION_DESCRIPTION + " to validate the request: result is not available.");
-            } else {
-                outcome = outcome.get(Util.RESULT).get(Util.REQUEST_PROPERTIES);
+            if (outcome != null) {
+                if (!outcome.has(Util.RESULT)) {
+                    throw new CommandFormatException("Failed to perform " + Util.READ_OPERATION_DESCRIPTION
+                            + " to validate the request: result is not available.");
+                } else {
+                    outcome = outcome.get(Util.RESULT).get(Util.REQUEST_PROPERTIES);
+                }
             }
         }
 
@@ -1188,7 +1188,7 @@ public class Util {
     }
 
     private static ModelNode retrieveDescription(CommandContext ctx,
-            ModelNode request) throws CommandFormatException {
+            ModelNode request, boolean strict) throws CommandFormatException {
         final ModelControllerClient client = ctx.getModelControllerClient();
         if (client == null) {
             throw new CommandFormatException("No connection to the controller.");
@@ -1215,10 +1215,14 @@ public class Util {
         try {
             outcome = client.execute(opDescrReq);
         } catch (Exception e) {
-            throw new CommandFormatException("Failed to perform " + Util.READ_OPERATION_DESCRIPTION + " to validate the request: " + e.getLocalizedMessage());
+            throw new CommandFormatException("Failed to perform " + Util.READ_OPERATION_DESCRIPTION, e);
         }
         if (!Util.isSuccess(outcome)) {
-            throw new CommandFormatException("Failed to get the list of the operation properties: \"" + Util.getFailureDescription(outcome) + '\"');
+            if(strict) {
+                throw new CommandFormatException("Failed to get the list of the operation properties: \"" + Util.getFailureDescription(outcome) + '\"');
+            } else {
+                return null;
+            }
         }
         return outcome;
     }
@@ -1233,7 +1237,7 @@ public class Util {
         }
         ModelNode outcome = (ModelNode) ctx.get(Scope.REQUEST, DESCRIPTION_RESPONSE);
         if (outcome == null) {
-            outcome = retrieveDescription(ctx, request);
+            outcome = retrieveDescription(ctx, request, true);
             if (outcome == null) {
                 return null;
             } else {
