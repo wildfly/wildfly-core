@@ -20,7 +20,6 @@
  */
 package org.jboss.as.repository;
 
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.jboss.as.repository.HashUtil.emptyStream;
@@ -41,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -53,7 +53,6 @@ import org.hamcrest.CoreMatchers;
 import org.jboss.as.protocol.StreamUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -63,7 +62,7 @@ import org.junit.Test;
 public class ContentRepositoryTest {
     private static final boolean IS_WINDOWS = AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
             System.getProperty("os.name", null).toLowerCase(Locale.ENGLISH).contains("windows"));
-
+    private static final FileTime time = FileTime.from(Instant.parse("2007-12-03T10:15:30.00Z"));
     private ContentRepository repository;
     private final File rootDir = new File("target", "repository");
     private final File tmpRootDir = new File("target", "tmp");
@@ -89,12 +88,6 @@ public class ContentRepositoryTest {
         deleteRecursively(rootDir.toPath());
         deleteRecursively(tmpRootDir.toPath());
         repository = null;
-    }
-
-    private String readFileContent(File file) throws Exception {
-        try (InputStream in = getFileInputStream(file)) {
-            return readFileContent(in);
-        }
     }
 
     private String readFileContent(Path path) throws Exception {
@@ -150,19 +143,16 @@ public class ContentRepositoryTest {
      * Test of explodeContent method, of class ContentRepository.
      */
     @Test
-    @Ignore("WFCORE-1748")
     public void testExplodeSubContent() throws Exception {
         byte[] archive = createMultiLevelArchive(Collections.singletonList("overlay.xhtml"), "test/archive.zip");
         try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
             byte[] originalHash = repository.addContent(stream);
             assertThat(originalHash, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(originalHash),
-                    anyOf(is("0aee80d935dd7fc73ead88df068b9b9d536770b6"), is("a9b8758000d5a985cd0d318498f997f885708aa9")));
+            assertThat(HashUtil.bytesToHexString(originalHash), is("f11be1883895957b06f7e46d784cad60dd015d71"));
             byte[] hash = repository.explodeContent(originalHash);
             //hash is different from the simple overlay.xhtml as we add the content folder name in the computation
             assertThat(hash, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(hash),
-                    anyOf(is("f608ff32e67e7e476564dc8193972f4acd0c2141"), is("6ad70df3952ddc65fa29516a64bfa869bda288da")));
+            assertThat(HashUtil.bytesToHexString(hash), is("5ab326c763fadad903d0e9bbfecbb42e69a1b8b4"));
             Path content = repository.getContent(hash).getPhysicalFile().toPath();
             String contentHtml = readFileContent(content.resolve("overlay.xhtml"));
             String expectedContentHtml = readFileContent(getResourceAsStream("overlay.xhtml"));
@@ -185,19 +175,19 @@ public class ContentRepositoryTest {
             try (ZipOutputStream out = new ZipOutputStream(buffer)) {
                 for (String resourcePath : resources) {
                     ZipEntry entry = new ZipEntry(resourcePath);
-                    entry.setTime(1466068270000L);
-                    entry.setLastAccessTime(FileTime.fromMillis(1466068270000L));
-                    entry.setLastModifiedTime(FileTime.fromMillis(1466068270000L));
+                    entry.setLastModifiedTime(time);
                     out.putNextEntry(entry);
                     try (InputStream in = getResourceAsStream(resourcePath)) {
                         StreamUtils.copyStream(in, out);
                     }
                     out.closeEntry();
                 }
-                ZipEntry entry = new ZipEntry(archivePath);
-                entry.setTime(1466068270000L);
-                entry.setLastAccessTime(FileTime.fromMillis(1466068270000L));
-                entry.setLastModifiedTime(FileTime.fromMillis(1466068270000L));
+                ZipEntry entry = new ZipEntry("test/");
+                entry.setLastModifiedTime(time);
+                out.putNextEntry(entry);
+                out.closeEntry();
+                entry = new ZipEntry(archivePath);
+                entry.setLastModifiedTime(time);
                 out.putNextEntry(entry);
                 try (InputStream in = new ByteArrayInputStream(createArchive(resources))) {
                     StreamUtils.copyStream(in, out);
@@ -213,9 +203,7 @@ public class ContentRepositoryTest {
             try (ZipOutputStream out = new ZipOutputStream(buffer)) {
                 for (String resourcePath : resources) {
                     ZipEntry entry = new ZipEntry(resourcePath);
-                    entry.setTime(1466068270000L);
-                    entry.setLastAccessTime(FileTime.fromMillis(1466068270000L));
-                    entry.setLastModifiedTime(FileTime.fromMillis(1466068270000L));
+                    entry.setLastModifiedTime(time);
                     out.putNextEntry(entry);
                     try (InputStream in = getResourceAsStream(resourcePath)) {
                         StreamUtils.copyStream(in, out);
