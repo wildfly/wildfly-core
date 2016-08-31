@@ -25,6 +25,7 @@ package org.jboss.as.domain.management.audit;
 import java.util.Arrays;
 import java.util.List;
 
+import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
@@ -74,24 +75,22 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
 
     static final List<SimpleAttributeDefinition> ATTRIBUTE_DEFINITIONS = Arrays.asList(LOG_BOOT, LOG_READ_ONLY, ENABLED);
 
-    private final boolean executeRuntime;
     private final ManagedAuditLogger auditLogger;
 
-    private AuditLogLoggerResourceDefinition(final PathElement pathElement, final ManagedAuditLogger auditLogger, boolean executeRuntime) {
+    private AuditLogLoggerResourceDefinition(final PathElement pathElement, final ManagedAuditLogger auditLogger) {
         super(pathElement,
                 DomainManagementResolver.getDeprecatedResolver(AccessAuditResourceDefinition.DEPRECATED_MESSAGE_CATEGORY, "core.management.audit-log"),
-                new AuditLogLoggerAddHandler(auditLogger, executeRuntime), new AuditLogLoggerRemoveHandler(auditLogger));
+                new AuditLogLoggerAddHandler(auditLogger), new AuditLogLoggerRemoveHandler(auditLogger));
         this.auditLogger = auditLogger;
-        this.executeRuntime = executeRuntime;
         setDeprecated(ModelVersion.create(1, 7));
     }
 
     static AuditLogLoggerResourceDefinition createDefinition(ManagedAuditLogger auditLogger){
-        return new AuditLogLoggerResourceDefinition(PATH_ELEMENT, auditLogger, true);
+        return new AuditLogLoggerResourceDefinition(PATH_ELEMENT, auditLogger);
     }
 
-    static AuditLogLoggerResourceDefinition createHostServerDefinition(ManagedAuditLogger auditLogger){
-        return new AuditLogLoggerResourceDefinition(HOST_SERVER_PATH_ELEMENT, auditLogger, false);
+    static AuditLogLoggerResourceDefinition createHostServerDefinition(){
+        return new AuditLogLoggerResourceDefinition(HOST_SERVER_PATH_ELEMENT, null);
     }
 
     @Override
@@ -100,12 +99,12 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadWriteAttribute(LOG_BOOT, null, new ModelOnlyWriteAttributeHandler(LOG_BOOT));
 
         resourceRegistration.registerReadWriteAttribute(LOG_READ_ONLY, null, new AuditLogReadOnlyWriteAttributeHandler(auditLogger));
-        resourceRegistration.registerReadWriteAttribute(ENABLED, null, new AuditLogEnabledWriteAttributeHandler(auditLogger, executeRuntime));
+        resourceRegistration.registerReadWriteAttribute(ENABLED, null, new AuditLogEnabledWriteAttributeHandler(auditLogger));
     }
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerSubModel(new AuditLogHandlerReferenceResourceDefinition(auditLogger, executeRuntime));
+        resourceRegistration.registerSubModel(new AuditLogHandlerReferenceResourceDefinition(auditLogger));
     }
 
 
@@ -131,11 +130,9 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
     private static class AuditLogLoggerAddHandler implements OperationStepHandler {
 
         private final ManagedAuditLogger auditLoggerProvider;
-        private final boolean executeRuntime;
 
-        AuditLogLoggerAddHandler(ManagedAuditLogger auditLoggerProvider, boolean executeRuntime) {
+        AuditLogLoggerAddHandler(ManagedAuditLogger auditLoggerProvider) {
             this.auditLoggerProvider = auditLoggerProvider;
-            this.executeRuntime = executeRuntime;
         }
 
         /** {@inheritDoc */
@@ -146,7 +143,7 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
                 attr.validateAndSet(operation, model);
             }
 
-            if (executeRuntime) {
+            if (auditLoggerProvider != null) {
                 context.addStep(new OperationStepHandler() {
                     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                         final boolean wasReadOnly = auditLoggerProvider.isLogReadOnly();
@@ -180,14 +177,12 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
                         });
                     }
                 }, OperationContext.Stage.RUNTIME);
-            } else {
-                auditLoggerProvider.setLoggerStatus(AuditLogger.Status.DISABLED);
             }
             context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
         }
     }
 
-    private static class AuditLogLoggerRemoveHandler implements OperationStepHandler {
+    private static class AuditLogLoggerRemoveHandler extends AbstractRemoveStepHandler {
 
         private final ManagedAuditLogger auditLogger;
 
@@ -196,46 +191,49 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
         }
 
         @Override
-        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        protected boolean requiresRuntime(OperationContext context) {
 
-            context.removeResource(PathAddress.EMPTY_ADDRESS);
+            // This is a hack. We want the Stage.MODEL behavior from the superclass but the
+            // way it deals with Stage.RUNTIME via performRuntime and recoverServices doesn't
+            // work for us. So we hack requiresRuntime to do what we want and then return false
+            // to turn off the superclass work
+            if (auditLogger != null) {
 
-            context.addStep(new OperationStepHandler() {
-                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                context.addStep(new OperationStepHandler() {
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-                    final boolean wasReadOnly = auditLogger.isLogReadOnly();
-                    final AuditLogger.Status oldStatus = auditLogger.getLoggerStatus();
+                        final boolean wasReadOnly = auditLogger.isLogReadOnly();
+                        final AuditLogger.Status oldStatus = auditLogger.getLoggerStatus();
 
-                    auditLogger.setLoggerStatus(AuditLogger.Status.DISABLE_NEXT);
+                        auditLogger.setLoggerStatus(AuditLogger.Status.DISABLE_NEXT);
 
-                    context.completeStep(new OperationContext.RollbackHandler() {
-                        @Override
-                        public void handleRollback(OperationContext context, ModelNode operation) {
-                            auditLogger.setLogReadOnly(wasReadOnly);
-                            auditLogger.setLoggerStatus(oldStatus);
-                        }
-                    });
-                }
-            }, OperationContext.Stage.RUNTIME);
+                        context.completeStep(new OperationContext.RollbackHandler() {
+                            @Override
+                            public void handleRollback(OperationContext context, ModelNode operation) {
+                                auditLogger.setLogReadOnly(wasReadOnly);
+                                auditLogger.setLoggerStatus(oldStatus);
+                            }
+                        });
+                    }
+                }, OperationContext.Stage.RUNTIME);
+            }
 
-            context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+            return false;
         }
     }
 
     private static class AuditLogEnabledWriteAttributeHandler extends AbstractWriteAttributeHandler<ManagedAuditLogger.Status> {
 
         private final ManagedAuditLogger auditLogger;
-        private final boolean executeRuntime;
 
-        AuditLogEnabledWriteAttributeHandler(ManagedAuditLogger auditLogger, boolean executeRuntime) {
+        AuditLogEnabledWriteAttributeHandler(ManagedAuditLogger auditLogger) {
             super(AuditLogLoggerResourceDefinition.ENABLED);
             this.auditLogger = auditLogger;
-            this.executeRuntime = executeRuntime;
         }
 
         @Override
         protected boolean requiresRuntime(OperationContext context) {
-            return executeRuntime;
+            return auditLogger != null;
         }
 
         @Override
@@ -256,7 +254,7 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
         }
     }
 
-    class AuditLogReadOnlyWriteAttributeHandler extends AbstractWriteAttributeHandler<Boolean> {
+    private static class AuditLogReadOnlyWriteAttributeHandler extends AbstractWriteAttributeHandler<Boolean> {
 
         private final ManagedAuditLogger auditLogger;
 
@@ -267,7 +265,7 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
 
         @Override
         protected boolean requiresRuntime(OperationContext context) {
-            return executeRuntime;
+            return auditLogger != null;
         }
 
         @Override
