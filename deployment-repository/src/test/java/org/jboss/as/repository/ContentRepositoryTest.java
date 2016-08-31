@@ -27,6 +27,7 @@ import static org.jboss.as.repository.PathUtil.deleteRecursively;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -64,6 +65,7 @@ public class ContentRepositoryTest {
     private static final boolean IS_WINDOWS = AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
             System.getProperty("os.name", null).toLowerCase(Locale.ENGLISH).contains("windows"));
     private static final FileTime time = FileTime.from(Instant.parse("2007-12-03T10:15:30.00Z"));
+
     private ContentRepository repository;
     private final File rootDir = new File("target", "repository");
     private final File tmpRootDir = new File("target", "tmp");
@@ -239,7 +241,7 @@ public class ContentRepositoryTest {
                     true);
             assertThat(hash, is(notNullValue()));
             assertThat(HashUtil.bytesToHexString(hash), is(updatedExpectedResult));
-            try(InputStream addedContent = repository.readContent(hash, "test.jsp")) {
+            try (InputStream addedContent = repository.readContent(hash, "test.jsp")) {
                 assertThat(addedContent, is(notNullValue()));
                 assertThat(readFileContent(addedContent), is("this is a test"));
             }
@@ -248,6 +250,25 @@ public class ContentRepositoryTest {
             hash = repository.removeContentFromExploded(hash, Collections.singletonList("test.jsp"));
             assertThat(hash, is(notNullValue()));
             assertThat(HashUtil.bytesToHexString(hash), is(expResult));
+            updatedExpectedResult = "a44921155d75009d885db3357005b85b435cf59f";
+            hash = repository.addContentToExploded(hash,
+                    Collections.singletonList(new ExplodedContent("test.jsp",
+                            new ByteArrayInputStream("this is an overwrite test".getBytes(StandardCharsets.UTF_8)))),
+                    true);
+            assertThat(hash, is(notNullValue()));
+            assertThat(HashUtil.bytesToHexString(hash), is(updatedExpectedResult));
+            try (InputStream addedContent = repository.readContent(hash, "test.jsp")) {
+                assertThat(addedContent, is(notNullValue()));
+                assertThat(readFileContent(addedContent), is("this is an overwrite test"));
+            }
+            try {
+            hash = repository.addContentToExploded(hash,
+                    Collections.singletonList(new ExplodedContent("test.jsp",
+                            new ByteArrayInputStream("this is a failure test".getBytes(StandardCharsets.UTF_8)))),
+                    false);
+                fail("Overwritting shouldn't work");
+            } catch( ExplodedContentException ex) {
+            }
         }
     }
 
@@ -259,21 +280,21 @@ public class ContentRepositoryTest {
             String expResult = "b1f18e286615dda0643633ec31f1a17d90e48875";
             //hash is different from the simple overlay.xhtml as we add the content folder name in the computation
             assertThat(hash, is(notNullValue()));
-             Path content = repository.getContent(hash).getPhysicalFile().toPath();
+            Path content = repository.getContent(hash).getPhysicalFile().toPath();
             String contentHtml = readFileContent(content.resolve("overlay.xhtml"));
             String expectedContentHtml = readFileContent(getResourceAsStream("overlay.xhtml"));
             assertThat(contentHtml, is(expectedContentHtml));
             assertThat(HashUtil.bytesToHexString(hash), is(expResult));
             String updatedExpectedResult = "161a2c95b16d5ffede0721c2cec984ca51009082";
             hash = repository.addContentToExploded(hash,
-                    Collections.singletonList(new ExplodedContent("test.jsp",new ByteArrayInputStream("this is a test".getBytes(StandardCharsets.UTF_8)))),
+                    Collections.singletonList(new ExplodedContent("test.jsp", new ByteArrayInputStream("this is a test".getBytes(StandardCharsets.UTF_8)))),
                     true);
             assertThat(hash, is(notNullValue()));
             assertThat(HashUtil.bytesToHexString(hash), is(updatedExpectedResult));
             List<String> contents = repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(-1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
             assertThat(contents.size(), is(2));
             assertThat(contents, CoreMatchers.hasItems("test.jsp", "overlay.xhtml"));
-            hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("test/empty-file.txt",emptyStream())), true);
+            hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("test/empty-file.txt", emptyStream())), true);
             hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("empty-dir", null)), true);
             contents = repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(-1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
             assertThat(contents, is(notNullValue()));
@@ -524,6 +545,7 @@ public class ContentRepositoryTest {
     }
 
     private static class CarriageReturnRemovalInputStream extends InputStream {
+
         private final InputStream delegate;
 
         private CarriageReturnRemovalInputStream(final InputStream delegate) {
