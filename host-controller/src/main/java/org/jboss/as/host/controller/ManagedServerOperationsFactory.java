@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT_LOG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHENTICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURATION_CHANGES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONNECTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONSTRAINT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
@@ -59,6 +60,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_HISTORY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMESPACES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -82,6 +84,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP_SCOPED_ROLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_IDENTITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_LOGGER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE;
@@ -241,6 +244,7 @@ public final class ManagedServerOperationsFactory {
         addAuditLog(updates);
         addManagementConnections(updates);
         addManagementAuthorization(updates);
+        addConfigurationChanges(updates);
         addInterfaces(updates);
         addSocketBindings(updates, portOffSet, socketBindingRef, defaultInterface);
         addSubsystems(updates);
@@ -539,6 +543,15 @@ public final class ManagedServerOperationsFactory {
                 final PathAddress loggerAddress = auditLogAddr.append(LOGGER, AUDIT_LOG);
                 AuditLogLoggerResourceDefinition.createServerAddOperations(updates, loggerAddress, auditLogModel.get(SERVER_LOGGER, AUDIT_LOG));
             }
+        }
+    }
+
+    private void addConfigurationChanges(ModelNodeList updates) {
+        final ModelNode configurationChangesModel = hostModel.get(CORE_SERVICE, MANAGEMENT, SERVICE, CONFIGURATION_CHANGES);
+        if (configurationChangesModel.isDefined()) {
+            ModelNode addConfigurationChanges = Util.createAddOperation(PathAddress.pathAddress().append(CORE_SERVICE, MANAGEMENT).append(SERVICE, CONFIGURATION_CHANGES));
+            addConfigurationChanges.get(MAX_HISTORY).set(configurationChangesModel.get(MAX_HISTORY));
+            updates.add(addConfigurationChanges);
         }
     }
 

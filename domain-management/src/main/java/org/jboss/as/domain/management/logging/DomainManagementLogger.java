@@ -1237,6 +1237,9 @@ public interface DomainManagementLogger extends BasicLogger {
     IllegalArgumentException asnInvalidLength();
 
     /* End X.500 exceptions */
+    @Message(id = 135, value = "The resource %s wasn't working properly and has been removed.")
+    String removedOutOfOrderResource(final String address);
+
     /**
      * Information message saying the username and password must be different.
      *

@@ -38,11 +38,14 @@ import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.ConfigurationChangesCollector;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
@@ -55,6 +58,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -72,6 +76,20 @@ public class ConfigurationChangeResourceDefinition extends SimpleResourceDefinit
     public static final PathElement PATH = PathElement.pathElement(SERVICE, CONFIGURATION_CHANGES);
     public static final ConfigurationChangeResourceDefinition INSTANCE = new ConfigurationChangeResourceDefinition();
     public static final String OPERATION_NAME = "list-changes";
+
+    static ResourceDefinition forDomain() {
+        return new SimpleResourceDefinition(new Parameters(PATH, DomainManagementResolver.getResolver(CORE, MANAGEMENT, SERVICE, CONFIGURATION_CHANGES))
+                .setAddHandler(new OperationStepHandler() {
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        String warning = DomainManagementLogger.ROOT_LOGGER.removedOutOfOrderResource(context.getCurrentAddress().toCLIStyleString());
+                        DomainManagementLogger.ROOT_LOGGER.warn(warning);
+                        context.getResult().add(warning);
+                    }
+
+                })
+                .setDeprecatedSince(ModelVersion.create(4, 2)));
+    }
 
     private ConfigurationChangeResourceDefinition() {
         super(new Parameters(PATH, DomainManagementResolver.getResolver(CORE, MANAGEMENT, SERVICE, CONFIGURATION_CHANGES))
@@ -92,7 +110,6 @@ public class ConfigurationChangeResourceDefinition extends SimpleResourceDefinit
     }
 
     private static class ConfigurationChangeResourceAddHandler extends AbstractAddStepHandler {
-
         public ConfigurationChangeResourceAddHandler() {
             super(MAX_HISTORY);
         }
