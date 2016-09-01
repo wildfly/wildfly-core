@@ -37,8 +37,10 @@ import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.openssl.OpenSSLProvider;
 
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for a management security realm resource.
@@ -47,6 +49,17 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class SecurityRealmResourceDefinition extends SimpleResourceDefinition {
+
+    static {
+        //register the Openssl Provider, if possible
+        //not really sure if this is the best place for it
+        try {
+            OpenSSLProvider.register();
+            DomainManagementLogger.ROOT_LOGGER.registeredOpenSSLProvider();
+        } catch (Throwable t){
+            DomainManagementLogger.ROOT_LOGGER.debugf(t, "Failed to register OpenSSL provider");
+        }
+    }
 
     public static final SecurityRealmResourceDefinition INSTANCE = new SecurityRealmResourceDefinition();
 
