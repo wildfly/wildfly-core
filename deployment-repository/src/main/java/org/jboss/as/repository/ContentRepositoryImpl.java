@@ -595,7 +595,11 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
                         if(in == null) {
                             Files.createDirectory(targetFile);
                         } else {
-                            Files.copy(in, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                            if(overwrite) {
+                                Files.copy(in, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                            } else {
+                                Files.copy(in, targetFile);
+                            }
                         }
                     }
                 }

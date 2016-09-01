@@ -155,43 +155,45 @@ public class DeploymentTestCase {
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
         final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
         archive2.addAsManifestResource(DeploymentTestCase.class.getPackage(), "marker.txt", "marker.txt");
+        final File dir = new File("target/archives");
 
         final ModelControllerClient client = managementClient.getControllerClient();
         final ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(client);
+        try {
+            testDeployments(false, new DeploymentExecutor() {
 
-        testDeployments(false, new DeploymentExecutor() {
-
-            @Override
-            public void initialDeploy() throws IOException {
-                Future<?> future = manager.execute(manager.newDeploymentPlan().add("test-deployment.jar", exportArchive(archive))
-                        .deploy("test-deployment.jar").build());
-                awaitDeploymentExecution(future);
-            }
-
-            @Override
-            public void fullReplace() throws IOException {
-                Future<?> future = manager.execute(manager.newDeploymentPlan().replace("test-deployment.jar", exportArchive(archive2)).build());
-                awaitDeploymentExecution(future);
-            }
-
-            @Override
-            public void undeploy() {
-                Future<?> future = manager.execute(manager.newDeploymentPlan().undeploy("test-deployment.jar").remove("test-deployment.jar").build());
-                awaitDeploymentExecution(future);
-            }
-
-            private File exportArchive(JavaArchive archive) {
-                final File dir = new File("target/archives");
-                dir.mkdirs();
-                final File file = new File(dir, "test-deployment.jar");
-                if (file.exists()) {
-                    file.delete();
+                @Override
+                public void initialDeploy() throws IOException {
+                    Future<?> future = manager.execute(manager.newDeploymentPlan().add("test-deployment.jar", exportArchive(archive))
+                            .deploy("test-deployment.jar").build());
+                    awaitDeploymentExecution(future);
                 }
-                archive.as(ZipExporter.class).exportTo(file, true);
-                return file;
-            }
-        });
 
+                @Override
+                public void fullReplace() throws IOException {
+                    Future<?> future = manager.execute(manager.newDeploymentPlan().replace("test-deployment.jar", exportArchive(archive2)).build());
+                    awaitDeploymentExecution(future);
+                }
+
+                @Override
+                public void undeploy() {
+                    Future<?> future = manager.execute(manager.newDeploymentPlan().undeploy("test-deployment.jar").remove("test-deployment.jar").build());
+                    awaitDeploymentExecution(future);
+                }
+
+                private File exportArchive(JavaArchive archive) {
+                    dir.mkdirs();
+                    final File file = new File(dir, "test-deployment.jar");
+                    if (file.exists()) {
+                        file.delete();
+                    }
+                    archive.as(ZipExporter.class).exportTo(file, true);
+                    return file;
+                }
+            });
+        } finally {
+            cleanFile(dir);
+        }
     }
 
     @Test
@@ -371,6 +373,7 @@ public class DeploymentTestCase {
             });
         } finally {
             removeDeploymentScanner(client, scannerName);
+            cleanFile(dir);
         }
     }
 
@@ -501,6 +504,7 @@ public class DeploymentTestCase {
             });
         } finally {
             removeDeploymentScanner(client, scannerName);
+            cleanFile(dir);
         }
     }
 
@@ -541,6 +545,7 @@ public class DeploymentTestCase {
             Files.delete(target);
             Files.delete(deployed);
             Files.delete(deployDir);
+            cleanFile(dir.toFile());
         }
     }
 
@@ -548,13 +553,12 @@ public class DeploymentTestCase {
     public void testExplodedFilesystemDeployment() throws Exception {
 
         final File deployDir = createDeploymentDir("exploded-deployments");
-
+        final File dir = new File("target/archives");
         ModelControllerClient client = managementClient.getControllerClient();
         final String scannerName = "exploded";
         addDeploymentScanner(deployDir, client, scannerName, false);
         try {
             final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
-            final File dir = new File("target/archives");
             dir.mkdirs();
             archive.as(ExplodedExporter.class).exportExploded(deployDir);
 
@@ -664,6 +668,7 @@ public class DeploymentTestCase {
             });
         } finally {
             removeDeploymentScanner(client, scannerName);
+            cleanFile(dir);
         }
     }
 
