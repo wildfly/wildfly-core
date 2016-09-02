@@ -57,45 +57,11 @@ public interface NetworkMessages {
     @Message(id = 2, value = "no multicast binding: %s")
     IllegalStateException noMulticastBinding(String name);
 
-    /**
-     * Creates an exception indicating parameter {@code name} cannot be null or an empty string.
-     *
-     * @param name the name.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 3, value = "%s cannot be null or an empty string")
-    IllegalArgumentException nullOrEmptyVar(String name);
+    // id = 3; redundant parameter null / empty check message
 
-    /**
-     * Creates an exception indicating a param of type {@code type} was null for the outbound socket binding {@code name}.
-     *
-     * @param type the type of the param
-     * @param name the name.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 4, value = "%s cannot be null for outbound socket binding '%s'")
-    IllegalArgumentException nullOutboundSocketBindingParam(String type, String name);
+    // id = 4; redundant parameter null check message
 
-    /**
-     * Creates an exception indicating no destination address for the outbound socket binding.
-     *
-     * @param name the name.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 5, value = "Destination address cannot be null or empty for outbound socket binding '%s'")
-    IllegalArgumentException nullDestinationAddress(String name);
+    // id = 5; redundant parameter null check message
 
-    /**
-     * Creates an exception indicating a negative destination port for the outbound socket binding {@code name}.
-     *
-     * @param port the illegal port value
-     * @param name the name.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 6, value = "Destination port cannot be a negative value: [%d] for outbound socket binding '%s'")
-    IllegalArgumentException negativeDestinationPort(int port, String name);
+    // id = 6; redundant minimum port number check message
 }
