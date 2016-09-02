@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * {@link InterfaceCriteria} that tests whether a given network interface and
@@ -56,8 +56,7 @@ public class AnyInterfaceCriteria implements InterfaceCriteria {
      * @throws IllegalArgumentException if <code>criteria</code> is <code>null</code>
      */
     public AnyInterfaceCriteria(Set<InterfaceCriteria> criteria) {
-        if (criteria == null)
-            throw ControllerLogger.ROOT_LOGGER.nullVar("criteria");
+        Assert.checkNotNullParam("criteria", criteria);
         this.criteria.addAll(criteria);
     }
 

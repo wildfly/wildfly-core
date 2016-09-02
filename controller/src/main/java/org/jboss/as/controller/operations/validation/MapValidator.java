@@ -25,6 +25,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.wildfly.common.Assert;
 
 /**
  * Validates parameters of type {@link org.jboss.dmr.ModelType#OBJECT}.
@@ -67,8 +68,7 @@ public class MapValidator extends ModelTypeValidator implements ParameterValidat
      */
     public MapValidator(ParameterValidator elementValidator, boolean nullable, int minSize, int maxSize) {
         super(ModelType.OBJECT, nullable, false, false);
-        if (elementValidator == null)
-            throw ControllerLogger.ROOT_LOGGER.nullVar("elementValidator");
+        Assert.checkNotNullParam("elementValidator", elementValidator);
         this.min = minSize;
         this.max = maxSize;
         this.elementValidator = elementValidator;

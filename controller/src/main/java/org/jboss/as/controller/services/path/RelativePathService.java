@@ -36,6 +36,7 @@ import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.Assert;
 
 /**
  * {@link AbstractPathService} implementation for paths that are relative
@@ -110,12 +111,8 @@ public class RelativePathService extends AbstractPathService {
     }
 
     static String convertPath(String relativePath) {
-        if (relativePath == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("relativePath");
-        }
-        if (relativePath.length() == 0) {
-            throw ControllerLogger.ROOT_LOGGER.emptyVar("relativePath");
-        }
+        Assert.checkNotNullParam("relativePath", relativePath);
+        Assert.checkNotEmptyParam("relativePath", relativePath);
         if (relativePath.charAt(0) == '/') {
             if (relativePath.length() == 1) {
                 throw ControllerLogger.ROOT_LOGGER.invalidRelativePathValue(relativePath);

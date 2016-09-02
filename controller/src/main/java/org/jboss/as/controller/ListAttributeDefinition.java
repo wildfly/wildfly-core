@@ -32,13 +32,13 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.ListValidator;
 import org.jboss.as.controller.operations.validation.NillableOrExpressionParameterValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.common.Assert;
 
 /**
  * Defining characteristics of an {@link ModelType#LIST} attribute in a {@link org.jboss.as.controller.registry.Resource}, with utility
@@ -332,9 +332,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
          */
         @SuppressWarnings("unchecked")
         public final BUILDER setElementValidator(ParameterValidator elementValidator) {
-            if (elementValidator == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("elementValidator");
-            }
+            Assert.checkNotNullParam("elementValidator", elementValidator);
             this.elementValidator = elementValidator;
             // Setting an element validator invalidates any existing overall attribute validator
             this.validator = null;

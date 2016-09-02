@@ -29,7 +29,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * {@link InterfaceCriteria} that tests whether a given name matches the
@@ -52,8 +52,7 @@ public class NicInterfaceCriteria extends AbstractInterfaceCriteria {
      * @throws IllegalArgumentException if <code>criteria</code> is <code>null</code>
      */
     public NicInterfaceCriteria(String name) {
-        if (name == null)
-            throw ControllerLogger.ROOT_LOGGER.nullVar("name");
+        Assert.checkNotNullParam("name", name);
         this.name = name;
     }
 

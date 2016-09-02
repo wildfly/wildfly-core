@@ -27,13 +27,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PAT
 import java.io.File;
 import java.util.List;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.common.Assert;
 
 /**
  * {@link AbstractPathService} implementation for paths that are not relative
@@ -77,12 +77,8 @@ public class AbsolutePathService extends AbstractPathService {
     }
 
     public static String convertPath(String abstractPath) {
-        if (abstractPath == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("abstractPath");
-        }
-        if (abstractPath.length() == 0) {
-            throw ControllerLogger.ROOT_LOGGER.emptyVar("abstractPath");
-        }
+        Assert.checkNotNullParam("abstractPath", abstractPath);
+        Assert.checkNotEmptyParam("abstractPath", abstractPath);
         // Use File.getAbsolutePath() to make relative paths absolute
         File f = new File(abstractPath);
         return f.getAbsolutePath();

@@ -1791,15 +1791,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 155, value = "%s may not be null")
     OperationFailedException nullNotAllowed(String name);
 
-    /**
-     * Creates an exception indicating the variable, represented by the {@code name} parameter, was {@code null}.
-     *
-     * @param name the name of the variable that was {@code null}.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 156, value = "%s is null")
-    IllegalArgumentException nullVar(String name);
+    // id = 156; redundant parameter null check message
 
     /**
      * Creates a message indicating the operation step.

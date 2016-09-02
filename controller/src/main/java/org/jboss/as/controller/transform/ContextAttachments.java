@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * Internal class for providing attachments. Although it is in the .transform package, this is more to avoid polluting
@@ -43,30 +43,22 @@ public class ContextAttachments {
     }
 
     public <V> V getAttachment(final OperationContext.AttachmentKey<V> key) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
+        Assert.checkNotNullParam("key", key);
         return key.cast(valueAttachments.get(key));
     }
 
     public <V> V attach(final OperationContext.AttachmentKey<V> key, final V value) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
+        Assert.checkNotNullParam("key", key);
         return key.cast(valueAttachments.put(key, value));
     }
 
     public <V> V attachIfAbsent(final OperationContext.AttachmentKey<V> key, final V value) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
+        Assert.checkNotNullParam("key", key);
         return key.cast(valueAttachments.putIfAbsent(key, value));
     }
 
     public <V> V detach(final OperationContext.AttachmentKey<V> key) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
+        Assert.checkNotNullParam("key", key);
         return key.cast(valueAttachments.remove(key));
     }
 }

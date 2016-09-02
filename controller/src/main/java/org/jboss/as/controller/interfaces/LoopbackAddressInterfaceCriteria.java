@@ -25,7 +25,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * A loopback criteria with a specified bind address.
@@ -50,8 +50,7 @@ public class LoopbackAddressInterfaceCriteria extends AbstractInterfaceCriteria 
      * @throws IllegalArgumentException if <code>network</code> is <code>null</code>
      */
     public LoopbackAddressInterfaceCriteria(final InetAddress address) {
-        if (address == null)
-            throw ControllerLogger.ROOT_LOGGER.nullVar("address");
+        Assert.checkNotNullParam("address", address);
         this.resolved = address;
         this.address = resolved.getHostAddress();
     }
@@ -65,8 +64,7 @@ public class LoopbackAddressInterfaceCriteria extends AbstractInterfaceCriteria 
      * @throws IllegalArgumentException if <code>network</code> is <code>null</code>
      */
     public LoopbackAddressInterfaceCriteria(final String address) {
-        if (address == null)
-            throw ControllerLogger.ROOT_LOGGER.nullVar("address");
+        Assert.checkNotNullParam("address", address);
         this.address = address;
     }
 

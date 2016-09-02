@@ -31,11 +31,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.Assert;
 
 /**
  * Abstract handler for the write aspect of a
@@ -55,7 +55,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
     private final Map<String, AttributeDefinition> attributeDefinitions;
 
     protected AbstractWriteAttributeHandler(final AttributeDefinition... definitions) {
-        assert definitions != null : ControllerLogger.ROOT_LOGGER.nullVar("definitions").getLocalizedMessage();
+        Assert.assertNotNull(definitions);
         attributeDefinitions = new HashMap<String, AttributeDefinition>();
         for (AttributeDefinition def : definitions) {
             attributeDefinitions.put(def.getName(), def);
