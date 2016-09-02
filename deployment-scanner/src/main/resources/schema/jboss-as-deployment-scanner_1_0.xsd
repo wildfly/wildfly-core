@@ -98,7 +98,7 @@
         <xs:attribute default="60" name="deployment-timeout" type="xs:int" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                   Timout used. in seconds, for deployment operations.  If an individual deployment operation
+                   Timeout used. in seconds, for deployment operations.  If an individual deployment operation
                    takes longer than this timeout it will be canceled and marked as failed.
                 </xs:documentation>
             </xs:annotation>
