@@ -33,6 +33,7 @@
     </resources>
 
     <dependencies>
+        <module name="org.wildfly.common"/>
         <module name="org.jboss.as.protocol"/>
         <module name="org.jboss.dmr"/>
         <module name="org.jboss.logging"/>

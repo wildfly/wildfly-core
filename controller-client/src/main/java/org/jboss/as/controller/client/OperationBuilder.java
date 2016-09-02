@@ -21,10 +21,10 @@
  */
 package org.jboss.as.controller.client;
 
-import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.controller.client.impl.InputStreamEntry;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.Assert;
 
 import java.io.DataOutput;
 import java.io.File;
@@ -52,9 +52,7 @@ public class OperationBuilder {
     }
 
     public OperationBuilder(final ModelNode operation, boolean autoCloseStreams) {
-        if (operation == null) {
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("operation");
-        }
+        Assert.checkNotNullParam("operation", operation);
         this.operation = operation;
         this.autoCloseStreams = autoCloseStreams;
     }
@@ -67,9 +65,7 @@ public class OperationBuilder {
      * @return the operation builder
      */
     public OperationBuilder addFileAsAttachment(final File file) {
-        if(file == null) {
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("file");
-        }
+        Assert.checkNotNullParam("file", file);
         try {
             FileStreamEntry entry = new FileStreamEntry(file);
             if (inputStreams == null) {
@@ -90,9 +86,7 @@ public class OperationBuilder {
      * @return a builder than can be used to continue building the operation
      */
     public OperationBuilder addInputStream(final InputStream in) {
-        if(in == null) {
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("input-stream");
-        }
+        Assert.checkNotNullParam("in", in);
         if (inputStreams == null) {
             inputStreams = new ArrayList<InputStream>();
         }

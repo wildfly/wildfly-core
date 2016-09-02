@@ -26,9 +26,9 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.UUID;
 
-import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentActionResult;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentPlanResult;
+import org.wildfly.common.Assert;
 
 /**
  * Default implementation of  {@link ServerDeploymentPlanResult}.
@@ -43,10 +43,8 @@ public class DeploymentPlanResultImpl implements ServerDeploymentPlanResult, Ser
     private final UUID planId;
 
     public DeploymentPlanResultImpl(UUID planId, Map<UUID, ServerDeploymentActionResult> actionResults) {
-        if (planId == null)
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("planId");
-        if (actionResults == null)
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("actionResults");
+        Assert.checkNotNullParam("planId", planId);
+        Assert.checkNotNullParam("actionResults", actionResults);
         this.planId = planId;
         this.actionResults = actionResults;
     }

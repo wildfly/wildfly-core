@@ -25,6 +25,7 @@ package org.jboss.as.controller.client.helpers.domain;
 import java.io.Serializable;
 
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
+import org.wildfly.common.Assert;
 
 /**
  * Indicates how the actions in a {@link DeploymentSetPlan} are to be
@@ -47,9 +48,7 @@ public class ServerGroupDeploymentPlan implements Serializable {
     }
 
     private ServerGroupDeploymentPlan(final String serverGroupName, final boolean rollback, final boolean rollingToServers, final int maxFailures, final int maxFailurePercentage) {
-        if (serverGroupName == null) {
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("serverGroupName");
-        }
+        Assert.checkNotNullParam("serverGroupName", serverGroupName);
         this.serverGroupName = serverGroupName;
         this.rollback = rollback;
         this.rollingToServers = rollingToServers;

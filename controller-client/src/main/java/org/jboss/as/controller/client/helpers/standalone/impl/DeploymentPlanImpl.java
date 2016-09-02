@@ -26,10 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.controller.client.helpers.standalone.DeploymentAction;
 import org.jboss.as.controller.client.helpers.standalone.DeploymentPlan;
 import org.jboss.as.protocol.StreamUtils;
+import org.wildfly.common.Assert;
 
 /**
  * Describes a set of actions to take to change the deployment content available
@@ -47,8 +47,7 @@ public class DeploymentPlanImpl implements DeploymentPlan {
     private final long gracefulShutdownPeriod;
 
     DeploymentPlanImpl(List<DeploymentActionImpl> actions, boolean globalRollback, boolean shutdown, long gracefulTimeout) {
-        if (actions == null)
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("actions");
+        Assert.checkNotNullParam("actions", actions);
         this.deploymentActions.addAll(actions);
         this.globalRollback = globalRollback;
         this.shutdown = shutdown;

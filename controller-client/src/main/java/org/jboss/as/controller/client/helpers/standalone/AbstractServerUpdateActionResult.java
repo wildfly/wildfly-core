@@ -24,7 +24,7 @@ package org.jboss.as.controller.client.helpers.standalone;
 
 import java.util.UUID;
 
-import org.jboss.as.controller.client.logging.ControllerClientLogger;
+import org.wildfly.common.Assert;
 
 /**
  * Abstract superclass of implementations of {@link ServerUpdateActionResult}.
@@ -54,10 +54,8 @@ public abstract class AbstractServerUpdateActionResult<T extends ServerUpdateAct
     }
 
     public AbstractServerUpdateActionResult(UUID id, Result result, Throwable deploymentException) {
-        if (id == null)
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("id");
-        if (result == null)
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("result");
+        Assert.checkNotNullParam("id", id);
+        Assert.checkNotNullParam("result", result);
         this.id = id;
         this.result = result;
         this.deploymentException = deploymentException;
