@@ -75,17 +75,10 @@ public interface RemotingLogger extends BasicLogger {
     @Message(id = 6, value = "Endpoint is null")
     IllegalStateException endpointEmpty();
 
-    @Message(id = 7, value = "Connection name cannot be null or empty")
-    IllegalStateException connectionNameEmpty();
-
-    @Message(id = 8, value = "Connection URI cannot be null for connection named: %s")
-    IllegalStateException connectionUriEmpty(String connectionName);
-
-    @Message(id = 9, value = "Outbound socket binding reference cannot be null or empty for connection named: %s")
-    IllegalStateException outboundSocketBindingEmpty(String connectionName);
-
-    @Message(id = 10, value = "Destination URI cannot be null while creating an outbound remote connection service")
-    IllegalStateException destinationUriEmpty();
+    // id = 7; redundant parameter null check message
+    // id = 8; redundant parameter null check message
+    // id = 9; redundant parameter null check message
+    // id = 10; redundant parameter null check message
 
     @Message(id = 11, value = "A security realm has been specified but no supported mechanism identified")
     IllegalStateException noSupportingMechanismsForRealm();

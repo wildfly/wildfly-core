@@ -47,10 +47,10 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
-import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.wildfly.common.Assert;
 
 /**
  * Parser for remoting subsystem 1.1 version
@@ -361,12 +361,10 @@ class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XML
     }
 
     static ModelNode getConnectionAddOperation(final String connectionName, final String outboundSocketBindingRef, final ModelNode userName, final String securityRealm, PathAddress address) {
-        if (connectionName == null || connectionName.trim().isEmpty()) {
-            throw RemotingLogger.ROOT_LOGGER.connectionNameEmpty();
-        }
-        if (outboundSocketBindingRef == null || outboundSocketBindingRef.trim().isEmpty()) {
-            throw RemotingLogger.ROOT_LOGGER.outboundSocketBindingEmpty(connectionName);
-        }
+        Assert.checkNotNullParam("connectionName", connectionName);
+        Assert.checkNotEmptyParam("connectionName", connectionName);
+        Assert.checkNotNullParam("outboundSocketBindingRef", outboundSocketBindingRef);
+        Assert.checkNotEmptyParam("outboundSocketBindingRef", outboundSocketBindingRef);
         final ModelNode addOperation = new ModelNode();
         addOperation.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
         // /subsystem=remoting/local-outbound-connection=<connection-name>
