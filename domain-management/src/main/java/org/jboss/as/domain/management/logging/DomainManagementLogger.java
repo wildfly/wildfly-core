@@ -1452,6 +1452,13 @@ public interface DomainManagementLogger extends BasicLogger {
     String argConfirmWarning();
 
     /**
+     * Instructions for the {@link org.jboss.as.domain.management.security.adduser.AddUser.CommandLineArgument#DISPLAY_SECRET} command line argument.
+     * @return the message.
+     */
+    @Message(id = Message.NONE, value = "If set the secret value will be printed.")
+    String argDisplaySecret();
+
+    /**
      * Instructions for the {@link org.jboss.as.domain.management.security.adduser.AddUser.CommandLineArgument#HELP} command line argument.
      * @return the message.
      */
