@@ -42,6 +42,7 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.process.DefaultJvmUtils;
 import org.jboss.as.version.ProductConfig;
+import org.wildfly.common.Assert;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -268,25 +269,12 @@ public class HostControllerEnvironment extends ProcessEnvironment {
                                      String initialHostConfig, RunningMode initialRunningMode, boolean backupDomainFiles, boolean useCachedDc,
                                      ProductConfig productConfig, boolean securityManagerEnabled, long startTime, ProcessType processType) {
 
-        if (hostSystemProperties == null) {
-            throw HostControllerLogger.ROOT_LOGGER.nullVar("hostSystemProperties");
-        }
-        this.hostSystemProperties = Collections.unmodifiableMap(hostSystemProperties);
-        if (modulePath == null) {
-            throw HostControllerLogger.ROOT_LOGGER.nullVar("modulePath");
-        }
-        if (processControllerAddress == null) {
-            throw HostControllerLogger.ROOT_LOGGER.nullVar("processControllerAddress");
-        }
-        if (processControllerPort == null) {
-            throw HostControllerLogger.ROOT_LOGGER.nullVar("processControllerPort");
-        }
-        if (hostControllerAddress == null) {
-            throw HostControllerLogger.ROOT_LOGGER.nullVar("hostControllerAddress");
-        }
-        if (hostControllerPort == null) {
-            throw HostControllerLogger.ROOT_LOGGER.nullVar("hostControllerPort");
-        }
+        this.hostSystemProperties = Collections.unmodifiableMap(Assert.checkNotNullParam("hostSystemProperties", hostSystemProperties));
+        Assert.checkNotNullParam("modulePath", modulePath);
+        Assert.checkNotNullParam("processControllerAddress", processControllerAddress);
+        Assert.checkNotNullParam("processControllerPort", processControllerPort);
+        Assert.checkNotNullParam("hostControllerAddress", hostControllerAddress);
+        Assert.checkNotNullParam("hostControllerPort", hostControllerPort);
         this.processControllerPort = processControllerPort;
         this.processControllerAddress = processControllerAddress;
         this.hostControllerAddress = hostControllerAddress;
