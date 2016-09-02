@@ -25,6 +25,7 @@ package org.jboss.as.protocol;
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Connection;
+import org.wildfly.common.Assert;
 
 import java.io.IOException;
 
@@ -41,9 +42,7 @@ public final class ProtocolConnectionManager {
     private volatile Connection connection;
 
     private ProtocolConnectionManager(final ConnectTask initial) {
-        if(initial == null) {
-            throw ProtocolLogger.ROOT_LOGGER.nullVar("connectTask");
-        }
+        Assert.checkNotNullParam("initial", initial);
         this.connectTask = initial;
     }
 

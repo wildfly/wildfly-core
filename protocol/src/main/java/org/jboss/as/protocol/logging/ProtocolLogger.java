@@ -250,15 +250,7 @@ public interface ProtocolLogger extends BasicLogger {
     //    @Message(id = 38, value = "Not connected")
     //    IllegalStateException notConnected();
 
-    /**
-     * Creates an exception indicating the {@code varName} is {@code null}.
-     *
-     * @param varName the variable name.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 39, value = "%s is null")
-    IllegalArgumentException nullVar(String varName);
+    // id = 39; redundant parameter null check message
 
     //    @Message(id = 40, value = "%s and %s are null")
     //    IllegalArgumentException nullParameters(String parameterName1, String parameterName2);
