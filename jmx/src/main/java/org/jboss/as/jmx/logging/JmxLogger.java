@@ -354,15 +354,7 @@ public interface JmxLogger extends BasicLogger {
     @Message(id = 20, value = "No operation called '%s' at %s")
     MBeanException noOperationCalled(@Cause Exception cause, String operation, PathAddress address);
 
-    /**
-     * Creates an exception indicating the variable, represented by the {@code name} parameter, is {@code null}.
-     *
-     * @param name the variable name.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 21, value = "%s is null")
-    IllegalArgumentException nullVar(String name);
+    // id = 21; redundant parameter null check message
 
     /**
      * Creates an exception indicating there is was no registration found for the path address.

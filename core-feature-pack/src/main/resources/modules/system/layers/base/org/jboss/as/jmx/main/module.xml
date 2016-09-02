@@ -43,6 +43,7 @@
         <module name="org.jboss.as.domain-management"/>
         <module name="org.jboss.as.network"/>
         <module name="org.jboss.as.remoting" />
+        <module name="org.wildfly.common"/>
         <module name="org.wildfly.security.elytron"/>
         <module name="org.jboss.as.server" />
         <module name="org.jboss.remoting" />

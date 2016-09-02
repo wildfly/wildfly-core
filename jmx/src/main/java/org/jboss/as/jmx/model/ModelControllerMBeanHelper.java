@@ -73,6 +73,7 @@ import org.jboss.as.jmx.model.ChildAddOperationFinder.ChildAddOperationEntry;
 import org.jboss.as.jmx.model.ResourceAccessControlUtil.ResourceAccessControl;
 import org.jboss.as.jmx.model.RootResourceIterator.ResourceAction;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.Assert;
 
 /**
  *
@@ -396,9 +397,7 @@ public class ModelControllerMBeanHelper {
     }
 
     Object invoke(ObjectName name, String operationName, Object[] params, String[] signature) throws InstanceNotFoundException, MBeanException, ReflectionException {
-        if (operationName == null) {
-            throw JmxLogger.ROOT_LOGGER.nullVar("operationName");
-        }
+        Assert.checkNotNullParam("operationName", operationName);
         if (params == null) {
             params = new Object[0];
         }
