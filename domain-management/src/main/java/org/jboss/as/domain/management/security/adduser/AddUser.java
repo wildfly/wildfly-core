@@ -414,7 +414,7 @@ public class AddUser {
                 return DomainManagementLogger.ROOT_LOGGER.argHelp();
             }
         },
-        DISPLAY_SECRET("-sv", "--secret") {
+        DISPLAY_SECRET("-ds", "--display-secret") {
             @Override
             public String instructions() {
                 return DomainManagementLogger.ROOT_LOGGER.argDisplaySecret();
