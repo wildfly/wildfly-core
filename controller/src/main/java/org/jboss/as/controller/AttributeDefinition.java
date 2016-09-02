@@ -936,12 +936,8 @@ public abstract class AttributeDefinition {
             result.get(ModelDescriptionConstants.ATTRIBUTE_GROUP).set(attributeGroup);
         }
         result.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(isAllowExpression());
-        if (forOperation) {
-            result.get(ModelDescriptionConstants.REQUIRED).set(isRequired());
-        }
-        // TODO use isNillable instead of isAllowNull
-        //result.get(ModelDescriptionConstants.NILLABLE).set(isNillable());
-        result.get(ModelDescriptionConstants.NILLABLE).set(isAllowNull());
+        result.get(ModelDescriptionConstants.REQUIRED).set(isRequired());
+        result.get(ModelDescriptionConstants.NILLABLE).set(isNillable());
         if (!forOperation && nilSignificant != null) {
             if (nilSignificant) {
                 result.get(ModelDescriptionConstants.NIL_SIGNIFICANT).set(true);
