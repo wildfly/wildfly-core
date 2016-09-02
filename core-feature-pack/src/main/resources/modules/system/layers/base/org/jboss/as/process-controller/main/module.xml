@@ -41,6 +41,7 @@
     <dependencies>
         <module name="javax.api"/>
         <module name="org.wildfly.security.elytron" services="import"/>
+        <module name="org.wildfly.common"/>
         <module name="org.jboss.as.version" export="true"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.logmanager" services="import"/>

@@ -45,6 +45,7 @@ import org.jboss.as.process.logging.ProcessLogger;
 import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.process.stdin.Base64OutputStream;
 import org.jboss.logging.Logger;
+import org.wildfly.common.Assert;
 
 /**
  * A managed process.
@@ -98,27 +99,13 @@ final class ManagedProcess {
     }
 
     ManagedProcess(final String processName, final List<String> command, final Map<String, String> env, final String workingDirectory, final Object lock, final ProcessController controller, final String authKey, final boolean privileged, final boolean respawn) {
-        if (processName == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
-        }
-        if (command == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("command");
-        }
-        if (env == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("env");
-        }
-        if (workingDirectory == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("workingDirectory");
-        }
-        if (lock == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("lock");
-        }
-        if (controller == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("controller");
-        }
-        if (authKey == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("authKey");
-        }
+        Assert.checkNotNullParam("processName", processName);
+        Assert.checkNotNullParam("command", command);
+        Assert.checkNotNullParam("env", env);
+        Assert.checkNotNullParam("workingDirectory", workingDirectory);
+        Assert.checkNotNullParam("lock", lock);
+        Assert.checkNotNullParam("controller", controller);
+        Assert.checkNotNullParam("authKey", authKey);
         if (authKey.length() != ProcessController.AUTH_BYTES_ENCODED_LENGTH) {
             throw ProcessLogger.ROOT_LOGGER.invalidLength("authKey");
         }
