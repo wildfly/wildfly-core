@@ -1,0 +1,20 @@
+RULE Create countDown for ContentRepositoryImpl
+CLASS org.jboss.as.repository.ContentRepositoryImpl
+METHOD addContent
+AT ENTRY
+IF TRUE
+DO
+  System.out.println("Creating countDown"  + $0);
+  createCountDown($0, 1);
+ENDRULE
+
+RULE Test Lock deployment removal
+CLASS org.jboss.as.repository.ContentRepositoryImpl
+METHOD lock
+AT EXIT
+IF !countDown($0)
+DO
+  traceStack("Invoking lock of ContentRepositoryImpl\n", 20);
+  System.out.println("I'm byteman and waiting for 3s " + $0);
+  Thread.sleep(3 * 1000);
+ENDRULE

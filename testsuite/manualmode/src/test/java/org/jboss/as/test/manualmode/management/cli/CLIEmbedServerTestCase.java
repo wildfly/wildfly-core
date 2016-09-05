@@ -116,7 +116,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
             //
         }
 
-        serviceActivatorDeployment = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(SERVICE_ACTIVATOR_DEPLOYMENT_NAME, null);
+        serviceActivatorDeployment = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(SERVICE_ACTIVATOR_DEPLOYMENT_NAME, Collections.emptyMap());
 
         File tmpDir = new File(System.getProperty("java.io.tmpdir"));
         serviceActivatorDeploymentFile = new File(tmpDir, SERVICE_ACTIVATOR_DEPLOYMENT_NAME);
@@ -289,6 +289,14 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         assertState("running", 0);
         cli.sendLine("shutdown", true);
         assertState("running", 0);
+    }
+
+    @Test
+    public void testTimeout() throws Exception {
+        cli.sendLine("command-timeout set 60");
+        String line = "embed-server --server-config=standalone-cli.xml " + JBOSS_HOME;
+        cli.sendLine(line);
+        cli.sendLine("stop-embedded-server");
     }
 
     /** Tests the standard cli 'deploy' command */

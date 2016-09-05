@@ -135,10 +135,8 @@ public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
 
         final ModelNode result = executeOperation(addScannerForNonExistentPath, false);
         // check that it failed
-        assertEquals("Adding a deployment scanner for a non-existent path was expected to fail but it passed", "failed", result.get("outcome").asString());
+        assertEquals("Adding a deployment scanner for a non-existent path was expected to succeed but it failed", "success", result.get("outcome").asString());
 
-        // check that rollback was success and we can create proper deployment scanner with the same name that failed
-        addDeploymentScanner();
         try {
             assertTestDeploymentScannerResourceExists();
         } finally {

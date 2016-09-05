@@ -179,7 +179,9 @@ public abstract class AbstractJvmModelTest extends AbstractCoreModelTest {
     @Test
     public void testWriteEnvironmentVariables() throws Exception {
         KernelServices kernelServices = doEmptyJvmAdd();
-        ModelNode value = new ModelNode().add("ENV1", "one").add("ENV2", "two");
+        ModelNode value = new ModelNode();
+        value.get("ENV1").set("one");
+        value.get("ENV2").set("two");
         Assert.assertEquals(value, writeTest(kernelServices, "environment-variables", value));
     }
 
@@ -196,7 +198,9 @@ public abstract class AbstractJvmModelTest extends AbstractCoreModelTest {
         ModelNode permgenSizeValue = new ModelNode("permGenSize");
         ModelNode maxPermSizeValue = new ModelNode("maxPermSize");
         ModelNode jvmOptionsValue = new ModelNode().add("-Xmx100m").add("-Xms30m");
-        ModelNode environmentVariablesValue = new ModelNode().add("ENV1", "one").add("ENV2", "two");
+        ModelNode environmentVariablesValue = new ModelNode();
+        environmentVariablesValue.get("ENV1").set("one");
+        environmentVariablesValue.get("ENV2").set("two");
 
         ModelNode debugEnabledValue = new ModelNode(true);
         ModelNode debugOptionsValue = new ModelNode("debugOptions");

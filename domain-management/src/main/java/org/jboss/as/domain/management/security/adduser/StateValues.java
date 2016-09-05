@@ -52,6 +52,7 @@ public class StateValues {
     private Set<String> enabledKnownUsers = new HashSet<String>();
     private Set<String> disabledKnownUsers = new HashSet<String>();
     private Map<String, String> knownGroups;
+    private boolean displaySecret = false;
 
     public StateValues() {
         options = new RuntimeOptions();
@@ -188,5 +189,13 @@ public class StateValues {
 
     public RuntimeOptions getOptions() {
         return options;
+    }
+
+    public boolean isDisplaySecret() {
+        return this.displaySecret || options.isDisplaySecret();
+    }
+
+    public void setDisplaySecret(boolean displaySecret) {
+        this.displaySecret = displaySecret;
     }
 }

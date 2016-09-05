@@ -452,6 +452,7 @@ public class ExtensionRegistry {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private class ExtensionContextImpl implements ExtensionContext, ExtensionContextSupplement {
 
         private final ExtensionInfo extension;
@@ -515,13 +516,16 @@ public class ExtensionRegistry {
             checkNewSubystem(extension.extensionModuleName, name);
             SubsystemInformationImpl info = extension.getSubsystemInfo(name);
             info.setVersion(version);
-            info.setDeprecated(deprecated);
             subsystemsInfo.put(name, info);
             if (deprecated){
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
-            return new SubsystemRegistrationImpl(name, version,
-                    profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType);
+            SubsystemRegistrationImpl result =  new SubsystemRegistrationImpl(name, version,
+                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType);
+            if (registerTransformers){
+                transformerRegistry.loadAndRegisterTransformers(name, version, extension.extensionModuleName);
+            }
+            return result;
         }
 
         @Override
@@ -609,8 +613,6 @@ public class ExtensionRegistry {
     private class SubsystemInformationImpl implements SubsystemInformation {
 
         private ModelVersion version;
-        private boolean deprecated = false;
-        private volatile boolean hostCapable;
         private final List<String> parsingNamespaces = new ArrayList<String>();
 
         @Override
@@ -637,25 +639,13 @@ public class ExtensionRegistry {
             return version != null ? version.getMicro() : null;
         }
 
+        @Override
+        public ModelVersion getManagementInterfaceVersion() {
+            return version;
+        }
+
         private void setVersion(ModelVersion version) {
             this.version = version;
-        }
-
-        public boolean isDeprecated() {
-            return deprecated;
-        }
-
-        private void setDeprecated(boolean deprecated) {
-            this.deprecated = deprecated;
-        }
-
-
-        private void setHostCapable() {
-            hostCapable = true;
-        }
-
-        public boolean isHostCapable() {
-            return hostCapable;
         }
     }
 

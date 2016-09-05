@@ -54,6 +54,7 @@ import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.dmr.Property;
 
 /**
  * Defining characteristics of an attribute in a {@link org.jboss.as.controller.registry.Resource} or a
@@ -502,6 +503,35 @@ public abstract class AttributeDefinition {
             case STRING:
                 return new ModelNode(node.asString());
             case OBJECT:
+                // Check for LIST of PROPERTY. If that is found convert.
+                // But only convert if that specifically is found in order
+                // to avoid odd unintended conversions (e.g. LIST of STRING, which DMR can convert to OBJECT)
+                if (nodeType == ModelType.LIST) {
+                    if (node.asInt() == 0) {
+                        return new ModelNode().setEmptyObject();
+                    }
+                    ModelNode first = node.get(0);
+                    if (first.getType() != ModelType.PROPERTY) {
+                        return node;
+                    }
+                    // Now we know at least the first element is property, so
+                    // we assume the rest are as well.
+                    List<Property> propertyList;
+                    try {
+                        propertyList = node.asPropertyList();
+                    } catch (IllegalArgumentException iae) {
+                        // ignore. The validator allowed this node or we wouldn't be here,
+                        // so just fall through and return the unconverted node
+                        // Note this isn't expected to be a real world case
+                        return node;
+                    }
+                    ModelNode result = new ModelNode().setEmptyObject();
+                    for (Property prop : propertyList) {
+                        result.get(prop.getName()).set(prop.getValue());
+                    }
+                    return result;
+                }
+                return node;
             default:
                 return node;
         }

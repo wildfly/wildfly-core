@@ -25,11 +25,16 @@ package org.jboss.as.host.controller.operations;
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
+import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
 
 import java.util.concurrent.Executor;
 
 import javax.net.ssl.SSLContext;
 
+import io.undertow.server.ListenerRegistry;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -66,7 +71,6 @@ import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.xnio.XnioWorker;
 
-import io.undertow.server.ListenerRegistry;
 
 /**
  * A handler that activates the HTTP management API.
@@ -91,11 +95,12 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
+        return super.requiresRuntime(context)
+                && (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
     }
 
     @Override
-    protected void installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
+    protected List<ServiceName> installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
         populateHostControllerInfo(hostControllerInfo, context, model);
 
         RunningMode runningMode = context.getRunningMode();
@@ -191,11 +196,9 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
             RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
                     ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), securityRealm, commonPolicy.getSaslServerAuthentication());
+            return Arrays.asList(UndertowHttpManagementService.SERVICE_NAME, HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         }
-    }
-
-    private ConsoleMode consoleMode(boolean consoleEnabled, boolean adminOnly) {
-        return consoleEnabled ? adminOnly ?  ConsoleMode.ADMIN_ONLY : ConsoleMode.CONSOLE : ConsoleMode.NO_CONSOLE;
+        return Collections.singletonList(UndertowHttpManagementService.SERVICE_NAME);
     }
 
     @Override

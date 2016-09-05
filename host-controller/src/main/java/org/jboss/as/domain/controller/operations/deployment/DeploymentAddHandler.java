@@ -20,9 +20,11 @@ package org.jboss.as.domain.controller.operations.deployment;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ALL;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ARCHIVE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.DOMAIN_ADD_ATTRIBUTES;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.EMPTY;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
 
 import java.io.IOException;
@@ -39,6 +41,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
+import org.jboss.as.server.deployment.DeploymentHandlerUtil;
 import org.jboss.as.server.deployment.DeploymentHandlerUtils;
 import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.dmr.ModelNode;
@@ -87,9 +90,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         }
 
         // TODO: JBAS-9020: for the moment overlays are not supported, so there is a single content item
-        ModelNode content = newModel.require(CONTENT_ALL.getName());
-        ModelNode contentItemNode = content.require(0);
-
+        ModelNode contentItemNode = newModel.require(CONTENT_RESOURCE.getName()).require(0);
         final ModelNode opAddr = correctedOperation.get(OP_ADDR);
         final PathAddress address = PathAddress.pathAddress(opAddr);
         final String name = address.getLastElement().getValue();
@@ -100,6 +101,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         byte[] hash = null;
 
         if (contentItemNode.hasDefined(CONTENT_HASH.getName())) {
+            DeploymentHandlerUtil.isArchive(contentItemNode);
             hash = contentItemNode.require(CONTENT_HASH.getName()).asBytes();
             // If we are the master, validate that we actually have this content. If we're not the master
             // we do not need the content until it's added to a server group we care about, so we defer
@@ -120,6 +122,14 @@ public class DeploymentAddHandler implements OperationStepHandler {
                 // Ensure the local repo has the files
                 fileRepository.getDeploymentFiles(ModelContentReference.fromModelAddress(address, hash));
             }
+        } else if (contentItemNode.hasDefined(EMPTY.getName())) {
+            // Store and transform operation
+            hash = DeploymentUploadUtil.storeEmptyContentAndTransformOperation(context, correctedOperation, contentRepository);
+            contentItemNode.get(CONTENT_HASH.getName()).set(hash);
+            contentItemNode.get(CONTENT_ARCHIVE.getName()).set(false);
+            ModelNode content = new ModelNode();
+            content.add(contentItemNode);
+            newModel.get(CONTENT_RESOURCE.getName()).set(content);
         } else if (DeploymentHandlerUtils.hasValidContentAdditionParameterDefined(contentItemNode)) {
             if (fileRepository != null || contentRepository == null) {
                 // This is a slave DC. We can't handle this operation; it should have been fixed up on the master DC
@@ -135,9 +145,9 @@ public class DeploymentAddHandler implements OperationStepHandler {
             contentItemNode.get(CONTENT_HASH.getName()).set(hash);
 
             // We have altered contentItemNode from what's in the newModel, so store it back to model
-            content = new ModelNode();
+            ModelNode content = new ModelNode();
             content.add(contentItemNode);
-            newModel.get(CONTENT_ALL.getName()).set(content);
+            newModel.get(CONTENT_RESOURCE.getName()).set(content);
 
         } // else would have failed validation
 

@@ -30,4 +30,7 @@ import org.jboss.dmr.ModelNode;
 public interface OperationCommand extends CommandHandler {
 
     ModelNode buildRequest(CommandContext ctx) throws CommandFormatException;
+    default ModelNode buildRequest(CommandContext ctx, Attachments attachments) throws CommandFormatException {
+        return buildRequest(ctx);
+    }
 }

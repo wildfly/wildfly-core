@@ -47,6 +47,8 @@ class RuntimeOptions {
 
     private boolean confirmWarning = false;
 
+    private boolean displaySecret = false;
+
     /**
      * Enable/Disable mode is active by using --enable or --disable argument
      */
@@ -135,5 +137,13 @@ class RuntimeOptions {
 
     void setConfirmWarning(boolean confirmWarning) {
         this.confirmWarning = confirmWarning;
+    }
+
+    boolean isDisplaySecret() {
+        return displaySecret;
+    }
+
+    void setDisplaySecret(boolean displaySecret) {
+        this.displaySecret = displaySecret;
     }
 }

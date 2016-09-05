@@ -36,6 +36,7 @@ import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
 import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.impl.AttributeNamePathCompleter;
+import org.jboss.as.cli.impl.DeploymentItemCompleter;
 import org.jboss.as.cli.impl.ValueTypeCompleter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
 import org.jboss.as.cli.operation.OperationFormatException;
@@ -337,11 +338,11 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
             if (typeNode.isDefined() && ModelType.BOOLEAN.equals(typeNode.asType())) {
                 return SimpleTabCompleter.BOOLEAN;
             }
-            if (attrDescr.has(Util.FILESYSTEM_PATH) && attrDescr.get(Util.FILESYSTEM_PATH).asBoolean()) {
-                return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
-            }
             if (attrDescr.has(Util.VALUE_TYPE)) {
                 final ModelNode valueTypeNode = attrDescr.get(Util.VALUE_TYPE);
+                if (typeNode.isDefined() && ModelType.LIST.equals(typeNode.asType())) {
+                    return new ValueTypeCompleter(attrDescr, address);
+                }
                 try {
                     // the logic is: if value-type is set to a specific type
                     // (i.e. doesn't describe a custom structure)
@@ -353,8 +354,14 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
                     }
                 } catch (IllegalArgumentException e) {
                     // TODO this means value-type describes a custom structure
-                    return new ValueTypeCompleter(attrDescr);
+                    return new ValueTypeCompleter(attrDescr, address);
                 }
+            }
+            if (attrDescr.has(Util.FILESYSTEM_PATH) && attrDescr.get(Util.FILESYSTEM_PATH).asBoolean()) {
+                return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+            }
+            if (attrDescr.has(Util.RELATIVE_TO) && attrDescr.get(Util.RELATIVE_TO).asBoolean()) {
+                return new DeploymentItemCompleter(address);
             }
             if (attrDescr.has(Util.ALLOWED)) {
                 return getAllowedCompleter(prop);

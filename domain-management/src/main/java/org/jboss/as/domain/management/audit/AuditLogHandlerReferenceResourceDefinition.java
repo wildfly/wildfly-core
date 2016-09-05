@@ -47,10 +47,10 @@ public class AuditLogHandlerReferenceResourceDefinition extends SimpleResourceDe
 
     static final PathElement PATH_ELEMENT = PathElement.pathElement(HANDLER);
 
-    public AuditLogHandlerReferenceResourceDefinition(ManagedAuditLogger auditLogger, boolean executeRuntime) {
+    public AuditLogHandlerReferenceResourceDefinition(ManagedAuditLogger auditLogger) {
         super(PATH_ELEMENT,
                 DomainManagementResolver.getDeprecatedResolver(AccessAuditResourceDefinition.DEPRECATED_MESSAGE_CATEGORY, "core.management.audit-log.handler-reference"),
-                new AuditLogHandlerReferenceAddHandler(auditLogger, executeRuntime), new AuditLogHandlerReferenceRemoveHandler(auditLogger, executeRuntime));
+                new AuditLogHandlerReferenceAddHandler(auditLogger), new AuditLogHandlerReferenceRemoveHandler(auditLogger));
         setDeprecated(ModelVersion.create(1, 7));
     }
 
@@ -61,15 +61,14 @@ public class AuditLogHandlerReferenceResourceDefinition extends SimpleResourceDe
 
     private static class AuditLogHandlerReferenceAddHandler extends AbstractAddStepHandler {
         private final ManagedAuditLogger auditLogger;
-        private final boolean executeRuntime;
 
-        AuditLogHandlerReferenceAddHandler(ManagedAuditLogger auditLogger, boolean executeRuntime) {
+        AuditLogHandlerReferenceAddHandler(ManagedAuditLogger auditLogger) {
             this.auditLogger = auditLogger;
-            this.executeRuntime = executeRuntime;
         }
 
         @Override
         protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
+            // TODO use capability based reference validation
             final PathAddress addr = PathAddress.pathAddress(operation.require(OP_ADDR));
             String name = addr.getLastElement().getValue();
             if (!HandlerUtil.lookForHandler(context, addr, name)) {
@@ -80,7 +79,7 @@ public class AuditLogHandlerReferenceResourceDefinition extends SimpleResourceDe
 
         @Override
         protected boolean requiresRuntime(OperationContext context){
-            return executeRuntime;
+            return auditLogger != null;
         }
 
         @Override
@@ -98,17 +97,15 @@ public class AuditLogHandlerReferenceResourceDefinition extends SimpleResourceDe
 
     private static class AuditLogHandlerReferenceRemoveHandler extends AbstractRemoveStepHandler {
         private final ManagedAuditLogger auditLogger;
-        private final boolean executeRuntime;
 
-        AuditLogHandlerReferenceRemoveHandler(ManagedAuditLogger auditLogger, boolean executeRuntime){
+        AuditLogHandlerReferenceRemoveHandler(ManagedAuditLogger auditLogger){
             this.auditLogger = auditLogger;
-            this.executeRuntime = executeRuntime;
 
         }
 
         @Override
         protected boolean requiresRuntime(OperationContext context){
-            return executeRuntime;
+            return auditLogger != null;
         }
 
         @Override

@@ -71,8 +71,8 @@ public class CustomFormattersTestCase extends AbstractLoggingOperationsTestCase 
         executeOperation(op);
 
         // Write some properties
-        final ModelNode properties = new ModelNode().setEmptyList();
-        properties.add("pattern", "%s%E%n");
+        final ModelNode properties = new ModelNode().setEmptyObject();
+        properties.get("pattern").set("%s%E%n");
         testWrite(CUSTOM_FORMATTER_ADDRESS, "properties", properties);
 
         // Undefine the properties

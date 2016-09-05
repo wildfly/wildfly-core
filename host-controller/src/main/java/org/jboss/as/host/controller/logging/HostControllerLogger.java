@@ -1350,4 +1350,8 @@ public interface HostControllerLogger extends BasicLogger {
     @LogMessage(level = Level.ERROR)
     @Message( id = 195, value = "Failed getting the response from the resume listener for server: %s")
     void resumeListenerFailed(@Cause ExecutionException cause, String serverName);
+
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 196, value = "Cannot move the file %s to %s, unable to persist domain configuration changes: %s ")
+    void cannotRenameCachedDomainXmlOnBoot(String tmpFilename, String destFilename, String reason);
 }

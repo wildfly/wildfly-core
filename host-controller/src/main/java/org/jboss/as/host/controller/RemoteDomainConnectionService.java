@@ -775,7 +775,14 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                     throw HostControllerLogger.ROOT_LOGGER.failedToGetFileFromRemoteRepository(e);
                 }
             } else {
-                return localFileRepository.getFile(relativePath);
+                final File file = localFileRepository.getFile(relativePath);
+                // using --cached-dc and the DC is unavailable, make sure the content exists locally.
+                if (localHostInfo.isUsingCachedDc()) {
+                    if (! file.exists()) {
+                        throw HostControllerLogger.ROOT_LOGGER.failedToGetFileFromRemoteRepository(new RuntimeException("Content hash " + relativePath + " not found."));
+                    }
+                }
+                return file;
             }
         }
     };

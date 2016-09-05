@@ -22,7 +22,11 @@
 
 package org.jboss.as.server.operations;
 
+
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
+
+import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
+
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
@@ -31,6 +35,10 @@ import java.util.concurrent.Executor;
 
 import javax.net.ssl.SSLContext;
 
+import io.undertow.server.ListenerRegistry;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -69,7 +77,6 @@ import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.XnioWorker;
 
-import io.undertow.server.ListenerRegistry;
 
 /**
  * A handler that activates the HTTP management API on a Server.
@@ -89,16 +96,12 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        //TODO Gigantic HACK to disable the runtime part of this for the core model testing.
-        //The core model testing currently uses RunningMode.ADMIN_ONLY, but in the real world
-        //the http interface needs to be enabled even when that happens.
-        //I don't want to wire up all the services unless I can avoid it, so for now the tests set this system property
-        return WildFlySecurityManager.getPropertyPrivileged("jboss.as.test.disable.runtime", null) == null
+        return super.requiresRuntime(context)
                 && (context.getProcessType() != ProcessType.EMBEDDED_SERVER || context.getRunningMode() != RunningMode.ADMIN_ONLY);
     }
 
     @Override
-    protected void installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
+    protected List<ServiceName> installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
         final ServiceTarget serviceTarget = context.getServiceTarget();
 
         ServiceName socketBindingServiceName = null;
@@ -200,7 +203,10 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
             RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
                     ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), securityRealm, commonPolicy.getSaslServerAuthentication());
+
+            return Arrays.asList(UndertowHttpManagementService.SERVICE_NAME, HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         }
+        return Collections.singletonList(UndertowHttpManagementService.SERVICE_NAME);
     }
 
     private ConsoleMode consoleMode(boolean consoleEnabled, boolean adminOnly) {

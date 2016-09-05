@@ -21,16 +21,24 @@
  */
 package org.jboss.as.server.mgmt.domain;
 
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jboss.as.repository.ContentFilter;
 
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.repository.ContentRepositoryElement;
 import org.jboss.as.repository.DeploymentFileRepository;
+import org.jboss.as.repository.ExplodedContent;
+import org.jboss.as.repository.ExplodedContentException;
 import org.jboss.as.repository.LocalDeploymentFileRepository;
+import org.jboss.as.repository.TypedInputStream;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
@@ -53,17 +61,17 @@ public class RemoteFileRepositoryService implements CompositeContentRepository, 
     private final ContentRepository contentRepository;
     private volatile RemoteFileRepositoryExecutor remoteFileRepositoryExecutor;
 
-    public static void addService(final ServiceTarget target, final File localDeploymentContentsFolder) {
-        final RemoteFileRepositoryService service = new RemoteFileRepositoryService(localDeploymentContentsFolder);
+    public static void addService(final ServiceTarget target, final File localDeploymentContentsFolder, final File localTmpFolder) {
+        final RemoteFileRepositoryService service = new RemoteFileRepositoryService(localDeploymentContentsFolder, localTmpFolder);
         target.addService(ContentRepository.SERVICE_NAME, service)
                 .addDependency(HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class, service.clientInjectedValue)
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
     }
 
-    RemoteFileRepositoryService(final File localDeploymentFolder) {
+    RemoteFileRepositoryService(final File localDeploymentFolder, final File localTmpFolder) {
         this.localDeploymentFolder = localDeploymentFolder;
-        this.contentRepository = ContentRepository.Factory.create(localDeploymentFolder);
+        this.contentRepository = ContentRepository.Factory.create(localDeploymentFolder, localTmpFolder);
         this.localRepository = new LocalDeploymentFileRepository(localDeploymentFolder);
     }
 
@@ -160,4 +168,43 @@ public class RemoteFileRepositoryService implements CompositeContentRepository, 
         return contentRepository.cleanObsoleteContent();
     }
 
+    @Override
+    public byte[] removeContentFromExploded(byte[] deploymentHash, List<String> paths) throws ExplodedContentException {
+        return contentRepository.removeContentFromExploded(deploymentHash, paths);
+    }
+
+    @Override
+    public byte[] addContentToExploded(byte[] deploymentHash, List<ExplodedContent> addFiles, boolean overwrite) throws ExplodedContentException {
+        return contentRepository.addContentToExploded(deploymentHash, addFiles, overwrite);
+    }
+
+    @Override
+    public void copyExplodedContent(byte[] hash, Path target) throws ExplodedContentException {
+        contentRepository.copyExplodedContent(hash, target);
+    }
+
+    @Override
+    public void copyExplodedContentFiles(byte[] deploymentHash, List<String> relativePaths, Path target) throws ExplodedContentException {
+        contentRepository.copyExplodedContentFiles(deploymentHash, relativePaths, target);
+    }
+
+    @Override
+    public byte[] explodeContent(byte[] hash) throws ExplodedContentException {
+        return contentRepository.explodeContent(hash);
+    }
+
+    @Override
+    public TypedInputStream readContent(byte[] deploymentHash, String path) throws ExplodedContentException {
+        return contentRepository.readContent(deploymentHash, path);
+    }
+
+    @Override
+    public byte[] explodeSubContent(byte[] deploymentHash, String relativePath) throws ExplodedContentException {
+        return contentRepository.explodeSubContent(deploymentHash, relativePath);
+    }
+
+    @Override
+    public List<ContentRepositoryElement> listContent(byte[] deploymentHash, String path, ContentFilter filter) throws ExplodedContentException {
+        return contentRepository.listContent(deploymentHash, path, filter);
+    }
 }

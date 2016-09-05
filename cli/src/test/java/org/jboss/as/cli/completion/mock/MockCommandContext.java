@@ -22,6 +22,7 @@
 package org.jboss.as.cli.completion.mock;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,6 +53,7 @@ import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestParser;
 import org.jboss.as.cli.operation.impl.DefaultPrefixFormatter;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.Operation;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -452,5 +454,30 @@ public class MockCommandContext implements CommandContext {
     @Override
     public void releaseOutput() {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setCommandTimeout(int numSeconds) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public int getCommandTimeout() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void resetTimeout(TIMEOUT_RESET_VALUE value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public ModelNode execute(ModelNode mn, String msg) throws CommandLineException, IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public ModelNode execute(Operation op, String msg) throws CommandLineException, IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

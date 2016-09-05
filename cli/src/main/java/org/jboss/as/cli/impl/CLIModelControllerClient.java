@@ -62,7 +62,8 @@ import org.xnio.OptionMap;
  * @author Alexey Loubyansky
  *
  */
-public class CLIModelControllerClient extends AbstractModelControllerClient {
+public class CLIModelControllerClient extends AbstractModelControllerClient
+        implements AwaiterModelControllerClient {
 
     private static final OptionMap DEFAULT_OPTIONS = OptionMap.EMPTY;
 
@@ -176,6 +177,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
         return ch;
     }
 
+    @Override
     public boolean isConnected() {
         return strategy != null;
     }
@@ -208,15 +210,22 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
         }
     }
 
+    @Override
     public ModelNode execute(ModelNode operation, boolean awaitClose) throws IOException {
         final ModelNode response = super.execute(operation);
         if(!Util.isSuccess(response)) {
             return response;
         }
+        awaitClose(awaitClose);
 
+        return response;
+    }
+
+    @Override
+    public void awaitClose(boolean awaitClose) throws IOException {
         if (awaitClose) {
-            synchronized(lock) {
-                if(strategy != null) {
+            synchronized (lock) {
+                if (strategy != null) {
                     try {
                         lock.wait(5000);
                     } catch (InterruptedException e) {
@@ -226,10 +235,9 @@ public class CLIModelControllerClient extends AbstractModelControllerClient {
                 }
             }
         }
-
-        return response;
     }
 
+    @Override
     public void ensureConnected(long timeoutMillis) throws CommandLineException {
         boolean doTry = true;
         final long start = System.currentTimeMillis();

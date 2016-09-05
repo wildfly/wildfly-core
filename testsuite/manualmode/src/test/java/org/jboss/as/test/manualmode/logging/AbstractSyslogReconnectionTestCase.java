@@ -174,5 +174,17 @@ public abstract class AbstractSyslogReconnectionTestCase extends AbstractLogging
     protected void makeLog_syslogIsOffline() throws Exception {
         makeLog();
         makeLog();
+        if (isSolaris()) {
+            makeLog();
+            makeLog();
+        }
+    }
+
+    private static boolean isSolaris() {
+        String osName = System.getProperty("os.name");
+        if (osName == null) {
+            Assert.fail("Can't get the operating system name");
+        }
+        return (osName.indexOf("Solaris") > -1) || (osName.indexOf("solaris") > -1) || (osName.indexOf("SunOS") > -1);
     }
 }

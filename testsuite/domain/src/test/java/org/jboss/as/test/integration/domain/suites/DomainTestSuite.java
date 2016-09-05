@@ -42,6 +42,7 @@ import org.junit.runners.Suite;
         CompositeOperationTestCase.class,
         CoreResourceManagementTestCase.class,
         DeploymentRolloutFailureTestCase.class,
+        ExplodedDeploymentTestCase.class,
         DirectoryGroupingByTypeTestCase.class,
         ExtensionManagementTestCase.class,
         FullReplaceUndeployTestCase.class,

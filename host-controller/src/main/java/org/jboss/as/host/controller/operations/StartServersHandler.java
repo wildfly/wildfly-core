@@ -98,6 +98,7 @@ public class StartServersHandler implements OperationStepHandler {
                     final ModelNode servers = hostModel.get(SERVER_CONFIG).clone();
                     if (hostControllerEnvironment.isRestart() || runningModeControl.getRestartMode() == RestartMode.HC_ONLY){
                         restartedHcStartOrReconnectServers(servers, domainModel, context);
+                        runningModeControl.setRestartMode(RestartMode.SERVERS);
                     } else {
                         cleanStartServers(servers, domainModel, context);
                     }

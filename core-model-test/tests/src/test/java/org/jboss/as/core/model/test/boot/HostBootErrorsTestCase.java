@@ -80,7 +80,7 @@ public class HostBootErrorsTestCase extends AbstractBootErrorTestCase {
         Assert.assertThat(result, is(notNullValue()));
         Assert.assertThat(result.asString(), result.getType(), is(ModelType.LIST));
         List<ModelNode> errors = result.asList();
-        Assert.assertThat(errors.size(), is(4));
+        Assert.assertThat(errors.size(), is(3));
         ModelNode error = errors.get(0);
         Assert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(OP).asString(), is(ADD));
         Assert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(ADDRESS).asString(), is("[(\"host\" => \"master\"),(\"core-service\" => \"management\"),(\"access\" => \"audit\"),(\"syslog-handler\" => \"syslog-udp\")]"));
@@ -102,12 +102,5 @@ public class HostBootErrorsTestCase extends AbstractBootErrorTestCase {
         Assert.assertThat(error.asString(), error.get(FAILURE_DESCRIPTION).asString(), containsString("testhost"));
         Assert.assertThat(error.asString(), error.hasDefined(FAILED_SERVICES), is(false));
         Assert.assertThat(error.asString(), error.hasDefined(SERVICES_MISSING_DEPENDENCIES), is(false));
-        error = errors.get(3);
-        Assert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(OP).asString(), is(ADD));
-        Assert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(ADDRESS).asString(), is("[(\"host\" => \"master\"),(\"core-service\" => \"management\"),(\"management-interface\" => \"native-interface\")]"));
-        Assert.assertThat(error.asString(), error.hasDefined(FAILURE_DESCRIPTION), is(true));
-        Assert.assertThat(error.asString(), error.hasDefined(FAILED_SERVICES), is(false));
-        Assert.assertThat(error.asString(), error.hasDefined(SERVICES_MISSING_DEPENDENCIES), is(true));
-
     }
 }

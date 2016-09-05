@@ -25,16 +25,21 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_BOOTING;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -42,6 +47,9 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
+import org.jboss.as.repository.ContentReference;
+import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.logging.ServerLogger;
@@ -65,14 +73,21 @@ public class DeploymentHandlerUtil {
 
     static class ContentItem {
         // either hash or <path, relativeTo, isArchive>
-        private byte[] hash;
-        private String path;
-        private String relativeTo;
-        private boolean isArchive;
+        private final byte[] hash;
+        private final String path;
+        private final String relativeTo;
+        private final boolean isArchive;
 
         ContentItem(final byte[] hash) {
+            this(hash, true);
+        }
+
+        ContentItem(final byte[] hash, boolean isArchive) {
             assert hash != null : "hash is null";
             this.hash = hash;
+            this.isArchive = isArchive;
+            this.path = null;
+            this.relativeTo = null;
         }
 
         ContentItem(final String path, final String relativeTo, final boolean isArchive) {
@@ -80,12 +95,15 @@ public class DeploymentHandlerUtil {
             this.path = path;
             this.relativeTo = relativeTo;
             this.isArchive = isArchive;
+            this.hash = null;
         }
 
         byte[] getHash() {
             return hash;
         }
     }
+
+    private static final String MANAGED_CONTENT = "managed-exploded";
 
     private DeploymentHandlerUtil() {
     }
@@ -163,14 +181,22 @@ public class DeploymentHandlerUtil {
     public static void doDeploy(final OperationContext context, final String deploymentUnitName, final String managementName,
                                 final Resource deploymentResource, final ImmutableManagementResourceRegistration registration,
                                 final ManagementResourceRegistration mutableRegistration, final AbstractVaultReader vaultReader, final ContentItem... contents) {
+
         final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
 
         final ServiceTarget serviceTarget = context.getServiceTarget();
         final ServiceController<?> contentService;
         // TODO: overlay service
         final ServiceName contentsServiceName = deploymentUnitServiceName.append("contents");
-        if (contents[0].hash != null)
-            contentService = ContentServitor.addService(serviceTarget, contentsServiceName, contents[0].hash);
+        boolean isExplodedContent = false;
+        if (contents[0].hash != null) {
+            if (contents[0].isArchive) {
+                contentService = ContentServitor.addService(serviceTarget, contentsServiceName, contents[0].hash);
+            } else {
+                isExplodedContent = true;
+                contentService = ManagedExplodedContentServitor.addService(serviceTarget, contentsServiceName, managementName, contents[0].hash);
+            }
+        }
         else {
             final String path = contents[0].path;
             final String relativeTo = contents[0].relativeTo;
@@ -179,7 +205,8 @@ public class DeploymentHandlerUtil {
         DeploymentOverlayIndex overlays = DeploymentOverlayIndex.createDeploymentOverlayIndex(context);
 
         final RootDeploymentUnitService service = new RootDeploymentUnitService(deploymentUnitName, managementName, null,
-                registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), vaultReader, overlays);
+                registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), vaultReader, overlays,
+                isExplodedContent);
         final ServiceController<DeploymentUnit> deploymentUnitController = serviceTarget.addService(deploymentUnitServiceName, service)
                 .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, service.getDeployerChainsInjector())
                 .addDependency(DeploymentMountProvider.SERVICE_NAME, DeploymentMountProvider.class, service.getServerDeploymentRepositoryInjector())
@@ -360,6 +387,22 @@ public class DeploymentHandlerUtil {
         }
     }
 
+    public static boolean isManaged(ModelNode contentItem) {
+        return !contentItem.hasDefined(DeploymentAttributes.CONTENT_PATH.getName());
+    }
+
+    public static boolean isArchive(ModelNode contentItem) {
+        return contentItem.get(DeploymentAttributes.CONTENT_ARCHIVE.getName()).asBoolean(true);
+    }
+
+    public static ModelNode getContentItem(Resource resource) {
+        return resource.getModel().get(DeploymentAttributes.CONTENT_RESOURCE.getName()).get(0);
+    }
+
+    static Path getExplodedDeploymentRoot(ServerEnvironment serverEnvironment, String deploymentManagementName) {
+        return Paths.get(serverEnvironment.getServerDataDir().getAbsolutePath()).resolve(MANAGED_CONTENT).resolve(deploymentManagementName);
+    }
+
     private static String getFormattedFailureDescription(OperationContext context) {
         ModelNode failureDescNode = context.getFailureDescription();
         String failureDesc = failureDescNode.toString();
@@ -373,5 +416,24 @@ public class DeploymentHandlerUtil {
             failureDesc = "\n" + failureDesc;
         }
         return failureDesc;
+    }
+
+    public static byte[] addFromHash(ContentRepository contentRepository, ModelNode contentItemNode, String deploymentName, PathAddress address, OperationContext context) throws OperationFailedException {
+        byte[] hash = contentItemNode.require(CONTENT_HASH.getName()).asBytes();
+        ContentReference reference = ModelContentReference.fromModelAddress(address, hash);
+        if (!contentRepository.syncContent(reference)) {
+            if (context.isBooting()) {
+                if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
+                    // The deployment content is missing, which would be a fatal boot error if we were going to actually
+                    // install services. In ADMIN-ONLY mode we allow it to give the admin a chance to correct the problem
+                    ServerLogger.ROOT_LOGGER.reportAdminOnlyMissingDeploymentContent(reference.getHexHash(), deploymentName);
+                } else {
+                    throw ServerLogger.ROOT_LOGGER.noSuchDeploymentContentAtBoot(reference.getHexHash(), deploymentName);
+                }
+            } else {
+                throw ServerLogger.ROOT_LOGGER.noSuchDeploymentContent(reference.getHexHash());
+            }
+        }
+        return hash;
     }
 }

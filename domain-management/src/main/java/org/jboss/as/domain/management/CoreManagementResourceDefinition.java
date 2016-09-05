@@ -99,9 +99,9 @@ public class CoreManagementResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerSubModel(ManagementControllerResourceDefinition.INSTANCE);
             resourceRegistration.registerSubModel(SecurityRealmResourceDefinition.INSTANCE);
             resourceRegistration.registerSubModel(LdapConnectionResourceDefinition.newInstance());
+            // Configuration Changes
+            resourceRegistration.registerSubModel(ConfigurationChangeResourceDefinition.INSTANCE);
         }
-        // Configuration Changes
-        resourceRegistration.registerSubModel(ConfigurationChangeResourceDefinition.INSTANCE);
 
         for (ResourceDefinition current : interfaces) {
             resourceRegistration.registerSubModel(current);
@@ -110,6 +110,7 @@ public class CoreManagementResourceDefinition extends SimpleResourceDefinition {
         switch (environment) {
             case DOMAIN:
                 resourceRegistration.registerSubModel(AccessAuthorizationResourceDefinition.forDomain(authorizer));
+                resourceRegistration.registerSubModel(ConfigurationChangeResourceDefinition.forDomain());
                 break;
             case DOMAIN_SERVER:
                 resourceRegistration.registerSubModel(AccessAuthorizationResourceDefinition.forDomainServer(authorizer));

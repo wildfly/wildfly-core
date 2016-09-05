@@ -1236,15 +1236,18 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 134, value = "Invalid length")
     IllegalArgumentException asnInvalidLength();
 
+    /* End X.500 exceptions */
+    @Message(id = 135, value = "The resource %s wasn't working properly and has been removed.")
+    String removedOutOfOrderResource(final String address);
+
     // Was WFLYRMT-13
-    @Message(id = 135, value = "Unable to create tmp dir for auth tokens as file already exists.")
-    StartException unableToCreateTempDirForAuthTokensFileExists();
+    @Message(id = 136, value = "Unable to create tmp dir for auth tokens as file already exists.")
+     StartException unableToCreateTempDirForAuthTokensFileExists();
 
     // Was WFLYRMT-14
-    @Message(id = 136, value = "Unable to create auth dir %s.")
+    @Message(id = 137, value = "Unable to create auth dir %s.")
     StartException unableToCreateAuthDir(String dir);
 
-    /* End X.500 exceptions */
     /**
      * Information message saying the username and password must be different.
      *
@@ -1342,6 +1345,14 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "Are you sure you want to use the password entered yes/no?")
     String sureToSetPassword();
+
+    /**
+     * A general description of the utility usage.
+     *
+     * @return a {@link String} for the message.
+     */
+    @Message(id = Message.NONE, value = "The add-user script is a utility for adding new users to the properties files for out-of-the-box authentication. It can be used to manage users in ManagementRealm and ApplicationRealm.")
+    String usageDescription();
 
     /**
      * Instructions for the {@link org.jboss.as.domain.management.security.adduser.AddUser.CommandLineArgument#USAGE} command line argument.
@@ -1447,6 +1458,13 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "Automatically confirm warning in interactive mode")
     String argConfirmWarning();
+
+    /**
+     * Instructions for the {@link org.jboss.as.domain.management.security.adduser.AddUser.CommandLineArgument#DISPLAY_SECRET} command line argument.
+     * @return the message.
+     */
+    @Message(id = Message.NONE, value = "If set the secret value will be printed.")
+    String argDisplaySecret();
 
     /**
      * Instructions for the {@link org.jboss.as.domain.management.security.adduser.AddUser.CommandLineArgument#HELP} command line argument.

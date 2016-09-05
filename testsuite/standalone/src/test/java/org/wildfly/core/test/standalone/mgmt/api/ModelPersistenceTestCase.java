@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
@@ -245,21 +246,23 @@ public class ModelPersistenceTestCase extends ContainerResourceMgmtTestBase {
 
 
         if (Files.isDirectory(dir)) {
-            Files.list(dir).filter(file -> {
-                String fileName = file.getFileName().toString();
-                String[] nameParts = fileName.split("\\.");
-                return !(!nameParts[0].contains("standalone") && !nameParts[2].equals("xml"));
-            }).forEach(path -> {
-                String fileName = path.getFileName().toString();
-                String[] nameParts = fileName.split("\\.");
-                if (!nameParts[0].contains("standalone")) { return; }
-                if (!nameParts[2].equals("xml")) { return; }
-                int version = Integer.valueOf(nameParts[1].substring(1));
-                if (version > lastVersion[0]) {
-                    lastVersion[0] = version;
-                    lastFile[0] = path.toFile();
-                }
-            });
+            try(Stream<Path> files = Files.list(dir)) {
+                files.filter(file -> {
+                    String fileName = file.getFileName().toString();
+                    String[] nameParts = fileName.split("\\.");
+                    return !(!nameParts[0].contains("standalone") && !nameParts[2].equals("xml"));
+                }).forEach(path -> {
+                    String fileName = path.getFileName().toString();
+                    String[] nameParts = fileName.split("\\.");
+                    if (!nameParts[0].contains("standalone")) { return; }
+                    if (!nameParts[2].equals("xml")) { return; }
+                    int version = Integer.valueOf(nameParts[1].substring(1));
+                    if (version > lastVersion[0]) {
+                        lastVersion[0] = version;
+                        lastFile[0] = path.toFile();
+                    }
+                });
+            }
         }
         return new CfgFileDescription(lastVersion[0], lastFile[0], (lastFile[0] != null) ? FileUtils.checksumCRC32(lastFile[0]) : 0);
     }

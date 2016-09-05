@@ -22,11 +22,17 @@
 package org.jboss.as.host.controller;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.xml.namespace.QName;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.persistence.BackupXmlConfigurationPersister;
@@ -52,13 +58,14 @@ import org.jboss.staxmapper.XMLElementWriter;
 public class ConfigurationPersisterFactory {
 
     static final String CACHED_DOMAIN_XML = "domain.cached-remote.xml";
+    static final String CACHED_DOMAIN_XML_BOOTFILE = "domain.cached-remote.xml.boot";
 
     // host.xml
     public static ExtensibleConfigurationPersister createHostXmlConfigurationPersister(final ConfigurationFile file, final HostControllerEnvironment environment,
             ExecutorService executorService, ExtensionRegistry hostExtensionRegistry) {
         HostXml hostXml = new HostXml(environment.getHostControllerName(), environment.getRunningModeControl().getRunningMode(),
                 environment.isUseCachedDc(), Module.getBootModuleLoader(), executorService, hostExtensionRegistry);
-        BackupXmlConfigurationPersister persister =  new BackupXmlConfigurationPersister(file, new QName(Namespace.CURRENT.getUriString(), "host"), hostXml, hostXml);
+        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, new QName(Namespace.CURRENT.getUriString(), "host"), hostXml, hostXml);
         for (Namespace namespace : Namespace.domainValues()) {
             if (!namespace.equals(Namespace.CURRENT)) {
                 persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "host"), hostXml);
@@ -84,8 +91,9 @@ public class ConfigurationPersisterFactory {
     // --backup
     public static ExtensibleConfigurationPersister createRemoteBackupDomainXmlConfigurationPersister(final File configDir, ExecutorService executorService, ExtensionRegistry extensionRegistry) {
         DomainXml domainXml = new DomainXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
+        File bootFile = new File(configDir, CACHED_DOMAIN_XML_BOOTFILE);
         File file = new File(configDir, CACHED_DOMAIN_XML);
-        BackupRemoteDomainXmlPersister persister = new BackupRemoteDomainXmlPersister(file, new QName(Namespace.CURRENT.getUriString(), "domain"), domainXml, domainXml);
+        BackupRemoteDomainXmlPersister persister = new BackupRemoteDomainXmlPersister(file, bootFile, new QName(Namespace.CURRENT.getUriString(), "domain"), domainXml, domainXml);
         for (Namespace namespace : Namespace.domainValues()) {
             if (!namespace.equals(Namespace.CURRENT)) {
                 persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "domain"), domainXml);
@@ -103,7 +111,7 @@ public class ConfigurationPersisterFactory {
     // slave=true
     public static ExtensibleConfigurationPersister createTransientDomainXmlConfigurationPersister(ExecutorService executorService, ExtensionRegistry extensionRegistry) {
         DomainXml domainXml = new DomainXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
-        ExtensibleConfigurationPersister persister =  new NullConfigurationPersister(domainXml);
+        ExtensibleConfigurationPersister persister = new NullConfigurationPersister(domainXml);
         extensionRegistry.setWriterRegistry(persister);
         return persister;
     }
@@ -113,8 +121,16 @@ public class ConfigurationPersisterFactory {
      */
     static class BackupRemoteDomainXmlPersister extends XmlConfigurationPersister {
 
-        BackupRemoteDomainXmlPersister(File fileName, QName rootElement, XMLElementReader<List<ModelNode>> rootParser, XMLElementWriter<ModelMarshallingContext> rootDeparser) {
-            super(fileName, rootElement, rootParser, rootDeparser);
+        private final AtomicBoolean successfulBoot = new AtomicBoolean();
+        private File file;
+        private File bootFile;
+        private XmlConfigurationPersister bootWriter;
+
+        BackupRemoteDomainXmlPersister(File file, File bootFile, QName rootElement, XMLElementReader<List<ModelNode>> rootParser, XMLElementWriter<ModelMarshallingContext> rootDeparser) {
+            super(file, rootElement, rootParser, rootDeparser);
+            this.bootWriter = new XmlConfigurationPersister(bootFile, rootElement, rootParser, rootDeparser);
+            this.file = file;
+            this.bootFile = bootFile;
         }
 
         @Override
@@ -127,6 +143,23 @@ public class ConfigurationPersisterFactory {
             }
         }
 
-    }
+        @Override
+        public void successfulBoot() throws ConfigurationPersistenceException {
+            if (successfulBoot.compareAndSet(false, true)) {
+                try {
+                    Files.move(bootFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    HostControllerLogger.ROOT_LOGGER.cannotRenameCachedDomainXmlOnBoot(bootFile.getName(), file.getName(), e.getMessage());
+                    throw new ConfigurationPersistenceException(e);
+                }
+            }
+        }
 
+        public PersistenceResource store(final ModelNode model, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException {
+            if (!successfulBoot.get()) {
+                return bootWriter.store(model, affectedAddresses);
+            }
+            return super.store(model, affectedAddresses);
+        }
+    }
 }

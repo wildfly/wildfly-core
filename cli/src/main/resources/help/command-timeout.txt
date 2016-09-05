@@ -1,0 +1,19 @@
+SYNOPSIS
+
+   command-timeout [get | set | reset] value
+
+DESCRIPTION
+
+    get, set or reset the command timeout. By default there is no timeout.
+
+ARGUMENTS
+
+ get                    - retrieves and print the currently set timeout. 
+                          A timeout of 0 means no timeout.
+
+ set num_seconds        - set the timeout to a number of seconds. 
+
+ reset [default|config] - reset the timeout to the default or CLI configuration 
+                          value.
+
+

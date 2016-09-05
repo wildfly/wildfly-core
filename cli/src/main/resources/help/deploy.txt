@@ -12,7 +12,8 @@ DESCRIPTION
 
   Deploys the application designated by the file_path or enables an already
   existing but disabled in the repository deployment designated by the name
-  argument. If executed w/o arguments, will list all the existing deployments.
+  argument. <all> can be used to identify all existing but disabled deployments. 
+  If executed w/o arguments, will list all the existing deployments.
 
 ARGUMENTS
 
@@ -39,6 +40,9 @@ ARGUMENTS
                      argument isn't specified then the command is supposed to
                      enable an already existing but disabled deployment, and in
                      this case the name argument is required.
+                     In order to identify all disabled deployments, <all>
+                     can be used as name value. <all> can be used both in standalone 
+                     and domain mode.
 
  --runtime-name    - optional, the runtime name for the deployment. This will
                      form the basis for such things as default Java EE

@@ -26,9 +26,13 @@ import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATIO
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
+import static org.jboss.as.remoting.RemotingServices.REMOTING_BASE;
+import static org.jboss.as.remoting.management.ManagementRemotingServices.MANAGEMENT_CONNECTOR;
 
 import javax.net.ssl.SSLContext;
 
+import java.util.Arrays;
+import java.util.List;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
@@ -63,11 +67,12 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
+        return super.requiresRuntime(context)
+                && (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
     }
 
     @Override
-    protected void installServices(OperationContext context, NativeInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
+    protected List<ServiceName> installServices(OperationContext context, NativeInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
         populateHostControllerInfo(hostControllerInfo, context, model);
 
         final ServiceTarget serviceTarget = context.getServiceTarget();
@@ -93,6 +98,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
         ManagementRemotingServices.installDomainConnectorServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                 nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), options, securityRealmName, saslAuthenticationFactoryName, sslContextName);
+        return Arrays.asList(REMOTING_BASE.append("server", MANAGEMENT_CONNECTOR), nativeManagementInterfaceBinding);
     }
 
     static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {

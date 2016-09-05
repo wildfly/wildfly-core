@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOWED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALL_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALTERNATIVES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTE_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITIES;
@@ -56,6 +57,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REASON;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REPLY_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
@@ -123,6 +125,8 @@ public class ModelTestModelDescriptionValidator {
         validChildTypeKeys.put(MODEL_DESCRIPTION, NullDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(ALLOWED, StringListValidator.INSTANCE);
         validChildTypeKeys.put(FILESYSTEM_PATH, BooleanDescriptorValidator.INSTANCE);
+        validChildTypeKeys.put(ATTACHED_STREAMS, BooleanDescriptorValidator.INSTANCE);
+        validChildTypeKeys.put(RELATIVE_TO, BooleanDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(WEB_URL, BooleanDescriptorValidator.INSTANCE);
         VALID_CHILD_TYPE_KEYS = Collections.unmodifiableMap(validChildTypeKeys);
 
@@ -138,6 +142,8 @@ public class ModelTestModelDescriptionValidator {
         paramAndAttributeKeys.put(ALTERNATIVES, StringListValidator.INSTANCE);
         paramAndAttributeKeys.put(ATTRIBUTE_GROUP, NullDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(FILESYSTEM_PATH, BooleanDescriptorValidator.INSTANCE);
+        paramAndAttributeKeys.put(ATTACHED_STREAMS, BooleanDescriptorValidator.INSTANCE);
+        paramAndAttributeKeys.put(RELATIVE_TO, BooleanDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(REQUIRES, StringListValidator.INSTANCE);
         paramAndAttributeKeys.put(MIN, NumericDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(MAX, NumericDescriptorValidator.INSTANCE);

@@ -27,11 +27,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -62,7 +65,7 @@ public abstract class DeploymentHandlerUtils {
         for(int i = 0; i < contents.length; i++) {
             final ModelNode node = nodes.get(i);
             if (node.has(HASH)) {
-                contents[i] = new DeploymentHandlerUtil.ContentItem(node.require(HASH).asBytes());
+                contents[i] = new DeploymentHandlerUtil.ContentItem(node.require(HASH).asBytes(), DeploymentHandlerUtil.isArchive(node));
             } else {
                 contents[i] = new DeploymentHandlerUtil.ContentItem(node.require(PATH).asString(), asString(node, RELATIVE_TO), node.require(ARCHIVE).asBoolean());
             }
@@ -72,6 +75,17 @@ public abstract class DeploymentHandlerUtils {
 
     public static InputStream getInputStream(OperationContext context, ModelNode contentItem) throws OperationFailedException {
         InputStream in = null;
+        if(!contentItem.isDefined()) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try ( ZipOutputStream zout = new ZipOutputStream(out);) {
+                zout.putNextEntry(new ZipEntry(context.getCurrentAddressValue() + '/'));
+                zout.closeEntry();
+                out.close();
+            } catch(IOException ioex) {
+                throw new OperationFailedException(ioex);
+            }
+            return new ByteArrayInputStream(out.toByteArray());
+        }
         if (contentItem.hasDefined(DeploymentAttributes.CONTENT_INPUT_STREAM_INDEX.getName())) {
             int streamIndex = DeploymentAttributes.CONTENT_INPUT_STREAM_INDEX.resolveModelAttribute(context, contentItem).asInt();
             int maxIndex = context.getAttachmentStreamCount();
@@ -122,5 +136,14 @@ public abstract class DeploymentHandlerUtils {
         // TODO: implement overlays
         if (content.asList().size() != 1)
             throw ServerLogger.ROOT_LOGGER.multipleContentItemsNotSupported();
+    }
+
+    public static InputStream emptyStream() {
+        return new InputStream() {
+            @Override
+            public int read() throws IOException {
+                return -1;
+            }
+        };
     }
 }

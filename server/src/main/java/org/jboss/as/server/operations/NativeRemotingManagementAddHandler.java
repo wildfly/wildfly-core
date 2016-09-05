@@ -22,11 +22,14 @@
 
 package org.jboss.as.server.operations;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
+import java.util.Collections;
+import java.util.List;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.management.ManagementInterfaceAddStepHandler;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
@@ -44,7 +47,7 @@ import org.jboss.msc.service.ServiceTarget;
  *
  * @author Kabir Khan
  */
-public class NativeRemotingManagementAddHandler extends AbstractAddStepHandler {
+public class NativeRemotingManagementAddHandler extends ManagementInterfaceAddStepHandler {
 
     public static final NativeRemotingManagementAddHandler INSTANCE = new NativeRemotingManagementAddHandler();
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
@@ -61,11 +64,9 @@ public class NativeRemotingManagementAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
-
+    public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final ServiceTarget serviceTarget = context.getServiceTarget();
         final ServiceName endpointName = RemotingServices.SUBSYSTEM_ENDPOINT;
-
         ManagementChannelRegistryService.addService(serviceTarget, endpointName);
         ManagementRemotingServices.installManagementChannelServices(serviceTarget,
                 endpointName,
@@ -74,6 +75,8 @@ public class NativeRemotingManagementAddHandler extends AbstractAddStepHandler {
                 ManagementRemotingServices.MANAGEMENT_CHANNEL,
                 Services.JBOSS_SERVER_EXECUTOR,
                 ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
+        List<ServiceName> requiredServices = Collections.singletonList(RemotingServices.channelServiceName(endpointName, ManagementRemotingServices.MANAGEMENT_CHANNEL));
+        addVerifyInstallationStep(context, requiredServices);
     }
 
 }

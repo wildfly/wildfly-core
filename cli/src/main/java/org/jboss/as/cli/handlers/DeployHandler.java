@@ -51,6 +51,7 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
+import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -82,6 +83,8 @@ public class DeployHandler extends DeploymentHandler {
     private AccessRequirement mainAddPermission;
     private AccessRequirement deployPermission;
     private PerNodeOperationAccess serverGroupAddPermission;
+
+    private static final String ALL = "<all>";
 
     public DeployHandler(CommandContext ctx) {
         super(ctx, "deploy", true);
@@ -144,9 +147,12 @@ public class DeployHandler extends DeploymentHandler {
                     String opBuffer = buffer.substring(nextCharIndex).trim();
                     if (opBuffer.isEmpty()) {
                         candidates.addAll(deployments);
+                        candidates.add(ALL);
+                    } else if (ALL.startsWith(opBuffer)) {
+                        candidates.add(ALL + " ");
                     } else {
-                        for(String name : deployments) {
-                            if(name.startsWith(opBuffer)) {
+                        for (String name : deployments) {
+                            if (name.startsWith(opBuffer)) {
                                 candidates.add(name);
                             }
                         }
@@ -342,6 +348,19 @@ public class DeployHandler extends DeploymentHandler {
         final String serverGroups = this.serverGroups.getValue(args);
         final boolean allServerGroups = this.allServerGroups.isPresent(args);
 
+        if (name.equals(ALL)) {
+            if (force || disabled) {
+                throw new CommandFormatException("force and disabled can't be used when deploying all disabled deployments");
+            }
+            List<String> sgList = getServerGroups(ctx, client, allServerGroups, serverGroups, f);
+            try {
+                deployAll(ctx, client, sgList);
+            } catch (IOException ex) {
+                throw new CommandFormatException(ex.getMessage(), ex);
+            }
+            return;
+        }
+
         if(force) {
             if((disabled && ctx.isDomainMode()) || serverGroups != null || allServerGroups) {
                 throw new CommandFormatException(this.force.getFullName() +
@@ -382,30 +401,7 @@ public class DeployHandler extends DeploymentHandler {
         // but this code here is to validate arguments and not to add deployment if something is wrong
         final ModelNode deployRequest;
         if(ctx.isDomainMode()) {
-            final List<String> sgList;
-            if(allServerGroups) {
-                if(serverGroups != null) {
-                    throw new CommandFormatException(this.serverGroups.getFullName() + " can't appear in the same command with " + this.allServerGroups.getFullName());
-                }
-                sgList = Util.getServerGroups(client);
-                if(sgList.isEmpty()) {
-                    throw new CommandFormatException("No server group is available.");
-                }
-            } else if(serverGroups == null) {
-                final StringBuilder buf = new StringBuilder();
-                buf.append("One of ");
-                if(f != null || deploymentUrl != null) {
-                    buf.append(this.disabled.getFullName()).append(", ");
-                }
-                buf.append(this.allServerGroups.getFullName() + " or " + this.serverGroups.getFullName() + " is missing.");
-                throw new CommandFormatException(buf.toString());
-            } else {
-                sgList = Arrays.asList(serverGroups.split(","));
-                if(sgList.isEmpty()) {
-                    throw new CommandFormatException("Couldn't locate server group name in '" + this.serverGroups.getFullName() + "=" + serverGroups + "'.");
-                }
-            }
-
+            final List<String> sgList = getServerGroups(ctx, client, allServerGroups, serverGroups, f);
             deployRequest = new ModelNode();
             deployRequest.get(Util.OPERATION).set(Util.COMPOSITE);
             deployRequest.get(Util.ADDRESS).setEmptyList();
@@ -453,6 +449,81 @@ public class DeployHandler extends DeploymentHandler {
         }
     }
 
+    private void deployAll(CommandContext ctx, ModelControllerClient client, List<String> serverGroups)
+            throws OperationFormatException, CommandLineException, IOException {
+        execute(ctx, buildDeployAllRequest(client, serverGroups), null, false);
+    }
+
+    private ModelNode buildDeployAllRequest(ModelControllerClient client,
+            List<String> serverGroups) throws CommandFormatException, IOException {
+        if (serverGroups == null) {
+            // No serverGroups means a null serverGroup.
+            serverGroups = Collections.singletonList(null);
+        }
+        final ModelNode composite = new ModelNode();
+        composite.get(Util.OPERATION).set(Util.COMPOSITE);
+        composite.get(Util.ADDRESS).setEmptyList();
+        final ModelNode steps = composite.get(Util.STEPS);
+        boolean empty = true;
+        for (String serverGroup : serverGroups) {
+            List<String> deployments = Util.getDeployments(client, serverGroup);
+            for (String deploymentName : deployments) {
+                if (!Util.isEnabledDeployment(deploymentName, client, serverGroup)) {
+                    DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+                    if (serverGroup != null) {
+                        builder.addNode(Util.SERVER_GROUP, serverGroup);
+                    }
+                    builder.addNode(Util.DEPLOYMENT, deploymentName);
+                    builder.setOperationName(Util.DEPLOY);
+                    steps.add(builder.buildRequest());
+                    empty = false;
+                }
+            }
+        }
+        if (empty) {
+            throw new CommandFormatException("No disabled deployment to deploy.");
+        }
+        return composite;
+    }
+
+    private List<String> getServerGroups(CommandContext ctx, ModelControllerClient client,
+            boolean allServerGroups, String serverGroups, File f) throws OperationFormatException, CommandFormatException {
+        List<String> sgList = null;
+        if (ctx.isDomainMode()) {
+            if (allServerGroups) {
+                if (serverGroups != null) {
+                    throw new OperationFormatException(this.serverGroups.getFullName()
+                            + " can't appear in the same command with "
+                            + this.allServerGroups.getFullName());
+                }
+                sgList = Util.getServerGroups(client);
+                if (sgList.isEmpty()) {
+                    throw new OperationFormatException("No server group is available.");
+                }
+            } else if (serverGroups == null) {
+                final StringBuilder buf = new StringBuilder();
+                buf.append("One of ");
+                if (f != null) {
+                    buf.append(this.disabled.getFullName()).append(", ");
+                }
+                buf.append(this.allServerGroups.getFullName()).append(" or ").
+                        append(this.serverGroups.getFullName()).append(" is missing.");
+                throw new OperationFormatException(buf.toString());
+            } else {
+                sgList = Arrays.asList(serverGroups.split(","));
+                if (sgList.isEmpty()) {
+                    throw new OperationFormatException("Couldn't locate server group name in '"
+                            + this.serverGroups.getFullName() + "=" + serverGroups + "'.");
+                }
+            }
+        } else if (serverGroups != null || allServerGroups) {
+            throw new CommandFormatException(this.serverGroups.getFullName()
+                    + " and " + this.allServerGroups.getFullName()
+                    + " can't appear in standalone mode.");
+        }
+        return sgList;
+    }
+
     @Override
     public ModelNode buildRequestWithoutHeaders(CommandContext ctx) throws CommandFormatException {
 
@@ -495,6 +566,18 @@ public class DeployHandler extends DeploymentHandler {
         final String serverGroups = this.serverGroups.getValue(args);
         final boolean allServerGroups = this.allServerGroups.isPresent(args);
         final boolean archive = isCliArchive(f);
+
+        if (name.equals(ALL)) {
+            if (force || disabled) {
+                throw new CommandFormatException("force and disabled can't be used when deploying all disabled deployments");
+            }
+            List<String> sgList = getServerGroups(ctx, client, allServerGroups, serverGroups, f);
+            try {
+                return buildDeployAllRequest(client, sgList);
+            } catch (IOException ex) {
+                throw new CommandFormatException(ex.getMessage(), ex);
+            }
+        }
 
         if(force) {
             if(f == null) {
@@ -610,30 +693,7 @@ public class DeployHandler extends DeploymentHandler {
         // but this code here is to validate arguments and not to add deployment if something is wrong
         final ModelNode deployRequest;
         if(ctx.isDomainMode()) {
-            final List<String> sgList;
-            if(allServerGroups) {
-                if(serverGroups != null) {
-                    throw new OperationFormatException(this.serverGroups.getFullName() + " can't appear in the same command with " + this.allServerGroups.getFullName());
-                }
-                sgList = Util.getServerGroups(client);
-                if(sgList.isEmpty()) {
-                    throw new OperationFormatException("No server group is available.");
-                }
-            } else if(serverGroups == null) {
-                final StringBuilder buf = new StringBuilder();
-                buf.append("One of ");
-                if(f != null) {
-                    buf.append(this.disabled.getFullName()).append(", ");
-                }
-                buf.append(this.allServerGroups.getFullName() + " or " + this.serverGroups.getFullName() + " is missing.");
-                throw new OperationFormatException(buf.toString());
-            } else {
-                sgList = Arrays.asList(serverGroups.split(","));
-                if(sgList.isEmpty()) {
-                    throw new OperationFormatException("Couldn't locate server group name in '" + this.serverGroups.getFullName() + "=" + serverGroups + "'.");
-                }
-            }
-
+            final List<String> sgList = getServerGroups(ctx, client, allServerGroups, serverGroups, f);
             deployRequest = new ModelNode();
             deployRequest.get(Util.OPERATION).set(Util.COMPOSITE);
             deployRequest.get(Util.ADDRESS).setEmptyList();

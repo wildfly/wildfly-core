@@ -123,4 +123,9 @@ public class MockCliConfig implements CliConfig {
     public boolean isEchoCommand() {
         return false;
     }
+
+    @Override
+    public Integer getCommandTimeout() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

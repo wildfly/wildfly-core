@@ -18,7 +18,20 @@
  */
 package org.jboss.as.repository;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Vector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
 
 /**
  * Utilities related to deployment content hashes.
@@ -76,5 +89,63 @@ class HashUtil {
                 return false;
         }
         return true;
+    }
+
+    public static byte[] hashContent(MessageDigest messageDigest, InputStream stream) throws IOException {
+        messageDigest.reset();
+        try (DigestInputStream dis = new DigestInputStream(stream, messageDigest)) {
+            byte[] bytes = new byte[8192];
+            while (dis.read(bytes) > -1) {
+            }
+        }
+        return messageDigest.digest();
+    }
+
+    /**
+     * Hashes a path, if the path points to a directory then hashes the contents recursively.
+     * @param messageDigest the digest used to hash.
+     * @param path the file/directory we want to hash.
+     * @return the resulting hash.
+     * @throws IOException
+     */
+    public static byte[] hashPath(MessageDigest messageDigest, Path path) throws IOException {
+        try (InputStream in = getRecursiveContentStream(path)) {
+            return hashContent(messageDigest, in);
+        }
+    }
+
+    private static InputStream getRecursiveContentStream(Path path) {
+        if (Files.isRegularFile(path)) {
+            try {
+                return new SequenceInputStream(new ByteArrayInputStream(path.getFileName().toString().getBytes(StandardCharsets.UTF_8)), Files.newInputStream(path));
+            } catch (IOException ex) {
+                throw DeploymentRepositoryLogger.ROOT_LOGGER.hashingError(ex, path);
+            }
+        } else if (Files.isDirectory(path)) {
+            try {
+                Vector<InputStream> v = new Vector<>();
+                v.add(new ByteArrayInputStream(path.getFileName().toString().getBytes(StandardCharsets.UTF_8)));
+                try(Stream<Path> paths = Files.list(path)) {
+                    v.addAll(paths.sorted((Path path1, Path path2) -> path1.compareTo(path2)).map(p -> getRecursiveContentStream(p)).collect(Collectors.toList()));
+                }
+                return new SequenceInputStream(v.elements());
+            } catch (IOException ex) {
+                throw DeploymentRepositoryLogger.ROOT_LOGGER.hashingError(ex, path);
+            }
+        }
+        return emptyStream();
+    }
+
+    /**
+     * Create an empty non-null) stream.
+     * @return an empty non-null stream.
+     */
+    public static InputStream emptyStream() {
+        return new InputStream() {
+            @Override
+            public int read() throws IOException {
+                return -1;
+            }
+        };
     }
 }

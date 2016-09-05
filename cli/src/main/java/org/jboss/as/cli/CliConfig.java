@@ -185,4 +185,11 @@ public interface CliConfig {
      * @return true, the commands are echoed, false, commands are not echoed.
      */
     boolean isEchoCommand();
+
+    /**
+     * The command timeout.
+     *
+     * @return The command timeout;
+     */
+    Integer getCommandTimeout();
 }

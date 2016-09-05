@@ -107,7 +107,7 @@ class IfElseControlFlow implements CommandLineRedirection {
 
             ModelNode targetValue;
             try {
-                targetValue = client.execute(ifRequest);
+                targetValue = ctx.execute(ifRequest, "if condition");
             } catch (IOException e) {
                 throw new CommandLineException("condition request failed", e);
             }

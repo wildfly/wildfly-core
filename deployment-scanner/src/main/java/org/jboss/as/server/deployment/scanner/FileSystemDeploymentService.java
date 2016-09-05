@@ -127,6 +127,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     private long scanInterval = 0;
     private volatile boolean scanEnabled = false;
     private volatile boolean firstScan = true;
+    private volatile boolean deployedContentEstablished = false;
     private ScheduledFuture<?> scanTask;
     private ScheduledFuture<?> rescanIncompleteTask;
     private ScheduledFuture<?> rescanUndeployTask;
@@ -158,6 +159,9 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     private final String relativePath;
     private final PropertyChangeListener propertyChangeListener;
     private Future<?> undeployScanTask;
+
+    private volatile boolean deploymentDirAccessible = true;
+    private volatile boolean lastScanSuccessful = true;
 
     @Override
     public void handleNotification(Notification notification) {
@@ -269,15 +273,6 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         assert scheduledExecutor != null;
         assert deploymentDir != null;
 
-        if (!deploymentDir.exists()) {
-            throw DeploymentScannerLogger.ROOT_LOGGER.directoryDoesNotExist(deploymentDir.getAbsolutePath());
-        }
-        if (!deploymentDir.isDirectory()) {
-            throw DeploymentScannerLogger.ROOT_LOGGER.notADirectory(deploymentDir.getAbsolutePath());
-        }
-        if (!deploymentDir.canWrite()) {
-            throw DeploymentScannerLogger.ROOT_LOGGER.directoryNotWritable(deploymentDir.getAbsolutePath());
-        }
         this.resourceAddress = resourceAddress.toModelNode();
         this.resourceAddress.protect();
         this.relativeTo = relativeTo;
@@ -401,7 +396,6 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         if (scanEnabled) {
             return;
         }
-        establishDeployedContentList(deploymentDir, deploymentOperations);
         this.scanEnabled = true;
         startScan();
         ROOT_LOGGER.started(getClass().getSimpleName(), deploymentDir.getAbsolutePath());
@@ -466,7 +460,14 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
 
     /** Perform a one-off scan during boot to establish deployment tasks to execute during boot */
     void bootTimeScan(final DeploymentOperations deploymentOperations) {
+        // WFCORE-1579: skip the scan if deployment dir is not available
+        if (!checkDeploymentDir(this.deploymentDir)) {
+            DeploymentScannerLogger.ROOT_LOGGER.bootTimeScanFailed(deploymentDir.getAbsolutePath());
+            return;
+        }
+
         this.establishDeployedContentList(this.deploymentDir, deploymentOperations);
+        deployedContentEstablished = true;
         if (acquireScanLock()) {
             try {
                 scan(true, deploymentOperations);
@@ -566,6 +567,21 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
 
         if (scanEnabled || oneOffScan) { // confirm the scan is still wanted
             ROOT_LOGGER.tracef("Scanning directory %s for deployment content changes", deploymentDir.getAbsolutePath());
+
+            // WFCORE-1579: skip the scan if deployment dir is not available
+            if (!checkDeploymentDir(deploymentDir)) {
+                if (lastScanSuccessful) {
+                    lastScanSuccessful = false;
+                    ROOT_LOGGER.scanFailed(deploymentDir.getAbsolutePath());
+                }
+                return scheduleRescan;
+            }
+            // if deployed content list was not established during scanner start (due to inaccessible deployment dir),
+            // do it now
+            if (!deployedContentEstablished) {
+                establishDeployedContentList(deploymentDir, deploymentOperations);
+                deployedContentEstablished = true;
+            }
 
             ScanContext scanContext = null;
             try {
@@ -777,6 +793,44 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         }
 
         return success;
+    }
+
+    /**
+     * Checks that given directory if readable & writable and prints a warning if the check fails. Warning is only
+     * printed once and is not repeated until the condition is fixed and broken again.
+     *
+     * @param directory deployment directory
+     * @return does given directory exist and is readable and writable?
+     */
+    private boolean checkDeploymentDir(File directory) {
+        if (!directory.exists()) {
+            if (deploymentDirAccessible) {
+                deploymentDirAccessible = false;
+                ROOT_LOGGER.directoryIsNonexistent(deploymentDir.getAbsolutePath());
+            }
+        }
+        else if (!directory.isDirectory()) {
+            if (deploymentDirAccessible) {
+                deploymentDirAccessible = false;
+                ROOT_LOGGER.isNotADirectory(deploymentDir.getAbsolutePath());
+            }
+        }
+        else if (!directory.canRead()) {
+            if (deploymentDirAccessible) {
+                deploymentDirAccessible = false;
+                ROOT_LOGGER.directoryIsNotReadable(deploymentDir.getAbsolutePath());
+            }
+        }
+        else if (!directory.canWrite()) {
+            if (deploymentDirAccessible) {
+                deploymentDirAccessible = false;
+                ROOT_LOGGER.directoryIsNotWritable(deploymentDir.getAbsolutePath());
+            }
+        } else {
+            deploymentDirAccessible = true;
+        }
+
+        return deploymentDirAccessible;
     }
 
     /**

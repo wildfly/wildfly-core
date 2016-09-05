@@ -45,7 +45,6 @@ import static org.jboss.as.remoting.Protocol.REMOTE;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
 import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -250,7 +249,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final LocalHostControllerInfoImpl hostControllerInfo = new LocalHostControllerInfoImpl(processState, environment);
         final AbstractVaultReader vaultReader = loadVaultReaderService();
         ROOT_LOGGER.debugf("Using VaultReader %s", vaultReader);
-        final ContentRepository contentRepository = ContentRepository.Factory.create(environment.getDomainContentDir());
+        final ContentRepository contentRepository = ContentRepository.Factory.create(environment.getDomainContentDir(), environment.getDomainTempDir());
         final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
         final ManagedAuditLogger auditLogger = createAuditLogger(environment);
         final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
@@ -713,12 +712,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 if (useLocalDomainXml) {
                     if (!hostControllerInfo.isMasterDomainController() && isCachedDc) {
                         ROOT_LOGGER.usingCachedDC(CommandLineConstants.CACHED_DC, ConfigurationPersisterFactory.CACHED_DOMAIN_XML);
-                        remoteFileRepository.setRemoteFileRepositoryExecutor(new RemoteDomainConnectionService.RemoteFileRepositoryExecutor() {
-                            @Override
-                            public File getFile(String relativePath, byte repoId, HostFileRepository localFileRepository) {
-                                return localFileRepository.getFile(relativePath);
-                            }
-                        });
                     }
 
                     // parse the domain.xml and load the steps
@@ -890,11 +883,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 domainModelComplete);
         MasterDomainControllerClient masterDomainControllerClient = getFuture(clientFuture);
         //Registers us with the master and gets down the master copy of the domain model to our DC
-        //TODO make sure that the RDCS checks env.isUseCachedDC, and if true falls through to that
-        // BES 2012/02/04 Comment ^^^ implies the semantic is to use isUseCachedDC as a fallback to
-        // a failure to connect as opposed to being an instruction to not connect at all. I believe
-        // the current impl is the latter. Don't change this without a discussion first, as the
-        // current semantic is a reasonable one.
+        // if --cached-dc is used and the DC is unavailable, we'll use a cached copy of the domain config
+        // (if available), and poll for reconnection to the DC. Once the DC becomes available again, the domain
+        // config will be re-synchronized.
         try {
             masterDomainControllerClient.register();
             return DomainConnectResult.CONNECTED;

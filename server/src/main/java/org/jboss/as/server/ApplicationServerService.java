@@ -143,10 +143,10 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
             if ( selfContained ) {
                 SelfContainedContentRepository.addService(serviceTarget);
             } else {
-                ContentRepository.Factory.addService(serviceTarget, serverEnvironment.getServerContentDir());
+                ContentRepository.Factory.addService(serviceTarget, serverEnvironment.getServerContentDir(), serverEnvironment.getServerTempDir());
             }
         } else {
-            RemoteFileRepositoryService.addService(serviceTarget, serverEnvironment.getServerContentDir());
+            RemoteFileRepositoryService.addService(serviceTarget, serverEnvironment.getServerContentDir(), serverEnvironment.getServerTempDir());
         }
         ContentCleanerService.addService(serviceTarget, ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
         DeploymentMountProvider.Factory.addService(serviceTarget);
