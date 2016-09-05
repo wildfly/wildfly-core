@@ -16,6 +16,7 @@
 package org.jboss.as.repository;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.CopyOption;
@@ -323,5 +324,36 @@ public class PathUtil {
             return fileName.substring(separator);
         }
         return "";
+    }
+
+    public static Path readFile(Path src, Path tempDir) throws IOException {
+        if(isFile(src)) {
+            return src;
+        } else {
+            Path file = getFile(src);
+            if(isArchive(file)) {
+                Path relativePath = file.relativize(src);
+                Path target = createTempDirectory(tempDir, "unarchive");
+                unzip(file, target);
+                return readFile(target.resolve(relativePath), tempDir);
+            } else {
+                throw new FileNotFoundException(src.toString());
+            }
+        }
+    }
+
+    private static Path getFile(Path src) throws FileNotFoundException {
+        if (src.getNameCount() > 1) {
+            Path parent = src.getParent();
+            if (isFile(parent)) {
+                return parent;
+            }
+            return getFile(parent);
+        }
+        throw new FileNotFoundException(src.toString());
+    }
+
+    private static boolean isFile(Path src) {
+        return Files.exists(src) && Files.isRegularFile(src);
     }
 }

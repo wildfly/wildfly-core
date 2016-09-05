@@ -527,8 +527,11 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
                 throw DeploymentRepositoryLogger.ROOT_LOGGER.errorLockingDeployment();
             }
             Path src = resolveSecurely(getDeploymentContentFile(deploymentHash), path);
+            Path tmpDir = Files.createTempDirectory(tmpRoot.toPath(), HashUtil.bytesToHexString(deploymentHash));
+            Path file = PathUtil.readFile(src, tmpDir);
             Path tmp = Files.createTempFile(tmpRoot.toPath(), CONTENT, getFileExtension(src));
-            Files.copy(src, tmp, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(file, tmp, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+            PathUtil.deleteRecursively(tmpDir);
             return new TemporaryFileInputStream(tmp);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();

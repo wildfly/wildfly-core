@@ -30,7 +30,7 @@ import org.jboss.as.domain.controller.operations.deployment.DeploymentExplodeHan
 import org.jboss.as.domain.controller.operations.deployment.DeploymentRemoveHandler;
 import org.jboss.as.domain.controller.operations.deployment.ExplodedDeploymentAddContentHandler;
 import org.jboss.as.domain.controller.operations.deployment.ExplodedDeploymentBrowseContentHandler;
-import org.jboss.as.domain.controller.operations.deployment.ExplodedDeploymentReadContentHandler;
+import org.jboss.as.domain.controller.operations.deployment.ManagedDeploymentReadContentHandler;
 import org.jboss.as.domain.controller.operations.deployment.ExplodedDeploymentRemoveContentHandler;
 import org.jboss.as.domain.controller.operations.deployment.ServerGroupDeploymentAddHandler;
 import org.jboss.as.domain.controller.operations.deployment.ServerGroupDeploymentDeployHandler;
@@ -73,7 +73,7 @@ class DomainDeploymentResourceDefinition extends DeploymentResourceDefinition {
                 new DeploymentExplodeHandler(contentRepository),
                 new ExplodedDeploymentAddContentHandler(contentRepository),
                 new ExplodedDeploymentRemoveContentHandler(contentRepository),
-                new ExplodedDeploymentReadContentHandler(contentRepository),
+                new ManagedDeploymentReadContentHandler(contentRepository),
                 new ExplodedDeploymentBrowseContentHandler(contentRepository));
     }
 
