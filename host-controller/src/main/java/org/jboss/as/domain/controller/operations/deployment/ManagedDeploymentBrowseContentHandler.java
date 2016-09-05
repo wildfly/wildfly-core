@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jboss.as.server.deployment;
+package org.jboss.as.domain.controller.operations.deployment;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIRECTORY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILE_SIZE;
@@ -23,10 +23,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONT
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.DEPLOYMENT_CONTENT_PATH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.DEPTH;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.getContentItem;
-import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isArchive;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isManaged;
-
-import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -34,37 +31,35 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.repository.ContentFilter;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.ContentRepositoryElement;
 import org.jboss.as.repository.ExplodedContentException;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
  * Handler for the "browse-content" operation over an exploded managed deployment.
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
-public class ExplodedDeploymentBrowseContentHandler implements OperationStepHandler {
+public class ManagedDeploymentBrowseContentHandler implements OperationStepHandler {
 
     protected final ContentRepository contentRepository;
 
-    public ExplodedDeploymentBrowseContentHandler(final ContentRepository contentRepository) {
+    public ManagedDeploymentBrowseContentHandler(final ContentRepository contentRepository) {
         assert contentRepository != null : "Null contentRepository";
         this.contentRepository = contentRepository;
     }
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         if (context.getProcessType() == ProcessType.SELF_CONTAINED) {
-            throw ServerLogger.ROOT_LOGGER.cannotReadContentFromSelfContainedServer();
+            throw DomainControllerLogger.ROOT_LOGGER.cannotReadContentFromSelfContainedServer();
         }
         final Resource deploymentResource = context.readResource(PathAddress.EMPTY_ADDRESS);
         ModelNode contentItemNode = getContentItem(deploymentResource);
         // Validate this op is available
         if (!isManaged(contentItemNode)) {
-            throw ServerLogger.ROOT_LOGGER.cannotReadContentFromUnmanagedDeployment();
-        } else if (isArchive(contentItemNode)) {
-            throw ServerLogger.ROOT_LOGGER.cannotReadContentFromUnexplodedDeployment();
+            throw DomainControllerLogger.ROOT_LOGGER.cannotReadContentFromUnmanagedDeployment();
         }
         final byte[] deploymentHash = CONTENT_HASH.resolveModelAttribute(context, contentItemNode).asBytes();
         final ModelNode pathNode = DEPLOYMENT_CONTENT_PATH.resolveModelAttribute(context, operation);
@@ -87,7 +82,7 @@ public class ExplodedDeploymentBrowseContentHandler implements OperationStepHand
                 context.getResult().add(contentNode);
             }
         } catch (ExplodedContentException ex) {
-            throw createFailureException(ex.toString());
+            throw new OperationFailedException(ex.getMessage());
         }
     }
 }

@@ -154,4 +154,12 @@ public interface DeploymentRepositoryLogger extends BasicLogger {
 
     @Message(id = 22, value = "Error copying files of exploded deployment to %s")
     ExplodedContentException errorCopyingDeployment(@Cause Exception ex, String target);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 23, value = "Error deleting file %s")
+    void cannotDeleteFile(@Cause Exception ex, Path path);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 24, value = "Error copying file %s")
+    void cannotCopyFile(@Cause Exception ex, Path path);
 }

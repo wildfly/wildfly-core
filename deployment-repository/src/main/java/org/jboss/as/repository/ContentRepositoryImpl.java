@@ -25,6 +25,7 @@ import static org.jboss.as.repository.ContentRepository.MARKED_CONTENT;
 import static org.jboss.as.repository.PathUtil.copyRecursively;
 import static org.jboss.as.repository.PathUtil.createTempDirectory;
 import static org.jboss.as.repository.PathUtil.deleteRecursively;
+import static org.jboss.as.repository.PathUtil.deleteSilentlyRecursively;
 import static org.jboss.as.repository.PathUtil.getFileExtension;
 import static org.jboss.as.repository.PathUtil.isArchive;
 import static org.jboss.as.repository.PathUtil.resolveSecurely;
@@ -522,16 +523,16 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
 
     @Override
     public TypedInputStream readContent(byte[] deploymentHash, String path) throws ExplodedContentException {
+        Path tmpDir = null;
         try {
             if(!lock(deploymentHash)) {
                 throw DeploymentRepositoryLogger.ROOT_LOGGER.errorLockingDeployment();
             }
             Path src = resolveSecurely(getDeploymentContentFile(deploymentHash), path);
-            Path tmpDir = Files.createTempDirectory(tmpRoot.toPath(), HashUtil.bytesToHexString(deploymentHash));
+            tmpDir = Files.createTempDirectory(tmpRoot.toPath(), HashUtil.bytesToHexString(deploymentHash));
             Path file = PathUtil.readFile(src, tmpDir);
             Path tmp = Files.createTempFile(tmpRoot.toPath(), CONTENT, getFileExtension(src));
             Files.copy(file, tmp, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
-            PathUtil.deleteRecursively(tmpDir);
             return new TemporaryFileInputStream(tmp);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
@@ -541,17 +542,21 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
             throw DeploymentRepositoryLogger.ROOT_LOGGER.errorAccessingDeployment(ex);
         } finally {
             unlock(deploymentHash);
+            deleteSilentlyRecursively(tmpDir);
         }
     }
 
     @Override
     public List<ContentRepositoryElement> listContent(byte[] deploymentHash, String path, ContentFilter filter) throws ExplodedContentException {
+        Path tmpDir = null;
         try {
             if (!lock(deploymentHash)) {
                 throw DeploymentRepositoryLogger.ROOT_LOGGER.errorLockingDeployment();
             }
+            tmpDir = Files.createTempDirectory(tmpRoot.toPath(), HashUtil.bytesToHexString(deploymentHash));
             final Path rootPath = resolveSecurely(getDeploymentContentFile(deploymentHash), path);
-            return PathUtil.listFiles(rootPath, filter);
+            List<ContentRepositoryElement> result = PathUtil.listFiles(rootPath, tmpDir, filter);
+            return result;
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(ex);
@@ -560,6 +565,9 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
             throw DeploymentRepositoryLogger.ROOT_LOGGER.errorAccessingDeployment(ex);
         } finally {
             unlock(deploymentHash);
+            if(tmpDir != null) {
+                deleteSilentlyRecursively(tmpDir);
+            }
         }
     }
 

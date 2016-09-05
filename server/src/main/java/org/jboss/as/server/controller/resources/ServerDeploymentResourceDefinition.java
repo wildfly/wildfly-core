@@ -33,7 +33,7 @@ import org.jboss.as.server.deployment.DeploymentExplodeHandler;
 import org.jboss.as.server.deployment.DeploymentRedeployHandler;
 import org.jboss.as.server.deployment.DeploymentRemoveHandler;
 import org.jboss.as.server.deployment.DeploymentUndeployHandler;
-import org.jboss.as.server.deployment.ExplodedDeploymentBrowseContentHandler;
+import org.jboss.as.server.deployment.ManagedDeploymentBrowseContentHandler;
 import org.jboss.as.server.deployment.ManagedDeploymentReadContentHandler;
 import org.jboss.as.server.deployment.ExplodedDeploymentRemoveContentHandler;
 import org.jboss.as.server.services.security.AbstractVaultReader;
@@ -73,7 +73,7 @@ public class ServerDeploymentResourceDefinition extends DeploymentResourceDefini
         resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOYMENT_ADD_CONTENT_DEFINITION, new ExplodedDeploymentAddContentHandler(contentRepository, serverEnvironment));
         resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOYMENT_REMOVE_CONTENT_DEFINITION, new ExplodedDeploymentRemoveContentHandler(contentRepository, serverEnvironment));
         resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOYMENT_READ_CONTENT_DEFINITION, new ManagedDeploymentReadContentHandler(contentRepository));
-        resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOYMENT_BROWSE_CONTENT_DEFINITION, new ExplodedDeploymentBrowseContentHandler(contentRepository));
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOYMENT_BROWSE_CONTENT_DEFINITION, new ManagedDeploymentBrowseContentHandler(contentRepository));
     }
 
     @Override

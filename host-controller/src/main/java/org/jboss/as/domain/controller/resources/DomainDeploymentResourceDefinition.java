@@ -29,7 +29,7 @@ import org.jboss.as.domain.controller.operations.deployment.DeploymentAddHandler
 import org.jboss.as.domain.controller.operations.deployment.DeploymentExplodeHandler;
 import org.jboss.as.domain.controller.operations.deployment.DeploymentRemoveHandler;
 import org.jboss.as.domain.controller.operations.deployment.ExplodedDeploymentAddContentHandler;
-import org.jboss.as.domain.controller.operations.deployment.ExplodedDeploymentBrowseContentHandler;
+import org.jboss.as.domain.controller.operations.deployment.ManagedDeploymentBrowseContentHandler;
 import org.jboss.as.domain.controller.operations.deployment.ManagedDeploymentReadContentHandler;
 import org.jboss.as.domain.controller.operations.deployment.ExplodedDeploymentRemoveContentHandler;
 import org.jboss.as.domain.controller.operations.deployment.ServerGroupDeploymentAddHandler;
@@ -74,7 +74,7 @@ class DomainDeploymentResourceDefinition extends DeploymentResourceDefinition {
                 new ExplodedDeploymentAddContentHandler(contentRepository),
                 new ExplodedDeploymentRemoveContentHandler(contentRepository),
                 new ManagedDeploymentReadContentHandler(contentRepository),
-                new ExplodedDeploymentBrowseContentHandler(contentRepository));
+                new ManagedDeploymentBrowseContentHandler(contentRepository));
     }
 
     public static DomainDeploymentResourceDefinition createForDomainSlave(boolean backupDC, HostFileRepository fileRepository, ContentRepository contentRepository) {

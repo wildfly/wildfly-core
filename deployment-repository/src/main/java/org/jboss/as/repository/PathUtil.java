@@ -78,7 +78,7 @@ public class PathUtil {
 
             @Override
             public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                DeploymentRepositoryLogger.ROOT_LOGGER.errorf(exc, "Error copying file %s", file);
+                DeploymentRepositoryLogger.ROOT_LOGGER.cannotCopyFile(exc, file);
                 return FileVisitResult.CONTINUE;
             }
 
@@ -90,12 +90,26 @@ public class PathUtil {
     }
 
     /**
+     * Delete a path recursively, not throwing Exception if it fails or if the path is null.
+     * @param path a Path pointing to a file or a directory that may not exists anymore.
+     */
+    public static void deleteSilentlyRecursively(final Path path) {
+        if (path != null) {
+            try {
+                deleteRecursively(path);
+            } catch (IOException ioex) {
+                DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteFile(ioex, path);
+            }
+        }
+    }
+
+    /**
      * Delete a path recursively.
      * @param path a Path pointing to a file or a directory that may not exists anymore.
      * @throws IOException
      */
     public static void deleteRecursively(final Path path) throws IOException {
-        DeploymentRepositoryLogger.ROOT_LOGGER.infof("Deleting %s recursively", path);
+        DeploymentRepositoryLogger.ROOT_LOGGER.debugf("Deleting %s recursively", path);
         if (Files.exists(path)) {
             Files.walkFileTree(path, new FileVisitor<Path>() {
                 @Override
@@ -111,7 +125,7 @@ public class PathUtil {
 
                 @Override
                 public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                    DeploymentRepositoryLogger.ROOT_LOGGER.errorf(exc, "Error deleting file %s", file);
+                    DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteFile(exc, path);
                     throw exc;
                 }
 
@@ -176,9 +190,12 @@ public class PathUtil {
      * @return the list of files / directory.
      * @throws IOException
      */
-    public static List<ContentRepositoryElement> listFiles(final Path rootPath, final ContentFilter filter) throws IOException {
+    public static List<ContentRepositoryElement> listFiles(final Path rootPath, Path tempDir, final ContentFilter filter) throws IOException {
         List<ContentRepositoryElement> result = new ArrayList<>();
         if (Files.exists(rootPath)) {
+            if(isArchive(rootPath)) {
+                return listZipContent(rootPath, filter);
+            }
             Files.walkFileTree(rootPath, new FileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -217,6 +234,38 @@ public class PathUtil {
                     return path.toString().replace(File.separatorChar, '/');
                 }
             });
+        } else {
+            Path file = getFile(rootPath);
+            if(isArchive(file)) {
+                Path relativePath = file.relativize(rootPath);
+                Path target = createTempDirectory(tempDir, "unarchive");
+                unzip(file, target);
+                return listFiles(target.resolve(relativePath), tempDir, filter);
+            } else {
+                throw new FileNotFoundException(rootPath.toString());
+            }
+        }
+        return result;
+    }
+
+    private static List<ContentRepositoryElement> listZipContent(final Path zipFilePath, final ContentFilter filter) throws IOException {
+        List<ContentRepositoryElement> result = new ArrayList<>();
+        try (final ZipFile zip = new ZipFile(zipFilePath.toFile())) {
+            final Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                final ZipEntry entry = entries.nextElement();
+                final String name = entry.getName();
+                Path entryPath = zipFilePath.resolve(name);
+                if (entry.isDirectory()) {
+                    if(filter.acceptDirectory(zipFilePath, entryPath)) {
+                        result.add(ContentRepositoryElement.createFolder(name));
+                    }
+                } else {
+                    if(filter.acceptFile(entryPath, entryPath)) {
+                        result.add(ContentRepositoryElement.createFile(name, entry.getSize()));
+                    }
+                }
+            }
         }
         return result;
     }
