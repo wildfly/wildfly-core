@@ -24,6 +24,7 @@ package org.jboss.as.cli;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.jboss.as.cli.impl.CommandCandidatesProvider;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -82,6 +83,7 @@ public class CommandCompleter implements CommandLineCompleter {
         }
 
         final DefaultCallbackHandler parsedCmd = (DefaultCallbackHandler) ctx.getParsedCommandLine();
+        boolean unresolvedVariableException = false;
         try {
             // WFCORE-1627 parse current position if cursor moves
             if (ctx.getArgumentsString() == null && buffer.length() > cursor) {
@@ -93,6 +95,7 @@ public class CommandCompleter implements CommandLineCompleter {
                 parsedCmd.parse(ctx.getCurrentNodePath(), buffer, false, ctx);
             }
         } catch(UnresolvedVariableException e) {
+            unresolvedVariableException = true;
             final String variable = e.getExpression();
             if(buffer.endsWith(variable)) {
                 for(String var : ctx.getVariables()) {
@@ -139,6 +142,25 @@ public class CommandCompleter implements CommandLineCompleter {
                 candidates.remove(notIndex);
             }
         }
+
+        // https://issues.jboss.org/browse/WFCORE-1714
+        if (!unresolvedVariableException) {
+            int index = buffer.lastIndexOf('$');
+            if (index != -1 && buffer.length() != index + 1) {
+                String variable = buffer.substring(index + 1);
+                if (buffer.endsWith(variable)) {
+                    List<String> candidateVariables = ctx.getVariables().stream()
+                            .filter(e -> e.startsWith(variable) && !e.equals(variable)).collect(Collectors.toList());
+                    if (!candidateVariables.isEmpty()) {
+                        candidates.addAll(candidateVariables);
+                        Collections.sort(candidates);
+                    }
+                } else {
+                    // failed to resolve a variable in the middle of the line
+                }
+            }
+        }
+
         // if there is nothing else to suggest, check whether it could be a start of a variable
         if(candidates.isEmpty() && buffer.charAt(buffer.length() - 1) == '$' && !ctx.getVariables().isEmpty()) {
             candidates.addAll(ctx.getVariables());
