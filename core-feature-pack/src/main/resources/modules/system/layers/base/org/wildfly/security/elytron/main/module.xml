@@ -26,7 +26,9 @@
 
     <exports>
         <exclude path="org/wildfly/security/_private"/>
-        <exclude path="org/wildfly/wildfly/security/manager/_private"/>
+        <exclude path="org/wildfly/security/manager/_private"/>
+        <exclude path="org/wildfly/security/sasl.digest/_private"/>
+        <exclude path="org/wildfly/security/util/_private"/>
     </exports>
 
     <resources>
