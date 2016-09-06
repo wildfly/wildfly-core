@@ -260,6 +260,33 @@ public class ExplodedDeploymentTestCase {
         }
     }
 
+    @Test
+    public void testReadResource() throws Exception {
+        String deploymentUnit = "/deployment=test" + System.currentTimeMillis()
+                + "-read-content.war";
+        try {
+            // Add the deployment
+            cli.sendLine(deploymentUnit + ":add(content=[{empty=true}])");
+            assertTrue(cli.readOutput().contains("success"));
+
+            String content = "<html><body> Test for Read-Content </html>";
+            File index = new File(TestSuiteEnvironment.getTmpDir(), "index.xhtml");
+            index.createNewFile();
+            Files.write(index.toPath(), content.getBytes());
+
+            cli.sendLine(deploymentUnit + ":add-content(content=["
+                    + "{input-stream-index=" + escapePath(index.getAbsolutePath())
+                    + ", target-path=index.xhtml}"
+                    + "]");
+            cli.sendLine("attachment display --operation=" + deploymentUnit
+                    + ":read-content(path=index.xhtml)");
+            String output = cli.readOutput();
+            assertTrue(output, output.contains(content));
+        } finally {
+            cli.sendLine(deploymentUnit + ":remove");
+        }
+    }
+
     private String escapePath(String filePath) {
         if (Util.isWindows()) {
             StringBuilder builder = new StringBuilder();

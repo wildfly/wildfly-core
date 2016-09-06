@@ -1130,4 +1130,126 @@ public class CliCompletionTestCase {
             ctx.terminateSession();
         }
     }
+
+    @Test
+    public void testAttachmentCompletion() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        try {
+            {
+                String cmd = "attachment ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 3);
+                assertEquals(candidates.toString(), Arrays.asList("--help",
+                        "display", "save"), candidates);
+            }
+            {
+                String cmd = "attachment d";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertEquals(candidates.toString(), Arrays.asList("display "),
+                        candidates);
+            }
+
+            {
+                String cmd = "attachment s";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertEquals(candidates.toString(), Arrays.asList("save "),
+                        candidates);
+            }
+
+            {
+                String cmd = "attachment ww";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "attachment ww ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "attachment display ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertEquals(candidates.toString(), Arrays.asList("--operation"),
+                        candidates);
+            }
+
+            {
+                String cmd = "attachment       display      ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertEquals(candidates.toString(), Arrays.asList("--operation"),
+                        candidates);
+            }
+
+            {
+                String cmd = "attachment display --operation=:read-resou";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() >= 1);
+                assertTrue(candidates.toString(), candidates.contains("read-resource"));
+            }
+
+            {
+                String cmd = "attachment display --operation=:read-resource() ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("--headers"));
+            }
+
+            {
+                String cmd = "attachment display --operation=:read-resource() ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("--headers"));
+            }
+
+            {
+                String cmd = "attachment save --operation=:read-resource() --";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 3);
+                assertEquals(candidates.toString(), Arrays.asList("--file",
+                        "--headers", "--overwrite"),
+                        candidates);
+            }
+
+            {
+                String cmd = "attachment save --operation=:read-resource() --file=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+            }
+
+        } finally {
+            ctx.terminateSession();
+        }
+    }
 }

@@ -1,0 +1,23 @@
+SYNOPSIS
+
+   attachment [save|display] --operation=<operation> [--file=<target file>] 
+              [--overwrite]
+
+DESCRIPTION
+
+    Display or save the content of the attachments located in the operation 
+    response.
+    If no --file option is provided, the attachment is saved in the CLI working
+    directory, the attachment uuid being used as the file name. 
+    If multiple attachments are returned, the attachments are saved using the 
+    file name + an index. If --overwrite is present, then any existing file 
+    will be overwritten.
+
+OPTIONS
+
+ --operation     - mandatory, the operation that returns attachments.
+
+ --file          - optional, the path of file used to save the attachments.
+
+ --overwrite     - optional, used when saving to a file. Will make the received 
+                   file to overwrite existing file. 

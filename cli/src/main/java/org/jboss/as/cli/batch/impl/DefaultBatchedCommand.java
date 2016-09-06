@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -25,6 +25,7 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.batch.BatchedCommand;
 import org.jboss.dmr.ModelNode;
+import org.jboss.as.cli.handlers.ResponseHandler;
 
 /**
  *
@@ -36,8 +37,10 @@ public class DefaultBatchedCommand implements BatchedCommand {
     private final ModelNode request;
     private final ModelNode description;
     private final CommandContext ctx;
-    public DefaultBatchedCommand(CommandContext ctx, String command, ModelNode request) {
-        if(command == null) {
+    private final ResponseHandler handler;
+
+    public DefaultBatchedCommand(CommandContext ctx, String command, ModelNode request, ResponseHandler handler) {
+        if (command == null) {
             throw new IllegalArgumentException("Command is null.");
         }
         this.command = command;
@@ -52,6 +55,7 @@ public class DefaultBatchedCommand implements BatchedCommand {
         // Keep a ref on description to speedup validation.
         description = (ModelNode) ctx.get(CommandContext.Scope.REQUEST,
                 Util.DESCRIPTION_RESPONSE);
+        this.handler = handler;
     }
 
     @Override
@@ -70,5 +74,10 @@ public class DefaultBatchedCommand implements BatchedCommand {
 
     public ModelNode getRequest() {
         return request;
+    }
+
+    @Override
+    public ResponseHandler getResponseHandler() {
+        return handler;
     }
 }
