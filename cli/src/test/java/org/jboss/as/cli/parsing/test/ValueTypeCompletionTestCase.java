@@ -44,6 +44,45 @@ import org.junit.Test;
  */
 public class ValueTypeCompletionTestCase {
 
+    private static final String jgroupsProtocolsAdd = "{\n" +
+"                \"type\" => LIST,\n" +
+"                \"description\" => \"The list of configured protocols for a protocol stack.\",\n" +
+"                \"expressions-allowed\" => false,\n" +
+"                \"required\" => false,\n" +
+"                \"nillable\" => true,\n" +
+"                \"deprecated\" => {\n" +
+"                    \"since\" => \"3.0.0\",\n" +
+"                    \"reason\" => \"Deprecated. Use separate protocol add operations instead.\"\n" +
+"                },\n" +
+"                \"value-type\" => {\n" +
+"                    \"type\" => {\n" +
+"                        \"type\" => STRING,\n" +
+"                        \"description\" => \"The implementation class for a protocol, which determines protocol functionality.\",\n" +
+"                        \"expressions-allowed\" => true,\n" +
+"                        \"nillable\" => true,\n" +
+"                        \"min-length\" => 1L,\n" +
+"                        \"max-length\" => 2147483647L\n" +
+"                    },\n" +
+"                    \"socket-binding\" => {\n" +
+"                        \"type\" => STRING,\n" +
+"                        \"description\" => \"Optional socket binding specification for this protocol layer, used to specify IP interfaces and ports for communication.\",\n" +
+"                        \"expressions-allowed\" => true,\n" +
+"                        \"nillable\" => true,\n" +
+"                        \"capability-reference\" => \"org.wildfly.network.socket-binding\",\n" +
+"                        \"min-length\" => 1L,\n" +
+"                        \"max-length\" => 2147483647L\n" +
+"                    },\n" +
+"                    \"properties\" => {\n" +
+"                        \"type\" => OBJECT,\n" +
+"                        \"description\" => \"Optional LIST parameter specifying the protocol list for the stack.\",\n" +
+"                        \"expressions-allowed\" => true,\n" +
+"                        \"nillable\" => true,\n" +
+"                        \"default\" => {},\n" +
+"                        \"value-type\" => STRING\n" +
+"                    }\n" +
+"                }\n" +
+"               }";
+
     private static final String loginModulesDescr = "{" +
             "\"type\" => LIST," +
             "\"description\" => \"List of authentication modules\"," +
@@ -113,9 +152,14 @@ public class ValueTypeCompletionTestCase {
             "                \"type\" => STRING," +
             "            }" +
             "        }" +
+            "      }," +
+            "    \"cc\" => {" +
+            "        \"description\" => \"smth\"," +
+            "        \"type\" => LIST," +
+            "        \"value-type\" => STRING" +
             "    }" +
-            "}" +
- "}";
+            "  }" +
+            "}";
 
     private static final String FILTER_DESCRIPTION = "{\n"
             + "                \"type\" => OBJECT,\n"
@@ -360,7 +404,7 @@ public class ValueTypeCompletionTestCase {
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{", 0, candidates);
-        assertEquals(Arrays.asList(new String[]{"aa", "bb", "code", "flag", "module", "module-options"}), candidates);
+        assertEquals(Arrays.asList(new String[]{"aa", "bb", "cc", "code", "flag", "module", "module-options"}), candidates);
         assertEquals(2, i);
 
         candidates.clear();
@@ -421,7 +465,7 @@ public class ValueTypeCompletionTestCase {
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=Main,", 0, candidates);
-        assertEquals(Arrays.asList(new String[]{"aa", "bb", "flag", "module", "module-options"}), candidates);
+        assertEquals(Arrays.asList(new String[]{"aa", "bb", "cc",  "flag", "module", "module-options"}), candidates);
         assertEquals(12, i);
 
         candidates.clear();
@@ -456,7 +500,7 @@ public class ValueTypeCompletionTestCase {
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=Main,flag = required,", 0, candidates);
-        assertEquals(Arrays.asList(new String[]{"aa", "bb", "module", "module-options"}), candidates);
+        assertEquals(Arrays.asList(new String[]{"aa", "bb", "cc", "module", "module-options"}), candidates);
         assertEquals(28, i);
 
         candidates.clear();
@@ -517,7 +561,7 @@ public class ValueTypeCompletionTestCase {
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=Main,flag = required,aa={ab1=1,ac1=2},", 0, candidates);
-        assertEquals(Arrays.asList(new String[]{"bb", "module", "module-options"}), candidates);
+        assertEquals(Arrays.asList(new String[]{"bb", "cc", "module", "module-options"}), candidates);
         assertEquals(45, i);
 
         candidates.clear();
@@ -529,6 +573,11 @@ public class ValueTypeCompletionTestCase {
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=Main,flag = required,aa={ab1=1,ac1=2},bb=[{", 0, candidates);
         assertEquals(Arrays.asList(new String[]{"bb1", "bb2", "bc1"}), candidates);
         assertEquals(50, i);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{code=Main,flag = required,aa={ab1=1,ac1=2},cc=[(", 0, candidates);
+        assertEquals(Collections.emptyList(), candidates);
+        assertEquals(-1, i);
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=\"UsersRoles\",flag=required,module-options=[(", 0, candidates);
@@ -547,7 +596,7 @@ public class ValueTypeCompletionTestCase {
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=toto,flag=required},{", 0, candidates);
-        assertEquals(Arrays.asList(new String[]{"aa", "bb", "code", "flag", "module", "module-options"}), candidates);
+        assertEquals(Arrays.asList(new String[]{"aa", "bb", "cc", "code", "flag", "module", "module-options"}), candidates);
         assertEquals(28, i);
 
         candidates.clear();
@@ -608,7 +657,7 @@ public class ValueTypeCompletionTestCase {
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=toto,flag=required},{code=Main,", 0, candidates);
-        assertEquals(Arrays.asList(new String[]{"aa", "bb", "flag", "module", "module-options"}), candidates);
+        assertEquals(Arrays.asList(new String[]{"aa", "bb", "cc", "flag", "module", "module-options"}), candidates);
         assertEquals(38, i);
 
         candidates.clear();
@@ -643,7 +692,7 @@ public class ValueTypeCompletionTestCase {
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=toto,flag=required},{code=Main,flag = required,", 0, candidates);
-        assertEquals(Arrays.asList(new String[]{"aa", "bb", "module", "module-options"}), candidates);
+        assertEquals(Arrays.asList(new String[]{"aa", "bb", "cc", "module", "module-options"}), candidates);
         assertEquals(54, i);
 
         candidates.clear();
@@ -704,7 +753,7 @@ public class ValueTypeCompletionTestCase {
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=toto,flag=required},{code=Main,flag = required,aa={ab1=1,ac1=2},", 0, candidates);
-        assertEquals(Arrays.asList(new String[]{"bb", "module", "module-options"}), candidates);
+        assertEquals(Arrays.asList(new String[]{"bb", "cc", "module", "module-options"}), candidates);
         assertEquals(71, i);
 
         candidates.clear();
@@ -790,5 +839,28 @@ public class ValueTypeCompletionTestCase {
         } finally {
             f.delete();
         }
+    }
+
+    @Test
+    public void testJgroupsProtocolAdd() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(jgroupsProtocolsAdd);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<String>();
+
+        int i;
+        i = new ValueTypeCompleter(propDescr).complete(null, "", 0, candidates);
+        assertEquals(Collections.singletonList("["), candidates);
+        assertEquals(0, i);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[", 0, candidates);
+        assertEquals(Arrays.asList(new String[]{"{"}), candidates);
+        assertEquals(1, i);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{", 0, candidates);
+        assertEquals(Arrays.asList(new String[]{"properties", "socket-binding", "type"}), candidates);
+        assertEquals(2, i);
     }
 }
