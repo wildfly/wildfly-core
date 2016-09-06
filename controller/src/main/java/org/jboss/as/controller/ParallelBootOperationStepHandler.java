@@ -348,6 +348,16 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             boolean interrupted = false;
             ParallelBootOperationContext operationContext = null;
             try {
+                if(bootOperations == null || bootOperations.isEmpty()) {
+                    transactionControl.operationPrepared(new ModelController.OperationTransaction() {
+                        @Override
+                        public void commit() {}
+
+                        @Override
+                        public void rollback() {}
+                    }, new ModelNode());
+                    return;
+                }
                 operationContext = new ParallelBootOperationContext(transactionControl, processState,
                         primaryContext, runtimeOps, controllingThread, controller, lockId, controller.getAuditLogger(),
                         controller.getManagementModel().getRootResource(), extraValidationStepHandler);
@@ -355,7 +365,6 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                     final OperationStepHandler osh = op.handler == null ? rootRegistration.getOperationHandler(op.address, op.operationName) : op.handler;
                     operationContext.addStep(op.response, op.operation, osh, executionStage);
                 }
-
                 operationContext.executeOperation();
             } catch (Throwable t) {
                 interrupted = (t instanceof InterruptedException);
