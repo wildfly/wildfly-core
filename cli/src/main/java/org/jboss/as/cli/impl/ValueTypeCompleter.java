@@ -98,18 +98,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             if (type == null) {
                 return null;
             }
-            if (type.has(Util.TYPE)) {
-                ModelNode t = type.get(Util.TYPE);
-                if (!isCompliantType(t)) {
-                    return null;
-                }
-                t = type.get(Util.VALUE_TYPE);
-                if (!t.isDefined()) {
-                    return null;
-                } else {
-                    return t;
-                }
-            } else if (type.has(Util.VALUE_TYPE)) {
+            if (type.has(Util.VALUE_TYPE)) {
                 return type.get(Util.VALUE_TYPE);
             }
             return type;
@@ -200,7 +189,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
 
         @Override
         boolean isCompliantType(ModelNode t) {
-            return t.asType().equals(ModelType.LIST);
+            return ValueTypeCompleter.typeEquals(t, ModelType.LIST);
         }
 
         @Override
@@ -236,7 +225,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
 
         @Override
         boolean isCompliantType(ModelNode t) {
-            return t.asType().equals(ModelType.OBJECT);
+            return ValueTypeCompleter.typeEquals(t, ModelType.OBJECT);
         }
 
         @Override
@@ -271,8 +260,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
 
         @Override
         boolean isCompliantType(ModelNode t) {
-            ModelType mt = t.asType();
-            return !mt.equals(ModelType.OBJECT) && !mt.equals(ModelType.LIST);
+            return !ValueTypeCompleter.typeEquals(t, ModelType.OBJECT)
+                    && !ValueTypeCompleter.typeEquals(t, ModelType.LIST);
         }
 
         @Override
@@ -341,6 +330,26 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         final ValueTypeCallbackHandler valueTypeHandler = new ValueTypeCallbackHandler(false);
         StateParser.parse(line, valueTypeHandler, InitialValueState.INSTANCE);
         return valueTypeHandler;
+    }
+
+    private static boolean typeEquals(ModelNode mn, ModelType type) {
+        ModelType mt;
+        try {
+            mt = mn.asType();
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+        return mt.equals(type);
+    }
+
+    private static boolean isObject(ModelNode mn) {
+        ModelType mt;
+        try {
+            mt = mn.asType();
+        } catch (IllegalArgumentException ex) {
+            return true;
+        }
+        return false;
     }
 
     private final class ValueTypeCallbackHandler implements ParsingStateCallbackHandler {
@@ -430,10 +439,10 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             // Empty value, returns the first char
             if (lastEnteredState == null) {
                 if (propDescr.has(Util.TYPE)) {
-                    final ModelType type = propDescr.get(Util.TYPE).asType();
-                            if(type.equals(ModelType.OBJECT)) {
+                    ModelNode mt = propDescr.get(Util.TYPE);
+                    if (typeEquals(mt, ModelType.OBJECT)) {
                         return Collections.singletonList("{");
-                            } else if(type.equals(ModelType.LIST)) {
+                    } else if (typeEquals(mt, ModelType.LIST)) {
                         return Collections.singletonList("[");
                     }
                 }
@@ -465,10 +474,10 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             if (lastEnteredState.equals(EqualsState.ID)) {
                 ModelNode pType = propType.get(last.name);
                 if (pType.has(Util.TYPE)) {
-                    final ModelType type = pType.get(Util.TYPE).asType();
-                    if (type.equals(ModelType.OBJECT)) {
+                    final ModelNode mt = pType.get(Util.TYPE);
+                    if (typeEquals(mt, ModelType.OBJECT)) {
                         return Collections.singletonList("{");
-                    } else if (type.equals(ModelType.LIST)) {
+                    } else if (typeEquals(mt, ModelType.LIST)) {
                         return Collections.singletonList("[");
                     }
                 }
@@ -485,7 +494,9 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                             && !currentInstance.isComplete()) {
                         List<String> candidates = new ArrayList<>(getSimpleValues(currentInstance.type,
                                 null, last.value.asString()));
-                        if (candidates.isEmpty()) {
+                        // Add separator only for complex types, a simple type, such as a String,
+                        // could lead to empty candidates too.
+                        if (candidates.isEmpty() && isObject(propType)) {
                             candidates.add("]");
                             candidates.add(",");
                         }
@@ -578,7 +589,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                         // We don't know, returns an empty list.
                         return Collections.<String>emptyList();
                     }
-                } catch (Exception ex) {
+                } catch (IllegalArgumentException ex) {
                     // This is an Object, returns the start character.
                     return Collections.singletonList("{");
                 }
@@ -603,12 +614,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
 
         protected boolean isBoolean(ModelNode propType) {
             if (propType.has(Util.TYPE)) {
-                try {
-                    return propType.get(Util.TYPE).asType().equals(ModelType.BOOLEAN);
-                } catch (IllegalArgumentException e) {
-                    // 'type', if present, is not always ModelType,
-                    // it could a custom property, in which case IAE will be thrown
-                }
+                return typeEquals(propType.get(Util.TYPE), ModelType.BOOLEAN);
             }
             return false;
         }
