@@ -545,8 +545,7 @@ public interface DomainControllerLogger extends BasicLogger {
     @Message(id = 47, value = "Invalid content declaration")
     String invalidContentDeclaration();
 
-    @Message(id = 48, value = "%s is null")
-    String nullVar(String name);
+    // id = 48; redundant parameter null check message
 
     /**
      * A message indicating the operation, represented by the {@code opName} parameter, cannot be used with the same

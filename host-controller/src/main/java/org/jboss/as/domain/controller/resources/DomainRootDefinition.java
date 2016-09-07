@@ -112,6 +112,7 @@ import org.jboss.as.server.services.net.InterfaceRemoveHandler;
 import org.jboss.as.server.services.net.InterfaceResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.common.Assert;
 
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for the root resource in the domain-wide model.
@@ -360,9 +361,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         private static final List<String> ALLOWED_SERVER_GROUP_CHILDREN = Arrays.asList(ROLLING_TO_SERVERS, MAX_FAILURE_PERCENTAGE, MAX_FAILED_SERVERS);
         @Override
         public void validateParameter(String parameterName, ModelNode plan) throws OperationFailedException {
-            if(plan == null) {
-                throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.nullVar("plan"));
-            }
+            Assert.assertNotNull(plan);
             if(!plan.hasDefined(ROLLOUT_PLAN)) {
                 throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.requiredChildIsMissing(ROLLOUT_PLAN, ROLLOUT_PLAN, plan.toString()));
             }
