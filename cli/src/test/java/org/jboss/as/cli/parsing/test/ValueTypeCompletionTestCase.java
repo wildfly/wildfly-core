@@ -44,6 +44,15 @@ import org.junit.Test;
  */
 public class ValueTypeCompletionTestCase {
 
+    private static final String compositeSteps = "{\n"
+            + "            \"type\" => LIST,\n"
+            + "            \"description\" => \"A list of the operation requests that constitute the composite request.\",\n"
+            + "            \"expressions-allowed\" => false,\n"
+            + "            \"required\" => true,\n"
+            + "            \"nillable\" => false,\n"
+            + "            \"value-type\" => OBJECT\n"
+            + "        }";
+
     private static final String jgroupsProtocolsAdd = "{\n" +
 "                \"type\" => LIST,\n" +
 "                \"description\" => \"The list of configured protocols for a protocol stack.\",\n" +
@@ -862,5 +871,31 @@ public class ValueTypeCompletionTestCase {
         i = new ValueTypeCompleter(propDescr).complete(null, "[{", 0, candidates);
         assertEquals(Arrays.asList(new String[]{"properties", "socket-binding", "type"}), candidates);
         assertEquals(2, i);
+    }
+
+    @Test
+    public void testCompositeSteps() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(compositeSteps);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<>();
+
+        int i;
+        i = new ValueTypeCompleter(propDescr).complete(null, "", 0, candidates);
+        assertEquals(Collections.singletonList("["), candidates);
+        assertEquals(0, i);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[", 0, candidates);
+        assertEquals(Arrays.asList(new String[]{"{"}), candidates);
+        assertEquals(1, i);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{", 0, candidates);
+        assertTrue(candidates.isEmpty());
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{a", 0, candidates);
+        assertTrue(candidates.isEmpty());
     }
 }
