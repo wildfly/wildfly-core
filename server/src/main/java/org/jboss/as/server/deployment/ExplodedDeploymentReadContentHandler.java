@@ -15,6 +15,7 @@
  */
 package org.jboss.as.server.deployment;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PATH;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.getContentItem;
@@ -70,7 +71,8 @@ public class ExplodedDeploymentReadContentHandler implements OperationStepHandle
         }
         try {
             TypedInputStream inputStream = contentRepository.readContent(deploymentHash, path);
-            context.attachResultStream(inputStream.getContentType(), inputStream);
+            String uuid = context.attachResultStream(inputStream.getContentType(), inputStream);
+            context.getResult().get(UUID).set(uuid);
         } catch (ExplodedContentException ex) {
             throw createFailureException(ex.toString());
         }
