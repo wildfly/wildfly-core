@@ -54,6 +54,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.as.controller.registry.AttributeAccess.Storage;
+import org.wildfly.common.Assert;
 
 final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
@@ -208,9 +209,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public ManagementResourceRegistration registerSubModel(final ResourceDefinition resourceDefinition) {
-        if (resourceDefinition == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("resourceDefinition");
-        }
+        Assert.checkNotNullParam("resourceDefinition", resourceDefinition);
         final PathElement address = resourceDefinition.getPathElement();
         if (address == null) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodelWithNullPath();

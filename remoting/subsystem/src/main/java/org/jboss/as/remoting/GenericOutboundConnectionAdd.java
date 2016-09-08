@@ -37,6 +37,7 @@ import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.remoting3.Endpoint;
+import org.wildfly.common.Assert;
 import org.xnio.OptionMap;
 
 /**
@@ -47,12 +48,10 @@ class GenericOutboundConnectionAdd extends AbstractAddStepHandler {
     static final GenericOutboundConnectionAdd INSTANCE = new GenericOutboundConnectionAdd();
 
     static ModelNode getAddOperation(final String connectionName, final String uri, PathAddress address) {
-        if (connectionName == null || connectionName.trim().isEmpty()) {
-            throw RemotingLogger.ROOT_LOGGER.connectionNameEmpty();
-        }
-        if (uri == null || uri.trim().isEmpty()) {
-            throw RemotingLogger.ROOT_LOGGER.connectionUriEmpty(connectionName);
-        }
+        Assert.checkNotNullParam("connectionName", connectionName);
+        Assert.checkNotEmptyParam("connectionName", connectionName);
+        Assert.checkNotNullParam("uri", uri);
+        Assert.checkNotEmptyParam("uri", uri);
         final ModelNode addOperation = new ModelNode();
         addOperation.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
         addOperation.get(ModelDescriptionConstants.OP_ADDR).set(address.toModelNode());

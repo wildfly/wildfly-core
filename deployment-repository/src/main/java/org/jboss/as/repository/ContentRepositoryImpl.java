@@ -59,7 +59,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-
+import org.wildfly.common.Assert;
 
 /**
  * Default implementation of {@link ContentRepository}.
@@ -79,12 +79,8 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
     private final long lockTimeout;
 
     protected ContentRepositoryImpl(final File repoRoot, final File tmpRoot, long obsolescenceTimeout, long lockTimeout) {
-        if (repoRoot == null) {
-            throw DeploymentRepositoryLogger.ROOT_LOGGER.nullVar("repoRoot");
-        }
-        if (tmpRoot == null) {
-            throw DeploymentRepositoryLogger.ROOT_LOGGER.nullVar("tmpRoot");
-        }
+        Assert.checkNotNullParam("repoRoot", repoRoot);
+        Assert.checkNotNullParam("tmpRoot", tmpRoot);
         checkDirectory(repoRoot);
         this.repoRoot = repoRoot;
         checkDirectory(tmpRoot);
@@ -168,9 +164,7 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
 
     @Override
     public VirtualFile getContent(byte[] hash) {
-        if (hash == null) {
-            throw DeploymentRepositoryLogger.ROOT_LOGGER.nullVar("hash");
-        }
+        Assert.checkNotNullParam("hash", hash);
         return VFS.getChild(getDeploymentContentFile(hash, true).toUri());
     }
 

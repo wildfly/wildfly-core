@@ -34,6 +34,7 @@ import java.net.Socket;
 import java.util.concurrent.Executor;
 
 import org.jboss.as.process.logging.ProcessLogger;
+import org.wildfly.common.Assert;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -134,9 +135,7 @@ final class ConnectionImpl implements Connection {
 
     @Override
     public void setMessageHandler(final MessageHandler messageHandler) {
-        if (messageHandler == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("messageHandler");
-        }
+        Assert.checkNotNullParam("messageHandler", messageHandler);
         this.messageHandler = messageHandler;
     }
 

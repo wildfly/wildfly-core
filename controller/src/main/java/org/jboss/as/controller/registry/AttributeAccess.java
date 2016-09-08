@@ -29,6 +29,7 @@ import java.util.Set;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationStepHandler;
+import org.wildfly.common.Assert;
 
 /**
  * Information about handling an attribute in a sub-model.
@@ -156,20 +157,18 @@ public final class AttributeAccess {
 
     AttributeAccess(final AccessType access, final Storage storage, final OperationStepHandler readHandler,
                     final OperationStepHandler writeHandler, AttributeDefinition definition, final EnumSet<Flag> flags) {
-        assert access != null : ControllerLogger.ROOT_LOGGER.nullVar("access").getLocalizedMessage();
-        assert storage != null : ControllerLogger.ROOT_LOGGER.nullVar("storage").getLocalizedMessage();
+        Assert.assertNotNull(access);
+        Assert.assertNotNull(storage);
         this.access = access;
         this.readHandler = readHandler;
         this.writeHandler = writeHandler;
         this.storage = storage;
         this.definition = definition;
         if (flags != null && flags.contains(Flag.ALIAS)) {
-            if (readHandler == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("writeHandler");
-            }
+            Assert.checkNotNullParam("readHandler", readHandler);
         }
-        if(access == AccessType.READ_WRITE && writeHandler == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("writeHandler");
+        if (access == AccessType.READ_WRITE) {
+            Assert.checkNotNullParam("writeHandler", writeHandler);
         }
         this.flags = flags == null ? EnumSet.noneOf(Flag.class) : EnumSet.copyOf(flags);
         switch (storage) {

@@ -53,6 +53,7 @@ import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.value.Value;
 import org.jboss.stdio.StdioContext;
+import org.wildfly.common.Assert;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
@@ -86,16 +87,11 @@ public class EmbeddedStandaloneServerFactory {
     }
 
     public static StandaloneServer create(final File jbossHomeDir, final ModuleLoader moduleLoader, final Properties systemProps, final Map<String, String> systemEnv, final String[] cmdargs) {
-        if (jbossHomeDir == null)
-            throw EmbeddedLogger.ROOT_LOGGER.nullVar("jbossHomeDir");
-        if (moduleLoader == null)
-            throw EmbeddedLogger.ROOT_LOGGER.nullVar("moduleLoader");
-        if (systemProps == null)
-            throw EmbeddedLogger.ROOT_LOGGER.nullVar("systemProps");
-        if (systemEnv == null)
-            throw EmbeddedLogger.ROOT_LOGGER.nullVar("systemEnv");
-        if (cmdargs == null)
-            throw EmbeddedLogger.ROOT_LOGGER.nullVar("cmdargs");
+        Assert.checkNotNullParam("jbossHomeDir", jbossHomeDir);
+        Assert.checkNotNullParam("moduleLoader", moduleLoader);
+        Assert.checkNotNullParam("systemProps", systemProps);
+        Assert.checkNotNullParam("systemEnv", systemEnv);
+        Assert.checkNotNullParam("cmdargs", cmdargs);
 
         setupCleanDirectories(jbossHomeDir.toPath(), systemProps);
 

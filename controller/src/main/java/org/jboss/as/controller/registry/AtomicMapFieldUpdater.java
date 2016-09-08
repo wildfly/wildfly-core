@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -54,9 +54,7 @@ final class AtomicMapFieldUpdater<C, K, V> {
     }
 
     public V put(C instance, K key, V value) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
+        Assert.checkNotNullParam("key", key);
         for (;;) {
             final Map<K, V> oldMap = updater.get(instance);
             final Map<K, V> newMap;
@@ -96,9 +94,7 @@ final class AtomicMapFieldUpdater<C, K, V> {
      * @return {@code value} if the snapshot is out of date, {@code null} if it succeeded, the existing value if the put failed
      */
     public V putAtomic(C instance, K key, V value, Map<K, V> snapshot) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
+        Assert.checkNotNullParam("key", key);
         final Map<K, V> newMap;
         final int oldSize = snapshot.size();
         if (oldSize == 0) {
@@ -124,9 +120,7 @@ final class AtomicMapFieldUpdater<C, K, V> {
     }
 
     public V putIfAbsent(C instance, K key, V value) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
+        Assert.checkNotNullParam("key", key);
         for (;;) {
             final Map<K, V> oldMap = updater.get(instance);
             final Map<K, V> newMap;

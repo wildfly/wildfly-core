@@ -34,6 +34,7 @@ import javax.net.ServerSocketFactory;
 
 import org.jboss.as.process.logging.ProcessLogger;
 import org.jboss.as.process.protocol.Connection.ClosedCallback;
+import org.wildfly.common.Assert;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -62,12 +63,8 @@ public final class ProtocolServer {
         readTimeout = configuration.getReadTimeout();
         readExecutor = configuration.getReadExecutor();
         callback = configuration.getClosedCallback();
-        if (bindAddress == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("bindAddress");
-        }
-        if (connectionHandler == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("connectionHandler");
-        }
+        Assert.checkNotNullParam("bindAddress", bindAddress);
+        Assert.checkNotNullParam("connectionHandler", connectionHandler);
     }
 
     public void start() throws IOException {

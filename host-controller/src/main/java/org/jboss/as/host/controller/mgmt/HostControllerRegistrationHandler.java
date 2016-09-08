@@ -82,6 +82,7 @@ import org.jboss.dmr.Property;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.threads.AsyncFutureTask;
+import org.wildfly.common.Assert;
 
 /**
  * Handler responsible for the host-controller registration process. This may involve assembling the correct
@@ -309,9 +310,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             boolean locked = false;
             Integer operationID = registrationContext.activeOperation.getOperationId();
 
-            if (operationID == null) {
-                throw HostControllerLogger.DOMAIN_LOGGER.nullVar("operationID");
-            }
+            Assert.checkNotNullParam("operationID", operationID);
 
             try {
                 try {

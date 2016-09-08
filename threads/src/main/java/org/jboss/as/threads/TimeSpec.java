@@ -25,6 +25,8 @@ package org.jboss.as.threads;
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
+import org.wildfly.common.Assert;
+
 /**
  * A specification of a simple duration.
  *
@@ -46,9 +48,7 @@ public final class TimeSpec implements Serializable {
      * @param duration the quantity of units
      */
     public TimeSpec(final TimeUnit unit, final long duration) {
-        if (unit == null) {
-            throw ThreadsLogger.ROOT_LOGGER.nullUnit();
-        }
+        Assert.checkNotNullParam("unit", unit);
         this.unit = unit;
         this.duration = duration;
     }

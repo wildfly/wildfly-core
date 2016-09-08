@@ -34,6 +34,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.zip.ZipFile;
 
 import org.jboss.as.patching.logging.PatchLogger;
+import org.wildfly.common.Assert;
 
 /**
  * @author Emanuel Muckenhuber
@@ -91,12 +92,8 @@ public class IoUtils {
      */
     private static void copyStream(InputStream is, OutputStream os, int bufferSize)
             throws IOException {
-        if (is == null) {
-            throw PatchLogger.ROOT_LOGGER.nullInputStream();
-        }
-        if (os == null) {
-            throw PatchLogger.ROOT_LOGGER.nullOutputStream();
-        }
+        Assert.checkNotNullParam("is", is);
+        Assert.checkNotNullParam("os", os);
         byte[] buff = new byte[bufferSize];
         int rc;
         while ((rc = is.read(buff)) != -1) os.write(buff, 0, rc);

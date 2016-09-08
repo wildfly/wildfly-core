@@ -41,7 +41,7 @@ import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * A registration for a management resource which consists of a resource description plus registered operation handlers.
@@ -393,9 +393,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
         @Deprecated
         public static ManagementResourceRegistration create(final DescriptionProvider rootModelDescriptionProvider,
                                                             AccessConstraintUtilizationRegistry constraintUtilizationRegistry) {
-            if (rootModelDescriptionProvider == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("rootModelDescriptionProvider");
-            }
+            Assert.checkNotNullParam("rootModelDescriptionProvider", rootModelDescriptionProvider);
             ResourceDefinition rootResourceDefinition = new ResourceDefinition() {
 
                 @Override
@@ -525,9 +523,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
         public ManagementResourceRegistration createRegistration(final ResourceDefinition resourceDefinition,
                                                                  AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
                                                                  CapabilityRegistry registry) {
-            if (resourceDefinition == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("rootModelDescriptionProviderFactory");
-            }
+            Assert.checkNotNullParam("resourceDefinition", resourceDefinition);
             ConcreteResourceRegistration resourceRegistration =
                     new ConcreteResourceRegistration(null, null, resourceDefinition,
                             constraintUtilizationRegistry, false, registry, processType);

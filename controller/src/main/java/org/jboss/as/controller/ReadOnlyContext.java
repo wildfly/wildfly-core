@@ -45,6 +45,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.common.Assert;
 
 /**
  * A read-only {@linkplain OperationContext}, allowing read-only access to the current write model from a different
@@ -309,25 +310,19 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     @Override
     public <V> V attach(final AttachmentKey<V> key, final V value) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
+        Assert.checkNotNullParam("key", key);
         return key.cast(valueAttachments.put(key, value));
     }
 
     @Override
     public <V> V attachIfAbsent(final AttachmentKey<V> key, final V value) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
+        Assert.checkNotNullParam("key", key);
         return key.cast(valueAttachments.putIfAbsent(key, value));
     }
 
     @Override
     public <V> V detach(final AttachmentKey<V> key) {
-        if (key == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("key");
-        }
+        Assert.checkNotNullParam("key", key);
         return key.cast(valueAttachments.remove(key));
     }
 

@@ -42,6 +42,7 @@ import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.common.Assert;
 
 /**
  * An operation to resolve a relative-to path.
@@ -161,9 +162,7 @@ public class ResolvePathHandler implements OperationStepHandler {
          * @return the operation handler builder
          */
         public static Builder of(final PathManager pathManager) {
-            if (pathManager == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("pathManager");
-            }
+            Assert.checkNotNullParam("pathManager", pathManager);
             return new Builder(OPERATION_NAME, pathManager);
         }
 
@@ -182,12 +181,8 @@ public class ResolvePathHandler implements OperationStepHandler {
          */
         @Deprecated
         public static Builder of(final String operationName, final PathManager pathManager) {
-            if (pathManager == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("pathManager");
-            }
-            if (operationName == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("operationName");
-            }
+            Assert.checkNotNullParam("operationName", operationName);
+            Assert.checkNotNullParam("pathManager", pathManager);
             return new Builder(operationName, pathManager);
         }
 

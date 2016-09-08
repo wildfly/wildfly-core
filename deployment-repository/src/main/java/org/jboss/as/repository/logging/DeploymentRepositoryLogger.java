@@ -106,15 +106,7 @@ public interface DeploymentRepositoryLogger extends BasicLogger {
     @Message(id = 7, value = "%s is not a directory")
     IllegalStateException notADirectory(String path);
 
-    /**
-     * Creates an exception indicating the variable, represented by the {@code name} parameter, is {@code null}.
-     *
-     * @param name the name of the variable.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 8, value = "%s is null")
-    IllegalArgumentException nullVar(String name);
+    // id = 8; redundant parameter null check message
 
     @LogMessage(level = INFO)
     @Message(id = 9, value = "Content %s is obsolete and will be removed")

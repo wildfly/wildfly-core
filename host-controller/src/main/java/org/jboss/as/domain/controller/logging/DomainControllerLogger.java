@@ -545,15 +545,8 @@ public interface DomainControllerLogger extends BasicLogger {
     @Message(id = 47, value = "Invalid content declaration")
     String invalidContentDeclaration();
 
-    /**
-     * Creates an exception indicating the variable is {@code null}.
-     *
-     * @param name the name of the variable.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
     @Message(id = 48, value = "%s is null")
-    IllegalArgumentException nullVar(String name);
+    String nullVar(String name);
 
     /**
      * A message indicating the operation, represented by the {@code opName} parameter, cannot be used with the same

@@ -24,9 +24,9 @@ package org.jboss.as.controller.operations.validation;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.Assert;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
@@ -36,8 +36,7 @@ public class ChainedParameterValidator extends AbstractParameterValidator implem
 
 
     public ChainedParameterValidator(final ParameterValidator... validators) {
-        if (validators == null)
-            throw ControllerLogger.ROOT_LOGGER.nullVar("validators");
+        Assert.checkNotNullParam("validators", validators);
         this.validators = validators;
     }
 

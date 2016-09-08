@@ -25,7 +25,7 @@ package org.jboss.as.host.controller.model.jvm;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * An element representing a list of jvm options.
@@ -49,10 +49,8 @@ public final class JvmOptionsElement {
      * @param value the option to add
      */
     void addOption(final String value) {
+        Assert.checkNotNullParam("value", value);
         synchronized (options) {
-            if (value == null) {
-                throw HostControllerLogger.ROOT_LOGGER.nullVar("value");
-            }
             options.add(value);
         }
     }

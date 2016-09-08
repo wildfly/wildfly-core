@@ -31,6 +31,7 @@ import java.util.Map;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  *
@@ -57,12 +58,8 @@ public class JvmOptionsBuilderFactory {
     }
 
     public void addOptions(JvmElement jvmElement, List<String> command){
-        if (jvmElement == null) {
-            throw HostControllerLogger.ROOT_LOGGER.nullVar("jvm");
-        }
-        if (command == null) {
-            throw HostControllerLogger.ROOT_LOGGER.nullVar("command");
-        }
+        Assert.checkNotNullParam("jvmElement", jvmElement);
+        Assert.checkNotNullParam("command", command);
         JvmOptionsBuilder builder = BUILDERS.get(jvmElement.getJvmType());
         if (builder == null) {
             throw HostControllerLogger.ROOT_LOGGER.unknown("jvm", jvmElement.getJvmType());

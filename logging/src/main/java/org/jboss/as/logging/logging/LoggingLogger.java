@@ -552,15 +552,7 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 52, value = "A failure was detecting while performing a rollback.")
     RuntimeException rollbackFailure(@Cause Throwable cause);
 
-    /**
-     * Creates an exception indicating the variable, represented by the {@code name} parameter, is {@code null}.
-     *
-     * @param name the name of the variable
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 53, value = "%s is null")
-    IllegalArgumentException nullVar(String name);
+    // id = 53; redundant parameter null check message
 
     /**
      * Creates an exception indicating a failure to load the class.

@@ -44,7 +44,7 @@ import org.jboss.as.controller.client.helpers.domain.ServerGroupDeploymentPlanBu
 import org.jboss.as.controller.client.helpers.domain.UndeployDeploymentPlanBuilder;
 import org.jboss.as.controller.client.impl.InputStreamEntry;
 import org.jboss.as.protocol.StreamUtils;
-
+import org.wildfly.common.Assert;
 
 /**
  * Builder capable of creating a {@link DeploymentPlanImpl}.
@@ -57,8 +57,7 @@ class DeploymentPlanBuilderImpl extends AbstractDeploymentPlanBuilder implements
 
     DeploymentPlanBuilderImpl(DeploymentContentDistributor deploymentDistributor) {
         super();
-        if (deploymentDistributor == null)
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("deploymentDistributor");
+        Assert.checkNotNullParam("deploymentDistributor", deploymentDistributor);
         this.deploymentDistributor = deploymentDistributor;
     }
 

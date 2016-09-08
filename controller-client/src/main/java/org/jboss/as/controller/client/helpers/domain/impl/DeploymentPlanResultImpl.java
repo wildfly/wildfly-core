@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.controller.client.helpers.domain.DeploymentActionResult;
 import org.jboss.as.controller.client.helpers.domain.DeploymentPlan;
 import org.jboss.as.controller.client.helpers.domain.DeploymentPlanResult;
@@ -35,7 +34,7 @@ import org.jboss.as.controller.client.helpers.domain.InvalidDeploymentPlanExcept
 import org.jboss.as.controller.client.helpers.domain.ServerGroupDeploymentActionResult;
 import org.jboss.as.controller.client.helpers.domain.ServerGroupDeploymentPlanResult;
 import org.jboss.as.controller.client.helpers.domain.ServerUpdateResult;
-
+import org.wildfly.common.Assert;
 
 /**
  * Default implementation of {@link DeploymentPlanResult}.
@@ -58,10 +57,9 @@ public class DeploymentPlanResultImpl implements DeploymentPlanResult {
     }
 
     public DeploymentPlanResultImpl(final DeploymentPlan plan, final InvalidDeploymentPlanException invalidPlanException) {
-        if (plan == null)
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("plan");
-        if (invalidPlanException == null)
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("invalidPlanException");
+        Assert.checkNotNullParam("plan", plan);
+        //noinspection ThrowableResultOfMethodCallIgnored
+        Assert.checkNotNullParam("invalidPlanException", invalidPlanException);
         this.plan = plan;
         this.results = null;
         this.idpe = invalidPlanException;

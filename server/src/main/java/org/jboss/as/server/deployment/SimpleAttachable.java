@@ -29,7 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.as.server.logging.ServerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * A simple implementation of {@link Attachable} which may be used as a base class or on a standalone basis.
@@ -71,9 +71,7 @@ public class SimpleAttachable implements Attachable {
 
     /** {@inheritDoc} */
     public synchronized <T> T putAttachment(final AttachmentKey<T> key, final T value) {
-        if (key == null) {
-            throw ServerLogger.ROOT_LOGGER.nullAttachmentKey();
-        }
+        Assert.checkNotNullParam("key", key);
         return key.cast(attachments.put(key, key.cast(value)));
     }
 

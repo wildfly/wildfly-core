@@ -39,6 +39,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.wildfly.common.Assert;
 
 /**
  * Basic implementation of {@link ResourceDefinition}.
@@ -77,9 +78,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     @Deprecated
     public SimpleResourceDefinition(final PathElement pathElement, final DescriptionProvider descriptionProvider) {
         //Can be removed when we get to 3.0.0
-        if (descriptionProvider == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("descriptionProvider");
-        }
+        Assert.checkNotNullParam("descriptionProvider", descriptionProvider);
         this.pathElement = pathElement;
         this.descriptionResolver = null;
         this.descriptionProvider = descriptionProvider;
@@ -268,9 +267,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         //Use the Parameters variety
 
         //Can be removed when we get to 3.0.0
-        if (descriptionResolver == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("descriptionProvider");
-        }
+        Assert.checkNotNullParam("descriptionResolver", descriptionResolver);
         this.pathElement = pathElement;
         this.descriptionResolver = descriptionResolver;
         this.descriptionProvider = null;
@@ -547,9 +544,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @param descriptionResolver the description provider. Cannot be {@code null}
          */
         public Parameters(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
-            if (descriptionResolver == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("descriptionResolver");
-            }
+            Assert.checkNotNullParam("descriptionResolver", descriptionResolver);
             this.pathElement = pathElement;
             this.descriptionResolver = descriptionResolver;
         }
@@ -597,9 +592,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @throws IllegalStateException if a null {@code addRestartLevel} is used
          */
         public Parameters setAddRestartLevel(OperationEntry.Flag addRestartLevel) {
-            if (addRestartLevel == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("addRestartLevel");
-            }
+            Assert.checkNotNullParam("addRestartLevel", addRestartLevel);
             this.addRestartLevel = addRestartLevel;
             return this;
         }
@@ -611,9 +604,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @throws IllegalStateException if a null {@code addRestartLevel} is used
          */
         public Parameters setRemoveRestartLevel(OperationEntry.Flag removeRestartLevel) {
-            if (removeRestartLevel == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("addRestartLevel");
-            }
+            Assert.checkNotNullParam("removeRestartLevel", removeRestartLevel);
             this.removeRestartLevel = removeRestartLevel;
             return this;
         }
@@ -659,9 +650,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @throws IllegalStateException if the {@code deprecationData} is null
          */
         public Parameters setDeprecatedSince(ModelVersion deprecatedSince) {
-            if (deprecatedSince == null) {
-                throw ControllerLogger.ROOT_LOGGER.nullVar("deprecatedSince");
-            }
+            Assert.checkNotNullParam("deprecatedSince", deprecatedSince);
 
             this.deprecationData = new DeprecationData(deprecatedSince);
             return this;

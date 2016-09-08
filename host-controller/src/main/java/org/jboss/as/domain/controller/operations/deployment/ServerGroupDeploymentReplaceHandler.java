@@ -46,6 +46,7 @@ import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.common.Assert;
 
 /**
  * Handles replacement in the runtime of one deployment by another.
@@ -60,9 +61,7 @@ public class ServerGroupDeploymentReplaceHandler implements OperationStepHandler
     private final ContentRepository contentRepository;
 
     public ServerGroupDeploymentReplaceHandler(final HostFileRepository fileRepository, final ContentRepository contentRepository) {
-        if (fileRepository == null) {
-            throw DomainControllerLogger.ROOT_LOGGER.nullVar("fileRepository");
-        }
+        Assert.checkNotNullParam("fileRepository", fileRepository);
         this.fileRepository = fileRepository;
         this.contentRepository = contentRepository;
     }

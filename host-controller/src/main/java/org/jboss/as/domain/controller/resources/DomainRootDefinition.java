@@ -361,7 +361,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         @Override
         public void validateParameter(String parameterName, ModelNode plan) throws OperationFailedException {
             if(plan == null) {
-                throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.nullVar("plan").getLocalizedMessage());
+                throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.nullVar("plan"));
             }
             if(!plan.hasDefined(ROLLOUT_PLAN)) {
                 throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.requiredChildIsMissing(ROLLOUT_PLAN, ROLLOUT_PLAN, plan.toString()));

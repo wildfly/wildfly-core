@@ -25,6 +25,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.common.Assert;
 
 /**
  * Validates parameters of type {@link ModelType#LIST}.
@@ -82,7 +83,7 @@ public class ListValidator extends ModelTypeValidator implements ParameterValida
      */
     public ListValidator(ParameterValidator elementValidator, boolean nullable, int minSize, int maxSize, boolean allowDuplicates) {
         super(ModelType.LIST, nullable, false, true);
-        if (elementValidator == null) { throw ControllerLogger.ROOT_LOGGER.nullVar("elementValidator"); }
+        Assert.checkNotNullParam("elementValidator", elementValidator);
         this.min = minSize;
         this.max = maxSize;
         this.elementValidator = elementValidator;

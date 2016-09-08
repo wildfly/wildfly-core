@@ -30,7 +30,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Arrays;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * {@link InterfaceCriteria} that tests whether a given address is on the
@@ -57,8 +57,7 @@ public class SubnetMatchInterfaceCriteria extends AbstractInterfaceCriteria {
      * @throws IllegalArgumentException if <code>network</code> is <code>null</code>
      */
     public SubnetMatchInterfaceCriteria(byte[] network, int mask) {
-        if (network == null)
-            throw ControllerLogger.ROOT_LOGGER.nullVar("network");
+        Assert.checkNotNullParam("network", network);
         this.network = network;
         this.mask = mask;
     }

@@ -79,12 +79,6 @@ public interface PatchLogger extends BasicLogger {
     @Message(id = Message.NONE, value = "Duplicate %s '%s'")
     IllegalStateException installationDuplicateLayer(String type, String layer);
 
-    @Message(id = Message.NONE, value = "null input stream")
-    IllegalArgumentException nullInputStream();
-
-    @Message(id = Message.NONE, value = "null output stream")
-    IllegalArgumentException nullOutputStream();
-
     @Message(id = Message.NONE, value = "Not a directory %s")
     IllegalStateException notADirectory(String path);
 

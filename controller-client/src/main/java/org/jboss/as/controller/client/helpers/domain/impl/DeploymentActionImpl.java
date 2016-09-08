@@ -24,8 +24,8 @@ package org.jboss.as.controller.client.helpers.domain.impl;
 import java.io.Serializable;
 import java.util.UUID;
 
-import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.controller.client.helpers.domain.DeploymentAction;
+import org.wildfly.common.Assert;
 
 /**
  * Implementation of {@link DeploymentAction}.
@@ -55,9 +55,7 @@ public class DeploymentActionImpl implements DeploymentAction, Serializable {
     }
 
     public static DeploymentActionImpl getReplaceAction(String deploymentName, String replacedName) {
-        if (replacedName == null) {
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("replacedName");
-        }
+        Assert.checkNotNullParam("replacedName", replacedName);
         return new DeploymentActionImpl(Type.REPLACE, deploymentName, null, null, replacedName);
     }
 
@@ -79,12 +77,8 @@ public class DeploymentActionImpl implements DeploymentAction, Serializable {
     private final byte[] newContentHash;
 
     private DeploymentActionImpl(Type type, String deploymentUnitName, String newContentFileName, byte[] newContentHash, String replacedDeploymentUnitName) {
-        if (type == null) {
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("type");
-        }
-        if (deploymentUnitName == null) {
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("deploymentUnitName");
-        }
+        Assert.checkNotNullParam("type", type);
+        Assert.checkNotNullParam("deploymentUnitName", deploymentUnitName);
         this.type = type;
         this.deploymentUnitName = deploymentUnitName;
         this.newContentFileName = newContentFileName;

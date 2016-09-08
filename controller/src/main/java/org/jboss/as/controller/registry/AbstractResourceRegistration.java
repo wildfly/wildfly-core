@@ -45,6 +45,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.Assert;
 
 /**
  * A registry of model node information.  This registry is thread-safe.
@@ -93,12 +94,8 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     @Override
     public ManagementResourceRegistration registerOverrideModel(String name, OverrideDescriptionProvider descriptionProvider) {
-        if (name == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("name");
-        }
-        if (descriptionProvider == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("descriptionProvider");
-        }
+        Assert.checkNotNullParam("name", name);
+        Assert.checkNotNullParam("descriptionProvider", descriptionProvider);
 
         if (parent == null) {
             throw ControllerLogger.ROOT_LOGGER.cannotOverrideRootRegistration();
@@ -121,9 +118,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     @Override
     public void unregisterOverrideModel(String name) {
-        if (name == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("name");
-        }
+        Assert.checkNotNullParam("name", name);
         if (PathElement.WILDCARD_VALUE.equals(name)) {
             throw ControllerLogger.ROOT_LOGGER.wildcardRegistrationIsNotAnOverride();
         }
@@ -336,9 +331,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public final ManagementResourceRegistration getOverrideModel(String name) {
 
-        if (name == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("name");
-        }
+        Assert.checkNotNullParam("name", name);
 
         if (parent == null) {
             throw ControllerLogger.ROOT_LOGGER.cannotOverrideRootRegistration();

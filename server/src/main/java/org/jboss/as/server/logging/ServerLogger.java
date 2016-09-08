@@ -886,11 +886,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 153, value = "Failed to process phase %s of %s")
     StartException deploymentPhaseFailed(Phase phase, DeploymentUnit deploymentUnit, @Cause Throwable cause);
 
-    @Message(id = 154, value = "Null initial deployment unit")
-    IllegalArgumentException nullInitialDeploymentUnit();
+    // id = 154; redundant parameter null check message
 
-    @Message(id = 155, value = "Attachment key is null")
-    IllegalArgumentException nullAttachmentKey();
+    // id = 155; redundant parameter null check message
 
     @Message(id = 156, value = "Failed to index deployment root for annotations")
     DeploymentUnitProcessingException deploymentIndexingFailed(@Cause Throwable cause);
@@ -952,8 +950,7 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 175, value = "No method found with id: %s on class (or its super class) %s")
     DeploymentUnitProcessingException noMethodFound(MethodIdentifier method, Class<?> clazz);
 
-    @Message(id = 176, value = "Method cannot be null")
-    IllegalArgumentException nullMethod();
+    // id = 176; redundant parameter null check message
 
     @Message(id = 177, value = "Error getting reflective information for %s with ClassLoader %s")
     RuntimeException errorGettingReflectiveInformation(Class<?> clazz, ClassLoader cl, @Param Throwable cause);
