@@ -174,9 +174,30 @@ public class ConfigurationChangesTestCase {
             checkConfigurationChanges(readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE), 11);
             checkConfigurationChanges(readConfigurationChanges(domainSlaveLifecycleUtil.getDomainClient(), HOST_SLAVE), 11);
             checkRootConfigurationChangeWarning(domainMasterLifecycleUtil.getDomainClient());
-            setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), HOST_MASTER, 20);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 20, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
+
+            setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), HOST_MASTER, 19);
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER);
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE);
             checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE);
+            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
+
+            setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE, 20);
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 20, HOST_SLAVE);
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 20, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 20, HOST_SLAVE);
+            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 20, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER);
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
+
+            setConfigurationChangeMaxHistory(domainSlaveLifecycleUtil.getDomainClient(), HOST_SLAVE, 21);
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 21, HOST_SLAVE);
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 21, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 21, HOST_SLAVE);
+            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 21, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER);
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
         } finally {
             clearConfigurationChanges(HOST_MASTER);
             clearConfigurationChanges(HOST_SLAVE);
@@ -205,6 +226,25 @@ public class ConfigurationChangesTestCase {
         } finally {
             clearConfigurationChanges(HOST_SLAVE);
         }
+    }
+
+    @Test
+    public void testEnablingConfigurationChangesOnHC() throws Exception {
+        DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
+        final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(HOST_SLAVE).append(ADDRESS));
+        add.get(ConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
+        ModelNode modelNode = executeForResult(client, add);
+        clearConfigurationChanges(HOST_SLAVE);
+    }
+
+    @Test
+    public void testEnablingConfigurationChangesOnHC2() throws Exception {
+        DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
+        final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(ADDRESS));
+        add.get(ConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
+        ModelNode response = client.execute(add);
+        assertThat(response.asString(), response.get(OUTCOME).asString(), is(FAILED));
+        assertThat(response.get(FAILURE_DESCRIPTION).asString(), containsString("WFLYDC0032"));
     }
 
     private void checkRootConfigurationChangeWarning(DomainClient client) throws IOException {
