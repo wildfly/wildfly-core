@@ -94,25 +94,28 @@ public class CommandExecutor {
     // For any request params that are of type BYTES, replace the file path with the bytes from the file
     private boolean replaceFilePathsWithBytes(ModelNode request) throws CommandFormatException, IOException {
         boolean didReplacement = false;
-        ModelNode opDesc = request.clone();
-        String opName = opDesc.get("operation").asString();
+        ModelNode opDesc = new ModelNode();
+        opDesc.get("address").set(request.get("address"));
         opDesc.get("operation").set("read-operation-description");
+        final String opName = request.get("operation").asString();
         opDesc.get("name").set(opName);
         ModelNode response = execute(opDesc, false).getResponseNode();
-        ModelNode requestProps = response.get("result", "request-properties");
-        for (Property prop : requestProps.asPropertyList()) {
-            ModelNode typeDesc = prop.getValue().get("type");
-            if (typeDesc.getType() == ModelType.TYPE &&
-                    typeDesc.asType() == ModelType.BYTES &&
-                    request.hasDefined(prop.getName())) {
-                String filePath = request.get(prop.getName()).asString();
-                File localFile = new File(filePath);
-                if (!localFile.exists()) continue;
-                try {
-                    request.get(prop.getName()).set(Util.readBytes(localFile));
-                    didReplacement = true;
-                } catch (OperationFormatException e) {
-                    throw new CommandFormatException(e);
+        if (response.hasDefined("result", "request-properties")) {
+            final ModelNode requestProps = response.get("result", "request-properties");
+            for (Property prop : requestProps.asPropertyList()) {
+                ModelNode typeDesc = prop.getValue().get("type");
+                if (typeDesc.getType() == ModelType.TYPE && typeDesc.asType() == ModelType.BYTES
+                        && request.hasDefined(prop.getName())) {
+                    String filePath = request.get(prop.getName()).asString();
+                    File localFile = new File(filePath);
+                    if (!localFile.exists())
+                        continue;
+                    try {
+                        request.get(prop.getName()).set(Util.readBytes(localFile));
+                        didReplacement = true;
+                    } catch (OperationFormatException e) {
+                        throw new CommandFormatException(e);
+                    }
                 }
             }
         }
