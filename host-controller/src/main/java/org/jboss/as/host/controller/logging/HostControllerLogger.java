@@ -96,7 +96,7 @@ public interface HostControllerLogger extends BasicLogger {
      * @param e the cause of the error.
      */
     @LogMessage(level = Level.ERROR)
-    @Message(id = 2, value = "Could not connect to master. Aborting. Error was: %s")
+    @Message(id = 2, value = "Could not connect to master. Error was: %s")
     void cannotConnectToMaster(Exception e);
 
     /**

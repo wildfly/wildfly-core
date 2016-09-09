@@ -898,7 +898,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                             CommandLineConstants.CACHED_DC);
 
                 }
-                SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+                SystemExiter.abort(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
                 // If we got here, the Exiter didn't really exit. Must be embedded.
                 // Inform the caller so it knows not to proceed with boot.
                 return DomainConnectResult.ABORT;
