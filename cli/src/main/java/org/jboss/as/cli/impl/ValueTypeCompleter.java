@@ -510,6 +510,10 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             // A piece of name?
             if (last.name != null) {
                 final List<String> candidates = new ArrayList<>();
+                // The propType can be an OBJECT, in such a case, no keys.
+                if (!isObject(propType)) {
+                    return Collections.<String>emptyList();
+                }
                 for (String p : propType.keys()) {
                     if (p.startsWith(last.name) && !currentInstance.contains(p)) {
                         candidates.add(p);
@@ -576,11 +580,16 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                         return candidates;
                     } else {
                         List<String> candidates = null;
-                        if (!mt.equals(ModelType.OBJECT)) {
-                            candidates = getCandidatesFromMetadata(currentInstance.type,
-                                    "");
-                        } else {
+                        if (mt.equals(ModelType.OBJECT)) {
                             candidates = getCandidatesFromMetadata(propType,
+                                    "");
+                            // New instance.
+                            if (candidates == null) {
+                                candidates = new ArrayList<>();
+                                candidates.add("{");
+                            }
+                        } else {
+                            candidates = getCandidatesFromMetadata(currentInstance.type,
                                     "");
                         }
                         if (candidates != null) {
