@@ -24,7 +24,6 @@ package org.jboss.as.domain.controller;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ProxyController;
-import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
@@ -50,13 +49,6 @@ public interface DomainController {
      * with the service container of a Host Controller that is acting as the domain controller.
      */
     ServiceName SERVICE_NAME = ServiceName.JBOSS.append("domain", "controller");
-
-    /**
-     * Gets the domain controller's current running mode.
-     *
-     * @return  the running mode
-     */
-    RunningMode getCurrentRunningMode();
 
     /**
      * Gets the local host controller info.

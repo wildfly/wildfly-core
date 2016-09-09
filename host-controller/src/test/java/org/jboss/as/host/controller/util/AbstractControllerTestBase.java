@@ -461,11 +461,6 @@ public abstract class AbstractControllerTestBase {
     public class MockDomainController implements DomainController {
 
         @Override
-        public RunningMode getCurrentRunningMode() {
-            return null;
-        }
-
-        @Override
         public LocalHostControllerInfo getLocalHostInfo() {
             return hostControllerInfo;
         }

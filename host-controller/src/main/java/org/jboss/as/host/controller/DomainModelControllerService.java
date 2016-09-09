@@ -139,6 +139,7 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.mgmt.DomainHostExcludeRegistry;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.as.host.controller.mgmt.MasterDomainControllerOperationHandlerService;
+import org.jboss.as.host.controller.mgmt.RejectSlavesOperationHandlerService;
 import org.jboss.as.host.controller.mgmt.ServerToHostOperationHandlerFactoryService;
 import org.jboss.as.host.controller.mgmt.ServerToHostProtocolHandler;
 import org.jboss.as.host.controller.mgmt.SlaveHostPinger;
@@ -326,11 +327,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     private static ManagedAuditLogger createAuditLogger(HostControllerEnvironment environment) {
         return new ManagedAuditLoggerImpl(environment.getProductConfig().resolveVersion(), false);
-    }
-
-    @Override
-    public RunningMode getCurrentRunningMode() {
-        return runningModeControl.getRunningMode();
     }
 
     @Override
@@ -710,6 +706,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
                 }
 
+                boolean remoteDC = hostControllerInfo.isMasterDomainController()
+                        && runningModeControl.getRunningMode().equals(RunningMode.NORMAL)
+                        && processType != ProcessType.EMBEDDED_HOST_CONTROLLER;
+
                 if (useLocalDomainXml) {
                     if (!hostControllerInfo.isMasterDomainController() && isCachedDc) {
                         ROOT_LOGGER.usingCachedDC(CommandLineConstants.CACHED_DC, ConfigurationPersisterFactory.CACHED_DOMAIN_XML);
@@ -732,7 +732,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                         ok = true;
                     }
 
-                    if (ok && processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
+                    if (ok && remoteDC) {
                         InternalExecutor executor = new InternalExecutor();
                         ManagementRemotingServices.installManagementChannelServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                                 new MasterDomainControllerOperationHandlerService(this, executor, executor, environment.getDomainTempDir(), this, domainHostExcludeRegistry),
@@ -746,6 +746,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     // register local host controller
                     final String hostName = hostControllerInfo.getLocalHostName();
                     slaveHostRegistrations.registerHost(hostName, null, "local");
+                }
+
+                if (ok && !remoteDC) {
+                    // Install a handler factory to reject slave registration requests
+                    ManagementRemotingServices.installManagementChannelServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
+                            new RejectSlavesOperationHandlerService(hostControllerInfo.isMasterDomainController(), environment.getDomainTempDir()),
+                            DomainModelControllerService.SERVICE_NAME, ManagementRemotingServices.DOMAIN_CHANNEL,
+                            HostControllerService.HC_EXECUTOR_SERVICE_NAME, HostControllerService.HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
                 }
             }
 
