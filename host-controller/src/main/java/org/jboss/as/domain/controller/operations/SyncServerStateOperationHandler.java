@@ -10,13 +10,18 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLAN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLANS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.NAME;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +34,9 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
@@ -48,6 +56,8 @@ import org.jboss.dmr.Property;
 class SyncServerStateOperationHandler implements OperationStepHandler {
     private final SyncModelParameters parameters;
     private final List<ModelNode> operations;
+
+    private enum SyncServerResultAction {RESTART_REQUIRED, RELOAD_REQUIRED};
 
     public SyncServerStateOperationHandler(SyncModelParameters parameters, List<ModelNode> operations) {
         this.parameters = parameters;
@@ -79,13 +89,13 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
 
                 //Get the affected servers for each op.
                 ContentDownloader contentDownloader = new ContentDownloader(startRoot, endRoot, endHostModel);
-                final Map<String, Boolean> servers =
+                final Map<String, SyncServerResultAction> servers =
                         determineServerStateChanges(context, domainRootResource, resolver, contentDownloader);
 
                 for (String serverName : endHostModel.get(SERVER_CONFIG).keys()) {
                     // Compare boot cmd (requires restart)
-                    Boolean restart = servers.get(serverName);
-                    if (restart == null || !restart) {
+                    SyncServerResultAction restart = servers.get(serverName);
+                    if (restart == null || restart == SyncServerResultAction.RELOAD_REQUIRED) {
                         //In some unit tests the start config may be null
                         ManagedServerBootConfiguration startConfig =
                                 new ManagedServerBootCmdFactory(serverName, startRoot, startHostModel,
@@ -97,15 +107,15 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                                         parameters.getHostControllerEnvironment(),
                                         parameters.getDomainController().getExpressionResolver()).createConfiguration();
                         if (startConfig == null || !startConfig.getServerLaunchCommand().equals(endConfig.getServerLaunchCommand())) {
-                            servers.put(serverName, true);
+                            servers.put(serverName, SyncServerResultAction.RESTART_REQUIRED);
                         }
                     }
                 }
 
-                for (Map.Entry<String, Boolean> entry : servers.entrySet()) {
+                for (Map.Entry<String, SyncServerResultAction> entry : servers.entrySet()) {
                     final PathAddress serverAddress =
                             PathAddress.pathAddress(HOST, localHostName).append(SERVER, entry.getKey());
-                    final String opName = entry.getValue() ?
+                    final String opName = entry.getValue() == SyncServerResultAction.RESTART_REQUIRED ?
                             ServerProcessStateHandler.REQUIRE_RESTART_OPERATION : ServerProcessStateHandler.REQUIRE_RELOAD_OPERATION;
                     final OperationStepHandler handler = context.getResourceRegistration().getOperationHandler(serverAddress, opName);
                     final ModelNode op = Util.createEmptyOperation(opName, serverAddress);
@@ -126,9 +136,9 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
         }, OperationContext.Stage.MODEL);
     }
 
-    private Map<String, Boolean> determineServerStateChanges(OperationContext context, Resource domainRootResource, ServerOperationResolver resolver,
+    private Map<String, SyncServerResultAction> determineServerStateChanges(OperationContext context, Resource domainRootResource, ServerOperationResolver resolver,
                                                              ContentDownloader contentDownloader) {
-        final Map<String, Boolean> serverStateChanges = new HashMap<>();
+        final Map<String, SyncServerResultAction> serverStateChanges = new HashMap<>();
         for (ModelNode operation : operations) {
             PathAddress addr = PathAddress.pathAddress(operation.get(OP_ADDR));
             contentDownloader.checkContent(operation, addr);
@@ -136,12 +146,30 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
             Map<Set<ServerIdentity>, ModelNode> serverMap = resolver.getServerOperations(context, operation, addr);
             for (Map.Entry<Set<ServerIdentity>, ModelNode> entry : serverMap.entrySet()) {
                 ModelNode op = entry.getValue();
-                boolean restart = op.get(OP).asString().equals(ServerProcessStateHandler.REQUIRE_RESTART_OPERATION);
+                String opName = op.get(OP).asString();
+                assert opName != null;
+                boolean restart = false;
+
+                // XXX debug operation.get(OP) vs opName
+                // if we got REQUIRE_RESTART_OPERATION back, or the op.get(OP) doesn't match the operation.get(OP), flag for a restart.
+                if (opName.equals(ServerProcessStateHandler.REQUIRE_RESTART_OPERATION) || (!operation.get(OP).asString().equals(opName))) {
+                    restart = true;
+                }
+
+                // if we got back REQUIRE_RELOAD_OPERATION, trust that.
+                if (!restart && !opName.equals(ServerProcessStateHandler.REQUIRE_RELOAD_OPERATION)) {
+                    // otherwise we do an additional check, but only for changes within /profile=* with length > 1
+                    // i.e. not the root profile.
+                    if (addr.size() > 1 && addr.getElement(0).getKey().equals(PROFILE)) {
+                        restart = checkOperationForRestartRequired(context, operation);
+                    }
+                }
+
                 for (ServerIdentity id : entry.getKey()) {
                     String serverName = id.getServerName();
-                    Boolean existing = serverStateChanges.get(serverName);
-                    if (existing == null || (!existing && restart)) {
-                        serverStateChanges.put(serverName, restart);
+                    SyncServerResultAction existing = serverStateChanges.get(serverName);
+                    if (existing == null || (existing == SyncServerResultAction.RELOAD_REQUIRED && restart)) {
+                        serverStateChanges.put(serverName, restart ? SyncServerResultAction.RESTART_REQUIRED : SyncServerResultAction.RELOAD_REQUIRED);
                     }
                 }
             }
@@ -149,10 +177,37 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
         Set<String> affectedServers = contentDownloader.pullDownContent(domainRootResource);
         for (String server : affectedServers) {
             if (!serverStateChanges.containsKey(server)) {
-                serverStateChanges.put(server, false);
+                serverStateChanges.put(server, SyncServerResultAction.RELOAD_REQUIRED);
             }
         }
         return serverStateChanges;
+    }
+
+    private boolean checkOperationForRestartRequired(final OperationContext context, final ModelNode operation) {
+        boolean restart = false;
+        final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
+        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+        // an example of this is toggling jts:
+        // /profile=full/subsystem=transactions:write-attribute(name=jts, value=true)
+        // previously on a reconnect to the DC the slave check would flag reload-required on a WRITE_ATTRIBUTE / UNDEFINE_ATTRIBUTE,
+        // so would get flagged into reload-required, but it really should be restart-required to match what would happen doing it with the DC
+        // online, and the registration of the jts attribute.
+        final String opName = operation.get(OP).asString();
+        if (WRITE_ATTRIBUTE_OPERATION.equals(opName) || UNDEFINE_ATTRIBUTE_OPERATION.equals(opName)) {
+            // look up the attribute name we're writing, and check the flags to see if we need restart.
+            final String attributeName = operation.get(NAME).asString();
+            // look up if the attribute requires restart / reload
+            final EnumSet<AttributeAccess.Flag> flags = registration.getAttributeAccess(address, attributeName).getAttributeDefinition().getFlags();
+            if (flags.contains(AttributeAccess.Flag.RESTART_JVM)) {
+                restart = true;
+            }
+        } else { // all other ops
+            final Set<OperationEntry.Flag> flags = registration.getOperationFlags(address, opName);
+            if (flags.contains(OperationEntry.Flag.RESTART_JVM)) {
+                restart = true;
+            }
+        }
+        return restart;
     }
 
     private class ContentDownloader {
@@ -231,19 +286,19 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
             return;
         }
 
-        private void makeExistingDeploymentUpdatedAffected(PathElement deploymentElement, ModelNode operation) {
+        private void makeExistingDeploymentUpdatedAffected(final PathElement deploymentElement, final ModelNode operation) {
             //Check if this is an existing deployment being updated
             //If so, check the hashes are different
             if (!startRoot.hasDefined(deploymentElement.getKey(), deploymentElement.getValue())) {
                 return;
             }
-            ModelNode deployment = startRoot.get(deploymentElement.getKey(), deploymentElement.getValue());
-            List<ModelNode> currentContents = deployment.get(CONTENT).asList();
-            List<ModelNode> newContents = operation.get(CONTENT).asList();
-            boolean changes  = currentContents.size() != newContents.size();
+            final ModelNode deployment = startRoot.get(deploymentElement.getKey(), deploymentElement.getValue());
+            final List<ModelNode> currentContents = deployment.get(CONTENT).asList();
+            final List<ModelNode> newContents = operation.get(CONTENT).asList();
+            boolean changes = currentContents.size() != newContents.size();
             if (!changes) {
-                Set<byte[]> currentHashes = new HashSet<>();
-                for (ModelNode contentItem : currentContents) {
+                final Set<byte[]> currentHashes = new HashSet<>();
+                for (final ModelNode contentItem : currentContents) {
                     currentHashes.add(contentItem.get(HASH).asBytes());
                 }
                 for (ModelNode contentItem : newContents) {
@@ -257,7 +312,7 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
             if (changes) {
                 //There are changes, add all server groups using this deployment to the affectedGroups
                 if (endRoot.hasDefined(SERVER_GROUP)) {
-                    for (Property serverGroup : endRoot.get(SERVER_GROUP).asPropertyList()) {
+                    for (final Property serverGroup : endRoot.get(SERVER_GROUP).asPropertyList()) {
                         if (serverGroup.getValue().hasDefined(deploymentElement.getKey(), deploymentElement.getValue())) {
                             affectedGroups.add(serverGroup.getName());
                             relevantDeployments.add(deploymentElement.getValue());
@@ -267,24 +322,24 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
             }
         }
 
-        Set<String> pullDownContent(Resource domainRootResource) {
+        Set<String> pullDownContent(final Resource domainRootResource) {
             // Make sure we have all needed deployment and management client content
-            for (String id : relevantDeployments) {
-                Set<ContentReference> hashes = deploymentHashes.remove(id);
+            for (final String id : relevantDeployments) {
+                final Set<ContentReference> hashes = deploymentHashes.remove(id);
                 if (hashes != null) {
                     requiredContent.addAll(hashes);
                 }
             }
-            for (ContentReference reference : requiredContent) {
+            for (final ContentReference reference : requiredContent) {
                 parameters.getFileRepository().getDeploymentFiles(reference);
                 parameters.getContentRepository().addContentReference(reference);
             }
 
             if (updateRolloutPlans) {
-                PathElement rolloutPlansElement = PathElement.pathElement(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS);
-                Resource existing = domainRootResource.removeChild(rolloutPlansElement);
+                final PathElement rolloutPlansElement = PathElement.pathElement(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS);
+                final Resource existing = domainRootResource.removeChild(rolloutPlansElement);
                 if (existing != null) {
-                    ModelNode hashNode = existing.getModel().get(HASH);
+                    final ModelNode hashNode = existing.getModel().get(HASH);
                     if (hashNode.isDefined()) {
                         removedContent.add(
                                 new ContentReference(PathAddress.pathAddress(rolloutPlansElement).toCLIStyleString(), hashNode.asBytes()));
@@ -296,17 +351,17 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                 domainRootResource.registerChild(rolloutPlansElement, rolloutPlansResource);
             }
 
-            Set<String> servers = new HashSet<>();
+            final Set<String> servers = new HashSet<>();
             for (String group : affectedGroups) {
                 servers.addAll(serversByGroup.get(group));
             }
             return servers;
         }
 
-        private Map<String, Set<String>> getOurServerGroups(ModelNode hostModel) {
+        private Map<String, Set<String>> getOurServerGroups(final ModelNode hostModel) {
             final Map<String, Set<String>> result = new HashMap<>();
             if (hostModel.hasDefined(SERVER_CONFIG)) {
-                for (Property config : hostModel.get(SERVER_CONFIG).asPropertyList()) {
+                for (final Property config : hostModel.get(SERVER_CONFIG).asPropertyList()) {
                     final String group = config.getValue().get(GROUP).asString();
                     Set<String> servers = result.get(group);
                     if (servers == null) {
