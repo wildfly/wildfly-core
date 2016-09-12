@@ -249,7 +249,7 @@ public class OperationDialog extends JDialog {
 
                 // Don't display boolean values that are already the default.
                 // This only works if the default value is provided by read-operation-description.
-                if (prop.type == ModelType.BOOLEAN) {
+                if (prop.type == ModelType.BOOLEAN && !prop.expressionsAllowed) {
                     ModelNode defaultValue = prop.getDefaultValue();
                     if ((defaultValue != null) && (defaultValue.asBoolean() == Boolean.parseBoolean(submittedValue))) continue;
                 }
@@ -285,6 +285,7 @@ public class OperationDialog extends JDialog {
         private String description;
         private boolean isRequired = false;
         private boolean nillable = false;
+        private boolean expressionsAllowed = false;
         private ModelNode defaultValue = null;
         private ModelNode value = null;
 
@@ -326,6 +327,10 @@ public class OperationDialog extends JDialog {
 
             if (props.get("nillable").isDefined()) {
                 this.nillable = props.get("nillable").asBoolean();
+            }
+
+            if (props.get("expressions-allowed").isDefined()) {
+                this.expressionsAllowed = props.get("expressions-allowed").asBoolean();
             }
 
             if (props.get("default").isDefined()) {
@@ -388,7 +393,7 @@ public class OperationDialog extends JDialog {
 
         private void setInputComponent() {
             this.label = makeLabel();
-            if (type == ModelType.BOOLEAN) {
+            if (type == ModelType.BOOLEAN && !expressionsAllowed) {
                 this.valueComponent = new JCheckBox(makeLabelString(false));
                 this.valueComponent.setToolTipText(description);
                 this.label = new JLabel(); // checkbox doesn't need a label
@@ -423,10 +428,6 @@ public class OperationDialog extends JDialog {
             }
 
             if (!valueToSet.isDefined()) return;
-
-            if (valueComponent instanceof JCheckBox) {
-                ((JCheckBox)this.valueComponent).setSelected(valueToSet.asBoolean());
-            }
 
             if (valueComponent instanceof JTextComponent) {
                 ((JTextComponent)valueComponent).setText(valueToSet.asString());
