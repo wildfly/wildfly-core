@@ -302,14 +302,14 @@ public class AttachmentHandler extends BatchModeCommandHandler {
                             String num = name.substring(indexed + 1, name.length() - 1);
                             index = Integer.valueOf(num);
                             index += 1;
-                            name = name.substring(0, indexed);
                         } catch (NumberFormatException ex) {
                             // XXX OK, not a number.
                         }
                     } else {
                         index += 1;
                     }
-                    targetFile = new File(name + "(" + index + ")");
+                    targetFile = new File(targetFile.getAbsolutePath()
+                            + "(" + index + ")");
                 }
             } else {
                 index += 1;
