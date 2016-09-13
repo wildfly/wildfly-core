@@ -115,7 +115,7 @@ rem defaults
 set SHORTNAME=Wildfly
 set DISPLAYNAME=WildFly
 rem NO quotes around the description here !
-set DESCRIPTION="WildFly Application Server"
+set DESCRIPTION=WildFly Application Server
 set CONTROLLER=localhost:9990
 set DC_HOST=master
 set IS_DOMAIN=false
