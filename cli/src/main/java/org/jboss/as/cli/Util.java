@@ -1345,10 +1345,17 @@ public class Util {
                 if (!valueType.isDefined()) {
                     valueType = description;
                 }
-                for (String k : value.keys()) {
-                    if (value.get(k).isDefined()) {
-                        applyReplacements(k, value.get(k), valueType.get(k),
-                                valueType.get(k).get("type").asType(), attachments);
+
+                // If valueTypeType is an OBJECT, then we can consult the value-type.
+                // If valueTypeType is not an OBJECT, then we are facing a Map<String, X>
+                // where X is indicated by the valueTypeType enum value
+                ModelType valueTypeType = valueType.getType();
+                if (ModelType.OBJECT.equals(valueTypeType)) {
+                    for (String k : value.keys()) {
+                        if (value.get(k).isDefined()) {
+                            applyReplacements(k, value.get(k), valueType.get(k),
+                                    valueType.get(k).get("type").asType(), attachments);
+                        }
                     }
                 }
                 break;
