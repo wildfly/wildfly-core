@@ -317,23 +317,23 @@ public class OperationDialog extends JDialog {
             this.value = value;
             this.type = props.get("type").asType();
 
-            if (props.get("description").isDefined()) {
+            if (props.hasDefined("description")) {
                 this.description = props.get("description").asString();
             }
 
-            if (props.get("required").isDefined()) {
+            if (props.hasDefined("required")) {
                 this.isRequired = props.get("required").asBoolean();
             }
 
-            if (props.get("nillable").isDefined()) {
+            if (props.hasDefined("nillable")) {
                 this.nillable = props.get("nillable").asBoolean();
             }
 
-            if (props.get("expressions-allowed").isDefined()) {
+            if (props.hasDefined("expressions-allowed")) {
                 this.expressionsAllowed = props.get("expressions-allowed").asBoolean();
             }
 
-            if (props.get("default").isDefined()) {
+            if (props.hasDefined("default")) {
                 this.defaultValue = props.get("default");
             }
 
