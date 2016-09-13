@@ -42,6 +42,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -57,6 +58,7 @@ import org.wildfly.test.shutdown.SlowStopServiceActivator;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
+@Ignore("WFCORE-1789")
 public class PreparedResponseTestCase {
 
     public static Logger LOGGER = Logger.getLogger(PreparedResponseTestCase.class);
