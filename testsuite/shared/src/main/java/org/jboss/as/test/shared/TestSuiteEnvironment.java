@@ -85,6 +85,17 @@ public class TestSuiteEnvironment {
     }
 
     /**
+     * @return The server address of node1
+     */
+    public static String getServerAddressNode1() {
+        String address = System.getProperty("node1");
+        if (address != null){
+            return formatPossibleIpv6Address(address);
+        }
+        return "localhost";
+    }
+
+    /**
      * @return The ipv6 arguments that should be used when launching external java processes, such as the application client
      */
     public static String getIpv6Args() {
