@@ -120,15 +120,25 @@ public final class SelfContainedContainer {
         final Bootstrap bootstrap = Bootstrap.Factory.newInstance();
 
         final Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
+
         configuration.setConfigurationPersisterFactory(
                 new Bootstrap.ConfigurationPersisterFactory() {
                     @Override
                     public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
-                        SelfContainedConfigurationPersister persister = new SelfContainedConfigurationPersister(containerDefinition);
-                        configuration.getExtensionRegistry().setWriterRegistry(persister);
-                        return persister;
+
+                        ExtensibleConfigurationPersister delegate;
+                        if(persisterFactory!=null) {
+                            delegate = persisterFactory.createConfigurationPersister(serverEnvironment, executorService);
+                        } else {
+                            delegate = new SelfContainedConfigurationPersister(containerDefinition);
+                        }
+
+                        configuration.getExtensionRegistry().setWriterRegistry(delegate);
+                        return delegate;
                     }
                 });
+
+
         configuration.setModuleLoader(Module.getBootModuleLoader());
 
         List<ServiceActivator> activators = new ArrayList<>();
