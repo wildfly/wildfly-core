@@ -25,10 +25,10 @@ package org.jboss.as.remoting;
 import java.io.IOException;
 import java.net.URI;
 
-import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
+import org.wildfly.common.Assert;
 import org.xnio.IoFuture;
 import org.xnio.OptionMap;
 
@@ -50,9 +50,7 @@ public class GenericOutboundConnectionService extends AbstractOutboundConnection
 
         super(connectionName, connectionCreationOptions);
 
-        if (destination == null) {
-            throw RemotingLogger.ROOT_LOGGER.destinationUriEmpty();
-        }
+        Assert.checkNotNullParam("destination", destination);
         this.destination = destination;
     }
 

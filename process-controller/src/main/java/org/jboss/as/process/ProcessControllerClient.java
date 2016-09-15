@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,6 +47,7 @@ import org.jboss.as.process.protocol.Connection;
 import org.jboss.as.process.protocol.MessageHandler;
 import org.jboss.as.process.protocol.ProtocolClient;
 import org.jboss.as.process.protocol.StreamUtils;
+import org.wildfly.common.Assert;
 
 /**
  * A client to the Process Controller.
@@ -63,15 +65,9 @@ public final class ProcessControllerClient implements Closeable {
     }
 
     public static ProcessControllerClient connect(final ProtocolClient.Configuration configuration, final String authCode, final ProcessMessageHandler messageHandler) throws IOException {
-        if (configuration == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("configuration");
-        }
-        if (authCode == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("authCode");
-        }
-        if (messageHandler == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("messageHandler");
-        }
+        Assert.checkNotNullParam("configuration", configuration);
+        Assert.checkNotNullParam("authCode", authCode);
+        Assert.checkNotNullParam("messageHandler", messageHandler);
         configuration.setMessageHandler(new MessageHandler() {
             public void handleMessage(final Connection connection, final InputStream dataStream) throws IOException {
                 final ProcessControllerClient client = (ProcessControllerClient) connection.getAttachment();
@@ -195,24 +191,13 @@ public final class ProcessControllerClient implements Closeable {
     }
 
     public void addProcess(String processName, String authKey, String[] cmd, String workingDir, Map<String, String> env) throws IOException {
-        if (processName == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
-        }
-        if (authKey == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("authKey");
-        }
-        if (cmd == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("cmd");
-        }
-        if (workingDir == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("workingDir");
-        }
-        if (env == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("env");
-        }
-        if (cmd.length < 1) {
-            throw ProcessLogger.ROOT_LOGGER.invalidCommandLen();
-        }
+        Assert.checkNotNullParam("processName", processName);
+        Assert.checkNotNullParam("authKey", authKey);
+        Assert.checkNotNullParam("cmd", cmd);
+        Assert.checkNotNullParam("workingDir", workingDir);
+        Assert.checkNotNullParam("env", env);
+        // fixme
+        Assert.checkNotEmptyParam("cmd", Arrays.asList(cmd));
         // this is Base64 encoded, and padded up to 24 bytes
         if (authKey.length() != ProcessController.AUTH_BYTES_ENCODED_LENGTH) {
             throw ProcessLogger.ROOT_LOGGER.invalidAuthKeyLen();
@@ -244,9 +229,7 @@ public final class ProcessControllerClient implements Closeable {
     }
 
     public void startProcess(String processName) throws IOException {
-        if (processName == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
-        }
+        Assert.checkNotNullParam("processName", processName);
         final OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.START_PROCESS);
@@ -258,9 +241,7 @@ public final class ProcessControllerClient implements Closeable {
     }
 
     public void stopProcess(String processName) throws IOException {
-        if (processName == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
-        }
+        Assert.checkNotNullParam("processName", processName);
         final OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.STOP_PROCESS);
@@ -272,9 +253,7 @@ public final class ProcessControllerClient implements Closeable {
     }
 
     public void removeProcess(String processName) throws IOException {
-        if (processName == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
-        }
+        Assert.checkNotNullParam("processName", processName);
         final OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.REMOVE_PROCESS);
@@ -296,9 +275,7 @@ public final class ProcessControllerClient implements Closeable {
     }
 
     public void reconnectProcess(final String processName, final URI managementURI, final boolean managementSubsystemEndpoint, final String authKey) throws IOException {
-        if (processName == null){
-            throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
-        }
+        Assert.checkNotNullParam("processName", processName);
         final OutputStream os = connection.writeMessage();
         try{
             os.write(Protocol.RECONNECT_PROCESS);
@@ -330,9 +307,7 @@ public final class ProcessControllerClient implements Closeable {
     }
 
     public void destroyProcess(String processName) throws IOException {
-        if (processName == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
-        }
+        Assert.checkNotNullParam("processName", processName);
         final OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.DESTROY_PROECESS);
@@ -344,9 +319,7 @@ public final class ProcessControllerClient implements Closeable {
     }
 
     public void killProcess(String processName) throws IOException {
-        if (processName == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("processName");
-        }
+        Assert.checkNotNullParam("processName", processName);
         final OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.KILL_PROCESS);

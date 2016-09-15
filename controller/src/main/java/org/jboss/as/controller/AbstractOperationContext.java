@@ -102,6 +102,8 @@ import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+
+import org.wildfly.common.Assert;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -304,18 +306,10 @@ abstract class AbstractOperationContext implements OperationContext {
                  final Stage stage, boolean addFirst) throws IllegalArgumentException {
 
         assert isControllingThread();
-        if (response == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("response");
-        }
-        if (operation == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("operation");
-        }
-        if (step == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("step");
-        }
-        if (stage == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("stage");
-        }
+        Assert.checkNotNullParam("response", response);
+        Assert.checkNotNullParam("operation", operation);
+        Assert.checkNotNullParam("step", step);
+        Assert.checkNotNullParam("stage", stage);
         if (currentStage == Stage.DONE) {
             throw ControllerLogger.ROOT_LOGGER.operationAlreadyComplete();
         }
@@ -431,9 +425,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
     @Override
     public final void completeStep(RollbackHandler rollbackHandler) {
-        if (rollbackHandler == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("rollbackHandler");
-        }
+        Assert.checkNotNullParam("rollbackHandler", rollbackHandler);
         if (rollbackHandler == RollbackHandler.NOOP_ROLLBACK_HANDLER) {
             completeStep(ResultHandler.NOOP_RESULT_HANDLER);
         } else {
@@ -444,9 +436,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
     @Override
     public final void completeStep(ResultHandler resultHandler) {
-        if (resultHandler == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("resultHandler");
-        }
+        Assert.checkNotNullParam("resultHandler", resultHandler);
         this.activeStep.resultHandler = resultHandler;
         // we return and executeStep picks it up
     }

@@ -132,8 +132,7 @@ interface ThreadsLogger extends BasicLogger {
     @Message(id = 25, value = "Missing '%s' for parameter '%s'")
     OperationFailedException missingKeepAliveUnit(String unit, String parameterName);
 
-    @Message(id = 26, value = "executor is null")
-    IllegalArgumentException nullExecutor();
+    // id = 26; redundant parameter null check message
 
     @Message(id = 27, value = "%s must be greater than or equal to zero")
     XMLStreamException countMustBePositive(Attribute count, @Param Location location);
@@ -147,6 +146,5 @@ interface ThreadsLogger extends BasicLogger {
     @Message(id = 30, value = "Failed to parse '%s', allowed values are: %s")
     OperationFailedException failedToParseUnit(String unit, List<TimeUnit> allowed);
 
-    @Message(id = 31, value = "unit is null")
-    IllegalArgumentException nullUnit();
+    // id = 31; redundant parameter null check message
 }

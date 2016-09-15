@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.threads.JBossExecutors;
-
+import org.wildfly.common.Assert;
 
 /**
  *
@@ -43,9 +43,7 @@ public abstract class ManagedExecutorService implements ExecutorService {
     private final ExecutorService executor;
 
     public ManagedExecutorService(ExecutorService executor) {
-        if(executor == null) {
-            throw ThreadsLogger.ROOT_LOGGER.nullExecutor();
-        }
+        Assert.checkNotNullParam("executor", executor);
         this.executor = protectExecutor(executor);
     }
 

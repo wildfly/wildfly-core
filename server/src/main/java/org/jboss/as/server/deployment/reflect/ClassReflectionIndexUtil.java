@@ -28,6 +28,7 @@ import java.util.Collection;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.invocation.proxy.MethodIdentifier;
+import org.wildfly.common.Assert;
 
 /**
  * Utility methods for finding methods within a {@link ClassReflectionIndex} hierarchy.
@@ -96,9 +97,7 @@ public class ClassReflectionIndexUtil {
      *          If no such method is found
      */
     public static Method findRequiredMethod(final DeploymentReflectionIndex deploymentReflectionIndex, final Class<?> clazz, final Method method) throws DeploymentUnitProcessingException {
-        if (method == null) {
-            throw ServerLogger.ROOT_LOGGER.nullMethod();
-        }
+        Assert.checkNotNullParam("method", method);
         final MethodIdentifier methodIdentifier = MethodIdentifier.getIdentifierForMethod(method);
         return findRequiredMethod(deploymentReflectionIndex, clazz, methodIdentifier);
     }
@@ -115,9 +114,7 @@ public class ClassReflectionIndexUtil {
      * @return
      */
     public static Method findMethod(final DeploymentReflectionIndex deploymentReflectionIndex, final Class<?> clazz, final Method method) {
-        if (method == null) {
-            throw ServerLogger.ROOT_LOGGER.nullMethod();
-        }
+        Assert.checkNotNullParam("method", method);
         MethodIdentifier methodIdentifier = MethodIdentifier.getIdentifierForMethod(method);
         return findMethod(deploymentReflectionIndex, clazz, methodIdentifier);
     }

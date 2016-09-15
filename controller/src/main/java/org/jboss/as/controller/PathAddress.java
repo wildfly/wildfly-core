@@ -39,6 +39,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.wildfly.common.Assert;
 
 /**
  * A path address for an operation.
@@ -216,7 +217,7 @@ public class PathAddress implements Iterable<PathElement> {
     private final List<PathElement> pathAddressList;
 
     PathAddress(final List<PathElement> pathAddressList) {
-        assert pathAddressList != null : ControllerLogger.ROOT_LOGGER.nullVar("pathAddressList").getLocalizedMessage();
+        Assert.assertNotNull(pathAddressList);
         this.pathAddressList = pathAddressList;
     }
 

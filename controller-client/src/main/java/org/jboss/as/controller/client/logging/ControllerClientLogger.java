@@ -248,15 +248,7 @@ public interface ControllerClientLogger extends BasicLogger {
     @Message(id = 20, value = "No %s is configured")
     IllegalStateException notConfigured(String name);
 
-    /**
-     * Creates an exception indicating the variable, represented by the {@code name} parameter, is {@code null}.
-     *
-     * @param name the name of the variable.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 21, value = "%s is null")
-    IllegalArgumentException nullVar(String name);
+    // id = 21; redundant parameter null check message
 
     /**
      * Creates an exception indicating the object is closed.

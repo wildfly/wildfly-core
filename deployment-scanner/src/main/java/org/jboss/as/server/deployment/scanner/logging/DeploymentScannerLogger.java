@@ -334,15 +334,7 @@ public interface DeploymentScannerLogger extends BasicLogger {
     @Message(id = 27, value = "%s is not a directory")
     IllegalArgumentException notADirectory(String path);
 
-    /**
-     * Creates an exception indicating the variable, represented by the {@code name} parameter, is {@code null}.
-     *
-     * @param name the name of the {@code null} variable.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 28, value = "%s is null")
-    IllegalArgumentException nullVar(String name);
+    // id = 28; redundant parameter null check message
 
     /**
      * A message indicating a previous version of this content was deployed and remains deployed.

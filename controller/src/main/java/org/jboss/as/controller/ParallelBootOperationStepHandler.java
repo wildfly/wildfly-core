@@ -356,6 +356,17 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                         .addRealm("Empty", SecurityRealm.EMPTY_REALM).build()
                         .build();
 
+                if(bootOperations == null || bootOperations.isEmpty()) {
+                    transactionControl.operationPrepared(new ModelController.OperationTransaction() {
+                        @Override
+                        public void commit() {}
+
+                        @Override
+                        public void rollback() {}
+                    }, new ModelNode());
+                    return;
+                }
+
                 operationContext = new ParallelBootOperationContext(transactionControl, processState,
                         primaryContext, runtimeOps, controllingThread, controller, lockId, controller.getAuditLogger(),
                         controller.getManagementModel().getRootResource(), extraValidationStepHandler, bootSecurityDomain::getAnonymousSecurityIdentity);
@@ -363,7 +374,6 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                     final OperationStepHandler osh = op.handler == null ? rootRegistration.getOperationHandler(op.address, op.operationName) : op.handler;
                     operationContext.addStep(op.response, op.operation, osh, executionStage);
                 }
-
                 operationContext.executeOperation();
             } catch (Throwable t) {
                 interrupted = (t instanceof InterruptedException);

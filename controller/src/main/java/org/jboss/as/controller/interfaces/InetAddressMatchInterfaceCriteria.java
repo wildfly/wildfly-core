@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * {@link InterfaceCriteria} that tests whether a given address is matches
@@ -57,8 +58,7 @@ public class InetAddressMatchInterfaceCriteria extends AbstractInterfaceCriteria
     private boolean anyLocalLogged;
 
     public InetAddressMatchInterfaceCriteria(final InetAddress address) {
-        if (address == null)
-            throw ControllerLogger.ROOT_LOGGER.nullVar("address");
+        Assert.checkNotNullParam("address", address);
         this.resolved = address;
         this.address = resolved.getHostAddress();
     }
@@ -72,9 +72,8 @@ public class InetAddressMatchInterfaceCriteria extends AbstractInterfaceCriteria
      * @throws IllegalArgumentException if <code>network</code> is <code>null</code>
      */
     public InetAddressMatchInterfaceCriteria(final String address) {
-        if (address == null || address.isEmpty() || address.trim().isEmpty()) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("address");
-        }
+        Assert.checkNotNullParam("address", address);
+        Assert.checkNotEmptyParam("address", address.trim());
         this.address = address;
     }
 

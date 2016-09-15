@@ -30,7 +30,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.regex.Pattern;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.common.Assert;
 
 /**
  * {@link InterfaceCriteria} that tests whether a given {@link Pattern regex pattern}
@@ -53,8 +53,7 @@ public class NicMatchInterfaceCriteria extends AbstractInterfaceCriteria {
      * @throws IllegalArgumentException if <code>criteria</code> is <code>null</code>
      */
     public NicMatchInterfaceCriteria(Pattern pattern) {
-        if (pattern == null)
-            throw ControllerLogger.ROOT_LOGGER.nullVar("pattern");
+        Assert.checkNotNullParam("pattern", pattern);
         this.pattern = pattern;
     }
 

@@ -546,15 +546,7 @@ public interface ProcessLogger extends BasicLogger {
     @Message(id = 31, value = "Command contains a null component")
     IllegalArgumentException nullCommandComponent();
 
-    /**
-     * Creates an exception indicating the variable is {@code null}.
-     *
-     * @param varName the variable name.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 32, value = "%s is null")
-    IllegalArgumentException nullVar(String varName);
+    // id = 32; redundant parameter null check message
 
     /**
      * Logs an error message indicating a failure to accept the connection.

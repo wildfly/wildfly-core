@@ -771,15 +771,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 75, value = "Property %s has a null value")
     IllegalStateException propertyValueHasNullValue(String name);
 
-    /**
-     * Creates an exception indicating the variable name is {@code null}.
-     *
-     * @param name the name of the variable.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 76, value = "%s is null")
-    IllegalArgumentException nullVar(String name);
+    // id = 76; redundant parameter null check message
 
     /**
      * Creates an exception indicating there is already a registered server with the name represented by the {@code

@@ -21,9 +21,9 @@
  */
 package org.jboss.as.controller.client;
 
-import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.Assert;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,9 +75,7 @@ class OperationImpl implements Operation {
     @Override
     @Deprecated
     public Operation clone(final ModelNode operation) {
-        if (operation == null) {
-            throw ControllerClientLogger.ROOT_LOGGER.nullVar("operation");
-        }
+        Assert.checkNotNullParam("operation", operation);
         List<InputStream> streamsCopy = inputStreams == null ? null : new ArrayList<InputStream>(inputStreams);
         return new OperationImpl(operation, streamsCopy);
     }

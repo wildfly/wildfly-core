@@ -101,6 +101,8 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
 //            throw ServerLogger.ROOT_LOGGER.noSuchDeployment(name);
 //        }
 
+        // verify that the resource existance before removing it
+        context.readResourceForUpdate(PathAddress.pathAddress(deploymentPath));
         // WFCORE-495 remove and call context.addResource() as below to add new resource with updated PERSISTENT value
         final ModelNode deploymentModel = context.removeResource(PathAddress.pathAddress(deploymentPath)).getModel();
 

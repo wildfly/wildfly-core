@@ -30,6 +30,7 @@ import java.util.concurrent.ThreadFactory;
 
 import org.jboss.as.process.logging.ProcessLogger;
 import org.jboss.as.process.protocol.Connection.ClosedCallback;
+import org.wildfly.common.Assert;
 
 import javax.net.SocketFactory;
 
@@ -60,21 +61,11 @@ public final class ProtocolClient {
         readTimeout = configuration.getReadTimeout();
         readExecutor = configuration.getReadExecutor();
         callback = configuration.getClosedCallback();
-        if (threadFactory == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("threadFactory");
-        }
-        if (socketFactory == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("factory");
-        }
-        if (serverAddress == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("serverAddress");
-        }
-        if (messageHandler == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("handler");
-        }
-        if (readExecutor == null) {
-            throw ProcessLogger.ROOT_LOGGER.nullVar("readExecutor");
-        }
+        Assert.checkNotNullParam("threadFactory", threadFactory);
+        Assert.checkNotNullParam("socketFactory", socketFactory);
+        Assert.checkNotNullParam("serverAddress", serverAddress);
+        Assert.checkNotNullParam("messageHandler", messageHandler);
+        Assert.checkNotNullParam("readExecutor", readExecutor);
     }
 
     public Connection connect() throws IOException {

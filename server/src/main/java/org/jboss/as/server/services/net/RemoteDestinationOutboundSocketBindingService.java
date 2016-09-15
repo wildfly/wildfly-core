@@ -22,8 +22,8 @@
 
 package org.jboss.as.server.services.net;
 
-import org.jboss.as.network.logging.NetworkMessages;
 import org.jboss.as.network.OutboundSocketBinding;
+import org.wildfly.common.Assert;
 
 /**
  * Service that represents a remote-destination outbound socket binding
@@ -39,12 +39,9 @@ public class RemoteDestinationOutboundSocketBindingService extends OutboundSocke
                                                          final Integer sourcePort, final boolean fixedSourcePort) {
 
         super(name, sourcePort, fixedSourcePort);
-        if (destinationAddress == null || destinationAddress.trim().isEmpty()) {
-            throw NetworkMessages.MESSAGES.nullDestinationAddress(name);
-        }
-        if (destinationPort < 0) {
-            throw NetworkMessages.MESSAGES.negativeDestinationPort(destinationPort, name);
-        }
+        Assert.checkNotNullParam("destinationAddress", destinationAddress);
+        Assert.checkNotEmptyParam("destinationAddress", destinationAddress);
+        Assert.checkMinimumParameter("destinationPort", 0, destinationPort);
         this.destinationHost = destinationAddress;
         this.destinationPort = destinationPort;
     }

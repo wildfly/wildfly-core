@@ -154,11 +154,7 @@ public interface EmbeddedLogger extends BasicLogger {
     @Message(id = 14, value = "Cannot load module %s from: %s")
     RuntimeException moduleLoaderError(@Cause Throwable cause, String msg, ModuleLoader moduleLoader);
 
-    /**
-     * Creates an exception indicating the variable, represented by the {@code name} parameter, is {@code null}.
-     */
-    @Message(id = 15, value = "%s is null")
-    IllegalArgumentException nullVar(String name);
+    // id = 15; redundant parameter null check message
 
     /**
      * Creates an exception indicating the system property could not be found.

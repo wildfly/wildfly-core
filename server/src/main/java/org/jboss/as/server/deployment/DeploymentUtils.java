@@ -35,11 +35,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.as.controller.HashUtil;
 
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.common.Assert;
 
 /**
  * Helper class with static methods related to deployment
@@ -79,8 +79,7 @@ public final class DeploymentUtils {
      * @return top deployment unit
      */
     public static DeploymentUnit getTopDeploymentUnit(DeploymentUnit unit) {
-        if (unit == null)
-            throw ServerLogger.ROOT_LOGGER.nullInitialDeploymentUnit();
+        Assert.checkNotNullParam("unit", unit);
 
         DeploymentUnit parent = unit.getParent();
         while (parent != null) {

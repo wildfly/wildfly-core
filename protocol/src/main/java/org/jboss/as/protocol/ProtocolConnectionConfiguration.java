@@ -30,6 +30,7 @@ import java.util.Map;
 
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Endpoint;
+import org.wildfly.common.Assert;
 import org.xnio.OptionMap;
 
 /**
@@ -67,15 +68,9 @@ public class ProtocolConnectionConfiguration {
      * @throws IllegalArgumentException if any required properties are not set
      */
     protected void validate() {
-        if (endpoint == null) {
-            throw ProtocolLogger.ROOT_LOGGER.nullVar("endpoint");
-        }
-        if (optionMap == null) {
-            throw ProtocolLogger.ROOT_LOGGER.nullVar("optionMap");
-        }
-        if (uri == null) {
-            throw ProtocolLogger.ROOT_LOGGER.nullVar("uri");
-        }
+        Assert.checkNotNullParam("endpoint", endpoint);
+        Assert.checkNotNullParam("optionMap", optionMap);
+        Assert.checkNotNullParam("uri", uri);
     }
 
     public URI getUri() {

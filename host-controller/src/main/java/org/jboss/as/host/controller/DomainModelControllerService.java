@@ -173,6 +173,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossThreadFactory;
+import org.wildfly.common.Assert;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -1335,18 +1336,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
         @Override
         public void acquireReadlock(final Integer operationID) throws IllegalArgumentException, InterruptedException {
-            if (operationID == null) {
-                throw HostControllerLogger.DOMAIN_LOGGER.nullVar("operationID");
-            }
+            Assert.checkNotNullParam("operationID", operationID);
             // acquire a read (shared mode) lock for this registration, released in releaseReadlock
             acquireReadLock(operationID);
         }
 
         @Override
         public void releaseReadlock(final Integer operationID) throws IllegalArgumentException {
-            if (operationID == null) {
-                throw HostControllerLogger.DOMAIN_LOGGER.nullVar("operationID");
-            }
+            Assert.checkNotNullParam("operationID", operationID);
             releaseReadLock(operationID);
         }
 

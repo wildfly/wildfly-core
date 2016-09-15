@@ -27,6 +27,7 @@ import java.util.List;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.Assert;
 
 /**
  * {@link ParameterValidator} that validates undefined values and expression types, delegating to a provided
@@ -51,9 +52,7 @@ public class NillableOrExpressionParameterValidator implements ParameterValidato
      * @throws java.lang.IllegalArgumentException if {@code delegate} is {@code null}
      */
     public NillableOrExpressionParameterValidator(ParameterValidator delegate, Boolean allowNull, boolean allowExpression) {
-        if (delegate == null) {
-            throw ControllerLogger.ROOT_LOGGER.nullVar("delegate");
-        }
+        Assert.checkNotNullParam("delegate", delegate);
         this.delegate = delegate;
         this.allowNull = allowNull;
         this.allowExpression = allowExpression;

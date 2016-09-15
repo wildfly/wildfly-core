@@ -22,8 +22,8 @@
 
 package org.jboss.as.network;
 
-import org.jboss.as.network.logging.NetworkMessages;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.common.Assert;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -76,18 +76,11 @@ public class OutboundSocketBinding {
                                  final String destinationAddress, final int destinationPort,
                                  final NetworkInterfaceBinding sourceNetworkInterface, final Integer sourcePort,
                                  final boolean fixedSourcePort) {
-        if (name == null || name.trim().isEmpty()) {
-            throw NetworkMessages.MESSAGES.nullOrEmptyVar("Socket name");
-        }
-        if (socketBindingManager == null) {
-            throw NetworkMessages.MESSAGES.nullOutboundSocketBindingParam(SocketBindingManager.class.getSimpleName(), name);
-        }
-        if (destinationAddress == null || destinationAddress.trim().isEmpty()) {
-            throw NetworkMessages.MESSAGES.nullDestinationAddress(name);
-        }
-        if (destinationPort < 0) {
-            throw NetworkMessages.MESSAGES.negativeDestinationPort(destinationPort, name);
-        }
+        Assert.checkNotNullParam("name", name);
+        Assert.checkNotEmptyParam("name", name);
+        Assert.checkNotNullParam("socketBindingManager", socketBindingManager);
+        Assert.checkNotNullParam("destinationAddress", destinationAddress);
+        Assert.checkMinimumParameter("destinationPort", 0, destinationPort);
         this.name = name;
         this.socketBindingManager = socketBindingManager;
         this.unresolvedDestinationAddress = destinationAddress;

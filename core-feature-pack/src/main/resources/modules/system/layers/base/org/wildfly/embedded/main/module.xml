@@ -39,6 +39,7 @@
 
     <dependencies>
         <module name="org.wildfly.security.elytron"/>
+        <module name="org.wildfly.common"/>
         <module name="org.jboss.as.server"/>
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.as.controller-client"/>

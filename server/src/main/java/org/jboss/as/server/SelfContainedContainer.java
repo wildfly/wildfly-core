@@ -62,7 +62,13 @@ public final class SelfContainedContainer {
 
     private static final String PRODUCT_SLOT = "main";
 
+    private Bootstrap.ConfigurationPersisterFactory persisterFactory = null;
+
     public SelfContainedContainer() {
+    }
+
+    public SelfContainedContainer(Bootstrap.ConfigurationPersisterFactory configuration) {
+        this.persisterFactory = configuration;
     }
 
     public ServiceContainer start(final List<ModelNode> containerDefinition, ContentProvider contentProvider) throws ExecutionException, InterruptedException, ModuleLoadException {
@@ -96,16 +102,28 @@ public final class SelfContainedContainer {
         Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
         ServerEnvironment serverEnvironment = determineEnvironment(WildFlySecurityManager.getSystemPropertiesPrivileged(), WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.SELF_CONTAINED, startTime);
         final Bootstrap bootstrap = Bootstrap.Factory.newInstance();
+
+
         final Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
+
         configuration.setConfigurationPersisterFactory(
                 new Bootstrap.ConfigurationPersisterFactory() {
                     @Override
                     public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
-                        SelfContainedConfigurationPersister persister = new SelfContainedConfigurationPersister(containerDefinition);
-                        configuration.getExtensionRegistry().setWriterRegistry(persister);
-                        return persister;
+
+                        ExtensibleConfigurationPersister delegate;
+                        if(persisterFactory!=null) {
+                            delegate = persisterFactory.createConfigurationPersister(serverEnvironment, executorService);
+                        } else {
+                            delegate = new SelfContainedConfigurationPersister(containerDefinition);
+                        }
+
+                        configuration.getExtensionRegistry().setWriterRegistry(delegate);
+                        return delegate;
                     }
                 });
+
+
         configuration.setModuleLoader(Module.getBootModuleLoader());
 
         List<ServiceActivator> activators = new ArrayList<>();

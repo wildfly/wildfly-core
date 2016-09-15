@@ -27,7 +27,7 @@
     <exports>
         <exclude path="org/wildfly/security/_private"/>
         <exclude path="org/wildfly/security/manager/_private"/>
-        <exclude path="org/wildfly/security/sasl.digest/_private"/>
+        <exclude path="org/wildfly/security/sasl/digest/_private"/>
         <exclude path="org/wildfly/security/util/_private"/>
     </exports>
 
@@ -40,6 +40,7 @@
         <module name="org.jboss.modules"/>
         <module name="org.jboss.threads"/>
         <module name="javax.api" />
+        <module name="javax.json.api" optional="true"/>
         <module name="sun.jdk"/>
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.client.config"/>
