@@ -42,7 +42,7 @@ import org.jboss.as.server.controller.resources.DeploymentResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Transorformers for deployments in domain mode.
+ * Transformers for deployments in domain mode.
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
 class DeploymentTransformers {
