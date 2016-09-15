@@ -25,6 +25,7 @@ package org.jboss.as.logging.deployments.resources;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.logging.deployments.LoggingConfigurationService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.config.LogContextConfiguration;
@@ -46,6 +47,9 @@ abstract class LoggingConfigurationReadStepHandler implements OperationStepHandl
         }
         // Some deployments may not have a logging configuration associated, e.g. log4j configured deployments
         if (configuration != null) {
+            // Attempt to resolve the resource to ensure it exists before continuing, this can be removed when
+            // WFCORE-1800 is resolved
+            context.readResource(PathAddress.EMPTY_ADDRESS, false);
             final String name = context.getCurrentAddressValue();
             final ModelNode result = context.getResult();
             updateModel(configuration, name, result);
