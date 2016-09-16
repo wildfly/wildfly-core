@@ -38,7 +38,9 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
@@ -48,6 +50,10 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 public class CliConfigTestCase {
+
+    @Rule
+    public final TemporaryFolder temporaryUserHome = new TemporaryFolder();
+
     @Test
     public void testEchoCommand() throws Exception {
         File f = createConfigFile(true);
@@ -105,6 +111,7 @@ public class CliConfigTestCase {
         File f = createConfigFile(false, 1);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("--controller="
                         + TestSuiteEnvironment.getServerAddress() + ":"
                         + TestSuiteEnvironment.getServerPort())
@@ -116,6 +123,7 @@ public class CliConfigTestCase {
     @Test
     public void testOptionTimeoutCommand() throws Exception {
         CliProcessWrapper cli = new CliProcessWrapper()
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("--controller="
                         + TestSuiteEnvironment.getServerAddress() + ":"
                         + TestSuiteEnvironment.getServerPort())
