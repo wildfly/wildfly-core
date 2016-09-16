@@ -92,6 +92,7 @@ import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -137,6 +138,7 @@ public class BasicOperationsUnitTestCase {
     }
 
     @Test
+    @Ignore("WFCORE-1805")
     public void testPathInfo() throws IOException {
         ModelNode address = new ModelNode();
         address.add(SUBSYSTEM, "logging");
