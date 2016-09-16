@@ -138,7 +138,7 @@
         <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta3</version.org.wildfly.security.elytron-web.undertow-server>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
         <!-- Non-default maven plugin versions and configuration -->
-        <version.org.zanata.plugin>3.1.1</version.org.zanata.plugin>
+        <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
         <version.xml.plugin>1.0</version.xml.plugin>
 
         <!-- Modularized JDK support (various workarounds) - activated via profile -->
@@ -225,6 +225,8 @@
                  <srcDir>target/classes</srcDir>
                  <transDir>src/main/resources</transDir>
                  <includes>**/*.i18n.properties,**/LocalDescriptions.properties</includes>
+                 <!-- In previous versions, 3.8.0 and lower, this defaulted to true -->
+                 <copyTrans>true</copyTrans>
               </configuration>
             </plugin>
             <plugin>
