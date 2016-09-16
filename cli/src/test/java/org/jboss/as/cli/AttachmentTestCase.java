@@ -33,6 +33,40 @@ public class AttachmentTestCase {
 
     private static final String PATH = "/a/nice/attachment/path";
 
+    private static final String VAULT_ADD_DESCRIPTION = "{\n"
+            + "          \"request-properties\" : {\n"
+            + "            \"code\" : {\n"
+            + "                \"type\" : \"STRING\",\n"
+            + "                \"description\" : \"Fully Qualified Name of the Security Vault Implementation.\",\n"
+            + "                \"expressions-allowed\" : true,\n"
+            + "                \"required\" : false,\n"
+            + "                \"nillable\" : true\n"
+            + "            },\n"
+            + "            \"module\" : {\n"
+            + "                \"type\" : \"STRING\",\n"
+            + "                \"description\" : \"The name of the module to load up the vault implementation from.\",\n"
+            + "                \"expressions-allowed\" : true,\n"
+            + "                \"required\" : false,\n"
+            + "                \"nillable\" : true,\n"
+            + "                \"requires\" : [\"code\"]\n"
+            + "            },\n"
+            + "            \"vault-options\" : {\n"
+            + "                \"type\" : \"OBJECT\",\n"
+            + "                \"description\" : \"Security Vault options.\",\n"
+            + "                \"expressions-allowed\" : true,\n"
+            + "                \"required\" : false,\n"
+            + "                \"nillable\" : true,\n"
+            + "                \"value-type\" : \"STRING\"\n"
+            + "            }\n"
+            + "        }\n"
+            + "}";
+
+    private static final String VAULT_ADD_VALUE = "{\n"
+            + "\"vault-options\" : {\n"
+            + "        \"KEYSTORE_PASSWORD\" : \"MASK-20OB41ZkH8YzlPTICpKg5.\",\n"
+            + "        \"KEYSTORE_ALIAS\"    : \"jboss\" }\n"
+            + "}";
+
     private static final String DESCRIPTION = "{\n"
             + "    \"request-properties\": {\n"
             + "        \"toto\": {\n"
@@ -205,6 +239,18 @@ public class AttachmentTestCase {
         for (int i = 0; i < attachments.getAttachedFiles().size(); i++) {
             String p = attachments.getAttachedFiles().get(i);
             Assert.assertEquals(p, PATH + i);
+        }
+    }
+
+    @Test
+    public void testInvalidValueType() throws CliInitializationException {
+        // 10 files should be replaced by indexes.
+        ModelNode description = ModelNode.fromJSONString(VAULT_ADD_DESCRIPTION);
+        ModelNode value = ModelNode.fromJSONString(VAULT_ADD_VALUE);
+        ModelNode req = description.get(Util.REQUEST_PROPERTIES).asObject();
+        Attachments attachments = new Attachments();
+        for (String k : value.keys()) {
+            Util.applyReplacements(k, value.get(k), req.get(k), req.get(k).get(Util.TYPE).asType(), attachments);
         }
     }
 }
