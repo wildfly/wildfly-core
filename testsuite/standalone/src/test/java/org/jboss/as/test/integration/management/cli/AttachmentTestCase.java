@@ -60,6 +60,31 @@ public class AttachmentTestCase {
     }
 
     @Test
+    public void testOtherDirectory() throws Exception {
+        CLIWrapper cli = new CLIWrapper(true);
+        File dir = new File(System.currentTimeMillis() + "attachment");
+        dir.mkdir();
+        File f = new File(dir, System.currentTimeMillis() + "attachment.log");
+        File f2 = new File(f.getAbsolutePath() + "(1)");
+        assertFalse(f.exists());
+        assertFalse(f2.exists());
+        try {
+            cli.sendLine("attachment save --operation=/subsystem=logging/log-file=server.log:"
+                    + "read-attribute(name=stream) --file=" + f.getAbsolutePath());
+            assertTrue(f.exists() && f.length() != 0);
+
+            cli.sendLine("attachment save --operation=/subsystem=logging/log-file=server.log:"
+                    + "read-attribute(name=stream) --file=" + f.getAbsolutePath());
+            assertTrue(f2.exists() && f2.length() != 0);
+        } finally {
+            f.delete();
+            f2.delete();
+            dir.delete();
+            cli.quit();
+        }
+    }
+
+    @Test
     public void testOverwrite() throws Exception {
         CLIWrapper cli = new CLIWrapper(true);
         File f = new File(System.currentTimeMillis() + "attachment.log");
