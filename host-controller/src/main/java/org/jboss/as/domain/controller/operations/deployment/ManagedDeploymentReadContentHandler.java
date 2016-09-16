@@ -15,15 +15,10 @@
  */
 package org.jboss.as.domain.controller.operations.deployment;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIRECTORY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILE_SIZE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.ARCHIVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.DEPLOYMENT_CONTENT_PATH;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.DEPTH;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PATH;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.getContentItem;
-import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isArchive;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isManaged;
 
 import org.jboss.as.controller.OperationContext;
@@ -33,24 +28,24 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
-import org.jboss.as.repository.ContentFilter;
 import org.jboss.as.repository.ContentRepository;
-import org.jboss.as.repository.ContentRepositoryElement;
 import org.jboss.as.repository.ExplodedContentException;
+import org.jboss.as.repository.TypedInputStream;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Handler for the "browse-content" operation over an exploded managed deployment.
+ * Handler for the "read-content" operation over an exploded managed deployment.
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
-public class ExplodedDeploymentBrowseContentHandler implements OperationStepHandler {
+public class ManagedDeploymentReadContentHandler implements OperationStepHandler {
 
     protected final ContentRepository contentRepository;
 
-    public ExplodedDeploymentBrowseContentHandler(final ContentRepository contentRepository) {
+    public ManagedDeploymentReadContentHandler(final ContentRepository contentRepository) {
         assert contentRepository != null : "Null contentRepository";
         this.contentRepository = contentRepository;
     }
+
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         if (context.getProcessType() == ProcessType.SELF_CONTAINED) {
@@ -61,31 +56,17 @@ public class ExplodedDeploymentBrowseContentHandler implements OperationStepHand
         // Validate this op is available
         if (!isManaged(contentItemNode)) {
             throw DomainControllerLogger.ROOT_LOGGER.cannotReadContentFromUnmanagedDeployment();
-        } else if (isArchive(contentItemNode)) {
-            throw DomainControllerLogger.ROOT_LOGGER.cannotReadContentFromUnexplodedDeployment();
         }
         final byte[] deploymentHash = CONTENT_HASH.resolveModelAttribute(context, contentItemNode).asBytes();
-        final ModelNode pathNode = DEPLOYMENT_CONTENT_PATH.resolveModelAttribute(context, operation);
-        final String path;
-        if(pathNode.isDefined()) {
-            path = pathNode.asString();
-        } else {
-            path = "";
-        }
-        int depth = DEPTH.resolveModelAttribute(context, operation).asInt();
-        boolean explodable = ARCHIVE.resolveModelAttribute(context, operation).asBoolean();
+        final ModelNode contentPath = CONTENT_PATH.resolveModelAttribute(context, operation);
+        final String path = contentPath.isDefined() ? contentPath.asString() : "";
         try {
-            for (ContentRepositoryElement content : contentRepository.listContent(deploymentHash, path, ContentFilter.Factory.createContentFilter(depth, explodable))) {
-                ModelNode contentNode = new ModelNode();
-                contentNode.get(PATH).set(content.getPath());
-                contentNode.get(DIRECTORY).set(content.isFolder());
-                if(!content.isFolder()) {
-                    contentNode.get(FILE_SIZE).set(content.getSize());
-                }
-                context.getResult().add(contentNode);
-            }
+            TypedInputStream inputStream = contentRepository.readContent(deploymentHash, path);
+            String uuid = context.attachResultStream(inputStream.getContentType(), inputStream);
+            context.getResult().get(UUID).set(uuid);
         } catch (ExplodedContentException ex) {
             throw new OperationFailedException(ex.getMessage());
         }
     }
+
 }

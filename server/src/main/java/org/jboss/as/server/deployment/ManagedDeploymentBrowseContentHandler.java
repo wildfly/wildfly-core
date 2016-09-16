@@ -23,7 +23,6 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONT
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.DEPLOYMENT_CONTENT_PATH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.DEPTH;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.getContentItem;
-import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isArchive;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isManaged;
 
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
@@ -45,11 +44,11 @@ import org.jboss.dmr.ModelNode;
  * Handler for the "browse-content" operation over an exploded managed deployment.
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
-public class ExplodedDeploymentBrowseContentHandler implements OperationStepHandler {
+public class ManagedDeploymentBrowseContentHandler implements OperationStepHandler {
 
     protected final ContentRepository contentRepository;
 
-    public ExplodedDeploymentBrowseContentHandler(final ContentRepository contentRepository) {
+    public ManagedDeploymentBrowseContentHandler(final ContentRepository contentRepository) {
         assert contentRepository != null : "Null contentRepository";
         this.contentRepository = contentRepository;
     }
@@ -63,8 +62,6 @@ public class ExplodedDeploymentBrowseContentHandler implements OperationStepHand
         // Validate this op is available
         if (!isManaged(contentItemNode)) {
             throw ServerLogger.ROOT_LOGGER.cannotReadContentFromUnmanagedDeployment();
-        } else if (isArchive(contentItemNode)) {
-            throw ServerLogger.ROOT_LOGGER.cannotReadContentFromUnexplodedDeployment();
         }
         final byte[] deploymentHash = CONTENT_HASH.resolveModelAttribute(context, contentItemNode).asBytes();
         final ModelNode pathNode = DEPLOYMENT_CONTENT_PATH.resolveModelAttribute(context, operation);

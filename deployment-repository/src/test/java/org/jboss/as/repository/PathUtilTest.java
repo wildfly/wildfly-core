@@ -18,7 +18,9 @@ package org.jboss.as.repository;
 import static org.jboss.as.repository.ContentFilter.Factory.createFileFilter;
 import static org.jboss.as.repository.PathUtil.deleteRecursively;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -115,6 +117,54 @@ public class PathUtilTest {
     }
 
     /**
+     * Test of isArchive method, of class PathUtil.
+     */
+    @Test
+    public void testReadFile() throws Exception {
+        Path archive = root.resolve("test.zip");
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(archive))) {
+            ZipEntry entry = new ZipEntry("overlay.xhtml");
+            out.putNextEntry(entry);
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+                StreamUtils.copyStream(in, out);
+            }
+            out.closeEntry();
+            entry = new ZipEntry("single/test/test.html");
+            out.putNextEntry(entry);
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+                StreamUtils.copyStream(in, out);
+            }
+            out.closeEntry();
+        }
+        try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+            String content = readFileContent(in);
+            Assert.assertEquals(readFileContent(PathUtil.readFile(archive.resolve("overlay.xhtml"), root)), content);
+            Assert.assertEquals(readFileContent(PathUtil.readFile(archive.resolve("single/test/test.html"), root)), content);
+        }
+        try {
+            readFileContent(PathUtil.readFile(archive.resolve("single/test.html"), root));
+            Assert.fail("Shouldn't find a file at " + archive.resolve("single/test.html"));
+        } catch (FileNotFoundException ex) {
+        }
+    }
+
+    private String readFileContent(Path path) throws Exception {
+        try (InputStream in = Files.newInputStream(path)) {
+            return readFileContent(in);
+        }
+    }
+
+    private String readFileContent(InputStream in) throws Exception {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8];
+            int length = 8;
+            while ((length = in.read(buffer, 0, length)) > 0) {
+                out.write(buffer, 0, length);
+            }
+            return out.toString("UTF-8");
+        }
+    }
+    /**
      * Test of listFiles method, of class PathUtil.
      */
     @Test
@@ -142,7 +192,7 @@ public class PathUtilTest {
         Files.createDirectories(root.resolve("empty").resolve("directory"));
         Files.createDirectories(root.resolve("htdocs").resolve("www"));
         Files.copy(this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml"), root.resolve("htdocs").resolve("www").resolve("overlay.xhtml"));
-        List<String> result = PathUtil.listFiles(root, ALL).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> result = PathUtil.listFiles(root, root, ALL).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
         Assert.assertEquals(9, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
@@ -153,19 +203,19 @@ public class PathUtilTest {
         Assert.assertTrue(result.contains("htdocs/www/overlay.xhtml"));
         Assert.assertTrue(result.contains("htdocs/www/"));
         Assert.assertTrue(result.contains("htdocs/"));
-        result = PathUtil.listFiles(root, explodableFileFilter(true)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        result = PathUtil.listFiles(root, root, explodableFileFilter(true)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/test.zip"));
-        result = PathUtil.listFiles(root, directoryListFileFilter()).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        result = PathUtil.listFiles(root, root, directoryListFileFilter()).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
-        result = PathUtil.listFiles(root, ContentFilter.Factory.createContentFilter(2, true)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        result = PathUtil.listFiles(root, root, ContentFilter.Factory.createContentFilter(2, true)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/test.zip"));
-        result = PathUtil.listFiles(root, ContentFilter.Factory.createContentFilter(2, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        result = PathUtil.listFiles(root, root, ContentFilter.Factory.createContentFilter(2, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
         Assert.assertEquals(8, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
@@ -175,7 +225,7 @@ public class PathUtilTest {
         Assert.assertTrue(result.contains("empty/directory/"));
         Assert.assertTrue(result.contains("htdocs/www/"));
         Assert.assertTrue(result.contains("htdocs/"));
-        result = PathUtil.listFiles(root, ContentFilter.Factory.createContentFilter(3, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        result = PathUtil.listFiles(root, root, ContentFilter.Factory.createContentFilter(3, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
         Assert.assertEquals(9, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
