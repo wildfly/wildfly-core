@@ -211,7 +211,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
                 .addOperation(RUNTIME_ONLY_DEFINITION, RUNTIME_MOD_HANDLER);
         if (caps != null && caps.length > 0) {
             result = result.addCapabilities((Capability[]) caps)
-                    .setAddOperation(new AbstractAddStepHandler())
+                    .setAddOperation(new AbstractAddStepHandler(new HashSet<RuntimeCapability>(Arrays.asList(caps))))
                     .setRemoveOperation(new ModelOnlyRemoveStepHandler());
         }
         return result;
@@ -269,16 +269,14 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
         rootRegistration.registerOperationHandler(new SimpleOperationDefinition("clean", NonResolvingResourceDescriptionResolver.INSTANCE), (context, operation) -> {
             ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
-            mrr.unregisterSubModel(TEST_ADDRESS1.getElement(0));
-            mrr.unregisterSubModel(TEST_ADDRESS2.getElement(0));
-            mrr.unregisterSubModel(TEST_ADDRESS4.getElement(0));
-            mrr.getSubModel(PathAddress.pathAddress(RELOAD_ELEMENT)).unregisterSubModel(INDEPENDENT_ELEMENT);
-            mrr.unregisterSubModel(RELOAD_ELEMENT);
-            mrr.unregisterSubModel(HOST_ELEMENT);
-            mrr.unregisterSubModel(PROFILE_ELEMENT);
-            mrr.unregisterSubModel(CHILD_ELEMENT);
-            mrr.getSubModel(PathAddress.pathAddress(DEP_CAP_ELEMENT)).unregisterSubModel(CHILD_ELEMENT);
-            mrr.unregisterSubModel(DEP_CAP_ELEMENT);
+            mrr.unregisterSubModel(TEST_RESOURCE1.getPathElement());
+            mrr.unregisterSubModel(TEST_RESOURCE2.getPathElement());
+            mrr.unregisterSubModel(TEST_RESOURCE4.getPathElement());
+            mrr.unregisterSubModel(RELOAD_PARENT.getPathElement());
+            mrr.unregisterSubModel(HOST_RESOURCE.getPathElement());
+            mrr.unregisterSubModel(PROFILE_RESOURCE.getPathElement());
+            mrr.unregisterSubModel(NO_CAP_RESOURCE.getPathElement());
+            mrr.unregisterSubModel(DEP_CAP_RESOURCE.getPathElement());
         });
 
         rootRegistration.registerOperationHandler(new SimpleOperationDefinition("create", NonResolvingResourceDescriptionResolver.INSTANCE), (context, operation) -> {
@@ -365,6 +363,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         executeCheckNoFailure(createOperation("remove-sub-resource", TEST_ADDRESS2));
 
         Assert.assertEquals(1, capabilityRegistry.getCapabilities().size());
+        //this is now 3 as remove resource also unregisteres sub resource from mgmt tree
         Assert.assertEquals(RELOAD_CAP_COUNT + 4, capabilityRegistry.getPossibleCapabilities().size());
 
         //remove test2 resource so capabilites are moved

@@ -159,7 +159,7 @@ final class NodeSubregistry {
     void unregisterSubModel(final String elementValue) {
         checkPermission();
         AbstractResourceRegistration rr = childRegistriesUpdater.remove(this, elementValue);
-        if (rr!=null) {
+        if (rr != null) {
             // We want to remove the possible capabilities.
             // We've removed the MRR so the normal getCapabilities() won't work as it
             // relies on walking the tree from the root. So we just use the local call
