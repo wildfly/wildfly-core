@@ -196,6 +196,11 @@
             <artifactId>wildfly-common</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.wildfly.openssl</groupId>
+            <artifactId>wildfly-openssl</artifactId>
+        </dependency>
+
         <!-- Add this dependency to make sure that the core model is tested before we build the server -->
         <dependency>
             <groupId>org.wildfly.core</groupId>

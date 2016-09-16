@@ -23,6 +23,7 @@
 package org.jboss.as.domain.management.logging;
 
 import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
@@ -1232,6 +1233,10 @@ public interface DomainManagementLogger extends BasicLogger {
     /* End X.500 exceptions */
     @Message(id = 135, value = "The resource %s wasn't working properly and has been removed.")
     String removedOutOfOrderResource(final String address);
+
+    @LogMessage(level = INFO)
+    @Message(id = 136, value = "Registered OpenSSL provider")
+    void registeredOpenSSLProvider();
 
     /**
      * Information message saying the username and password must be different.
