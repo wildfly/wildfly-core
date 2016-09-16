@@ -518,7 +518,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                     throw ControllerLogger.MGMT_OP_LOGGER.capabilityAlreadyRegisteredInContext(capabilityId.getName(),
                             capabilityId.getScope().getName());
                 }
-                return capabilityRegistration;
+                return currentRegistration;
             });
             possibleCapabilities.putIfAbsent(capabilityId, capabilityRegistration);
             modified = true;
