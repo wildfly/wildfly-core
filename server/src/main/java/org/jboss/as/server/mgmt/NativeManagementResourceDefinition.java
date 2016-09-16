@@ -56,7 +56,6 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
     public static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, false)
             .setXmlName(Attribute.NATIVE.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
-            .setAlternatives(ModelDescriptionConstants.INTERFACE)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
             .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
