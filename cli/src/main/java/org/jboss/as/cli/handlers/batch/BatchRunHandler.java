@@ -104,6 +104,7 @@ public class BatchRunHandler extends BaseOperationCommand {
                         if (cmd.getResponseHandler() != null) {
                             cmd.getResponseHandler().handleResponse(step, response);
                         }
+                        i += 1;
                     }
                 }
             }

@@ -192,6 +192,22 @@ public class AttachmentHandler extends BatchModeCommandHandler {
         headers.addRequiredPreceding(operation);
     }
 
+    @Override
+    protected void recognizeArguments(CommandContext ctx) throws CommandFormatException {
+        String act = getAction(ctx);
+        if (DISPLAY.equals(act)) {
+            if (targetFile.isPresent(ctx.getParsedCommandLine())) {
+                throw new CommandFormatException(targetFile.getFullName()
+                        + " can't be used with display action");
+            }
+            if (overwrite.isPresent(ctx.getParsedCommandLine())) {
+                throw new CommandFormatException(overwrite.getFullName()
+                        + " can't be used with display action");
+            }
+        }
+        super.recognizeArguments(ctx);
+    }
+
     private String getAction(CommandContext ctx) {
         final String originalLine = ctx.getParsedCommandLine().getOriginalLine();
         if (originalLine == null || originalLine.isEmpty()) {

@@ -123,8 +123,7 @@ public class AttachmentTestCase {
                     + "read-attribute(name=stream) --file=" + f.getAbsolutePath());
             cli.sendLine("run-batch");
             assertTrue(f.exists() && f.length() != 0);
-            // Same streams, second consumer deals with a consumed stream
-            assertTrue(f2.exists() && f2.length() == 0);
+            assertTrue(f2.exists() && f2.length() != 0);
         } finally {
             f.delete();
             f2.delete();
@@ -148,8 +147,7 @@ public class AttachmentTestCase {
         try {
             cli.sendLine("run-batch --file=" + batchFile + " -v");
             assertTrue(f.exists() && f.length() != 0);
-            // Same streams, second consumer deals with a consumed stream
-            assertTrue(f2.exists() && f2.length() == 0);
+            assertTrue(f2.exists() && f2.length() != 0);
         } finally {
             batchFile.delete();
             f.delete();
@@ -221,6 +219,67 @@ public class AttachmentTestCase {
             String output = cli.readOutput();
             assertTrue(output.contains("jboss.home.dir"));
         } finally {
+            cli.quit();
+        }
+    }
+
+    @Test
+    public void testDisplayWrongOptions() throws Exception {
+        CLIWrapper cli = new CLIWrapper(true);
+        boolean failed = false;
+
+        try {
+            cli.sendLine("attachment display --operation=/subsystem=logging/"
+                    + "log-file=server.log:read-attribute(name=stream) --overwrite");
+        } catch (Throwable ex) {
+            // XXX OK.
+            failed = true;
+        }
+
+        try {
+            cli.sendLine("attachment display --operation=/subsystem=logging/"
+                    + "log-file=server.log:read-attribute(name=stream) --file=toto");
+        } catch (Throwable ex) {
+            // XXX OK.
+            failed = true;
+        } finally {
+            cli.quit();
+        }
+        if (!failed) {
+            throw new Exception("Should have failed");
+        }
+    }
+
+    @Test
+    public void testBatchIncrementalDeployment() throws Exception {
+        CLIWrapper cli = new CLIWrapper(true);
+        File f = new File(System.currentTimeMillis() + "batch_attachment.log");
+        File f2 = new File(System.currentTimeMillis() + "batch_attachment2.log");
+        File source = new File(System.currentTimeMillis() + "todeploy.log");
+        String expected = "HelloWorld";
+        Files.write(source.toPath(), expected.getBytes());
+        assertFalse(f.exists());
+        assertFalse(f2.exists());
+        try {
+            cli.sendLine("/deployment=AttachedFileTestCase.war:add(content=[{empty=true}])");
+            cli.sendLine("batch");
+            cli.sendLine("/deployment=AttachedFileTestCase.war:add-content(content=[{input-stream-index="
+                    + source.getName() + ", target-path=batch.text.file1}])");
+            cli.sendLine("/deployment=AttachedFileTestCase.war:add-content(content=[{input-stream-index="
+                    + source.getName() + ", target-path=batch.text.file2}])");
+            cli.sendLine("attachment save --operation=/deployment=AttachedFileTestCase.war:"
+                    + "read-content(path=batch.text.file1) --file=" + f.getAbsolutePath());
+            cli.sendLine("attachment save --operation=/deployment=AttachedFileTestCase.war:"
+                    + "read-content(path=batch.text.file2) --file=" + f2.getAbsolutePath());
+            cli.sendLine("run-batch");
+            assertTrue(f.exists() && f.length() != 0);
+            assertTrue(Files.readAllLines(f.toPath()).get(0).equals(expected));
+            assertTrue(f2.exists() && f2.length() != 0);
+            assertTrue(Files.readAllLines(f2.toPath()).get(0).equals(expected));
+        } finally {
+            f.delete();
+            f2.delete();
+            source.delete();
             cli.quit();
         }
     }
