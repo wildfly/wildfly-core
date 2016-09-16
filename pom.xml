@@ -26,7 +26,7 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>20</version>
+      <version>21</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
@@ -109,7 +109,7 @@
         <version.org.jboss.marshalling.jboss-marshalling>1.4.11.Final</version.org.jboss.marshalling.jboss-marshalling>
         <!-- this is test only dependancy -->
         <version.org.jboss.metadata.jboss-metadata-common>10.0.0.Final</version.org.jboss.metadata.jboss-metadata-common>
-        <version.org.jboss.modules.jboss-modules>1.6.0.Beta2</version.org.jboss.modules.jboss-modules>
+        <version.org.jboss.modules.jboss-modules>1.6.0.Beta3</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.2.6.Final</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>4.0.21.Final</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>2.0.1.Final</version.org.jboss.remotingjmx.remoting-jmx>
@@ -1500,7 +1500,11 @@
             </activation>
             <properties>
                 <!-- [WFCORE-1431] remove SASL workaround -->
-                <modular.jdk.args>-XaddExports:java.security.sasl/com.sun.security.sasl.digest=ALL-UNNAMED -XaddExports:java.security.sasl/com.sun.security.sasl=ALL-UNNAMED -XaddExports:jdk.unsupported/sun.reflect=ALL-UNNAMED -XaddExports:jdk.unsupported/sun.misc=ALL-UNNAMED</modular.jdk.args>
+                <modular.jdk.args>--add-exports java.security.sasl/com.sun.security.sasl.digest=ALL-UNNAMED
+                    --add-exports java.security.sasl/com.sun.security.sasl=ALL-UNNAMED
+                    --add-exports jdk.unsupported/sun.reflect=ALL-UNNAMED
+                    --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED
+                </modular.jdk.args>
                 <!-- [WFCORE-1494] remove JUL workaround -->
                 <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true</modular.jdk.props>
             </properties>
@@ -1514,7 +1518,7 @@
                                 <!-- fork is needed so compiler args can be used -->
                                 <fork>true</fork>
                                 <compilerArgs>
-                                    <arg>-J-addmods</arg>
+                                    <arg>-J--add-modules</arg>
                                     <arg>-Jjava.annotations.common</arg>
                                 </compilerArgs>
                             </configuration>
