@@ -21,6 +21,7 @@
  */
 package org.jboss.as.controller;
 
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
@@ -36,10 +37,19 @@ public abstract class RestartParentResourceAddHandler extends RestartParentResou
         super(parentKeyName);
     }
 
+    public RestartParentResourceAddHandler(RuntimeCapability capability, String parentKeyName, AttributeDefinition... attributes) {
+        super(capability, parentKeyName, attributes);
+    }
+
+    public RestartParentResourceAddHandler(Parameters parameters, String parentKeyName) {
+        super(parameters, parentKeyName);
+    }
+
     @Override
     protected void updateModel(OperationContext context, ModelNode operation) throws OperationFailedException {
         final Resource resource = context.createResource(PathAddress.EMPTY_ADDRESS);
-        populateModel(operation, resource.getModel());
+        populateModel(context, operation, resource);
+        recordCapabilitiesAndRequirements(context, operation, resource);
     }
 
     /**
