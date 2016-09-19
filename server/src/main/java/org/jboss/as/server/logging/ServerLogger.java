@@ -1196,4 +1196,6 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 241, value = "Shutting down in response to management operation '%s'")
     void shuttingDownInResponseToManagementRequest(String op);
 
+    @Message(id = 257, value = "Required system property '%s' not set")
+    IllegalArgumentException requiredSystemPropertyMissing(String propName);
 }
