@@ -365,31 +365,11 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             serverLogDir = new File(WildFlySecurityManager.getPropertyPrivileged("user.dir", "."));
 
 
-            try {
-                File tmpDir = File.createTempFile( "wildfly-self-contained", ".d" );
-                if ( tmpDir.exists() ) {
-                    for ( int i = 0 ; i < 10 ; ++i ) {
-                        if ( tmpDir.exists() ) {
-                            if (deleteRecursively(tmpDir)) {
-                                break;
-                            }
-                            try {
-                                Thread.sleep( 100 );
-                            } catch (InterruptedException e) {
-                                break;
-                            }
-                        }
-                    }
-                    if ( tmpDir.exists() ) {
-                        throw ServerLogger.ROOT_LOGGER.unableToCreateSelfContainedDir();
-                    }
-                }
-                tmpDir.mkdirs();
-                tmpDir.deleteOnExit();
-                serverTempDir = tmpDir;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            String serverDirProp = props.getProperty(SERVER_TEMP_DIR);
+            if(null==serverDirProp) {
+                throw new IllegalStateException("LaunchType.SELF_CONTAINED requires the property "+SERVER_TEMP_DIR+ " to be set");
             }
+            serverTempDir = new File(serverDirProp);
 
             serverDataDir = serverTempDir;
             modulesDir = null;
@@ -609,22 +589,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         } catch (Exception ex) {
             ServerLogger.ROOT_LOGGER.cannotAddURLStreamHandlerFactory(ex, VFS_MODULE_IDENTIFIER);
         }
-    }
-
-    private static boolean deleteRecursively(File f) {
-        if ( ! f.exists() ) {
-            return false;
-        }
-        if ( f.isDirectory() ) {
-            File[] children = f.listFiles();
-            for ( int i = 0 ; i < children.length ; ++i ) {
-                if ( ! deleteRecursively(children[i]) ) {
-                    return false;
-                }
-            }
-        }
-
-        return f.delete();
     }
 
     private void setPathProperty(String propertyName, File path) {
