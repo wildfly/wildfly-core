@@ -165,7 +165,7 @@ class VaultConfig {
                                 "' is not found for element " +
                                 VAULT_OPTION + "' at " + reader.getLocation());
                     }
-                    config.addOption(name.trim(), value.trim());
+                    config.addOption(name, value);
                     CliConfigImpl.CliConfigReader.requireNoContent(reader);
                 } else {
                     throw new XMLStreamException("Unexpected element: " + localName);
