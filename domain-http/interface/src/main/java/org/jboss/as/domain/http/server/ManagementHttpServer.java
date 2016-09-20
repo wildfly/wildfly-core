@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,12 +64,15 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.CanonicalPathHandler;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
 import io.undertow.server.handlers.PathHandler;
+import io.undertow.server.handlers.ResponseCodeHandler;
 import io.undertow.server.handlers.SetHeaderHandler;
 import io.undertow.server.handlers.cache.CacheHandler;
 import io.undertow.server.handlers.cache.DirectBufferCache;
 import io.undertow.server.handlers.error.SimpleErrorPageHandler;
+import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.protocol.http.HttpOpenListener;
 import io.undertow.util.Headers;
+import io.undertow.util.Methods;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
@@ -84,6 +88,7 @@ import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.StartException;
+import org.wildfly.common.Assert;
 import org.xnio.BufferAllocator;
 import org.xnio.ByteBufferSlicePool;
 import org.xnio.ChannelListener;
@@ -107,7 +112,23 @@ import org.xnio.ssl.XnioSsl;
  */
 public class ManagementHttpServer {
 
+
+    public interface PathRemapper {
+        String remapPath(String originalPath);
+    }
+
     private static final Map<Pattern, Charset> USER_AGENT_CHARSET_MAP = generateCharsetMap();
+
+    private static final Set<String> RESERVED_CONTEXTS;
+
+    static {
+        Set<String> set = new HashSet<>();
+        set.add(DomainApiCheckHandler.PATH);
+        set.add(DomainApiCheckHandler.GENERIC_CONTENT_REQUEST);
+        set.add(LogoutHandler.PATH);
+        set.add(ErrorContextHandler.ERROR_CONTEXT);
+        RESERVED_CONTEXTS = Collections.unmodifiableSet(set);
+    }
 
     private final HttpOpenListener openListener;
     private final InetSocketAddress httpAddress;
@@ -117,17 +138,18 @@ public class ManagementHttpServer {
     private volatile AcceptingChannel<SslConnection> secureServer;
     private final SSLContext sslContext;
     private final SslClientAuthMode sslClientAuthMode;
+    private final ExtensionHandlers extensionHandlers;
 
     private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext,
-                                 SslClientAuthMode sslClientAuthMode, XnioWorker worker) {
+                                 SslClientAuthMode sslClientAuthMode, XnioWorker worker, ExtensionHandlers extensionExtensionHandlers) {
         this.openListener = openListener;
         this.httpAddress = httpAddress;
         this.secureAddress = secureAddress;
         this.sslContext = sslContext;
         this.sslClientAuthMode = sslClientAuthMode;
         this.worker = worker;
+        this.extensionHandlers = extensionExtensionHandlers;
     }
-
 
     public void start() {
         try {
@@ -157,6 +179,47 @@ public class ManagementHttpServer {
     public void stop() {
         IoUtils.safeClose(normalServer);
         IoUtils.safeClose(secureServer);
+    }
+
+    public void addStaticContext(String contextName, ResourceManager resourceManager) {
+        Assert.checkNotNullParam("contextName", contextName);
+        Assert.checkNotNullParam("resourceManager", resourceManager);
+        String context = fixPath(contextName);
+        // Reject reserved contexts or duplicate extensions
+        if (extensionHandlers.reservedContexts.contains(context) || !extensionHandlers.extensionContexts.add(context)) {
+            throw new IllegalStateException();
+        }
+        ResourceHandlerDefinition def = DomainUtil.createStaticContentHandler(resourceManager, context);
+        HttpHandler readinessHandler = new RedirectReadinessHandler(extensionHandlers.securityRealm, def.getHandler(),
+                ErrorContextHandler.ERROR_CONTEXT);
+        extensionHandlers.extensionPathHandler.addPrefixPath(context, readinessHandler);
+    }
+
+    public void addManagementGetRemapContext(String contextName, PathRemapper remapper) {
+        Assert.checkNotNullParam("contextName", contextName);
+        String context = fixPath(contextName);
+        // Reject reserved contexts or duplicate extensions
+        if (extensionHandlers.reservedContexts.contains(context) || !extensionHandlers.extensionContexts.add(context)) {
+            throw new IllegalStateException();
+        }
+        HttpHandler remapHandler = new RemapHandler(remapper, extensionHandlers.managementHandler);
+        extensionHandlers.extensionPathHandler.addPrefixPath(context, remapHandler);
+    }
+
+    public void removeContext(String contextName) {
+        Assert.checkNotNullParam("contextName", contextName);
+        String context = fixPath(contextName);
+        // Reject reserved contexts or non-existent extensions
+        if (extensionHandlers.reservedContexts.contains(context) || !extensionHandlers.extensionContexts.contains(context)) {
+            throw new IllegalStateException();
+        }
+        extensionHandlers.extensionContexts.remove(context);
+        extensionHandlers.extensionPathHandler.removePrefixPath(context);
+    }
+
+    private static String fixPath(String contextName) {
+        Assert.checkNotEmptyParam("contextName", contextName);
+        return '/' == contextName.charAt(0) ? contextName : "/" + contextName;
     }
 
     public static ManagementHttpServer create(InetSocketAddress bindAddress, InetSocketAddress secureBindAddress, int backlog,
@@ -193,17 +256,38 @@ public class ManagementHttpServer {
             secureRedirectPort = -1;
         }
 
-        setupOpenListener(openListener, modelController, consoleMode, consoleSlot, controlledProcessStateService,
+        final ExtensionHandlers extensionHandlers = setupOpenListener(openListener, modelController, consoleMode, consoleSlot, controlledProcessStateService,
                 secureRedirectPort, securityRealm, upgradeHandler, managementHttpRequestProcessor, allowedOrigins, managementExecutor);
-        return new ManagementHttpServer(openListener, bindAddress, secureBindAddress, sslContext, sslClientAuthMode, worker);
+        return new ManagementHttpServer(openListener, bindAddress, secureBindAddress, sslContext, sslClientAuthMode, worker, extensionHandlers);
     }
 
+    private static class ExtensionHandlers {
+        private final PathHandler extensionPathHandler;
+        private final HttpHandler managementHandler;
+        private final SecurityRealm securityRealm;
+        private final Set<String> reservedContexts;
+        private final Set<String> extensionContexts = new HashSet<>();
 
-    private static void setupOpenListener(HttpOpenListener listener, ModelController modelController, ConsoleMode consoleMode,
-                                          String consoleSlot, ControlledProcessStateService controlledProcessStateService,
-                                          int secureRedirectPort, SecurityRealm securityRealm,
-                                          final ChannelUpgradeHandler upgradeHandler, final ManagementHttpRequestProcessor managementHttpRequestProcessor,
-                                          final Collection<String> allowedOrigins, Executor managementExecutor) {
+        private ExtensionHandlers(PathHandler extensionPathHandler, HttpHandler managementHandler,
+                                  SecurityRealm securityRealm, ResourceHandlerDefinition consoleHandler) {
+            this.extensionPathHandler = extensionPathHandler;
+            this.managementHandler = managementHandler;
+            this.securityRealm = securityRealm;
+            if (consoleHandler == null) {
+                this.reservedContexts = RESERVED_CONTEXTS;
+            } else {
+                Set<String> set = new HashSet<>(RESERVED_CONTEXTS);
+                set.add(consoleHandler.getContext());
+                this.reservedContexts = Collections.unmodifiableSet(set);
+            }
+        }
+    }
+
+    private static ExtensionHandlers setupOpenListener(HttpOpenListener listener, ModelController modelController, ConsoleMode consoleMode,
+                                                       String consoleSlot, ControlledProcessStateService controlledProcessStateService,
+                                                       int secureRedirectPort, SecurityRealm securityRealm,
+                                                       final ChannelUpgradeHandler upgradeHandler, final ManagementHttpRequestProcessor managementHttpRequestProcessor,
+                                                       final Collection<String> allowedOrigins, Executor managementExecutor) {
 
         CanonicalPathHandler canonicalPathHandler = new CanonicalPathHandler();
         ManagementHttpRequestHandler managementHttpRequestHandler = new ManagementHttpRequestHandler(managementHttpRequestProcessor, canonicalPathHandler);
@@ -255,11 +339,13 @@ public class ManagementHttpServer {
         HttpHandler readinessHandler = wrapXFrameOptions(new DmrFailureReadinessHandler(securityRealm,
                 secureDomainAccess(domainApiHandler, securityRealm), ErrorContextHandler.ERROR_CONTEXT));
         pathHandler.addPrefixPath(DomainApiCheckHandler.PATH, readinessHandler);
-        pathHandler.addExactPath("management-upload", readinessHandler);
+        pathHandler.addExactPath(DomainApiCheckHandler.GENERIC_CONTENT_REQUEST, readinessHandler);
 
         if (securityRealm != null) {
             pathHandler.addPrefixPath(LogoutHandler.PATH, wrapXFrameOptions(new LogoutHandler(securityRealm.getName())));
         }
+
+        return new ExtensionHandlers(pathHandler, readinessHandler, securityRealm, consoleHandler);
     }
 
     private static HttpHandler secureDomainAccess(final HttpHandler domainHandler, final SecurityRealm securityRealm) {
@@ -347,6 +433,40 @@ public class ManagementHttpServer {
                     return ret;
                 });
             }
+            next.handleRequest(exchange);
+        }
+    }
+
+    private static class RemapHandler implements HttpHandler {
+
+        private final PathRemapper remapper;
+        private final HttpHandler next;
+
+        private RemapHandler(PathRemapper remapper, HttpHandler next) {
+            this.remapper = remapper;
+            this.next = next;
+        }
+
+        @Override
+        public void handleRequest(HttpServerExchange exchange) throws Exception {
+            if (Methods.POST.equals(exchange.getRequestMethod()))  {
+                ResponseCodeHandler.HANDLE_405.handleRequest(exchange);
+                return;
+            }
+            String origReqPath = exchange.getRelativePath();
+            String remapped = remapper.remapPath(origReqPath);
+            if (remapped == null) {
+                ResponseCodeHandler.HANDLE_404.handleRequest(exchange);
+                return;
+            }
+            exchange.setRelativePath(remapped);
+
+            // Note: we only change the relative path, not other exchange data that
+            // incorporates it (like getRequestPath(), getRequestURL()) and not the
+            // resolved path. If this request gets to DomainApiHandler, it should
+            // work off the relative path. Other handlers in between may need the
+            // original data.
+
             next.handleRequest(exchange);
         }
     }

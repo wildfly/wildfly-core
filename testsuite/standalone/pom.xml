@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- 
-  Set these VM properties in your IDE debugger 
+<!--
+  Set these VM properties in your IDE debugger
 
   -Djava.util.logging.manager=org.jboss.logmanager.LogManager
   -Djboss.home=${workspace_loc:wildfly-build}/target/wildfly-3.0.0.Alpha11-SNAPSHOT 

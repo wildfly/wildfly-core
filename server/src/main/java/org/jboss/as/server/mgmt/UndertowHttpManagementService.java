@@ -32,8 +32,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import io.undertow.server.handlers.resource.ResourceManager;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.http.server.ManagementHttpServer;
@@ -44,6 +46,7 @@ import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.mgmt.domain.ExtensibleHttpManagement;
 import org.jboss.as.server.mgmt.domain.HttpManagement;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
@@ -54,6 +57,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.Assert;
 import org.xnio.XnioWorker;
 
 /**
@@ -61,7 +65,10 @@ import org.xnio.XnioWorker;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class UndertowHttpManagementService implements Service<HttpManagement> {
-    public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("serverManagement", "controller", "management", "http");
+
+    public static final RuntimeCapability<Void> EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.management.http.extensible", ExtensibleHttpManagement.class).build();
+    public static final ServiceName SERVICE_NAME = EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY.getCapabilityServiceName();
 
     public static final String SERVER_NAME = "wildfly-managment";
     public static final String HTTP_MANAGEMENT = "http-management";
@@ -95,7 +102,31 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private ManagedBinding basicManagedBinding;
     private ManagedBinding secureManagedBinding;
 
-    private HttpManagement httpManagement = new HttpManagement() {
+    private ExtensibleHttpManagement httpManagement = new ExtensibleHttpManagement() {
+
+        @Override
+        public void addStaticContext(String contextName, ResourceManager resourceManager) {
+            Assert.assertNotNull(serverManagement);
+            serverManagement.addStaticContext(contextName, resourceManager);
+        }
+
+        @Override
+        public void addManagementGetRemapContext(String contextName, final PathRemapper remapper) {
+            Assert.assertNotNull(serverManagement);
+            serverManagement.addManagementGetRemapContext(contextName, new ManagementHttpServer.PathRemapper() {
+                @Override
+                public String remapPath(String originalPath) {
+                    return remapper.remapPath(originalPath);
+                }
+            });
+        }
+
+        @Override
+        public void removeContext(String contextName) {
+            Assert.assertNotNull(serverManagement);
+            serverManagement.removeContext(contextName);
+        }
+
         public InetSocketAddress getHttpSocketAddress(){
             return basicManagedBinding == null ? null : basicManagedBinding.getBindAddress();
         }

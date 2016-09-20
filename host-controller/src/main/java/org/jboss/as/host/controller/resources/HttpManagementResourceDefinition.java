@@ -38,6 +38,7 @@ import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.operations.HttpManagementAddHandler;
 import org.jboss.as.host.controller.operations.HttpManagementRemoveHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
+import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -82,7 +83,9 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setAddHandler(add)
             .setRemoveHandler(remove)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
-            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES));
+            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
+            .setCapabilities(UndertowHttpManagementService.EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY)
+        );
     }
 
     public static HttpManagementResourceDefinition create(final LocalHostControllerInfoImpl hostControllerInfo,
