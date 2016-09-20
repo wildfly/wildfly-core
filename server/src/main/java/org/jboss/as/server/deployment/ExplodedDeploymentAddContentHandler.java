@@ -87,7 +87,7 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
         final String managementName = context.getCurrentAddress().getLastElement().getValue();
         final PathAddress address = PathAddress.pathAddress(DEPLOYMENT, managementName);
         final byte[] oldHash = CONTENT_HASH.resolveModelAttribute(context, contentItemNode).asBytes();
-        final boolean overwrite = OVERWRITE.resolveModelAttribute(context, contentItemNode).asBoolean(true);
+        final boolean overwrite = OVERWRITE.resolveModelAttribute(context, operation).asBoolean(true);
         List<ModelNode> contents = EXPLODED_CONTENT.resolveModelAttribute(context, operation).asList();
         final List<ExplodedContent> addedFiles = new ArrayList<>(contents.size());
         final byte[] newHash;
