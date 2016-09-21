@@ -27,6 +27,7 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECU
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -42,6 +43,14 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.security.auth.server.IdentityLocator;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.auth.server.SupportLevel;
+import org.wildfly.security.authz.AuthorizationIdentity;
+import org.wildfly.security.authz.MapAttributes;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.evidence.Evidence;
 
 /**
  *
@@ -88,6 +97,11 @@ public class PropertiesSubjectSupplemental extends PropertiesFileLoader implemen
      * SubjectSupplementalMethods
      */
 
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        return new SecurityRealmImpl();
+    }
+
     /**
      * @see org.jboss.as.domain.management.security.SubjectSupplemental#supplementSubject(javax.security.auth.Subject)
      */
@@ -117,11 +131,105 @@ public class PropertiesSubjectSupplemental extends PropertiesFileLoader implemen
                 }
             }
         } else {
-            SECURITY_LOGGER.tracef("No roles found for user '%s' in properties file.", user);
+            SECURITY_LOGGER.tracef("No groups found for user '%s' in properties file.", user);
             response = Collections.emptySet();
         }
 
         return response;
+    }
+
+    private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
+
+        @Override
+        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+            if (! locator.hasName()) return RealmIdentity.NON_EXISTENT;
+
+            try {
+                Properties groups = getProperties();
+
+                String name = locator.getName();
+                return new RealmIdentityImpl(name, groups.getProperty(name, "").trim());
+            } catch (IOException e) {
+                throw new RealmUnavailableException(e);
+            }
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        @Override
+        public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        private class RealmIdentityImpl implements RealmIdentity {
+
+            private final String name;
+            private final String groups;
+
+            private RealmIdentityImpl(final String name, final String groups) {
+                this.name = name;
+                this.groups = groups;
+            }
+
+            @Override
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                    throws RealmUnavailableException {
+                return SupportLevel.UNSUPPORTED;
+            }
+
+            @Override
+            public <C extends Credential> C getCredential(Class<C> credentialType) throws RealmUnavailableException {
+                return null;
+            }
+
+            @Override
+            public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                    throws RealmUnavailableException {
+                return SupportLevel.UNSUPPORTED;
+            }
+
+            @Override
+            public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
+                return false;
+            }
+
+            @Override
+            public boolean exists() throws RealmUnavailableException {
+                return true;
+            }
+
+            @Override
+            public AuthorizationIdentity getAuthorizationIdentity() throws RealmUnavailableException {
+
+                if (groups.length() > 0) {
+                    String[] temp = groups.split(COMMA);
+                    Set<String> groups = new HashSet<>(temp.length);
+
+                    for (String current : temp) {
+                        String cleaned = current.trim();
+                        if (cleaned.length() > 0) {
+                            SECURITY_LOGGER.tracef("Adding group '%s' for identity '%s'.", cleaned, name);
+                            groups.add(cleaned);
+                        }
+                    }
+
+                    Map<String, Set<String>> groupsAttributeMap = new HashMap<String, Set<String>>();
+                    groupsAttributeMap.put("GROUPS",Collections.unmodifiableSet(groups));
+
+                    return AuthorizationIdentity.basicIdentity(new MapAttributes(Collections.unmodifiableMap(groupsAttributeMap)));
+                } else {
+                    SECURITY_LOGGER.tracef("No groups found for identity '%s' in properties file.", name);
+                    return AuthorizationIdentity.EMPTY;
+                }
+            }
+
+        }
+
     }
 
     public static final class ServiceUtil {

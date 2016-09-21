@@ -85,6 +85,15 @@ public interface CallbackHandlerService {
      */
     SecurityRealm getElytronSecurityRealm();
 
+    /**
+     * Where the Elytron {@link SecurityRealm} is used should group loading also be enabled?
+     *
+     * @return {@code true} if group loading should be enabled, {@code false} otherwise.
+     */
+    default boolean allowGroupLoading() {
+        return true;
+    }
+
     public static final class ServiceUtil {
 
         private ServiceUtil() {

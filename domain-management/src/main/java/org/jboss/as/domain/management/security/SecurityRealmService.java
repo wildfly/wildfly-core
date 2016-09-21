@@ -66,11 +66,13 @@ import org.jboss.msc.value.InjectedSetValue;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.permission.LoginPermission;
+import org.wildfly.security.auth.realm.AggregateSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.sasl.localuser.LocalUserServer;
 import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
 import org.wildfly.security.sasl.util.PropertiesSaslServerFactory;
@@ -130,12 +132,20 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         final Map<String, String> mechanismConfiguration = new HashMap<>();
         final Map<AuthMechanism, MechanismConfiguration> configurationMap = new HashMap<>();
 
+        SubjectSupplementalService subjectSupplementalService = this.subjectSupplemental.getOptionalValue();
+        org.wildfly.security.auth.server.SecurityRealm authorizationRealm = subjectSupplementalService != null ? subjectSupplementalService.getElytronSecurityRealm() : org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM;
+
         SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
         for (Entry<AuthMechanism, CallbackHandlerService> currentRegistration : registeredServices.entrySet()) {
-            org.wildfly.security.auth.server.SecurityRealm elytronRealm = currentRegistration.getValue().getElytronSecurityRealm();
+            CallbackHandlerService currentService = currentRegistration.getValue();
+            org.wildfly.security.auth.server.SecurityRealm elytronRealm = currentService.getElytronSecurityRealm();
             if (elytronRealm != null) {
                 final AuthMechanism mechanism = currentRegistration.getKey();
-                domainBuilder.addRealm(mechanism.toString(), elytronRealm).build();
+
+                domainBuilder.addRealm(mechanism.toString(),
+                        currentService.allowGroupLoading() ? new AggregateSecurityRealm(elytronRealm, authorizationRealm) : elytronRealm)
+                        .setRoleDecoder(RoleDecoder.simple("GROUPS"))
+                        .build();
                 configurationMap.put(mechanism,
                         MechanismConfiguration.builder()
                             .setRealmMapper((n, p, e) -> mechanism.toString())

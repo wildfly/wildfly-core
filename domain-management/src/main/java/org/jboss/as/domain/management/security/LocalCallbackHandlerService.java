@@ -109,6 +109,11 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
         return new LocalSecurityRealm();
     }
 
+    @Override
+    public boolean allowGroupLoading() {
+        return !skipGroupLoading;
+    }
+
     private class LocalSecurityRealm implements org.wildfly.security.auth.server.SecurityRealm {
 
         @Override
