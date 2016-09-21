@@ -263,7 +263,7 @@ public final class CredentialReference implements Destroyable {
                                     credentialReference.getAlias());
         } else {
             final CredentialStore credentialStore = new ClearTextCredentialStore(credentialReference);
-            updatedCredentialStoreClient = new CredentialStoreClient(credentialStore, CredentialReference.class.getName(), null);
+            updatedCredentialStoreClient = new CredentialStoreClient(credentialStore, CredentialReference.class.getName(), ""); // non null otherwise irrelevant alias
         }
         injectedCredentialStoreClient.setValue(() -> updatedCredentialStoreClient);
     }
