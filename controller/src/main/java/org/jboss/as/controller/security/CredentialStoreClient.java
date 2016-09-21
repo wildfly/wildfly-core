@@ -19,9 +19,6 @@ package org.jboss.as.controller.security;
 
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
-import javax.security.auth.DestroyFailedException;
-import javax.security.auth.Destroyable;
-
 import org.jboss.logging.Logger;
 import org.wildfly.common.Assert;
 import org.wildfly.security.credential.Credential;
@@ -36,9 +33,9 @@ import org.wildfly.security.password.interfaces.ClearPassword;
  *
  * @author <a href="mailto:pskopek@redhat.com">Peter Skopek</a>
  */
-public class CredentialStoreClient implements Destroyable {
+public class CredentialStoreClient {
 
-    private CredentialStore credentialStore;
+    private final CredentialStore credentialStore;
     private final String name;
     private final String alias;
     private final Class<? extends Credential> type;
@@ -52,6 +49,7 @@ public class CredentialStoreClient implements Destroyable {
      */
     public CredentialStoreClient(final CredentialStore credentialStore, final String name, final String alias, final Class<? extends Credential> type) {
         Assert.checkNotNullParam("name", name);
+        Assert.checkNotNullParam("credentialStore", credentialStore);
         this.name = name;
         this.alias = alias;
         this.type = type;
@@ -65,7 +63,7 @@ public class CredentialStoreClient implements Destroyable {
      * @param alias of credential in the store
      */
     public CredentialStoreClient(final CredentialStore credentialStore, final String name, final String alias) {
-        this(credentialStore, name, alias, (Class) null);
+        this(credentialStore, name, alias, (Class<Credential>) null);
     }
 
     /**
@@ -86,12 +84,9 @@ public class CredentialStoreClient implements Destroyable {
 
     /**
      * Get the secret in form of clear text.
-     * @return secret as clear text
+     * @return secret as clear text or {@code null} when destroyed.
      */
     public char[] getSecret() {
-        if (isDestroyed()) {
-            return null;
-        }
         PasswordCredential passwordCredential = (PasswordCredential) getCredential();
         if (passwordCredential != null) {
             if (passwordCredential.getPassword() instanceof ClearPassword) {
@@ -109,7 +104,7 @@ public class CredentialStoreClient implements Destroyable {
      * @return Credential instance of proper credential type specified if not available {@code null}
      */
     public Credential getCredential() {
-        if (isDestroyed() || alias == null) {
+        if (alias == null) {
             return null;
         }
         try {
@@ -149,42 +144,6 @@ public class CredentialStoreClient implements Destroyable {
      */
     public Class<? extends Credential> getType() {
         return type;
-    }
-
-    /**
-     * Destroy this {@code Object}.
-     * <p>
-     * <p> Sensitive information associated with this {@code Object}
-     * is destroyed or cleared.  Subsequent calls to certain methods
-     * on this {@code Object} will result in an
-     * {@code IllegalStateException} being thrown.
-     * <p>
-     * <p>
-     * The default implementation throws {@code DestroyFailedException}.
-     *
-     * @throws DestroyFailedException if the destroy operation fails. <p>
-     * @throws SecurityException      if the caller does not have permission
-     *                                to destroy this {@code Object}.
-     */
-    @Override
-    public void destroy() throws DestroyFailedException {
-        if (! isDestroyed()) {
-            credentialStore = null;
-        }
-    }
-
-    /**
-     * Determine if this {@code Object} has been destroyed.
-     * <p>
-     * <p>
-     * The default implementation returns false.
-     *
-     * @return true if this {@code Object} has been destroyed,
-     * false otherwise.
-     */
-    @Override
-    public boolean isDestroyed() {
-        return credentialStore == null;
     }
 
 }

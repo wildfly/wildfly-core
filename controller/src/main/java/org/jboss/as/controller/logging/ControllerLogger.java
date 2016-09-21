@@ -3449,33 +3449,33 @@ public interface ControllerLogger extends BasicLogger {
 
     // ---- Credential Store related messages -----------
 
-    @Message(id = 450, value = "Credential store \"%s\" doesn't support credential type \"%s\" ")
+    @Message(id = 423, value = "Credential store \"%s\" doesn't support credential type \"%s\" ")
     UnsupportedCredentialTypeException unsupportedCredentialType(String credentialStore, String credentialType);
 
-    @Message(id = 451, value = "Supposed Credential Store URI has no scheme or different from '" + CredentialStoreURIParser.CR_STORE_SCHEME + "://' ('%s')")
+    @Message(id = 424, value = "Supposed Credential Store URI has no scheme or different from '" + CredentialStoreURIParser.CR_STORE_SCHEME + "://' ('%s')")
     IllegalArgumentException credentialStoreURIWrongScheme(String uri);
 
-    @Message(id = 452, value = "Credential Store URI has to be absolute '%s'")
+    @Message(id = 425, value = "Credential Store URI has to be absolute '%s'")
     IllegalArgumentException credentialStoreURIisNotAbsolute(String uri);
 
-    @Message(id = 453, value = "More than one fragment defined for Credential Store URI")
+    @Message(id = 426, value = "More than one fragment defined for Credential Store URI")
     String moreThanOneFragmentDefined();
 
-    @Message(id = 454, value = "Credential Store name has to be defined '%s'")
+    @Message(id = 427, value = "Credential Store name has to be defined '%s'")
     IllegalArgumentException credentialStoreHasNoName(String uri);
 
-    @Message(id = 455, value = "Attribute name is defined, but empty '%s'")
+    @Message(id = 428, value = "Attribute name is defined, but empty '%s'")
     IllegalArgumentException credentialStoreURIAttributeEmpty(String uri);
 
-    @Message(id = 456, value = "Opening quote has to be the first character in parameter value '%s'")
+    @Message(id = 429, value = "Opening quote has to be the first character in parameter value '%s'")
     IllegalArgumentException credentialStoreURIParameterOpeningQuote(String uri);
 
-    @Message(id = 457, value = "Closing quote has to be the last character of parameter value '%s'")
+    @Message(id = 430, value = "Closing quote has to be the last character of parameter value '%s'")
     IllegalArgumentException credentialStoreURIParameterClosingQuote(String uri);
 
-    @Message(id = 458, value = "Unexpected end of parameter part of '%s'")
+    @Message(id = 431, value = "Unexpected end of parameter part of '%s'")
     IllegalArgumentException credentialStoreURIParameterUnexpectedEnd(String uri);
 
-    @Message(id = 459, value = "Parameter name expected, but is missing '%s'")
+    @Message(id = 432, value = "Parameter name expected, but is missing '%s'")
     IllegalArgumentException credentialStoreURIParameterNameExpected(String uri);
 }

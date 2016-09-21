@@ -22,10 +22,12 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
 import java.util.Set;
 
-import javax.security.auth.DestroyFailedException;
 import javax.security.auth.Destroyable;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
+import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -36,12 +38,10 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.CredentialStoreException;
-import org.wildfly.security.credential.store.CredentialStoreSpi;
 import org.wildfly.security.credential.store.UnsupportedCredentialTypeException;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.interfaces.ClearPassword;
@@ -106,6 +106,8 @@ public final class CredentialReference implements Destroyable {
                 .build();
         credentialReferenceAttributeDefinition = new ObjectTypeAttributeDefinition.Builder(CREDENTIAL_REFERENCE, credentialStoreAttribute, credentialAliasAttribute, credentialTypeAttribute, clearTextAttribute)
                 .setXmlName(CREDENTIAL_REFERENCE)
+                .setAttributeMarshaller(credentialReferenceAttributeMarshaller())
+                .setAttributeParser(credentialReferenceAttributeParser())
                 .build();
     }
 
@@ -122,7 +124,7 @@ public final class CredentialReference implements Destroyable {
 
     /**
      * Get the credential store name part of this reference.
-     * @return credential store name
+     * @return credential store name or {@code null}
      */
     public String getCredentialStoreName() {
         return credentialStoreName;
@@ -130,7 +132,7 @@ public final class CredentialReference implements Destroyable {
 
     /**
      * Get the credential alias which denotes credential stored inside named credential store.
-     * @return alias of the referenced credential
+     * @return alias of the referenced credential or {@code null}
      */
     public String getAlias() {
         return alias;
@@ -138,7 +140,7 @@ public final class CredentialReference implements Destroyable {
 
     /**
      * Get credential type which narrows selection of the credential stored under the alias in the credential store.
-     * @return credential type (class name of desired credential type)
+     * @return credential type (class name of desired credential type) or {@code null}
      */
     public String getCredentialType() {
         return credentialType;
@@ -146,7 +148,7 @@ public final class CredentialReference implements Destroyable {
 
     /**
      * Get the secret stored as clear text in this reference.
-     * @return secret value as clear text
+     * @return secret value as clear text or {@code null}
      */
     public char[] getSecret() {
         return secret;
@@ -154,22 +156,10 @@ public final class CredentialReference implements Destroyable {
 
 
     /**
-     * Destroy this {@code Object}.
-     * <p>
-     * <p> Sensitive information associated with this {@code Object}
-     * is destroyed or cleared.  Subsequent calls to certain methods
-     * on this {@code Object} will result in an
-     * {@code IllegalStateException} being thrown.
-     * <p>
-     * <p>
-     * The default implementation throws {@code DestroyFailedException}.
-     *
-     * @throws DestroyFailedException if the destroy operation fails. <p>
-     * @throws SecurityException      if the caller does not have permission
-     *                                to destroy this {@code Object}.
+     * Destroy the secret stored in this {@code Object}.
      */
     @Override
-    public void destroy() throws DestroyFailedException {
+    public void destroy() {
         if (secret != null) {
             for (int i = 0; i < secret.length; i++) {
                 secret[i] = 0;
@@ -180,10 +170,6 @@ public final class CredentialReference implements Destroyable {
 
     /**
      * Determine if this {@code Object} has been destroyed.
-     * <p>
-     * <p>
-     * The default implementation returns false.
-     *
      * @return true if this {@code Object} has been destroyed,
      * false otherwise.
      */
@@ -277,41 +263,52 @@ public final class CredentialReference implements Destroyable {
                                     credentialReference.getAlias());
         } else {
             final CredentialStore credentialStore = new ClearTextCredentialStore(credentialReference);
-            updatedCredentialStoreClient = new CredentialStoreClient(credentialStore, CredentialReference.class.getName(), null);
+            updatedCredentialStoreClient = new CredentialStoreClient(credentialStore, CredentialReference.class.getName(), ""); // non null otherwise irrelevant alias
         }
         injectedCredentialStoreClient.setValue(() -> updatedCredentialStoreClient);
     }
 
-    /**
-     * Marshall the value from {@code credentialReferenceModelNode} as an xml element into the given {@code writer}.
-     * @param credentialReferenceModelNode he model, a non-null node of {@link org.jboss.dmr.ModelType#OBJECT}.
-     * @param writer stream writer to use for writing the attribute
-     * @throws XMLStreamException if thrown by {@code writer}
-     */
-    public static void marshallAsElement(ModelNode credentialReferenceModelNode, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        writer.writeStartElement(CredentialReference.CREDENTIAL_REFERENCE);
-        if (credentialReferenceModelNode.hasDefined(clearTextAttribute.getName())) {
-            clearTextAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
-        } else {
-            credentialStoreAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
-            credentialAliasAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
-            credentialTypeAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
-        }
-        writer.writeEndElement();
+    private static AttributeMarshaller credentialReferenceAttributeMarshaller() {
+        return new AttributeMarshaller() {
+            @Override
+            public void marshallAsElement(AttributeDefinition attribute, ModelNode credentialReferenceModelNode, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+                writer.writeStartElement(CredentialReference.CREDENTIAL_REFERENCE);
+                if (credentialReferenceModelNode.hasDefined(clearTextAttribute.getName())) {
+                    clearTextAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
+                } else {
+                    credentialStoreAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
+                    credentialAliasAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
+                    credentialTypeAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
+                }
+                writer.writeEndElement();
+            }
 
+            @Override
+            public boolean isMarshallableAsElement() {
+                return true;
+            }
+
+        };
+    }
+
+    private static AttributeParser credentialReferenceAttributeParser() {
+        return new AttributeParser() {
+            @Override
+            public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
+                AttributeParser.OBJECT_PARSER.parseElement(attribute, reader, operation);
+            }
+
+            @Override
+            public boolean isParseAsElement() {
+                return true;
+            }
+        };
     }
 
     /**
-     * Parse {@link CredentialReference} from {@code XMLStreamReader} and set addOperation.
-     * @param addOperation to set
-     * @param reader stream reader to parse
-     * @throws XMLStreamException if thrown by {@code reader}
+     * Special implementation of Credential Store SPI which handles one clear text password alias.
      */
-    public static void readCredentialReference(ModelNode addOperation, XMLExtendedStreamReader reader) throws XMLStreamException {
-        AttributeParser.OBJECT_PARSER.parseElement(CredentialReference.getAttributeDefinition(), reader, addOperation);
-    }
-
-    static class ClearTextCredentialStore extends CredentialStore {
+    private static class ClearTextCredentialStore extends CredentialStore {
         private static String TYPE = "ClearTextCredentialStore";
         private CredentialReference credentialReference;
 
@@ -321,7 +318,7 @@ public final class CredentialReference implements Destroyable {
         }
 
         /**
-         * Checks whether underlying credential store is initialized.
+         * Always return true. This is special implementation with only one credential alias stored.
          *
          * @return {@code true} in case of initialization passed successfully, {@code false} otherwise.
          */
@@ -331,9 +328,9 @@ public final class CredentialReference implements Destroyable {
         }
 
         /**
-         * Check if credential store supports modification of actual store
+         * Always return false. This is non modifiable credential store.
          *
-         * @return true in case of modification of store is supported
+         * @return false
          */
         @Override
         public boolean isModifiable() {
@@ -341,31 +338,27 @@ public final class CredentialReference implements Destroyable {
         }
 
         /**
-         * Check whether credential store has an entry associated with the given credential alias of specified credential type.
+         * Always return false. As this is special implementation with only one credential alias stored.
+         * No check is irrelevant.
          *
          * @param credentialAlias alias to check existence
          * @param credentialType  to check existence in the credential store
-         * @return true in case key exist in store
-         * @throws CredentialStoreException           when there is a problem with credential store
-         * @throws UnsupportedCredentialTypeException when the credentialType is not supported
+         * @return always return false
          */
         @Override
-        public <C extends Credential> boolean exists(String credentialAlias, Class<C> credentialType) throws CredentialStoreException, UnsupportedCredentialTypeException {
+        public <C extends Credential> boolean exists(String credentialAlias, Class<C> credentialType) {
             return false;
         }
 
         /**
-         * Store credential to the store under the given alias. If given alias already contains specific credential type type the credential
-         * replaces older one. <em>Note:</em> {@link CredentialStoreSpi} supports storing of multiple entries (credential types) per alias.
-         * Each must be of different credential type.
+         * The method is not implemented and throws {@code RuntimeException} only.
          *
          * @param credentialAlias to store the credential to the store
          * @param credential      instance of {@link Credential} to store
-         * @throws CredentialStoreException           when the credential cannot be stored
-         * @throws UnsupportedCredentialTypeException when the credentialType is not supported
+         * @throws RuntimeException any time it is called as this method is not implemented
          */
         @Override
-        public <C extends Credential> void store(String credentialAlias, C credential) throws CredentialStoreException, UnsupportedCredentialTypeException {
+        public <C extends Credential> void store(String credentialAlias, C credential) {
             throw new RuntimeException("method not implemented");
         }
 
@@ -389,27 +382,24 @@ public final class CredentialReference implements Destroyable {
         }
 
         /**
-         * Remove the credentialType with from given alias from the store.
+         * The method is not implemented and throws {@code RuntimeException} only.
          *
          * @param credentialAlias alias to remove
          * @param credentialType  - credential type to be removed from under the credentialAlias from the store
-         * @throws CredentialStoreException           - if credentialAlias credentialType combination doesn't exist or credentialAlias cannot be removed
-         * @throws UnsupportedCredentialTypeException when the credentialType is not supported
+         * @throws RuntimeException any time it is called as this method is not implemented
          */
         @Override
-        public <C extends Credential> void remove(String credentialAlias, Class<C> credentialType) throws CredentialStoreException, UnsupportedCredentialTypeException {
+        public <C extends Credential> void remove(String credentialAlias, Class<C> credentialType) {
             throw new RuntimeException("method not implemented");
         }
 
         /**
-         * Returns {@code Set<String>} stored in this store.
+         * Always returns empty set of aliases as it is not supposed to be used.
          *
-         * @return {@code Set<String>} of all keys stored in this store
-         * @throws UnsupportedOperationException when this method is not supported by the underlying credential store
-         * @throws CredentialStoreException      if there is any problem with internal store
+         * @return {@code Set<String>} {@code Collections.emptySet()}
          */
         @Override
-        public Set<String> getAliases() throws UnsupportedOperationException, CredentialStoreException {
+        public Set<String> getAliases() {
             return Collections.emptySet();
         }
     }
