@@ -19,7 +19,6 @@ package org.jboss.as.controller.security;
 
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
-import javax.security.auth.DestroyFailedException;
 import javax.security.auth.Destroyable;
 
 import org.jboss.logging.Logger;
@@ -86,7 +85,7 @@ public class CredentialStoreClient implements Destroyable {
 
     /**
      * Get the secret in form of clear text.
-     * @return secret as clear text
+     * @return secret as clear text or {@code null} when destroyed.
      */
     public char[] getSecret() {
         if (isDestroyed()) {
@@ -153,21 +152,11 @@ public class CredentialStoreClient implements Destroyable {
 
     /**
      * Destroy this {@code Object}.
-     * <p>
-     * <p> Sensitive information associated with this {@code Object}
-     * is destroyed or cleared.  Subsequent calls to certain methods
-     * on this {@code Object} will result in an
-     * {@code IllegalStateException} being thrown.
-     * <p>
-     * <p>
-     * The default implementation throws {@code DestroyFailedException}.
-     *
-     * @throws DestroyFailedException if the destroy operation fails. <p>
-     * @throws SecurityException      if the caller does not have permission
-     *                                to destroy this {@code Object}.
+     * Sensitive information associated with this {@code Object}
+     * is cleared.
      */
     @Override
-    public void destroy() throws DestroyFailedException {
+    public void destroy() {
         if (! isDestroyed()) {
             credentialStore = null;
         }
@@ -175,10 +164,6 @@ public class CredentialStoreClient implements Destroyable {
 
     /**
      * Determine if this {@code Object} has been destroyed.
-     * <p>
-     * <p>
-     * The default implementation returns false.
-     *
      * @return true if this {@code Object} has been destroyed,
      * false otherwise.
      */
