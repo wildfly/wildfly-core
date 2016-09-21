@@ -1,5 +1,6 @@
 package org.jboss.as.test.integration.management.cli;
 
+
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -8,7 +9,6 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -25,8 +25,9 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
+
+
 @RunWith(WildflyTestRunner.class)
-@Ignore("WFCORE-1821")
 public class ModuleOpsCompletionTestCase {
 
     private static final String MODULE_NAME = "org.jboss.test.cli.climoduletest";
@@ -36,6 +37,7 @@ public class ModuleOpsCompletionTestCase {
 
     @BeforeClass
     public static void before() throws Exception {
+        cleanUp();
         cli = new CLIWrapper(true, null, System.in);
 
         final JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "Dummy.jar");
@@ -47,6 +49,14 @@ public class ModuleOpsCompletionTestCase {
     @AfterClass
     public static void after() throws Exception {
         cli.close();
+        cleanUp();
+        Files.deleteIfExists(jarFile.toPath());
+    }
+
+    private static void cleanUp() throws IOException {
+        for (File dir : getModulePath().listFiles(f -> !f.getName().equals("system"))) {
+            deleteRecursively(dir);
+        }
     }
 
     @Test
@@ -113,23 +123,17 @@ public class ModuleOpsCompletionTestCase {
 
     private Stream<File> listTopLevelModuleDirs() {
         ArrayList<File> res = new ArrayList<>();
-        for (File dir : getModulePath().listFiles(f -> !f.getName().equals("system"))) {
-            res.add(dir);
-        }
+        res.addAll(Arrays.asList(getModulePath().listFiles(f -> !f.getName().equals("system"))));
 
         if (new File(getModulePath(), "system/layers/").exists() ) {
             for (File layer : new File(getModulePath(), "system/layers/").listFiles()) {
-                for (File dir : layer.listFiles()) {
-                    res.add(dir);
-                }
+                res.addAll(Arrays.asList(layer.listFiles()));
             }
         }
 
         if (new File(getModulePath(), "system/add-ons/").exists() ) {
             for (File layer : new File(getModulePath(), "system/add-ons/").listFiles()) {
-                for (File dir : layer.listFiles()) {
-                    res.add(dir);
-                }
+                res.addAll(Arrays.asList(layer.listFiles()));
             }
         }
 
@@ -162,7 +166,7 @@ public class ModuleOpsCompletionTestCase {
         assertEquals(expectedIndex, offset);
     }
 
-    private File getModulePath() {
+    private static File getModulePath() {
         String modulePath = TestSuiteEnvironment.getSystemProperty("module.path", null);
         if (modulePath == null) {
             String jbossHome = TestSuiteEnvironment.getSystemProperty("jboss.dist", null);
@@ -184,5 +188,16 @@ public class ModuleOpsCompletionTestCase {
                     "Determined module path is not a dir");
         }
         return moduleDir;
+    }
+    private static void deleteRecursively(final File dir) {
+        if (dir.isDirectory()) {
+            final File[] files = dir.listFiles();
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteRecursively(file);
+                }
+                file.delete();
+            }
+        }
     }
 }
