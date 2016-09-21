@@ -367,7 +367,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
             String serverDirProp = props.getProperty(SERVER_TEMP_DIR);
             if(null==serverDirProp) {
-                throw new IllegalStateException("LaunchType.SELF_CONTAINED requires the property "+SERVER_TEMP_DIR+ " to be set");
+                throw ServerLogger.ROOT_LOGGER.requiredSystemPropertyMissing(SERVER_TEMP_DIR);
             }
             serverTempDir = new File(serverDirProp);
 
