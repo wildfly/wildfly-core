@@ -92,7 +92,6 @@ import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -138,7 +137,6 @@ public class BasicOperationsUnitTestCase {
     }
 
     @Test
-    @Ignore("WFCORE-1805")
     public void testPathInfo() throws IOException {
         ModelNode address = new ModelNode();
         address.add(SUBSYSTEM, "logging");
@@ -150,8 +148,8 @@ public class BasicOperationsUnitTestCase {
         operation.get(OP_ADDR).set(address);
 
         ModelNode result = managementClient.getControllerClient().execute(operation);
-        assertTrue(Operations.isSuccessfulOutcome(result));
-        assertTrue(result.hasDefined(RESULT));
+        assertTrue(result.toJSONString(true), Operations.isSuccessfulOutcome(result));
+        assertTrue(result.toJSONString(true), result.hasDefined(RESULT));
         Path logFile = Paths.get(Operations.readResult(result).asString());
         Assert.assertTrue("The log file was not created.", Files.exists(logFile));
 
@@ -159,7 +157,7 @@ public class BasicOperationsUnitTestCase {
         operation.get(OP).set("path-info");
         operation.get(OP_ADDR).set(address);
         result = managementClient.getControllerClient().execute(operation);
-        assertTrue(Operations.isSuccessfulOutcome(result));
+        assertTrue(result.toJSONString(true), Operations.isSuccessfulOutcome(result));
         assertTrue(result.hasDefined(RESULT));
         long size = result.get(RESULT).get("file").get("path").get("used-space").asLong();
         BasicFileAttributes attributes = Files.getFileAttributeView(logFile, BasicFileAttributeView.class).readAttributes();
@@ -174,8 +172,8 @@ public class BasicOperationsUnitTestCase {
         operation.get(OP).set("path-info");
         operation.get(OP_ADDR).set(address);
         result = managementClient.getControllerClient().execute(operation);
-        assertTrue(Operations.isSuccessfulOutcome(result));
-        assertTrue(result.hasDefined(RESULT));
+        assertTrue(result.toJSONString(true), Operations.isSuccessfulOutcome(result));
+        assertTrue(result.toJSONString(true), result.hasDefined(RESULT));
         assertTrue(Operations.readResult(result).get("path").get("used-space").asDouble() > 0.0D);
         assertTrue(Operations.readResult(result).get("path").get("last-modified").isDefined());
         assertTrue(Operations.readResult(result).get("path").get("creation-time").isDefined());
@@ -188,8 +186,8 @@ public class BasicOperationsUnitTestCase {
         operation.get(OP).set("path-info");
         operation.get(OP_ADDR).set(address);
         result = managementClient.getControllerClient().execute(operation);
-        assertTrue(Operations.isSuccessfulOutcome(result));
-        assertTrue(result.hasDefined(RESULT));
+        assertTrue(result.toJSONString(true), Operations.isSuccessfulOutcome(result));
+        assertTrue(result.toJSONString(true), result.hasDefined(RESULT));
         assertTrue(Operations.readResult(result).get("content-dir").get("used-space").asDouble() == 0.0D);
         assertTrue(Operations.readResult(result).get("content-dir").get("last-modified").isDefined());
         assertTrue(Operations.readResult(result).get("content-dir").get("creation-time").isDefined());
