@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+
 import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
 
 /**
@@ -326,7 +327,7 @@ public class PathUtil {
      */
     public static Path createTempDirectory(Path dir, String prefix) throws IOException {
         try {
-            return Files.createTempDirectory(dir, prefix, PathUtil.readFileAttributes(dir));
+            return Files.createTempDirectory(dir, prefix);
         } catch (UnsupportedOperationException ex) {
         }
         return Files.createTempDirectory(dir, prefix);
@@ -346,7 +347,7 @@ public class PathUtil {
 
     private static void unzip(final ZipFile zip, final Path targetDir) throws IOException {
         final Enumeration<? extends ZipEntry> entries = zip.entries();
-        while(entries.hasMoreElements()) {
+        while (entries.hasMoreElements()) {
             final ZipEntry entry = entries.nextElement();
             final String name = entry.getName();
             final Path current = targetDir.resolve(name);
@@ -355,14 +356,18 @@ public class PathUtil {
                     Files.createDirectories(current);
                 }
             } else {
-                if (!Files.exists(current.getParent())) {
+                if (Files.notExists(current.getParent())) {
                     Files.createDirectories(current.getParent());
                 }
                 try (final InputStream eis = zip.getInputStream(entry)) {
                     Files.copy(eis, current);
                 }
             }
-            Files.getFileAttributeView(current, BasicFileAttributeView.class).setTimes(entry.getLastModifiedTime(), entry.getLastAccessTime(), entry.getCreationTime());
+            try {
+                Files.getFileAttributeView(current, BasicFileAttributeView.class).setTimes(entry.getLastModifiedTime(), entry.getLastAccessTime(), entry.getCreationTime());
+            } catch (IOException e) {
+                //ignore, if we cannot set it, world will not end
+            }
         }
     }
 
