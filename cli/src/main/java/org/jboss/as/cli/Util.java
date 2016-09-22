@@ -73,6 +73,8 @@ public class Util {
     public static final String BLOCKING_TIMEOUT = "blocking-timeout";
     public static final String BROWSE_CONTENT = "browse-content";
     public static final String BYTES = "bytes";
+    public static final String CAPABILITY_REFERENCE = "capability-reference";
+    public static final String CAPABILITY_REGISTRY = "capability-registry";
     public static final String CHILDREN = "children";
     public static final String CHILD_TYPE = "child-type";
     public static final String COMBINED_DESCRIPTIONS = "combined-descriptions";

@@ -34,6 +34,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
 import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.operation.OperationRequestAddress;
+import org.jboss.as.cli.operation.impl.CapabilityReferenceCompleter;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
 import org.jboss.as.cli.parsing.CharacterHandler;
 import org.jboss.as.cli.parsing.DefaultParsingState;
@@ -408,6 +409,12 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                         = new DeploymentItemCompleter(address);
                 candidates = new ArrayList<>();
                 valLength = completer.complete(ctx, path, offset, candidates);
+            } else if (propType.has(Util.CAPABILITY_REFERENCE)) {
+                CapabilityReferenceCompleter completer
+                        = new CapabilityReferenceCompleter(address,
+                                propType.get(Util.CAPABILITY_REFERENCE).asString());
+                candidates = new ArrayList<>();
+                completer.complete(ctx, path, offset, candidates);
             }
             return candidates;
         }

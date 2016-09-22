@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2014, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller;
 
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
@@ -70,7 +73,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     private final boolean forServer;
     private final Set<CapabilityScope> knownContexts;
     private final ResolutionContextImpl resolutionContext = new ResolutionContextImpl();
-    private final Map<CapabilityId, CapabilityRegistration> possibleCapabilities = new ConcurrentHashMap<>();
+    private final Map<CapabilityId, CapabilityRegistration<?>> possibleCapabilities = new ConcurrentHashMap<>();
     private final Set<CapabilityId> reloadCapabilities = new HashSet<>();
     private final Set<CapabilityId> restartCapabilities = new HashSet<>();
 
@@ -506,7 +509,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     public void registerPossibleCapability(Capability capability, PathAddress registrationPoint) {
         final CapabilityId capabilityId = new CapabilityId(capability.getName(), CapabilityScope.GLOBAL);
         RegistrationPoint point = new RegistrationPoint(registrationPoint, null);
-        CapabilityRegistration capabilityRegistration = new CapabilityRegistration<>(capability, CapabilityScope.GLOBAL, point);
+        CapabilityRegistration<?> capabilityRegistration = new CapabilityRegistration<>(capability, CapabilityScope.GLOBAL, point);
         writeLock.lock();
         try {
             possibleCapabilities.computeIfPresent(capabilityId, (capabilityId1, currentRegistration) -> {
@@ -537,12 +540,12 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
      * registration points for the capability still exist
      */
     @Override
-    public CapabilityRegistration removePossibleCapability(Capability capability, PathAddress registrationPoint) {
+    public CapabilityRegistration<?> removePossibleCapability(Capability capability, PathAddress registrationPoint) {
         CapabilityId capabilityId = new CapabilityId(capability.getName(), CapabilityScope.GLOBAL);
-        CapabilityRegistration removed = null;
+        CapabilityRegistration<?> removed = null;
         writeLock.lock();
         try {
-            CapabilityRegistration candidate = possibleCapabilities.get(capabilityId);
+            CapabilityRegistration<?> candidate = possibleCapabilities.get(capabilityId);
             if (candidate != null) {
                 RegistrationPoint rp = new RegistrationPoint(registrationPoint, null);
                 if (candidate.removeRegistrationPoint(rp)) {
@@ -594,7 +597,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     }
 
     @Override
-    public Set<CapabilityRegistration> getCapabilities() {
+    public Set<CapabilityRegistration<?>> getCapabilities() {
         readLock.lock();
         try {
             return Collections.unmodifiableSet(new TreeSet<>(capabilities.values()));
@@ -604,7 +607,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     }
 
     @Override
-    public Set<CapabilityRegistration> getPossibleCapabilities() {
+    public Set<CapabilityRegistration<?>> getPossibleCapabilities() {
         readLock.lock();
         try {
             return Collections.unmodifiableSet(new TreeSet<>(possibleCapabilities.values()));
@@ -633,7 +636,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         readLock.lock();
         try {
             capabilityId = capabilityId.getScope() == CapabilityScope.GLOBAL ? capabilityId : new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL); //possible registry is only in global scope
-            CapabilityRegistration<RuntimeCapability> reg =  possibleCapabilities.get(capabilityId);
+            CapabilityRegistration<?> reg =  possibleCapabilities.get(capabilityId);
             if (reg != null) {
                 result.addAll(reg.getRegistrationPoints().stream().map(RegistrationPoint::getAddress).collect(Collectors.toList()));
             }
@@ -644,10 +647,11 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         return result;
     }
 
-    public CapabilityRegistration getCapability(CapabilityId capabilityId){
+    @Override
+    public CapabilityRegistration<?> getCapability(CapabilityId capabilityId){
         readLock.lock();
         try {
-            CapabilityRegistration<RuntimeCapability> reg = capabilities.get(capabilityId);
+            CapabilityRegistration<?> reg = capabilities.get(capabilityId);
             return reg != null ? new CapabilityRegistration<>(reg) : null;
         } finally {
             readLock.unlock();
@@ -716,7 +720,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         assert target.writeLock.isHeldByCurrentThread();
         copyCapabilities(source.capabilities, target.capabilities);
         source.possibleCapabilities.entrySet().stream().forEach(entry -> {
-            target.possibleCapabilities.put(entry.getKey(), new CapabilityRegistration(entry.getValue()));
+            target.possibleCapabilities.put(entry.getKey(), new CapabilityRegistration<>(entry.getValue()));
         });
         copyRequirements(source.requirements, target.requirements);
         copyRequirements(source.runtimeOnlyRequirements, target.runtimeOnlyRequirements);
@@ -905,6 +909,45 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         return null;
     }
 
+    @Override
+    public Set<String> getDynamicCapabilityNames(String referencedCapability,
+            CapabilityScope dependentScope) {
+        if (referencedCapability == null || referencedCapability.isEmpty()
+                || dependentScope == null) {
+            return Collections.emptySet();
+        }
+
+        // Retrieve all the provider points that matching capabilities
+        // must be compliant with. Each ProviderPoint is converted onto a
+        // PathMatcher that is used to filter-in/out the capabilities.
+
+        //For possible capabilities it is always global.
+        CapabilityId id = new CapabilityId(referencedCapability,
+                CapabilityScope.GLOBAL);
+        List<PathMatcher> matchers = getPossibleProviderPoints(id).stream().
+                map((possiblePoint) -> FileSystems.getDefault().getPathMatcher("glob:"
+                        + possiblePoint.toPathStyleString())).collect(Collectors.toList());
+
+        // Filter the streams of capabilities to extract matching ones
+        return getCapabilities().stream().
+                // Keep capability that matches at least one of the registration point
+                filter((registration) -> {
+                    return registration.getRegistrationPoints().stream().
+                            map((rp) -> Paths.get(rp.getAddress().toPathStyleString())).
+                            filter((path) -> matchers.stream().anyMatch((matcher) -> matcher.matches(path))).
+                            count() > 0;
+                }).
+                // Keep capability that can be reached from the provided scope
+                filter((registration) -> hasCapability(registration.getCapabilityName(), dependentScope)).
+                // Remove static name
+                filter((registration) -> !registration.getCapabilityName().equals(referencedCapability)).
+                // Finally convert remaining capabilities onto capability dynamic name.
+                map((registration) -> {
+                    return registration.getCapabilityName().
+                            substring(referencedCapability.length() + 1);
+                }).
+                collect(Collectors.toSet());
+    }
 
     private static class ResolutionContextImpl extends CapabilityResolutionContext {
         private boolean resolutionComplete;
