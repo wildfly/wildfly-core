@@ -94,7 +94,7 @@ Usage:
  --echo-command  - include the prompt with the command into the output 
                    for each command executed in non-interactive mode.
 
- --command-timeout  - The maxium amount of seconds the CLI will wait for a 
+ --command-timeout  - The maximum amount of seconds the CLI will wait for a 
                       command to complete.
 
 For a list of available commands execute

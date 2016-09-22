@@ -140,6 +140,14 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>
+
+                <xs:element name="command-timeout" type="xs:int" default="0" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The maximum amount of seconds the CLI will wait for a command to complete. Default timeout of 0 means no timeout.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
