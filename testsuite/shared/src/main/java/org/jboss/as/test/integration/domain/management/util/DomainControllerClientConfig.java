@@ -92,7 +92,7 @@ public class DomainControllerClientConfig implements Closeable {
         }
         if(endpoint != null) try {
             endpoint.close();
-        } catch (IOException e) {
+        } catch (IOException | UnsupportedOperationException e) {
             // ignore
         }
         if(destroyExecutor) {

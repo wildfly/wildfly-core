@@ -89,7 +89,10 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
             }
             // Then the endpoint
             if (endpoint != null) {
-                endpoint.closeAsync();
+                try {
+                    endpoint.closeAsync();
+                } catch (UnsupportedOperationException ignored) {
+                }
                 endpoint = null;
             }
             // Cancel all still active operations
