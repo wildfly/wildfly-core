@@ -257,7 +257,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 if (valueResult < 0) {
                     return valueResult;
                 } else {
-                    if(chunk != null && candidates.size() == 1 && chunk.equals(candidates.get(0))) {
+                    if(suggestionEqualsUserEntry(candidates, chunk, valueResult)) {
                         final CommandLineFormat format = parsedCmd.getFormat();
                         if(format != null) {
                             for (CommandArgument arg : allArgs) {
@@ -490,6 +490,19 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             Util.sortAndEscape(candidates, ESCAPE_SELECTOR);
         }
         return parsedCmd.endsOnSeparator() ? parsedCmd.getLastSeparatorIndex() + 1 : parsedCmd.getLastChunkIndex();
+    }
+
+    private boolean suggestionEqualsUserEntry(List<String> candidates, String chunk, int suggestionOffset) {
+        if (chunk == null || candidates.size() != 1) {
+            return false;
+        }
+
+        if (suggestionOffset > 0) {
+            // user entry before suggestionOffset is always the same - compare only part after offset
+            return chunk.substring(suggestionOffset).equals(candidates.get(0));
+        } else {
+            return chunk.equals(candidates.get(0));
+        }
     }
 
     protected CommandLineCompleter getValueCompleter(CommandContext ctx, Iterable<CommandArgument> allArgs, final String argName) {
