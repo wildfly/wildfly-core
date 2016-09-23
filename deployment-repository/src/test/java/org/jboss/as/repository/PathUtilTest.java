@@ -149,9 +149,8 @@ public class PathUtilTest {
     }
 
     private String readFileContent(Path path) throws Exception {
-        try (InputStream in = Files.newInputStream(path)) {
-            return readFileContent(in);
-        }
+        byte[] bytes = Files.readAllBytes(path);
+        return new String(bytes, "UTF-8");
     }
 
     private String readFileContent(InputStream in) throws Exception {
