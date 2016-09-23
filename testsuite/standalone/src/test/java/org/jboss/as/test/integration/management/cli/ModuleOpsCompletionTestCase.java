@@ -8,6 +8,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -25,6 +26,7 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(WildflyTestRunner.class)
+@Ignore("WFCORE-1821")
 public class ModuleOpsCompletionTestCase {
 
     private static final String MODULE_NAME = "org.jboss.test.cli.climoduletest";
