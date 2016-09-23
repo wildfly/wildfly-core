@@ -22,9 +22,8 @@
 
 package org.jboss.as.controller.management;
 
-import static org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition.NATIVE_MANAGEMENT_CAPABILITY;
-
 import java.util.List;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -42,7 +41,7 @@ import org.xnio.OptionMap.Builder;
 public abstract class BaseNativeInterfaceAddStepHandler extends ManagementInterfaceAddStepHandler {
 
     protected BaseNativeInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
-        super(NATIVE_MANAGEMENT_CAPABILITY, attributeDefinitions);
+        super(attributeDefinitions);
     }
 
     @Override
