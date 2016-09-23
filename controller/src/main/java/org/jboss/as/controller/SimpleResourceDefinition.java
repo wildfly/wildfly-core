@@ -25,6 +25,7 @@ package org.jboss.as.controller;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -679,12 +680,44 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         }
 
         /**
-         * set access constraint definitions for this resource
+         * Add possible capabilities for this resource to any that are already set.
+         * @param capabilities capabilities to register
+         * @return Parameters object
+         */
+        public Parameters addCapabilities(RuntimeCapability ... capabilities) {
+            if (this.capabilities == null) {
+                setCapabilities(capabilities);
+            } else if (capabilities != null && capabilities.length > 0) {
+                RuntimeCapability[] combo = Arrays.copyOf(this.capabilities, this.capabilities.length + capabilities.length);
+                System.arraycopy(capabilities, 0, combo, this.capabilities.length, capabilities.length);
+                setCapabilities(combo);
+            }
+            return this;
+        }
+
+        /**
+         * Set access constraint definitions for this resource
          * @param accessConstraints access constraint definitions for this resource
          * @return Parameters object
          */
         public Parameters setAccessConstraints(AccessConstraintDefinition ... accessConstraints){
             this.accessConstraints = accessConstraints;
+            return this;
+        }
+
+        /**
+         * Add access constraint definitions for this resource to any that are already set.
+         * @param accessConstraints access constraint definitions for this resource
+         * @return Parameters object
+         */
+        public Parameters addAccessConstraints(AccessConstraintDefinition ... accessConstraints) {
+            if (this.accessConstraints == null) {
+                setAccessConstraints(accessConstraints);
+            } else if (accessConstraints != null && accessConstraints.length > 0) {
+                AccessConstraintDefinition[] combo = Arrays.copyOf(this.accessConstraints, this.accessConstraints.length + accessConstraints.length);
+                System.arraycopy(accessConstraints, 0, combo, this.accessConstraints.length, accessConstraints.length);
+                setAccessConstraints(combo);
+            }
             return this;
         }
 
@@ -731,6 +764,23 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          */
         public Parameters setIncorporatingCapabilities(Set<RuntimeCapability> incorporatingCapabilities) {
             this.incorporatingCapabilities = incorporatingCapabilities;
+            return this;
+        }
+
+        /**
+         * Adds incorporating capabilities to any that have already been set.
+         * @param incorporatingCapabilities capabilities to add
+         * @return Parameters object
+         */
+        public Parameters addIncorporatingCapabilities(Set<RuntimeCapability> incorporatingCapabilities) {
+            if (this.incorporatingCapabilities == null) {
+                setIncorporatingCapabilities(incorporatingCapabilities);
+            } else if (incorporatingCapabilities != null && !incorporatingCapabilities.isEmpty()) {
+                Set<RuntimeCapability> combo = new HashSet<>();
+                combo.addAll(this.incorporatingCapabilities);
+                combo.addAll(incorporatingCapabilities);
+                setIncorporatingCapabilities(combo);
+            }
             return this;
         }
     }
