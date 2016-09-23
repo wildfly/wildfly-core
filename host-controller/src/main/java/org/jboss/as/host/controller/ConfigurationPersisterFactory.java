@@ -41,6 +41,7 @@ import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
+import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.controller.persistence.XmlConfigurationPersister;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.parsing.DomainXml;
@@ -131,6 +132,24 @@ public class ConfigurationPersisterFactory {
             this.bootWriter = new XmlConfigurationPersister(bootFile, rootElement, rootParser, rootDeparser);
             this.file = file;
             this.bootFile = bootFile;
+        }
+
+        @Override
+        public void registerAdditionalRootElement(final QName anotherRoot, final XMLElementReader<List<ModelNode>> parser){
+            bootWriter.registerAdditionalRootElement(anotherRoot, parser);
+            super.registerAdditionalRootElement(anotherRoot, parser);
+        }
+
+        @Override
+        public void registerSubsystemWriter(String name, XMLElementWriter<SubsystemMarshallingContext> deparser) {
+            bootWriter.registerSubsystemWriter(name, deparser);
+            super.registerSubsystemWriter(name, deparser);
+        }
+
+        @Override
+        public void unregisterSubsystemWriter(String name) {
+            bootWriter.unregisterSubsystemWriter(name);
+            super.unregisterSubsystemWriter(name);
         }
 
         @Override

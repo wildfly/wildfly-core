@@ -185,7 +185,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
 
         }
 
-        if (operations.getAllOps().size() > 0 && parameters.isFullModelTransfer() && !context.isBooting()) {
+        if (!context.isBooting() && operations.getAllOps().size() > 0 && parameters.isFullModelTransfer()) {
             //Only do this is if it is a full model transfer as a result of a _reconnect_ to the DC.
             //When fetching missing configuration while connected, the servers will get put into reload-required as a
             // result of changing the server-group, profile or the socket-binding-group
