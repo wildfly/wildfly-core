@@ -25,8 +25,6 @@ package org.jboss.as.controller.management;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 
-import java.util.List;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
@@ -41,7 +39,6 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -114,15 +111,15 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
 
     protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SECURITY_REALM,  CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     /**
      * @param parameters
      */
     protected BaseHttpInterfaceResourceDefinition(Parameters parameters) {
-        super(parameters);
-        this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
-        setDeprecated(ModelVersion.create(1, 7));
+        super(parameters
+                .addAccessConstraints(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
+                .addCapabilities(HTTP_MANAGEMENT_CAPABILITY)
+                .setDeprecatedSince(ModelVersion.create(1, 7))
+        );
     }
 
     @Override
@@ -137,16 +134,6 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
                 resourceRegistration.registerReadWriteAttribute(attr, null, defaultWriteHandler);
             }
         }
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(HTTP_MANAGEMENT_CAPABILITY);
     }
 
     protected abstract AttributeDefinition[] getAttributeDefinitions();

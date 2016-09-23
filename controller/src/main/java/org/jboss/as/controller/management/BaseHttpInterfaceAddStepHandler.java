@@ -23,9 +23,9 @@
 package org.jboss.as.controller.management;
 
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
-import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.HTTP_MANAGEMENT_CAPABILITY;
 
 import java.util.List;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -44,7 +44,7 @@ import org.xnio.OptionMap.Builder;
 public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfaceAddStepHandler {
 
     protected BaseHttpInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
-        super(HTTP_MANAGEMENT_CAPABILITY, attributeDefinitions);
+        super(attributeDefinitions);
     }
 
     @Override
