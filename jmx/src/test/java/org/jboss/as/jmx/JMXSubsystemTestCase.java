@@ -75,6 +75,7 @@ import org.xnio.OptionMap;
  */
 public class JMXSubsystemTestCase extends AbstractSubsystemTest {
 
+    private static final int JMX_PORT = 27258;
     private static final String TYPE_STANDALONE = "STANDALONE";
 
     public JMXSubsystemTestCase() {
@@ -203,9 +204,8 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
         Assert.assertTrue(model.get(SUBSYSTEM).hasDefined(JMXExtension.SUBSYSTEM_NAME));
 
         //Make sure that we can connect to the MBean server
-        int port = 12345;
         String urlString = System.getProperty("jmx.service.url",
-            "service:jmx:remoting-jmx://localhost:" + port);
+            "service:jmx:remoting-jmx://localhost:" + JMX_PORT);
         JMXServiceURL serviceURL = new JMXServiceURL(urlString);
 
         JMXConnector connector = null;
@@ -652,7 +652,7 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
 
         @Override
         protected void setupController(ControllerInitializer controllerInitializer) {
-            controllerInitializer.addSocketBinding("remote", 12345);
+            controllerInitializer.addSocketBinding("remote", JMX_PORT);
             controllerInitializer.addPath("jboss.controller.temp.dir", System.getProperty("java.io.tmpdir"), null);
         }
 
