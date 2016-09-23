@@ -1239,4 +1239,7 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 256, value = "Cannot read content from an unexploded deployment")
     OperationFailedException cannotReadContentFromUnexplodedDeployment();
+
+    @Message(id = 257, value = "Required system property '%s' not set")
+    IllegalArgumentException requiredSystemPropertyMissing(String propName);
 }
