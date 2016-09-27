@@ -694,9 +694,9 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+            return builder(SUBSYSTEM_ROOT_INSTANCE.getPathElement(), NAMESPACE)
                     .addChild(
-                            builder(RESOURCE_INSTANCE)
+                            builder(RESOURCE_INSTANCE.getPathElement())
                                     .setXmlWrapperElement("resources")
                                     .addAttributes(
                                             // cluster group
@@ -715,7 +715,7 @@ public class PersistentResourceXMLParserTestCase {
                                     )
                     )
                     .addChild(
-                            builder(BUFFER_CACHE_INSTANCE)
+                            builder(BUFFER_CACHE_INSTANCE.getPathElement())
                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
                                     .addAttribute(COMPLEX_MAP2)
@@ -729,9 +729,9 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+            return builder(SUBSYSTEM_ROOT_INSTANCE.getPathElement(), NAMESPACE)
                     .addChild(
-                            builder(RESOURCE_INSTANCE)
+                            builder(RESOURCE_INSTANCE.getPathElement())
                                     .addAttributes(
                                             // cluster group
                                             clusterAttr1,
@@ -747,7 +747,7 @@ public class PersistentResourceXMLParserTestCase {
                                     )
                     )
                     .addChild(
-                            builder(BUFFER_CACHE_INSTANCE)
+                            builder(BUFFER_CACHE_INSTANCE.getPathElement())
                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
                     )
@@ -760,9 +760,9 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+            return builder(SUBSYSTEM_ROOT_INSTANCE.getPathElement(), NAMESPACE)
                     .addChild(
-                            builder(SERVER_INSTANCE)
+                            builder(SERVER_INSTANCE.getPathElement())
                                     .addAttributes(SECURITY_ENABLED, STATISTICS_ENABLED)
                                     .addAttribute(INTERCEPTORS)
                                     .addAttribute(COMPLEX_LIST)
@@ -770,7 +770,7 @@ public class PersistentResourceXMLParserTestCase {
                                     .addAttribute(PROPERTIES)
                                     .addAttribute(COMPLEX_MAP3)
                                     .addChild(
-                                            builder(BUFFER_CACHE_INSTANCE)
+                                            builder(BUFFER_CACHE_INSTANCE.getPathElement())
                                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
                                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
                                     )
@@ -783,7 +783,7 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+            return builder(SUBSYSTEM_ROOT_INSTANCE.getPathElement(), NAMESPACE)
                     .addAttributes(clusterAttr1)
                     .build();
         }
@@ -793,13 +793,13 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+            return builder(SUBSYSTEM_ROOT_INSTANCE.getPathElement(), NAMESPACE)
                     .addChild(
-                            builder(SESSION_INSTANCE)
+                            builder(SESSION_INSTANCE.getPathElement())
                                     .setNameAttributeName("session-name") //custom name attribute for session resources
                                     .addAttributes(MAX_REGIONS, WRAPPED_PROPERTIES)
                                     .addChild(
-                                            builder(CUSTOM_SERVER_INSTANCE)
+                                            builder(CUSTOM_SERVER_INSTANCE.getPathElement())
                                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, PROPERTIES)
                                                     .setXmlElementName("custom-server")
                                     )
@@ -812,7 +812,7 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(IIOPRootDefinition.INSTANCE, "urn:jboss:domain:orb-test:1.0")
+            return builder(IIOPRootDefinition.INSTANCE.getPathElement(), "urn:jboss:domain:orb-test:1.0")
                     .addAttributes(IIOPRootDefinition.ALL_ATTRIBUTES.toArray(new AttributeDefinition[0]))
                     .build();
         }

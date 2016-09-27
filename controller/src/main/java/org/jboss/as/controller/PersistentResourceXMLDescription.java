@@ -14,7 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
@@ -35,7 +34,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public final class PersistentResourceXMLDescription {
 
-    protected final PersistentResourceDefinition resourceDefinition;
+    protected final PathElement pathElement;
     protected final String xmlElementName;
     protected final String xmlWrapperElement;
     protected final LinkedHashMap<String, LinkedHashMap<String, AttributeDefinition>> attributesByGroup;
@@ -58,7 +57,7 @@ public final class PersistentResourceXMLDescription {
 
 
     private PersistentResourceXMLDescription(PersistentResourceXMLBuilder builder) {
-        this.resourceDefinition = builder.resourceDefinition;
+        this.pathElement = builder.pathElement;
         this.xmlElementName = builder.xmlElementName;
         this.xmlWrapperElement = builder.xmlWrapperElement;
         this.useElementsForGroups = builder.useElementsForGroups;
@@ -108,12 +107,12 @@ public final class PersistentResourceXMLDescription {
     }
 
     public PathElement getPathElement() {
-        return resourceDefinition.getPathElement();
+        return this.pathElement;
     }
 
     public void parse(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
         ModelNode op = Util.createAddOperation();
-        boolean wildcard = resourceDefinition.getPathElement().isWildcard();
+        boolean wildcard = getPathElement().isWildcard();
         String name = parseAttributeGroups(reader, op, wildcard);
         if (wildcard && name == null) {
             if (forcedName != null) {
@@ -122,7 +121,7 @@ public final class PersistentResourceXMLDescription {
                 throw ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(new StringBuilder(NAME), reader.getLocation());
             }
         }
-        PathElement path = wildcard ? PathElement.pathElement(resourceDefinition.getPathElement().getKey(), name) : resourceDefinition.getPathElement();
+        PathElement path = wildcard ? PathElement.pathElement(getPathElement().getKey(), name) : getPathElement();
         PathAddress address = parentAddress.append(path);
         if (!noAddOperation) {
             op.get(ADDRESS).set(address.toModelNode());
@@ -303,9 +302,9 @@ public final class PersistentResourceXMLDescription {
     }
 
     public void persist(XMLExtendedStreamWriter writer, ModelNode model, String namespaceURI) throws XMLStreamException {
-        boolean wildcard = resourceDefinition.getPathElement().isWildcard();
-        model = wildcard ? model.get(resourceDefinition.getPathElement().getKey()) : model.get(resourceDefinition.getPathElement().getKeyValuePair());
-        boolean isSubsystem = resourceDefinition.getPathElement().getKey().equals(ModelDescriptionConstants.SUBSYSTEM);
+        boolean wildcard = getPathElement().isWildcard();
+        model = wildcard ? model.get(getPathElement().getKey()) : model.get(getPathElement().getKeyValuePair());
+        boolean isSubsystem = getPathElement().getKey().equals(ModelDescriptionConstants.SUBSYSTEM);
         if (!isSubsystem && !model.isDefined() && !useValueAsElementName) {
             return;
         }
@@ -331,7 +330,7 @@ public final class PersistentResourceXMLDescription {
         } else {
             final boolean empty = attributeGroups.isEmpty() && children.isEmpty();
             if (useValueAsElementName) {
-                writeStartElement(writer, namespaceURI, resourceDefinition.getPathElement().getValue());
+                writeStartElement(writer, namespaceURI, getPathElement().getValue());
             } else if (isSubsystem) {
                 startSubsystemElement(writer, namespaceURI, empty);
             } else {
@@ -410,16 +409,52 @@ public final class PersistentResourceXMLDescription {
         }
     }
 
+    /**
+     * @param resource resource for which path we are creating builder
+     * @return PersistentResourceXMLBuilder
+     * @deprecated please use {@linkplain PersistentResourceXMLBuilder(PathElement, String)} variant
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public static PersistentResourceXMLBuilder builder(PersistentResourceDefinition resource) {
         return new PersistentResourceXMLBuilder(resource);
     }
 
+    /**
+     *
+     * @param resource resource for which path we are creating builder
+     * @param namespaceURI xml namespace to use for this resource, usually used for top level elements such as subsystems
+     * @return PersistentResourceXMLBuilder
+     * @deprecated please use {@linkplain PersistentResourceXMLBuilder(PathElement, String)} variant
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public static PersistentResourceXMLBuilder builder(PersistentResourceDefinition resource, String namespaceURI) {
         return new PersistentResourceXMLBuilder(resource, namespaceURI);
     }
 
+    /**
+     * Creates builder for passed path element
+     * @param pathElement for which we are creating builder
+     * @return PersistentResourceXMLBuilder
+     */
+    public static PersistentResourceXMLBuilder builder(final PathElement pathElement) {
+        return new PersistentResourceXMLBuilder(pathElement);
+    }
+
+    /**
+     * Creates builder for passed path element
+     *
+     * @param pathElement for which we are creating builder
+     * @param namespaceURI xml namespace to use for this resource, usually used for top level elements such as subsystems
+     * @return PersistentResourceXMLBuilder
+     */
+    public static PersistentResourceXMLBuilder builder(final PathElement pathElement, final String namespaceURI) {
+        return new PersistentResourceXMLBuilder(pathElement, namespaceURI);
+    }
+
     public static class PersistentResourceXMLBuilder {
-        protected final PersistentResourceDefinition resourceDefinition;
+        protected final PathElement pathElement;
         private final String namespaceURI;
         protected String xmlElementName;
         protected String xmlWrapperElement;
@@ -435,16 +470,35 @@ public final class PersistentResourceXMLDescription {
         private boolean marshallDefaultValues = false;
         private String nameAttributeName = NAME;
 
+        /**
+         * @deprecated please use {@link PersistentResourceXMLBuilder(PathElement) } instead
+         * @param resourceDefinition for which xml build is constructed
+         */
+        @Deprecated
         protected PersistentResourceXMLBuilder(final PersistentResourceDefinition resourceDefinition) {
-            this.resourceDefinition = resourceDefinition;
-            this.namespaceURI = null;
-            this.xmlElementName = resourceDefinition.getPathElement().isWildcard() ? resourceDefinition.getPathElement().getKey() : resourceDefinition.getPathElement().getValue();
+            this(resourceDefinition.getPathElement());
         }
 
+        /**
+         * @param resourceDefinition for which xml build is constructed
+         * @param namespaceURI namespace for which we create this resource, usually only useful for top level resources
+         * @deprecated please use {@link PersistentResourceXMLBuilder(PathElement, String) } instead
+         */
+        @Deprecated
         protected PersistentResourceXMLBuilder(final PersistentResourceDefinition resourceDefinition, String namespaceURI) {
-            this.resourceDefinition = resourceDefinition;
+            this(resourceDefinition.getPathElement(), namespaceURI);
+        }
+
+        protected PersistentResourceXMLBuilder(final PathElement pathElement) {
+            this.pathElement = pathElement;
+            this.namespaceURI = null;
+            this.xmlElementName = pathElement.isWildcard() ? pathElement.getKey() : pathElement.getValue();
+        }
+
+        protected PersistentResourceXMLBuilder(final PathElement pathElement, String namespaceURI) {
+            this.pathElement = pathElement;
             this.namespaceURI = namespaceURI;
-            this.xmlElementName = resourceDefinition.getPathElement().isWildcard() ? resourceDefinition.getPathElement().getKey() : resourceDefinition.getPathElement().getValue();
+            this.xmlElementName = pathElement.isWildcard() ? pathElement.getKey() : pathElement.getValue();
         }
 
         public PersistentResourceXMLBuilder addChild(PersistentResourceXMLBuilder builder) {
