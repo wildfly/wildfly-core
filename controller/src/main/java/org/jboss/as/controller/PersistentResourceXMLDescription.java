@@ -197,7 +197,7 @@ public final class PersistentResourceXMLDescription {
                 throw ParseUtils.unexpectedAttribute(reader, i, attributes.keySet());
             }
         }
-        //only pare attribute elements here if there are no attribute groups defined
+        //only parse attribute elements here if there are no attribute groups defined
         if (attributeGroups.isEmpty() && !attributeElements.isEmpty() && reader.isStartElement()) {
             String originalStartElement = reader.getLocalName();
             if (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {

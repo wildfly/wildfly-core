@@ -408,6 +408,32 @@ public class PersistentResourceXMLParserTestCase {
         Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
     }
 
+
+    @Test
+    public void testComplexAttributesStuff() throws Exception {
+        CoreParser parser = new CoreParser();
+
+        String xml = readResource("core-subsystem.xml");
+        StringReader strReader = new StringReader(xml);
+
+        XMLMapper mapper = XMLMapper.Factory.create();
+        mapper.registerRootElement(new QName("urn:jboss:domain:core:1.0", "subsystem"), parser);
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StreamSource(strReader));
+        List<ModelNode> operations = new ArrayList<>();
+        mapper.parseDocument(operations, reader);
+
+        Assert.assertEquals(2, operations.size());
+        ModelNode subsystem = opsToModel(operations);
+
+        StringWriter stringWriter = new StringWriter();
+        XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter));
+        SubsystemMarshallingContext context = new SubsystemMarshallingContext(subsystem, xmlStreamWriter);
+        mapper.deparseDocument(parser, context, xmlStreamWriter);
+        String out = stringWriter.toString();
+        Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
+    }
+
     private ModelNode opsToModel(List<ModelNode> operations) {
         ModelNode subsystem = new ModelNode();
 
@@ -1139,5 +1165,67 @@ public class PersistentResourceXMLParserTestCase {
 
     }
 
+    private static final String CLASS = "class";
+    private static final String MODULE = "module";
+    public static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder("properties", true)
+            .setAllowExpression(true)
+            .build();
 
+    public static final ObjectTypeAttributeDefinition PROCESS_STATE_LISTENER = ObjectTypeAttributeDefinition.Builder.of("process-state-listener",
+            SimpleAttributeDefinitionBuilder.create(CLASS, ModelType.STRING, false)
+                    .setAllowExpression(false)
+                    .build(),
+            SimpleAttributeDefinitionBuilder.create(MODULE, ModelType.STRING, false)
+                    .setAllowExpression(false)
+                    .build(),
+            PROPERTIES)
+            .setRestartAllServices()
+            .setAllowNull(true)
+            .build();
+
+    public static final AttributeDefinition PROCESS_STATE_LISTENERS = ObjectListAttributeDefinition.Builder.of("listeners", PROCESS_STATE_LISTENER)
+            .setAllowNull(false)
+            .setRuntimeServiceNotRequired()
+            .build();
+
+
+    static final PersistentResourceDefinition SERVICE_PROCESS_RESOURCE = new PersistentResourceDefinition(PathElement.pathElement("service"), new NonResolvingResourceDescriptionResolver()) {
+        @Override
+        public Collection<AttributeDefinition> getAttributes() {
+            Collection<AttributeDefinition> attributes = new ArrayList<>();
+            attributes.add(PROCESS_STATE_LISTENERS);
+            return attributes;
+        }
+    };
+
+    protected static final PathElement PROCESS_SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, "process");
+
+    PersistentResourceDefinition PROCESS_SUBSYSTEM_ROOT_INSTANCE = new PersistentResourceDefinition(PROCESS_SUBSYSTEM_PATH, new NonResolvingResourceDescriptionResolver()) {
+
+              @Override
+              public Collection<AttributeDefinition> getAttributes() {
+                  return Collections.emptyList();
+              }
+
+              @Override
+              protected List<? extends PersistentResourceDefinition> getChildren() {
+                  List<PersistentResourceDefinition> children = new ArrayList<>();
+                  children.add(SERVICE_PROCESS_RESOURCE);
+                  return children;
+              }
+          };
+
+    private static class CoreParser extends PersistentResourceXMLParser {
+
+        protected static final String NAMESPACE = "urn:jboss:domain:core:1.0";
+
+
+
+        @Override
+        public PersistentResourceXMLDescription getParserDescription() {
+            return PersistentResourceXMLDescription.builder(PROCESS_SUBSYSTEM_PATH, NAMESPACE)
+                    .addChild(builder(SERVICE_PROCESS_RESOURCE.getPathElement()).addAttribute(PROCESS_STATE_LISTENERS))
+                    .build();
+        }
+    }
 }
