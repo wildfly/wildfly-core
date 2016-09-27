@@ -468,6 +468,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     }
 
+    protected NotificationSupport getNotificationSupport() {
+        return controller.getNotificationSupport();
+    }
+
     protected final MutableRootResourceRegistrationProvider getMutableRootResourceRegistrationProvider() {
         return ModelControllerImpl.getMutableRootResourceRegistrationProvider();
     }

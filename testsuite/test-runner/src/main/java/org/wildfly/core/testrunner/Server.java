@@ -57,7 +57,7 @@ public class Server {
 
     private final String serverDebug = "wildfly.debug";
     private final int serverDebugPort = Integer.getInteger("wildfly.debug.port", 8787);
-    private boolean adminMode = false;
+    private StartMode startMode = StartMode.NORMAL;
 
     private final Logger log = Logger.getLogger(Server.class.getName());
     private Thread shutdownThread;
@@ -84,8 +84,8 @@ public class Server {
         this.serverConfig = serverConfig;
     }
 
-    public void setAdminMode(boolean adminMode) {
-        this.adminMode = adminMode;
+    public void setStartMode(StartMode startMode) {
+        this.startMode = startMode;
     }
 
     protected void start() {
@@ -113,8 +113,10 @@ public class Server {
                 commandBuilder.setDebug(true, serverDebugPort);
             }
 
-            if (this.adminMode) {
+            if (this.startMode == StartMode.ADMIN_ONLY) {
                 commandBuilder.setAdminOnly();
+            } else if (this.startMode == StartMode.SUSPEND){
+                commandBuilder.setStartSuspended();
             }
 
             //we are testing, of course we want assertions and set-up some other defaults
@@ -270,7 +272,17 @@ public class Server {
      * @param timeout time in miliseconds to wait for server to come back after reload
      */
     public void reload(boolean adminOnly, int timeout) {
-        reload(adminOnly, timeout, null);
+        reload(adminOnly ? StartMode.ADMIN_ONLY : StartMode.NORMAL, timeout);
+    }
+
+    /**
+     * Reload current server
+     * This method makes sure client on server is still operational after reload is done.
+     * @param startMode tells server to boot in admin only mode, suspended or normal
+     * @param timeout time in miliseconds to wait for server to come back after reload
+     */
+    public void reload(StartMode startMode, int timeout) {
+        reload(startMode, timeout, null);
     }
 
     /**
@@ -280,15 +292,29 @@ public class Server {
      * @param timeout time in miliseconds to wait for server to come back after reload
      */
     public void reload(boolean adminOnly, int timeout, String serverConfig) {
-        executeReload(adminOnly, serverConfig);
+        executeReload(adminOnly ? StartMode.ADMIN_ONLY : StartMode.NORMAL, serverConfig);
+        waitForLiveServerToReload(timeout); //30 seconds
+    }
+    /**
+     * Reload current server
+     * This method makes sure client on server is still operational after reload is done.
+     * @param startMode tells server to boot in admin only mode, suspended or normal
+     * @param timeout time in miliseconds to wait for server to come back after reload
+     */
+    public void reload(StartMode startMode, int timeout, String serverConfig) {
+        executeReload(startMode, serverConfig);
         waitForLiveServerToReload(timeout); //30 seconds
     }
 
-    private void executeReload(boolean adminOnly, String serverConfig) {
+    private void executeReload(StartMode startMode, String serverConfig) {
         ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).setEmptyList();
         operation.get(OP).set("reload");
-        operation.get("admin-only").set(adminOnly);
+        if(startMode == StartMode.ADMIN_ONLY) {
+            operation.get("admin-only").set(true);
+        } else if(startMode == StartMode.SUSPEND) {
+            operation.get("start-mode").set("suspend");
+        }
         if (serverConfig != null) {
             operation.get(SERVER_CONFIG).set(serverConfig);
         }
@@ -386,5 +412,11 @@ public class Server {
         }
     }
 
+
+    public enum StartMode {
+        NORMAL,
+        ADMIN_ONLY,
+        SUSPEND
+    }
 
 }

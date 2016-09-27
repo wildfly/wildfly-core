@@ -544,7 +544,7 @@ public interface ServerLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = Message.NONE, value = "Set the server's running type to ADMIN_ONLY causing it to open administrative interfaces and accept management requests but not start other runtime services or accept end user requests.")
+    @Message(id = Message.NONE, value = "Set the server's running type to ADMIN_ONLY causing it to open administrative interfaces and accept management requests but not start other runtime services or accept end user requests. Cannot be used in conjunction with --start-mode.")
     String argAdminOnly();
 
     /**
@@ -562,6 +562,14 @@ public interface ServerLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "Runs the server with a security manager installed.")
     String argSecMgr();
+
+    /**
+     * Instructions for the {@link CommandLineConstants#START_MODE} command line argument.
+     *
+     * @return the message
+     */
+    @Message(id = Message.NONE, value = "Sets the start mode of the server, it can be either 'normal','admin-only' or 'suspend'. If this is 'suspend' the server will start in suspended mode, and will not service requests until it has been resumed. If this is started in admin-only mode the server will only open administrative interfaces and accept management requests but not start other runtime services or accept end user requests. Cannot be used in conjunction with --admin-only.")
+    String argStartMode();
 
     /**
      * Creates an error message indicating a value was expected for the given command line option.
@@ -1249,4 +1257,19 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 259, value = "If attribute secure-socket-binding is defined one of ssl-context or security-realm must also be defined")
     OperationFailedException secureSocketBindingRequiresSSLContext();
 
+    @LogMessage(level = INFO)
+    @Message(id = 260, value = "Starting server in suspended mode")
+    void startingServerSuspended();
+
+    @Message(id = 261, value = "Boot complete")
+    String bootComplete();
+
+    @Message(id = 262, value = "You cannot set both " + CommandLineConstants.START_MODE + " and " + CommandLineConstants.ADMIN_ONLY)
+    String cannotSetBothAdminOnlyAndStartMode();
+
+    @Message(id = 263, value = "Unknown start mode %s")
+    String unknownStartMode(String value);
+
+    @Message(id = 264, value = "Cannot specify both admin-only and start-mode")
+    OperationFailedException cannotSpecifyBothAdminOnlyAndStartMode();
 }

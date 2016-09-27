@@ -339,6 +339,15 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     }
 
     /**
+     * Sets the server argument {@code --start-mode=suspend}.
+     *
+     * @return the builder
+     */
+    public T setStartSuspended() {
+        return addServerArgument("--start-mode=suspend");
+    }
+
+    /**
      * Sets the system property {@code jboss.bind.address} to the address given.
      * <p/>
      * This will override any previous value set via {@link #addServerArgument(String)}.
