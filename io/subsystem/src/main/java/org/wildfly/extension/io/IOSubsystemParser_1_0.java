@@ -38,9 +38,9 @@ class IOSubsystemParser_1_0 extends PersistentResourceXMLParser {
     private final PersistentResourceXMLDescription xmlDescription;
 
     private IOSubsystemParser_1_0() {
-        xmlDescription = builder(IORootDefinition.INSTANCE)
+        xmlDescription = builder(IORootDefinition.INSTANCE.getPathElement())
                 .addChild(
-                        builder(WorkerResourceDefinition.INSTANCE)
+                        builder(WorkerResourceDefinition.INSTANCE.getPathElement())
                                 .addAttribute(WorkerResourceDefinition.WORKER_IO_THREADS, new AttributeParser.DiscardOldDefaultValueParser("3"))
                                 .addAttributes(
                                         WorkerResourceDefinition.WORKER_TASK_KEEPALIVE,
@@ -48,7 +48,7 @@ class IOSubsystemParser_1_0 extends PersistentResourceXMLParser {
                                         WorkerResourceDefinition.STACK_SIZE)
                 )
                 .addChild(
-                        builder(BufferPoolResourceDefinition.INSTANCE)
+                        builder(BufferPoolResourceDefinition.INSTANCE.getPathElement())
                                 .addAttribute(BufferPoolResourceDefinition.BUFFER_SIZE, new AttributeParser.DiscardOldDefaultValueParser("16384"))
                                 .addAttribute(BufferPoolResourceDefinition.BUFFER_PER_SLICE, new AttributeParser.DiscardOldDefaultValueParser("128"))
                                 .addAttribute(BufferPoolResourceDefinition.DIRECT_BUFFERS)

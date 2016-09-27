@@ -39,9 +39,9 @@ class IOSubsystemParser_1_1 extends PersistentResourceXMLParser {
     private static final PersistentResourceXMLDescription xmlDescription;
 
     static {
-        xmlDescription = builder(IORootDefinition.INSTANCE, Namespace.CURRENT.getUriString())
+        xmlDescription = builder(IORootDefinition.INSTANCE.getPathElement(), Namespace.CURRENT.getUriString())
                 .addChild(
-                        builder(WorkerResourceDefinition.INSTANCE)
+                        builder(WorkerResourceDefinition.INSTANCE.getPathElement())
                                 .addAttributes(
                                         WorkerResourceDefinition.WORKER_IO_THREADS,
                                         WorkerResourceDefinition.WORKER_TASK_KEEPALIVE,
@@ -49,7 +49,7 @@ class IOSubsystemParser_1_1 extends PersistentResourceXMLParser {
                                         WorkerResourceDefinition.STACK_SIZE)
                 )
                 .addChild(
-                        builder(BufferPoolResourceDefinition.INSTANCE)
+                        builder(BufferPoolResourceDefinition.INSTANCE.getPathElement())
                                 .addAttributes(BufferPoolResourceDefinition.BUFFER_SIZE,
                                         BufferPoolResourceDefinition.BUFFER_PER_SLICE,
                                         BufferPoolResourceDefinition.DIRECT_BUFFERS)
