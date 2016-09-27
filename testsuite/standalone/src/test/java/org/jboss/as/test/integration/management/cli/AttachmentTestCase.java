@@ -280,6 +280,7 @@ public class AttachmentTestCase {
             f.delete();
             f2.delete();
             source.delete();
+            cli.sendLine("undeploy AttachedFileTestCase.war");
             cli.quit();
         }
     }
