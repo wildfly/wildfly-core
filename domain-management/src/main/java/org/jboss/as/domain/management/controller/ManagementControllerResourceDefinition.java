@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.management.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BOOT_COMPLETE_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_MODIFICATION_BEGUN;
@@ -49,6 +50,7 @@ public class ManagementControllerResourceDefinition extends SimpleResourceDefini
 
     private static final NotificationDefinition NOTIFICATION_BEGIN_RUNTIME_MODIFICATION = NotificationDefinition.Builder.create(RUNTIME_MODIFICATION_BEGUN, RESOLVER).build();
     private static final NotificationDefinition NOTIFICATION_COMPLETE_RUNTIME_MODIFICATION = NotificationDefinition.Builder.create(RUNTIME_MODIFICATION_COMPLETE, RESOLVER).build();
+    private static final NotificationDefinition NOTIFICATION_BOOT_COMPLETE = NotificationDefinition.Builder.create(BOOT_COMPLETE_NOTIFICATION, RESOLVER).build();
 
     public static final ResourceDefinition INSTANCE = new ManagementControllerResourceDefinition();
 
@@ -70,6 +72,7 @@ public class ManagementControllerResourceDefinition extends SimpleResourceDefini
         super.registerNotifications(resourceRegistration);
         resourceRegistration.registerNotification(NOTIFICATION_BEGIN_RUNTIME_MODIFICATION);
         resourceRegistration.registerNotification(NOTIFICATION_COMPLETE_RUNTIME_MODIFICATION);
+        resourceRegistration.registerNotification(NOTIFICATION_BOOT_COMPLETE);
     }
 
     @Override

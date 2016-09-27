@@ -84,6 +84,7 @@ public class ModelDescriptionConstants {
     public static final String BOOT_TIME = "boot-time";
     public static final String BOOT_ERROR = "boot-error";
     public static final String BOOT_ERRORS = "boot-errors";
+    public static final String BOOT_COMPLETE_NOTIFICATION = "boot-complete";
     public static final String BROWSE_CONTENT = "browse-content";
     public static final String BYTES = "bytes";
     public static final String CALLER_THREAD = "caller-thread";
@@ -488,6 +489,7 @@ public class ModelDescriptionConstants {
     public static final String SSL_CONTEXT = "ssl-context";
     public static final String STANDARD_ROLE_NAMES = "standard-role-names";
     public static final String START = "start";
+    public static final String START_MODE = "start-mode";
     public static final String START_SERVERS = "start-servers";
     public static final String STATIC_DISCOVERY = "static-discovery";
     public static final String STATISTICS_ENABLED = "statistics-enabled";

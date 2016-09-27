@@ -53,6 +53,7 @@ import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.domain.controller.resources.DomainResolver;
@@ -71,6 +72,10 @@ import org.jboss.dmr.Property;
 public class DomainServerLifecycleHandlers {
 
     private static final AttributeDefinition BLOCKING = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.BLOCKING, ModelType.BOOLEAN, true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
+
+    private static final AttributeDefinition SUSPEND = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND, ModelType.BOOLEAN, true)
             .setDefaultValue(new ModelNode(false))
             .build();
 
@@ -114,6 +119,7 @@ public class DomainServerLifecycleHandlers {
         return new SimpleOperationDefinitionBuilder(operationName,
                 DomainResolver.getResolver(serverGroup ? ModelDescriptionConstants.SERVER_GROUP : ModelDescriptionConstants.DOMAIN))
                 .addParameter(BLOCKING)
+                .addParameter(SUSPEND)
                 .setRuntimeOnly()
                 .build();
     }
@@ -137,7 +143,6 @@ public class DomainServerLifecycleHandlers {
         }
         return builder.build();
     }
-
     private abstract static class AbstractHackLifecycleHandler implements OperationStepHandler {
         volatile ServerInventory serverInventory;
 
@@ -225,6 +230,7 @@ public class DomainServerLifecycleHandlers {
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
             final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
+            final boolean suspend = SUSPEND.resolveModelAttribute(context, operation).asBoolean();
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -242,7 +248,7 @@ public class DomainServerLifecycleHandlers {
                                     if (status != ServerStatus.STOPPED) {
                                         serverInventory.stopServer(config.getName(), 0);
                                     }
-                                    serverInventory.startServer(config.getName(), model);
+                                    serverInventory.startServer(config.getName(), model, false, suspend);
                                     waitForServers.add(config.getName());
                                 }
                             }
@@ -269,6 +275,7 @@ public class DomainServerLifecycleHandlers {
             final String group = getServerGroupName(operation);
             final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
             final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
+            final boolean suspend = SUSPEND.resolveModelAttribute(context, operation).asBoolean();
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -280,7 +287,7 @@ public class DomainServerLifecycleHandlers {
                     for (String serverName : processes.keySet()) {
                         final String serverModelName = serverInventory.getProcessServerName(serverName);
                         if (group == null || serversInGroup.contains(serverModelName)) {
-                            serverInventory.restartServer(serverModelName, timeout > 0 ? timeout * 1000 : timeout, model);
+                            serverInventory.restartServer(serverModelName, timeout > 0 ? timeout * 1000 : timeout, model, false, suspend);
                             waitForServers.add(serverModelName);
                         }
                     }
@@ -305,6 +312,7 @@ public class DomainServerLifecycleHandlers {
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
             final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
+            final boolean suspend = SUSPEND.resolveModelAttribute(context, operation).asBoolean();
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -316,7 +324,7 @@ public class DomainServerLifecycleHandlers {
                     for (String serverName : processes.keySet()) {
                         final String serverModelName = serverInventory.getProcessServerName(serverName);
                         if (group == null || serversInGroup.contains(serverModelName)) {
-                            serverInventory.reloadServer(serverModelName, false);
+                            serverInventory.reloadServer(serverModelName, false, suspend);
                             waitForServers.add(serverModelName);
                         }
                     }
@@ -411,5 +419,22 @@ public class DomainServerLifecycleHandlers {
                 .addRejectCheck(RejectAttributeChecker.DEFINED, TIMEOUT)
                 .end();
     }
+
+    public static void registerSuspendedStartTransformers(ResourceTransformationDescriptionBuilder builder) {
+        builder.addOperationTransformationOverride(START_SERVERS)
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(false)), SUSPEND)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, SUSPEND)
+                .end()
+                .addOperationTransformationOverride(RELOAD_SERVERS)
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(false)), SUSPEND)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, SUSPEND)
+                .end()
+                .addOperationTransformationOverride(RESTART_SERVERS)
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(false)), SUSPEND)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, SUSPEND)
+                .end();
+
+    }
+
 
 }

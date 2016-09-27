@@ -180,11 +180,11 @@ public class ServerInventoryImpl implements ServerInventory {
 
     @Override
     public ServerStatus startServer(final String serverName, final ModelNode domainModel) {
-        return startServer(serverName, domainModel, false);
+        return startServer(serverName, domainModel, false, false);
     }
 
     @Override
-    public ServerStatus startServer(final String serverName, final ModelNode domainModel, final boolean blocking) {
+    public ServerStatus startServer(final String serverName, final ModelNode domainModel, final boolean blocking, boolean suspend) {
         if(shutdown || connectionFinished) {
             throw HostControllerLogger.ROOT_LOGGER.hostAlreadyShutdown();
         }
@@ -212,7 +212,7 @@ public class ServerInventoryImpl implements ServerInventory {
             }
         }
         // Start the server
-        server.start(createBootFactory(serverName, domainModel));
+        server.start(createBootFactory(serverName, domainModel, suspend));
         synchronized (shutdownCondition) {
             shutdownCondition.notifyAll();
         }
@@ -228,11 +228,11 @@ public class ServerInventoryImpl implements ServerInventory {
 
     @Override
     public ServerStatus restartServer(final String serverName, final int gracefulTimeout, final ModelNode domainModel) {
-        return restartServer(serverName, gracefulTimeout, domainModel, false);
+        return restartServer(serverName, gracefulTimeout, domainModel, false, false);
     }
 
     @Override
-    public ServerStatus restartServer(final String serverName, final int gracefulTimeout, final ModelNode domainModel, final boolean blocking) {
+    public ServerStatus restartServer(final String serverName, final int gracefulTimeout, final ModelNode domainModel, final boolean blocking, final boolean suspend) {
         stopServer(serverName, gracefulTimeout);
         synchronized (shutdownCondition) {
             for(;;) {
@@ -250,7 +250,7 @@ public class ServerInventoryImpl implements ServerInventory {
                 }
             }
         }
-        startServer(serverName, domainModel, blocking);
+        startServer(serverName, domainModel, blocking, suspend);
         return determineServerStatus(serverName);
     }
 
@@ -290,7 +290,7 @@ public class ServerInventoryImpl implements ServerInventory {
         }
         if(running) {
             if(!stopping) {
-                 server.reconnectServerProcess(createBootFactory(serverName, domainModel));
+                 server.reconnectServerProcess(createBootFactory(serverName, domainModel, false));
             } else {
                  server.setServerProcessStopping();
             }
@@ -303,7 +303,7 @@ public class ServerInventoryImpl implements ServerInventory {
     }
 
     @Override
-    public ServerStatus reloadServer(final String serverName, final boolean blocking) {
+    public ServerStatus reloadServer(final String serverName, final boolean blocking, boolean suspend) {
         if (shutdown || connectionFinished) {
             throw HostControllerLogger.ROOT_LOGGER.hostAlreadyShutdown();
         }
@@ -311,7 +311,7 @@ public class ServerInventoryImpl implements ServerInventory {
         if (server == null) {
             return ServerStatus.STOPPED;
         }
-        if (server.reload(CurrentOperationIdHolder.getCurrentOperationID())) {
+        if (server.reload(CurrentOperationIdHolder.getCurrentOperationID(), suspend)) {
             // Reload with current permit
             if (blocking) {
                 server.awaitState(ManagedServer.InternalState.SERVER_STARTED);
@@ -749,10 +749,10 @@ public class ServerInventoryImpl implements ServerInventory {
         return new ManagedServer(hostControllerName, serverName, authKey, processControllerClient, managementURI, target);
     }
 
-    private ManagedServerBootCmdFactory createBootFactory(final String serverName, final ModelNode domainModel) {
+    private ManagedServerBootCmdFactory createBootFactory(final String serverName, final ModelNode domainModel, boolean suspend) {
         final String hostControllerName = domainController.getLocalHostInfo().getLocalHostName();
         final ModelNode hostModel = domainModel.require(HOST).require(hostControllerName);
-        return new ManagedServerBootCmdFactory(serverName, domainModel, hostModel, environment, domainController.getExpressionResolver());
+        return new ManagedServerBootCmdFactory(serverName, domainModel, hostModel, environment, domainController.getExpressionResolver(), suspend);
     }
 
     @Override
