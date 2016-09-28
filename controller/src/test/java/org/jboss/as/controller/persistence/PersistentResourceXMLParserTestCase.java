@@ -408,6 +408,32 @@ public class PersistentResourceXMLParserTestCase {
         Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
     }
 
+
+    @Test
+    public void testComplexAttributesStuff() throws Exception {
+        CoreParser parser = new CoreParser();
+
+        String xml = readResource("core-subsystem.xml");
+        StringReader strReader = new StringReader(xml);
+
+        XMLMapper mapper = XMLMapper.Factory.create();
+        mapper.registerRootElement(new QName("urn:jboss:domain:core:1.0", "subsystem"), parser);
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StreamSource(strReader));
+        List<ModelNode> operations = new ArrayList<>();
+        mapper.parseDocument(operations, reader);
+
+        Assert.assertEquals(2, operations.size());
+        ModelNode subsystem = opsToModel(operations);
+
+        StringWriter stringWriter = new StringWriter();
+        XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter));
+        SubsystemMarshallingContext context = new SubsystemMarshallingContext(subsystem, xmlStreamWriter);
+        mapper.deparseDocument(parser, context, xmlStreamWriter);
+        String out = stringWriter.toString();
+        Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
+    }
+
     private ModelNode opsToModel(List<ModelNode> operations) {
         ModelNode subsystem = new ModelNode();
 
@@ -694,9 +720,9 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+            return builder(SUBSYSTEM_ROOT_INSTANCE.getPathElement(), NAMESPACE)
                     .addChild(
-                            builder(RESOURCE_INSTANCE)
+                            builder(RESOURCE_INSTANCE.getPathElement())
                                     .setXmlWrapperElement("resources")
                                     .addAttributes(
                                             // cluster group
@@ -715,7 +741,7 @@ public class PersistentResourceXMLParserTestCase {
                                     )
                     )
                     .addChild(
-                            builder(BUFFER_CACHE_INSTANCE)
+                            builder(BUFFER_CACHE_INSTANCE.getPathElement())
                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
                                     .addAttribute(COMPLEX_MAP2)
@@ -729,9 +755,9 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+            return builder(SUBSYSTEM_ROOT_INSTANCE.getPathElement(), NAMESPACE)
                     .addChild(
-                            builder(RESOURCE_INSTANCE)
+                            builder(RESOURCE_INSTANCE.getPathElement())
                                     .addAttributes(
                                             // cluster group
                                             clusterAttr1,
@@ -747,7 +773,7 @@ public class PersistentResourceXMLParserTestCase {
                                     )
                     )
                     .addChild(
-                            builder(BUFFER_CACHE_INSTANCE)
+                            builder(BUFFER_CACHE_INSTANCE.getPathElement())
                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
                     )
@@ -760,9 +786,9 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+            return builder(SUBSYSTEM_ROOT_INSTANCE.getPathElement(), NAMESPACE)
                     .addChild(
-                            builder(SERVER_INSTANCE)
+                            builder(SERVER_INSTANCE.getPathElement())
                                     .addAttributes(SECURITY_ENABLED, STATISTICS_ENABLED)
                                     .addAttribute(INTERCEPTORS)
                                     .addAttribute(COMPLEX_LIST)
@@ -770,7 +796,7 @@ public class PersistentResourceXMLParserTestCase {
                                     .addAttribute(PROPERTIES)
                                     .addAttribute(COMPLEX_MAP3)
                                     .addChild(
-                                            builder(BUFFER_CACHE_INSTANCE)
+                                            builder(BUFFER_CACHE_INSTANCE.getPathElement())
                                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
                                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
                                     )
@@ -783,7 +809,7 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+            return builder(SUBSYSTEM_ROOT_INSTANCE.getPathElement(), NAMESPACE)
                     .addAttributes(clusterAttr1)
                     .build();
         }
@@ -793,13 +819,13 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(SUBSYSTEM_ROOT_INSTANCE, NAMESPACE)
+            return builder(SUBSYSTEM_ROOT_INSTANCE.getPathElement(), NAMESPACE)
                     .addChild(
-                            builder(SESSION_INSTANCE)
+                            builder(SESSION_INSTANCE.getPathElement())
                                     .setNameAttributeName("session-name") //custom name attribute for session resources
                                     .addAttributes(MAX_REGIONS, WRAPPED_PROPERTIES)
                                     .addChild(
-                                            builder(CUSTOM_SERVER_INSTANCE)
+                                            builder(CUSTOM_SERVER_INSTANCE.getPathElement())
                                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, PROPERTIES)
                                                     .setXmlElementName("custom-server")
                                     )
@@ -812,7 +838,7 @@ public class PersistentResourceXMLParserTestCase {
 
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
-            return builder(IIOPRootDefinition.INSTANCE, "urn:jboss:domain:orb-test:1.0")
+            return builder(IIOPRootDefinition.INSTANCE.getPathElement(), "urn:jboss:domain:orb-test:1.0")
                     .addAttributes(IIOPRootDefinition.ALL_ATTRIBUTES.toArray(new AttributeDefinition[0]))
                     .build();
         }
@@ -1139,5 +1165,67 @@ public class PersistentResourceXMLParserTestCase {
 
     }
 
+    private static final String CLASS = "class";
+    private static final String MODULE = "module";
+    public static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder("properties", true)
+            .setAllowExpression(true)
+            .build();
 
+    public static final ObjectTypeAttributeDefinition PROCESS_STATE_LISTENER = ObjectTypeAttributeDefinition.Builder.of("process-state-listener",
+            SimpleAttributeDefinitionBuilder.create(CLASS, ModelType.STRING, false)
+                    .setAllowExpression(false)
+                    .build(),
+            SimpleAttributeDefinitionBuilder.create(MODULE, ModelType.STRING, false)
+                    .setAllowExpression(false)
+                    .build(),
+            PROPERTIES)
+            .setRestartAllServices()
+            .setAllowNull(true)
+            .build();
+
+    public static final AttributeDefinition PROCESS_STATE_LISTENERS = ObjectListAttributeDefinition.Builder.of("listeners", PROCESS_STATE_LISTENER)
+            .setAllowNull(false)
+            .setRuntimeServiceNotRequired()
+            .build();
+
+
+    static final PersistentResourceDefinition SERVICE_PROCESS_RESOURCE = new PersistentResourceDefinition(PathElement.pathElement("service"), new NonResolvingResourceDescriptionResolver()) {
+        @Override
+        public Collection<AttributeDefinition> getAttributes() {
+            Collection<AttributeDefinition> attributes = new ArrayList<>();
+            attributes.add(PROCESS_STATE_LISTENERS);
+            return attributes;
+        }
+    };
+
+    protected static final PathElement PROCESS_SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, "process");
+
+    PersistentResourceDefinition PROCESS_SUBSYSTEM_ROOT_INSTANCE = new PersistentResourceDefinition(PROCESS_SUBSYSTEM_PATH, new NonResolvingResourceDescriptionResolver()) {
+
+              @Override
+              public Collection<AttributeDefinition> getAttributes() {
+                  return Collections.emptyList();
+              }
+
+              @Override
+              protected List<? extends PersistentResourceDefinition> getChildren() {
+                  List<PersistentResourceDefinition> children = new ArrayList<>();
+                  children.add(SERVICE_PROCESS_RESOURCE);
+                  return children;
+              }
+          };
+
+    private static class CoreParser extends PersistentResourceXMLParser {
+
+        protected static final String NAMESPACE = "urn:jboss:domain:core:1.0";
+
+
+
+        @Override
+        public PersistentResourceXMLDescription getParserDescription() {
+            return PersistentResourceXMLDescription.builder(PROCESS_SUBSYSTEM_PATH, NAMESPACE)
+                    .addChild(builder(SERVICE_PROCESS_RESOURCE.getPathElement()).addAttribute(PROCESS_STATE_LISTENERS))
+                    .build();
+        }
+    }
 }
