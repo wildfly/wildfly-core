@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2015, Red Hat, Inc., and individual contributors as indicated
+ * Copyright 2016, Red Hat, Inc., and individual contributors as indicated
  * by the @authors tag.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +30,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
@@ -48,6 +49,8 @@ import org.jboss.dmr.ModelType;
  */
 public class CapabilityRegistryResourceDefinition extends SimpleResourceDefinition {
 
+    private static final SimpleListAttributeDefinition DEPENDENT_ADDRESS = new SimpleListAttributeDefinition.
+            Builder("dependent-address", new SimpleAttributeDefinition("parameter", ModelType.PROPERTY, false)).build();
 
     private static final SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING)
             .setAllowNull(false)
@@ -87,6 +90,14 @@ public class CapabilityRegistryResourceDefinition extends SimpleResourceDefiniti
             .setRuntimeOnly()
             .setReplyParameters(CAPABILITY)
             .build();
+    private static final OperationDefinition SUGGEST_CAPABILITIES = new SimpleOperationDefinitionBuilder("suggest-capabilities", ServerDescriptions.getResourceDescriptionResolver("core", CAPABILITY_REGISTRY))
+            .addParameter(NAME)
+            .addParameter(DEPENDENT_ADDRESS)
+            .setReadOnly()
+            .setRuntimeOnly()
+            .setReplyType(ModelType.LIST)
+            .setReplyValueType(ModelType.STRING)
+            .build();
 
     private final ImmutableCapabilityRegistry capabilityRegistry;
 
@@ -115,7 +126,7 @@ public class CapabilityRegistryResourceDefinition extends SimpleResourceDefiniti
         }
     }
 
-    private static void populateCapabilities(Set<CapabilityRegistration> caps, ModelNode res, boolean possible) {
+    private static void populateCapabilities(Set<CapabilityRegistration<?>> caps, ModelNode res, boolean possible) {
         for (CapabilityRegistration cr : caps) {
             ModelNode cap = res.add();
             cap.get(NAME.getName()).set(cr.getCapabilityName());
@@ -158,6 +169,19 @@ public class CapabilityRegistryResourceDefinition extends SimpleResourceDefiniti
             if (reg!=null) {
                 ModelNode result = context.getResult();
                 populateCapabilityRegistration(reg, result);
+            }
+        });
+
+        resourceRegistration.registerOperationHandler(SUGGEST_CAPABILITIES, (context, operation) -> {
+            final String name = NAME.resolveModelAttribute(context, operation).asString();
+            PathAddress address = PathAddress.pathAddress(DEPENDENT_ADDRESS.
+                    resolveModelAttribute(context, operation));
+            CapabilityScope dependentScope = CapabilityScope.Factory.
+                create(context.getProcessType(),
+                        address);
+            Set<String> capabilities = capabilityRegistry.getDynamicCapabilityNames(name, dependentScope);
+            for(String capability : capabilities) {
+                context.getResult().add(capability);
             }
         });
     }

@@ -30,6 +30,7 @@ import java.util.List;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.DefaultCompleter;
+import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -42,7 +43,7 @@ public class AttributeTypeDescrValueCompleter extends DefaultCompleter {
 
     private static final List<String> BOOLEAN = Arrays.asList(new String[]{"false", "true"});
 
-    public AttributeTypeDescrValueCompleter(final ModelNode attrDescr) {
+    public AttributeTypeDescrValueCompleter(final ModelNode attrDescr, OperationRequestAddress address) {
         super(new CandidatesProvider(){
 
             @Override
@@ -61,6 +62,9 @@ public class AttributeTypeDescrValueCompleter extends DefaultCompleter {
                         }
                         return values;
                     }
+                } else if (attrDescr.has(Util.CAPABILITY_REFERENCE)) {
+                    return CapabilityReferenceCompleter.getCapabilityNames(ctx, address,
+                            attrDescr.get(Util.CAPABILITY_REFERENCE).asString());
                 }
                 return Collections.emptyList();
             }});

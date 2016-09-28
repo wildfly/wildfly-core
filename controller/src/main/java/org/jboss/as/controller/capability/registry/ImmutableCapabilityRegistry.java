@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2015, Red Hat, Inc., and individual contributors as indicated
+ * Copyright 2016, Red Hat, Inc., and individual contributors as indicated
  * by the @authors tag.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,14 +61,14 @@ public interface ImmutableCapabilityRegistry {
      *
      * @return read only {@link Set} with all runtime capabilities and where ware they registered
      */
-    Set<CapabilityRegistration> getCapabilities();
+    Set<CapabilityRegistration<?>> getCapabilities();
 
     /**
      * Returns set of possible capabilities with there registration points registered in the registry
      *
      * @return read only {@link Set} with all possible capabilities and where ware they registered
      */
-    Set<CapabilityRegistration> getPossibleCapabilities();
+    Set<CapabilityRegistration<?>> getPossibleCapabilities();
 
     /**
      * Gets the name of the service provided by the capability, if there is one.
@@ -99,5 +99,14 @@ public interface ImmutableCapabilityRegistry {
      * @param capabilityId id of capability with its scope.
      * @return CapabilityRegistration or null if none is found
      */
-    CapabilityRegistration getCapability(CapabilityId capabilityId);
+    CapabilityRegistration<?> getCapability(CapabilityId capabilityId);
+
+    /**
+     * Retrieve all the capability names that the passed scope can access
+     * @param referencedCapability The static name of the capability
+     * @param dependentScope The scope from which the capability is referenced
+     * @return A set of capabilities name. Only the dynamic part of the name is returned
+     */
+    Set<String> getDynamicCapabilityNames(String referencedCapability,
+            CapabilityScope dependentScope);
 }
