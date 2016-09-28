@@ -63,11 +63,11 @@ import org.jboss.as.test.integration.management.rbac.RbacAdminCallbackHandler;
 import org.jboss.as.test.integration.management.rbac.RbacUtil;
 import org.jboss.as.test.integration.management.rbac.UserRolesMappingServerSetupTask;
 import org.jboss.dmr.ModelNode;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 import org.wildfly.test.jmx.JMXServiceDeploymentSetupTask;
 
 /**

@@ -51,11 +51,11 @@ import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfig
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 
 /**
  * Test of migration of the domain controller from one host to another.
