@@ -448,6 +448,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             if (lastEnteredState == null) {
                 if (propDescr.has(Util.TYPE)) {
                     ModelNode mt = propDescr.get(Util.TYPE);
+                    // Can be a Map or a complex type ruled by value-type.
                     if (typeEquals(mt, ModelType.OBJECT)) {
                         return Collections.singletonList("{");
                     } else if (typeEquals(mt, ModelType.LIST)) {
