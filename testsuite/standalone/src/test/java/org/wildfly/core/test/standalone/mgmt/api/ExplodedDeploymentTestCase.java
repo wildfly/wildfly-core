@@ -27,6 +27,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
+import static org.jboss.as.repository.PathUtil.deleteRecursively;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -50,7 +51,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -102,7 +102,7 @@ public class ExplodedDeploymentTestCase {
     }
 
     @AfterClass
-    public static void cleanFiles() {
+    public static void cleanFiles() throws IOException {
         String jbossBaseDir = System.getProperty("jboss.home");
         Assert.assertNotNull(jbossBaseDir);
         Path dataDir = new File(jbossBaseDir).toPath().resolve("standalone").resolve("data");
@@ -120,7 +120,7 @@ public class ExplodedDeploymentTestCase {
 
             @Override
             public void initialDeploy() throws IOException {
-                try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()){
+                try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()) {
                     Future<?> future = manager.execute(manager.newDeploymentPlan()
                             .add("test-deployment.jar", is)
                             .explodeDeployment("test-deployment.jar")
@@ -133,7 +133,7 @@ public class ExplodedDeploymentTestCase {
             @Override
             public void addContent() throws IOException {
                 String content = "";
-                try (StringWriter writer = new StringWriter()){
+                try (StringWriter writer = new StringWriter()) {
                     properties2.store(writer, "New Content");
                     content = writer.toString();
                 }
@@ -149,7 +149,7 @@ public class ExplodedDeploymentTestCase {
             @Override
             public void replaceContent() throws IOException {
                 String content = "";
-                try (StringWriter writer = new StringWriter()){
+                try (StringWriter writer = new StringWriter()) {
                     properties3.store(writer, "Replace Content");
                     content = writer.toString();
                 }
@@ -234,7 +234,7 @@ public class ExplodedDeploymentTestCase {
                 ModelNode op = new ModelNode();
                 op.get(OP).set(ClientConstants.DEPLOYMENT_BROWSE_CONTENT_OPERATION);
                 op.get(OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
-                if(path != null && !path.isEmpty()) {
+                if (path != null && !path.isEmpty()) {
                     op.get(PATH).set(path);
                 }
                 Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
@@ -242,12 +242,12 @@ public class ExplodedDeploymentTestCase {
                     ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
                     Assert.assertTrue(Operations.isSuccessfulOutcome(response));
                     List<ModelNode> contents = Operations.readResult(response).asList();
-                    for(ModelNode content : contents) {
+                    for (ModelNode content : contents) {
                         Assert.assertTrue(content.hasDefined("path"));
                         String contentPath = content.get("path").asString();
                         Assert.assertTrue(content.asString() + " isn't expected", expectedContents.contains(contentPath));
                         Assert.assertTrue(content.hasDefined("directory"));
-                        if(! content.get("directory").asBoolean()) {
+                        if (!content.get("directory").asBoolean()) {
                             Assert.assertTrue(content.hasDefined("file-size"));
                         }
                         expectedContents.remove(contentPath);
@@ -265,7 +265,6 @@ public class ExplodedDeploymentTestCase {
 
         });
     }
-
 
     @Test
     public void testEmptyDeployment() throws Exception {
@@ -294,7 +293,7 @@ public class ExplodedDeploymentTestCase {
             @Override
             public void addContent() throws IOException {
                 String content = "";
-                try (StringWriter writer = new StringWriter()){
+                try (StringWriter writer = new StringWriter()) {
                     properties2.store(writer, "New Content");
                     content = writer.toString();
                 }
@@ -310,7 +309,7 @@ public class ExplodedDeploymentTestCase {
             @Override
             public void replaceContent() throws IOException {
                 String content = "";
-                try (StringWriter writer = new StringWriter()){
+                try (StringWriter writer = new StringWriter()) {
                     properties3.store(writer, "Replace Content");
                     content = writer.toString();
                 }
@@ -394,7 +393,7 @@ public class ExplodedDeploymentTestCase {
                 ModelNode op = new ModelNode();
                 op.get(OP).set(ClientConstants.DEPLOYMENT_BROWSE_CONTENT_OPERATION);
                 op.get(OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
-                if(path != null && !path.isEmpty()) {
+                if (path != null && !path.isEmpty()) {
                     op.get(PATH).set(path);
                 }
                 Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
@@ -402,12 +401,12 @@ public class ExplodedDeploymentTestCase {
                     ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
                     Assert.assertTrue(Operations.isSuccessfulOutcome(response));
                     List<ModelNode> contents = Operations.readResult(response).asList();
-                    for(ModelNode content : contents) {
+                    for (ModelNode content : contents) {
                         Assert.assertTrue(content.hasDefined("path"));
                         String contentPath = content.get("path").asString();
                         Assert.assertTrue(content.asString() + " isn't expected", expectedContents.contains(contentPath));
                         Assert.assertTrue(content.hasDefined("directory"));
-                        if(! content.get("directory").asBoolean()) {
+                        if (!content.get("directory").asBoolean()) {
                             Assert.assertTrue(content.hasDefined("file-size"));
                         }
                         expectedContents.remove(contentPath);
@@ -523,18 +522,6 @@ public class ExplodedDeploymentTestCase {
             throw new RuntimeException(e);
         }
 
-    }
-
-    private static void deleteRecursively(Path toClean) {
-        try {
-            if (Files.exists(toClean) && Files.isDirectory(toClean)) {
-                Stream<Path> files = Files.list(toClean);
-                files.forEach(child -> deleteRecursively(child));
-            }
-            Files.deleteIfExists(toClean);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
     }
 
     private interface ExplodedDeploymentExecutor {

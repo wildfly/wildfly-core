@@ -22,14 +22,20 @@
 
 package org.jboss.as.server.deploymentoverlay;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
-import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ParameterCorrector;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
@@ -42,8 +48,11 @@ import org.jboss.as.controller.operations.validation.MinMaxValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.DeploymentFileRepository;
+import org.jboss.as.repository.ExplodedContentException;
+import org.jboss.as.repository.TypedInputStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -70,17 +79,32 @@ public class DeploymentOverlayContentDefinition extends SimpleResourceDefinition
             .build();
 
     public static final SimpleAttributeDefinition CONTENT_ATTRIBUTE =
-            new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONTENT, ModelType.BYTES, false)
+            new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONTENT, ModelType.BYTES, true)
             .setValidator(new HashValidator(true))
             .build();
 
+     public static final SimpleAttributeDefinition STREAM_ATTRIBUTE =
+            SimpleAttributeDefinitionBuilder.create("stream", ModelType.STRING, true)
+                .setStorageRuntime()
+                .setRuntimeServiceNotRequired()
+                .build();
+
     private final ContentRepository contentRepository;
     private final OperationStepHandler addHandler;
-    private final SimpleOperationDefinition readContent;
+    private static final SimpleOperationDefinition READ_CONTENT_OP_DEFINITION =
+            new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.READ_CONTENT,
+                    ControllerResolver.getResolver(ModelDescriptionConstants.DEPLOYMENT_OVERLAY, ModelDescriptionConstants.CONTENT))
+            .setDeprecated(ModelVersion.create(5, 0, 0))
+            .build();
+    private static final SimpleOperationDefinition ADD_OP_DEFINITION =
+                new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD,
+                        ControllerResolver.getResolver(ModelDescriptionConstants.DEPLOYMENT_OVERLAY))
+                .setParameters(CONTENT_PARAMETER)
+                .build();
     private static final AttributeDefinition[] ATTRIBUTES = {CONTENT_ATTRIBUTE};
 
     public static AttributeDefinition[] attributes() {
-        return ATTRIBUTES.clone();
+        return  ATTRIBUTES.clone();
     }
 
     public DeploymentOverlayContentDefinition(final ContentRepository contentRepository, final DeploymentFileRepository remoteRepository) {
@@ -89,29 +113,23 @@ public class DeploymentOverlayContentDefinition extends SimpleResourceDefinition
                 null,
                 new DeploymentOverlayContentRemove(contentRepository));
         this.contentRepository = contentRepository;
-        readContent = new SimpleOperationDefinition(READ_CONTENT, getResourceDescriptionResolver());
-        //Will be registered in registerOperations()
         addHandler = new DeploymentOverlayContentAdd(contentRepository, remoteRepository);
     }
 
     @Override
     public void registerAttributes(final ManagementResourceRegistration resourceRegistration) {
+        super.registerAttributes(resourceRegistration);
         for (AttributeDefinition attr : ATTRIBUTES) {
             resourceRegistration.registerReadOnlyAttribute(attr, null);
         }
+        resourceRegistration.registerReadOnlyAttribute(STREAM_ATTRIBUTE, new DeploymentOverlayReadContentHandler(contentRepository));
     }
 
     @Override
     public void registerOperations(final ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        ReadContentHandler handler = new ReadContentHandler(contentRepository);
-        resourceRegistration.registerOperationHandler(readContent, handler);
-
-        OperationDefinition addDefinition =
-                new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, ControllerResolver.getResolver(ModelDescriptionConstants.DEPLOYMENT_OVERLAY))
-                        .setParameters(CONTENT_PARAMETER)
-                        .build();
-        resourceRegistration.registerOperationHandler(addDefinition, addHandler);
+        resourceRegistration.registerOperationHandler(READ_CONTENT_OP_DEFINITION, new ReadContentHandler(contentRepository));
+        resourceRegistration.registerOperationHandler(ADD_OP_DEFINITION, addHandler);
     }
 
     private static class HashValidator extends ModelTypeValidator implements MinMaxValidator {
@@ -145,4 +163,29 @@ public class DeploymentOverlayContentDefinition extends SimpleResourceDefinition
         }
     }
 
+    private static class DeploymentOverlayReadContentHandler implements OperationStepHandler {
+
+        protected final ContentRepository contentRepository;
+
+        public DeploymentOverlayReadContentHandler(final ContentRepository contentRepository) {
+            this.contentRepository = contentRepository;
+        }
+
+        @Override
+        public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+            Resource resource = context.getOriginalRootResource();
+            for (final PathElement element : address) {
+                resource = resource.getChild(element);
+            }
+            byte[] contentHash = resource.getModel().get(CONTENT).asBytes();
+            try {
+                TypedInputStream inputStream = contentRepository.readContent(contentHash, "");
+                String uuid = context.attachResultStream(inputStream.getContentType(), inputStream);
+                context.getResult().get(UUID).set(uuid);
+            } catch (ExplodedContentException ex) {
+                throw new RuntimeException(ex.getMessage(), ex);
+            }
+        }
+    }
 }
