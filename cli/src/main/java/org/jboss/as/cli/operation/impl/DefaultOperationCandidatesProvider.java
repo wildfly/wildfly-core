@@ -352,6 +352,10 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
                     if (attrDescr.has(Util.ALLOWED)) {
                         return getAllowedCompleter(prop);
                     }
+                    // Possibly a Map.
+                    if (typeNode.isDefined() && ModelType.OBJECT.equals(typeNode.asType())) {
+                        return new ValueTypeCompleter(attrDescr, address);
+                    }
                 } catch (IllegalArgumentException e) {
                     // TODO this means value-type describes a custom structure
                     return new ValueTypeCompleter(attrDescr, address);

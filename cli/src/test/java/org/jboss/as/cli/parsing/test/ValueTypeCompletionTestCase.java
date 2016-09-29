@@ -174,6 +174,11 @@ public class ValueTypeCompletionTestCase {
             + "                \"value-type\" => LIST"
             + "                }\n";
 
+    private static final String simple_map = "{\n"
+            + "                \"type\" => OBJECT,\n"
+            + "                \"value-type\" => STRING"
+            + "                }\n";
+
     private static final String elytron_simple_permission_mapper_add = "{\n" +
 "                \"type\" => LIST,\n" +
 "                \"description\" => \"The defined permission mappings.\",\n" +
@@ -1410,5 +1415,18 @@ public class ValueTypeCompletionTestCase {
                 + "prop1_2={}},prop2={}}", 0, candidates);
         assertEquals(Arrays.asList(), candidates);
         assertEquals(i, -1);
+    }
+
+    @Test
+    public void testMap() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(simple_map);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<>();
+
+        int i;
+        i = new ValueTypeCompleter(propDescr).complete(null, "", 0, candidates);
+        assertEquals(Arrays.asList("{"), candidates);
+        assertEquals(i, 0);
     }
 }
