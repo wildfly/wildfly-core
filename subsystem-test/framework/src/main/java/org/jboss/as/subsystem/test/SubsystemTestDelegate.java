@@ -88,8 +88,8 @@ import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
 import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
+import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
 import org.jboss.as.model.test.ChildFirstClassLoaderBuilder;
 import org.jboss.as.model.test.EAPRepositoryReachableUtil;
 import org.jboss.as.model.test.ModelFixer;
@@ -107,6 +107,7 @@ import org.jboss.as.subsystem.bridge.local.ScopedKernelServicesBootstrap;
 import org.jboss.as.subsystem.test.ModelDescriptionValidator.ValidationConfiguration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.filter.ClassFilter;
+import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -556,7 +557,7 @@ final class SubsystemTestDelegate {
             ExtensionParsingContext epc = clone.getExtensionParsingContext(extension, null);
             for (Map.Entry<String, SubsystemInformation> entry : extensionParsingRegistry.getAvailableSubsystems(extension).entrySet()) {
                 for (String namespace : entry.getValue().getXMLNamespaces()) {
-                    epc.setSubsystemXmlMapping(entry.getKey(), namespace, null);
+                    epc.setSubsystemXmlMapping(entry.getKey(), namespace, (XMLElementReader) null);
                 }
             }
         }

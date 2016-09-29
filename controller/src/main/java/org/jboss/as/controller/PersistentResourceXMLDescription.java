@@ -35,14 +35,14 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 public final class PersistentResourceXMLDescription {
 
     protected final PathElement pathElement;
-    protected final String xmlElementName;
-    protected final String xmlWrapperElement;
-    protected final LinkedHashMap<String, LinkedHashMap<String, AttributeDefinition>> attributesByGroup;
+    private final String xmlElementName;
+    private final String xmlWrapperElement;
+    private final LinkedHashMap<String, LinkedHashMap<String, AttributeDefinition>> attributesByGroup;
     protected final List<PersistentResourceXMLDescription> children;
-    protected final Map<String, AttributeDefinition> attributeElements = new HashMap<>();
-    protected final boolean useValueAsElementName;
-    protected final boolean noAddOperation;
-    protected final AdditionalOperationsGenerator additionalOperationsGenerator;
+    private final Map<String, AttributeDefinition> attributeElements = new HashMap<>();
+    private final boolean useValueAsElementName;
+    private final boolean noAddOperation;
+    private final AdditionalOperationsGenerator additionalOperationsGenerator;
     private boolean flushRequired = true;
     private boolean childAlreadyRead = false;
     private final Map<String, AttributeParser> attributeParsers;
@@ -65,7 +65,7 @@ public final class PersistentResourceXMLDescription {
         this.namespaceURI = builder.namespaceURI;
         if (useElementsForGroups) {
             // Ensure we have a map for the default group even if there are no attributes so we don't NPE later
-            this.attributesByGroup.put(null, new LinkedHashMap<String, AttributeDefinition>());
+            this.attributesByGroup.put(null, new LinkedHashMap<>());
             this.attributeGroups = new HashSet<>();
             // Segregate attributes by group
             for (AttributeDefinition ad : builder.attributeList) {
@@ -93,9 +93,10 @@ public final class PersistentResourceXMLDescription {
             this.attributeGroups = null;
         }
         this.children = new ArrayList<>();
-        for (PersistentResourceXMLBuilder b : builder.children) {
+        for (PersistentResourceXMLBuilder b : builder.childrenBuilders) {
             this.children.add(b.build());
         }
+        builder.children.forEach(this.children::add);
         this.useValueAsElementName = builder.useValueAsElementName;
         this.noAddOperation = builder.noAddOperation;
         this.additionalOperationsGenerator = builder.additionalOperationsGenerator;
@@ -417,7 +418,18 @@ public final class PersistentResourceXMLDescription {
     @SuppressWarnings("deprecation")
     @Deprecated
     public static PersistentResourceXMLBuilder builder(PersistentResourceDefinition resource) {
-        return new PersistentResourceXMLBuilder(resource);
+        return new PersistentResourceXMLBuilder(resource.getPathElement());
+    }
+
+    /**
+     * @param resource resource for which path we are creating builder
+     * @return PersistentResourceXMLBuilder
+     * @deprecated please use {@linkplain PersistentResourceXMLBuilder(PathElement, String)} variant
+     */
+    @SuppressWarnings("deprecation")
+    @Deprecated
+    public static PersistentResourceXMLBuilder builder(ResourceDefinition resource) {
+        return new PersistentResourceXMLBuilder(resource.getPathElement());
     }
 
     /**
@@ -430,7 +442,7 @@ public final class PersistentResourceXMLDescription {
     @SuppressWarnings("deprecation")
     @Deprecated
     public static PersistentResourceXMLBuilder builder(PersistentResourceDefinition resource, String namespaceURI) {
-        return new PersistentResourceXMLBuilder(resource, namespaceURI);
+        return new PersistentResourceXMLBuilder(resource.getPathElement(), namespaceURI);
     }
 
     /**
@@ -453,55 +465,42 @@ public final class PersistentResourceXMLDescription {
         return new PersistentResourceXMLBuilder(pathElement, namespaceURI);
     }
 
-    public static class PersistentResourceXMLBuilder {
+    public static final class PersistentResourceXMLBuilder {
         protected final PathElement pathElement;
         private final String namespaceURI;
-        protected String xmlElementName;
-        protected String xmlWrapperElement;
-        protected boolean useValueAsElementName;
-        protected boolean noAddOperation;
-        protected AdditionalOperationsGenerator additionalOperationsGenerator;
-        protected final LinkedList<AttributeDefinition> attributeList = new LinkedList<>();
-        protected final List<PersistentResourceXMLBuilder> children = new ArrayList<>();
-        protected final LinkedHashMap<String, AttributeParser> attributeParsers = new LinkedHashMap<>();
-        protected final LinkedHashMap<String, AttributeMarshaller> attributeMarshallers = new LinkedHashMap<>();
-        protected boolean useElementsForGroups = true;
-        protected String forcedName;
+        private String xmlElementName;
+        private String xmlWrapperElement;
+        private boolean useValueAsElementName;
+        private boolean noAddOperation;
+        private AdditionalOperationsGenerator additionalOperationsGenerator;
+        private final LinkedList<AttributeDefinition> attributeList = new LinkedList<>();
+        private final List<PersistentResourceXMLBuilder> childrenBuilders = new ArrayList<>();
+        private final List<PersistentResourceXMLDescription> children = new ArrayList<>();
+        private final LinkedHashMap<String, AttributeParser> attributeParsers = new LinkedHashMap<>();
+        private final LinkedHashMap<String, AttributeMarshaller> attributeMarshallers = new LinkedHashMap<>();
+        private boolean useElementsForGroups = true;
+        private String forcedName;
         private boolean marshallDefaultValues = false;
         private String nameAttributeName = NAME;
 
-        /**
-         * @deprecated please use {@link PersistentResourceXMLBuilder(PathElement) } instead
-         * @param resourceDefinition for which xml build is constructed
-         */
-        @Deprecated
-        protected PersistentResourceXMLBuilder(final PersistentResourceDefinition resourceDefinition) {
-            this(resourceDefinition.getPathElement());
-        }
-
-        /**
-         * @param resourceDefinition for which xml build is constructed
-         * @param namespaceURI namespace for which we create this resource, usually only useful for top level resources
-         * @deprecated please use {@link PersistentResourceXMLBuilder(PathElement, String) } instead
-         */
-        @Deprecated
-        protected PersistentResourceXMLBuilder(final PersistentResourceDefinition resourceDefinition, String namespaceURI) {
-            this(resourceDefinition.getPathElement(), namespaceURI);
-        }
-
-        protected PersistentResourceXMLBuilder(final PathElement pathElement) {
+        private PersistentResourceXMLBuilder(final PathElement pathElement) {
             this.pathElement = pathElement;
             this.namespaceURI = null;
             this.xmlElementName = pathElement.isWildcard() ? pathElement.getKey() : pathElement.getValue();
         }
 
-        protected PersistentResourceXMLBuilder(final PathElement pathElement, String namespaceURI) {
+        private PersistentResourceXMLBuilder(final PathElement pathElement, String namespaceURI) {
             this.pathElement = pathElement;
             this.namespaceURI = namespaceURI;
             this.xmlElementName = pathElement.isWildcard() ? pathElement.getKey() : pathElement.getValue();
         }
 
         public PersistentResourceXMLBuilder addChild(PersistentResourceXMLBuilder builder) {
+            this.childrenBuilders.add(builder);
+            return this;
+        }
+
+        public PersistentResourceXMLBuilder addChild(PersistentResourceXMLDescription builder) {
             this.children.add(builder);
             return this;
         }
