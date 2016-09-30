@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -42,6 +42,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 public class ModuleConfigImpl implements ModuleConfig {
 
     static final String DEPENDENCIES = "dependencies";
+    static final String EXPORT = "export";
     static final String MAIN_CLASS = "main-class";
     static final String MODULE = "module";
     static final String MODULE_NS = "urn:jboss:module:1.1";

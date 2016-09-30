@@ -7,6 +7,7 @@ SYNOPSIS
                [--absolute-resources=list_of_jars] [--resource-delimiter=delimiter]
                (--module-xml=file_path |
                 ([--dependencies=list_of_module_names]
+                 [--export-dependencies=list_of_module_names]
                  [--properties=list_of_properties]
                  [--main-class=fully_qualified_class_name]])
                )
@@ -81,6 +82,14 @@ ARGUMENTS
  --dependencies  - (used with add, optional) a comma-separated list of module
                    names the module being added depends on. NOTE: In non-interactive
                    mode this list must be surrounded by square brackets, e.g. [dep1,dep2].
+                   NOTE: this argument makes sense only when the module.xml file
+                   is generated, i.e. when the --module-xml argument isn't
+                   specified.
+
+ --export-dependencies  - (used with add, optional) a comma-separated list of module
+                   names the module being added depends on and exports.
+                   NOTE: In non-interactive mode this list must be surrounded by 
+                   square brackets, e.g. [dep1,dep2].
                    NOTE: this argument makes sense only when the module.xml file
                    is generated, i.e. when the --module-xml argument isn't
                    specified.
