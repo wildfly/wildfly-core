@@ -188,7 +188,7 @@ public class BasicOperationsUnitTestCase {
         result = managementClient.getControllerClient().execute(operation);
         assertTrue(result.toJSONString(true), Operations.isSuccessfulOutcome(result));
         assertTrue(result.toJSONString(true), result.hasDefined(RESULT));
-        assertTrue(result.toJSONString(true), Operations.readResult(result).get("content-dir").get("used-space").asDouble() == 0.0D);
+        assertTrue(result.toJSONString(true), Operations.readResult(result).get("content-dir").get("used-space").asDouble() >= 0.0D);
         assertTrue(result.toJSONString(true), Operations.readResult(result).get("content-dir").get("last-modified").isDefined());
         assertTrue(result.toJSONString(true), Operations.readResult(result).get("content-dir").get("creation-time").isDefined());
         assertTrue(result.toJSONString(true), Operations.readResult(result).get("content-dir").get("resolved-path").isDefined());
@@ -204,7 +204,6 @@ public class BasicOperationsUnitTestCase {
         assertTrue(result.toJSONString(true), Operations.readResult(result).get("log-dir").get("last-modified").isDefined());
         assertTrue(result.toJSONString(true), Operations.readResult(result).get("log-dir").get("creation-time").isDefined());
         assertTrue(result.toJSONString(true), Operations.readResult(result).get("log-dir").get("resolved-path").isDefined());
-
     }
 
     @Test
