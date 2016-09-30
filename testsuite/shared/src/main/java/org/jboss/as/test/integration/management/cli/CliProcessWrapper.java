@@ -26,6 +26,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.fail;
 
@@ -85,7 +86,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
         cliProcess = createProcess();
         new Thread(new CliResultsReader(cliProcess.getInputStream())).start();
         new Thread(new CliResultsReader(cliProcess.getErrorStream())).start();
-        bufferedWriter = new BufferedWriter(new OutputStreamWriter(cliProcess.getOutputStream()));
+        bufferedWriter = new BufferedWriter(new OutputStreamWriter(cliProcess.getOutputStream(), StandardCharsets.UTF_8));
 
         return waitForPrompt(prompt);
     }
@@ -301,7 +302,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
 
         @Override
         public void run() {
-            try(java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(cliStream))){
+            try(java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(cliStream, StandardCharsets.UTF_8))){
                 int intCharacter = 0;
                 Character character;
                 // While the next character is a valid character and isn't null

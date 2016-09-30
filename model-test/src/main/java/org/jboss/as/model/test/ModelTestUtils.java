@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -79,11 +80,10 @@ public class ModelTestUtils {
      * @throws IOException
      */
     public static String readResource(final Class<?> clazz, final String name) throws IOException {
-
         URL configURL = clazz.getResource(name);
         Assert.assertNotNull(name + " url is null", configURL);
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(configURL.openStream()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(configURL.openStream(), StandardCharsets.UTF_8));
         StringWriter writer = new StringWriter();
         try {
             String line;

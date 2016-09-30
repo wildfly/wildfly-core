@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -257,7 +258,7 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
             }
             try (
                     final InputStream in = (tail ? new LifoFileInputStream(file) : Files.newInputStream(file.toPath()));
-                    final InputStreamReader isr = (encoding == null ? new InputStreamReader(in) : new InputStreamReader(in, encoding));
+                    final InputStreamReader isr = (encoding == null ? new InputStreamReader(in, StandardCharsets.UTF_8) : new InputStreamReader(in, encoding));
                     final BufferedReader reader = new BufferedReader(isr)
             ) {
                 int lineCount = 0;

@@ -2,6 +2,7 @@ package org.jboss.as.test.patching.util.module;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -84,7 +85,7 @@ public class Module {
     public File writeToDisk(File baseDir) throws IOException {
         File mainDir = IoUtils.mkdir(baseDir, (name + "." + slot).split("\\."));
         File moduleXml = PatchingTestUtil.touch(mainDir, "module.xml");
-        PatchingTestUtil.dump(moduleXml, generateXml().getBytes());
+        PatchingTestUtil.dump(moduleXml, generateXml().getBytes(StandardCharsets.UTF_8));
         for (ResourceItem resourceRoot : resourceRoots) {
             File f = PatchingTestUtil.touch(mainDir, resourceRoot.getItemName());
             PatchingTestUtil.dump(f, resourceRoot.getContent());

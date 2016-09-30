@@ -29,7 +29,8 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Set;
 
 import javax.security.auth.callback.Callback;
@@ -134,12 +135,7 @@ public class PropertiesAuthenticationDigestedTestCase extends SecurityRealmTestB
         }
 
         UsernamePasswordHashUtil uph = new UsernamePasswordHashUtil();
-        PrintWriter pw = new PrintWriter(propertiesFile);
-        try {
-            pw.println(TEST_USERNAME + "=" + uph.generateHashedHexURP(TEST_USERNAME, TEST_REALM, TEST_PASSWORD.toCharArray()));
-        } finally {
-            pw.close();
-        }
+        Files.write(propertiesFile.toPath(), (TEST_USERNAME + "=" + uph.generateHashedHexURP(TEST_USERNAME, TEST_REALM, TEST_PASSWORD.toCharArray())).getBytes(StandardCharsets.UTF_8));
 
         builder.authentication().property().setPath(propertiesFile.getAbsolutePath()).build().build();
     }

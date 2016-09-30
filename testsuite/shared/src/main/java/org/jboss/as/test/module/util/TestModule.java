@@ -22,14 +22,15 @@
 package org.jboss.as.test.module.util;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -306,8 +307,7 @@ public class TestModule {
     }
 
     private void generateModuleXml(File mainDirectory) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(new File(mainDirectory, "module.xml")));
-        try {
+        try (Writer writer = Files.newBufferedWriter(new File(mainDirectory, "module.xml").toPath(), StandardCharsets.UTF_8)){
             writer.write("<module xmlns=\"urn:jboss:module:1.1\" name=\"" + moduleName + "\">");
             writer.write("<resources>");
             for (JavaArchive jar : resources) {
@@ -320,8 +320,6 @@ public class TestModule {
             }
             writer.write("</dependencies>");
             writer.write("</module>");
-        } finally {
-            writer.close();
         }
     }
 

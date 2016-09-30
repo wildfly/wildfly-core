@@ -37,6 +37,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
@@ -149,18 +150,18 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         String moduleAName = "org.a.module-a";
         Module moduleA = new Module.Builder(moduleAName)
                 .resourceRoot(new ResourceItem(jarA.getName(), jarABytes))
-                .miscFile(new ResourceItem("resource-a", "resource a in the module".getBytes()))
+                .miscFile(new ResourceItem("resource-a", "resource a in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
         File moduleADir = moduleA.writeToDisk(new File(MODULES_PATH));
 
         String moduleBName = "org.b.module-b";
         Module moduleB = new Module.Builder(moduleBName)
                 .resourceRoot(new ResourceItem(jarB.getName(), jarBBytes))
-                .miscFile(new ResourceItem("resource-b", "resource b in the module".getBytes()))
+                .miscFile(new ResourceItem("resource-b", "resource b in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
         File moduleBDir = moduleB.writeToDisk(new File(MODULES_PATH));
 
-        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource a one-off".getBytes())).build();
+        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource a one-off".getBytes(StandardCharsets.UTF_8))).build();
         // create the patch with the updated module
         ContentModification moduleAModified = ContentModificationUtils.modifyModule(patchDir, patchElement1Id, HashUtils.hashFile(moduleADir), moduleA);
 
@@ -188,7 +189,7 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         final String patchElement2Id = randomString();
         patchDir = mkdir(tempDir, patchID);
 
-        moduleB = new Module.Builder(moduleBName).miscFile(new ResourceItem("resource-b", "resource b cp".getBytes())).build();
+        moduleB = new Module.Builder(moduleBName).miscFile(new ResourceItem("resource-b", "resource b cp".getBytes(StandardCharsets.UTF_8))).build();
         // create the patch with the updated module
         ContentModification moduleBModified = ContentModificationUtils.modifyModule(patchDir, patchElement2Id, HashUtils.hashFile(moduleBDir), moduleB);
 
@@ -238,17 +239,17 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         String moduleAName = "org.a.module-a";
         Module moduleA = new Module.Builder(moduleAName)
                 .resourceRoot(new ResourceItem(jarA.getName(), jarABytes))
-                .miscFile(new ResourceItem("resource-a", "resource a in the module".getBytes()))
+                .miscFile(new ResourceItem("resource-a", "resource a in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
         File moduleADir = moduleA.writeToDisk(new File(MODULES_PATH));
         String moduleBName = "org.b.module-b";
         Module moduleB = new Module.Builder(moduleBName)
                 .resourceRoot(new ResourceItem(jarB.getName(), jarBBytes))
-                .miscFile(new ResourceItem("resource-b", "resource b in the module".getBytes()))
+                .miscFile(new ResourceItem("resource-b", "resource b in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
         File moduleBDir = moduleB.writeToDisk(new File(MODULES_PATH));
 
-        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource cp1".getBytes())).build();
+        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource cp1".getBytes(StandardCharsets.UTF_8))).build();
         // create the patch with the updated module
         ContentModification moduleAModified = ContentModificationUtils.modifyModule(patchDir, patchElement1Id, HashUtils.hashFile(moduleADir), moduleA);
 
@@ -276,7 +277,7 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         final String patchElement2Id = randomString();
         patchDir = mkdir(tempDir, patchID);
 
-        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource oneoff1".getBytes())).build();
+        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource oneoff1".getBytes(StandardCharsets.UTF_8))).build();
         // create the patch with the updated module
         moduleAModified = ContentModificationUtils.modifyModule(patchDir, patchElement2Id, moduleAModified.getItem().getContentHash(), moduleA);
 
@@ -302,7 +303,7 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         final String patchElement3Id = randomString();
         patchDir = mkdir(tempDir, patchID);
 
-        moduleB = new Module.Builder(moduleBName).miscFile(new ResourceItem("resource-b", "resource b cp".getBytes())).build();
+        moduleB = new Module.Builder(moduleBName).miscFile(new ResourceItem("resource-b", "resource b cp".getBytes(StandardCharsets.UTF_8))).build();
         // create the patch with the updated module
         ContentModification moduleBModified = ContentModificationUtils.modifyModule(patchDir, patchElement3Id, HashUtils.hashFile(moduleBDir), moduleB);
 
@@ -357,11 +358,11 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         String moduleAName = "org.a.module-a";
         Module moduleA = new Module.Builder(moduleAName)
                 .resourceRoot(new ResourceItem(jarA.getName(), jarABytes))
-                .miscFile(new ResourceItem("resource-a", "resource a in the module".getBytes()))
+                .miscFile(new ResourceItem("resource-a", "resource a in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
         File moduleADir = moduleA.writeToDisk(new File(MODULES_PATH));
 
-        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource cp1".getBytes())).build();
+        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource cp1".getBytes(StandardCharsets.UTF_8))).build();
         // create the patch with the updated module
         ContentModification moduleAModified = ContentModificationUtils.modifyModule(patchDir, patchElement1Id, HashUtils.hashFile(moduleADir), moduleA);
 
@@ -389,7 +390,7 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         final String patchElement2Id = randomString();
         patchDir = mkdir(tempDir, patchID);
 
-        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource oneoff1".getBytes())).build();
+        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource oneoff1".getBytes(StandardCharsets.UTF_8))).build();
         // create the patch with the updated module
         moduleAModified = ContentModificationUtils.modifyModule(patchDir, patchElement2Id, moduleAModified.getItem().getContentHash(), moduleA);
 
@@ -415,7 +416,7 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         final String patchElement3Id = randomString();
         patchDir = mkdir(tempDir, patchID);
 
-        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource oneoff1".getBytes())).build();
+        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource oneoff1".getBytes(StandardCharsets.UTF_8))).build();
         // create the patch with the updated module
         moduleAModified = ContentModificationUtils.modifyModule(patchDir, patchElement3Id, moduleAModified.getItem().getContentHash(), moduleA);
 
@@ -440,7 +441,7 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         final String patchElement4Id = randomString();
         patchDir = mkdir(tempDir, patchID);
 
-        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource oneoff2".getBytes())).build();
+        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource oneoff2".getBytes(StandardCharsets.UTF_8))).build();
         // create the patch with the updated module
         moduleAModified = ContentModificationUtils.modifyModule(patchDir, patchElement4Id, moduleAModified.getItem().getContentHash(), moduleA);
 
@@ -499,23 +500,23 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         final String moduleAName = "org.a.module-a";
         Module moduleA = new Module.Builder(moduleAName)
                 .resourceRoot(new ResourceItem(jarA.getName(), jarABytes))
-                .miscFile(new ResourceItem("resource-a", "resource a in the module".getBytes()))
+                .miscFile(new ResourceItem("resource-a", "resource a in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
         final File moduleADir = moduleA.writeToDisk(new File(MODULES_PATH));
         final String moduleBName = "org.b.module-b";
         Module moduleB = new Module.Builder(moduleBName)
                 .resourceRoot(new ResourceItem(jarB.getName(), jarBBytes))
-                .miscFile(new ResourceItem("resource-b", "resource b in the module".getBytes()))
+                .miscFile(new ResourceItem("resource-b", "resource b in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
         final File moduleBDir = moduleB.writeToDisk(new File(MODULES_PATH));
         final String moduleCName = "org.c.module-c";
         Module moduleC = new Module.Builder(moduleCName)
                 .resourceRoot(new ResourceItem(jarC.getName(), jarCBytes))
-                .miscFile(new ResourceItem("resource-c", "resource c in the module".getBytes()))
+                .miscFile(new ResourceItem("resource-c", "resource c in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
         File moduleCDir = moduleC.writeToDisk(new File(MODULES_PATH));
 
-        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource cp1".getBytes())).build();
+        moduleA = new Module.Builder(moduleAName).miscFile(new ResourceItem("resource-a", "resource cp1".getBytes(StandardCharsets.UTF_8))).build();
         final ContentModification moduleAModified = ContentModificationUtils.modifyModule(patchDir, patchElement1Id, HashUtils.hashFile(moduleADir), moduleA);
 
         Patch patch = PatchBuilder.create()
@@ -542,7 +543,7 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         final String patchElement2Id = randomString();
         patchDir = mkdir(tempDir, patchID);
 
-        moduleB = new Module.Builder(moduleBName).miscFile(new ResourceItem("resource-b", "resource oneoff1".getBytes())).build();
+        moduleB = new Module.Builder(moduleBName).miscFile(new ResourceItem("resource-b", "resource oneoff1".getBytes(StandardCharsets.UTF_8))).build();
         final ContentModification moduleBModified = ContentModificationUtils.modifyModule(patchDir, patchElement2Id, HashUtils.hashFile(moduleBDir), moduleB);
 
         patch = PatchBuilder.create()
@@ -567,7 +568,7 @@ public class CPRollingbackOneOffTestCase extends AbstractPatchingTestCase {
         final String patchElement3Id = randomString();
         patchDir = mkdir(tempDir, patchID);
 
-        moduleC = new Module.Builder(moduleCName).miscFile(new ResourceItem("resource-c", "resource c cp".getBytes())).build();
+        moduleC = new Module.Builder(moduleCName).miscFile(new ResourceItem("resource-c", "resource c cp".getBytes(StandardCharsets.UTF_8))).build();
         final ContentModification moduleCModified = ContentModificationUtils.modifyModule(patchDir, patchElement3Id, HashUtils.hashFile(moduleCDir), moduleC);
 
         patch = PatchBuilder.create()

@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileLock;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.jboss.as.controller.OperationContext;
@@ -59,7 +60,7 @@ public class ConfigurationPersistence implements Configurator, LogContextConfigu
     private static final Object LOCK = new Object();
     private static final String PROPERTIES_FILE = "logging.properties";
     private static final byte[] NOTE_MESSAGE = String.format("# Note this file has been generated and will be overwritten if a%n" +
-            "# logging subsystem has been defined in the XML configuration.%n%n").getBytes();
+            "# logging subsystem has been defined in the XML configuration.%n%n").getBytes(StandardCharsets.UTF_8);
     private final PropertyConfigurator config;
     private final LogContextConfiguration delegate;
 

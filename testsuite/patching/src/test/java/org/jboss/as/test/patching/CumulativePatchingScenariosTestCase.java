@@ -14,6 +14,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
 import static org.jboss.as.test.patching.PatchingTestUtil.readFile;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -67,8 +68,8 @@ public class CumulativePatchingScenariosTestCase extends AbstractPatchingTestCas
 
         final String moduleName = "org.wildfly.test." + randomString();
 
-        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes());
-        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes());
+        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes(StandardCharsets.UTF_8));
+        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes(StandardCharsets.UTF_8));
 
         Module newModule = new Module.Builder(moduleName)
                 .miscFile(resourceItem1)
@@ -96,8 +97,8 @@ public class CumulativePatchingScenariosTestCase extends AbstractPatchingTestCas
 
         final String moduleName = "org.wildfly.test." + randomString();
 
-        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes());
-        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes());
+        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes(StandardCharsets.UTF_8));
+        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes(StandardCharsets.UTF_8));
 
         // Also see if we can update jboss-modules
         final File installation = new File(AS_DISTRIBUTION);

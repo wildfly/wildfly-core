@@ -35,6 +35,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.createPatchXMLFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -245,6 +246,6 @@ public class RemotePatchInfoPatchIdUnitTestCase extends AbstractPatchingTestCase
         bytesOs.reset();
         ctx.handle(line);
         controller.stop();
-        return new String(bytesOs.toByteArray());
+        return new String(bytesOs.toByteArray(), StandardCharsets.UTF_8);
     }
 }

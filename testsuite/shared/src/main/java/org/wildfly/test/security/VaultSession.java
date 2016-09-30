@@ -153,11 +153,11 @@ public final class VaultSession {
         SecretKeyFactory factory = SecretKeyFactory.getInstance(VAULT_ENC_ALGORITHM);
 
         char[] password = "somearbitrarycrazystringthatdoesnotmatter".toCharArray();
-        PBEParameterSpec cipherSpec = new PBEParameterSpec(salt.getBytes(), iterationCount);
+        PBEParameterSpec cipherSpec = new PBEParameterSpec(salt.getBytes(StandardCharsets.UTF_8), iterationCount);
         PBEKeySpec keySpec = new PBEKeySpec(password);
         SecretKey cipherKey = factory.generateSecret(keySpec);
 
-        String maskedPass = PBEUtils.encode64(keystorePassword.getBytes(), VAULT_ENC_ALGORITHM, cipherKey, cipherSpec);
+        String maskedPass = PBEUtils.encode64(keystorePassword.getBytes(StandardCharsets.UTF_8), VAULT_ENC_ALGORITHM, cipherKey, cipherSpec);
 
         return PicketBoxSecurityVault.PASS_MASK_PREFIX + maskedPass;
     }

@@ -21,10 +21,12 @@
  */
 package org.jboss.as.cli.handlers.batch;
 
+
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import org.jboss.as.cli.Attachments;
 
@@ -175,7 +177,7 @@ public class BatchRunHandler extends BaseOperationCommand {
 
             BufferedReader reader = null;
             try {
-                reader = new BufferedReader(new FileReader(f));
+                reader = Files.newBufferedReader(f.toPath(), StandardCharsets.UTF_8);
                 String line = reader.readLine();
                 batchManager.activateNewBatch();
                 while(line != null) {

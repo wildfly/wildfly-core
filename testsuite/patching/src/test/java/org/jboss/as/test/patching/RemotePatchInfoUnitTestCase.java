@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +136,7 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
 
         handle("patch info --verbose");
         final ByteArrayInputStream bis = new ByteArrayInputStream(bytesOs.toByteArray());
-        final InputStreamReader reader = new InputStreamReader(bis);
+        final InputStreamReader reader = new InputStreamReader(bis, StandardCharsets.UTF_8);
         final BufferedReader buf = new BufferedReader(reader);
         try {
             table = CLIPatchInfoUtil.parseTable(buf);
@@ -291,7 +292,7 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
         bytesOs.reset();
         ctx.handle(line);
         controller.stop();
-        return new String(bytesOs.toByteArray());
+        return new String(bytesOs.toByteArray(), StandardCharsets.UTF_8);
     }
 
     private static String descriptionFor(String patchId) {

@@ -25,10 +25,11 @@ package org.jboss.as.cli.handlers;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -658,7 +659,7 @@ public class DeployHandler extends DeploymentHandler {
 
                 BufferedReader reader = null;
                 try {
-                    reader = new BufferedReader(new FileReader(scriptFile));
+                    reader = Files.newBufferedReader(scriptFile.toPath(), StandardCharsets.UTF_8);
                     String line = reader.readLine();
                     while (!ctx.isTerminated() && line != null) {
                         ctx.handle(line);

@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
@@ -36,7 +37,7 @@ public class FileUtils {
             StringBuilder builder = new StringBuilder();
             int read = -1;
             while ((read = stream.read(buff)) != -1) {
-                builder.append(new String(buff, 0, read));
+                builder.append(new String(buff, 0, read, StandardCharsets.UTF_8));
             }
             return builder.toString();
         } catch (IOException e) {

@@ -29,6 +29,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import javax.xml.stream.XMLStreamException;
 
@@ -82,7 +83,7 @@ public class PatchXmlUnitTestCase {
         final StringBuilder buf = new StringBuilder();
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new InputStreamReader(is));
+            reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             String line = reader.readLine();
             final String newLine = System.getProperty("line.separator");
             while(line != null) {

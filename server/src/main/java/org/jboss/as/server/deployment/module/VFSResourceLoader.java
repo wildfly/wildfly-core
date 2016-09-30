@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deployment.module;
 
+import static java.security.AccessController.doPrivileged;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +31,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
@@ -61,8 +64,6 @@ import org.jboss.vfs.VirtualFilePermission;
 import org.jboss.vfs.VisitorAttributes;
 import org.jboss.vfs.util.FilterVirtualFileVisitor;
 import org.wildfly.security.manager.WildFlySecurityManager;
-
-import static java.security.AccessController.doPrivileged;
 
 /**
  * Resource loader capable of loading resources from VFS archives.
@@ -224,7 +225,7 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
         final VirtualFile indexFile = VFS.getChild(root.getPathName() + ".index");
         if (indexFile.exists()) {
             try {
-                final BufferedReader r = new BufferedReader(new InputStreamReader(indexFile.openStream()));
+                final BufferedReader r = new BufferedReader(new InputStreamReader(indexFile.openStream(), StandardCharsets.UTF_8));
                 try {
                     String s;
                     while ((s = r.readLine()) != null) {

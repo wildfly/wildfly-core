@@ -21,12 +21,20 @@
 */
 package org.jboss.as.test.integration.management.base;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
+import static org.jboss.as.test.integration.management.util.ModelUtil.createCompositeNode;
+import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
+
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,12 +62,6 @@ import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
-import static org.jboss.as.test.integration.management.util.ModelUtil.createCompositeNode;
-import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 
 /**
  * @author Dominik Pospisil <dpospisi@redhat.com>
@@ -197,14 +199,15 @@ public abstract class AbstractMgmtTestBase {
     }
 
     public static String readXmlResource(final String name) throws IOException {
-        File f = new File(name);
-        BufferedReader reader = new BufferedReader(new FileReader(f));
-        StringWriter writer = new StringWriter();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            writer.write(line);
+        Path f = Paths.get(name);
+        try (BufferedReader reader = Files.newBufferedReader(f, StandardCharsets.UTF_8);
+             StringWriter writer = new StringWriter()) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                writer.write(line);
+            }
+            return writer.toString();
         }
-        return writer.toString();
     }
 
     protected void takeSnapShot() throws Exception{

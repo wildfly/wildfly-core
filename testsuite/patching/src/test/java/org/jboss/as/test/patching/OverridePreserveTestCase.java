@@ -35,6 +35,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.dump;
 import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.patching.HashUtils;
 import org.jboss.as.patching.metadata.ContentModification;
@@ -394,7 +395,7 @@ public class OverridePreserveTestCase extends AbstractPatchingTestCase {
         File patchDir = mkdir(tempDir, patchID);
 
         Module updatedModule = new Module.Builder(moduleName)
-                .miscFile(new ResourceItem("res1", "new resource in the module".getBytes()))
+                .miscFile(new ResourceItem("res1", "new resource in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
 
         // create the patch with the updated module
