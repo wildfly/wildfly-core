@@ -192,6 +192,22 @@ public class AttachmentHandler extends BatchModeCommandHandler {
         headers.addRequiredPreceding(operation);
     }
 
+    @Override
+    protected void recognizeArguments(CommandContext ctx) throws CommandFormatException {
+        String act = getAction(ctx);
+        if (DISPLAY.equals(act)) {
+            if (targetFile.isPresent(ctx.getParsedCommandLine())) {
+                throw new CommandFormatException(targetFile.getFullName()
+                        + " can't be used with display action");
+            }
+            if (overwrite.isPresent(ctx.getParsedCommandLine())) {
+                throw new CommandFormatException(overwrite.getFullName()
+                        + " can't be used with display action");
+            }
+        }
+        super.recognizeArguments(ctx);
+    }
+
     private String getAction(CommandContext ctx) {
         final String originalLine = ctx.getParsedCommandLine().getOriginalLine();
         if (originalLine == null || originalLine.isEmpty()) {
@@ -302,14 +318,14 @@ public class AttachmentHandler extends BatchModeCommandHandler {
                             String num = name.substring(indexed + 1, name.length() - 1);
                             index = Integer.valueOf(num);
                             index += 1;
-                            name = name.substring(0, indexed);
                         } catch (NumberFormatException ex) {
                             // XXX OK, not a number.
                         }
                     } else {
                         index += 1;
                     }
-                    targetFile = new File(name + "(" + index + ")");
+                    targetFile = new File(targetFile.getAbsolutePath()
+                            + "(" + index + ")");
                 }
             } else {
                 index += 1;

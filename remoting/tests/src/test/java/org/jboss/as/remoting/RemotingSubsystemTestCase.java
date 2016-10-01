@@ -130,7 +130,7 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
         return new AdditionalInitialization() {
             @Override
             protected void setupController(ControllerInitializer controllerInitializer) {
-                controllerInitializer.addSocketBinding("remoting", 12345);
+                controllerInitializer.addSocketBinding("remoting", 27258);
                 controllerInitializer.addRemoteOutboundSocketBinding("dummy-outbound-socket", "localhost", 6799);
                 controllerInitializer.addRemoteOutboundSocketBinding("other-outbound-socket", "localhost", 1234);
             }

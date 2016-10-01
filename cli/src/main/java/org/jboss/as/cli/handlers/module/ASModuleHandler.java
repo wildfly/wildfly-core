@@ -42,6 +42,7 @@ import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.handlers.ModuleNameTabCompleter;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
@@ -128,30 +129,27 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         super("module", false);
 
         final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
-        final CommandLineCompleter moduleNameCompleter = new CommandLineCompleter() {
-            @Override
-            public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
-                String path = buffer.replace('.', File.separatorChar);
-                String modulesPath;
-                try {
-                    modulesPath = getModulesDir(ctx).getAbsolutePath() + File.separatorChar;
-                } catch (CommandLineException e) {
-                    return -1;
-                }
-                int result = pathCompleter.complete(ctx, modulesPath + path, cursor, candidates);
-                if(result < 0) {
-                    return result;
-                }
-                for(int i = 0; i < candidates.size(); ++i) {
-                    candidates.set(i, candidates.get(i).replace(File.separatorChar, '.'));
-                }
-                return result - modulesPath.length();
-            }
-        };
 
         moduleRootDir = new FileSystemPathArgument(this, pathCompleter, "--module-root-dir");
 
-        name = new ArgumentWithValue(this, moduleNameCompleter, "--name") {
+        name = new ArgumentWithValue(this, new CommandLineCompleter() {
+            @Override
+            public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
+                try {
+                    String currentAction = action.getValue(ctx.getParsedCommandLine());
+                    // suggest only modules from user's repository, not system modules
+                    final ModuleNameTabCompleter moduleNameCompleter = ModuleNameTabCompleter.completer(getModulesDir(ctx))
+                            .excludeNonModuleFolders(ACTION_REMOVE.equals(currentAction))
+                            .includeSystemModules(ACTION_ADD.equals(currentAction))
+                            .build();
+
+                    candidates.addAll(moduleNameCompleter.complete(buffer));
+                    return 0;
+                } catch (CommandLineException e) {
+                    return -1;
+                }
+            }
+        }, "--name") {
             @Override
             protected ParsingState initParsingState() {
                 final ExpressionBaseState state = new ExpressionBaseState("EXPR", true, false);
@@ -240,10 +238,24 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
             @Override
             public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
                 final int lastSeparator = buffer.lastIndexOf(MODULE_SEPARATOR);
-                if(lastSeparator >= 0) {
-                    return lastSeparator + 1 + moduleNameCompleter.complete(ctx, buffer.substring(lastSeparator + 1), cursor, candidates);
+
+                try {
+                    // any module (including system) can be a dependency
+                    final ModuleNameTabCompleter moduleNameCompleter = ModuleNameTabCompleter.completer(getModulesDir(ctx))
+                            .excludeNonModuleFolders(true)
+                            .includeSystemModules(true)
+                            .build();
+
+                    if (lastSeparator >= 0) {
+                        candidates.addAll(moduleNameCompleter.complete(buffer.substring(lastSeparator + 1)));
+                        return lastSeparator + 1;
+                    } else {
+                        candidates.addAll(moduleNameCompleter.complete(buffer));
+                        return 0;
+                    }
+                } catch (CommandLineException e) {
+                    return -1;
                 }
-                return moduleNameCompleter.complete(ctx, buffer, cursor, candidates);
             }});
         props = new AddModuleListArgument("--properties");
 

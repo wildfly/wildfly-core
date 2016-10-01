@@ -18,6 +18,8 @@
 
 package org.jboss.as.controller;
 
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static org.jboss.as.controller.AttributeParsers.ObjectParser.parseEmbeddedElement;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTY;
 import static org.jboss.as.controller.parsing.ParseUtils.requireAttributes;
 
@@ -26,7 +28,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -88,7 +89,7 @@ public interface AttributeParsers {
                     throw ParseUtils.unexpectedElement(reader, Collections.singleton(wrapper));
                 } else {
                     // allow empty properties list
-                    if (reader.nextTag() == XMLStreamConstants.END_ELEMENT) {
+                    if (reader.nextTag() == END_ELEMENT) {
                         return;
                     }
                 }
@@ -102,12 +103,12 @@ public interface AttributeParsers {
                     throw ParseUtils.unexpectedElement(reader, Collections.singleton(elementName));
                 }
 
-            } while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT && reader.getLocalName().equals(elementName));
+            } while (reader.hasNext() && reader.nextTag() != END_ELEMENT && reader.getLocalName().equals(elementName));
 
             if (wrapElement) {
                 // To exit the do loop either we hit an END_ELEMENT or a START_ELEMENT not for 'elementName'
                 // The latter means a bad document
-                if (reader.getEventType() != XMLStreamConstants.END_ELEMENT) {
+                if (reader.getEventType() != END_ELEMENT) {
                     throw ParseUtils.unexpectedElement(reader, Collections.singleton(elementName));
                 }
             }
@@ -180,7 +181,7 @@ public interface AttributeParsers {
             ParseUtils.requireAttributes(reader, keyAttributeName);
             String key = reader.getAttributeValue(null, keyAttributeName);
             ModelNode op = operation.get(attribute.getName(), key);
-            ObjectParser.parseEmbeddedElement(objectType, reader, op, keyAttributeName);
+            parseEmbeddedElement(objectType, reader, op, keyAttributeName);
             ParseUtils.requireNoContent(reader);
         }
     }
@@ -212,6 +213,11 @@ public interface AttributeParsers {
             Map<String, AttributeDefinition> attributes = Arrays.asList(valueTypes).stream()
                     .collect(Collectors.toMap(AttributeDefinition::getXmlName, Function.identity()));
 
+            Map<String, AttributeDefinition> attributeElements = Arrays.asList(valueTypes).stream()
+                                   .filter(attributeDefinition -> attributeDefinition.getParser().isParseAsElement())
+                                              .collect(Collectors.toMap(AttributeDefinition::getXmlName, Function.identity()));
+
+
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 String attributeName = reader.getAttributeLocalName(i);
                 String value = reader.getAttributeValue(i);
@@ -224,10 +230,51 @@ public interface AttributeParsers {
                     throw ParseUtils.unexpectedAttribute(reader, i, attributes.keySet());
                 }
             }
+            // Check if there are also element attributes inside a group
+            if (!attributeElements.isEmpty()) {
+                while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+                    String attrName = reader.getLocalName();
+                    if (attributeElements.containsKey(attrName)) {
+                        AttributeDefinition ad = attributeElements.get(reader.getLocalName());
+                        ad.getParser().parseElement(ad, reader, op);
+                    } else {
+                        throw ParseUtils.unexpectedElement(reader);
+                    }
+                }
+            }
 
         }
 
     }
+
+    static class ObjectListParser extends AttributeParser {
+           @Override
+           public boolean isParseAsElement() {
+               return true;
+           }
+
+           @Override
+           public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
+               assert attribute instanceof ObjectListAttributeDefinition;
+
+               ObjectListAttributeDefinition list = ((ObjectListAttributeDefinition) attribute);
+               ObjectTypeAttributeDefinition objectType = list.getValueType();
+
+
+               ModelNode listValue = new ModelNode();
+               listValue.setEmptyList();
+               while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+                   if (objectType.getXmlName().equals(reader.getLocalName())){
+                       ModelNode op = listValue.add();
+                       parseEmbeddedElement(objectType, reader, op);
+                   }else{
+                       throw ParseUtils.unexpectedElement(reader, Collections.singleton(objectType.getXmlName()));
+                   }
+                   ParseUtils.requireNoContent(reader);
+               }
+               operation.get(attribute.getName()).set(listValue);
+           }
+       };
 
 
     AttributeParser PROPERTIES_WRAPPED = new PropertiesParser();

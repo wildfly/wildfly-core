@@ -329,6 +329,7 @@ public class ExtensionRegistry {
                     profileReg.unregisterSubModel(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, subsystem));
                     if (deploymentsReg != null) {
                         deploymentsReg.unregisterSubModel(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, subsystem));
+                        deploymentsReg.unregisterSubModel(PathElement.pathElement(ModelDescriptionConstants.SUBDEPLOYMENT, subsystem));
                     }
 
                     if (extension.xmlMapper != null) {

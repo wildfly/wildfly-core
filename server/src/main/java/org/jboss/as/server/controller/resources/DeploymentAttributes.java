@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -276,7 +277,7 @@ public class DeploymentAttributes {
                             CONTENT_PATH,
                             CONTENT_RELATIVE_TO,
                             CONTENT_ARCHIVE)
-                            //.setValidator(new ContentTypeValidator())
+                            .setValidator(new ContentTypeValidator())
                             .build())
                     .setMinSize(1)
                     .setMaxSize(1)
@@ -289,11 +290,10 @@ public class DeploymentAttributes {
                         CONTENT_HASH,
                         CONTENT_BYTES,
                         CONTENT_URL,
-                        CONTENT_PATH,
-                        CONTENT_RELATIVE_TO,
                         TARGET_PATH)
-                     .build())
+                    .build())
                     .setMinSize(1)
+                    .setValidator(new ManagedContentTypeValidator(ModelDescriptionConstants.TARGET_PATH, ModelDescriptionConstants.OVERWRITE))
                     .setCorrector(ContentListCorrector.INSTANCE)
                     .build();
 
@@ -515,6 +515,9 @@ public class DeploymentAttributes {
         public void validateParameter(String parameterName, ModelNode contentItemNode) throws OperationFailedException {
             for (String key : contentItemNode.keys()){
                 boolean managedAttr = true;
+                if (CONTENT_ARCHIVE.equals(key)) {
+                    continue;
+                }
                 AttributeDefinition def = MANAGED_CONTENT_ATTRIBUTES.get(key);
                 if (def == null) {
                     def = UNMANAGED_CONTENT_ATTRIBUTES.get(key);
@@ -557,6 +560,51 @@ public class DeploymentAttributes {
                     }
                 } else {
                     throw ServerLogger.ROOT_LOGGER.unknownContentItemKey(key);
+                }
+            }
+        }
+    }
+
+    private static class ManagedContentTypeValidator extends ParametersValidator {
+        private final Set<String> ignoredParameters;
+
+        public ManagedContentTypeValidator(String ... ignoredParameters) {
+            this.ignoredParameters = new HashSet<>(Arrays.asList(ignoredParameters));
+        }
+
+        @Override
+        public void validateParameter(String parameterName, ModelNode contentItemNode) throws OperationFailedException {
+            for (String key : contentItemNode.keys()) {
+                if (ignoredParameters.contains(key)) {
+                    continue;
+                }
+                AttributeDefinition def = MANAGED_CONTENT_ATTRIBUTES.get(key);
+                if (def == null) {
+                    throw ServerLogger.ROOT_LOGGER.unknownContentItemKey(key);
+                }
+                def.validateOperation(contentItemNode);
+                if (contentItemNode.hasDefined(key)) {
+                    String[] alts = def.getAlternatives();
+                    if (alts != null && alts.length > 0) {
+                        for (String alt : alts) {
+                            if (contentItemNode.hasDefined(alt)) {
+                                throw ServerLogger.ROOT_LOGGER.cannotHaveMoreThanOneManagedContentItem(MANAGED_CONTENT_ATTRIBUTES.keySet());
+                            }
+                        }
+                    }
+                    String[] reqs = def.getRequires();
+                    if (reqs != null && reqs.length > 0) {
+                        boolean hasReq = false;
+                        for (String req : reqs) {
+                            if (contentItemNode.hasDefined(req)) {
+                                hasReq = true;
+                                break;
+                            }
+                        }
+                        if (!hasReq) {
+                            throw ServerLogger.ROOT_LOGGER.nullParameter(reqs[0]);
+                        }
+                    }
                 }
             }
         }

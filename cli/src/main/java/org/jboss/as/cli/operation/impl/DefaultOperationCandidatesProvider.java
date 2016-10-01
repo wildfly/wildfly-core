@@ -352,6 +352,10 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
                     if (attrDescr.has(Util.ALLOWED)) {
                         return getAllowedCompleter(prop);
                     }
+                    // Possibly a Map.
+                    if (typeNode.isDefined() && ModelType.OBJECT.equals(typeNode.asType())) {
+                        return new ValueTypeCompleter(attrDescr, address);
+                    }
                 } catch (IllegalArgumentException e) {
                     // TODO this means value-type describes a custom structure
                     return new ValueTypeCompleter(attrDescr, address);
@@ -365,6 +369,10 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
             }
             if (attrDescr.has(Util.ALLOWED)) {
                 return getAllowedCompleter(prop);
+            }
+            if (attrDescr.has(Util.CAPABILITY_REFERENCE)) {
+                return new CapabilityReferenceCompleter(address,
+                        attrDescr.get(Util.CAPABILITY_REFERENCE).asString());
             }
         }
         return propCompleter;
@@ -452,7 +460,7 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
                     return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
                 }
 
-                return new AttributeTypeDescrValueCompleter(attrDescr);
+                return new AttributeTypeDescrValueCompleter(attrDescr, address);
             }});
         addGlobalOpPropCompleter(Util.READ_OPERATION_DESCRIPTION, Util.NAME, new CommandLineCompleterFactory(){
             @Override

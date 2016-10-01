@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2015, Red Hat, Inc., and individual contributors as indicated
+ * Copyright 2016, Red Hat, Inc., and individual contributors as indicated
  * by the @authors tag.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,6 +47,6 @@ public interface PossibleCapabilityRegistry {
      * @return the capability that was removed, or {@code null} if no matching capability was registered or other
      * registration points for the capability still exist
      */
-    CapabilityRegistration removePossibleCapability(Capability capability, PathAddress registrationPoint);
+    CapabilityRegistration<?> removePossibleCapability(Capability capability, PathAddress registrationPoint);
 
 }

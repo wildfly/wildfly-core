@@ -25,6 +25,7 @@ package org.jboss.as.controller;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -679,12 +680,44 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         }
 
         /**
-         * set access constraint definitions for this resource
+         * Add possible capabilities for this resource to any that are already set.
+         * @param capabilities capabilities to register
+         * @return Parameters object
+         */
+        public Parameters addCapabilities(RuntimeCapability ... capabilities) {
+            if (this.capabilities == null) {
+                setCapabilities(capabilities);
+            } else if (capabilities != null && capabilities.length > 0) {
+                RuntimeCapability[] combo = Arrays.copyOf(this.capabilities, this.capabilities.length + capabilities.length);
+                System.arraycopy(capabilities, 0, combo, this.capabilities.length, capabilities.length);
+                setCapabilities(combo);
+            }
+            return this;
+        }
+
+        /**
+         * Set access constraint definitions for this resource
          * @param accessConstraints access constraint definitions for this resource
          * @return Parameters object
          */
         public Parameters setAccessConstraints(AccessConstraintDefinition ... accessConstraints){
             this.accessConstraints = accessConstraints;
+            return this;
+        }
+
+        /**
+         * Add access constraint definitions for this resource to any that are already set.
+         * @param accessConstraints access constraint definitions for this resource
+         * @return Parameters object
+         */
+        public Parameters addAccessConstraints(AccessConstraintDefinition ... accessConstraints) {
+            if (this.accessConstraints == null) {
+                setAccessConstraints(accessConstraints);
+            } else if (accessConstraints != null && accessConstraints.length > 0) {
+                AccessConstraintDefinition[] combo = Arrays.copyOf(this.accessConstraints, this.accessConstraints.length + accessConstraints.length);
+                System.arraycopy(accessConstraints, 0, combo, this.accessConstraints.length, accessConstraints.length);
+                setAccessConstraints(combo);
+            }
             return this;
         }
 
@@ -708,8 +741,46 @@ public class SimpleResourceDefinition implements ResourceDefinition {
             return this;
         }
 
+        /**
+         * Registers a set of capabilities that this resource does not directly provide but to which it contributes. This
+         * will only include capabilities for which this resource <strong>does not</strong> control the
+         * {@link ManagementResourceRegistration#registerCapability(RuntimeCapability) registration of the capability}.
+         * Any capabilities registered by this resource should instead be declared using {@link #setCapabilities(RuntimeCapability[])}.
+         * <p>
+         * Use of this method is only necessary if the caller wishes to specifically record capability incorporation,
+         * instead of relying on the default resolution mechanism detailed in
+         * {@link ManagementResourceRegistration#getIncorporatingCapabilities()}, or
+         * if it wishes disable the default resolution mechanism and specifically declare that this resource does not
+         * contribute to parent capabilities. It does the latter by passing an empty set as the {@code capabilities}
+         * parameter. Passing an empty set is not necessary if this resource itself directly
+         * {@link #setCapabilities(RuntimeCapability[]) provides a capability}, as it is the contract of
+         * {@link ManagementResourceRegistration#getIncorporatingCapabilities()} that in that case it must return an empty set.
+         *
+         * @param  incorporatingCapabilities set of capabilities, or {@code null} if default resolution of capabilities to which this
+         *                      resource contributes should be used; an empty set can be used to indicate this resource
+         *                      does not contribute to capabilities provided by its parent
+         *
+         * @return Parameters object
+         */
         public Parameters setIncorporatingCapabilities(Set<RuntimeCapability> incorporatingCapabilities) {
             this.incorporatingCapabilities = incorporatingCapabilities;
+            return this;
+        }
+
+        /**
+         * Adds incorporating capabilities to any that have already been set.
+         * @param incorporatingCapabilities capabilities to add
+         * @return Parameters object
+         */
+        public Parameters addIncorporatingCapabilities(Set<RuntimeCapability> incorporatingCapabilities) {
+            if (this.incorporatingCapabilities == null) {
+                setIncorporatingCapabilities(incorporatingCapabilities);
+            } else if (incorporatingCapabilities != null && !incorporatingCapabilities.isEmpty()) {
+                Set<RuntimeCapability> combo = new HashSet<>();
+                combo.addAll(this.incorporatingCapabilities);
+                combo.addAll(incorporatingCapabilities);
+                setIncorporatingCapabilities(combo);
+            }
             return this;
         }
     }

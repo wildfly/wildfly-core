@@ -18,12 +18,12 @@ package org.jboss.as.controller.management;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.State;
@@ -40,8 +40,8 @@ public abstract class ManagementInterfaceAddStepHandler extends AbstractAddStepH
 
     public static final OperationContext.AttachmentKey<Boolean> MANAGEMENT_INTERFACE_KEY = OperationContext.AttachmentKey.create(Boolean.class);
 
-    protected ManagementInterfaceAddStepHandler(final RuntimeCapability capability, final AttributeDefinition[] attributeDefinitions) {
-        super(capability, attributeDefinitions);
+    protected ManagementInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
+        super(attributeDefinitions);
     }
 
     protected ManagementInterfaceAddStepHandler() {

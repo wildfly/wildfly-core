@@ -23,9 +23,9 @@
 package org.jboss.as.controller.management;
 
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
-import static org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition.HTTP_MANAGEMENT_RUNTIME_CAPABILITY;
 
 import java.util.List;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -46,7 +46,7 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
     protected static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
 
     protected BaseHttpInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
-        super(HTTP_MANAGEMENT_RUNTIME_CAPABILITY, attributeDefinitions);
+        super(attributeDefinitions);
     }
 
     @Override

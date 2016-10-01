@@ -16,6 +16,7 @@
 package org.jboss.as.repository;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.CopyOption;
@@ -40,6 +41,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+
 import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
 
 /**
@@ -77,7 +79,7 @@ public class PathUtil {
 
             @Override
             public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                DeploymentRepositoryLogger.ROOT_LOGGER.errorf(exc, "Error copying file %s", file);
+                DeploymentRepositoryLogger.ROOT_LOGGER.cannotCopyFile(exc, file);
                 return FileVisitResult.CONTINUE;
             }
 
@@ -89,12 +91,26 @@ public class PathUtil {
     }
 
     /**
+     * Delete a path recursively, not throwing Exception if it fails or if the path is null.
+     * @param path a Path pointing to a file or a directory that may not exists anymore.
+     */
+    public static void deleteSilentlyRecursively(final Path path) {
+        if (path != null) {
+            try {
+                deleteRecursively(path);
+            } catch (IOException ioex) {
+                DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteFile(ioex, path);
+            }
+        }
+    }
+
+    /**
      * Delete a path recursively.
      * @param path a Path pointing to a file or a directory that may not exists anymore.
      * @throws IOException
      */
     public static void deleteRecursively(final Path path) throws IOException {
-        DeploymentRepositoryLogger.ROOT_LOGGER.infof("Deleting %s recursively", path);
+        DeploymentRepositoryLogger.ROOT_LOGGER.debugf("Deleting %s recursively", path);
         if (Files.exists(path)) {
             Files.walkFileTree(path, new FileVisitor<Path>() {
                 @Override
@@ -110,7 +126,7 @@ public class PathUtil {
 
                 @Override
                 public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                    DeploymentRepositoryLogger.ROOT_LOGGER.errorf(exc, "Error deleting file %s", file);
+                    DeploymentRepositoryLogger.ROOT_LOGGER.cannotDeleteFile(exc, path);
                     throw exc;
                 }
 
@@ -175,9 +191,12 @@ public class PathUtil {
      * @return the list of files / directory.
      * @throws IOException
      */
-    public static List<ContentRepositoryElement> listFiles(final Path rootPath, final ContentFilter filter) throws IOException {
+    public static List<ContentRepositoryElement> listFiles(final Path rootPath, Path tempDir, final ContentFilter filter) throws IOException {
         List<ContentRepositoryElement> result = new ArrayList<>();
         if (Files.exists(rootPath)) {
+            if(isArchive(rootPath)) {
+                return listZipContent(rootPath, filter);
+            }
             Files.walkFileTree(rootPath, new FileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -216,6 +235,38 @@ public class PathUtil {
                     return path.toString().replace(File.separatorChar, '/');
                 }
             });
+        } else {
+            Path file = getFile(rootPath);
+            if(isArchive(file)) {
+                Path relativePath = file.relativize(rootPath);
+                Path target = createTempDirectory(tempDir, "unarchive");
+                unzip(file, target);
+                return listFiles(target.resolve(relativePath), tempDir, filter);
+            } else {
+                throw new FileNotFoundException(rootPath.toString());
+            }
+        }
+        return result;
+    }
+
+    private static List<ContentRepositoryElement> listZipContent(final Path zipFilePath, final ContentFilter filter) throws IOException {
+        List<ContentRepositoryElement> result = new ArrayList<>();
+        try (final ZipFile zip = new ZipFile(zipFilePath.toFile())) {
+            final Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                final ZipEntry entry = entries.nextElement();
+                final String name = entry.getName();
+                Path entryPath = zipFilePath.resolve(name);
+                if (entry.isDirectory()) {
+                    if(filter.acceptDirectory(zipFilePath, entryPath)) {
+                        result.add(ContentRepositoryElement.createFolder(name));
+                    }
+                } else {
+                    if(filter.acceptFile(entryPath, entryPath)) {
+                        result.add(ContentRepositoryElement.createFile(name, entry.getSize()));
+                    }
+                }
+            }
         }
         return result;
     }
@@ -276,7 +327,7 @@ public class PathUtil {
      */
     public static Path createTempDirectory(Path dir, String prefix) throws IOException {
         try {
-            return Files.createTempDirectory(dir, prefix, PathUtil.readFileAttributes(dir));
+            return Files.createTempDirectory(dir, prefix);
         } catch (UnsupportedOperationException ex) {
         }
         return Files.createTempDirectory(dir, prefix);
@@ -296,7 +347,7 @@ public class PathUtil {
 
     private static void unzip(final ZipFile zip, final Path targetDir) throws IOException {
         final Enumeration<? extends ZipEntry> entries = zip.entries();
-        while(entries.hasMoreElements()) {
+        while (entries.hasMoreElements()) {
             final ZipEntry entry = entries.nextElement();
             final String name = entry.getName();
             final Path current = targetDir.resolve(name);
@@ -305,14 +356,18 @@ public class PathUtil {
                     Files.createDirectories(current);
                 }
             } else {
-                if (!Files.exists(current.getParent())) {
+                if (Files.notExists(current.getParent())) {
                     Files.createDirectories(current.getParent());
                 }
                 try (final InputStream eis = zip.getInputStream(entry)) {
                     Files.copy(eis, current);
                 }
             }
-            Files.getFileAttributeView(current, BasicFileAttributeView.class).setTimes(entry.getLastModifiedTime(), entry.getLastAccessTime(), entry.getCreationTime());
+            try {
+                Files.getFileAttributeView(current, BasicFileAttributeView.class).setTimes(entry.getLastModifiedTime(), entry.getLastAccessTime(), entry.getCreationTime());
+            } catch (IOException e) {
+                //ignore, if we cannot set it, world will not end
+            }
         }
     }
 
@@ -323,5 +378,36 @@ public class PathUtil {
             return fileName.substring(separator);
         }
         return "";
+    }
+
+    public static Path readFile(Path src, Path tempDir) throws IOException {
+        if(isFile(src)) {
+            return src;
+        } else {
+            Path file = getFile(src);
+            if(isArchive(file)) {
+                Path relativePath = file.relativize(src);
+                Path target = createTempDirectory(tempDir, "unarchive");
+                unzip(file, target);
+                return readFile(target.resolve(relativePath), tempDir);
+            } else {
+                throw new FileNotFoundException(src.toString());
+            }
+        }
+    }
+
+    private static Path getFile(Path src) throws FileNotFoundException {
+        if (src.getNameCount() > 1) {
+            Path parent = src.getParent();
+            if (isFile(parent)) {
+                return parent;
+            }
+            return getFile(parent);
+        }
+        throw new FileNotFoundException(src.toString());
+    }
+
+    private static boolean isFile(Path src) {
+        return Files.exists(src) && Files.isRegularFile(src);
     }
 }

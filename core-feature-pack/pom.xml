@@ -30,7 +30,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.0.Alpha8-SNAPSHOT</version>
+        <version>3.0.0.Alpha10-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-feature-pack</artifactId>
@@ -109,6 +109,11 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jul-to-slf4j-stub</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>commons-logging-jboss-logmanager</artifactId>
         </dependency>
 
         <dependency>
@@ -194,6 +199,11 @@
         <dependency>
             <groupId>org.wildfly.common</groupId>
             <artifactId>wildfly-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.openssl</groupId>
+            <artifactId>wildfly-openssl</artifactId>
         </dependency>
 
         <!-- Add this dependency to make sure that the core model is tested before we build the server -->

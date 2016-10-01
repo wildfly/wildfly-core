@@ -50,3 +50,6 @@ local-repo-eap
 #OS X index files
 .DS_Store
 testsuite-core/standalone/cli_output
+
+# Zanata files
+**/.zanata-cache/

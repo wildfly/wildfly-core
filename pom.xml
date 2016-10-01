@@ -26,12 +26,12 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>20</version>
+      <version>21</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>3.0.0.Alpha8-SNAPSHOT</version>
+    <version>3.0.0.Alpha10-SNAPSHOT</version>
 
     <name>WildFly: Core Parent Aggregator</name>
     <description>WildFly: Core Parent Aggregator</description>
@@ -81,7 +81,7 @@
 
         <version.commons-io>2.4</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>1.4.0.Final</version.io.undertow>
+        <version.io.undertow>1.4.3.Final</version.io.undertow>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
         <version.junit>4.12</version.junit>
         <version.log4j>1.2.16</version.log4j>
@@ -89,12 +89,12 @@
         <version.org.apache.httpcomponents.httpclient>4.5</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.1</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.maven>3.3.9</version.org.apache.maven>
-        <version.org.apache.xerces>2.11.0.SP4</version.org.apache.xerces>
+        <version.org.apache.xerces>2.11.0.SP5</version.org.apache.xerces>
         <version.org.codehaus.plexus.plexus-utils>3.0.21</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core-asl>4.4.1</version.org.codehaus.woodstox.woodstox-core-asl>
         <version.org.fusesource.jansi>1.11</version.org.fusesource.jansi>
-        <version.org.jboss.aesh>0.66.10</version.org.jboss.aesh>
+        <version.org.jboss.aesh>0.66.11</version.org.jboss.aesh>
         <version.org.jboss.byteman>3.0.3</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.1.2.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.5.0.Beta1</version.org.jboss.invocation>
@@ -103,13 +103,14 @@
         <version.org.jboss.jboss-vfs>3.2.12.Final</version.org.jboss.jboss-vfs>
         <version.org.jboss.logging.jboss-logging>3.3.0.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.logging.jboss-logging-tools>2.0.1.Final</version.org.jboss.logging.jboss-logging-tools>
+        <version.org.jboss.logmanager.commons-logging-jboss-logmanager>1.0.0.Final</version.org.jboss.logmanager.commons-logging-jboss-logmanager>
         <version.org.jboss.logmanager.jboss-logmanager>2.0.4.Final</version.org.jboss.logmanager.jboss-logmanager>
         <version.org.jboss.logmanager.log4j-jboss-logmanager>1.1.2.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
         <version.org.jboss.marshalling.jboss-marshalling>1.4.11.Final</version.org.jboss.marshalling.jboss-marshalling>
         <!-- this is test only dependancy -->
         <version.org.jboss.metadata.jboss-metadata-common>10.0.0.Final</version.org.jboss.metadata.jboss-metadata-common>
-        <version.org.jboss.modules.jboss-modules>1.6.0.Beta2</version.org.jboss.modules.jboss-modules>
-        <version.org.jboss.msc.jboss-msc>1.2.6.Final</version.org.jboss.msc.jboss-msc>
+        <version.org.jboss.modules.jboss-modules>1.6.0.Beta3</version.org.jboss.modules.jboss-modules>
+        <version.org.jboss.msc.jboss-msc>1.2.7.Final</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>5.0.0.Beta4</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>3.0.0.Alpha1</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.shrinkwrap.shrinkwrap>1.2.3</version.org.jboss.shrinkwrap.shrinkwrap>
@@ -132,12 +133,13 @@
         <version.org.wildfly.checkstyle-config>1.0.4.Final</version.org.wildfly.checkstyle-config>
         <version.org.wildfly.client.config>1.0.0.Beta1</version.org.wildfly.client.config>
         <version.org.wildfly.common>1.2.0.Beta1</version.org.wildfly.common>
+        <version.org.wildfly.openssl>1.0.0.Alpha1</version.org.wildfly.openssl>
         <version.org.wildfly.legacy.test>2.0.2.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.security.elytron>1.1.0.Beta9</version.org.wildfly.security.elytron>
-        <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta3</version.org.wildfly.security.elytron-web.undertow-server>
+        <version.org.wildfly.security.elytron>1.1.0.Beta10</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta4</version.org.wildfly.security.elytron-web.undertow-server>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
         <!-- Non-default maven plugin versions and configuration -->
-        <version.org.zanata.plugin>3.1.1</version.org.zanata.plugin>
+        <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
         <version.xml.plugin>1.0</version.xml.plugin>
 
         <!-- Modularized JDK support (various workarounds) - activated via profile -->
@@ -224,6 +226,8 @@
                  <srcDir>target/classes</srcDir>
                  <transDir>src/main/resources</transDir>
                  <includes>**/*.i18n.properties,**/LocalDescriptions.properties</includes>
+                 <!-- In previous versions, 3.8.0 and lower, this defaulted to true -->
+                 <copyTrans>true</copyTrans>
               </configuration>
             </plugin>
             <plugin>
@@ -249,6 +253,12 @@
                                 <JBossAS-Release-Codename>${wildfly.core.release.codename}</JBossAS-Release-Codename>
                             </manifestEntries>
                         </archive>
+                        <!-- Do not package the generated logging properties as the generated binaries will be packaged -->
+                        <!-- These files are not required at runtime -->
+                        <excludes>
+                            <exclude>**/*.i18n.properties</exclude>
+                            <exclude>**/*.i18n_*.properties</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1132,6 +1142,12 @@
 
             <dependency>
                 <groupId>org.jboss.logmanager</groupId>
+                <artifactId>commons-logging-jboss-logmanager</artifactId>
+                <version>${version.org.jboss.logmanager.commons-logging-jboss-logmanager}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.logmanager</groupId>
                 <artifactId>jboss-logmanager</artifactId>
                 <version>${version.org.jboss.logmanager.jboss-logmanager}</version>
             </dependency>
@@ -1323,12 +1339,6 @@
 
             <dependency>
                 <groupId>org.slf4j</groupId>
-                <artifactId>jcl-over-slf4j</artifactId>
-                <version>${version.org.slf4j}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${version.org.slf4j}</version>
             </dependency>
@@ -1391,6 +1401,12 @@
                         <artifactId>wildfly-security-manager</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl</artifactId>
+                <version>${version.org.wildfly.openssl}</version>
             </dependency>
 
             <dependency>
@@ -1493,7 +1509,11 @@
             </activation>
             <properties>
                 <!-- [WFCORE-1431] remove SASL workaround -->
-                <modular.jdk.args>-XaddExports:java.security.sasl/com.sun.security.sasl.digest=ALL-UNNAMED -XaddExports:java.security.sasl/com.sun.security.sasl=ALL-UNNAMED -XaddExports:jdk.unsupported/sun.reflect=ALL-UNNAMED -XaddExports:jdk.unsupported/sun.misc=ALL-UNNAMED</modular.jdk.args>
+                <modular.jdk.args>--add-exports java.security.sasl/com.sun.security.sasl.digest=ALL-UNNAMED
+                    --add-exports java.security.sasl/com.sun.security.sasl=ALL-UNNAMED
+                    --add-exports jdk.unsupported/sun.reflect=ALL-UNNAMED
+                    --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED
+                </modular.jdk.args>
                 <!-- [WFCORE-1494] remove JUL workaround -->
                 <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true</modular.jdk.props>
             </properties>
@@ -1507,7 +1527,7 @@
                                 <!-- fork is needed so compiler args can be used -->
                                 <fork>true</fork>
                                 <compilerArgs>
-                                    <arg>-J-addmods</arg>
+                                    <arg>-J--add-modules</arg>
                                     <arg>-Jjava.annotations.common</arg>
                                 </compilerArgs>
                             </configuration>

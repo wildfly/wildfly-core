@@ -192,15 +192,12 @@ public class BlockerExtension implements Extension {
                         context.addStep(new BlockStep(blockTime), OperationContext.Stage.RUNTIME);
                         break;
                     }
-                    case SERVICE_START:
-                    case SERVICE_STOP: {
+                    case SERVICE_START: {
                         context.addStep(new OperationStepHandler() {
                             @Override
                             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                                BlockingService service = new BlockingService(blockTime, blockPoint == BlockPoint.SERVICE_START);
-
+                                BlockingService service = new BlockingService(blockTime, true);
                                 context.getServiceTarget().addService(BlockingService.SERVICE_NAME, service).install();
-
                                 context.completeStep(new OperationContext.ResultHandler() {
                                     @Override
                                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
@@ -208,6 +205,18 @@ public class BlockerExtension implements Extension {
                                         context.removeService(BlockingService.SERVICE_NAME);
                                     }
                                 });
+                            }
+                        }, OperationContext.Stage.RUNTIME);
+                        break;
+                    }
+                    //This is used by PreparedResponseTestCase where we only add the service which will be stopped by stopping/reloading the server in the test.
+                    //This might not be the original intent of the BLockerExtension so be careful if you want to change it.
+                    case SERVICE_STOP: {
+                        context.addStep(new OperationStepHandler() {
+                            @Override
+                            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                                BlockingService service = new BlockingService(blockTime, false);
+                                context.getServiceTarget().addService(BlockingService.SERVICE_NAME, service).install();
                             }
                         }, OperationContext.Stage.RUNTIME);
                         break;
@@ -301,17 +310,23 @@ public class BlockerExtension implements Extension {
 //                Thread thread = new Thread(r);
 //                thread.start();
 //                context.asynchronous();
-            } else {
-                // Not yet used
-                throw new UnsupportedOperationException();
             }
         }
 
         @Override
         public void stop(final StopContext context) {
             if (!blockStart) {
-                // Not yet used
-                throw new UnsupportedOperationException();
+                try {
+                    synchronized (waitObject) {
+                        log.info("BlockService blocking in stop");
+                        waitObject.wait(blockTime);
+                    }
+                    context.complete();
+                } catch (InterruptedException e) {
+                    log.info("BlockService interrupted");
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
+                }
             } else {
                 synchronized (waitObject) {
                     log.info("BlockService Stopping");

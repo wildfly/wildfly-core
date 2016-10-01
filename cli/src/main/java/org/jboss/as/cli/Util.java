@@ -73,6 +73,8 @@ public class Util {
     public static final String BLOCKING_TIMEOUT = "blocking-timeout";
     public static final String BROWSE_CONTENT = "browse-content";
     public static final String BYTES = "bytes";
+    public static final String CAPABILITY_REFERENCE = "capability-reference";
+    public static final String CAPABILITY_REGISTRY = "capability-registry";
     public static final String CHILDREN = "children";
     public static final String CHILD_TYPE = "child-type";
     public static final String COMBINED_DESCRIPTIONS = "combined-descriptions";
@@ -1345,10 +1347,17 @@ public class Util {
                 if (!valueType.isDefined()) {
                     valueType = description;
                 }
-                for (String k : value.keys()) {
-                    if (value.get(k).isDefined()) {
-                        applyReplacements(k, value.get(k), valueType.get(k),
-                                valueType.get(k).get("type").asType(), attachments);
+
+                // If valueTypeType is an OBJECT, then we can consult the value-type.
+                // If valueTypeType is not an OBJECT, then we are facing a Map<String, X>
+                // where X is indicated by the valueTypeType enum value
+                ModelType valueTypeType = valueType.getType();
+                if (ModelType.OBJECT.equals(valueTypeType)) {
+                    for (String k : value.keys()) {
+                        if (value.get(k).isDefined()) {
+                            applyReplacements(k, value.get(k), valueType.get(k),
+                                    valueType.get(k).get("type").asType(), attachments);
+                        }
                     }
                 }
                 break;

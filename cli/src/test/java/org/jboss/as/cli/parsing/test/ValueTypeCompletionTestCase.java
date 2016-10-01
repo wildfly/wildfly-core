@@ -44,6 +44,205 @@ import org.junit.Test;
  */
 public class ValueTypeCompletionTestCase {
 
+    private static final String nested_objects = "{\n"
+            + "                \"type\" => OBJECT,\n"
+            + "                \"value-type\" => {\n"
+            + "                    \"prop1\" => {\n"
+            + "                        \"type\" => OBJECT,\n"
+            + "                        \"value-type\" => {\n"
+            + "                             \"prop1_1\" => {\n"
+            + "                                 \"type\" => OBJECT,\n"
+            + "                                 \"value-type\" => {\n"
+            + "                                      \"prop1_1_1\" => {\n"
+            + "                                         \"type\" => OBJECT,\n"
+            + "                                         \"value-type\" => {\n"
+            + "                                              \"prop1_1_1_1\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop1_1_1_2\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop1_1_1_3\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             }\n"
+            + "                                         }\n"
+            + "                                     },\n"
+            + "                                     \"prop1_1_2\" => {\n"
+            + "                                         \"type\" => OBJECT,\n"
+            + "                                         \"value-type\" => {\n"
+            + "                                              \"prop1_1_2_1\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop1_1_2_2\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop1_1_2_3\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             }\n"
+            + "                                         }\n"
+            + "                                     }\n"
+            + "                                 }\n"
+            + "                             },\n"
+            + "                              \"prop1_2\" => {\n"
+            + "                                 \"type\" => OBJECT,\n"
+            + "                                 \"value-type\" => {\n"
+            + "                                      \"prop1_2_1\" => {\n"
+            + "                                         \"type\" => OBJECT,\n"
+            + "                                         \"value-type\" => {\n"
+            + "                                              \"prop1_2_1_1\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop1_2_1_2\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop1_2_1_3\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             }\n"
+            + "                                         }\n"
+            + "                                     }\n"
+            + "                                 }\n"
+            + "                             }\n"
+            + "                        }\n"
+            + "                    },\n"
+            + "                    \"prop2\" => {\n"
+            + "                        \"type\" => OBJECT,\n"
+            + "                        \"value-type\" => {\n"
+            + "                             \"prop2_1\" => {\n"
+            + "                                 \"type\" => OBJECT,\n"
+            + "                                 \"value-type\" => {\n"
+            + "                                      \"prop2_1_1\" => {\n"
+            + "                                         \"type\" => OBJECT,\n"
+            + "                                         \"value-type\" => {\n"
+            + "                                              \"prop2_1_1_1\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop2_1_1_2\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop2_1_1_3\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             }\n"
+            + "                                         }\n"
+            + "                                     },\n"
+            + "                                     \"prop2_1_2\" => {\n"
+            + "                                         \"type\" => OBJECT,\n"
+            + "                                         \"value-type\" => {\n"
+            + "                                              \"prop2_1_2_1\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop2_1_2_2\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop2_1_2_3\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             }\n"
+            + "                                         }\n"
+            + "                                     }\n"
+            + "                                 }\n"
+            + "                             },\n"
+            + "                              \"prop2_2\" => {\n"
+            + "                                 \"type\" => OBJECT,\n"
+            + "                                 \"value-type\" => {\n"
+            + "                                      \"prop2_2_1\" => {\n"
+            + "                                         \"type\" => OBJECT,\n"
+            + "                                         \"value-type\" => {\n"
+            + "                                              \"prop2_2_1_1\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop2_2_1_2\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             },\n"
+            + "                                             \"prop2_2_1_3\" => {\n"
+            + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                             }\n"
+            + "                                         }\n"
+            + "                                     }\n"
+            + "                                 }\n"
+            + "                             }\n"
+            + "                        }\n"
+            + "                    }\n"
+            + "                }\n"
+            + "              }\n";
+
+
+    private static final String nested_lists = "{\n"
+            + "                \"type\" => LIST,\n"
+            + "                \"description\" => \"The defined permission mappings.\",\n"
+            + "                \"expressions-allowed\" => false,\n"
+            + "                \"required\" => false,\n"
+            + "                \"nillable\" => false,\n"
+            + "                \"value-type\" => LIST"
+            + "                }\n";
+
+    private static final String simple_map = "{\n"
+            + "                \"type\" => OBJECT,\n"
+            + "                \"value-type\" => STRING"
+            + "                }\n";
+
+    private static final String elytron_simple_permission_mapper_add = "{\n" +
+"                \"type\" => LIST,\n" +
+"                \"description\" => \"The defined permission mappings.\",\n" +
+"                \"expressions-allowed\" => false,\n" +
+"                \"required\" => false,\n" +
+"                \"nillable\" => false,\n" +
+"                \"value-type\" => {\n" +
+"                    \"principals\" => {\n" +
+"                        \"type\" => LIST,\n" +
+"                        \"description\" => \"Principals to compare when mapping permissions, if the identities principal matches any one in the list it is a match.\",\n" +
+"                        \"expressions-allowed\" => true,\n" +
+"                        \"nillable\" => true,\n" +
+"                        \"value-type\" => STRING\n" +
+"                    },\n" +
+"                    \"roles\" => {\n" +
+"                        \"type\" => LIST,\n" +
+"                        \"description\" => \"Roles to compare when mapping permissions, if the identity is a member of any one in the list it is a match.\",\n" +
+"                        \"expressions-allowed\" => true,\n" +
+"                        \"nillable\" => true,\n" +
+"                        \"value-type\" => STRING\n" +
+"                    },\n" +
+"                    \"permissions\" => {\n" +
+"                        \"type\" => LIST,\n" +
+"                        \"description\" => \"The permissions to assign in the event of a match.\",\n" +
+"                        \"expressions-allowed\" => false,\n" +
+"                        \"nillable\" => false,\n" +
+"                        \"value-type\" => {\n" +
+"                            \"class-name\" => {\n" +
+"                                \"type\" => STRING,\n" +
+"                                \"description\" => \"The fully qualified class name of the permission.\",\n" +
+"                                \"expressions-allowed\" => true,\n" +
+"                                \"nillable\" => false,\n" +
+"                                \"min-length\" => 1L,\n" +
+"                                \"max-length\" => 2147483647L\n" +
+"                            },\n" +
+"                            \"module\" => {\n" +
+"                                \"type\" => STRING,\n" +
+"                                \"description\" => \"The module to use to load the permission.\",\n" +
+"                                \"expressions-allowed\" => true,\n" +
+"                                \"nillable\" => true,\n" +
+"                                \"min-length\" => 1L,\n" +
+"                                \"max-length\" => 2147483647L\n" +
+"                            },\n" +
+"                            \"target-name\" => {\n" +
+"                                \"type\" => STRING,\n" +
+"                                \"description\" => \"The target name to pass to the permission as it is constructed.\",\n" +
+"                                \"expressions-allowed\" => true,\n" +
+"                                \"nillable\" => true,\n" +
+"                                \"min-length\" => 1L,\n" +
+"                                \"max-length\" => 2147483647L\n" +
+"                            },\n" +
+"                            \"action\" => {\n" +
+"                                \"type\" => STRING,\n" +
+"                                \"description\" => \"The action to pass to the permission as it is constructed.\",\n" +
+"                                \"expressions-allowed\" => true,\n" +
+"                                \"nillable\" => true,\n" +
+"                                \"min-length\" => 1L,\n" +
+"                                \"max-length\" => 2147483647L\n" +
+"                            }\n" +
+"                        }\n" +
+"                    }\n" +
+"                }\n" +
+"            }";
+
     private static final String compositeSteps = "{\n"
             + "            \"type\" => LIST,\n"
             + "            \"description\" => \"A list of the operation requests that constitute the composite request.\",\n"
@@ -392,6 +591,11 @@ public class ValueTypeCompletionTestCase {
         assertEquals(19, i);
 
         candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{all={change-level=ALL,deny=true,"
+                + "level=ALL,level-range={},match=cds,not={},"
+                + "replace={pattern=cdsc},accept=true", 0, candidates);
+        assertEquals(Arrays.asList("}"), candidates);
+        assertEquals(109, i);
     }
 
     @Test
@@ -504,8 +708,8 @@ public class ValueTypeCompletionTestCase {
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=Main,flag = required", 0, candidates);
-        assertEquals(Arrays.asList(new String[]{"required"}), candidates);
-        assertEquals(19, i);
+        assertEquals(Arrays.asList(new String[]{","}), candidates);
+        assertEquals(27, i);
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=Main,flag = required,", 0, candidates);
@@ -560,8 +764,8 @@ public class ValueTypeCompletionTestCase {
         //assertEquals(Arrays.asList(new String[]{","}), valueTypeHandler.getCandidates(valueType, "code=Main,flag = required,aa={ab1=1,ac1=2}"));
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=Main,flag = required,aa={ab1=1,ac1=false", 0, candidates);
-        assertEquals(Collections.singletonList("false"), candidates);
-        assertEquals(42, i);
+        assertEquals(Collections.singletonList(","), candidates);
+        assertEquals(47, i);
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=Main,flag = required,aa={ab1=1,ac1=2,", 0, candidates);
@@ -696,8 +900,8 @@ public class ValueTypeCompletionTestCase {
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=toto,flag=required},{code=Main,flag = required", 0, candidates);
-        assertEquals(Arrays.asList(new String[]{"required"}), candidates);
-        assertEquals(45, i);
+        assertEquals(Arrays.asList(new String[]{","}), candidates);
+        assertEquals(53, i);
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=toto,flag=required},{code=Main,flag = required,", 0, candidates);
@@ -752,8 +956,8 @@ public class ValueTypeCompletionTestCase {
         //assertEquals(Arrays.asList(new String[]{","}), valueTypeHandler.getCandidates(valueType, "code=Main,flag = required,aa={ab1=1,ac1=2}"));
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=toto,flag=required},{code=Main,flag = required,aa={ab1=1,ac1=false", 0, candidates);
-        assertEquals(Collections.singletonList("false"), candidates);
-        assertEquals(68, i);
+        assertEquals(Collections.singletonList(","), candidates);
+        assertEquals(73, i);
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{code=toto,flag=required},{code=Main,flag = required,aa={ab1=1,ac1=2,", 0, candidates);
@@ -897,5 +1101,332 @@ public class ValueTypeCompletionTestCase {
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{a", 0, candidates);
         assertTrue(candidates.isEmpty());
+    }
+
+    @Test
+    public void testElytronPermissionMapper() throws Exception {
+    final ModelNode propDescr = ModelNode.fromString(elytron_simple_permission_mapper_add);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<>();
+
+        int i;
+        i = new ValueTypeCompleter(propDescr).complete(null, "", 0, candidates);
+        assertEquals(Collections.singletonList("["), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[", 0, candidates);
+        assertEquals(Arrays.asList(new String[]{"{"}), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{", 0, candidates);
+        assertEquals(Arrays.asList("permissions", "principals", "roles"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions", 0, candidates);
+        assertEquals(Arrays.asList("permissions="), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=", 0, candidates);
+        assertEquals(Arrays.asList("["), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[", 0, candidates);
+        assertEquals(Arrays.asList("{"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{", 0, candidates);
+        assertEquals(Arrays.asList("action", "class-name", "module", "target-name"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name", 0, candidates);
+        assertEquals(Arrays.asList("class-name="), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",", 0, candidates);
+        assertEquals(Arrays.asList("action", "module", "target-name"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action", 0, candidates);
+        assertEquals(Arrays.asList("action="), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx}", 0, candidates);
+        assertEquals(Arrays.asList(",", "]"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},", 0, candidates);
+        assertEquals(Arrays.asList("{"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{", 0, candidates);
+        assertEquals(Arrays.asList("action", "class-name", "module", "target-name"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}]", 0, candidates);
+        assertEquals(Arrays.asList(","), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}]", 0, candidates);
+        assertEquals(Arrays.asList(","), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],", 0, candidates);
+        assertEquals(Arrays.asList("principals", "roles"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],", 0, candidates);
+        assertEquals(Arrays.asList("principals", "roles"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=", 0, candidates);
+        assertEquals(Arrays.asList("["), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[", 0, candidates);
+        assertEquals(Arrays.asList(), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[]", 0, candidates);
+        assertEquals(Arrays.asList(","), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],", 0, candidates);
+        assertEquals(Arrays.asList("roles"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles", 0, candidates);
+        assertEquals(Arrays.asList("roles="), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=", 0, candidates);
+        assertEquals(Arrays.asList("["), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[", 0, candidates);
+        assertEquals(Arrays.asList(), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]", 0, candidates);
+        assertEquals(Arrays.asList("}"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]}", 0, candidates);
+        assertEquals(Arrays.asList(",", "]"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]},", 0, candidates);
+        assertEquals(Arrays.asList("{"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]},{", 0, candidates);
+        assertEquals(Arrays.asList("permissions", "principals", "roles"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]},"
+                + "{roles=[],permissions=[{", 0, candidates);
+        assertEquals(Arrays.asList("action", "class-name", "module", "target-name"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]},"
+                + "{roles=[],permissions=[{action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},"
+                + "                       {action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},{", 0, candidates);
+        assertEquals(Arrays.asList("action", "class-name", "module", "target-name"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]},"
+                + "{roles=[],permissions=[{action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},"
+                + "                       {action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},{}],", 0, candidates);
+        assertEquals(Arrays.asList("principals"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]},"
+                + "{roles=[],permissions=[{action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},"
+                + "                       {action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},{}],principals=[]", 0, candidates);
+        assertEquals(Arrays.asList("}"), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]},"
+                + "{roles=[],permissions=[{action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},"
+                + "                       {action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},{}],principals=[]}]", 0, candidates);
+        assertEquals(Arrays.asList(), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{roles=", 0, candidates);
+        assertEquals(Arrays.asList("["), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{roles=[", 0, candidates);
+        assertEquals(Arrays.asList(), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{roles=[role=", 0, candidates);
+        assertEquals(Arrays.asList(), candidates);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[{roles=[role=xxx", 0, candidates);
+        assertEquals(Arrays.asList(), candidates);
+
+    }
+
+    @Test
+    public void testNestedLists() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(nested_lists);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<>();
+
+        int i;
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "", 0, candidates);
+        assertEquals(Collections.singletonList("["), candidates);
+        assertEquals(i, 0);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[", 0, candidates);
+        assertEquals(Collections.singletonList("["), candidates);
+        assertEquals(i, 1);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[[]", 0, candidates);
+        assertEquals(Arrays.asList(",", "]"), candidates);
+        assertEquals(i, 3);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[[],", 0, candidates);
+        assertEquals(Arrays.asList("["), candidates);
+        assertEquals(i, 4);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[[],[]", 0, candidates);
+        assertEquals(Arrays.asList(",", "]"), candidates);
+        assertEquals(i, 6);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[[],[123,qwert,dscds],", 0, candidates);
+        assertEquals(Arrays.asList("["), candidates);
+        assertEquals(i, 22);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "[[],[123,qwert,dscds]]", 0, candidates);
+        assertEquals(Arrays.asList(), candidates);
+        assertEquals(i, -1);
+    }
+
+    @Test
+    public void testNestedObjects() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(nested_objects);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<>();
+
+        int i;
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=", 0, candidates);
+        assertEquals(Arrays.asList("false", "true"), candidates);
+        assertEquals(i, 40);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true", 0, candidates);
+        assertEquals(Arrays.asList(","), candidates);
+        assertEquals(i, 44);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,", 0, candidates);
+        assertEquals(Arrays.asList("prop1_1_1_2", "prop1_1_1_3"), candidates);
+        assertEquals(i, 45);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true", 0, candidates);
+        assertEquals(Arrays.asList("}"), candidates);
+        assertEquals(i, 79);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",", 0, candidates);
+        assertEquals(Arrays.asList("prop1_1_2"), candidates);
+        assertEquals(i, 81);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2=", 0, candidates);
+        assertEquals(Arrays.asList("{"), candidates);
+        assertEquals(i, 91);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2={", 0, candidates);
+        assertEquals(Arrays.asList("prop1_1_2_1", "prop1_1_2_2", "prop1_1_2_3"), candidates);
+        assertEquals(i, 92);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2={prop1_1_2_1=true,prop1_1_2_2=false,prop1_1_2_3=", 0, candidates);
+        assertEquals(Arrays.asList("false", "true"), candidates);
+        assertEquals(i, 139);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2={prop1_1_2_1=true,prop1_1_2_2=false,prop1_1_2_3=false", 0, candidates);
+        assertEquals(Arrays.asList("}"), candidates);
+        assertEquals(i, 144);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2={prop1_1_2_1=true,prop1_1_2_2=false,prop1_1_2_3=false}", 0, candidates);
+        assertEquals(Arrays.asList("}"), candidates);
+        assertEquals(i, 145);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2={prop1_1_2_1=true,prop1_1_2_2=false,prop1_1_2_3=false}}", 0, candidates);
+        assertEquals(Arrays.asList(","), candidates);
+        assertEquals(i, 146);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2={prop1_1_2_1=true,prop1_1_2_2=false,prop1_1_2_3=false}},", 0, candidates);
+        assertEquals(Arrays.asList("prop1_2"), candidates);
+        assertEquals(i, 147);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2={prop1_1_2_1=true,prop1_1_2_2=false,prop1_1_2_3=false}},"
+                + "prop1_2={}", 0, candidates);
+        assertEquals(Arrays.asList("}"), candidates);
+        assertEquals(i, 157);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2={prop1_1_2_1=true,prop1_1_2_2=false,prop1_1_2_3=false}},"
+                + "prop1_2={}},", 0, candidates);
+        assertEquals(Arrays.asList("prop2"), candidates);
+        assertEquals(i, 159);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2={prop1_1_2_1=true,prop1_1_2_2=false,prop1_1_2_3=false}},"
+                + "prop1_2={}},prop2={}", 0, candidates);
+        assertEquals(Arrays.asList("}"), candidates);
+        assertEquals(i, 167);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+                + ",prop1_1_2={prop1_1_2_1=true,prop1_1_2_2=false,prop1_1_2_3=false}},"
+                + "prop1_2={}},prop2={}}", 0, candidates);
+        assertEquals(Arrays.asList(), candidates);
+        assertEquals(i, -1);
+    }
+
+    @Test
+    public void testMap() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(simple_map);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<>();
+
+        int i;
+        i = new ValueTypeCompleter(propDescr).complete(null, "", 0, candidates);
+        assertEquals(Arrays.asList("{"), candidates);
+        assertEquals(i, 0);
     }
 }

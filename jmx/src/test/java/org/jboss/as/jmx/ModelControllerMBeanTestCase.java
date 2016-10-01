@@ -120,6 +120,8 @@ import org.xnio.OptionMap;
  */
 public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
+    private static final int JMX_PORT = 27258;
+
     private static final String LEGACY_DOMAIN = "jboss.resolved";
     private static final ObjectName LEGACY_ROOT_NAME = ModelControllerMBeanHelper.createRootObjectName(LEGACY_DOMAIN);
     private static final ObjectName LEGACY_INTERFACE_NAME = createObjectName(LEGACY_DOMAIN + ":interface=test-interface");
@@ -137,8 +139,8 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
     private static final ObjectName EXPR_SERVER_SOCKET_BINDING_NAME_2 = createObjectName(EXPR_DOMAIN + ":socket-binding=server,socket-binding-group=test-socket-binding-group");
     private static final ObjectName EXPR_SUBSYSTEM_NAME = createObjectName(EXPR_DOMAIN + ":subsystem=jmx");
     private static final ObjectName EXPR_BAD_NAME = createObjectName(LEGACY_DOMAIN + ":type=bad");
-    private static final QueryExp   PORT_QUERY_EXP = Query.eq(Query.attr("port"), Query.value(12345));
-    private static final QueryExp   PORT_STRING_QUERY_EXP = Query.eq(Query.attr("port"), Query.value("12345"));
+    private static final QueryExp   PORT_QUERY_EXP = Query.eq(Query.attr("port"), Query.value(JMX_PORT));
+    private static final QueryExp   PORT_STRING_QUERY_EXP = Query.eq(Query.attr("port"), Query.value(Integer.toString(JMX_PORT)));
     private static final QueryExp   DEFAULT_INTERFACE_QUERY_EXP = Query.eq(Query.attr("defaultInterface"), Query.value("test-interface"));
 
     private JMXConnector jmxConnector;
@@ -1576,9 +1578,8 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
         // Make sure that we can connect to the MBean server
         String host = "localhost";
-        int port = 12345;
         String urlString = System
-                .getProperty("jmx.service.url", "service:jmx:remoting-jmx://" + host + ":" + port);
+                .getProperty("jmx.service.url", "service:jmx:remoting-jmx://" + host + ":" + JMX_PORT);
         JMXServiceURL serviceURL = new JMXServiceURL(urlString);
 
         // TODO this is horrible - for some reason after the first test the
@@ -1632,7 +1633,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
         @Override
         protected void setupController(ControllerInitializer controllerInitializer) {
-            controllerInitializer.addSocketBinding("server", 12345);
+            controllerInitializer.addSocketBinding("server", JMX_PORT);
             controllerInitializer.addPath("jboss.controller.temp.dir", System.getProperty("java.io.tmpdir"), null);
         }
 

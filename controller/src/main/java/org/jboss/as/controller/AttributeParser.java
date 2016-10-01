@@ -25,12 +25,6 @@
 package org.jboss.as.controller;
 
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
@@ -157,51 +151,6 @@ public abstract class AttributeParser {
         }
     };
 
-    public static final AttributeParser OBJECT_LIST_PARSER = new AttributeParser() {
-        @Override
-        public boolean isParseAsElement() {
-            return true;
-        }
-
-        @Override
-        public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
-            assert attribute instanceof ObjectListAttributeDefinition;
-
-            ObjectListAttributeDefinition list = ((ObjectListAttributeDefinition) attribute);
-            ObjectTypeAttributeDefinition objectType = list.getValueType();
-            AttributeDefinition[] valueTypes = objectType.getValueTypes();
-
-            Map<String, AttributeDefinition> attributes = Arrays.asList(valueTypes).stream()
-                    .collect(Collectors.toMap(AttributeDefinition::getXmlName,
-                            Function.identity()));
-            ModelNode listValue = new ModelNode();
-            listValue.setEmptyList();
-            while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
-                if (objectType.getXmlName().equals(reader.getLocalName())){
-                    ModelNode op = listValue.add();
-                    for (int i = 0; i < reader.getAttributeCount(); i++) {
-                        String attributeName = reader.getAttributeLocalName(i);
-                        String value = reader.getAttributeValue(i);
-                        if (attributes.containsKey(attributeName)) {
-                            AttributeDefinition def = attributes.get(attributeName);
-                            AttributeParser parser = def.getParser();
-                            assert parser != null;
-                            parser.parseAndSetParameter(def, value, op, reader);
-                        } else {
-                            throw ParseUtils.unexpectedAttribute(reader, i, attributes.keySet());
-                        }
-                    }
-                }else{
-                    throw ParseUtils.unexpectedElement(reader, Collections.singleton(objectType.getXmlName()));
-                }
-                ParseUtils.requireNoContent(reader);
-            }
-            operation.get(attribute.getName()).set(listValue);
-        }
-    };
-
-
-
     public static final class DiscardOldDefaultValueParser extends AttributeParser{
         private final String value;
 
@@ -223,5 +172,7 @@ public abstract class AttributeParser {
     public static final AttributeParser PROPERTIES_PARSER_UNWRAPPED = new AttributeParsers.PropertiesParser(false);
 
     public static final AttributeParser OBJECT_PARSER = new AttributeParsers.ObjectParser();
+
+    public static final AttributeParser OBJECT_LIST_PARSER = new AttributeParsers.ObjectListParser();
 
 }

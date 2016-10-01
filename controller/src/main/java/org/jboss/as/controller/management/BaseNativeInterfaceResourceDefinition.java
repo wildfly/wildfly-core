@@ -28,8 +28,6 @@ import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 
-import java.util.List;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationStepHandler;
@@ -38,7 +36,6 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -98,12 +95,12 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
 
     protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SSL_CONTEXT, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL, SASL_AUTHENTICATION_FACTORY };
 
-    private final List<AccessConstraintDefinition> accessConstraints;
-
     protected BaseNativeInterfaceResourceDefinition(Parameters parameters) {
-        super(parameters);
-        this.accessConstraints = SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.wrapAsList();
-        setDeprecated(ModelVersion.create(1, 7));
+        super(parameters
+                .addAccessConstraints(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
+                .addCapabilities(NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
+                .setDeprecatedSince(ModelVersion.create(1, 7))
+        );
     }
 
     @Override
@@ -113,11 +110,6 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         for (AttributeDefinition attr : attributeDefinitions) {
             resourceRegistration.registerReadWriteAttribute(attr, null, writeHandler);
         }
-    }
-
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return accessConstraints;
     }
 
     @Override

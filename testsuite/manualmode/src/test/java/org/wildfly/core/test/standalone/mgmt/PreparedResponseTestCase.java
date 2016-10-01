@@ -20,25 +20,24 @@
  */
 package org.wildfly.core.test.standalone.mgmt;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
-import static org.wildfly.test.shutdown.SlowStopServiceActivator.SHUTDOWN_WAITING_TIME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import javax.inject.Inject;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
-import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
+import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
+import org.jboss.as.test.integration.management.extension.ExtensionUtils;
+import org.jboss.as.test.integration.management.extension.blocker.BlockerExtension;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.msc.service.ServiceActivator;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -47,9 +46,8 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
+import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.wildfly.test.shutdown.SlowStopService;
-import org.wildfly.test.shutdown.SlowStopServiceActivator;
 
 /**
  *
@@ -60,62 +58,70 @@ import org.wildfly.test.shutdown.SlowStopServiceActivator;
 public class PreparedResponseTestCase {
 
     public static Logger LOGGER = Logger.getLogger(PreparedResponseTestCase.class);
-
-    public static final String SLOW_STOP_JAR = "slow-stop.jar";
-    private static final long FREQUENCY = TimeoutUtil.adjust(500);
+    private static final long FREQUENCY = TimeoutUtil.adjust(50);
+    private static final long SHUTDOWN_WAITING_TIME = TimeoutUtil.adjust(3000);
+    private static final long RESTART_WAITING_TIME = TimeoutUtil.adjust(20000);
 
     @Inject
     protected static ServerController controller;
 
     @BeforeClass
     public static void startAndSetupContainer() throws Exception {
+        ExtensionUtils.createExtensionModule(BlockerExtension.MODULE_NAME, BlockerExtension.class, EmptySubsystemParser.class.getPackage());
         controller.start();
-        ManagementClient managementClient = controller.getClient();
-        deploy(managementClient);
+        try (ManagementClient managementClient = controller.getClient()) {
+            managementClient.executeForResult(Operations.createAddOperation(PathAddress.pathAddress(EXTENSION, BlockerExtension.MODULE_NAME).toModelNode()));
+            managementClient.executeForResult(Operations.createAddOperation(PathAddress.pathAddress(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME).toModelNode()));
+        }
     }
 
     @AfterClass
     public static void stopContainer() throws Exception {
-        undeploy(controller.getClient());
+        try (ManagementClient managementClient = getManagementClient()) {
+            managementClient.executeForResult(Operations.createRemoveOperation(PathAddress.pathAddress(EXTENSION, BlockerExtension.MODULE_NAME).toModelNode()));
+        }
         controller.stop();
+        ExtensionUtils.deleteExtensionModule(BlockerExtension.MODULE_NAME);
     }
 
-    public static void deploy(ManagementClient managementClient) throws Exception {
-        ServerDeploymentHelper helper = new ServerDeploymentHelper(managementClient.getControllerClient());
-        JavaArchive war = ShrinkWrap.create(JavaArchive.class, SLOW_STOP_JAR);
-        war.addPackage(SlowStopService.class.getPackage());
-        war.addClass(TimeoutUtil.class);
-        war.addAsServiceProvider(ServiceActivator.class, SlowStopServiceActivator.class);
-        war.addAsResource(new StringAsset("Dependencies: org.jboss.dmr, org.jboss.logging, org.jboss.as.controller, org.jboss.as.server,org.wildfly.extension.request-controller, org.jboss.as.network\n"), "META-INF/MANIFEST.MF");
-        helper.deploy(SLOW_STOP_JAR, war.as(ZipExporter.class).exportAsInputStream());
-    }
-
-    public static void undeploy(ManagementClient managementClient) throws ServerDeploymentHelper.ServerDeploymentException {
-        ServerDeploymentHelper helper = new ServerDeploymentHelper(managementClient.getControllerClient());
-        helper.undeploy(SLOW_STOP_JAR);
+    private void block(ManagementClient client) throws UnsuccessfulOperationException {
+        ModelNode blockOp = Operations.createOperation("block", PathAddress.pathAddress(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME).toModelNode());
+        blockOp.get("block-point").set("SERVICE_STOP");
+        blockOp.get("block-time").set(SHUTDOWN_WAITING_TIME);
+        client.executeForResult(blockOp);
     }
 
     @Test
     public void reloadServer() throws Exception {
-        ManagementClient mgmtClient = getManagementClient();
-        long timeout = SHUTDOWN_WAITING_TIME + System.currentTimeMillis();
-        mgmtClient.executeForResult(Operations.createOperation(RELOAD, new ModelNode().setEmptyList()));
-        while (System.currentTimeMillis() < timeout) {
-            Thread.sleep(FREQUENCY);
-            try {
-                controller.getClient().isServerInRunningState();
-            } catch (RuntimeException ex) {
-                break;
+        try (ManagementClient managementClient = getManagementClient()) {
+            block(managementClient);
+            long timeout = SHUTDOWN_WAITING_TIME + System.currentTimeMillis();
+            managementClient.executeForResult(Operations.createOperation(RELOAD, new ModelNode().setEmptyList()));
+            while (System.currentTimeMillis() < timeout) {
+                Thread.sleep(FREQUENCY);
+                try {
+                    managementClient.isServerInRunningState();
+                } catch (RuntimeException ex) {
+                    break;
+                }
+            }
+            Assert.assertFalse(System.currentTimeMillis() < timeout);
+            timeout = RESTART_WAITING_TIME + System.currentTimeMillis();
+            while (System.currentTimeMillis() < timeout) {
+                Thread.sleep(FREQUENCY);
+                try {
+                    managementClient.isServerInRunningState();
+                } catch (RuntimeException ex) {
+                    break;
+                }
             }
         }
-        Assert.assertFalse(System.currentTimeMillis() < timeout);
-        Thread.sleep(2 * FREQUENCY);
-        Assert.assertTrue(mgmtClient.isServerInRunningState());
     }
 
     @Test
     public void shutdownServer() throws Exception {
         try (ManagementClient managementClient = getManagementClient()) {
+            block(managementClient);
             long timeout = SHUTDOWN_WAITING_TIME + System.currentTimeMillis();
             managementClient.executeForResult(Operations.createOperation(SHUTDOWN, new ModelNode().setEmptyList()));
             while (System.currentTimeMillis() < timeout) {
