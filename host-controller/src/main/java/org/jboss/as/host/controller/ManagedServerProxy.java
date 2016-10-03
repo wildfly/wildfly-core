@@ -70,7 +70,7 @@ class ManagedServerProxy implements TransactionalProtocolClient {
             Set<AsyncFuture<OperationResponse>> inFlight = activeRequests.remove(old);
             if (inFlight != null) {
                 for (AsyncFuture<OperationResponse> future : inFlight) {
-                    future.cancel(true);
+                    future.asyncCancel(true);
                 }
             }
             return true;
@@ -103,7 +103,7 @@ class ManagedServerProxy implements TransactionalProtocolClient {
     private synchronized void registerFuture(TransactionalProtocolClient remoteClient, AsyncFuture<OperationResponse> future) {
         if (this.remoteClient != remoteClient) {
             // We were disconnected. Just cancel this future
-            future.cancel(true);
+            future.asyncCancel(true);
         } else {
             // Track the future for cancellation on disconnect
             Set<AsyncFuture<OperationResponse>> futures = activeRequests.get(remoteClient);
