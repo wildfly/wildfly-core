@@ -36,14 +36,17 @@ import java.util.Set;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLMapper;
+import org.projectodd.vdx.core.XMLStreamValidationException;
+import org.projectodd.vdx.wildfly.ErrorReporter;
 
 /**
  * A configuration persister which uses an XML file for backing storage.
@@ -127,11 +130,33 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
             } finally {
                 safeClose(fis);
             }
+        } catch (XMLStreamException e) {
+            final boolean reported = reportValidationError(e);
+            Throwable cause = null;
+            if (!reported) {
+                if (e instanceof XMLStreamValidationException) {
+                    cause = e.getNestedException();
+                } else {
+                    cause = e;
+                }
+            }
+            throw ControllerLogger.ROOT_LOGGER.failedToParseConfiguration(cause);
         } catch (Exception e) {
             throw ControllerLogger.ROOT_LOGGER.failedToParseConfiguration(e);
         }
         return updates;
     }
+
+    private boolean reportValidationError(final XMLStreamException exception) {
+        final String jbossHome = System.getProperty("jboss.home.dir");
+
+        return jbossHome != null &&
+                new ErrorReporter(this.fileName,
+                                  new File(jbossHome, "docs/schema"),
+                                  ControllerLogger.ROOT_LOGGER)
+                        .report(exception);
+    }
+
 
     private static void safeClose(final Closeable closeable) {
         if (closeable != null) try {
