@@ -152,6 +152,10 @@ public class ContentRepositoryTest {
             byte[] originalHash = repository.addContent(stream);
             assertThat(originalHash, is(notNullValue()));
             assertThat(HashUtil.bytesToHexString(originalHash), is("f11be1883895957b06f7e46d784cad60dd015d71"));
+            try {
+                repository.explodeSubContent(originalHash, "test/archive.zip");
+                fail("Shouldn't be able to explode sub content of unexploded content");
+            } catch(ExplodedContentException ex) {}
             byte[] hash = repository.explodeContent(originalHash);
             //hash is different from the simple overlay.xhtml as we add the content folder name in the computation
             assertThat(hash, is(notNullValue()));

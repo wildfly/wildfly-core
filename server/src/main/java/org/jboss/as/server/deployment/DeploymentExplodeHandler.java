@@ -66,6 +66,9 @@ public class DeploymentExplodeHandler implements OperationStepHandler {
         if (!isArchive(contentItem) && !explodedPath.isDefined()) {
             throw ServerLogger.ROOT_LOGGER.cannotExplodeAlreadyExplodedDeployment();
         }
+        if (isArchive(contentItem) && explodedPath.isDefined()) {
+            throw ServerLogger.ROOT_LOGGER.cannotExplodeSubDeploymentOfUnexplodedDeployment();
+        }
         ModelNode model = resource.getModel();
         if (context.isNormalServer()) {
             boolean enabled = ENABLED.resolveModelAttribute(context, model).asBoolean();
