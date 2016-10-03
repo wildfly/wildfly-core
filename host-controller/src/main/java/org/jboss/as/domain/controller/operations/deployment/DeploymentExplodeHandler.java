@@ -90,8 +90,12 @@ public class DeploymentExplodeHandler implements OperationStepHandler {
         // Validate this op is available
         if (!isManaged(contentItem)) {
             throw DomainControllerLogger.ROOT_LOGGER.cannotExplodeUnmanagedDeployment();
-        } else if (!isArchive(contentItem) && !explodedPath.isDefined()) {
+        }
+        if (!isArchive(contentItem) && !explodedPath.isDefined()) {
             throw DomainControllerLogger.ROOT_LOGGER.cannotExplodeAlreadyExplodedDeployment();
+        }
+        if (isArchive(contentItem) && explodedPath.isDefined()) {
+            throw DomainControllerLogger.ROOT_LOGGER.cannotExplodeSubDeploymentOfUnexplodedDeployment();
         }
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         ModelNode deploymentModel = deploymentResource.getModel();
