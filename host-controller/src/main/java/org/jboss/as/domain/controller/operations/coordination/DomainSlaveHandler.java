@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -54,6 +53,7 @@ import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.dmr.ModelNode;
+import org.jboss.threads.AsyncFuture;
 
 /**
  * Executes the first phase of a two phase operation on one or more remote, slave host controllers.
@@ -250,7 +250,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
             for (final TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared : results) {
                 final String hostName = prepared.getOperation().getName();
                 final HostControllerUpdateTask.ExecutedHostRequest request = finalResults.get(hostName);
-                final Future<OperationResponse> future = prepared.getFinalResult();
+                final AsyncFuture<OperationResponse> future = prepared.getFinalResult();
                 try {
                     final OperationResponse finalResponse = future.get(patient, TimeUnit.MILLISECONDS);
                     final ModelNode transformedResult = request.transformResult(finalResponse.getResponseNode());
@@ -265,7 +265,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
 
                 } catch (InterruptedException e) {
                     interruptThread = true;
-                    future.cancel(true);
+                    future.asyncCancel(true);
                     // We suppressed an interrupt, so don't block indefinitely waiting for other responses;
                     // just grab them if they are already available
                     patient = patient == 0 ? 0 : 50; // if we were already really impatient, we still are
@@ -273,7 +273,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
                 } catch (ExecutionException e) {
                     HOST_CONTROLLER_LOGGER.caughtExceptionAwaitingFinalResponse(e.getCause(), hostName);
                 } catch (TimeoutException e) {
-                    future.cancel(true);
+                    future.asyncCancel(true);
                     if (interruptThread) {
                         HOST_CONTROLLER_LOGGER.interruptedAwaitingFinalResponse(hostName);
                     } else {
