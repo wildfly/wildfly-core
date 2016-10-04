@@ -262,7 +262,7 @@ public class PathUtil {
                         result.add(ContentRepositoryElement.createFolder(name));
                     }
                 } else {
-                    if(filter.acceptFile(entryPath, entryPath)) {
+                    if(filter.acceptFile(zipFilePath, entryPath)) {
                         result.add(ContentRepositoryElement.createFile(name, entry.getSize()));
                     }
                 }
