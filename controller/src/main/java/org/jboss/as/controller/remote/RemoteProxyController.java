@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.BlockingTimeout;
@@ -47,6 +46,7 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.dmr.ModelNode;
+import org.jboss.threads.AsyncFuture;
 
 /**
  * Remote {@link ProxyController} implementation.
@@ -152,7 +152,7 @@ public class RemoteProxyController implements ProxyController {
                 }
             }
         };
-        Future<OperationResponse> futureResult = null;
+        AsyncFuture<OperationResponse> futureResult = null;
         try {
             // Translate the operation
             final PathAddress targetAddress = PathAddress.pathAddress(original.get(OP_ADDR));
@@ -170,7 +170,7 @@ public class RemoteProxyController implements ProxyController {
                 prepared = queue.poll(timeout, TimeUnit.MILLISECONDS);
                 if (prepared == null) {
                     blockingTimeout.proxyTimeoutDetected(targetAddress);
-                    futureResult.cancel(true);
+                    futureResult.asyncCancel(true);
                     ModelNode response = getTimeoutResponse(translated.get(OP).asString(), timeout);
                     control.operationFailed(response);
                     ControllerLogger.MGMT_OP_LOGGER.info(response.get(FAILURE_DESCRIPTION).asString());
@@ -183,7 +183,7 @@ public class RemoteProxyController implements ProxyController {
                 return;
             }
             // Send the prepared notification and wrap the OperationTransaction to block on commit/rollback
-            final Future cancellable = futureResult;
+            final AsyncFuture cancellable = futureResult;
             control.operationPrepared(new ModelController.OperationTransaction() {
                 @Override
                 public void commit() {
@@ -205,13 +205,13 @@ public class RemoteProxyController implements ProxyController {
                         } else {
                             long timeout = blockingTimeout.getProxyBlockingTimeout(targetAddress, RemoteProxyController.this);
                             if (!completed.await(timeout, TimeUnit.MILLISECONDS)) {
-                                cancellable.cancel(true);
+                                cancellable.asyncCancel(true);
                                 blockingTimeout.proxyTimeoutDetected(targetAddress);
                                 ControllerLogger.MGMT_OP_LOGGER.timeoutAwaitingFinalResponse(translated.get(OP).asString(), getProxyNodeAddress(), timeout);
                             }
                         }
                     } catch (InterruptedException e) {
-                        cancellable.cancel(true);
+                        cancellable.asyncCancel(true);
                         ControllerLogger.MGMT_OP_LOGGER.interruptedAwaitingFinalResponse(translated.get(OP).asString(), getProxyNodeAddress());
                         Thread.currentThread().interrupt();
                     } catch (Exception e) {
@@ -224,7 +224,7 @@ public class RemoteProxyController implements ProxyController {
             if (futureResult != null) { // it won't be null, as IE can only be thrown after it's assigned
                 ControllerLogger.MGMT_OP_LOGGER.interruptedAwaitingInitialResponse(original.get(OP).asString(), getProxyNodeAddress());
                 // Cancel the operation
-                futureResult.cancel(true);
+                futureResult.asyncCancel(true);
             }
             control.operationFailed(getCancelledResponse());
             Thread.currentThread().interrupt();
