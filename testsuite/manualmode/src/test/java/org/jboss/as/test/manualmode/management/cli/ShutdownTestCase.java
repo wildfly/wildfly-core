@@ -46,7 +46,7 @@ public class ShutdownTestCase {
     public void test() throws Exception {
         serverController.start();
         CommandContextConfiguration config = new CommandContextConfiguration.Builder().
-                setController("http-remoting://"
+                setController("remote+http://"
                         + TestSuiteEnvironment.getServerAddress() + ":"
                         + TestSuiteEnvironment.getServerPort()).build();
         CommandContext ctx = CommandContextFactory.getInstance().newCommandContext(config);

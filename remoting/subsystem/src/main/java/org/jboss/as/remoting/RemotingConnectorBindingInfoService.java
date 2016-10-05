@@ -49,7 +49,12 @@ public class RemotingConnectorBindingInfoService implements Service<RemotingConn
         return SERVICE_NAME.append(connectorName);
     }
 
+    @Deprecated
     public static void install(final ServiceTarget target, final String connectorName, final SocketBinding binding, final String protocol) {
+        target.addService(serviceName(connectorName), new RemotingConnectorBindingInfoService(new RemotingConnectorInfo(binding, Protocol.forName(protocol)))).install();
+    }
+
+    public static void install(final ServiceTarget target, final String connectorName, final SocketBinding binding, final Protocol protocol) {
         target.addService(serviceName(connectorName), new RemotingConnectorBindingInfoService(new RemotingConnectorInfo(binding, protocol))).install();
     }
 
@@ -68,9 +73,9 @@ public class RemotingConnectorBindingInfoService implements Service<RemotingConn
 
     public static final class RemotingConnectorInfo {
         private final SocketBinding socketBinding;
-        private final String protocol;
+        private final Protocol protocol;
 
-        public RemotingConnectorInfo(SocketBinding socketBinding, String protocol) {
+        public RemotingConnectorInfo(SocketBinding socketBinding, Protocol protocol) {
             this.socketBinding = socketBinding;
             this.protocol = protocol;
         }
@@ -80,7 +85,7 @@ public class RemotingConnectorBindingInfoService implements Service<RemotingConn
         }
 
         public String getProtocol() {
-            return protocol;
+            return protocol.toString();
         }
     }
 }

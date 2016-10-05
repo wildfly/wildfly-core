@@ -57,9 +57,6 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
     public static final ServiceName REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("remote-outbound-connection");
 
     private static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
-    private static final String HTTP_REMOTING = "http-remoting";
-    private static final String HTTPS_REMOTING = "https-remoting";
-
     private final InjectedValue<OutboundSocketBinding> destinationOutboundSocketBindingInjectedValue = new InjectedValue<OutboundSocketBinding>();
     private final InjectedValue<SecurityRealm> securityRealmInjectedValue = new InjectedValue<SecurityRealm>();
 
@@ -104,15 +101,21 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         builder.set(SASL_POLICY_NOANONYMOUS, Boolean.FALSE);
         builder.set(SASL_POLICY_NOPLAINTEXT, Boolean.FALSE);
         builder.set(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
-
-        if (uri.getScheme().equals(HTTP_REMOTING)) {
-            builder.set(SSL_ENABLED, false);
-        } else if (uri.getScheme().equals(HTTPS_REMOTING)) {
-            builder.set(SSL_ENABLED, true);
-            builder.set(SSL_STARTTLS, false);
-        } else {
-            builder.set(Options.SSL_ENABLED, true);
-            builder.set(Options.SSL_STARTTLS, true);
+        Protocol protocol = Protocol.forName(uri.getScheme());
+        switch (protocol) {
+            case HTTP_REMOTING:
+            case REMOTE_HTTP:
+                builder.set(SSL_ENABLED, false);
+                break;
+            case HTTPS_REMOTING:
+            case REMOTE_HTTPS:
+                builder.set(SSL_ENABLED, true);
+                builder.set(SSL_STARTTLS, false);
+                break;
+            default:
+                builder.set(Options.SSL_ENABLED, true);
+                builder.set(Options.SSL_STARTTLS, true);
+                break;
         }
 
         // now override with user specified options

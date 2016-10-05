@@ -81,12 +81,17 @@ public class ProtocolConnectionConfiguration {
         this.uri = uri;
         if (uri != null) {
             String scheme = uri.getScheme();
-            if ("http-remoting".equals(scheme)) {
-                this.sslEnabled = false;
-                this.useStartTLS = false;
-            } else if ("https-remoting".equals(scheme)) {
-                this.sslEnabled = true;
-                this.useStartTLS = false;
+            switch(uri.getScheme()) {
+                case "http-remoting":
+                case "remote+http":
+                    this.sslEnabled = false;
+                    this.useStartTLS = false;
+                    break;
+                case "https-remoting":
+                case "remote+https":
+                    this.sslEnabled = true;
+                    this.useStartTLS = false;
+                    break;
             }
         }
     }

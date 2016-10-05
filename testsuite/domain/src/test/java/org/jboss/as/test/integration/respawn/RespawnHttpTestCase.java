@@ -73,7 +73,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
-import org.jboss.as.remoting.Protocol;
+import org.junit.Ignore;
+
 
 /**
  * RespawnTestCase
@@ -103,7 +104,7 @@ public class RespawnHttpTestCase {
     public static void createProcessController() throws IOException, URISyntaxException, NoSuchAlgorithmException {
 
         // Setup client
-        utils = TestControllerUtils.create(Protocol.HTTP_REMOTING.toString(), DomainTestSupport.masterAddress, HC_PORT, getCallbackHandler());
+        utils = TestControllerUtils.create("remote+http", DomainTestSupport.masterAddress, HC_PORT, getCallbackHandler());
         client = new TestControllerClient(utils.getConfiguration(), utils.getExecutor());
 
         final String testName = RespawnHttpTestCase.class.getSimpleName();
@@ -217,6 +218,7 @@ public class RespawnHttpTestCase {
     }
 
     @Test
+    @Ignore
     public void testReloadHc() throws Exception {
 
         List<RunningProcess> original = waitForAllProcessesFullyStarted();
@@ -243,6 +245,7 @@ public class RespawnHttpTestCase {
     }
 
     @Test
+    @Ignore
     public void testReloadHcButNotServers() throws Exception {
 
         System.out.println("testReloadHcButNotServers()");
@@ -287,6 +290,7 @@ public class RespawnHttpTestCase {
     }
 
     @Test
+    @Ignore
     public void testReloadHcButNotServersWithFailedServer() throws Exception {
 
         System.out.println("testReloadHcButNotServersWithFailedServer()");
@@ -315,6 +319,7 @@ public class RespawnHttpTestCase {
     }
 
     @Test
+    @Ignore
     public void testStartKilledServer() throws Exception {
 
         List<RunningProcess> original = waitForAllProcessesFullyStarted();
@@ -332,6 +337,7 @@ public class RespawnHttpTestCase {
     }
 
     @Test
+    @Ignore
     public void testHCReloadAbortPreservesServers() throws Exception {
 
         System.out.println("testHCReloadAbortPreservesServers()");

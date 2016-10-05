@@ -50,7 +50,7 @@ public class CLITestUtil {
     public static CommandContext getCommandContext() throws CliInitializationException {
         System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(constructUri("http-remoting", serverAddr , serverPort), null, null);
+        return CommandContextFactory.getInstance().newCommandContext(constructUri("remote+http", serverAddr , serverPort), null, null);
     }
 
     public static CommandContext getCommandContext(DomainTestSupport domainTestSupport) throws CliInitializationException {
