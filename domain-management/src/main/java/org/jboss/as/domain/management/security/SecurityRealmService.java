@@ -198,6 +198,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                         return AuthMechanism.DIGEST;
                     case "JBOSS-LOCAL-USER":
                         return AuthMechanism.LOCAL;
+                    case "PLAIN":
+                        return AuthMechanism.PLAIN;
                 }
                 break;
             case "HTTP":

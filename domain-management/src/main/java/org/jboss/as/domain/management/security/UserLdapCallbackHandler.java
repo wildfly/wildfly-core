@@ -24,15 +24,16 @@ package org.jboss.as.domain.management.security;
 
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.VERIFY_PASSWORD_CALLBACK_SUPPORTED;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.naming.Context;
-import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -54,6 +55,12 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.auth.server.IdentityLocator;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.auth.server.SupportLevel;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 
 /**
@@ -110,8 +117,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
 
     @Override
     public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
-        // TODO Elytron Add back LDAP support.
-        return null;
+        return new SecurityRealmImpl();
     }
 
     /*
@@ -218,51 +224,8 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
             try {
                 // 2 - Search to identify the DN of the user connecting
                 SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(lch, username);
-                LdapEntry ldapEntry = searchResult.getResult();
 
-                // 3 - Connect as user once their DN is identified
-                final PasswordCredential cachedCredential = searchResult.getAttachment(PASSWORD_KEY);
-                if (cachedCredential != null) {
-                    if (cachedCredential.verify(password)) {
-                        SECURITY_LOGGER.tracef("Password verified for user '%s' (using cached password)", username);
-                        evidenceVerifyCallback.setVerified(true);
-                        sharedState.put(LdapEntry.class.getName(), ldapEntry);
-                        if (username.equals(ldapEntry.getSimpleName()) == false) {
-                            sharedState.put(SecurityRealmService.LOADED_USERNAME_KEY, ldapEntry.getSimpleName());
-                        }
-                    } else {
-                        SECURITY_LOGGER.tracef("Password verification failed for user (using cached password) '%s'", username);
-                        evidenceVerifyCallback.setVerified(false);
-                    }
-                } else {
-                    try {
-                        LdapConnectionHandler verificationHandler = lch;
-                        URI referralUri = ldapEntry.getReferralUri();
-                        if (referralUri != null) {
-                            verificationHandler = verificationHandler.findForReferral(referralUri);
-                        }
-
-                        if (verificationHandler != null) {
-                            verificationHandler.verifyIdentity(ldapEntry.getDistinguishedName(), password);
-                            SECURITY_LOGGER.tracef("Password verified for user '%s' (using connection attempt)", username);
-                            evidenceVerifyCallback.setVerified(true);
-                            searchResult.attach(PASSWORD_KEY, new PasswordCredential(password));
-                            sharedState.put(LdapEntry.class.getName(), ldapEntry);
-                            if (username.equals(ldapEntry.getSimpleName()) == false) {
-                                sharedState.put(SecurityRealmService.LOADED_USERNAME_KEY, ldapEntry.getSimpleName());
-                            }
-                        } else {
-                            SECURITY_LOGGER.tracef(
-                                    "Password verification failed for user '%s', no connection for referral '%s'", username,
-                                    referralUri.toString());
-                            evidenceVerifyCallback.setVerified(false);
-                        }
-                    } catch (Exception e) {
-                        SECURITY_LOGGER.tracef("Password verification failed for user (using connection attempt) '%s'",
-                                username);
-                        evidenceVerifyCallback.setVerified(false);
-                    }
-                }
+                evidenceVerifyCallback.setVerified(verifyPassword(lch, searchResult, username, password, sharedState));
             } catch (Exception e) {
                 SECURITY_LOGGER.trace("Unable to verify identity.", e);
                 throw DomainManagementLogger.ROOT_LOGGER.cannotPerformVerification(e);
@@ -274,24 +237,157 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                 }
             }
         }
-
     }
 
-    private void safeClose(Context context) {
-        if (context != null) {
+    private static boolean verifyPassword(LdapConnectionHandler ldapConnectionHandler, SearchResult<LdapEntry> searchResult, String username, String password, Map<String, Object> sharedState) {
+        LdapEntry ldapEntry = searchResult.getResult();
+
+        // 3 - Connect as user once their DN is identified
+        final PasswordCredential cachedCredential = searchResult.getAttachment(PASSWORD_KEY);
+        if (cachedCredential != null) {
+            if (cachedCredential.verify(password)) {
+                SECURITY_LOGGER.tracef("Password verified for user '%s' (using cached password)", username);
+
+                sharedState.put(LdapEntry.class.getName(), ldapEntry);
+                if (username.equals(ldapEntry.getSimpleName()) == false) {
+                    sharedState.put(SecurityRealmService.LOADED_USERNAME_KEY, ldapEntry.getSimpleName());
+                }
+                return true;
+            } else {
+                SECURITY_LOGGER.tracef("Password verification failed for user (using cached password) '%s'", username);
+                return false;
+            }
+        } else {
             try {
-                context.close();
-            } catch (Exception ignored) {
+                LdapConnectionHandler verificationHandler = ldapConnectionHandler;
+                URI referralUri = ldapEntry.getReferralUri();
+                if (referralUri != null) {
+                    verificationHandler = verificationHandler.findForReferral(referralUri);
+                }
+
+                if (verificationHandler != null) {
+                    verificationHandler.verifyIdentity(ldapEntry.getDistinguishedName(), password);
+                    SECURITY_LOGGER.tracef("Password verified for user '%s' (using connection attempt)", username);
+
+                    searchResult.attach(PASSWORD_KEY, new PasswordCredential(password));
+                    sharedState.put(LdapEntry.class.getName(), ldapEntry);
+                    if (username.equals(ldapEntry.getSimpleName()) == false) {
+                        sharedState.put(SecurityRealmService.LOADED_USERNAME_KEY, ldapEntry.getSimpleName());
+                    }
+                    return true;
+                } else {
+                    SECURITY_LOGGER.tracef(
+                            "Password verification failed for user '%s', no connection for referral '%s'", username,
+                            referralUri.toString());
+                    return false;
+                }
+            } catch (Exception e) {
+                SECURITY_LOGGER.tracef("Password verification failed for user (using connection attempt) '%s'",
+                        username);
+                return false;
             }
         }
     }
 
-    private void safeClose(NamingEnumeration ne) {
-        if (ne != null) {
-            try {
-                ne.close();
-            } catch (Exception ignored) {
+    private void safeClose(LdapConnectionHandler ldapConnectionHandler) {
+        try {
+            if (ldapConnectionHandler != null) {
+                ldapConnectionHandler.close();
             }
+        } catch (IOException e) {
+            SECURITY_LOGGER.trace("Unable to close ldapConnectionHandler", e);
+        }
+    }
+
+    private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
+
+        @Override
+        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+            final String name;
+            if (locator.hasName() == false || (name = locator.getName()).length() == 0) {
+                return RealmIdentity.NON_EXISTENT;
+            }
+
+            LdapConnectionHandler ldapConnectionHandler = createLdapConnectionHandler();
+
+            try {
+                SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(ldapConnectionHandler, name);
+
+                return new RealmIdentityImpl(name, ldapConnectionHandler, searchResult);
+            } catch (IllegalStateException e) {
+                safeClose(ldapConnectionHandler);
+                return RealmIdentity.NON_EXISTENT;
+            } catch (IOException | NamingException e) {
+                safeClose(ldapConnectionHandler);
+                throw new RealmUnavailableException(e);
+            }
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        @Override
+        public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) throws RealmUnavailableException {
+            checkNotNullParam("evidenceType", evidenceType);
+            return PasswordGuessEvidence.class.isAssignableFrom(evidenceType) ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+        }
+
+        private class RealmIdentityImpl implements RealmIdentity {
+
+            private final String username;
+            private final LdapConnectionHandler ldapConnectionHandler;
+            private final SearchResult<LdapEntry> searchResult;
+            private final Map<String, Object> sharedState = new HashMap<>();
+
+            private RealmIdentityImpl(final String username, final LdapConnectionHandler ldapConnectionHandler, final SearchResult<LdapEntry> searchResult) {
+                this.username = username;
+                this.ldapConnectionHandler = ldapConnectionHandler;
+                this.searchResult = searchResult;
+            }
+
+            @Override
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            @Override
+            public <C extends Credential> C getCredential(Class<C> credentialType) throws RealmUnavailableException {
+                return null;
+            }
+
+            @Override
+            public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getEvidenceVerifySupport(evidenceType, algorithmName);
+            }
+
+            @Override
+            public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
+                if (evidence instanceof PasswordGuessEvidence) {
+                    PasswordGuessEvidence passwordGuessEvidence = (PasswordGuessEvidence) evidence;
+                    char[] guess =passwordGuessEvidence.getGuess();
+
+                    if (guess == null || (allowEmptyPassword == false && guess.length == 0)) {
+                        SECURITY_LOGGER.trace("No password or 0 length password supplied.");
+                        return false;
+                    }
+
+                    return verifyPassword(ldapConnectionHandler, searchResult, username, new String(guess), sharedState);
+                }
+                return false;
+            }
+
+            @Override
+            public boolean exists() throws RealmUnavailableException {
+                return true;
+            }
+
+            @Override
+            public void dispose() {
+                safeClose(ldapConnectionHandler);
+            }
+
         }
     }
 
