@@ -172,7 +172,7 @@ public class JmxAuditLogFieldsOfLogTestCase {
 
     private MBeanServerConnection setupAndGetConnection() throws Exception {
         String urlString = System.getProperty("jmx.service.url",
-                "service:jmx:http-remoting-jmx://" + container.getClient().getMgmtAddress() + ":" + container.getClient().getMgmtPort());
+                "service:jmx:remote+http://" + container.getClient().getMgmtAddress() + ":" + container.getClient().getMgmtPort());
         JMXServiceURL serviceURL = new JMXServiceURL(urlString);
         connector = JMXConnectorFactory.connect(serviceURL, null);
         return connector.getMBeanServerConnection();

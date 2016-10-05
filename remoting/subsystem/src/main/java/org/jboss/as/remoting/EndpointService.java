@@ -75,10 +75,22 @@ public class EndpointService implements Service<Endpoint> {
             endpoint = createEndpoint();
             try {
                 // Reuse the options for the remote connection factory for now
-                endpoint.addConnectionProvider(Protocol.REMOTE.toString(), new RemoteConnectionProviderFactory(), optionMap);
-                endpoint.addConnectionProvider(Protocol.HTTP_REMOTING.toString(), new HttpUpgradeConnectionProviderFactory(), optionMap);
-                endpoint.addConnectionProvider(Protocol.HTTPS_REMOTING.toString(), new HttpUpgradeConnectionProviderFactory(),
-                        OptionMap.builder().set(Options.SSL_ENABLED, true).addAll(optionMap).getMap());
+                for(Protocol protocol : Protocol.values()) {
+                    switch(protocol) {
+                        case REMOTE:
+                            endpoint.addConnectionProvider(protocol.toString(), new RemoteConnectionProviderFactory(), optionMap);
+                            break;
+                        case HTTPS_REMOTING:
+                        case REMOTE_HTTPS:
+                            endpoint.addConnectionProvider(protocol.toString(), new HttpUpgradeConnectionProviderFactory(),
+                                    OptionMap.builder().set(Options.SSL_ENABLED, true).addAll(optionMap).getMap());
+                            break;
+                        case HTTP_REMOTING:
+                        case REMOTE_HTTP:
+                            endpoint.addConnectionProvider(protocol.toString(), new HttpUpgradeConnectionProviderFactory(), optionMap);
+                            break;
+                    }
+                }
                 ok = true;
             } finally {
                 if (! ok) {

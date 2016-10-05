@@ -156,7 +156,7 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port.
          *
-         * @param protocol The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
+         * @param protocol The prototcol to use. If this is remote+http or remote+https http upgrade will be used rather than the native remote protocol
          * @param address  the address of the remote host
          * @param port     the port
          * @return A model controller client
@@ -189,7 +189,7 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port.
          *
-         * @param protocol The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
+         * @param protocol The prototcol to use. If this is remote+http or remote+https http upgrade will be used rather than the native remote protocol
          * @param address  the address of the remote host
          * @param port     the port
          * @param handler  CallbackHandler to obtain authentication information for the call.
@@ -227,7 +227,7 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port.
          *
-         * @param protocol    The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used
+         * @param protocol    The prototcol to use. If this is remote+http or remote+https http upgrade will be used
          * @param address     the address of the remote host
          * @param port        the port
          * @param handler     CallbackHandler to obtain authentication information for the call.
@@ -264,7 +264,7 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port.
          *
-         * @param protocol The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
+         * @param protocol The prototcol to use. If this is remote+http or remote+https http upgrade will be used rather than the native remote protocol
          * @param hostName the remote host
          * @param port     the port
          * @return A model controller client
@@ -298,7 +298,7 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port and CallbackHandler.
          *
-         * @param protocol The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
+         * @param protocol The prototcol to use. If this is remote+http or remote+https http upgrade will be used rather than the native remote protocol
          * @param hostName the remote host
          * @param port     the port
          * @param handler  CallbackHandler to obtain authentication information for the call.
@@ -338,7 +338,7 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port and CallbackHandler.
          *
-         * @param protocol    The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
+         * @param protocol    The prototcol to use. If this is remote+http or remote+https http upgrade will be used rather than the native remote protocol
          * @param hostName   the remote host
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
@@ -384,7 +384,7 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port and CallbackHandler.
          *
-         * @param protocol    The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
+         * @param protocol    The prototcol to use. If this is remote+http or remote+https http upgrade will be used rather than the native remote protocol
          * @param hostName   the remote host
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
@@ -433,7 +433,7 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port and CallbackHandler.
          *
-         * @param protocol    The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
+         * @param protocol    The prototcol to use. If this is remote+http or remote+https http upgrade will be used rather than the native remote protocol
          * @param hostName   the remote host
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
@@ -487,7 +487,7 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port and CallbackHandler.
          *
-         * @param protocol    The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
+         * @param protocol    The prototcol to use. If this is remote+http or remote+https http upgrade will be used rather than the native remote protocol
          * @param hostName   the remote host
          * @param port       the port
          * @param handler    CallbackHandler to obtain authentication information for the call.
@@ -537,7 +537,7 @@ public interface ModelControllerClient extends Closeable {
         /**
          * Create a client instance for a remote address and port and CallbackHandler.
          *
-         * @param protocol    The prototcol to use. If this is http-remoting or https-remoting http upgrade will be used rather than the native remote protocol
+         * @param protocol    The prototcol to use. If this is remote+http or remote+https http upgrade will be used rather than the native remote protocol
          * @param hostName    the remote host
          * @param port        the port
          * @param handler     CallbackHandler to obtain authentication information for the call.

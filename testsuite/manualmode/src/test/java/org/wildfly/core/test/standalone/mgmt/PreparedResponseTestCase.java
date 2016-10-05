@@ -147,11 +147,11 @@ public class PreparedResponseTestCase {
     static ManagementClient getManagementClient() {
         ModelControllerClient client = null;
         try {
-            client = ModelControllerClient.Factory.create("http-remoting", InetAddress.getByName(TestSuiteEnvironment.getServerAddress()),
+            client = ModelControllerClient.Factory.create("remote+http", InetAddress.getByName(TestSuiteEnvironment.getServerAddress()),
                     TestSuiteEnvironment.getServerPort(), new org.wildfly.core.testrunner.Authentication.CallbackHandler());
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
-        return new ManagementClient(client, TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort(), "http-remoting");
+        return new ManagementClient(client, TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort(), "remote+http");
     }
 }

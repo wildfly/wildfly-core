@@ -39,8 +39,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.jboss.as.domain.controller.HostConnectionInfo.Events.create;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.DOMAIN_LOGGER;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
-import static org.jboss.as.remoting.Protocol.HTTPS_REMOTING;
-import static org.jboss.as.remoting.Protocol.HTTP_REMOTING;
+import static org.jboss.as.remoting.Protocol.REMOTE_HTTPS;
+import static org.jboss.as.remoting.Protocol.REMOTE_HTTP;
 import static org.jboss.as.remoting.Protocol.REMOTE;
 
 import java.beans.PropertyChangeEvent;
@@ -822,7 +822,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         if (hostControllerInfo.getHttpManagementSecureInterface() != null && !hostControllerInfo.getHttpManagementSecureInterface().isEmpty()
                 && hostControllerInfo.getHttpManagementSecurePort() > 0) {
             return ServerInventoryService.install(serviceTarget, this, runningModeControl, environment, extensionRegistry,
-                    hostControllerInfo.getHttpManagementSecureInterface(), hostControllerInfo.getHttpManagementSecurePort(), HTTPS_REMOTING.toString());
+                    hostControllerInfo.getHttpManagementSecureInterface(), hostControllerInfo.getHttpManagementSecurePort(), REMOTE_HTTPS.toString());
         }
         if (hostControllerInfo.getNativeManagementInterface() != null && !hostControllerInfo.getNativeManagementInterface().isEmpty()
                 && hostControllerInfo.getNativeManagementPort() > 0) {
@@ -833,7 +833,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             return getPlaceHolderInventory();
         }
         return ServerInventoryService.install(serviceTarget, this, runningModeControl, environment, extensionRegistry,
-                hostControllerInfo.getHttpManagementInterface(), hostControllerInfo.getHttpManagementPort(), HTTP_REMOTING.toString());
+                hostControllerInfo.getHttpManagementInterface(), hostControllerInfo.getHttpManagementPort(), REMOTE_HTTP.toString());
     }
 
     private void installDiscoveryService(final ServiceTarget serviceTarget, List<DiscoveryOption> discoveryOptions) {
@@ -846,12 +846,12 @@ public class DomainModelControllerService extends AbstractControllerService impl
         if (hostControllerInfo.getHttpManagementSecureInterface() != null && !hostControllerInfo.getHttpManagementSecureInterface().isEmpty()
                 && hostControllerInfo.getHttpManagementSecurePort() > 0) {
             interfaces.add(new DomainControllerManagementInterface(hostControllerInfo.getHttpManagementSecurePort(),
-                    hostControllerInfo.getHttpManagementSecureInterface(), HTTPS_REMOTING));
+                    hostControllerInfo.getHttpManagementSecureInterface(), REMOTE_HTTPS));
         }
         if (hostControllerInfo.getHttpManagementInterface() != null && !hostControllerInfo.getHttpManagementInterface().isEmpty()
                 && hostControllerInfo.getHttpManagementPort() > 0) {
             interfaces.add(new DomainControllerManagementInterface(hostControllerInfo.getHttpManagementPort(),
-                    hostControllerInfo.getHttpManagementInterface(), HTTP_REMOTING));
+                    hostControllerInfo.getHttpManagementInterface(), REMOTE_HTTP));
         }
         DiscoveryService.install(serviceTarget, discoveryOptions, interfaces, hostControllerInfo.isMasterDomainController());
     }

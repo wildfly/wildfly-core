@@ -1142,12 +1142,12 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             } catch (RedirectException re) {
                 try {
                     URI location = new URI(re.getLocation());
-                    if ("http-remoting".equals(address.getProtocol()) && "https".equals(location.getScheme())) {
+                    if (("remote+http".equals(address.getProtocol()) || "http-remoting".equals(address.getProtocol())) && "https".equals(location.getScheme())) {
                         int port = location.getPort();
                         if (port < 0) {
                             port = 443;
                         }
-                        address = addressResolver.resolveAddress(new URI("https-remoting", null, location.getHost(), port,
+                        address = addressResolver.resolveAddress(new URI("remote+https", null, location.getHost(), port,
                                 null, null, null).toString());
                         if (visited.add(address) == false) {
                             throw new CommandLineException("Redirect to address already tried encountered Address="

@@ -80,7 +80,7 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
         bytesOs = new ByteArrayOutputStream();
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
         System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
-        String controller =   "http-remoting://" + NetworkUtils.formatPossibleIpv6Address(System.getProperty("node0", "127.0.0.1")) + ":9990";
+        String controller =   "remote+http://" + NetworkUtils.formatPossibleIpv6Address(System.getProperty("node0", "127.0.0.1")) + ":9990";
         ctx = CommandContextFactory.getInstance().newCommandContext(controller, null, null, System.in, bytesOs);
     }
 

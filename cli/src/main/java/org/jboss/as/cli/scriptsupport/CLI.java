@@ -140,7 +140,7 @@ public class CLI {
      */
     public void connect(String controllerHost, int controllerPort,
             String username, char[] password) {
-        connect("http-remoting", controllerHost, controllerPort,
+        connect("remote+http", controllerHost, controllerPort,
                 username, password, null);
     }
 
@@ -155,7 +155,7 @@ public class CLI {
      */
     public void connect(String controllerHost, int controllerPort,
             String username, char[] password, String clientBindAddress) {
-        connect("http-remoting", controllerHost, controllerPort,
+        connect("remote+http", controllerHost, controllerPort,
                 username, password, clientBindAddress);
     }
 
