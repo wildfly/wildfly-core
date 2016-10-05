@@ -42,9 +42,7 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
-import org.jboss.metadata.property.PropertiesPropertyResolver;
-import org.jboss.metadata.property.PropertyReplacer;
-import org.jboss.metadata.property.PropertyReplacers;
+import org.jboss.util.StringPropertyReplacer;
 import org.jboss.util.xml.JBossEntityResolver;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -131,13 +129,12 @@ public class SchemaValidator {
      * be properly resolved).
      */
     private static String resolveAllExpressions(String xmlContent, Properties resolvedProperties) throws IOException {
-        PropertyReplacer replacer = PropertyReplacers.resolvingExpressionReplacer(new PropertiesPropertyResolver(resolvedProperties));
         StringBuilder out = new StringBuilder();
 
         try( BufferedReader reader = new BufferedReader(new StringReader(xmlContent)) ) {
             String line;
             while ((line = reader.readLine()) != null) {
-                out.append(replacer.replaceProperties(line));
+                out.append(StringPropertyReplacer.replaceProperties(line, resolvedProperties));
                 out.append('\n');
             }
         }
