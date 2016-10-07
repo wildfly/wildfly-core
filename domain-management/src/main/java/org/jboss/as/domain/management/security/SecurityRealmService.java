@@ -68,11 +68,17 @@ import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.AggregateSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.IdentityLocator;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SupportLevel;
 import org.wildfly.security.authz.RoleDecoder;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.sasl.localuser.LocalUserServer;
 import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
 import org.wildfly.security.sasl.util.PropertiesSaslServerFactory;
@@ -143,7 +149,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 final AuthMechanism mechanism = currentRegistration.getKey();
 
                 domainBuilder.addRealm(mechanism.toString(),
-                        currentService.allowGroupLoading() ? new AggregateSecurityRealm(elytronRealm, authorizationRealm) : elytronRealm)
+                        currentService.allowGroupLoading() ? new SharedStateSecurityRealm(new AggregateSecurityRealm(elytronRealm, authorizationRealm)) : elytronRealm)
                         .setRoleDecoder(RoleDecoder.simple("GROUPS"))
                         .build();
                 configurationMap.put(mechanism,
@@ -454,5 +460,43 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
     public CallbackHandlerFactory getSecretCallbackHandlerFactory() {
         return secretCallbackFactory.getOptionalValue();
+    }
+
+    static class SharedStateSecurityRealm implements org.wildfly.security.auth.server.SecurityRealm {
+
+        private static ThreadLocal<Map<String, Object>> sharedStateLocal = new ThreadLocal<>();
+
+        private final org.wildfly.security.auth.server.SecurityRealm wrapped;
+
+        public SharedStateSecurityRealm(final org.wildfly.security.auth.server.SecurityRealm wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+            try {
+                sharedStateLocal.set(new HashMap<>());
+                return wrapped.getRealmIdentity(locator);
+            } finally {
+                sharedStateLocal.remove();
+            }
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                throws RealmUnavailableException {
+            return wrapped.getCredentialAcquireSupport(credentialType, algorithmName);
+        }
+
+        @Override
+        public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                throws RealmUnavailableException {
+            return wrapped.getEvidenceVerifySupport(evidenceType, algorithmName);
+        }
+
+        static Map<String, Object> getSharedState() {
+            return sharedStateLocal.get();
+        }
+
     }
 }
