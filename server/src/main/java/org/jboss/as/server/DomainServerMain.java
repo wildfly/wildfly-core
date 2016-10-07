@@ -124,12 +124,13 @@ public final class DomainServerMain {
                     // TODO activate host controller client service
                 }
             }));
-        } catch (Exception e) {
-            e.printStackTrace(initialError);
+        } catch (Throwable t) {
+            t.printStackTrace(initialError);
             SystemExiter.abort(ExitCodes.FAILED);
             throw new IllegalStateException(); // not reached
-        } finally {
         }
+
+        Throwable caught = null;
         for (;;) {
             try {
                 final String scheme = StreamUtils.readUTFZBytes(initialInput);
@@ -157,12 +158,15 @@ public final class DomainServerMain {
             } catch (EOFException e) {
                 // this means it's time to exit
                 break;
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Throwable t) {
+                t.printStackTrace();
+                caught = t;
                 break;
             }
         }
-        //we may be attempting a graceful shutdown, in which case we need to wait
+
+        // Once the input stream is cut off, shut down
+        // We may be attempting a graceful shutdown, in which case we need to wait
         final ServiceContainer container;
         try {
             container = containerFuture.get();
@@ -170,11 +174,17 @@ public final class DomainServerMain {
             if(controller != null) {
                 ((GracefulShutdownService)controller.getValue()).awaitSuspend();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (InterruptedException ie) {
+            // ignore this and exit
+        } catch (Throwable  t) {
+            t.printStackTrace();
+        } finally {
+            if (caught == null) {
+                SystemExiter.logAndExit(ServerLogger.ROOT_LOGGER::shuttingDownInResponseToProcessControllerSignal, ExitCodes.NORMAL);
+            } else {
+                SystemExiter.abort(ExitCodes.FAILED);
+            }
         }
-        // Once the input stream is cut off, shut down
-        SystemExiter.logAndExit(ServerLogger.ROOT_LOGGER::shuttingDownInResponseToProcessControllerSignal, ExitCodes.NORMAL);
         throw new IllegalStateException(); // not reached
     }
 

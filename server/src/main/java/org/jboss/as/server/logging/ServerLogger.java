@@ -1242,4 +1242,7 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 257, value = "Required system property '%s' not set")
     IllegalArgumentException requiredSystemPropertyMissing(String propName);
+
+    @Message(id = 258, value = "Cannot explode a subdeployment of an unexploded deployment")
+    OperationFailedException cannotExplodeSubDeploymentOfUnexplodedDeployment();
 }

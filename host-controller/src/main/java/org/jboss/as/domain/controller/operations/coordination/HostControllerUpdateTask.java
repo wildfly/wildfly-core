@@ -42,7 +42,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Future;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -158,10 +157,6 @@ class HostControllerUpdateTask {
 
         ExecutedHostRequest(AsyncFuture<OperationResponse> futureResult, OperationTransformer.TransformedOperation transformedOperation) {
             this(futureResult, transformedOperation, transformedOperation);
-        }
-
-        public Future<OperationResponse> getFinalResult() {
-            return futureResult;
         }
 
         @Override

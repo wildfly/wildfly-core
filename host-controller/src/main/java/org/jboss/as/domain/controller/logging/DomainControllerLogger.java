@@ -799,4 +799,7 @@ public interface DomainControllerLogger extends BasicLogger {
 
     @Message(id = 96, value = "Cannot read content from an unexploded deployment")
     OperationFailedException cannotReadContentFromUnexplodedDeployment();
+
+    @Message(id = 97, value = "Cannot explode a subdeployment of an unexploded deployment")
+    OperationFailedException cannotExplodeSubDeploymentOfUnexplodedDeployment();
 }

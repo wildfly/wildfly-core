@@ -62,8 +62,9 @@ import org.junit.Test;
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
 public class ContentRepositoryTest {
-    private static final boolean IS_WINDOWS = AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
-            System.getProperty("os.name", null).toLowerCase(Locale.ENGLISH).contains("windows"));
+
+    private static final boolean IS_WINDOWS = AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
+            -> System.getProperty("os.name", null).toLowerCase(Locale.ENGLISH).contains("windows"));
     private static final FileTime time = FileTime.from(Instant.parse("2007-12-03T10:15:30.00Z"));
 
     private ContentRepository repository;
@@ -152,6 +153,11 @@ public class ContentRepositoryTest {
             byte[] originalHash = repository.addContent(stream);
             assertThat(originalHash, is(notNullValue()));
             assertThat(HashUtil.bytesToHexString(originalHash), is("f11be1883895957b06f7e46d784cad60dd015d71"));
+            try {
+                repository.explodeSubContent(originalHash, "test/archive.zip");
+                fail("Shouldn't be able to explode sub content of unexploded content");
+            } catch (ExplodedContentException ex) {
+            }
             byte[] hash = repository.explodeContent(originalHash);
             //hash is different from the simple overlay.xhtml as we add the content folder name in the computation
             assertThat(hash, is(notNullValue()));
@@ -218,6 +224,45 @@ public class ContentRepositoryTest {
         }
     }
 
+    private byte[] createContentArchive() throws IOException {
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            try (ZipOutputStream out = new ZipOutputStream(buffer)) {
+                ZipEntry entry = new ZipEntry("overlay.xhtml");
+                entry.setLastModifiedTime(time);
+                out.putNextEntry(entry);
+                try (InputStream in = getResourceAsStream("overlay.xhtml")) {
+                    StreamUtils.copyStream(in, out);
+                }
+                out.closeEntry();
+                entry = new ZipEntry("test.jsp");
+                entry.setLastModifiedTime(time);
+                out.putNextEntry(entry);
+                try (InputStream in = new ByteArrayInputStream("this is a test".getBytes(StandardCharsets.UTF_8))) {
+                    StreamUtils.copyStream(in, out);
+                }
+                out.closeEntry();
+                entry = new ZipEntry("empty-dir/");
+                entry.setLastModifiedTime(time);
+                out.putNextEntry(entry);
+                out.closeEntry();
+                assertTrue(entry.isDirectory());
+                entry = new ZipEntry("test/");
+                entry.setLastModifiedTime(time);
+                out.putNextEntry(entry);
+                out.closeEntry();
+                assertTrue(entry.isDirectory());
+                entry = new ZipEntry("test/empty-file.txt");
+                entry.setLastModifiedTime(time);
+                out.putNextEntry(entry);
+                try (InputStream in = HashUtil.emptyStream()) {
+                    StreamUtils.copyStream(in, out);
+                }
+                out.closeEntry();
+            }
+            return buffer.toByteArray();
+        }
+    }
+
     /**
      * Test of explodeContent method, of class ContentRepository.
      */
@@ -262,12 +307,12 @@ public class ContentRepositoryTest {
                 assertThat(readFileContent(addedContent), is("this is an overwrite test"));
             }
             try {
-            hash = repository.addContentToExploded(hash,
-                    Collections.singletonList(new ExplodedContent("test.jsp",
-                            new ByteArrayInputStream("this is a failure test".getBytes(StandardCharsets.UTF_8)))),
-                    false);
+                hash = repository.addContentToExploded(hash,
+                        Collections.singletonList(new ExplodedContent("test.jsp",
+                                new ByteArrayInputStream("this is a failure test".getBytes(StandardCharsets.UTF_8)))),
+                        false);
                 fail("Overwritting shouldn't work");
-            } catch( ExplodedContentException ex) {
+            } catch (ExplodedContentException ex) {
             }
         }
     }
@@ -305,6 +350,29 @@ public class ContentRepositoryTest {
             assertThat(contents, is(notNullValue()));
             assertThat(contents.size(), is(2));
             assertThat(contents, CoreMatchers.hasItems("overlay.xhtml", "test/empty-file.txt"));
+        }
+    }
+
+    @Test
+    public void testListArchiveContents() throws Exception {
+        byte[] archive = createContentArchive();
+        try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
+            byte[] hash = repository.addContent(stream);
+            //hash is different from the simple overlay.xhtml as we add the content folder name in the computation
+            assertThat(hash, is(notNullValue()));
+            List<String> contents = repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(-1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+            assertThat(contents.size(), is(5));
+            assertThat(contents, CoreMatchers.hasItems("test.jsp", "overlay.xhtml", "test/empty-file.txt", "test/", "empty-dir/"));
+            hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("test/empty-file.txt", emptyStream())), true);
+            hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("empty-dir", null)), true);
+            contents = repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+            assertThat(contents, is(notNullValue()));
+            assertThat(contents.size(), is(4));
+            assertThat(contents, CoreMatchers.hasItems("test.jsp", "overlay.xhtml", "test/", "empty-dir/"));
+            contents = repository.listContent(hash, "", ContentFilter.Factory.createFileFilter(-1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+            assertThat(contents, is(notNullValue()));
+            assertThat(contents.size(), is(3));
+            assertThat(contents, CoreMatchers.hasItems("test.jsp", "overlay.xhtml", "test/empty-file.txt"));
         }
     }
 

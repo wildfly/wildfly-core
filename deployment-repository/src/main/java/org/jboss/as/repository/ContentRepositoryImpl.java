@@ -460,8 +460,9 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
                     DeploymentRepositoryLogger.ROOT_LOGGER.contentAdded(realFile.toAbsolutePath().toString());
                 }
                 return sha1Bytes;
+            } else {
+                throw DeploymentRepositoryLogger.ROOT_LOGGER.errorExplodingContent(null, sourcePath.toString());
             }
-            return deploymentHash;
         } catch (IOException ioex) {
             DeploymentRepositoryLogger.ROOT_LOGGER.warn(ioex);
             throw DeploymentRepositoryLogger.ROOT_LOGGER.errorExplodingContent(ioex, sourcePath.toString());
