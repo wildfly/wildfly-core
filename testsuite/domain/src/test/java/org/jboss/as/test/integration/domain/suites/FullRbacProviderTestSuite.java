@@ -26,13 +26,12 @@ import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.as.test.integration.domain.rbac.IncludeAllRoleTestCase;
-import org.jboss.as.test.integration.domain.rbac.JmxRBACProviderHostScopedRolesTestCase;
-import org.jboss.as.test.integration.domain.rbac.JmxRBACProviderServerGroupScopedRolesTestCase;
 import org.jboss.as.test.integration.domain.rbac.ListRoleNamesTestCase;
 import org.jboss.as.test.integration.domain.rbac.PermissionsCoverageTestCase;
 import org.jboss.as.test.integration.domain.rbac.RBACProviderHostScopedRolesTestCase;
 import org.jboss.as.test.integration.domain.rbac.RBACProviderServerGroupScopedRolesTestCase;
 import org.jboss.as.test.integration.domain.rbac.RBACProviderStandardRolesTestCase;
+import org.jboss.as.test.integration.domain.rbac.RBACSensitivityConstraintUtilizationTestCase;
 import org.jboss.as.test.integration.domain.rbac.RolesIntegrityCheckingTestCase;
 import org.jboss.as.test.integration.domain.rbac.WildcardReadsTestCase;
 import org.junit.AfterClass;
@@ -48,14 +47,13 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses ({
-        RBACProviderHostScopedRolesTestCase.class,
-        RBACProviderServerGroupScopedRolesTestCase.class,
-        JmxRBACProviderHostScopedRolesTestCase.class,
-        JmxRBACProviderServerGroupScopedRolesTestCase.class,
-        RBACProviderStandardRolesTestCase.class,
-        PermissionsCoverageTestCase.class,
         IncludeAllRoleTestCase.class,
         ListRoleNamesTestCase.class,
+        PermissionsCoverageTestCase.class,
+        RBACProviderHostScopedRolesTestCase.class,
+        RBACProviderServerGroupScopedRolesTestCase.class,
+        RBACProviderStandardRolesTestCase.class,
+        RBACSensitivityConstraintUtilizationTestCase.class,
         RolesIntegrityCheckingTestCase.class,
         WildcardReadsTestCase.class
 })
