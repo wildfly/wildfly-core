@@ -882,6 +882,10 @@ class ManagedServer {
             final ModelNode operation = new ModelNode();
             operation.get(OP).set("reload");
             operation.get(OP_ADDR).setEmptyList();
+            // See WFCORE-1791, Operation-id is sent back again to the HC in
+            // HostControllerConnection.ServerRegisterRequest.sendRequest method.
+            // With this operation-id ServerRegistrationStepHandler is able to acquire
+            // the lock and register the server in the domain.
             operation.get("operation-id").set(permit);
 
             try {
