@@ -93,6 +93,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
         if (!serverSetupTasks.isEmpty() && !automaticServerControl) {
             throw new RuntimeException("Can't run setup tasks with manual server control");
         }
+        doInject(getTestClass(), null); //reinject statics
         if (automaticServerControl) {
             runSetupTasks();
         }
