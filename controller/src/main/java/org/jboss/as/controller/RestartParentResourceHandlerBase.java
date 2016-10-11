@@ -204,7 +204,7 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
         if (parentModel != null && context.revertResourceRestarted(address, this)) {
             try {
                 removeServices(context, serviceName, invalidatedParentModel);
-                recreateParentService(context, address, parentModel, null);
+                recreateParentService(context, address, parentModel);
             } catch (OperationFailedException e) {
                 throw ControllerLogger.ROOT_LOGGER.failedToRecoverServices(e);
             }
@@ -214,7 +214,7 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
     private ModelNode getModel(OperationContext ctx, PathAddress address) {
         try {
             Resource resource = ctx.readResourceFromRoot(address);
-            return Resource.Tools.readModel(resource);
+            return Resource.Tools.readModel(resource, 1);
         } catch (NoSuchElementException e) {
             return null;
         }
@@ -223,7 +223,7 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
     private ModelNode getOriginalModel(OperationContext ctx, PathAddress address) {
         try {
             Resource resource = ctx.getOriginalRootResource().navigate(address);
-            return Resource.Tools.readModel(resource);
+            return Resource.Tools.readModel(resource, 1);
         } catch (NoSuchElementException e) {
             return null;
         }
