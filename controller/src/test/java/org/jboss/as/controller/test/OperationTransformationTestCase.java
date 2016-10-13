@@ -100,7 +100,7 @@ public class OperationTransformationTestCase {
     @Before
     public void setUp() {
         registry.discardOperation(TEST_DISCARD, 1, 1, "discard");
-        registry.registerTransformer(TEST_NORMAL, 1, 2, "normal", OPERATION_TRANSFORMER);
+        registry.registerTransformer(TEST_NORMAL, ModelVersion.create(1, 2), "normal", OPERATION_TRANSFORMER);
     }
 
     @Test
@@ -140,7 +140,7 @@ public class OperationTransformationTestCase {
         OperationTransformerRegistry.OperationTransformerEntry entry = localRegistry.resolveOperationTransformer(address, "testing", null);
         Assert.assertSame(OperationTransformerRegistry.FORWARD, entry);
 
-        registry.registerTransformer(address, 1, 0, "testing", NOOP_TRANSFORMER);
+        registry.registerTransformer(address, ModelVersion.create(1, 0), "testing", NOOP_TRANSFORMER);
         localRegistry.mergeSubsystem(registry, "test", ModelVersion.create(1, 0));
 
         entry = localRegistry.resolveOperationTransformer(address, "testing", null);

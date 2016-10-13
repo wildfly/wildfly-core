@@ -76,19 +76,6 @@ public class GlobalTransformerRegistry {
         registerTransformer(address.iterator(), version, operationName, OperationTransformerRegistry.DISCARD);
     }
 
-    /**
-     * Register an operation transformer.
-     *
-     * @param address the operation handler address
-     * @param major the major version
-     * @param minor the minor version
-     * @param operationName the operation name
-     * @param transformer the operation transformer
-     */
-    public void registerTransformer(final PathAddress address, int major, int minor, String operationName, OperationTransformer transformer) {
-        registerTransformer(address.iterator(), ModelVersion.create(major, minor), operationName, new OperationTransformerRegistry.OperationTransformerEntry(transformer, false));
-    }
-
     public void createDiscardingChildRegistry(final PathAddress address, final ModelVersion version) {
         createChildRegistry(address.iterator(), version, PathAddressTransformer.DEFAULT, DISCARD, OperationTransformerRegistry.DISCARD, false);
     }
@@ -163,6 +150,7 @@ public class GlobalTransformerRegistry {
     }
 
     public OperationTransformerRegistry create(final ModelVersion version, final Map<PathAddress, ModelVersion> versions) {
+        //Used to create the registry for a host or server
         final OperationTransformerRegistry registry = new OperationTransformerRegistry(PathAddressTransformer.DEFAULT, RESOURCE_TRANSFORMER, null, false);
         process(registry, PathAddress.EMPTY_ADDRESS, version, versions);
         return registry;
@@ -225,7 +213,7 @@ public class GlobalTransformerRegistry {
     protected void registerTransformer(final Iterator<PathElement> iterator, ModelVersion version, String operationName, OperationTransformerRegistry.OperationTransformerEntry entry) {
         if(! iterator.hasNext()) {
             // by default skip the default transformer
-            getOrCreate(version, PathAddressTransformer.DEFAULT, null, null, false).registerTransformer(PathAddress.EMPTY_ADDRESS.iterator(), operationName, entry);
+            getOrCreate(version, PathAddressTransformer.DEFAULT, RESOURCE_TRANSFORMER, null, false).registerTransformer(PathAddress.EMPTY_ADDRESS.iterator(), operationName, entry);
         } else {
             final PathElement element = iterator.next();
             final SubRegistry subRegistry = getOrCreate(element.getKey());
@@ -289,6 +277,7 @@ public class GlobalTransformerRegistry {
             final Map<ModelVersion, OperationTransformerRegistry> snapshot = registryUpdater.get(this);
             OperationTransformerRegistry registry = snapshot.get(version);
             if(registry == null) {
+
                 registry = new OperationTransformerRegistry(pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
                 OperationTransformerRegistry existing = registryUpdater.putAtomic(this, version, registry, snapshot);
                 if(existing == null) {
