@@ -423,8 +423,9 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
                 final String[] depsArr = dependenciesStr.split(",+");
                 for(String dep : depsArr) {
                     // TODO validate dependencies
-                    config.addDependency(new ModuleDependency(dep));
-                    modules.add(dep);
+                    String depName = dep.trim();
+                    config.addDependency(new ModuleDependency(depName));
+                    modules.add(depName);
                 }
             }
 
@@ -433,13 +434,14 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
                 final String[] depsArr = exportDependenciesStr.split(",+");
                 for (String dep : depsArr) {
                     // TODO validate dependencies
-                    if (modules.contains(dep)) {
+                    String depName = dep.trim();
+                    if (modules.contains(depName)) {
                         deleteRecursively(moduleDir);
                         throw new CommandLineException("Error, duplicated dependency "
-                                + dep);
+                                + depName);
                     }
-                    modules.add(dep);
-                    config.addDependency(new ModuleDependency(dep, true));
+                    modules.add(depName);
+                    config.addDependency(new ModuleDependency(depName, true));
                 }
             }
 
