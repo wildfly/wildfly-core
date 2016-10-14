@@ -3301,6 +3301,8 @@
             <xs:enumeration value="remote"/>
             <xs:enumeration value="http-remoting"/>
             <xs:enumeration value="https-remoting"/>
+            <xs:enumeration value="remote+http"/>
+            <xs:enumeration value="remote+https"/>
         </xs:restriction>
     </xs:simpleType>
 

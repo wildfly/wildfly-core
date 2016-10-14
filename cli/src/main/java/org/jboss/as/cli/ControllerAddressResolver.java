@@ -72,14 +72,21 @@ public class ControllerAddressResolver {
         }
 
         if (port < 0) {
-            if ("remote".equals(protocol) || "remoting".equals(protocol)) {
-                port = 9999;
-            } else if ("http-remoting".equals(protocol)) {
-                port = 9990;
-            } else if ("https-remoting".equals(protocol)) {
-                port = 9993;
-            } else {
-                throw new CommandLineException("Unexpected protocol '" + protocol + "'");
+            switch (protocol) {
+                case "remote":
+                case "remoting":
+                    port = 9999;
+                    break;
+                case "remote+http":
+                case "http-remoting":
+                    port = 9990;
+                    break;
+                case "remote+https":
+                case "https-remoting":
+                    port = 9993;
+                    break;
+                default:
+                    throw new CommandLineException("Unexpected protocol '" + protocol + "'");
             }
         }
 

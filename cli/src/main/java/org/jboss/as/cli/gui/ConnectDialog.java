@@ -66,7 +66,7 @@ import org.jboss.as.cli.CommandLineException;
  */
 public class ConnectDialog extends JInternalFrame {
 
-    static final String DEFAULT_REMOTE = "http-remoting://localhost:9990"; // TODO - Can this sync up with config somehow?
+    static final String DEFAULT_REMOTE = "remote+http://localhost:9990"; // TODO - Can this sync up with config somehow?
     // NOTE: CLI has no Message IDs assigned, hence Resources.getText(...);
     // This will probably requirean i18n
     static final String HINT_CONNECT = "<protocol>://<hostname>:<port> OR empty";

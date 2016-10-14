@@ -14,8 +14,10 @@ import org.jboss.dmr.ModelNode;
 public enum Protocol {
 
     REMOTE("remote"),
+    REMOTE_HTTP("remote+http"),
     HTTP_REMOTING("http-remoting"),
-    HTTPS_REMOTING("https-remoting");
+    HTTPS_REMOTING("https-remoting"),
+    REMOTE_HTTPS("remote+https");
 
     private static final Map<String, Protocol> MAP;
 

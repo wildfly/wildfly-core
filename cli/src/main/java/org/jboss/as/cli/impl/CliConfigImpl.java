@@ -213,7 +213,7 @@ class CliConfigImpl implements CliConfig {
     }
 
     private CliConfigImpl() {
-        defaultControllerProtocol = "http-remoting";
+        defaultControllerProtocol = "remote+http";
 
         historyEnabled = true;
         historyFileName = ".jboss-cli-history";

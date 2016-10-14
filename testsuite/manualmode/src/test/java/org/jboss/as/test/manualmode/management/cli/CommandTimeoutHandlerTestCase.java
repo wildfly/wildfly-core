@@ -128,7 +128,7 @@ public class CommandTimeoutHandlerTestCase {
                 EmptySubsystemParser.class.getPackage());
         CommandContextConfiguration config = new CommandContextConfiguration.Builder().
                 setInitConsole(true).setConsoleOutput(consoleOutput).
-                setController("http-remoting://"
+                setController("remote+http://"
                         + TestSuiteEnvironment.getServerAddress() + ":"
                         + TestSuiteEnvironment.getServerPort()).
                 setCommandTimeout(CONFIG_TIMEOUT).build();

@@ -177,7 +177,7 @@ public class RemoveManagementInterfaceTestCase {
     static ModelControllerClient getHttpModelControllerClient() {
         ModelControllerClient client = null;
         try {
-            client = ModelControllerClient.Factory.create("http-remoting", InetAddress.getByName(TestSuiteEnvironment.getServerAddress()),
+            client = ModelControllerClient.Factory.create("remote+http", InetAddress.getByName(TestSuiteEnvironment.getServerAddress()),
                     MANAGEMENT_HTTP_PORT, new org.wildfly.core.testrunner.Authentication.CallbackHandler());
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);

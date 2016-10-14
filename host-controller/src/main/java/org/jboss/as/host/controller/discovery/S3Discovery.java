@@ -117,11 +117,13 @@ public class S3Discovery implements DiscoveryOption {
             Collections.sort(data, new Comparator<DomainControllerData>() {
                 @Override
                 public int compare(DomainControllerData data, DomainControllerData otherData) {
-                    if (Protocol.REMOTE.toString().equals(data.getProtocol())) {
+                    Protocol protocol = Protocol.forName(data.getProtocol());
+                    if (Protocol.REMOTE == protocol) {
                         return 1;
                     }
-                    if (Protocol.HTTPS_REMOTING.toString().equals(data.getProtocol())) {
-                        if (Protocol.REMOTE.toString().equals(otherData.getProtocol())) {
+                    if (Protocol.HTTPS_REMOTING == protocol || Protocol.REMOTE_HTTPS == protocol) {
+                        Protocol otherProtocol  = Protocol.forName(otherData.getProtocol());
+                        if (Protocol.REMOTE == otherProtocol) {
                             return -1;
                         }
                         return 1;
