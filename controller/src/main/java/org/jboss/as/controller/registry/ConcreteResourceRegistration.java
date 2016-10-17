@@ -255,13 +255,15 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
             if (subregistry != null) {
                 //we remove also children, effectively doing recursive delete
-                Set<PathElement> children = getChildAddresses(PathAddress.pathAddress(address));
-                if (children != null) {
-                    for (PathElement a : children) {
-                        subregistry.getResourceRegistration(PathAddress.EMPTY_ADDRESS.iterator(), address.getValue()).unregisterSubModel(a);
+                Set<PathElement> childAddresses = getChildAddresses(PathAddress.pathAddress(address));
+                if (childAddresses != null) {
+                    ManagementResourceRegistration registration = subregistry.getResourceRegistration(PathAddress.EMPTY_ADDRESS.iterator(), address.getValue());
+                    if(!registration.isAlias()) {
+                        for (PathElement a : childAddresses) {
+                            registration.unregisterSubModel(a);
+                        }
                     }
                 }
-
                 subregistry.unregisterSubModel(address.getValue());
             }
             if (constraintUtilizationRegistry != null) {
