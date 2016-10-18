@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -506,7 +507,7 @@ class ModelControllerImpl implements ModelController {
                 //Get the modified resources from the initial operations and add to the resources to be validated by the post operations
                 Set<PathAddress> validateAddresses = new HashSet<PathAddress>();
                 Resource root = managementModel.get().getRootResource();
-                addAllAddresses(PathAddress.EMPTY_ADDRESS, root, validateAddresses);
+                addAllAddresses(managementModel.get().getRootResourceRegistration(), PathAddress.EMPTY_ADDRESS, root, validateAddresses);
 
                 final AbstractOperationContext validateContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                         EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
@@ -521,16 +522,34 @@ class ModelControllerImpl implements ModelController {
         return  resultAction == OperationContext.ResultAction.KEEP;
     }
 
-    private void addAllAddresses(PathAddress current, Resource resource, Set<PathAddress> addresses) {
+    private void addAllAddresses(ImmutableManagementResourceRegistration mrr, PathAddress current, Resource resource, Set<PathAddress> addresses) {
         addresses.add(current);
-
-        for (String name : resource.getChildTypes()) {
+        for (String name : getNonIgnoredChildTypes(mrr)) {
             for (ResourceEntry entry : resource.getChildren(name)) {
                 if (!entry.isProxy() && !entry.isRuntime()) {
-                    addAllAddresses(current.append(entry.getPathElement()), entry, addresses);
+                    addAllAddresses(mrr.getSubModel(PathAddress.pathAddress(entry.getPathElement())), current.append(entry.getPathElement()), entry, addresses);
                 }
             }
         }
+    }
+
+    /**
+     * Creates a set of child types that are not {@linkplain ImmutableManagementResourceRegistration#isRemote() remote}
+     * or {@linkplain ImmutableManagementResourceRegistration#isRuntimeOnly() runtime} child types.
+     *
+     * @param mrr the resource registration to process the child types for
+     *
+     * @return a collection of non-remote and non-runtime only child types
+     */
+    private static Set<String> getNonIgnoredChildTypes(ImmutableManagementResourceRegistration mrr) {
+        final Set<String> result = new LinkedHashSet<>();
+        for (PathElement pe : mrr.getChildAddresses(PathAddress.EMPTY_ADDRESS)) {
+            ImmutableManagementResourceRegistration childMrr = mrr.getSubModel(PathAddress.pathAddress(pe));
+            if (childMrr != null && !childMrr.isRemote() && !childMrr.isRuntimeOnly()) {
+                result.add(pe.getKey());
+            }
+        }
+        return result;
     }
 
     /**
