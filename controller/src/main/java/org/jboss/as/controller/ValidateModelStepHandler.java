@@ -178,15 +178,20 @@ class ValidateModelStepHandler implements OperationStepHandler {
     private Resource loadResource(OperationContext context) {
         final PathAddress address = context.getCurrentAddress();
         PathAddress current = PathAddress.EMPTY_ADDRESS;
+        final ImmutableManagementResourceRegistration mrr = context.getRootResourceRegistration();
         Resource resource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
         for (PathElement element : address) {
             if (resource.isRuntime()){
                 return null;
             }
+            current = current.append(element);
+            final ImmutableManagementResourceRegistration subMrr = mrr.getSubModel(current);
+            if (subMrr == null || subMrr.isRuntimeOnly() || subMrr.isRemote()) {
+                return null;
+            }
             if (!resource.hasChild(element)) {
                 return null;
             }
-            current = current.append(element);
             resource = context.readResourceFromRoot(current, false);
         }
         if (resource.isRuntime()) {
