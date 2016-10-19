@@ -161,12 +161,49 @@ public interface Resource extends Cloneable {
      */
     Set<String> getOrderedChildTypes();
 
+    /**
+     * Gets whether this resource only exists in the runtime and has no representation in the
+     * persistent configuration model.
+     *
+     * @return {@code true} if the resource has no representation in the
+     * persistent configuration model; {@code false} otherwise
+     */
     boolean isRuntime();
+
+    /**
+     * Gets whether operations against this resource will be proxied to a remote process.
+     *
+     * @return {@code true} if this resource represents a remote resource; {@code false} otherwise
+     */
     boolean isProxy();
 
+    /**
+     * Creates and returns a copy of this resource.
+     *
+     * @return the clone. Will not return {@code null}
+     */
     Resource clone();
 
-    public interface ResourceEntry extends Resource {
+    /**
+     * Creates a shallow copy of this resource, which will only have placeholder resources
+     * for immediate children. Those placeholder resources will return an empty
+     * {@link org.jboss.as.controller.registry.Resource#getModel() model} and will not themselves have any children.
+     * Their presence, however, allows the caller to see what immediate children exist under the target resource.
+     * @return the shallow copy. Will not return {@code null}
+     */
+    default Resource shallowCopy() {
+
+        final Resource copy = Resource.Factory.create();
+        copy.writeModel(getModel());
+        for(final String childType : getChildTypes()) {
+            for(final Resource.ResourceEntry child : getChildren(childType)) {
+                copy.registerChild(child.getPathElement(), PlaceholderResource.INSTANCE);
+            }
+        }
+        return copy;
+    }
+
+    interface ResourceEntry extends Resource {
 
         /**
          * Get the name this resource was registered under.

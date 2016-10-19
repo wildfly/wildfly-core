@@ -67,15 +67,21 @@ public class LoggingResource implements Resource {
 
     private final PathManager pathManager;
     private final Resource delegate;
+    private final ModelNode fileHandlersModel;
 
     public LoggingResource(final PathManager pathManager) {
         this(Resource.Factory.create(), pathManager);
     }
 
     public LoggingResource(final Resource delegate, final PathManager pathManager) {
+        this(delegate, pathManager, null);
+    }
+
+    private LoggingResource(final Resource delegate, final PathManager pathManager, final ModelNode fileHandlersModel) {
         assert pathManager != null : "PathManager cannot be null";
         this.delegate = delegate;
         this.pathManager = pathManager;
+        this.fileHandlersModel = fileHandlersModel;
     }
 
     @Override
@@ -262,7 +268,15 @@ public class LoggingResource implements Resource {
 
     @Override
     public Resource clone() {
-        return new LoggingResource(delegate.clone(), pathManager);
+        return new LoggingResource(delegate.clone(), pathManager, fileHandlersModel);
+    }
+
+    @Override
+    public Resource shallowCopy() {
+        // Calculate the file handlers model so the shallow copy has the data needed
+        // to deal with log files
+        ModelNode fileHdlrsModel = getFileHandlersModel();
+        return new LoggingResource(delegate.shallowCopy(), pathManager, fileHdlrsModel);
     }
 
     private boolean hasReadableFile(final String fileName) {
@@ -282,7 +296,9 @@ public class LoggingResource implements Resource {
     }
 
     private ModelNode getFileHandlersModel() {
-        return Tools.readModel(delegate, -1, FileHandlerResourceFilter.INSTANCE);
+        // If we were provided a fileHandlersModel at construction
+        // (i.e. we are a shallow copy) use it; else calculate the model from our children
+        return fileHandlersModel == null ? Tools.readModel(delegate, -1, FileHandlerResourceFilter.INSTANCE) : fileHandlersModel;
     }
 
 
