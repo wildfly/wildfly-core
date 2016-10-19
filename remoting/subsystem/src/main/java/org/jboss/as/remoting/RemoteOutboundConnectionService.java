@@ -118,7 +118,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         // now override with user specified options
         builder.addAll(this.connectionCreationOptions);
 
-        return endpoint.connect(uri, null);
+        return endpoint.connect(uri, builder.getMap());
     }
 
     @Override
