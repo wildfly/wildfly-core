@@ -142,7 +142,14 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             final Collection<CommandArgument> allArgs = candidatesProvider.getProperties(ctx, parsedCmd.getOperationName(), parsedCmd.getAddress());
             if (allArgs.isEmpty()) {
                 final CommandLineFormat format = parsedCmd.getFormat();
-                if (format != null && format.getPropertyListEnd() != null && format.getPropertyListEnd().length() > 0) {
+                // If no arguments are provided, the only valid case is that the operation
+                // has no arguments. Invalid cases are (wrong operation, exception, ..
+                // In the valid case the operation should be closed.
+                // If some properties are already typed, something is wrong, do not complete
+                if (!parsedCmd.hasProperties()
+                        && format != null
+                        && format.getPropertyListEnd() != null
+                        && format.getPropertyListEnd().length() > 0) {
                     candidates.add(format.getPropertyListEnd());
                 }
                 return buffer.length();
