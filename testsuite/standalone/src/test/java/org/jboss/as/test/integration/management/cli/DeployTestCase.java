@@ -107,7 +107,7 @@ public class DeployTestCase {
         checkDeployment(cliTestAnotherWar.getName(), false);
         checkDeployment(cliTestApp2War.getName(), false);
         // Deploy them all.
-        ctx.handle("deploy --name=<all>");
+        ctx.handle("deploy --name=*");
         checkDeployment(cliTestApp1War.getName(), true);
         checkDeployment(cliTestAnotherWar.getName(), true);
         checkDeployment(cliTestApp2War.getName(), true);
@@ -120,27 +120,18 @@ public class DeployTestCase {
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                     cmd.length(), candidates);
-            assertTrue(candidates.toString(), candidates.contains("<all>"));
+            assertTrue(candidates.toString(), candidates.contains("*"));
             assertTrue(candidates.toString(), candidates.contains(cliTestApp1War.getName()));
             assertTrue(candidates.toString(), candidates.contains(cliTestAnotherWar.getName()));
             assertTrue(candidates.toString(), candidates.contains(cliTestApp2War.getName()));
         }
 
         {
-            String cmd = "deploy --name=<";
+            String cmd = "deploy --name=*";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                     cmd.length(), candidates);
-            assertTrue(candidates.toString(), candidates.contains("<all> "));
-            assertTrue(candidates.toString(), candidates.size() == 1);
-        }
-
-        {
-            String cmd = "deploy --name=<all>";
-            List<String> candidates = new ArrayList<>();
-            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length(), candidates);
-            assertTrue(candidates.toString(), candidates.contains("<all> "));
+            assertTrue(candidates.toString(), candidates.contains("* "));
             assertTrue(candidates.toString(), candidates.size() == 1);
         }
 
