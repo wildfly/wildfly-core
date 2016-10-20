@@ -784,7 +784,7 @@ class ModelControllerImpl implements ModelController {
 
     ConfigurationPersister.PersistenceResource writeModel(final ManagementModelImpl model, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException {
         ControllerLogger.MGMT_OP_LOGGER.tracef("persisting %s from %s", model.rootResource, model);
-        final ModelNode newModel = Resource.Tools.readModel(model.rootResource);
+        final ModelNode newModel = Resource.Tools.readModel(model.rootResource, model.resourceRegistration);
         final ConfigurationPersister.PersistenceResource delegate = persister.store(newModel, affectedAddresses);
         return new ConfigurationPersister.PersistenceResource() {
 
