@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
+import java.util.function.Supplier;
 import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -452,6 +452,18 @@ public class ExtensionRegistry {
                 extension.getSubsystemInfo(subsystemName).addParsingNamespace(namespaceUri);
                 if (extension.xmlMapper != null) {
                     extension.xmlMapper.registerRootElement(new QName(namespaceUri, SUBSYSTEM), reader);
+                }
+            }
+        }
+
+        @Override
+        public void setSubsystemXmlMapping(String subsystemName, String namespaceUri, Supplier<XMLElementReader<List<ModelNode>>> supplier){
+            assert subsystemName != null : "subsystemName is null";
+            assert namespaceUri != null : "namespaceUri is null";
+            synchronized (extension) {
+                extension.getSubsystemInfo(subsystemName).addParsingNamespace(namespaceUri);
+                if (extension.xmlMapper != null) {
+                    extension.xmlMapper.registerRootElement(new QName(namespaceUri, SUBSYSTEM), supplier);
                 }
             }
         }

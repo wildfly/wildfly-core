@@ -79,10 +79,6 @@ public class JMXExtension implements Extension {
             new SensitivityClassification(SUBSYSTEM_NAME, "jmx", false, false, true);
 
     static final SensitiveTargetAccessConstraintDefinition JMX_SENSITIVITY_DEF = new SensitiveTargetAccessConstraintDefinition(JMX_SENSITIVITY);
-    static final JMXSubsystemParser_1_3 parserCurrent = new JMXSubsystemParser_1_3();
-    static final JMXSubsystemParser_1_2 parser12 = new JMXSubsystemParser_1_2();
-    static final JMXSubsystemParser_1_1 parser11 = new JMXSubsystemParser_1_1();
-    static final JMXSubsystemParser_1_0 parser10 = new JMXSubsystemParser_1_0();
     static final JMXSubsystemWriter writer = new JMXSubsystemWriter();
 
     private static final int MANAGEMENT_API_MAJOR_VERSION = 1;
@@ -120,10 +116,10 @@ public class JMXExtension implements Extension {
      */
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.JMX_1_0.getUriString(), parser10);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.JMX_1_1.getUriString(), parser11);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.JMX_1_2.getUriString(), parser12);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.JMX_1_3.getUriString(), parserCurrent);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.JMX_1_0.getUriString(), JMXSubsystemParser_1_0::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.JMX_1_1.getUriString(), JMXSubsystemParser_1_1::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.JMX_1_2.getUriString(), JMXSubsystemParser_1_2::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.JMX_1_3.getUriString(), JMXSubsystemParser_1_3::new);
     }
 
     private static ModelNode createAddOperation() {

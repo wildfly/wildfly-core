@@ -50,8 +50,6 @@ import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 */
 class DeploymentScannerParser_1_0 implements XMLStreamConstants, XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
 
-    public static final DeploymentScannerParser_1_0 INSTANCE = new DeploymentScannerParser_1_0();
-
     /** {@inheritDoc} */
     @Override
     public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {

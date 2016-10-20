@@ -33,8 +33,6 @@ import org.jboss.as.controller.PersistentResourceXMLParser;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  */
 class IOSubsystemParser_1_1 extends PersistentResourceXMLParser {
-    static final IOSubsystemParser_1_1 INSTANCE = new IOSubsystemParser_1_1();
-
 
     private static final PersistentResourceXMLDescription xmlDescription;
 

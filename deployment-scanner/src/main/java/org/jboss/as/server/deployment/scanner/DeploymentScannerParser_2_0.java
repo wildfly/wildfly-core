@@ -49,8 +49,6 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 class DeploymentScannerParser_2_0 implements XMLStreamConstants, XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
 
-    public static final DeploymentScannerParser_2_0 INSTANCE = new DeploymentScannerParser_2_0();
-
     /**
      * {@inheritDoc}
      */
