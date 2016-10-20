@@ -45,7 +45,7 @@ class ProtocolConfigurationFactory {
         URI connURI;
         if(client.getProtocol() == null) {
             // WFLY-1462 for compatibility assume remoting if the standard native port is configured
-            String protocol = client.getPort() == 9999 ? "remote://" : "http-remoting://";
+            String protocol = client.getPort() == 9999 ? "remote://" : "remote+http://";
             connURI = new URI(protocol + formatPossibleIpv6Address(client.getHost()) +  ":" + client.getPort());
         } else  {
             connURI = new URI(client.getProtocol() + "://" + formatPossibleIpv6Address(client.getHost()) +  ":" + client.getPort());

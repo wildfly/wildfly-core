@@ -39,7 +39,7 @@ public class MockCliConfig implements CliConfig {
 
     @Override
     public String getDefaultControllerProtocol() {
-        return "http-remoting";
+        return "remote+http";
     }
 
     @Override
@@ -61,7 +61,7 @@ public class MockCliConfig implements CliConfig {
 
     @Override
     public ControllerAddress getDefaultControllerAddress() {
-        return new ControllerAddress("http-remoting", "localhost", 9990);
+        return new ControllerAddress("remote+http", "localhost", 9990);
     }
 
     @Override

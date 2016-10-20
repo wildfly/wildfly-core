@@ -54,11 +54,11 @@ public class CustomCLIExecutor {
     public static final int MANAGEMENT_NATIVE_PORT = 9999;
     public static final int MANAGEMENT_HTTP_PORT = 9990;
     public static final int MANAGEMENT_HTTPS_PORT = 9993;
-    public static final String NATIVE_CONTROLLER = "remoting://" + TestSuiteEnvironment.getServerAddress() + ":"
+    public static final String NATIVE_CONTROLLER = "remote://" + TestSuiteEnvironment.getServerAddress() + ":"
             + MANAGEMENT_NATIVE_PORT;
-    public static final String HTTP_CONTROLLER = "http-remoting://" + TestSuiteEnvironment.getServerAddress() + ":"
+    public static final String HTTP_CONTROLLER = "remote+http://" + TestSuiteEnvironment.getServerAddress() + ":"
             + MANAGEMENT_HTTP_PORT;
-    public static final String HTTPS_CONTROLLER = "https-remoting://" + TestSuiteEnvironment.getServerAddress() + ":"
+    public static final String HTTPS_CONTROLLER = "remote+https://" + TestSuiteEnvironment.getServerAddress() + ":"
             + MANAGEMENT_HTTPS_PORT;
 
     private static Logger LOGGER = Logger.getLogger(CustomCLIExecutor.class);

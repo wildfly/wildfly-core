@@ -131,7 +131,7 @@ public class CLIWrapper implements AutoCloseable {
     public final boolean sendConnect(String cliAddress) {
         try {
             if (cliAddress!=null) {
-                ctx.connectController(new URI("http-remoting", null, cliAddress, TestSuiteEnvironment.getServerPort(), null, null, null).toString());
+                ctx.connectController(new URI("remote+http", null, cliAddress, TestSuiteEnvironment.getServerPort(), null, null, null).toString());
             }else{
                 ctx.connectController();//use already configured ctx
             }

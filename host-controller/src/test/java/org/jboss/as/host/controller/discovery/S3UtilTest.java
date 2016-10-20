@@ -22,8 +22,8 @@ package org.jboss.as.host.controller.discovery;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.jboss.as.remoting.Protocol.HTTP_REMOTING;
 import static org.jboss.as.remoting.Protocol.REMOTE;
+import static org.jboss.as.remoting.Protocol.REMOTE_HTTP;
 import static org.junit.Assert.assertThat;
 
 import java.io.ByteArrayInputStream;
@@ -48,10 +48,10 @@ public class S3UtilTest {
      */
     @Test
     public void testDomainControllerDataToByteBuffer() throws Exception {
-        List<DomainControllerData> data = Arrays.asList(new DomainControllerData[]{new DomainControllerData(REMOTE.toString(), "native.example.com", 9999), new DomainControllerData(HTTP_REMOTING.toString(), "http.example.com", 9990)});
+        List<DomainControllerData> data = Arrays.asList(new DomainControllerData[]{new DomainControllerData(REMOTE.toString(), "native.example.com", 9999), new DomainControllerData(REMOTE_HTTP.toString(), "http.example.com", 9990)});
         byte[] bytes = S3Util.domainControllerDataToByteBuffer(data);
         assertThat(bytes, is(notNullValue()));
-        assertThat(bytes.length, is(80));
+        assertThat(bytes.length, is(78));
         List<DomainControllerData> result = S3Util.domainControllerDataFromByteBuffer(bytes);
         assertThat(result, is(notNullValue()));
         assertThat(result.size(), is(2));

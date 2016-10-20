@@ -33,7 +33,7 @@
         </xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="default-protocol" minOccurs="0" default="http-remoting">
+                <xs:element name="default-protocol" minOccurs="0" default="remote+http">
                     <xs:annotation>
                         <xs:documentation>
                             The default protocol to use when controller addresses are supplied without one.
@@ -46,8 +46,8 @@
                                     <xs:annotation>
                                         <xs:documentation>
                                             The default protocol is used where a connection address is specified and no
-                                            protocol is specified, in previous versions the port 9999 would have been used with the remoting
-                                            protocol - this attribute set to true causes the protocol to default to remoting if the port
+                                            protocol is specified, in previous versions the port 9999 would have been used with the remote
+                                            protocol - this attribute set to true causes the protocol to default to remote if the port
                                             number is 9999.
 
                                             If this attribute is set to false then the specified default is used regardless
@@ -64,7 +64,7 @@
                     <xs:annotation>
                         <xs:documentation>
                             If no default controller is specifed then the default will be assumed to be using host 'localhost'
-                            along with the default-protocol (Which will be http-remoting if not defined) and the port will be whatever
+                            along with the default-protocol (Which will be remote+http if not defined) and the port will be whatever
                             default corresponds to the selected protocol.
                         </xs:documentation>
                     </xs:annotation>
