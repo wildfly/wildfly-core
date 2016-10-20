@@ -92,7 +92,7 @@
         <version.org.apache.xerces>2.11.0.SP5</version.org.apache.xerces>
         <version.org.codehaus.plexus.plexus-utils>3.0.21</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
-        <version.org.codehaus.woodstox.woodstox-core-asl>4.4.1</version.org.codehaus.woodstox.woodstox-core-asl>
+        <version.org.codehaus.woodstox.woodstox-core>5.0.3</version.org.codehaus.woodstox.woodstox-core>
         <version.org.fusesource.jansi>1.11</version.org.fusesource.jansi>
         <version.org.jboss.aesh>0.66.11</version.org.jboss.aesh>
         <version.org.jboss.byteman>3.0.3</version.org.jboss.byteman>
@@ -1020,10 +1020,24 @@
                 <version>${version.org.codehaus.plexus.plexus-utils}</version>
             </dependency>
 
+            <!-- TODO: remove, here only till WildFly full moves to new GAV -->
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>woodstox-core-asl</artifactId>
-                <version>${version.org.codehaus.woodstox.woodstox-core-asl}</version>
+                <version>4.4.1</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>${version.org.codehaus.woodstox.woodstox-core}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>javax.xml.stream</groupId>
