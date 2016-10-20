@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -31,7 +31,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -118,6 +120,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     private final ArgumentWithValue resources;
     private final ArgumentWithValue absoluteResources;
     private final ArgumentWithListValue dependencies;
+    private final ArgumentWithListValue exportDependencies;
     private final ArgumentWithListValue props;
     private final ArgumentWithValue moduleArg;
     private final ArgumentWithValue slot;
@@ -237,26 +240,17 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         dependencies = new AddModuleListArgument("--dependencies", new CommandLineCompleter(){
             @Override
             public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
-                final int lastSeparator = buffer.lastIndexOf(MODULE_SEPARATOR);
+                return doCompleteDependencies(ctx, buffer, cursor, candidates);
+            }
+        });
 
-                try {
-                    // any module (including system) can be a dependency
-                    final ModuleNameTabCompleter moduleNameCompleter = ModuleNameTabCompleter.completer(getModulesDir(ctx))
-                            .excludeNonModuleFolders(true)
-                            .includeSystemModules(true)
-                            .build();
+        exportDependencies = new AddModuleListArgument("--export-dependencies", new CommandLineCompleter() {
+            @Override
+            public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
+                return doCompleteDependencies(ctx, buffer, cursor, candidates);
+            }
+        });
 
-                    if (lastSeparator >= 0) {
-                        candidates.addAll(moduleNameCompleter.complete(buffer.substring(lastSeparator + 1)));
-                        return lastSeparator + 1;
-                    } else {
-                        candidates.addAll(moduleNameCompleter.complete(buffer));
-                        return 0;
-                    }
-                } catch (CommandLineException e) {
-                    return -1;
-                }
-            }});
         props = new AddModuleListArgument("--properties");
 
         moduleArg = new FileSystemPathArgument(this, pathCompleter, "--module-xml") {
@@ -290,11 +284,37 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
 
         moduleArg.addCantAppearAfter(mainClass);
         moduleArg.addCantAppearAfter(dependencies);
+        moduleArg.addCantAppearAfter(exportDependencies);
         moduleArg.addCantAppearAfter(props);
 
         mainClass.addCantAppearAfter(moduleArg);
         dependencies.addCantAppearAfter(moduleArg);
+        exportDependencies.addCantAppearAfter(moduleArg);
         props.addCantAppearAfter(moduleArg);
+    }
+
+    private int doCompleteDependencies(CommandContext ctx, String buffer,
+            int cursor, List<String> candidates) {
+        final int lastSeparator = buffer.lastIndexOf(MODULE_SEPARATOR);
+
+        try {
+            // any module (including system) can be a dependency
+            final ModuleNameTabCompleter moduleNameCompleter
+                    = ModuleNameTabCompleter.completer(getModulesDir(ctx))
+                    .excludeNonModuleFolders(true)
+                    .includeSystemModules(true)
+                    .build();
+
+            if (lastSeparator >= 0) {
+                candidates.addAll(moduleNameCompleter.complete(buffer.substring(lastSeparator + 1)));
+                return lastSeparator + 1;
+            } else {
+                candidates.addAll(moduleNameCompleter.complete(buffer));
+                return 0;
+            }
+        } catch (CommandLineException e) {
+            return -1;
+        }
     }
 
     @Override
@@ -396,13 +416,30 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
             }
         }
 
-        if(config != null) {
+        if (config != null) {
+            Set<String> modules = new HashSet<>();
             final String dependenciesStr = dependencies.getValue(parsedCmd);
             if(dependenciesStr != null) {
                 final String[] depsArr = dependenciesStr.split(",+");
                 for(String dep : depsArr) {
                     // TODO validate dependencies
                     config.addDependency(new ModuleDependency(dep));
+                    modules.add(dep);
+                }
+            }
+
+            final String exportDependenciesStr = exportDependencies.getValue(parsedCmd);
+            if (exportDependenciesStr != null) {
+                final String[] depsArr = exportDependenciesStr.split(",+");
+                for (String dep : depsArr) {
+                    // TODO validate dependencies
+                    if (modules.contains(dep)) {
+                        deleteRecursively(moduleDir);
+                        throw new CommandLineException("Error, duplicated dependency "
+                                + dep);
+                    }
+                    modules.add(dep);
+                    config.addDependency(new ModuleDependency(dep, true));
                 }
             }
 

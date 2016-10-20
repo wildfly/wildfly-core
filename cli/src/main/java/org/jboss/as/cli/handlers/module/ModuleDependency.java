@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -33,12 +33,18 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 public class ModuleDependency implements Dependency {
 
     private final String name;
+    private final boolean export;
 
     public ModuleDependency(String name) {
+        this(name, false);
+    }
+
+    public ModuleDependency(String name, boolean export) {
         if(name == null) {
             throw new IllegalArgumentException("Module name can't be null.");
         }
         this.name = name;
+        this.export = export;
     }
 
     /* (non-Javadoc)
@@ -53,6 +59,9 @@ public class ModuleDependency implements Dependency {
 
         writer.writeStartElement(ModuleConfigImpl.MODULE);
         writer.writeAttribute(ModuleConfigImpl.NAME, name);
+        if (export) {
+            writer.writeAttribute(ModuleConfigImpl.EXPORT, "true");
+        }
         writer.writeEndElement();
     }
 }
