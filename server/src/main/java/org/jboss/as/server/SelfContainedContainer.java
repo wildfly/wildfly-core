@@ -22,11 +22,26 @@
 
 package org.jboss.as.server;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.selfcontained.ContentProvider;
 import org.jboss.as.selfcontained.ContentProviderServiceActivator;
 import org.jboss.as.selfcontained.SelfContainedConfigurationPersister;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
@@ -39,15 +54,6 @@ import org.jboss.stdio.NullInputStream;
 import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 
 /**
  * The main-class entry point for self-contained server instances.
@@ -62,7 +68,21 @@ public final class SelfContainedContainer {
 
     private static final String PRODUCT_SLOT = "main";
 
+    private Bootstrap.ConfigurationPersisterFactory persisterFactory = null;
+
+    private File tmpDir;
+
+    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+    private ServiceContainer serviceContainer;
+
     public SelfContainedContainer() {
+        tmpDir = createTmpDir();
+    }
+
+    public SelfContainedContainer(Bootstrap.ConfigurationPersisterFactory configuration) {
+        this();
+        this.persisterFactory = configuration;
     }
 
     public ServiceContainer start(final List<ModelNode> containerDefinition, ContentProvider contentProvider) throws ExecutionException, InterruptedException, ModuleLoadException {
@@ -76,6 +96,8 @@ public final class SelfContainedContainer {
     public ServiceContainer start(final List<ModelNode> containerDefinition, ContentProvider contentProvider, Collection<ServiceActivator> additionalActivators) throws ExecutionException, InterruptedException, ModuleLoadException {
 
         final long startTime = System.currentTimeMillis();
+
+
         if (java.util.logging.LogManager.getLogManager().getClass().getName().equals("org.jboss.logmanager.LogManager")) {
             try {
                 Class.forName(org.jboss.logmanager.handlers.ConsoleHandler.class.getName(), true, org.jboss.logmanager.handlers.ConsoleHandler.class.getClassLoader());
@@ -96,29 +118,112 @@ public final class SelfContainedContainer {
         Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
         ServerEnvironment serverEnvironment = determineEnvironment(WildFlySecurityManager.getSystemPropertiesPrivileged(), WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.SELF_CONTAINED, startTime);
         final Bootstrap bootstrap = Bootstrap.Factory.newInstance();
+
         final Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
+
         configuration.setConfigurationPersisterFactory(
                 new Bootstrap.ConfigurationPersisterFactory() {
                     @Override
                     public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
-                        SelfContainedConfigurationPersister persister = new SelfContainedConfigurationPersister(containerDefinition);
-                        configuration.getExtensionRegistry().setWriterRegistry(persister);
-                        return persister;
+
+                        ExtensibleConfigurationPersister delegate;
+                        if(persisterFactory!=null) {
+                            delegate = persisterFactory.createConfigurationPersister(serverEnvironment, executorService);
+                        } else {
+                            delegate = new SelfContainedConfigurationPersister(containerDefinition);
+                        }
+
+                        configuration.getExtensionRegistry().setWriterRegistry(delegate);
+                        return delegate;
                     }
                 });
+
+
         configuration.setModuleLoader(Module.getBootModuleLoader());
 
         List<ServiceActivator> activators = new ArrayList<>();
         activators.add( new ContentProviderServiceActivator(contentProvider));
         activators.addAll(additionalActivators);
 
-        return bootstrap.startup(configuration, activators).get();
+        serviceContainer = bootstrap.startup(configuration, activators).get();
+        return serviceContainer;
     }
 
-    public static ServerEnvironment determineEnvironment(Properties systemProperties, Map<String, String> systemEnvironment, ServerEnvironment.LaunchType launchType, long startTime) {
-        ProductConfig productConfig = ProductConfig.fromKnownSlot(PRODUCT_SLOT, Module.getBootModuleLoader(), systemProperties);
-        return new ServerEnvironment(null, systemProperties, systemEnvironment, null, null, launchType, RunningMode.NORMAL, productConfig, startTime);
+    /**
+     * Stops the service container and cleans up all file system resources.
+     *
+     * @throws Exception
+     */
+    public void stop() throws Exception {
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        this.serviceContainer.addTerminateListener(info -> latch.countDown());
+        this.serviceContainer.shutdown();
+
+        latch.await();
+
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                deleteRecursively(tmpDir);
+            }
+        });
+        executor.shutdown();
     }
+
+    public ServerEnvironment determineEnvironment(Properties systemProperties, Map<String, String> systemEnvironment, ServerEnvironment.LaunchType launchType, long startTime) {
+        ProductConfig productConfig = ProductConfig.fromKnownSlot(PRODUCT_SLOT, Module.getBootModuleLoader(), systemProperties);
+        systemProperties.put(ServerEnvironment.SERVER_TEMP_DIR, tmpDir.getAbsolutePath());
+        ServerEnvironment serverEnvironment = new ServerEnvironment(null, systemProperties, systemEnvironment, null, null, launchType, RunningMode.NORMAL, productConfig, startTime);
+        return serverEnvironment;
+    }
+
+    private File createTmpDir() {
+        try {
+            File tmpDir = File.createTempFile( "wildfly-self-contained", ".d" );
+            if ( tmpDir.exists() ) {
+                for ( int i = 0 ; i < 10 ; ++i ) {
+                    if ( tmpDir.exists() ) {
+                        if (deleteRecursively(tmpDir)) {
+                            break;
+                        }
+                        try {
+                            Thread.sleep( 100 );
+                        } catch (InterruptedException e) {
+                            break;
+                        }
+                    }
+                }
+                if ( tmpDir.exists() ) {
+                    throw ServerLogger.ROOT_LOGGER.unableToCreateSelfContainedDir();
+                }
+            }
+            tmpDir.mkdirs();
+            tmpDir.deleteOnExit();
+            return tmpDir;
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static boolean deleteRecursively(File f) {
+        if ( ! f.exists() ) {
+            return false;
+        }
+        if ( f.isDirectory() ) {
+            File[] children = f.listFiles();
+            for ( int i = 0 ; i < children.length ; ++i ) {
+                if ( ! deleteRecursively(children[i]) ) {
+                    return false;
+                }
+            }
+        }
+
+        return f.delete();
+    }
+
+
 
 }
 
