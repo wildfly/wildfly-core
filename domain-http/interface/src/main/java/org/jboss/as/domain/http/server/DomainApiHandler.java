@@ -38,7 +38,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
+import static org.jboss.as.domain.http.server.DomainUtil.getStreamIndex;
 import static org.jboss.as.domain.http.server.DomainUtil.writeResponse;
+import static org.jboss.as.domain.http.server.DomainUtil.writeStreamResponse;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
@@ -53,6 +55,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.ETag;
+import io.undertow.util.ETagUtils;
+import io.undertow.util.HeaderMap;
+import io.undertow.util.Headers;
+import io.undertow.util.HexConverter;
+import io.undertow.util.Methods;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -65,16 +75,6 @@ import org.jboss.dmr.ModelNode;
 import org.xnio.IoUtils;
 import org.xnio.streams.ChannelInputStream;
 
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.ETag;
-import io.undertow.util.ETagUtils;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HexConverter;
-import io.undertow.util.HttpString;
-import io.undertow.util.Methods;
-
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -82,8 +82,6 @@ import io.undertow.util.Methods;
 class DomainApiHandler implements HttpHandler {
 
     private static final String JSON_PRETTY = "json.pretty";
-    private static final String USE_STREAM_AS_RESPONSE = "useStreamAsResponse";
-    private static final HttpString USE_STREAM_AS_RESPONSE_HEADER = new HttpString("org.wildfly.useStreamAsResponse");
 
     /**
      * Represents all possible management operations that can be executed using HTTP GET. Cacheable operations
@@ -180,9 +178,9 @@ class DomainApiHandler implements HttpHandler {
                             // invalid index
                             Common.sendError(exchange, encode, new ModelNode(HttpServerLogger.ROOT_LOGGER.invalidUseStreamAsResponseIndex(streamIndex, streamEntries.size())), 400);
                         } else {
-                            // writeResponse will close the response
+                            // writeStreamResponse will close the response
                             closeResponse = false;
-                            writeResponse(exchange, 200, response, streamIndex, operationParameterBuilder.build());
+                            writeStreamResponse(exchange, response, streamIndex, operationParameterBuilder.build());
                         }
                     }
                 } finally {
@@ -232,31 +230,6 @@ class DomainApiHandler implements HttpHandler {
         callback.sendResponse(response);
     }
 
-    private static int getStreamIndex(final HttpServerExchange exchange, final HeaderMap requestHeaders) {
-        // First check for an HTTP header
-        int result = getStreamIndex(requestHeaders.get(USE_STREAM_AS_RESPONSE_HEADER));
-        if (result == -1) {
-            // Nope. Now check for a URL query parameter
-            Map<String, Deque<String>> queryParams = exchange.getQueryParameters();
-            result = getStreamIndex(queryParams.get(USE_STREAM_AS_RESPONSE));
-        }
-        return result;
-    }
-
-    private static int getStreamIndex(Deque<String> holder) {
-        int result;
-        if (holder != null) {
-            if (holder.size() > 0 && holder.getFirst().length() > 0) {
-                result = Integer.parseInt(holder.getFirst());
-            } else {
-                result = 0;
-            }
-        } else {
-            result = -1;
-        }
-        return result;
-    }
-
     private GetOperation getOperation(HttpServerExchange exchange) {
         Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
 
@@ -287,7 +260,7 @@ class DomainApiHandler implements HttpHandler {
         for (Entry<String, Deque<String>> entry : queryParameters.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue().getFirst();
-             ModelNode valueNode = null;
+            ModelNode valueNode = null;
             if (key.startsWith("operation-header-")) {
                 String header = key.substring("operation-header-".length());
                 //Remove the same headers as the native interface (ModelControllerClientOperationHandler)
