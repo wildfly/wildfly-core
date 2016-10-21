@@ -356,11 +356,12 @@ public class ManagementHttpServer {
         }
 
         ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(consoleHandler);
-        HttpHandler domainApiHandler = InExecutorHandler.wrap(
-                builder.executor,
-                associateIdentity(new DomainApiCheckHandler(builder.modelController, builder.controlledProcessStateService,
+        HttpHandler domainApiHandler = StreamReadLimitHandler.wrap(
+                InExecutorHandler.wrap(
+                    builder.executor,
+                    associateIdentity(new DomainApiCheckHandler(builder.modelController, builder.controlledProcessStateService,
                         builder.allowedOrigins), builder)
-        );
+                ));
 
         final Function<HttpServerExchange, Boolean> readyFunction = createReadyFunction(builder);
         pathHandler.addPrefixPath("/", rootConsoleRedirectHandler);
