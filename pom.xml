@@ -99,7 +99,7 @@
         <version.org.apache.xerces>2.11.0.SP5-redhat-1</version.org.apache.xerces>
         <version.org.codehaus.plexus.plexus-utils>3.0.24</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>3.1.4.redhat-1</version.org.codehaus.woodstox.stax2-api>
-        <version.org.codehaus.woodstox.woodstox-core>5.0.3</version.org.codehaus.woodstox.woodstox-core>
+        <version.org.codehaus.woodstox.woodstox-core>5.0.3.redhat-1</version.org.codehaus.woodstox.woodstox-core>
         <version.org.fusesource.jansi>1.16</version.org.fusesource.jansi>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
         <version.org.jboss.aesh>0.66.19</version.org.jboss.aesh>
