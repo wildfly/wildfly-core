@@ -411,13 +411,14 @@ public class FailedOperationTransformationConfig {
             return false;
         }
 
-        protected boolean checkValue(ModelNode operation, String attrName, ModelNode attribute, boolean isWriteAttribute) {
-            return checkValue(attrName, attribute, isWriteAttribute);
+        @SuppressWarnings("unused")
+        protected boolean checkValue(ModelNode operation, String attrName, ModelNode attribute, boolean isGeneratedWriteAttribute) {
+            return checkValue(attrName, attribute, isGeneratedWriteAttribute);
         }
 
-        protected abstract boolean checkValue(String attrName, ModelNode attribute, boolean isWriteAttribute);
+        protected abstract boolean checkValue(String attrName, ModelNode attribute, boolean isGeneratedWriteAttribute);
 
-        protected abstract ModelNode correctValue(ModelNode toResolve, boolean isWriteAttribute);
+        protected abstract ModelNode correctValue(ModelNode toResolve, boolean isGeneratedWriteAttribute);
     }
 
     /**
@@ -437,7 +438,7 @@ public class FailedOperationTransformationConfig {
         }
 
 
-        protected ModelNode correctValue(ModelNode toResolve, boolean isWriteAttribute) {
+        protected ModelNode correctValue(ModelNode toResolve, boolean isGeneratedWriteAttribute) {
             if (toResolve.getType() == ModelType.STRING) {
                 toResolve = new ModelNode().set(new ValueExpression(toResolve.asString()));
             }
@@ -451,7 +452,7 @@ public class FailedOperationTransformationConfig {
         }
 
         @Override
-        protected boolean checkValue(String attrName, ModelNode attribute, boolean isWriteAttribute) {
+        protected boolean checkValue(String attrName, ModelNode attribute, boolean isGeneratedWriteAttribute) {
             if (!attribute.isDefined()) {
                 return false;
             }
@@ -465,11 +466,11 @@ public class FailedOperationTransformationConfig {
             case LIST:
                 for (ModelNode entry : attribute.asList()) {
                     if (complexChildConfig == null) {
-                        if (checkValue(attrName, entry, isWriteAttribute)) {
+                        if (checkValue(attrName, entry, isGeneratedWriteAttribute)) {
                             return true;
                         }
                     } else {
-                        if (childHasExpressions(complexChildConfig, attribute.get(attrName), isWriteAttribute)) {
+                        if (childHasExpressions(complexChildConfig, attribute.get(attrName), isGeneratedWriteAttribute)) {
                             return true;
                         }
                     }
@@ -478,11 +479,11 @@ public class FailedOperationTransformationConfig {
             case OBJECT:
                 for (Property prop : attribute.asPropertyList()) {
                     if (complexChildConfig == null) {
-                        if (checkValue(attrName, prop.getValue(), isWriteAttribute)) {
+                        if (checkValue(attrName, prop.getValue(), isGeneratedWriteAttribute)) {
                             return true;
                         }
                     } else {
-                        if (childHasExpressions(complexChildConfig, attribute, isWriteAttribute)) {
+                        if (childHasExpressions(complexChildConfig, attribute, isGeneratedWriteAttribute)) {
                             return true;
                         }
                     }
@@ -490,11 +491,11 @@ public class FailedOperationTransformationConfig {
                 break;
             case PROPERTY:
                 if (complexChildConfig == null) {
-                    if (checkValue(attrName, attribute.asProperty().getValue(), isWriteAttribute)) {
+                    if (checkValue(attrName, attribute.asProperty().getValue(), isGeneratedWriteAttribute)) {
                         return true;
                     }
                 } else {
-                    if (childHasExpressions(complexChildConfig, attribute.asProperty().getValue(), isWriteAttribute)) {
+                    if (childHasExpressions(complexChildConfig, attribute.asProperty().getValue(), isGeneratedWriteAttribute)) {
                         return true;
                     }
                 }
@@ -502,9 +503,9 @@ public class FailedOperationTransformationConfig {
             return false;
         }
 
-        private boolean childHasExpressions(AttributesPathAddressConfig<?> complexChildConfig, ModelNode attribute, boolean isWriteAttribute) {
+        private boolean childHasExpressions(AttributesPathAddressConfig<?> complexChildConfig, ModelNode attribute, boolean isGeneratedWriteAttribute) {
             for (String child : complexChildConfig.attributes) {
-                if (complexChildConfig.checkValue(child, attribute.get(child), isWriteAttribute)) {
+                if (complexChildConfig.checkValue(child, attribute.get(child), isGeneratedWriteAttribute)) {
                     return true;
                 }
             }
@@ -528,12 +529,12 @@ public class FailedOperationTransformationConfig {
 
 
         @Override
-        protected boolean checkValue(String attrName, ModelNode attribute, boolean isWriteAttribute) {
+        protected boolean checkValue(String attrName, ModelNode attribute, boolean isGeneratedWriteAttribute) {
             return attribute.isDefined();
         }
 
         @Override
-        protected ModelNode correctValue(ModelNode attribute, boolean isWriteAttribute) {
+        protected ModelNode correctValue(ModelNode attribute, boolean isGeneratedWriteAttribute) {
             return new ModelNode();
         }
 
@@ -631,13 +632,13 @@ public class FailedOperationTransformationConfig {
         }
 
         @Override
-        protected boolean checkValue(String attrName, ModelNode attribute, boolean isWriteAttribute) {
+        protected boolean checkValue(String attrName, ModelNode attribute, boolean isGeneratedWriteAttribute) {
             //Since all the PathAddress methods have been overridden this should never be called
             throw new IllegalStateException("Not all methods were overridden");
         }
 
         @Override
-        protected ModelNode correctValue(ModelNode toResolve, boolean isWriteAttribute) {
+        protected ModelNode correctValue(ModelNode toResolve, boolean isGeneratedWriteAttribute) {
           //Since all the PathAddress methods have been overridden this should never be called
             throw new IllegalStateException("Not all methods were overridden");
         }
