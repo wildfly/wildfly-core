@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -37,6 +38,7 @@ import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.operations.validation.AbstractParameterValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -89,6 +91,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
     private static PathAddress TEST_ADDRESS2 = PathAddress.pathAddress("subsystem", "test2");
     private static PathAddress TEST_ADDRESS3 = PathAddress.pathAddress("sub", "resource");
     private static PathAddress TEST_ADDRESS4 = PathAddress.pathAddress("subsystem", "test4");
+    private static PathAddress TEST_ADDRESS5 = PathAddress.pathAddress("subsystem", "broken");
 
     private static PathElement RELOAD_ELEMENT = PathElement.pathElement("subsystem", "reload");
     private static PathElement CHILD_ELEMENT = PathElement.pathElement("child", "test");
@@ -254,6 +257,36 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .pushChild(createReloadTestResourceBuilder(CHILD_ELEMENT, TRANS_DEP_CAPABILITY)).pop()
             .build();
 
+    private static final AtomicReference<CountDownLatch> readLatchHolder = new AtomicReference<>();
+    private static final AtomicReference<CountDownLatch> failLatchHolder = new AtomicReference<>();
+    private static final ResourceDefinition BAD_RESOURCE = ResourceBuilder.Factory.create(TEST_ADDRESS5.getElement(0),
+            NonResolvingResourceDescriptionResolver.INSTANCE)
+            .setAddOperation(new AbstractAddStepHandler(Collections.singleton(TEST_CAPABILITY1)) {
+                @Override
+                protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+
+                    try {
+                        CountDownLatch latch = new CountDownLatch(1);
+                        failLatchHolder.set(latch);
+
+                        // Notify the test we are done with model stage
+                        readLatchHolder.get().countDown();
+
+                        // Wait for test to unblock us
+                        latch.await();
+
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
+                    context.setRollbackOnly();
+                    context.getFailureDescription().set("failed per design");
+                }
+            })
+            .setRemoveOperation(new ReloadRequiredRemoveStepHandler(TEST_CAPABILITY3))
+            .addOperation(new SimpleOperationDefinition("read", NonResolvingResourceDescriptionResolver.INSTANCE),
+                    ((context, operation) -> context.getResult().set(true)))
+            .build();
+
     private static final int RELOAD_CAP_COUNT = 6;
 
     private ManagementModel managementModel;
@@ -272,6 +305,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             mrr.unregisterSubModel(TEST_RESOURCE1.getPathElement());
             mrr.unregisterSubModel(TEST_RESOURCE2.getPathElement());
             mrr.unregisterSubModel(TEST_RESOURCE4.getPathElement());
+            mrr.unregisterSubModel(BAD_RESOURCE.getPathElement());
             mrr.unregisterSubModel(RELOAD_PARENT.getPathElement());
             mrr.unregisterSubModel(HOST_RESOURCE.getPathElement());
             mrr.unregisterSubModel(PROFILE_RESOURCE.getPathElement());
@@ -284,6 +318,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             mrr.registerSubModel(TEST_RESOURCE1);
             mrr.registerSubModel(TEST_RESOURCE2);
             mrr.registerSubModel(TEST_RESOURCE4);
+            mrr.registerSubModel(BAD_RESOURCE);
             mrr.registerSubModel(RELOAD_PARENT);
             mrr.registerSubModel(HOST_RESOURCE);
             mrr.registerSubModel(PROFILE_RESOURCE);
@@ -688,6 +723,48 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         } finally {
             //noinspection ThrowFromFinallyBlock
             remove(RELOAD_ELEMENT);
+        }
+    }
+
+    @Test
+    public void testConcurrentRead() throws OperationFailedException, InterruptedException {
+        readLatchHolder.set(new CountDownLatch(1));
+
+        ModelNode addOp = Util.createAddOperation(TEST_ADDRESS5);
+        Thread t = new Thread(() -> executeForFailure(addOp));
+        t.setDaemon(true);
+        t.start();
+        try {
+            // Wait for the add op to reach Stage.RUNTIME, so the cap is registered
+            readLatchHolder.get().await();
+
+            CountDownLatch failLatch = failLatchHolder.get();
+            Assert.assertNotNull(failLatch);
+
+            // add op's registry change should not be visible
+            Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+
+            // Execute a concurrent read
+            executeCheckNoFailure(Util.createEmptyOperation("read", TEST_ADDRESS5));
+
+            // Confirm add op is still blocking
+            Assert.assertTrue(t.isAlive());
+
+            // add op's registry change should not be visible
+            Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+
+            // Let the add op release and fail
+            failLatch.countDown();
+
+            // Wait for add op to finish and then check the registry
+            t.join(30000);
+            Assert.assertFalse(t.isAlive());
+            Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+
+        } finally {
+            if (t.isAlive()) {
+                t.interrupt();
+            }
         }
     }
 
