@@ -122,6 +122,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final InjectedValue<ExecutorService> injectedExecutorService = new InjectedValue<ExecutorService>();
     private final ExpressionResolver expressionResolver;
     private volatile ModelControllerImpl controller;
+    private volatile Thread bootThread;
     private ConfigurationPersister configurationPersister;
     private final ManagedAuditLogger auditLogger;
     private final BootErrorCollector bootErrorCollector;
@@ -321,6 +322,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
             }
         }, "Controller Boot Thread", bootStackSize);
         bootThread.start();
+        this.bootThread = bootThread;
     }
 
     /**
@@ -387,7 +389,11 @@ public abstract class AbstractControllerService implements Service<ModelControll
      */
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure, boolean skipModelValidation,
                            MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
-        return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT,
+        ModelControllerImpl theController = this.controller;
+        if (theController == null) {
+            return false;
+        }
+        return theController.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT,
                 rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider, skipModelValidation,
                 getPartialModelIndicator().isModelPartial());
     }
@@ -451,9 +457,12 @@ public abstract class AbstractControllerService implements Service<ModelControll
     }
 
     protected void finishBoot() throws ConfigurationPersistenceException {
-        controller.finishBoot();
-        configurationPersister.successfulBoot();
-        capabilityRegistry.publish();
+        ModelControllerImpl theController = this.controller;
+        if (theController != null) {
+            controller.finishBoot();
+            configurationPersister.successfulBoot();
+            capabilityRegistry.publish();
+        }
     }
 
     protected void bootThreadDone() {
@@ -472,6 +481,13 @@ public abstract class AbstractControllerService implements Service<ModelControll
         capabilityRegistry.clear();
         capabilityRegistry.publish();
         controller = null;
+
+        // If we're booting, cancel that thread
+        Thread bootthread = this.bootThread;
+        if (bootthread != null && bootthread.isAlive()) {
+            bootthread.interrupt();
+        }
+        bootThread = null;
 
         Runnable r = new Runnable() {
             @Override
@@ -580,9 +596,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
      */
     protected final ModelNode registerModelControllerServiceInitializationBootStep(BootContext context) {
         ModelControllerServiceInitializationParams initParams = getModelControllerServiceInitializationParams();
-        if (initParams != null) {
+        ModelControllerImpl theController = this.controller;
+        if (initParams != null && theController != null) {
             //Register the hidden op. The operation handler removes the operation once it is done
-            controller.getManagementModel().getRootResourceRegistration().registerOperationHandler(INIT_CONTROLLER_OP, new ModelControllerServiceInitializationBootStepHandler(initParams));
+            theController.getManagementModel().getRootResourceRegistration().registerOperationHandler(INIT_CONTROLLER_OP, new ModelControllerServiceInitializationBootStepHandler(initParams));
             //Return the operation
             return Util.createEmptyOperation(INIT_CONTROLLER_OP.getName(), PathAddress.EMPTY_ADDRESS);
         }
