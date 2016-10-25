@@ -41,6 +41,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.PlaceholderResource;
@@ -354,6 +356,7 @@ public class LoggingResource implements Resource {
 
     private static Collection<String> findValidFileNames(final ModelNode model) {
         final Collection<String> names = new ArrayList<>();
+        final Set<String> unresolvableExpressions = new LinkedHashSet<>();
         // Get all the file names from the model
         for (Property resource : model.asPropertyList()) {
             final String name = resource.getName();
@@ -367,11 +370,25 @@ public class LoggingResource implements Resource {
                         if (fileModel.hasDefined(PathResourceDefinition.RELATIVE_TO.getName())
                                 && ServerEnvironment.SERVER_LOG_DIR.equals(fileModel.get(PathResourceDefinition.RELATIVE_TO.getName()).asString())
                                 && fileModel.hasDefined(PathResourceDefinition.PATH.getName())) {
-                            names.add(fileModel.get(PathResourceDefinition.PATH.getName()).asString());
+                            final ModelNode path;
+                            try {
+                                // Possible expressions need to be resolved for the path name. If not resolved the expression
+                                // may contain invalid path characters.
+                                path = ExpressionResolver.SIMPLE.resolveExpressions(fileModel.get(PathResourceDefinition.PATH.getName()));
+                            } catch (OperationFailedException e) {
+                                // The expression could not be resolved for some reason. Collect all the unresolvable paths
+                                // and we'll log them once at the end
+                                unresolvableExpressions.add(fileModel.get(PathResourceDefinition.PATH.getName()).asString());
+                                continue;
+                            }
+                            names.add(path.asString());
                         }
                     }
                 }
             }
+        }
+        if (!unresolvableExpressions.isEmpty()) {
+            LoggingLogger.ROOT_LOGGER.unresolvablePathExpressions(unresolvableExpressions);
         }
         return names;
     }
