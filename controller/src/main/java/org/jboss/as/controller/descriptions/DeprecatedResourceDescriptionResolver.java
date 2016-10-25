@@ -28,7 +28,6 @@ import java.util.ResourceBundle;
  * This is useful when you need to deprecate whole subsystem and don't want to add deprecated key entries for each any every resource / attribute / operation
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
-@Deprecated
 public class DeprecatedResourceDescriptionResolver extends StandardResourceDescriptionResolver {
     private final String DEPRECATED_KEY;
 
