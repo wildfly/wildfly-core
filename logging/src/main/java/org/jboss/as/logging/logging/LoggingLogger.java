@@ -29,6 +29,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.Set;
 import java.util.logging.Handler;
 
 import org.jboss.as.controller.OperationFailedException;
@@ -43,6 +44,7 @@ import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.logging.annotations.Once;
 import org.jboss.logging.annotations.Transform;
 import org.jboss.logging.annotations.Transform.TransformType;
 import org.jboss.logmanager.Configurator;
@@ -926,4 +928,18 @@ public interface LoggingLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 88, value = "Could not determine %s had any children resources.")
     void errorDeterminingChildrenExist(@Cause Throwable cause, String childType);
+
+    /**
+     * Logs a warning message indicating all the path expressions that could not be resolved while attempting to
+     * determine which log files are available to be read.
+     * <p>
+     * Note this will only be logged once for the life of the JVM.
+     * </p>
+     *
+     * @param unresolvableExpressions the set of expressions that could not be resolved
+     */
+    @Once
+    @LogMessage(level = WARN)
+    @Message(id = 90, value = "The following path expressions could not be resolved while attempting to determine which log files are available to be read: %s")
+    void unresolvablePathExpressions(Set<String> unresolvableExpressions);
 }
