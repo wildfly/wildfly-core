@@ -147,7 +147,7 @@ public class DeployAllDomainTestCase {
         checkDeployment(sgTwo, cliTestApp2War.getName(), false);
         checkDeployment(sgTwo, cliTestAppEar.getName(), false);
         // Deploy them all.
-        ctx.handle("deploy --name=<all> --server-groups=" + sgTwo + ',' + sgOne);
+        ctx.handle("deploy --name=* --server-groups=" + sgTwo + ',' + sgOne);
         checkDeployment(sgOne, cliTestApp1War.getName(), true);
         checkDeployment(sgOne, cliTestAnotherWar.getName(), true);
         checkDeployment(sgOne, cliTestAppEar.getName(), true);
@@ -155,15 +155,6 @@ public class DeployAllDomainTestCase {
         checkDeployment(sgTwo, cliTestApp2War.getName(), true);
         checkDeployment(sgTwo, cliTestAppEar.getName(), true);
 
-    }
-
-    private void disableDeployment(String serverGroup, String name) throws CommandFormatException, IOException {
-        ModelNode mn = ctx.buildRequest("/server-group=" + serverGroup
-                + "/deployment=" + name + ":undeploy()");
-        ModelNode response = ctx.getModelControllerClient().execute(mn);
-        if (!response.hasDefined(Util.OUTCOME) || !response.get(Util.OUTCOME).asString().equals(Util.SUCCESS)) {
-            throw new CommandFormatException(name + " can't be dosabled");
-        }
     }
 
     private void checkDeployment(String serverGroup, String name, boolean enabled) throws CommandFormatException, IOException {

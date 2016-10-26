@@ -84,7 +84,7 @@ public class DeployHandler extends DeploymentHandler {
     private AccessRequirement deployPermission;
     private PerNodeOperationAccess serverGroupAddPermission;
 
-    private static final String ALL = "<all>";
+    private static final String ALL = "*";
 
     public DeployHandler(CommandContext ctx) {
         super(ctx, "deploy", true);
