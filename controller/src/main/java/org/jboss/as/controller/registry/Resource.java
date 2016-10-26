@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.registry;
 
+import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -161,12 +162,49 @@ public interface Resource extends Cloneable {
      */
     Set<String> getOrderedChildTypes();
 
+    /**
+     * Gets whether this resource only exists in the runtime and has no representation in the
+     * persistent configuration model.
+     *
+     * @return {@code true} if the resource has no representation in the
+     * persistent configuration model; {@code false} otherwise
+     */
     boolean isRuntime();
+
+    /**
+     * Gets whether operations against this resource will be proxied to a remote process.
+     *
+     * @return {@code true} if this resource represents a remote resource; {@code false} otherwise
+     */
     boolean isProxy();
 
+    /**
+     * Creates and returns a copy of this resource.
+     *
+     * @return the clone. Will not return {@code null}
+     */
     Resource clone();
 
-    public interface ResourceEntry extends Resource {
+    /**
+     * Creates a shallow copy of this resource, which will only have placeholder resources
+     * for immediate children. Those placeholder resources will return an empty
+     * {@link org.jboss.as.controller.registry.Resource#getModel() model} and will not themselves have any children.
+     * Their presence, however, allows the caller to see what immediate children exist under the target resource.
+     * @return the shallow copy. Will not return {@code null}
+     */
+    default Resource shallowCopy() {
+
+        final Resource copy = Resource.Factory.create();
+        copy.writeModel(getModel());
+        for(final String childType : getChildTypes()) {
+            for(final Resource.ResourceEntry child : getChildren(childType)) {
+                copy.registerChild(child.getPathElement(), PlaceholderResource.INSTANCE);
+            }
+        }
+        return copy;
+    }
+
+    interface ResourceEntry extends Resource {
 
         /**
          * Get the name this resource was registered under.
@@ -184,7 +222,7 @@ public interface Resource extends Cloneable {
 
     }
 
-    public static class Factory {
+    class Factory {
 
         private Factory() { }
 
@@ -221,7 +259,7 @@ public interface Resource extends Cloneable {
         }
     }
 
-    public static class Tools {
+    class Tools {
 
         /**
          * A {@link ResourceFilter} that returns {@code false} for {@link Resource#isRuntime() runtime} and
@@ -263,6 +301,33 @@ public interface Resource extends Cloneable {
         }
 
         /**
+         * Recursively reads an entire resource tree, ignoring runtime-only and proxy resources, and generates
+         * a DMR tree representing all of the non-ignored resources.  This variant can use a resource
+         * registration to help identify runtime-only and proxy resources more efficiently.
+         *
+         * @param resource the root resource
+         * @param mrr the resource registration for {@code resource}, or {@code null}
+         * @return the DMR tree
+         */
+        public static ModelNode readModel(final Resource resource, final ImmutableManagementResourceRegistration mrr) {
+            return readModel(resource, -1, mrr, ALL_BUT_RUNTIME_AND_PROXIES_FILTER);
+        }
+
+        /**
+         * Reads a resource tree, recursing up to the given number of levels but ignoring runtime-only and proxy resources,
+         * and generates a DMR tree representing all of the non-ignored resources.  This variant can use a resource
+         * registration to help identify runtime-only and proxy resources more efficiently.
+         *
+         * @param resource the model
+         * @param level the number of levels to recurse, or {@code -1} for no limit
+         * @param mrr the resource registration for {@code resource}, or {@code null}
+         * @return the DMR tree
+         */
+        public static ModelNode readModel(final Resource resource, final int level, final ImmutableManagementResourceRegistration mrr) {
+            return readModel(resource, level, mrr, ALL_BUT_RUNTIME_AND_PROXIES_FILTER);
+        }
+
+        /**
          * Reads a resource tree, recursing up to the given number of levels but ignoring resources not accepted
          * by the given {@code filter}, and generates a DMR tree representing all of the non-ignored resources.
          *
@@ -272,28 +337,51 @@ public interface Resource extends Cloneable {
          * @return the model
          */
         public static ModelNode readModel(final Resource resource, final int level, final ResourceFilter filter) {
-            if(filter.accepts(PathAddress.EMPTY_ADDRESS, resource)) {
-                return readModel(PathAddress.EMPTY_ADDRESS, resource, level, filter);
+            return readModel(resource, level, null, filter);
+        }
+
+        private static ModelNode readModel(final Resource resource, final int level,
+                                           final ImmutableManagementResourceRegistration mrr, final ResourceFilter filter) {
+            if (filter.accepts(PathAddress.EMPTY_ADDRESS, resource)) {
+                return readModel(PathAddress.EMPTY_ADDRESS, resource, level, mrr, filter);
             } else {
                 return new ModelNode();
             }
         }
 
-        static ModelNode readModel(final PathAddress address, final Resource resource, final int level, final ResourceFilter filter) {
+        private static ModelNode readModel(final PathAddress address, final Resource resource, final int level,
+                                           final ImmutableManagementResourceRegistration mrr, final ResourceFilter filter) {
             final ModelNode model = resource.getModel().clone();
-            final boolean recursive = level == -1 ? true : level > 0;
-            if(recursive) {
+            final boolean recursive = level == -1 || level > 0;
+            if (recursive) {
                 final int newLevel = level == -1 ? -1 : level - 1;
-                for(final String childType : resource.getChildTypes()) {
+                Set<String> validChildTypes = mrr == null ? null : getNonIgnoredChildTypes(mrr);
+                for (final String childType : resource.getChildTypes()) {
+                    if (validChildTypes != null && !validChildTypes.contains(childType)) {
+                        continue;
+                    }
                     model.get(childType).setEmptyObject();
-                    for(final ResourceEntry entry : resource.getChildren(childType)) {
-                        if(filter.accepts(address.append(entry.getPathElement()), resource)) {
-                            model.get(childType, entry.getName()).set(readModel(entry, newLevel));
+                    for (final ResourceEntry entry : resource.getChildren(childType)) {
+                        if (filter.accepts(address.append(entry.getPathElement()), resource)) {
+                            ImmutableManagementResourceRegistration childMrr =
+                                    mrr == null ? null : mrr.getSubModel(address.append(entry.getPathElement()));
+                            model.get(childType, entry.getName()).set(readModel(entry, newLevel, childMrr, filter));
                         }
                     }
                 }
             }
             return model;
+        }
+
+        private static Set<String> getNonIgnoredChildTypes(ImmutableManagementResourceRegistration mrr) {
+            Set<String> result = new HashSet<>();
+            for (PathElement pe : mrr.getChildAddresses(PathAddress.EMPTY_ADDRESS)) {
+                ImmutableManagementResourceRegistration childMrr = mrr.getSubModel(PathAddress.pathAddress(pe));
+                if (childMrr != null && !childMrr.isRemote() && !childMrr.isRuntimeOnly()) {
+                    result.add(pe.getKey());
+                }
+            }
+            return result;
         }
 
         /**
@@ -322,7 +410,7 @@ public interface Resource extends Cloneable {
      * {@link Resource#navigate(PathAddress)} implementations to indicate a client error when invoking a
      * management operation.
      */
-    public static class NoSuchResourceException extends NoSuchElementException implements OperationClientException {
+    class NoSuchResourceException extends NoSuchElementException implements OperationClientException {
 
         private static final long serialVersionUID = -2409240663987141424L;
 
