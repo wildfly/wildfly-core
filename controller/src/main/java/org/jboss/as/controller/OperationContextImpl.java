@@ -864,14 +864,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         if(recursive) {
             return model.clone();
         } else {
-            final Resource copy = Resource.Factory.create();
-            copy.writeModel(model.getModel());
-            for(final String childType : model.getChildTypes()) {
-                for(final Resource.ResourceEntry child : model.getChildren(childType)) {
-                    copy.registerChild(child.getPathElement(), PlaceholderResource.INSTANCE);
-                }
-            }
-            return copy;
+            return model.shallowCopy();
         }
     }
 
