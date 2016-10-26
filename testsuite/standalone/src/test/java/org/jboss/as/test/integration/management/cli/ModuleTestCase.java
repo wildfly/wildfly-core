@@ -186,6 +186,20 @@ public class ModuleTestCase extends AbstractCliTestBase {
         testModuleAndSlotExist(false, slot, getModulePath());
     }
 
+    @Test
+    public void addModuleWithWhitespacesInDependencies() throws Exception {
+        // should trim the surrounding whitespaces
+        try {
+            cli.sendLine("module add --name=" + MODULE_NAME
+                    + " --resources=" + jarFile.getAbsolutePath()
+                    + " --dependencies=[ org.jboss.logging ]"
+                    + " --export-dependencies=[ org.jboss.logmanager ]");
+            testModuleFiles("main", getModulePath(), false, false, false, true, false);
+        } finally {
+            testRemove("main", false);
+        }
+    }
+
     private void testAddRemove(String slotName, boolean addModuleRootDir, boolean addResources,
                                boolean addAbsoluteResources, boolean addPropeties,
                                boolean addDependencies, boolean addMainClass) throws Exception {
