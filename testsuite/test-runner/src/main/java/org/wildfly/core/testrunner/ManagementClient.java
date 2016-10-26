@@ -251,12 +251,15 @@ public class ManagementClient implements AutoCloseable, Closeable {
 
     public JMXServiceURL getRemoteJMXURL() {
         try {
-            if (mgmtProtocol.equals("http-remoting")) {
-                return new JMXServiceURL("service:jmx:http-remoting-jmx://" + NetworkUtils.formatPossibleIpv6Address(mgmtAddress) + ":" + mgmtPort);
-            } else if (mgmtProtocol.equals("https-remoting")) {
-                return new JMXServiceURL("service:jmx:https-remoting-jmx://" + NetworkUtils.formatPossibleIpv6Address(mgmtAddress) + ":" + mgmtPort);
-            } else {
-                return new JMXServiceURL("service:jmx:remoting-jmx://" + NetworkUtils.formatPossibleIpv6Address(mgmtAddress) + ":" + mgmtPort);
+            switch (mgmtProtocol) {
+                case "http-remoting":
+                case "remote+http":
+                    return new JMXServiceURL("service:jmx:remote+http://" + NetworkUtils.formatPossibleIpv6Address(mgmtAddress) + ":" + mgmtPort);
+                case "https-remoting":
+                case "remote+https":
+                    return new JMXServiceURL("service:jmx:remote+https://" + NetworkUtils.formatPossibleIpv6Address(mgmtAddress) + ":" + mgmtPort);
+                default:
+                    return new JMXServiceURL("service:jmx:remote://" + NetworkUtils.formatPossibleIpv6Address(mgmtAddress) + ":" + mgmtPort);
             }
         } catch (Exception e) {
             throw new RuntimeException("Could not create JMXServiceURL:" + this, e);
@@ -283,7 +286,7 @@ public class ManagementClient implements AutoCloseable, Closeable {
         if (ejbUri == null) {
             URI webUri = getWebUri();
             try {
-                ejbUri = new URI("http-remoting", webUri.getUserInfo(), webUri.getHost(), webUri.getPort(),null,null,null);
+                ejbUri = new URI("remote+http", webUri.getUserInfo(), webUri.getHost(), webUri.getPort(),null,null,null);
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e);
             }

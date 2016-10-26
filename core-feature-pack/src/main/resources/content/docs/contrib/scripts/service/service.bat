@@ -462,7 +462,7 @@ if "%STOP_PATH%"=="" set STOP_PATH="%JBOSS_HOME%\bin"
 if "%STOP_SCRIPT%"=="" set STOP_SCRIPT=jboss-cli.bat
 
 if /I "%IS_DOMAIN%" == "true" (
-  if "%BASE%"=="" set BASE="%JBOSS_HOME%\domain"
+  if "%BASE%"=="" set "BASE=%JBOSS_HOME%\domain"
   if "%CONFIG%"=="" set CONFIG=domain.xml
   if "%START_SCRIPT%"=="" set START_SCRIPT=domain.bat
   set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.domain.base.dir=!BASE!#--domain-config=!CONFIG!#--host-config=!HOSTCONFIG!"

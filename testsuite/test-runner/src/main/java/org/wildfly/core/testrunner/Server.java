@@ -53,7 +53,7 @@ public class Server {
     private String serverConfig = System.getProperty("server.config", "standalone.xml");
     private final int managementPort = Integer.getInteger("management.port", 9990);
     private final String managementAddress = System.getProperty("management.address", "localhost");
-    private final String managementProtocol = System.getProperty("management.protocol", "http-remoting");
+    private final String managementProtocol = System.getProperty("management.protocol", "remote+http");
 
     private final String serverDebug = "wildfly.debug";
     private final int serverDebugPort = Integer.getInteger("wildfly.debug.port", 8787);

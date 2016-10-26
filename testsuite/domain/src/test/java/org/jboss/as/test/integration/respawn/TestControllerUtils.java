@@ -41,6 +41,7 @@ class TestControllerUtils implements Closeable {
     }
     static TestControllerUtils create(URI uri, CallbackHandler callbackHandler) throws IOException {
         final Endpoint endpoint = Endpoint.getCurrent();
+
         final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, uri);
         configuration.setCallbackHandler(callbackHandler);
         return new TestControllerUtils(endpoint, configuration, createDefaultExecutor());

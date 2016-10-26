@@ -445,6 +445,18 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public void setSubsystemXmlMapping(String subsystemName, String namespaceUri, Supplier<XMLElementReader<List<ModelNode>>> supplier){
+            assert subsystemName != null : "subsystemName is null";
+            assert namespaceUri != null : "namespaceUri is null";
+            synchronized (extension) {
+                extension.getSubsystemInfo(subsystemName).addParsingNamespace(namespaceUri);
+                if (extension.xmlMapper != null) {
+                    extension.xmlMapper.registerRootElement(new QName(namespaceUri, SUBSYSTEM), supplier);
+                }
+            }
+        }
+
+        @Override
         public void setProfileParsingCompletionHandler(ProfileParsingCompletionHandler handler) {
             assert handler != null : "handler is null";
             synchronized (extension) {

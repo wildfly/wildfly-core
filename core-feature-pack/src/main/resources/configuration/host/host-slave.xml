@@ -61,7 +61,7 @@
     <domain-controller>
         <remote security-realm="ManagementRealm">
             <discovery-options>
-                <static-discovery name="primary" protocol="${jboss.domain.master.protocol:http-remoting}" host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9990}"/>
+                <static-discovery name="primary" protocol="${jboss.domain.master.protocol:remote+http}" host="${jboss.domain.master.address}" port="${jboss.domain.master.port:9990}"/>
             </discovery-options>
         </remote>
     </domain-controller>

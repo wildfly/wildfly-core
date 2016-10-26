@@ -33,11 +33,9 @@ import org.jboss.as.controller.PersistentResourceXMLParser;
  */
 class IOSubsystemParser_1_0 extends PersistentResourceXMLParser {
 
-    static final IOSubsystemParser_1_0 INSTANCE = new IOSubsystemParser_1_0();
-
     private final PersistentResourceXMLDescription xmlDescription;
 
-    private IOSubsystemParser_1_0() {
+    IOSubsystemParser_1_0() {
         xmlDescription = builder(IORootDefinition.INSTANCE.getPathElement())
                 .addChild(
                         builder(WorkerResourceDefinition.INSTANCE.getPathElement())

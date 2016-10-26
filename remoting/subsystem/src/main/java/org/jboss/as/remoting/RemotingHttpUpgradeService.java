@@ -21,7 +21,11 @@
  */
 package org.jboss.as.remoting;
 
+
 import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.jboss.as.remoting.Protocol.REMOTE_HTTP;
+import static org.jboss.as.remoting.Protocol.REMOTE_HTTPS;
+
 import java.io.IOException;
 import java.util.function.Consumer;
 
@@ -136,7 +140,7 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
         ListenerRegistry.Listener listenerInfo = listenerRegistry.getValue().getListener(httpConnectorName);
         assert listenerInfo != null;
         listenerInfo.addHttpUpgradeMetadata(httpUpgradeMetadata = new ListenerRegistry.HttpUpgradeMetadata("jboss-remoting", endpointName));
-        RemotingConnectorBindingInfoService.install(context.getChildTarget(), context.getController().getName().getSimpleName(), (SocketBinding)listenerInfo.getContextInformation("socket-binding"), listenerInfo.getProtocol().equals("https") ? "https-remoting" : "http-remoting");
+        RemotingConnectorBindingInfoService.install(context.getChildTarget(), context.getController().getName().getSimpleName(), (SocketBinding)listenerInfo.getContextInformation("socket-binding"), listenerInfo.getProtocol().equals("https") ? REMOTE_HTTPS : REMOTE_HTTP);
 
         if (connectorPropertiesOptionMap != null) {
             builder.addAll(connectorPropertiesOptionMap);

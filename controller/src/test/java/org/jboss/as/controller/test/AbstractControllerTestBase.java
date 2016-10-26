@@ -131,7 +131,7 @@ public abstract class AbstractControllerTestBase {
         return executeCheckNoFailure(operation).get(RESULT);
     }
 
-    public void executeForFailure(ModelNode operation) throws OperationFailedException {
+    public void executeForFailure(ModelNode operation) {
         try {
             ModelNode result = executeForResult(operation);
             Assert.fail(operation + " did not fail; returned " + result);
@@ -149,7 +149,7 @@ public abstract class AbstractControllerTestBase {
         return rsp;
     }
 
-    public ModelNode executeCheckForFailure(ModelNode operation) throws OperationFailedException {
+    public ModelNode executeCheckForFailure(ModelNode operation) {
             ModelNode rsp = getController().execute(operation, null, null, null);
             if (!FAILED.equals(rsp.get(OUTCOME).asString())) {
                 Assert.fail("Should have failed!");

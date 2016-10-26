@@ -56,7 +56,7 @@ public interface PoolAttributeDefinitions {
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
     SimpleAttributeDefinition QUEUE_LENGTH = new SimpleAttributeDefinitionBuilder(CommonAttributes.QUEUE_LENGTH, ModelType.INT, false)
-            .setValidator(new IntRangeValidator(0, Integer.MAX_VALUE, false, true)).setAllowExpression(true).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
+            .setValidator(new IntRangeValidator(1, Integer.MAX_VALUE, false, true)).setAllowExpression(true).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
     SimpleAttributeDefinition ALLOW_CORE_TIMEOUT = new SimpleAttributeDefinitionBuilder(CommonAttributes.ALLOW_CORE_TIMEOUT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)

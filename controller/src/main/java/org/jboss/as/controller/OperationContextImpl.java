@@ -529,7 +529,12 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     void publishCapabilityRegistry() {
-        modelController.publishCapabilityRegistry(managementModel);
+        // WFCORE-1886 Only publish the capability registry if we ourselves modified it,
+        // or if we modified the MRR tree (which may have modified it without our awareness)
+        // Either one is done under the exclusive lock so we won't publish someone else's modifications
+        if (affectsCapabilityRegistry || affectsResourceRegistration) {
+            modelController.publishCapabilityRegistry(managementModel);
+        }
     }
 
     @Override

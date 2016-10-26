@@ -70,7 +70,7 @@ public class DeploymentScannerExtension implements Extension {
         }
 
         final SubsystemRegistration subsystem = context.registerSubsystem(CommonAttributes.DEPLOYMENT_SCANNER, CURRENT_VERSION);
-        subsystem.registerXMLElementWriter(DeploymentScannerParser_2_0.INSTANCE);
+        subsystem.registerXMLElementWriter(new DeploymentScannerParser_2_0());
 
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(new DeploymentScannerSubsystemDefinition());
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
@@ -89,9 +89,9 @@ public class DeploymentScannerExtension implements Extension {
      */
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.DEPLOYMENT_SCANNER_1_0.getUriString(), DeploymentScannerParser_1_0.INSTANCE);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.DEPLOYMENT_SCANNER_1_1.getUriString(), DeploymentScannerParser_1_1.INSTANCE);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.DEPLOYMENT_SCANNER_2_0.getUriString(), DeploymentScannerParser_2_0.INSTANCE);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.DEPLOYMENT_SCANNER_1_0.getUriString(), DeploymentScannerParser_1_0::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.DEPLOYMENT_SCANNER_1_1.getUriString(), DeploymentScannerParser_1_1::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.DEPLOYMENT_SCANNER_2_0.getUriString(), DeploymentScannerParser_2_0::new);
 
     }
 

@@ -23,7 +23,7 @@
 package org.jboss.as.controller.parsing;
 
 import java.util.List;
-
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
@@ -65,6 +65,23 @@ public interface ExtensionParsingContext {
      *                               {@code subsystemName}
      */
     void setSubsystemXmlMapping(String subsystemName, String namespaceUri, XMLElementReader<List<ModelNode>> reader);
+
+    /**
+      * Set the parser for the profile-wide subsystem configuration XML element.  The element is always
+      * called {@code "subsystem"}.  The reader should populate the given model node with the appropriate
+      * "subsystem add" update, without the address or operation name as that information will be automatically
+      * populated.
+      * It is recommended that supplier always creates new instance of the {@link XMLElementReader}
+      * instead of caching and returning always same instance.
+      *
+      * @param subsystemName the name of the subsystem. Cannot be {@code null}
+      * @param namespaceUri the URI of the sussystem's XML namespace, in string form. Cannot be {@code null}
+      * @param supplier of the element reader. Cannot be {@code null}
+      *
+      * @throws IllegalStateException if another {@link org.jboss.as.controller.Extension} has already registered a subsystem with the given
+      *                               {@code subsystemName}
+      */
+    void setSubsystemXmlMapping(String subsystemName, String namespaceUri, Supplier<XMLElementReader<List<ModelNode>>> supplier);
 
     /**
      * Registers a {@link ProfileParsingCompletionHandler} to receive a callback upon completion of parsing of a

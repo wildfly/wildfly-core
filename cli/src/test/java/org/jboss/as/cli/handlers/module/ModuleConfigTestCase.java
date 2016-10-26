@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -72,6 +72,7 @@ public class ModuleConfigTestCase {
         final ModuleConfigImpl moduleConfig = new ModuleConfigImpl("org.jboss.as.cli.test.module");
         moduleConfig.setMainClass("org.jboss.as.cli.test.Main");
         moduleConfig.addDependency(new ModuleDependency("org.jboss.logging"));
+        moduleConfig.addDependency(new ModuleDependency("org.jboss.foo", true));
         moduleConfig.addResource(new ResourceRoot("fake.jar"));
         moduleConfig.setProperty("test.property", "value");
         moduleConfig.setSlot("other");

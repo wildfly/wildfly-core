@@ -61,7 +61,7 @@ public class DeployTestCase {
     public static void before() throws Exception {
         CommandContextConfiguration.Builder configBuilder = new CommandContextConfiguration.Builder();
         configBuilder.setInitConsole(true).setConsoleInput(System.in).setConsoleOutput(System.out).
-                setController("http-remoting://" + TestSuiteEnvironment.getServerAddress()
+                setController("remote+http://" + TestSuiteEnvironment.getServerAddress()
                         + ":" + TestSuiteEnvironment.getServerPort());
         ctx = CommandContextFactory.getInstance().newCommandContext(configBuilder.build());
         ctx.connectController();

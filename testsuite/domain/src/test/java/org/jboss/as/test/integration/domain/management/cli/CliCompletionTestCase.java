@@ -1252,4 +1252,22 @@ public class CliCompletionTestCase {
             ctx.terminateSession();
         }
     }
+
+    @Test
+    public void testInvalidOperation() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        try {
+            {
+                String cmd = "/subsystem=ohnoabug:dodo(cc";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+        } finally {
+            ctx.terminateSession();
+        }
+    }
 }

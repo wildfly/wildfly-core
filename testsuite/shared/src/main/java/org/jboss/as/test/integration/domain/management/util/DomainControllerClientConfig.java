@@ -41,6 +41,7 @@ import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.threads.JBossThreadFactory;
 
+
 /**
  * Shared test configuration where all {@linkplain org.jboss.as.controller.client.ModelControllerClient}s share a common {@linkplain Endpoint} and
  * {@linkplain java.util.concurrent.Executor}.
@@ -110,6 +111,7 @@ public class DomainControllerClientConfig implements Closeable {
 
     static DomainControllerClientConfig create(final ExecutorService executorService, boolean destroyExecutor) throws IOException {
         final Endpoint endpoint = Endpoint.getCurrent();
+
         return new DomainControllerClientConfig(endpoint, executorService, destroyExecutor);
     }
 

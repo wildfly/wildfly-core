@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2014, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -207,6 +207,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
                 + (addModuleRootDir ? " --module-root-dir=" + customModulesDirectory.getAbsolutePath() : "")
                 + (addProperties ? " --properties=bat=man" : "")
                 + (addDependencies ? " --dependencies=org.jboss.logging" : "")
+                + (addDependencies ? " --export-dependencies=org.jboss.logmanager" : "")
                 + (addMainClass ? " --main-class=org.jboss.Test" : ""));
     }
 
@@ -349,9 +350,21 @@ public class ModuleTestCase extends AbstractCliTestBase {
         XPathExpression dependenciesNameAttrExpr = xpath.compile("/module/dependencies/module/@name");
         nl = (NodeList) dependenciesNameAttrExpr.evaluate(doc, XPathConstants.NODESET);
         if (checkDependencies) {
-            assertTrue("module.xml should contain one resource-root elements", nl.getLength() == 1);
+            assertTrue("module.xml should contain two resource-root elements", nl.getLength() == 2);
             assertTrue("module.xml should contain module element with atrribute name=\"org.jboss.logging\"",
                     nl.item(0).getNodeValue().equals("org.jboss.logging"));
+            assertTrue("module.xml should contain module element with atrribute name=\"org.jboss.logmanager\"",
+                    nl.item(1).getNodeValue().equals("org.jboss.logmanager"));
+        } else {
+            assertTrue("module.xml shouldn't contain any dependencies but it has " + nl.getLength() + " dependencies", nl.getLength() == 0);
+        }
+
+        XPathExpression exportDependenciesNameAttrExpr = xpath.compile("/module/dependencies/module/@export");
+        nl = (NodeList) exportDependenciesNameAttrExpr.evaluate(doc, XPathConstants.NODESET);
+        if (checkDependencies) {
+            assertTrue("module.xml should contain one resource-root elements", nl.getLength() == 1);
+            assertTrue("module.xml should contain module element with atrribute export=true",
+                    nl.item(0).getNodeValue().equals("true"));
         } else {
             assertTrue("module.xml shouldn't contain any dependencies but it has " + nl.getLength() + " dependencies", nl.getLength() == 0);
         }

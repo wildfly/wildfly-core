@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-subsystem-test-parent</artifactId>
-        <version>3.0.0.Alpha10-SNAPSHOT</version>
+        <version>3.0.0.Alpha11-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-subsystem-test-tests</artifactId>
@@ -52,8 +52,8 @@
            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>woodstox-core-asl</artifactId>
+            <groupId>com.fasterxml.woodstox</groupId>
+            <artifactId>woodstox-core</artifactId>
             <scope>test</scope> <!-- here to test WFCORE-1136 -->
         </dependency>
     </dependencies>

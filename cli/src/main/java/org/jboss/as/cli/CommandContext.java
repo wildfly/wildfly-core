@@ -192,7 +192,7 @@ public interface CommandContext {
      *
      * The default controller will be identified as the default specified on starting the CLI will be used, if no controller was
      * specified on start up then the default defined in the CLI configuration will be used, if no default is defined then a
-     * connection to http-remoting://localhost:9990 will be used instead.
+     * connection to remote+http://localhost:9990 will be used instead.
      *
      * @throws CommandLineException in case the attempt to connect failed
      */
@@ -203,7 +203,7 @@ public interface CommandContext {
      *
      * If the controller is null then the default specified on starting the CLI will be used, if no controller was specified on
      * start up then the default defined in the CLI configuration will be used, if no default is defined then a connection to
-     * http-remoting://localhost:9990 will be used instead.
+     * remote+http://localhost:9990 will be used instead.
      *
      * @param controller the controller to connect to
      * @throws CommandLineException in case the attempt to connect failed
