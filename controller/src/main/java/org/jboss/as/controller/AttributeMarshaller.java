@@ -22,9 +22,11 @@
 
 package org.jboss.as.controller;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
-
+import java.util.Set;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -122,19 +124,39 @@ public abstract class AttributeMarshaller {
             this.marshallSimpleTypeAsElement = marshallSimpleTypeAsAttribute;
         }
 
+        private static Set<AttributeDefinition> sortAttributes(AttributeDefinition[] attributes) {
+            Set<AttributeDefinition> sortedAttrs = new LinkedHashSet<>(attributes.length);
+            List<AttributeDefinition> elementAds = null;
+            for (AttributeDefinition ad : attributes) {
+                if (ad.getParser().isParseAsElement()) {
+                    if (elementAds == null) {
+                        elementAds = new ArrayList<>();
+                    }
+                    elementAds.add(ad);
+                } else {
+                    sortedAttrs.add(ad);
+                }
+            }
+            if (elementAds != null) {
+                sortedAttrs.addAll(elementAds);
+            }
+            return sortedAttrs;
+        }
+
         @Override
         public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
             assert attribute instanceof ObjectTypeAttributeDefinition;
             if (resourceModel.hasDefined(attribute.getName())) {
                 AttributeDefinition[] valueTypes = ((ObjectTypeAttributeDefinition) attribute).getValueTypes();
+                Set<AttributeDefinition> sortedAttrs = sortAttributes(valueTypes);
                 writer.writeStartElement(attribute.getXmlName());
-                for (AttributeDefinition valueType : valueTypes) {
+                for (AttributeDefinition valueType : sortedAttrs) {
                     if(resourceModel.hasDefined(attribute.getName(), valueType.getName())) {
                         ModelNode handler = resourceModel.get(attribute.getName());
                         if(marshallSimpleTypeAsElement) {
                             valueType.marshallAsElement(handler, marshallDefault, writer);
                         } else {
-                            valueType.getAttributeMarshaller().marshallAsAttribute(valueType, handler, marshallDefault, writer);
+                            valueType.getAttributeMarshaller().marshall(valueType, handler, marshallDefault, writer);
                         }
                     }
                 }
@@ -151,7 +173,6 @@ public abstract class AttributeMarshaller {
 
     private static class ObjectListMarshaller extends AttributeMarshaller {
         private ObjectListMarshaller() {
-
         }
 
         @Override
@@ -159,11 +180,36 @@ public abstract class AttributeMarshaller {
             return true;
         }
 
-        @Override
-        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+        ObjectTypeAttributeDefinition getObjectType(AttributeDefinition attribute) {
             assert attribute instanceof ObjectListAttributeDefinition;
             ObjectListAttributeDefinition list = ((ObjectListAttributeDefinition) attribute);
-            ObjectTypeAttributeDefinition objectType = list.getValueType();
+            return list.getValueType();
+        }
+
+        private boolean isMarshallable(AttributeDefinition[] valueTypes, ModelNode element){
+            for (AttributeDefinition valueType : valueTypes) {
+                if (valueType.getAttributeMarshaller().isMarshallable(valueType, element)){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        void writeElements(XMLStreamWriter writer, ObjectTypeAttributeDefinition objectType, AttributeDefinition[] valueTypes, List<ModelNode> elements) throws XMLStreamException {
+            for (ModelNode element : elements) {
+                if (isMarshallable(valueTypes, element)) {
+                    writer.writeStartElement(objectType.getXmlName());
+                    for (AttributeDefinition valueType : valueTypes) {
+                        valueType.getAttributeMarshaller().marshall(valueType, element, false, writer);
+                    }
+                    writer.writeEndElement();
+                }
+            }
+        }
+
+        @Override
+        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            ObjectTypeAttributeDefinition objectType = getObjectType(attribute);
             AttributeDefinition[] valueTypes = objectType.getValueTypes();
             if (resourceModel.hasDefined(attribute.getName())) {
                 List<ModelNode> elements = resourceModel.get(attribute.getName()).asList();
@@ -171,17 +217,27 @@ public abstract class AttributeMarshaller {
                     writer.writeEmptyElement(attribute.getXmlName());
                 } else {
                     writer.writeStartElement(attribute.getXmlName());
-                    for (ModelNode element : elements) {
-                        writer.writeStartElement(objectType.getXmlName());
-                        for (AttributeDefinition valueType : valueTypes) {
-                            valueType.getAttributeMarshaller().marshall(valueType, element, false, writer);
-                        }
-                        writer.writeEndElement();
-                    }
+                    writeElements(writer, objectType, valueTypes, elements);
                     writer.writeEndElement();
                 }
             }
         }
+    }
+
+    private static class UnwrappedObjectListMarshaller extends ObjectListMarshaller {
+        private UnwrappedObjectListMarshaller() {
+        }
+
+        @Override
+        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            ObjectTypeAttributeDefinition objectType = getObjectType(attribute);
+            AttributeDefinition[] valueTypes = objectType.getValueTypes();
+            if (resourceModel.hasDefined(attribute.getName())) {
+                List<ModelNode> elements = resourceModel.get(attribute.getName()).asList();
+                writeElements(writer, objectType, valueTypes, elements);
+            }
+        }
+
     }
 
     /**
@@ -210,7 +266,9 @@ public abstract class AttributeMarshaller {
     public static final AttributeMarshaller ATTRIBUTE_OBJECT = new ObjectMarshaller(false);
 
 
-    public static final AttributeMarshaller OBJECT_LIST_MARSHALLER = new ObjectListMarshaller();
+    public static final AttributeMarshaller WRAPPED_OBJECT_LIST_MARSHALLER = new ObjectListMarshaller();
+    public static final AttributeMarshaller UNWRAPPED_OBJECT_LIST_MARSHALLER = new UnwrappedObjectListMarshaller();
+    public static final AttributeMarshaller OBJECT_LIST_MARSHALLER = WRAPPED_OBJECT_LIST_MARSHALLER;
 
     public static final AttributeMarshaller OBJECT_MAP_MARSHALLER = new AttributeMarshallers.ObjectMapAttributeMarshaller();
 

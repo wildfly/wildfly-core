@@ -24,13 +24,8 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.parsing.Attribute.NAME;
-import static org.jboss.as.controller.parsing.Element.PROPERTY;
-
 import java.util.Locale;
 import java.util.ResourceBundle;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -70,41 +65,23 @@ public class SimpleMapAttributeDefinition extends MapAttributeDefinition {
         node.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(new ModelNode(isAllowExpression()));
     }
 
-    private static class MapAttributeMarshaller extends AttributeMarshaller {
-        @Override
-        public boolean isMarshallable(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault) {
-            return resourceModel.isDefined() && resourceModel.hasDefined(attribute.getName());
-        }
-
-        @Override
-        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-            resourceModel = resourceModel.get(attribute.getXmlName());
-            writer.writeStartElement(attribute.getName());
-            marshalToElement(resourceModel, writer);
-            writer.writeEndElement();
-        }
-
-        private void marshalToElement(ModelNode resourceModel, XMLStreamWriter writer) throws XMLStreamException {
-            if (!resourceModel.isDefined()) { return; }
-            for (String name : resourceModel.keys()) {
-                writer.writeStartElement(PROPERTY.getLocalName());
-                writer.writeAttribute(NAME.getLocalName(), name);
-                writer.writeCharacters(resourceModel.get(name).asString());
-                writer.writeEndElement();
-            }
-        }
-    }
-
     public static final class Builder extends MapAttributeDefinition.Builder<Builder, SimpleMapAttributeDefinition> {
         private ModelType valueType = ModelType.STRING;
 
         public Builder(final String name, boolean allowNull) {
             super(name, allowNull);
+            setDefaults();
         }
 
         public Builder(final String name, final ModelType valueType, final boolean allowNull) {
             super(name, allowNull);
             this.valueType = valueType;
+            setDefaults();
+        }
+
+        private void setDefaults(){
+            setAttributeParser(AttributeParser.PROPERTIES_PARSER);
+            setAttributeMarshaller(AttributeMarshaller.PROPERTIES_MARSHALLER);
         }
 
         public Builder(final SimpleMapAttributeDefinition basis) {
@@ -124,9 +101,6 @@ public class SimpleMapAttributeDefinition extends MapAttributeDefinition {
         public SimpleMapAttributeDefinition build() {
             if (elementValidator == null) {
                 elementValidator = new ModelTypeValidator(valueType, allowNull, allowExpression);
-            }
-            if (attributeMarshaller == null) {
-                attributeMarshaller = new MapAttributeMarshaller();
             }
             return new SimpleMapAttributeDefinition(this);
         }
