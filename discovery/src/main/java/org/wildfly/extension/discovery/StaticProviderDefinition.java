@@ -25,6 +25,8 @@ package org.wildfly.extension.discovery;
 import static org.wildfly.extension.discovery.DiscoveryExtension.DISCOVERY_PROVIDER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.discovery.DiscoveryExtension.STATIC_PROVIDER;
 
+import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathElement;
@@ -50,7 +52,10 @@ final class StaticProviderDefinition extends SimpleResourceDefinition {
 
     static final ObjectTypeAttributeDefinition ATTRIBUTE = new ObjectTypeAttributeDefinition.Builder(DiscoveryExtension.ATTRIBUTE, NAME, VALUE).build();
 
-    static final ObjectListAttributeDefinition ATTRIBUTES = new ObjectListAttributeDefinition.Builder(DiscoveryExtension.ATTRIBUTES, ATTRIBUTE).build();
+    static final ObjectListAttributeDefinition ATTRIBUTES = new ObjectListAttributeDefinition.Builder(DiscoveryExtension.ATTRIBUTES, ATTRIBUTE)
+            .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
+            .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
+            .build();
 
     static final ObjectTypeAttributeDefinition SERVICE = new ObjectTypeAttributeDefinition.Builder(DiscoveryExtension.SERVICE,
         ABSTRACT_TYPE,

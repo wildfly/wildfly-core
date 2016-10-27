@@ -90,10 +90,10 @@
             </documentation>
         </annotation>
         <xs:choice>
-            <xs:element name="services" type="servicesType" minOccurs="0">
+            <xs:element name="service" type="serviceType" minOccurs="0" maxOccurs="unbounded">
                 <annotation xmlns="http://www.w3.org/2001/XMLSchema">
                     <documentation>
-                        The list of services which make up this provider.
+                        A single service definition within the service list.
                     </documentation>
                 </annotation>
             </xs:element>
@@ -107,23 +107,6 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="servicesType">
-        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
-            <documentation>
-                A list of static services.
-            </documentation>
-        </annotation>
-        <xs:choice>
-            <xs:element name="service" type="serviceType" minOccurs="0" maxOccurs="unbounded">
-                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
-                    <documentation>
-                        A single service definition within the service list.
-                    </documentation>
-                </annotation>
-            </xs:element>
-        </xs:choice>
-    </xs:complexType>
-
     <xs:complexType name="serviceType">
         <annotation xmlns="http://www.w3.org/2001/XMLSchema">
             <documentation>
@@ -131,10 +114,10 @@
             </documentation>
         </annotation>
         <xs:sequence>
-            <xs:element name="attributes" type="attributesType" minOccurs="0">
+            <xs:element name="attribute" type="attributeType" minOccurs="0" maxOccurs="unbounded">
                 <annotation xmlns="http://www.w3.org/2001/XMLSchema">
                     <documentation>
-                        A list of attributes which apply to this service definition.
+                        A single attribute in this attribute list.
                     </documentation>
                 </annotation>
             </xs:element>
@@ -167,23 +150,6 @@
                 </documentation>
             </annotation>
         </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="attributesType">
-        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
-            <documentation>
-                A list of attributes.
-            </documentation>
-        </annotation>
-        <xs:choice>
-            <xs:element name="attribute" type="attributeType" minOccurs="0" maxOccurs="unbounded">
-                <annotation xmlns="http://www.w3.org/2001/XMLSchema">
-                    <documentation>
-                        A single attribute in this attribute list.
-                    </documentation>
-                </annotation>
-            </xs:element>
-        </xs:choice>
     </xs:complexType>
 
     <xs:complexType name="attributeType">
