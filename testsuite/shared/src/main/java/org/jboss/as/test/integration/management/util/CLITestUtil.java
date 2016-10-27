@@ -35,6 +35,7 @@ import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.wildfly.test.api.Authentication;
 
 /**
  *
@@ -47,10 +48,14 @@ public class CLITestUtil {
     private static final String serverAddr = TestSuiteEnvironment.getServerAddress();
     private static final int serverPort = TestSuiteEnvironment.getServerPort();
 
+    private static final String username = Authentication.username;
+    private static final String password = Authentication.password;
+    private static final boolean isRemote = Boolean.parseBoolean(System.getProperty("org.jboss.as.test.integration.remote", "false"));
+
     public static CommandContext getCommandContext() throws CliInitializationException {
         System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(constructUri("remote+http", serverAddr , serverPort), null, null);
+        return CommandContextFactory.getInstance().newCommandContext(constructUri("remote+http", serverAddr , serverPort), isRemote ? username : null, isRemote ? password.toCharArray() : null);
     }
 
     public static CommandContext getCommandContext(DomainTestSupport domainTestSupport) throws CliInitializationException {
@@ -63,7 +68,7 @@ public class CLITestUtil {
             return CommandContextFactory.getInstance().newCommandContext(
                     constructUri(config.getHostControllerManagementProtocol(),
                             config.getHostControllerManagementAddress(),
-                            config.getHostControllerManagementPort()), null, null);
+                            config.getHostControllerManagementPort()),  isRemote ? username : null, isRemote ? password.toCharArray() : null);
         }
 
     public static CommandContext getCommandContext(String address, int port, InputStream in, OutputStream out)
@@ -71,7 +76,7 @@ public class CLITestUtil {
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
         System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(address + ":" + port, null, null, in, out);
+        return CommandContextFactory.getInstance().newCommandContext(address + ":" + port, isRemote ? username : null, isRemote ? password.toCharArray() : null, in, out);
     }
 
     public static CommandContext getCommandContext(String protocol, String address, int port)
@@ -79,7 +84,7 @@ public class CLITestUtil {
         // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
         System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(constructUri(protocol, address, port), null, null);
+        return CommandContextFactory.getInstance().newCommandContext(constructUri(protocol, address, port), isRemote ? username : null, isRemote ? password.toCharArray() : null);
     }
 
     public static CommandContext getCommandContext(OutputStream out) throws CliInitializationException {
@@ -87,7 +92,7 @@ public class CLITestUtil {
         System.setProperty("aesh.ansi","false");
         System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(constructUri(null, serverAddr , serverPort), null, null, null, out);
+        return CommandContextFactory.getInstance().newCommandContext(constructUri(null, serverAddr , serverPort), isRemote ? username : null, isRemote ? password.toCharArray() : null, null, out);
     }
 
     public static CommandContext getCommandContext(DomainTestSupport domainTestSupport, InputStream in, OutputStream out) throws CliInitializationException {
@@ -99,7 +104,7 @@ public class CLITestUtil {
         return CommandContextFactory.getInstance().
                 newCommandContext(constructUri(config.getHostControllerManagementProtocol(),
                         config.getHostControllerManagementAddress(),
-                        config.getHostControllerManagementPort()), null, null,
+                        config.getHostControllerManagementPort()), isRemote ? username : null, isRemote ? password.toCharArray() : null,
                         in, out);
     }
 
