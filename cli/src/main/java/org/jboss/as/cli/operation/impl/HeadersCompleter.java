@@ -49,6 +49,10 @@ public class HeadersCompleter implements CommandLineCompleter {
             return -1;
         }
         buffer = originalBuffer.substring(valueIndex);
+        if (buffer.isEmpty()) {
+            candidates.add("{");
+            return 0;
+        }
         try {
             handler.parseOperation(null, buffer);
         } catch (CommandFormatException e) {
