@@ -18,13 +18,9 @@
 
 <subsystem xmlns="urn:jboss:domain:discovery:1.0">
     <static-provider name="test">
-        <services>
-            <service uri="local://" abstract-type="ejb" abstract-type-authority="jboss" uri-scheme-authority="test">
-                <attributes>
-                    <attribute name="x" value="y"/>
-                </attributes>
-            </service>
-        </services>
+        <service uri="local://" abstract-type="ejb" abstract-type-authority="jboss" uri-scheme-authority="test">
+           <attribute name="x" value="y" />
+        </service>
     </static-provider>
     <aggregate-provider name="aggregate" providers="test"/>
 </subsystem>

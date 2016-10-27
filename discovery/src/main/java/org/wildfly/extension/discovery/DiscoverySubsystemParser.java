@@ -28,6 +28,8 @@ import static org.wildfly.extension.discovery.DiscoveryExtension.AGGREGATE_PROVI
 import static org.wildfly.extension.discovery.DiscoveryExtension.DISCOVERY;
 import static org.wildfly.extension.discovery.DiscoveryExtension.STATIC_PROVIDER;
 
+import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.PersistentResourceXMLParser;
@@ -43,7 +45,7 @@ final class DiscoverySubsystemParser extends PersistentResourceXMLParser {
         xmlDescription = builder(PathElement.pathElement(SUBSYSTEM, DISCOVERY), DiscoveryExtension.NAMESPACE)
             .addChild(
                 builder(PathElement.pathElement(STATIC_PROVIDER))
-                    .addAttribute(StaticProviderDefinition.SERVICES)
+                    .addAttribute(StaticProviderDefinition.SERVICES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             )
             .addChild(
                 builder(PathElement.pathElement(AGGREGATE_PROVIDER))
