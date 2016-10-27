@@ -28,6 +28,8 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.test.integration.management.cli.ifelse.CLISystemPropertyTestBase;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -53,6 +55,56 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
             assertEquals("try", getValue());
+        } finally {
+            ctx.handleSafe(getRemovePropertyReq());
+            ctx.terminateSession();
+            cliOut.reset();
+        }
+    }
+
+    @Test
+    public void testCatchException() throws Exception {
+        cliOut.reset();
+        final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        try {
+            ctx.connectController();
+            ctx.handle("try");
+            ctx.handle("echo try block");
+            ctx.handle("fail try");
+            ctx.handle("catch");
+            ctx.handle("echo catch block");
+            ctx.handle("fail catch");
+            ctx.handle("finally");
+            ctx.handle("echo finally block");
+            ctx.handle("fail finally");
+            ctx.handleSafe("end-try");
+            String out = cliOut.toString();
+            assertFalse(out.contains("fail try"));
+            assertTrue(out.contains("fail catch"));
+            assertTrue(out.contains("fail finally"));
+        } finally {
+            ctx.handleSafe(getRemovePropertyReq());
+            ctx.terminateSession();
+            cliOut.reset();
+        }
+    }
+
+    @Test
+    public void testTryException() throws Exception {
+        cliOut.reset();
+        final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        try {
+            ctx.connectController();
+            ctx.handle("try");
+            ctx.handle("echo try block");
+            ctx.handle("fail try");
+            ctx.handle("finally");
+            ctx.handle("echo finally block");
+            ctx.handle("fail finally");
+            ctx.handleSafe("end-try");
+            String out = cliOut.toString();
+            assertTrue(out.contains("fail try"));
+            assertTrue(out.contains("fail finally"));
         } finally {
             ctx.handleSafe(getRemovePropertyReq());
             ctx.terminateSession();
