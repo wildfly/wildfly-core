@@ -21,6 +21,9 @@
 */
 package org.jboss.as.domain.http.server;
 
+import static io.undertow.predicate.Predicates.not;
+import static io.undertow.predicate.Predicates.path;
+
 import java.io.File;
 import java.util.Set;
 import java.util.SortedSet;
@@ -30,7 +33,6 @@ import io.undertow.predicate.Predicates;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.PredicateHandler;
 import io.undertow.server.handlers.RedirectHandler;
-import io.undertow.server.handlers.SetHeaderHandler;
 import io.undertow.server.handlers.resource.ClassPathResourceManager;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
 import org.jboss.modules.Module;
@@ -38,10 +40,6 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.wildfly.security.manager.WildFlySecurityManager;
-
-import static io.undertow.predicate.Predicates.not;
-import static io.undertow.predicate.Predicates.path;
-import static io.undertow.predicate.Predicates.suffixes;
 
 
 /**
@@ -132,28 +130,12 @@ public enum ConsoleMode {
      */
     static class ConsoleHandler {
 
-        private static final String NOCACHE_JS = ".nocache.js";
-        private static final String INDEX_HTML = "index.html";
-        private static final String APP_HTML = "App.html";
-
         private static final String CONSOLE_MODULE = "org.jboss.as.console";
         private static final String CONTEXT = "/console";
-        private static final String DEFAULT_RESOURCE = "/" + INDEX_HTML;
 
         static ResourceHandlerDefinition createConsoleHandler(String skin) throws ModuleLoadException {
             final ClassPathResourceManager resource = new ClassPathResourceManager(findConsoleClassLoader(Module.getCallerModuleLoader(), skin), "");
-            final io.undertow.server.handlers.resource.ResourceHandler handler = new io.undertow.server.handlers.resource.ResourceHandler(resource)
-                    .setCacheTime(60 * 60 * 24 * 31)
-                    .setAllowed(not(path("META-INF")))
-                    .setResourceManager(resource)
-                    .setDirectoryListingEnabled(false)
-                    .setCachable(not(suffixes(NOCACHE_JS, APP_HTML, INDEX_HTML)));
-
-            // avoid clickjacking attacks: console must not be included in (i)frames
-            SetHeaderHandler frameHandler = new SetHeaderHandler(handler, "X-Frame-Options", "SAMEORIGIN");
-            // we also need to setup the default resource redirect
-            PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(CONTEXT + DEFAULT_RESOURCE), frameHandler);
-            return new ResourceHandlerDefinition(CONTEXT, DEFAULT_RESOURCE, predicateHandler);
+            return DomainUtil.createStaticContentHandler(resource, CONTEXT);
 
         }
 

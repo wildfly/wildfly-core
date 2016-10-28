@@ -181,7 +181,9 @@ public class DomainLifecycleUtil {
                 copyConfigFile(configuration.getMgmtUsersFile(), configDir, null);
             } else {
                 // No point backing up the file in a test scenario, just write what we need.
-                final String text = "slave=" + new UsernamePasswordHashUtil().generateHashedHexURP(SLAVE_HOST_USERNAME, "ManagementRealm", SLAVE_HOST_PASSWORD.toCharArray());
+                final String text =
+                        "testSuite=29a64f8524f32269aa9b681efc347f96\n" +
+                        "slave=" + new UsernamePasswordHashUtil().generateHashedHexURP(SLAVE_HOST_USERNAME, "ManagementRealm", SLAVE_HOST_PASSWORD.toCharArray());
                 createFile(configDir.resolve("mgmt-users.properties"), text);
             }
             if (configuration.getMgmtGroupsFile() != null) {
