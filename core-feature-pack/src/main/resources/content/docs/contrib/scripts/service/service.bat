@@ -156,8 +156,8 @@ echo(
 echo     /controller ^<host:port^>   : The host:port of the management interface.
 echo                                 default: %CONTROLLER%
 echo(
-echo     /host [^<domainhost^>]      : Indicates that domain mode is to be used with an
-echo                                 optional domain controller name.
+echo     /host [^<domainhost^>]      : Indicates that domain mode is to be used,
+echo                                 with an optional domain/host controller name.
 echo                                 default: %DC_HOST%
 echo                                 Not specifying /host will install JBoss in
 echo                                 standalone mode.
@@ -450,7 +450,7 @@ if not "%SERVICE_USER%" == "" (
     echo When specifying a user, you need to specify the password
     goto endBatch
   )
-  set RUNAS=--ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASS%
+  set RUNAS=--ServiceUser="%SERVICE_USER%" --ServicePassword="%SERVICE_PASS%"
 )
 
 if "%STDOUT%"=="" set STDOUT=auto
