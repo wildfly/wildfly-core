@@ -901,6 +901,14 @@ public class CliCompletionTestCase {
         CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
                 System.in, System.out);
         ctx.connectController();
+
+        {
+            String cmd = "deployment-info --headers=";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertEquals(Arrays.asList("{"), candidates);
+        }
         testHeader("ls -l --headers=", ctx);
         testHeader(":read-resource()", ctx);
     }
