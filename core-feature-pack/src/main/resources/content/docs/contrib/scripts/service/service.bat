@@ -450,7 +450,7 @@ if not "%SERVICE_USER%" == "" (
     echo When specifying a user, you need to specify the password
     goto endBatch
   )
-  set RUNAS=--ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASS%
+  set RUNAS=--ServiceUser="%SERVICE_USER%" --ServicePassword="%SERVICE_PASS%"
 )
 
 if "%STDOUT%"=="" set STDOUT=auto
