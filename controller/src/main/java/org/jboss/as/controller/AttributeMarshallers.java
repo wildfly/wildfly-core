@@ -54,7 +54,7 @@ public interface AttributeMarshallers {
                 return;
             }
 
-            String wrapper = wrapperElement == null ? attribute.getXmlName() : wrapperElement;
+            String wrapper = wrapperElement == null ? attribute.getName() : wrapperElement;
             List<ModelNode> elementList = resourceModel.asList();
             if (elementList.isEmpty()) {
                 if (wrapElement) {

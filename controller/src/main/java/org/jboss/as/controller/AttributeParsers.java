@@ -79,7 +79,7 @@ public interface AttributeParsers {
 
         @Override
         public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
-            String wrapper = getXmlName(attribute);
+            String wrapper = wrapperElement == null ? attribute.getName() : wrapperElement;
             assert attribute instanceof MapAttributeDefinition;
             MapAttributeDefinition mapAttribute = (MapAttributeDefinition) attribute;
 
