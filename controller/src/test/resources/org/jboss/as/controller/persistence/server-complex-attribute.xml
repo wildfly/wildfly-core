@@ -21,6 +21,7 @@
         <interceptors>
             <class name="org.bar.MyInterceptor" module="org.bar"/>
             <class name="org.baz.MyOtherInterceptor" module="org.baz"/>
+            <class name="org.baz.sss" module="org.fff"/>
         </interceptors>
         <security enabled="${security.enabled:false}"/>
         <statistics enabled="${statistics.enabled:true}"/>

@@ -142,10 +142,8 @@ public interface AttributeParsers {
         }
 
         public void parseSingleElement(MapAttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
-            assert attribute instanceof PropertiesAttributeDefinition;
-            PropertiesAttributeDefinition property = (PropertiesAttributeDefinition) attribute;
             final String[] array = requireAttributes(reader, org.jboss.as.controller.parsing.Attribute.NAME.getLocalName(), org.jboss.as.controller.parsing.Attribute.VALUE.getLocalName());
-            property.parseAndAddParameterElement(array[0], array[1], operation, reader);
+            attribute.parseAndAddParameterElement(array[0], array[1], operation, reader);
             ParseUtils.requireNoContent(reader);
         }
     }
@@ -200,6 +198,7 @@ public interface AttributeParsers {
             if (attribute.getXmlName().equals(reader.getLocalName())) {
                 ObjectTypeAttributeDefinition objectType = ((ObjectTypeAttributeDefinition) attribute);
                 ModelNode op = operation.get(attribute.getName());
+                op.setEmptyObject();
                 parseEmbeddedElement(objectType, reader, op);
             } else {
                 throw ParseUtils.unexpectedElement(reader, Collections.singleton(attribute.getXmlName()));
@@ -215,7 +214,7 @@ public interface AttributeParsers {
 
             Map<String, AttributeDefinition> attributeElements = Arrays.asList(valueTypes).stream()
                                    .filter(attributeDefinition -> attributeDefinition.getParser().isParseAsElement())
-                                              .collect(Collectors.toMap(AttributeDefinition::getXmlName, Function.identity()));
+                    .collect(Collectors.toMap(a -> a.getParser().getXmlName(a) , Function.identity()));
 
 
             for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -247,34 +246,71 @@ public interface AttributeParsers {
 
     }
 
-    static class ObjectListParser extends AttributeParser {
-           @Override
-           public boolean isParseAsElement() {
-               return true;
-           }
-
-           @Override
-           public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
-               assert attribute instanceof ObjectListAttributeDefinition;
-
-               ObjectListAttributeDefinition list = ((ObjectListAttributeDefinition) attribute);
-               ObjectTypeAttributeDefinition objectType = list.getValueType();
+    class WrappedObjectListParser extends AttributeParser {
+        @Override
+        public boolean isParseAsElement() {
+            return true;
+        }
 
 
-               ModelNode listValue = new ModelNode();
-               listValue.setEmptyList();
-               while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                   if (objectType.getXmlName().equals(reader.getLocalName())){
-                       ModelNode op = listValue.add();
-                       parseEmbeddedElement(objectType, reader, op);
-                   }else{
-                       throw ParseUtils.unexpectedElement(reader, Collections.singleton(objectType.getXmlName()));
-                   }
-                   ParseUtils.requireNoContent(reader);
-               }
-               operation.get(attribute.getName()).set(listValue);
-           }
-       };
+        ObjectTypeAttributeDefinition getObjectType(AttributeDefinition attribute) {
+            assert attribute instanceof ObjectListAttributeDefinition;
+            ObjectListAttributeDefinition list = ((ObjectListAttributeDefinition) attribute);
+            return list.getValueType();
+        }
+
+        @Override
+        public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
+            assert attribute instanceof ObjectListAttributeDefinition;
+
+            ObjectListAttributeDefinition list = ((ObjectListAttributeDefinition) attribute);
+            ObjectTypeAttributeDefinition objectType = list.getValueType();
+
+
+            ModelNode listValue = new ModelNode();
+            listValue.setEmptyList();
+            while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+                if (objectType.getXmlName().equals(reader.getLocalName())) {
+                    ModelNode op = listValue.add();
+                    parseEmbeddedElement(objectType, reader, op);
+                } else {
+                    throw ParseUtils.unexpectedElement(reader, Collections.singleton(objectType.getXmlName()));
+                }
+                if (!reader.isEndElement()) {
+                    ParseUtils.requireNoContent(reader);
+                }
+            }
+            operation.get(attribute.getName()).set(listValue);
+        }
+    }
+
+    class UnWrappedObjectListParser extends WrappedObjectListParser {
+
+        @Override
+        public String getXmlName(AttributeDefinition attribute) {
+            return getObjectType(attribute).getXmlName();
+        }
+
+        @Override
+        public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
+            ObjectTypeAttributeDefinition objectType = getObjectType(attribute);
+
+            ModelNode listValue = operation.get(attribute.getName());
+            if (!listValue.isDefined()){
+                listValue.setEmptyList();
+            }
+            String xmlName = objectType.getXmlName();
+            if (xmlName.equals(reader.getLocalName())) {
+                ModelNode op = listValue.add();
+                parseEmbeddedElement(objectType, reader, op);
+            } else {
+                throw ParseUtils.unexpectedElement(reader, Collections.singleton(xmlName));
+            }
+            if (!reader.isEndElement()) {
+                ParseUtils.requireNoContent(reader);
+            }
+        }
+    }
 
 
     AttributeParser PROPERTIES_WRAPPED = new PropertiesParser();
@@ -282,6 +318,9 @@ public interface AttributeParsers {
 
     AttributeParser OBJECT_MAP_WRAPPED = new ObjectMapParser();
     AttributeParser OBJECT_MAP_UNWRAPPED = new ObjectMapParser(false);
+
+    AttributeParser WRAPPED_OBJECT_LIST_PARSER = new WrappedObjectListParser();
+    AttributeParser UNWRAPPED_OBJECT_LIST_PARSER = new UnWrappedObjectListParser();
 
     static AttributeParser getObjectMapAttributeParser(String keyElementName) {
         return new ObjectMapParser(null, null, true, keyElementName);
