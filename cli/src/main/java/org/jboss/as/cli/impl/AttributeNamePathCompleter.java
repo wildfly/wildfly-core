@@ -225,7 +225,11 @@ public class AttributeNamePathCompleter implements CommandLineCompleter {
         }
 
         private boolean isWritable(ModelNode attrDescr) {
-            return !attrDescr.has(Util.ACCESS_TYPE) || !Util.READ_ONLY.equals(attrDescr.get(Util.ACCESS_TYPE).asString());
+            return !isReadOnly(attrDescr);
+        }
+
+        private boolean isReadOnly(ModelNode attrDescr) {
+            return attrDescr.has(Util.ACCESS_TYPE) && (Util.READ_ONLY.equals(attrDescr.get(Util.ACCESS_TYPE).asString()) || Util.METRIC.equals(attrDescr.get(Util.ACCESS_TYPE).asString()));
         }
 
         public int getCandidateIndex() {
