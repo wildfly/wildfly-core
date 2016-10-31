@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,11 +38,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLPeerUnverifiedException;
 
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -60,6 +63,8 @@ import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.modules.ModuleLoadException;
 import org.wildfly.common.Assert;
+import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
+import org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.xnio.BufferAllocator;
@@ -95,6 +100,8 @@ import io.undertow.security.impl.GSSAPIAuthenticationMechanism;
 import io.undertow.security.impl.SimpleNonceManager;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.RenegotiationRequiredException;
+import io.undertow.server.SSLSessionInfo;
 import io.undertow.server.handlers.BlockingHandler;
 import io.undertow.server.handlers.CanonicalPathHandler;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
@@ -194,7 +201,7 @@ public class ManagementHttpServer {
             throw new IllegalStateException();
         }
         ResourceHandlerDefinition def = DomainUtil.createStaticContentHandler(resourceManager, context);
-        HttpHandler readinessHandler = new RedirectReadinessHandler(extensionHandlers.securityRealm, def.getHandler(),
+        HttpHandler readinessHandler = new RedirectReadinessHandler(extensionHandlers.readyFunction, def.getHandler(),
                 ErrorContextHandler.ERROR_CONTEXT);
         extensionHandlers.extensionPathHandler.addPrefixPath(context, readinessHandler);
     }
@@ -282,13 +289,39 @@ public class ManagementHttpServer {
         return new ManagementHttpServer(openListener, builder.bindAddress, builder.secureBindAddress, sslContext, sslClientAuthMode, builder.worker, extensionHandlers);
     }
 
-    private static void addRedirectRedinessHandler(PathHandler pathHandler, ResourceHandlerDefinition consoleHandler, Builder builder) {
-        HttpHandler readinessHandler = new RedirectReadinessHandler(builder.securityRealm, consoleHandler.getHandler(), ErrorContextHandler.ERROR_CONTEXT);
+    private static Function<HttpServerExchange, Boolean> createReadyFunction(Builder builder) {
+        if (builder.securityRealm != null) {
+            final SecurityRealm securityRealm = builder.securityRealm;
+            return e -> securityRealm.isReadyForHttpChallenge() || clientCertPotentiallyPossible(securityRealm, e);
+        } else {
+            return e -> Boolean.TRUE;
+        }
+    }
+
+    private static boolean clientCertPotentiallyPossible(final SecurityRealm securityRealm, final HttpServerExchange exchange) {
+        if (securityRealm.getSupportedAuthenticationMechanisms().contains(AuthMechanism.CLIENT_CERT) == false) {
+            return false;
+        }
+
+        SSLSessionInfo session = exchange.getConnection().getSslSessionInfo();
+        if (session != null) {
+            try {
+                // todo: renegotiation?
+                return session.getPeerCertificates()[0] instanceof X509Certificate;
+            } catch (SSLPeerUnverifiedException | RenegotiationRequiredException e) {
+            }
+        }
+
+        return false;
+    }
+
+    private static void addRedirectRedinessHandler(PathHandler pathHandler, ResourceHandlerDefinition consoleHandler, Function<HttpServerExchange, Boolean> readyFunction) {
+        HttpHandler readinessHandler = new RedirectReadinessHandler(readyFunction, consoleHandler.getHandler(), ErrorContextHandler.ERROR_CONTEXT);
         pathHandler.addPrefixPath(consoleHandler.getContext(), readinessHandler);
     }
 
-    private static HttpHandler addDmrRedinessHandler(PathHandler pathHandler, HttpHandler domainApiHandler, Builder builder) {
-        HttpHandler readinessHandler = wrapXFrameOptions(new DmrFailureReadinessHandler(builder.securityRealm, domainApiHandler, ErrorContextHandler.ERROR_CONTEXT));
+    private static HttpHandler addDmrRedinessHandler(PathHandler pathHandler, HttpHandler domainApiHandler, Function<HttpServerExchange, Boolean> readinessFunction) {
+        HttpHandler readinessHandler = wrapXFrameOptions(new DmrFailureReadinessHandler(readinessFunction, domainApiHandler, ErrorContextHandler.ERROR_CONTEXT));
         pathHandler.addPrefixPath(DomainApiCheckHandler.PATH, readinessHandler);
         pathHandler.addExactPath(DomainApiCheckHandler.GENERIC_CONTENT_REQUEST, readinessHandler);
 
@@ -304,15 +337,15 @@ public class ManagementHttpServer {
     private static class ExtensionHandlers {
         private final PathHandler extensionPathHandler;
         private final HttpHandler managementHandler;
-        private final SecurityRealm securityRealm;
+        private final Function<HttpServerExchange, Boolean> readyFunction;
         private final Set<String> reservedContexts;
         private final Set<String> extensionContexts = new HashSet<>();
 
         private ExtensionHandlers(PathHandler extensionPathHandler, HttpHandler managementHandler,
-                                  SecurityRealm securityRealm, ResourceHandlerDefinition consoleHandler) {
+                Function<HttpServerExchange, Boolean> readyFunction, ResourceHandlerDefinition consoleHandler) {
             this.extensionPathHandler = extensionPathHandler;
             this.managementHandler = managementHandler;
-            this.securityRealm = securityRealm;
+            this.readyFunction = readyFunction;
             if (consoleHandler == null) {
                 this.reservedContexts = RESERVED_CONTEXTS;
             } else {
@@ -368,16 +401,17 @@ public class ManagementHttpServer {
                         builder.allowedOrigins), builder)
         );
 
+        final Function<HttpServerExchange, Boolean> readyFunction = createReadyFunction(builder);
         pathHandler.addPrefixPath("/", rootConsoleRedirectHandler);
         if (consoleHandler != null) {
-            addRedirectRedinessHandler(pathHandler, consoleHandler, builder);
+            addRedirectRedinessHandler(pathHandler, consoleHandler, readyFunction);
         }
 
         domainApiHandler = secureDomainAccess(domainApiHandler, builder);
-        HttpHandler readinessHandler = addDmrRedinessHandler(pathHandler, domainApiHandler, builder);
+        HttpHandler readinessHandler = addDmrRedinessHandler(pathHandler, domainApiHandler, readyFunction);
         addLogoutHandler(pathHandler, builder);
 
-        return new ExtensionHandlers(pathHandler, readinessHandler, securityRealm, consoleHandler);
+        return new ExtensionHandlers(pathHandler, readinessHandler, readyFunction, consoleHandler);
     }
 
     private static HttpHandler associateIdentity(HttpHandler domainHandler, final Builder builder) {
@@ -397,6 +431,8 @@ public class ManagementHttpServer {
         } else if (builder.securityRealm != null) {
             return secureDomainAccess(domainHandler, builder.securityRealm);
         }
+
+        return domainHandler;
     }
 
     private static HttpHandler secureDomainAccess(final HttpHandler domainHandler, final SecurityRealm securityRealm) {

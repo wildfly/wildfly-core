@@ -33,11 +33,11 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 
 import java.io.IOException;
+import java.util.function.Function;
 
 import io.undertow.util.Methods;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
 import org.jboss.as.domain.http.server.OperationParameter;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -49,8 +49,8 @@ public class DmrFailureReadinessHandler extends RealmReadinessHandler {
 
     private final String redirectTo;
 
-    public DmrFailureReadinessHandler(final SecurityRealm securityRealm, final HttpHandler next, final String redirectTo) {
-        super(securityRealm, next);
+    public DmrFailureReadinessHandler(final Function<HttpServerExchange, Boolean> readyFunction, final HttpHandler next, final String redirectTo) {
+        super(readyFunction, next);
         this.redirectTo = redirectTo;
     }
 
