@@ -24,6 +24,7 @@ package org.jboss.as.controller.persistence;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 import static org.jboss.as.controller.SimpleAttributeDefinitionBuilder.create;
+import static org.jboss.as.controller.persistence.PersistentResourceXMLParserTestCase.IdentityMappingObjectDefinition.OBJECT_DEFINITION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -424,6 +425,7 @@ public class PersistentResourceXMLParserTestCase {
         mapper.parseDocument(operations, reader);
 
         Assert.assertEquals(2, operations.size());
+        Assert.assertEquals(2, operations.get(1).get("listeners").asList().size());
         ModelNode subsystem = opsToModel(operations);
 
         StringWriter stringWriter = new StringWriter();
@@ -1183,20 +1185,150 @@ public class PersistentResourceXMLParserTestCase {
             .setAllowNull(true)
             .build();
 
+    public static final ObjectTypeAttributeDefinition STATE_LISTENER = ObjectTypeAttributeDefinition.Builder.of("state-listener",
+            SimpleAttributeDefinitionBuilder.create(CLASS, ModelType.STRING, false)
+                    .setAllowExpression(false)
+                    .build(),
+            SimpleAttributeDefinitionBuilder.create(MODULE, ModelType.STRING, false)
+                    .setAllowExpression(false)
+                    .build(),
+            PROPERTIES)
+            .setRestartAllServices()
+            .setAllowNull(true)
+            .build();
+
     public static final AttributeDefinition PROCESS_STATE_LISTENERS = ObjectListAttributeDefinition.Builder.of("listeners", PROCESS_STATE_LISTENER)
             .setAllowNull(false)
             .setRuntimeServiceNotRequired()
             .build();
 
+    public static final AttributeDefinition UNWRAPPED_LISTENER = ObjectListAttributeDefinition.Builder.of("unwrapped-listener", STATE_LISTENER)
+              .setAllowNull(false)
+              .setRuntimeServiceNotRequired()
+              .build();
+
+    static class AttributeMappingObjectDefinition {
+            static final SimpleAttributeDefinition FROM = new SimpleAttributeDefinitionBuilder("from", ModelType.STRING, false)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final SimpleAttributeDefinition TO = new SimpleAttributeDefinitionBuilder("to", ModelType.STRING, true)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final SimpleAttributeDefinition FILTER = new SimpleAttributeDefinitionBuilder("filter", ModelType.STRING, true)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final SimpleAttributeDefinition FILTER_BASE_DN = new SimpleAttributeDefinitionBuilder("filter-base-dn", ModelType.STRING, true)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final SimpleAttributeDefinition AS_RDN = new SimpleAttributeDefinitionBuilder("as-rdn", ModelType.STRING, true)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final SimpleAttributeDefinition[] ATTRIBUTES = new SimpleAttributeDefinition[] {FROM, TO, FILTER, FILTER_BASE_DN, AS_RDN};
+
+            static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder("attribute", ATTRIBUTES)
+                    .build();
+        }
+
+    static class NewIdentityAttributeObjectDefinition {
+            static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder("name", ModelType.STRING, true)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final StringListAttributeDefinition VALUE = new StringListAttributeDefinition.Builder("value")
+                    .setAllowExpression(true)
+                    .setMinSize(1)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {NAME, VALUE};
+
+            static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder("attribute", ATTRIBUTES)
+                    .build();
+        }
+
+    static class IdentityMappingObjectDefinition {
+
+            static final SimpleAttributeDefinition RDN_IDENTIFIER = new SimpleAttributeDefinitionBuilder("rdn-identifier", ModelType.STRING, false)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final SimpleAttributeDefinition USE_RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder("use-recursive-search", ModelType.BOOLEAN, false)
+                    .setDefaultValue(new ModelNode(false))
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final SimpleAttributeDefinition SEARCH_BASE_DN = new SimpleAttributeDefinitionBuilder("search-base-dn", ModelType.STRING, true)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final ObjectListAttributeDefinition ATTRIBUTE_MAPPINGS = new ObjectListAttributeDefinition.Builder("attribute-mapping", AttributeMappingObjectDefinition.OBJECT_DEFINITION)
+                    .setAllowNull(true)
+                    .setAttributeGroup("attribute")
+                    .setAllowDuplicates(true)
+                    .build();
+
+            static final ObjectListAttributeDefinition NEW_IDENTITY_ATTRIBUTES = new ObjectListAttributeDefinition.Builder("new-identity-attributes", NewIdentityAttributeObjectDefinition.OBJECT_DEFINITION)
+                    .setAllowNull(true)
+                    .setAllowDuplicates(true)
+                    .build();
+
+            static final SimpleAttributeDefinition FILTER_NAME = new SimpleAttributeDefinitionBuilder("filter-name", ModelType.STRING, true)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final SimpleAttributeDefinition ITERATOR_FILTER = new SimpleAttributeDefinitionBuilder("iterator-filter", ModelType.STRING, true)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final SimpleAttributeDefinition NEW_IDENTITY_PARENT_DN = new SimpleAttributeDefinitionBuilder("new-identity-parent-dn", ModelType.STRING, true)
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+            static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {
+                    RDN_IDENTIFIER, USE_RECURSIVE_SEARCH, SEARCH_BASE_DN,
+                    ATTRIBUTE_MAPPINGS,
+                    FILTER_NAME, ITERATOR_FILTER, NEW_IDENTITY_PARENT_DN, NEW_IDENTITY_ATTRIBUTES
+            };
+
+            static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder("identity-mapping",
+                        RDN_IDENTIFIER, USE_RECURSIVE_SEARCH, SEARCH_BASE_DN,
+                        ATTRIBUTE_MAPPINGS,
+                    FILTER_NAME, ITERATOR_FILTER, NEW_IDENTITY_PARENT_DN, NEW_IDENTITY_ATTRIBUTES/*,
+                        UserPasswordCredentialMappingObjectDefinition.OBJECT_DEFINITION,
+                        OtpCredentialMappingObjectDefinition.OBJECT_DEFINITION*/
+                    )
+                    .setAllowNull(false)
+                    .build();
+        }
 
     static final PersistentResourceDefinition SERVICE_PROCESS_RESOURCE = new PersistentResourceDefinition(PathElement.pathElement("service"), new NonResolvingResourceDescriptionResolver()) {
         @Override
         public Collection<AttributeDefinition> getAttributes() {
             Collection<AttributeDefinition> attributes = new ArrayList<>();
             attributes.add(PROCESS_STATE_LISTENERS);
+            attributes.add(UNWRAPPED_LISTENER);
+            attributes.add(OBJECT_DEFINITION);
             return attributes;
         }
     };
+
 
     protected static final PathElement PROCESS_SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, "process");
 
@@ -1219,12 +1351,13 @@ public class PersistentResourceXMLParserTestCase {
 
         protected static final String NAMESPACE = "urn:jboss:domain:core:1.0";
 
-
-
         @Override
         public PersistentResourceXMLDescription getParserDescription() {
             return PersistentResourceXMLDescription.builder(PROCESS_SUBSYSTEM_PATH, NAMESPACE)
-                    .addChild(builder(SERVICE_PROCESS_RESOURCE.getPathElement()).addAttribute(PROCESS_STATE_LISTENERS))
+                    .addChild(builder(SERVICE_PROCESS_RESOURCE.getPathElement())
+                            .addAttribute(PROCESS_STATE_LISTENERS)
+                            .addAttribute(UNWRAPPED_LISTENER, AttributeParsers.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
+                            .addAttribute(OBJECT_DEFINITION))
                     .build();
         }
     }

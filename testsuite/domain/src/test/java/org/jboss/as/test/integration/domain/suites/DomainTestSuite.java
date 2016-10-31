@@ -41,6 +41,7 @@ import org.junit.runners.Suite;
         CapabilityReloadRequiredUnitTestCase.class,
         CompositeOperationTestCase.class,
         CoreResourceManagementTestCase.class,
+        CustomManagementContextTestCase.class,
         DeploymentRolloutFailureTestCase.class,
         ExplodedDeploymentTestCase.class,
         DirectoryGroupingByTypeTestCase.class,

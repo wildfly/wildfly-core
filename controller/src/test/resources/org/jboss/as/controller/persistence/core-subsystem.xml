@@ -18,14 +18,46 @@
 
 <subsystem xmlns="urn:jboss:domain:core:1.0">
     <service name="process-state-listeners">
-            <listeners>
-                <process-state-listener class="org.foo.Listener" module="org.foo">
-                    <properties>
-                        <property name="foo" value="true"/>
-                        <property name="bar" value="${bar.prop:2}"/>
-                    </properties>
-                </process-state-listener>
-            </listeners>
-
+        <listeners>
+            <process-state-listener class="org.foo.Listener" module="org.foo">
+                <properties>
+                    <property name="foo" value="true"/>
+                    <property name="bar" value="${bar.prop:2}"/>
+                </properties>
+            </process-state-listener>
+            <process-state-listener class="org.bar.listener" module="org.bar">
+                <properties>
+                    <property name="foo" value="true"/>
+                    <property name="bar" value="${bar.prop:2}"/>
+                </properties>
+            </process-state-listener>
+        </listeners>
+        <state-listener class="org.foo.Listener" module="org.foo">
+            <properties>
+                <property name="foo" value="true"/>
+                <property name="bar" value="${bar.prop:2}"/>
+            </properties>
+        </state-listener>
+        <state-listener class="org.bar.listener" module="org.bar"/>
+        <identity-mapping rdn-identifier="uid" use-recursive-search="true" search-base-dn="dc=elytron,dc=wildfly,dc=org" iterator-filter="(uid=*)"
+                          new-identity-parent-dn="dc=elytron,dc=wildfly,dc=org">
+            <attribute-mapping>
+                <attribute from="CN" to="firstName"/>
+                <attribute from="SN" to="lastName"/>
+                <attribute from="CN"/>
+                <attribute from="CN" to="fullName"/>
+                <attribute from="SN" to="fullName"/>
+                <attribute filter="(&amp;(objectClass=groupOfNames)(member={0}))" from="CN" to="role"/>
+                <attribute filter-base-dn="ou=Finance,dc=elytron,dc=wildfly,dc=org" filter="(&amp;(objectClass=groupOfNames)(member={0}))" from="CN" as-rdn="OU"
+                           to="businessUnit"/>
+                <attribute filter-base-dn="ou=Sales,dc=elytron,dc=wildfly,dc=org" filter="(&amp;(objectClass=groupOfNames)(member={0}))" from="CN" as-rdn="OU"
+                           to="businessUnit"/>
+            </attribute-mapping>
+            <new-identity-attributes>
+                <attribute name="objectClass" value="top inetOrgPerson person organizationalPerson"/>
+                <attribute name="sn" value="BlankSurname"/>
+                <attribute name="cn" value="BlankCommonName"/>
+            </new-identity-attributes>
+        </identity-mapping>
     </service>
 </subsystem>

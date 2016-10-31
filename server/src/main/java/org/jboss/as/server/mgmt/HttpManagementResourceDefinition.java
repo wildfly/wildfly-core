@@ -70,7 +70,9 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setAddHandler(HttpManagementAddHandler.INSTANCE)
             .setRemoveHandler(HttpManagementRemoveHandler.INSTANCE)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
-            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES));
+            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
+            .setCapabilities(UndertowHttpManagementService.EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY)
+        );
     }
 
     @Override

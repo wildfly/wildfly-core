@@ -287,7 +287,7 @@ class DomainApiHandler implements HttpHandler {
     }
 
     private ModelNode convertGetRequest(HttpServerExchange exchange, GetOperation operation) {
-        ArrayList<String> pathSegments = decodePath(exchange.getRequestPath());
+        ArrayList<String> pathSegments = decodePath(exchange.getRelativePath());
         Map<String, Deque<String>> queryParameters = exchange.getQueryParameters();
 
         ModelNode dmr = new ModelNode();
@@ -312,7 +312,7 @@ class DomainApiHandler implements HttpHandler {
         dmr.get(OP).set(operation.realOperation);
 
         ModelNode list = dmr.get(OP_ADDR).setEmptyList();
-        for (int i = 1; i < pathSegments.size() - 1; i += 2) {
+        for (int i = 0; i < pathSegments.size() - 1; i += 2) {
             list.add(pathSegments.get(i), pathSegments.get(i + 1));
         }
         return dmr;
@@ -331,18 +331,20 @@ class DomainApiHandler implements HttpHandler {
         if (path == null)
             throw new IllegalArgumentException();
 
-        int i = path.charAt(0) == '/' ? 1 : 0;
-
         ArrayList<String> segments = new ArrayList<String>();
 
-        do {
-            int j = path.indexOf('/', i);
-            if (j == -1)
-                j = path.length();
+        if (!path.isEmpty()) {
+            int i = path.charAt(0) == '/' ? 1 : 0;
 
-            segments.add(unescape(path.substring(i, j)));
-            i = j + 1;
-        } while (i < path.length());
+            do {
+                int j = path.indexOf('/', i);
+                if (j == -1)
+                    j = path.length();
+
+                segments.add(unescape(path.substring(i, j)));
+                i = j + 1;
+            } while (i < path.length());
+        }
 
         return segments;
     }

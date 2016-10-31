@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,10 +64,10 @@ public final class PersistentResourceXMLDescription {
         this.useElementsForGroups = builder.useElementsForGroups;
         this.attributesByGroup = new LinkedHashMap<>();
         this.namespaceURI = builder.namespaceURI;
+        this.attributeGroups = new HashSet<>();
         if (useElementsForGroups) {
             // Ensure we have a map for the default group even if there are no attributes so we don't NPE later
             this.attributesByGroup.put(null, new LinkedHashMap<>());
-            this.attributeGroups = new HashSet<>();
             // Segregate attributes by group
             for (AttributeDefinition ad : builder.attributeList) {
 
@@ -77,9 +78,9 @@ public final class PersistentResourceXMLDescription {
                     this.attributeGroups.add(ad.getAttributeGroup());
                 }
                 forGroup.put(ad.getXmlName(), ad);
-
-                if (ad.getParser() != null && ad.getParser().isParseAsElement()) {
-                    attributeElements.put(ad.getParser().getXmlName(ad), ad);
+                AttributeParser ap = builder.attributeParsers.getOrDefault(ad.getXmlName(), ad.getParser());
+                if (ap != null && ap.isParseAsElement()) {
+                    attributeElements.put(ap.getXmlName(ad), ad);
                 }
 
             }
@@ -87,10 +88,13 @@ public final class PersistentResourceXMLDescription {
             LinkedHashMap<String, AttributeDefinition> attrs = new LinkedHashMap<>();
             for (AttributeDefinition ad : builder.attributeList) {
                 attrs.put(ad.getXmlName(), ad);
+
+                if (ad.getParser() != null && ad.getParser().isParseAsElement()) {
+                    attributeElements.put(ad.getParser().getXmlName(ad), ad);
+                }
             }
             // Ignore attribute-group, treat all as if they are in the default group
             this.attributesByGroup.put(null, attrs);
-            this.attributeGroups = null;
         }
         this.children = new ArrayList<>();
         for (PersistentResourceXMLBuilder b : builder.childrenBuilders) {
@@ -195,7 +199,9 @@ public final class PersistentResourceXMLDescription {
                 assert parser != null;
                 parser.parseAndSetParameter(def, value, op, reader);
             } else {
-                throw ParseUtils.unexpectedAttribute(reader, i, attributes.keySet());
+                Set<String> possible = new LinkedHashSet<>(attributes.keySet());
+                possible.add(nameAttributeName);
+                throw ParseUtils.unexpectedAttribute(reader, i, possible);
             }
         }
         //only parse attribute elements here if there are no attribute groups defined
@@ -205,7 +211,8 @@ public final class PersistentResourceXMLDescription {
                 do {
                     if (attributeElements.containsKey(reader.getLocalName())) {
                         AttributeDefinition ad = attributeElements.get(reader.getLocalName());
-                        ad.getParser().parseElement(ad, reader, op);
+                        AttributeParser parser = attributeParsers.getOrDefault(ad.getXmlName(), ad.getParser());
+                        parser.parseElement(ad, reader, op);
                     } else {
                         return name;  //this means we only have children left, return so child handling logic can take over
                     }
@@ -385,7 +392,7 @@ public final class PersistentResourceXMLDescription {
         }
 
         for (AttributeDefinition ad : sortedAds) {
-            AttributeMarshaller marshaller = attributeMarshallers.getOrDefault(ad.getName(), ad.getAttributeMarshaller());
+            AttributeMarshaller marshaller = attributeMarshallers.getOrDefault(ad.getXmlName(), ad.getAttributeMarshaller());
             if (marshaller.isMarshallable(ad, model, marshallDefaultValues)) {
                 if (!started && group != null) {
                     if (elementAds != null) {

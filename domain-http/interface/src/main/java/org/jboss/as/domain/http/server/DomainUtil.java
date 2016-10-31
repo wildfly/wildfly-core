@@ -21,6 +21,9 @@
  */
 package org.jboss.as.domain.http.server;
 
+import static io.undertow.predicate.Predicates.not;
+import static io.undertow.predicate.Predicates.path;
+import static io.undertow.predicate.Predicates.suffixes;
 import static io.undertow.util.Headers.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 
@@ -34,6 +37,10 @@ import java.nio.charset.StandardCharsets;
 import io.undertow.io.IoCallback;
 import io.undertow.io.Sender;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.handlers.PredicateHandler;
+import io.undertow.server.handlers.RedirectHandler;
+import io.undertow.server.handlers.SetHeaderHandler;
+import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.HeaderValues;
 import io.undertow.util.Headers;
@@ -47,6 +54,11 @@ import org.xnio.IoUtils;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class DomainUtil {
+
+    private static final String NOCACHE_JS = ".nocache.js";
+    private static final String INDEX_HTML = "index.html";
+    private static final String APP_HTML = "App.html";
+    private static final String DEFAULT_RESOURCE = "/" + INDEX_HTML;
 
     public static void writeResponse(final HttpServerExchange exchange, final int status, ModelNode response,
             OperationParameter operationParameter) {
@@ -194,5 +206,20 @@ public class DomainUtil {
         String protocol = exchange.getConnection().getSslSessionInfo() != null ? "https" : "http";
 
         return protocol + "://" + host + path;
+    }
+
+    static ResourceHandlerDefinition createStaticContentHandler(ResourceManager resource, String context) {
+        final io.undertow.server.handlers.resource.ResourceHandler handler = new io.undertow.server.handlers.resource.ResourceHandler(resource)
+                .setCacheTime(60 * 60 * 24 * 31)
+                .setAllowed(not(path("META-INF")))
+                .setResourceManager(resource)
+                .setDirectoryListingEnabled(false)
+                .setCachable(not(suffixes(NOCACHE_JS, APP_HTML, INDEX_HTML)));
+
+        // avoid clickjacking attacks: console must not be included in (i)frames
+        SetHeaderHandler frameHandler = new SetHeaderHandler(handler, "X-Frame-Options", "SAMEORIGIN");
+        // we also need to setup the default resource redirect
+        PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(context + DEFAULT_RESOURCE), frameHandler);
+        return new ResourceHandlerDefinition(context, DEFAULT_RESOURCE, predicateHandler);
     }
 }

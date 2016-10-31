@@ -173,6 +173,9 @@ public abstract class AttributeParser {
 
     public static final AttributeParser OBJECT_PARSER = new AttributeParsers.ObjectParser();
 
-    public static final AttributeParser OBJECT_LIST_PARSER = new AttributeParsers.ObjectListParser();
+    public static final AttributeParser OBJECT_LIST_PARSER = AttributeParsers.WRAPPED_OBJECT_LIST_PARSER;
+
+    public static final AttributeParser WRAPPED_OBJECT_LIST_PARSER = AttributeParsers.WRAPPED_OBJECT_LIST_PARSER;
+    public static final AttributeParser UNWRAPPED_OBJECT_LIST_PARSER = AttributeParsers.UNWRAPPED_OBJECT_LIST_PARSER;
 
 }

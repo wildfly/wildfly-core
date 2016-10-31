@@ -46,8 +46,8 @@ import org.jboss.as.domain.http.server.cors.CorsUtil;
  */
 class DomainApiCheckHandler implements HttpHandler {
 
-    static String PATH = "/management";
-    private static final String GENERIC_CONTENT_REQUEST = PATH + "-upload";
+    static final String PATH = "/management";
+    static final String GENERIC_CONTENT_REQUEST = PATH + "-upload";
     private static final String ADD_CONTENT_REQUEST = PATH + "/add-content";
 
     private final ControlledProcessStateService controlledProcessStateService;

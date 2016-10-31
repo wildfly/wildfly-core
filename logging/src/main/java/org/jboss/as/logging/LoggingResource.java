@@ -41,6 +41,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.PlaceholderResource;
@@ -67,15 +69,21 @@ public class LoggingResource implements Resource {
 
     private final PathManager pathManager;
     private final Resource delegate;
+    private final ModelNode fileHandlersModel;
 
     public LoggingResource(final PathManager pathManager) {
         this(Resource.Factory.create(), pathManager);
     }
 
     public LoggingResource(final Resource delegate, final PathManager pathManager) {
+        this(delegate, pathManager, null);
+    }
+
+    private LoggingResource(final Resource delegate, final PathManager pathManager, final ModelNode fileHandlersModel) {
         assert pathManager != null : "PathManager cannot be null";
         this.delegate = delegate;
         this.pathManager = pathManager;
+        this.fileHandlersModel = fileHandlersModel;
     }
 
     @Override
@@ -262,7 +270,15 @@ public class LoggingResource implements Resource {
 
     @Override
     public Resource clone() {
-        return new LoggingResource(delegate.clone(), pathManager);
+        return new LoggingResource(delegate.clone(), pathManager, fileHandlersModel);
+    }
+
+    @Override
+    public Resource shallowCopy() {
+        // Calculate the file handlers model so the shallow copy has the data needed
+        // to deal with log files
+        ModelNode fileHdlrsModel = getFileHandlersModel();
+        return new LoggingResource(delegate.shallowCopy(), pathManager, fileHdlrsModel);
     }
 
     private boolean hasReadableFile(final String fileName) {
@@ -282,7 +298,9 @@ public class LoggingResource implements Resource {
     }
 
     private ModelNode getFileHandlersModel() {
-        return Tools.readModel(delegate, -1, FileHandlerResourceFilter.INSTANCE);
+        // If we were provided a fileHandlersModel at construction
+        // (i.e. we are a shallow copy) use it; else calculate the model from our children
+        return fileHandlersModel == null ? Tools.readModel(delegate, -1, FileHandlerResourceFilter.INSTANCE) : fileHandlersModel;
     }
 
 
@@ -338,6 +356,7 @@ public class LoggingResource implements Resource {
 
     private static Collection<String> findValidFileNames(final ModelNode model) {
         final Collection<String> names = new ArrayList<>();
+        final Set<String> unresolvableExpressions = new LinkedHashSet<>();
         // Get all the file names from the model
         for (Property resource : model.asPropertyList()) {
             final String name = resource.getName();
@@ -351,11 +370,25 @@ public class LoggingResource implements Resource {
                         if (fileModel.hasDefined(PathResourceDefinition.RELATIVE_TO.getName())
                                 && ServerEnvironment.SERVER_LOG_DIR.equals(fileModel.get(PathResourceDefinition.RELATIVE_TO.getName()).asString())
                                 && fileModel.hasDefined(PathResourceDefinition.PATH.getName())) {
-                            names.add(fileModel.get(PathResourceDefinition.PATH.getName()).asString());
+                            final ModelNode path;
+                            try {
+                                // Possible expressions need to be resolved for the path name. If not resolved the expression
+                                // may contain invalid path characters.
+                                path = ExpressionResolver.SIMPLE.resolveExpressions(fileModel.get(PathResourceDefinition.PATH.getName()));
+                            } catch (OperationFailedException e) {
+                                // The expression could not be resolved for some reason. Collect all the unresolvable paths
+                                // and we'll log them once at the end
+                                unresolvableExpressions.add(fileModel.get(PathResourceDefinition.PATH.getName()).asString());
+                                continue;
+                            }
+                            names.add(path.asString());
                         }
                     }
                 }
             }
+        }
+        if (!unresolvableExpressions.isEmpty()) {
+            LoggingLogger.ROOT_LOGGER.unresolvablePathExpressions(unresolvableExpressions);
         }
         return names;
     }
