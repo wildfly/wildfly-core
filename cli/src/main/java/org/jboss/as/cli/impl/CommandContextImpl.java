@@ -1798,7 +1798,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             throw new RuntimeException(e);
                         } finally {
                             // in case of success the console will continue after connectController has finished all the initialization required
-                            if (!success || callContinuous) {
+                            if (console != null && (!success || callContinuous)) {
                                 console.continuous();
                             }
                         }
