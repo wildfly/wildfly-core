@@ -170,6 +170,8 @@ public class AccessAuditContext {
                 return securityIdentity.runAs(action);
             } else try {
                 return action.run();
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
                 throw new PrivilegedActionException(e);
             }
