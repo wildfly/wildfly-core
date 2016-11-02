@@ -114,7 +114,7 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
         if (strategy == null) {
             try {
 
-                endpoint = Endpoint.getCurrent();
+                endpoint = Endpoint.builder().setEndpointName("management-client").build();
 
                 final ProtocolConnectionConfiguration configuration = ProtocolConfigurationFactory.create(clientConfiguration, endpoint);
 
