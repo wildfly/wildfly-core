@@ -115,6 +115,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
     private static final byte CONNECTING = 1;
     private static final byte CONNECTED = 2;
     private static final byte LOST_CONNECTION = 3;
+    private static final byte MUST_CLOSE = 4;
 
     private final Object lock = new Object();
 
@@ -170,15 +171,32 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
 
     protected Channel getOrCreateChannel() throws IOException {
         Channel ch = null;
+        // Strategy is checked against null by mutiple methods in locked blocks.
+        // Make it non null only at the end of connection process to advertise
+        // that connection is done.
+        ManagementClientChannelStrategy localStrategy;
         synchronized(lock) {
             if (strategy == null) {
                 final ChannelCloseHandler channelCloseHandler = new ChannelCloseHandler();
-                strategy = ManagementClientChannelStrategy.create(channelConfig, channelAssociation, handler, saslOptions, sslContext,
+                localStrategy = ManagementClientChannelStrategy.create(channelConfig, channelAssociation, handler, saslOptions, sslContext,
                         channelCloseHandler);
-                channelCloseHandler.setOriginalStrategy(strategy);
+                channelCloseHandler.setOriginalStrategy(localStrategy);
+            } else {
+                localStrategy = strategy;
             }
             state.set(CONNECTING);
-            ch = strategy.getChannel();
+        }
+        // Can't be called locked, can create dead-lock in case close occurs.
+        ch = localStrategy.getChannel();
+        synchronized(lock) {
+            strategy = localStrategy;
+            // In case this client has been closed (e.g.: Ctrl-C during a reload)
+            // the state is switched to MUST_CLOSE.
+            if (state.get() == MUST_CLOSE) {
+                close();
+                lock.notifyAll();
+                throw new IOException("Connection closed");
+            }
             // it could happen that the connection has been lost already
             // in that case the channel close handler would change the state to LOST_CONNECTION
             if(state.get() == LOST_CONNECTION) {
@@ -203,6 +221,16 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
         }
         synchronized (lock) {
             if(state.get() == CLOSED) {
+                return;
+            }
+            // Do this check in locked block. The connection could be in progress
+            // and state could have been changed to CONNECTED. There is is a small
+            // window but still possible.
+            if (state.get() == CONNECTING) {
+                state.set(MUST_CLOSE);
+                // We can't go any further at the risk to deadlock when shuting down
+                // the channelAssociation. If close is required, will be closed
+                // in connecting thread.
                 return;
             }
             state.set(CLOSED);
@@ -257,18 +285,19 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
         final long start = System.currentTimeMillis();
         IOException ioe = null;
         while (doTry) {
-            synchronized (lock) {
-                try {
-                    getOrCreateChannel().getConnection();
-                    doTry = false;
-                } catch (IOException e) {
-                    ioe = e;
+            try {
+                // Can't be called locked, could create dead lock if close occured.
+                getOrCreateChannel().getConnection();
+                doTry = false;
+            } catch (IOException e) {
+                ioe = e;
+                synchronized (lock) {
                     if (strategy != null) {
                         StreamUtils.safeClose(strategy);
                         strategy = null;
                     }
+                    lock.notifyAll();
                 }
-                lock.notifyAll();
             }
 
             if (ioe != null) {
