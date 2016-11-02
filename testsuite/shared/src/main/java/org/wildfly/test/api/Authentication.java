@@ -31,8 +31,8 @@ import javax.security.sasl.RealmCallback;
  */
 public class Authentication {
 
-    public static String username = "";
-    public static String password = "";
+    public static String username = System.getProperty("jboss.management.user", "");
+    public static String password = System.getProperty("jboss.management.password", "");
 
     public static CallbackHandler getCallbackHandler() {
         return new CallbackHandler();
