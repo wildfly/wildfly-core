@@ -1187,6 +1187,17 @@ public class Util {
             }
             t1 = t1.getCause();
         }
+
+        // Add the suppressed exceptions attached to the passed exception.
+        // suppressed exceptions can contain valuable information to help trace
+        // exception path.
+        for (Throwable suppressed : t.getSuppressed()) {
+            if (suppressed.getLocalizedMessage() != null) {
+                buf.append("\n").append(suppressed.getLocalizedMessage());
+            } else {
+                buf.append("\n").append(suppressed.getClass().getName());
+            }
+        }
         return buf.toString();
     }
 

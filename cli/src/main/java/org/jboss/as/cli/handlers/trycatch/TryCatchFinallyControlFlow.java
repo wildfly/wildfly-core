@@ -186,7 +186,14 @@ class TryCatchFinallyControlFlow implements CommandLineRedirection {
 
             try {
                 executeBlock(ctx, finallyList, "finally");
-            } catch(CommandLineException eFinally) {
+            } catch (CommandLineException eFinally) {
+                // Try or catch exception are hidden by the finally exception.
+                // Make them an exception suppressed by the finally one.
+                // Doing so, they will be part of the error message displayed by
+                // the CLI.
+                if (error != null) {
+                    eFinally.addSuppressed(error);
+                }
                 error = eFinally;
             }
 
