@@ -59,17 +59,47 @@ public class FailedOperationTransformationConfig {
     public static final FailedOperationTransformationConfig NO_FAILURES = new FailedOperationTransformationConfig();
 
     private PathAddressConfigRegistry registry = new PathAddressConfigRegistry();
+    private boolean transformComposite = true;
+    private BeforeExecuteCompositeCallback callback;
 
     /**
      * Add a handler for failed operation transformers at a resource address
      *
      *  @param pathAddress the path address
      *  @param config the config
-     *  @return this setup
+     *  @return this config
      */
     public FailedOperationTransformationConfig addFailedAttribute(PathAddress pathAddress, PathAddressConfig config) {
         registry.addConfig(pathAddress.iterator(), config);
         return this;
+    }
+
+    /**
+     * THe default behaviour is to add the original operations to a composite, once they have been 'fixed'. That composite
+     * is then transformed. However some transformers rely on inspecting the model, and use a {@code config}
+     * that changes the model. For these cases, we can call this method, which instead adds the transformed operations to
+     * the resulting composite.
+     *
+     * @return this config
+     */
+    public FailedOperationTransformationConfig setDontTransformComposite() {
+        this.transformComposite = false;
+        return this;
+    }
+
+    public FailedOperationTransformationConfig setCallback(BeforeExecuteCompositeCallback callback) {
+        this.callback = callback;
+        return this;
+    }
+
+    boolean isTransformComposite() {
+        return transformComposite;
+    }
+
+    void invokeCallback() {
+        if (callback != null) {
+            callback.callback();
+        }
     }
 
     boolean expectFailed(ModelNode operation) {
@@ -136,6 +166,14 @@ public class FailedOperationTransformationConfig {
             return operation;
         }
         return cfg.correctWriteAttributeOperation(operation);
+    }
+
+    public void operationDone(ModelNode operation) {
+        PathAddressConfig cfg = registry.getConfig(operation);
+        if (cfg == null) {
+            return;
+        }
+        cfg.operationDone(operation);
     }
 
     private static class PathAddressConfigRegistry {
@@ -256,6 +294,14 @@ public class FailedOperationTransformationConfig {
          * @return {@code true} if expected to fail
          */
         boolean expectDiscarded(ModelNode operation);
+
+        /**
+         * Called by the framework when the operation has been all fixed up.
+         *
+         * @param operation the operation
+         */
+        default void operationDone(ModelNode operation) {
+        }
 
     }
 
@@ -745,4 +791,7 @@ public class FailedOperationTransformationConfig {
         }
     };
 
+    public interface BeforeExecuteCompositeCallback {
+        void callback();
+    }
 }

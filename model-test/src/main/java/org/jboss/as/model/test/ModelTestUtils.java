@@ -22,10 +22,12 @@
 package org.jboss.as.model.test;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
 import java.io.BufferedReader;
@@ -33,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -46,6 +49,8 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -502,31 +507,89 @@ public class ModelTestUtils {
      * @param operations the operations
      * @param config the config
      */
-    public static void checkFailedTransformedBootOperations(ModelTestKernelServices<?> mainServices, ModelVersion modelVersion, List<ModelNode> operations, FailedOperationTransformationConfig config) throws OperationFailedException {
+    public static void checkFailedTransformedBootOperations(ModelTestKernelServices<?> mainServices,
+                                                            ModelVersion modelVersion, List<ModelNode> operations,
+                                                            FailedOperationTransformationConfig config) throws OperationFailedException {
+        //Create a composite to execute all the boot operations in the main controller.
+        //We execute the operations in the main controller to make sure it is a valid config in the main controller
+        //The reason this needs to be a composite is that an add operation for a resource might have a reference on
+        //a capability introduced by a later add operation, and the controller has already started
+        final ModelNode mainComposite = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+        final ModelNode mainSteps = mainComposite.get(STEPS).setEmptyList();
         for (ModelNode op : operations) {
-            List<ModelNode> writeOps = config.createWriteAttributeOperations(op);
+            mainSteps.add(op.clone());
+        }
+        Assert.assertEquals(operations, mainSteps.asList());
+        ModelTestUtils.checkOutcome(mainServices.executeOperation(mainComposite));
 
-            ModelTestUtils.checkOutcome(mainServices.executeOperation(op));
-            checkFailedTransformedAddOperation(mainServices, modelVersion, op, config);
+        //Next check the transformations of the operations for the legacy controller, fixing them up from the config when
+        //they are rejected.
 
-            for (ModelNode writeOp : writeOps) {
-                checkFailedTransformedWriteAttributeOperation(mainServices, modelVersion, writeOp, config);
+        //We gather all the transformed operations into a composite which we then execute in the legacy controller. The
+        //reason this is a composite is the same as for the main controller.
+        final ModelNode legacyComposite = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+        final ModelNode legacySteps = legacyComposite.get(STEPS).setEmptyList();
+
+        //We also check all the attributes by executing write operations after we have created the legacy composite.
+        //Let's gather these while checking rejections of the ops, and creating the legacy composite.
+        final List<ModelNode> writeOps = new ArrayList<>();
+        for (ModelNode op : operations) {
+            writeOps.addAll(config.createWriteAttributeOperations(op));
+            checkFailedTransformedAddOperation(mainServices, modelVersion, op, config, legacySteps);
+        }
+
+        config.invokeCallback();
+
+        if (config.isTransformComposite()) {
+            //Transform and execute the composite
+            TransformedOperation transformedComposite = mainServices.transformOperation(modelVersion, legacyComposite);
+            if (transformedComposite.rejectOperation(successResult())) {
+                Assert.fail(transformedComposite.getFailureDescription());
             }
+            mainServices.executeOperation(modelVersion, transformedComposite);
+        } else {
+            //The composite already contains the transformed operations
+            ModelTestKernelServices<?> legacyServices = mainServices.getLegacyServices(modelVersion);
+            ModelTestUtils.checkOutcome(legacyServices.executeOperation(legacyComposite));
+        }
+
+        //Check all the write ops
+        for (ModelNode writeOp : writeOps) {
+            checkFailedTransformedWriteAttributeOperation(mainServices, modelVersion, writeOp, config);
         }
     }
 
-    private static void checkFailedTransformedAddOperation(ModelTestKernelServices<?> mainServices, ModelVersion modelVersion, ModelNode operation, FailedOperationTransformationConfig config) throws OperationFailedException {
+    private static void checkFailedTransformedAddOperation(
+            ModelTestKernelServices<?> mainServices, ModelVersion modelVersion,
+            ModelNode operation, FailedOperationTransformationConfig config, ModelNode legacySteps) throws OperationFailedException {
         TransformedOperation transformedOperation = mainServices.transformOperation(modelVersion, operation.clone());
         if (config.expectFailed(operation)) {
+            Assert.assertTrue("Expected transformation to get rejected " + operation + " for version " + modelVersion, transformedOperation.rejectOperation(successResult()));
             Assert.assertNotNull("Expected transformation to get rejected " + operation + " for version " + modelVersion , transformedOperation.getFailureDescription());
             if (config.canCorrectMore(operation)) {
-                checkFailedTransformedAddOperation(mainServices, modelVersion, config.correctOperation(operation), config);
+                checkFailedTransformedAddOperation(mainServices, modelVersion, config.correctOperation(operation), config, legacySteps);
             }
         } else if (config.expectDiscarded(operation)) {
             Assert.assertNull("Expected null transformed operation for discarded " + operation, transformedOperation.getTransformedOperation());
+            Assert.assertFalse("Expected transformation to not be rejected for discarded " + operation, transformedOperation.rejectOperation(successResult()));
         } else {
-            ModelNode result = mainServices.executeOperation(modelVersion, transformedOperation);
-            Assert.assertEquals("Failed: " + operation + "\n: " + result, SUCCESS, result.get(OUTCOME).asString());
+            if (transformedOperation.rejectOperation(successResult())) {
+                Assert.fail(operation + " should not have been rejected " + transformedOperation.getFailureDescription());
+            }
+            Assert.assertFalse(config.canCorrectMore(operation));
+
+            config.operationDone(operation);
+
+            if (config.isTransformComposite()) {
+                //Add the original operation here since the legacy composite as a whole
+                // will be transformed by checkFailedTransformedBootOperations()
+                legacySteps.add(operation);
+            } else {
+                ModelNode transformed = transformedOperation.getTransformedOperation();
+                if (transformed != null) {
+                    legacySteps.add(transformed);
+                }
+            }
         }
     }
 
@@ -541,4 +604,12 @@ public class ModelTestUtils {
             Assert.assertEquals("Failed: " + operation + "\n: " + result, SUCCESS, result.get(OUTCOME).asString());
         }
     }
+
+    private static ModelNode successResult() {
+        final ModelNode result = new ModelNode();
+        result.get(ModelDescriptionConstants.OUTCOME).set(ModelDescriptionConstants.SUCCESS);
+        result.get(ModelDescriptionConstants.RESULT);
+        return result;
+    }
+
 }
