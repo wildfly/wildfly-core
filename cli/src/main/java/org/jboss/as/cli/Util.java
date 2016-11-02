@@ -117,6 +117,7 @@ public class Util {
     public static final String MAX_FAILED_SERVERS = "max-failed-servers";
     public static final String MAX_FAILURE_PERCENTAGE = "max-failure-percentage";
     public static final String MAX_OCCURS = "max-occurs";
+    public static final String METRIC = "metric";
     public static final String MIN_OCCURS = "min-occurs";
     public static final String MODULE = "module";
     public static final String MODULE_SLOT = "module-slot";

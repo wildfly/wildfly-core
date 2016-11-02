@@ -55,6 +55,31 @@ public class AttributeNamePathCompletionTestCase {
             "      \"required\" => true," +
             "      \"nillable\" => false" +
             "}," +
+            "\"attr-read-only\" => {" +
+            "      \"type\" => STRING," +
+            "      \"description\" => \"String attribute\"," +
+            "      \"expressions-allowed\" => false," +
+            "      \"required\" => true," +
+            "      \"nillable\" => false," +
+            "      \"access-type\" => \"read-only\""+
+            "}," +
+            "\"attr-read-write\" => {" +
+            "      \"type\" => STRING," +
+            "      \"description\" => \"String attribute\"," +
+            "      \"expressions-allowed\" => false," +
+            "      \"required\" => true," +
+            "      \"nillable\" => false," +
+            "      \"access-type\" => \"read-write\""+
+            "}," +
+            "\"attr-metric\" => {" +
+            "      \"type\" => STRING," +
+            "      \"description\" => \"String attribute\"," +
+            "      \"expressions-allowed\" => false," +
+            "      \"required\" => true," +
+            "      \"nillable\" => false," +
+            "      \"access-type\" => \"metric\""+
+            "}," +
+
             "\"step1\" => {" +
             "      \"type\" => OBJECT," +
             "      \"description\" => \"Object attribute\"," +
@@ -109,7 +134,7 @@ public class AttributeNamePathCompletionTestCase {
 
         int i;
         i = completer.complete(null, "", 0, candidates);
-        assertEquals(Arrays.asList("module-options", "step1", "str", "str2"), candidates);
+        assertEquals(Arrays.asList("attr-metric", "attr-read-only", "attr-read-write", "module-options", "step1", "str", "str2"), candidates);
         assertEquals(0, i);
 
         candidates.clear();
@@ -191,5 +216,26 @@ public class AttributeNamePathCompletionTestCase {
         i = completer.complete(null, "module-options.", 0, candidates);
         assertEquals(Collections.emptyList(), candidates);
         assertEquals(-1, i);
+    }
+
+    @Test
+    public void testAttributeAccessType() throws Exception {
+        // WFCORE-1908
+        final ModelNode propDescr = ModelNode.fromString(attrsDescr);
+        assertTrue(propDescr.isDefined());
+
+        final AttributeNamePathCompleter completer = new AttributeNamePathCompleter(propDescr);
+        final List<String> candidates = new ArrayList<String>();
+
+        // test write-only attribute
+        int i = completer.complete("attr", candidates, propDescr, true);
+        assertEquals(Arrays.asList("attr-read-write"), candidates);
+        assertEquals(0, i);
+
+        // test NOT write-only attribute
+        candidates.clear();
+        i = completer.complete("attr", candidates, propDescr, false);
+        assertEquals(Arrays.asList("attr-metric", "attr-read-only", "attr-read-write"), candidates);
+        assertEquals(0, i);
     }
 }
