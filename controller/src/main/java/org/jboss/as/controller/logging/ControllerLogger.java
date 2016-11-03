@@ -3478,4 +3478,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 432, value = "Parameter name expected, but is missing '%s'")
     IllegalArgumentException credentialStoreURIParameterNameExpected(String uri);
+
+    @Message(id = 433, value = "'%s' is not a valid representation of a resource address")
+    OperationFailedException invalidAddressFormat(ModelNode address);
 }
