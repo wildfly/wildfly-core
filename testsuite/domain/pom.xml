@@ -178,6 +178,7 @@
 
                     <systemPropertyVariables>
                         <jboss.options>-ea</jboss.options>
+                        <cli.jvm.args>${modular.jdk.args}</cli.jvm.args>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                         <module.path>${jboss.dist}/modules</module.path>
@@ -241,6 +242,7 @@
 
                             <systemPropertyVariables>
                                 <jboss.options>-ea</jboss.options>
+                                <cli.jvm.args>${modular.jdk.args}</cli.jvm.args>
                                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                 <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                                 <module.path>${jboss.dist}/modules</module.path>

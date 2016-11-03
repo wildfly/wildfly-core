@@ -68,7 +68,7 @@ public class JBossCliXmlConfigTestCase {
 
         final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist);
         commandBuilder.addJavaOptions("-Djboss.cli.config=" + f.toPath());
-
+        commandBuilder.addJavaOptions(System.getProperty("cli.jvm.args", "").split("\\s+"));
         commandBuilder.addCliArgument("--command=help");
         Process cliProc = null;
         try {

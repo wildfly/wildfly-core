@@ -237,6 +237,7 @@ public class FileWithPropertiesTestCase {
         if (modulePath != null) {
             commandBuilder.setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)));
         }
+        commandBuilder.addJavaOptions(System.getProperty("cli.jvm.args", "").split("\\s+"));
 
         final List<String> ipv6Args = new ArrayList<>();
         TestSuiteEnvironment.getIpv6Args(ipv6Args);

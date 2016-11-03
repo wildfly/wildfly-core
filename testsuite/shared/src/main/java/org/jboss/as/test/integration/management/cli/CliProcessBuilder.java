@@ -51,6 +51,7 @@ abstract class CliProcessBuilder{
     public CliProcessBuilder(){
         String jbossDist = TestSuiteEnvironment.getSystemProperty("jboss.dist");
         cliCommandBuilder = CliCommandBuilder.of(jbossDist);
+        cliCommandBuilder.addJavaOptions(System.getProperty("cli.jvm.args", "").split("\\s+"));
         //cliCommandBuilder.addJavaOption("-Daesh.ansi=false");
     }
 
