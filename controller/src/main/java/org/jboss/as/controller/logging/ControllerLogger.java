@@ -1126,7 +1126,7 @@ public interface ControllerLogger extends BasicLogger {
      *
      * @return the exception.
      */
-    @Message(id = 97, value = "Wrong type for %s. Expected %s but was %s")
+    @Message(id = 97, value = "Wrong type for '%s'. Expected %s but was %s")
     OperationFailedException incorrectType(String name, Collection<ModelType> validTypes, ModelType invalidType);
 
     /**
@@ -1790,7 +1790,7 @@ public interface ControllerLogger extends BasicLogger {
      *
      * @return the exception.
      */
-    @Message(id = 155, value = "%s may not be null")
+    @Message(id = 155, value = "'%s' may not be null")
     OperationFailedException nullNotAllowed(String name);
 
     // id = 156; redundant parameter null check message
