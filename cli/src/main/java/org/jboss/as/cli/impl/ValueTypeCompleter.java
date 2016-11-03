@@ -25,7 +25,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -276,6 +278,14 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         }
     }
 
+    /**
+     * To test capabilities completion without actual connection to server.
+     */
+    public interface CapabilityCompleterFactory {
+
+        CapabilityReferenceCompleter newCompleter(OperationRequestAddress address, String staticPart);
+    }
+
     private static final List<ModelNode> BOOLEAN_LIST = new ArrayList<ModelNode>(2);
     static {
         BOOLEAN_LIST.add(new ModelNode(Boolean.FALSE));
@@ -287,16 +297,30 @@ public class ValueTypeCompleter implements CommandLineCompleter {
     private CommandContext ctx;
     private final OperationRequestAddress address;
     private String buffer;
+    private final CapabilityCompleterFactory factory;
+
     public ValueTypeCompleter(ModelNode propDescr) {
         this(propDescr, new DefaultOperationRequestAddress());
     }
 
+    // Testing purpose
+    public ValueTypeCompleter(ModelNode propDescr, CapabilityCompleterFactory factory) {
+        this(propDescr, new DefaultOperationRequestAddress(), factory);
+    }
+
     public ValueTypeCompleter(ModelNode propDescr, OperationRequestAddress address) {
+        this(propDescr, address, null);
+    }
+
+    public ValueTypeCompleter(ModelNode propDescr, OperationRequestAddress address, CapabilityCompleterFactory factory) {
         if(propDescr == null || !propDescr.isDefined()) {
             throw new IllegalArgumentException("property description is null or undefined.");
         }
         this.propDescr = propDescr;
         this.address = address;
+        this.factory = factory == null ? (a, p) -> {
+            return new CapabilityReferenceCompleter(a, p);
+        } : factory;
     }
 
     @Override
@@ -412,7 +436,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 valLength = completer.complete(ctx, path, offset, candidates);
             } else if (propType.has(Util.CAPABILITY_REFERENCE)) {
                 CapabilityReferenceCompleter completer
-                        = new CapabilityReferenceCompleter(address,
+                        = factory.newCompleter(address,
                                 propType.get(Util.CAPABILITY_REFERENCE).asString());
                 candidates = new ArrayList<>();
                 completer.complete(ctx, path, offset, candidates);
@@ -466,9 +490,14 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 return Collections.emptyList();
             }
 
-            // If the currentInstance is the root and is complete. Return empty list.
+            // If the currentInstance is the root and is complete must
+            // return an index of 0 and the full value type content.
+            // That is the contract with OperationRequestCompleter to concider
+            // the value has beeing complete and propose ')' to close the
+            // operation
             if (currentInstance.parent == null && currentInstance.isComplete()) {
-                return Collections.emptyList();
+                lastStateIndex = 0;
+                return Collections.singletonList(buffer);
             }
 
             // Retrieve the last property (if any)
@@ -537,6 +566,12 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                     // The completion index is already at the end of the stream.
                     if ((currentInstance instanceof ListInstance)
                             && !currentInstance.isComplete()) {
+                        // A list of capability references
+                        // We can do better by analysing its content.
+                        if (currentInstance.type.has(Util.CAPABILITY_REFERENCE)) {
+                            return getCapabilitiesListContent(last);
+                        }
+
                         List<String> candidates = new ArrayList<>();
                         getSimpleValues(currentInstance.type,
                                 null, last.value.asString(), candidates);
@@ -578,6 +613,48 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             }
 
             return Collections.emptyList();
+        }
+
+        private Set<String> getAllCapabilities() {
+            String staticPart = currentInstance.type.get(Util.CAPABILITY_REFERENCE).asString();
+            List<String> names = factory.newCompleter(address, staticPart).getCapabilityReferenceNames(ctx, address, staticPart);
+            Set<String> allSet = new HashSet<>();
+            allSet.addAll(names);
+            return allSet;
+        }
+
+        private Set<String> getPresentCapabilities() {
+            Set<String> presentSet = new HashSet<>();
+            for (Instance.Property p : currentInstance.properties) {
+                presentSet.add(p.value.asString());
+            }
+            return presentSet;
+        }
+
+        private List<String> getCapabilitiesListContent(Instance.Property last) {
+            String val = last == null ? "" : last.value.asString();
+            String staticPart = currentInstance.type.get(Util.CAPABILITY_REFERENCE).asString();
+            Set<String> allSet = getAllCapabilities();
+            Set<String> presentSet = getPresentCapabilities();
+            if (allSet.equals(presentSet)) {
+                valLength = buffer.length() - lastStateIndex;
+                return Collections.singletonList("]");
+            }
+            CapabilityReferenceCompleter completer
+                    = factory.newCompleter(address,
+                            staticPart);
+            List<String> candidates = new ArrayList<>();
+            completer.complete(ctx, val, offset, candidates);
+            if (candidates.size() == 1) {
+                if (candidates.get(0).equals(val)) {
+                    valLength = buffer.length() - lastStateIndex;
+                    candidates.set(0, ",");
+                }
+            }
+            // Remove existing.
+            candidates.removeAll(presentSet);
+            Collections.sort(candidates);
+            return candidates;
         }
 
         private List<String> getCompletedValueCandidates(ModelNode propType) {
@@ -665,8 +742,12 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                         } else if (mt.equals(ModelType.LIST)) {
                             return Collections.singletonList("[");
                         } else {
-                            candidates = getCandidatesFromMetadata(currentInstance.type,
-                                    "");
+                            if (currentInstance.type.has(Util.CAPABILITY_REFERENCE)) {
+                                candidates = getCapabilitiesListContent(null);
+                            } else {
+                                candidates = getCandidatesFromMetadata(currentInstance.type,
+                                        "");
+                            }
                         }
                         if (candidates != null) {
                             return candidates;
