@@ -218,9 +218,9 @@ class DomainApiHandler implements HttpHandler {
             }
             response = modelController.execute(new OperationBuilder(dmr).build(), OperationMessageHandler.logging, control);
             if (cachable && streamIndex > -1) {
-                // Use the MD5 of the model nodes toString() method as ETag
+                // Use the MD5 of the model nodes asString() method as ETag
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                md.update(response.toString().getBytes());
+                md.update(response.getResponseNode().asString().getBytes());
                 ETag etag = new ETag(false, HexConverter.convertToHexString(md.digest()));
                 operationParameterBuilder.etag(etag);
                 if (!ETagUtils.handleIfNoneMatch(exchange, etag, false)) {
