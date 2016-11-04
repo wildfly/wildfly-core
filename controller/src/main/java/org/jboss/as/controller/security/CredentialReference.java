@@ -84,12 +84,12 @@ public final class CredentialReference implements Destroyable {
     static final SimpleAttributeDefinition credentialTypeAttribute;
     static final SimpleAttributeDefinition clearTextAttribute;
 
-    static ObjectTypeAttributeDefinition credentialReferenceAttributeDefinition;
+    static final ObjectTypeAttributeDefinition credentialReferenceAttributeDefinition;
 
     private final String credentialStoreName;
     private final String alias;
     private final String credentialType;
-    private char[] secret;
+    private volatile char[] secret;
 
     static {
         credentialStoreAttribute = new SimpleAttributeDefinitionBuilder(STORE, ModelType.STRING, true)
@@ -153,7 +153,6 @@ public final class CredentialReference implements Destroyable {
     public char[] getSecret() {
         return secret;
     }
-
 
     /**
      * Destroy the secret stored in this {@code Object}.
