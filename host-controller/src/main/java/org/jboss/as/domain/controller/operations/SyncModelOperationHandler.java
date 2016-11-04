@@ -50,6 +50,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UND
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -72,6 +73,15 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMESPACES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_VERSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_CODENAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_VERSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SCHEMA_LOCATIONS;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
 import org.jboss.as.controller.operations.common.Util;
@@ -99,6 +109,10 @@ class SyncModelOperationHandler implements OperationStepHandler {
     private final Set<String> missingExtensions;
     private final SyncModelParameters parameters;
     private final OrderedChildTypesAttachment localOrderedChildTypes;
+    private static final Set<String> ROOT_ATTRIBUTES = new HashSet<>(Arrays.asList(
+            MANAGEMENT_MAJOR_VERSION, MANAGEMENT_MINOR_VERSION, MANAGEMENT_MICRO_VERSION,
+            PRODUCT_NAME, PRODUCT_VERSION, RELEASE_CODENAME, RELEASE_VERSION,
+            NAMESPACES, NAME, SCHEMA_LOCATIONS));
 
     SyncModelOperationHandler(List<ModelNode> localOperations, Resource remoteModel, Set<String> missingExtensions,
                               SyncModelParameters parameters, OrderedChildTypesAttachment localOrderedChildTypes) {
@@ -154,6 +168,17 @@ class SyncModelOperationHandler implements OperationStepHandler {
         OrderedOperationsCollection operations = new OrderedOperationsCollection(context);
         processAttributes(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
         processChildren(currentRoot, remoteRoot, operations, context.getRootResourceRegistration());
+
+        //Process root domain attributes manually as those are read-only
+        if(context.getCurrentAddress().size() == 0) {
+            Resource rootResource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
+            ModelNode rootModel = rootResource.getModel().clone();
+            ModelNode remoteRootModel = remoteModel.getModel();
+            ROOT_ATTRIBUTES.stream().filter((attributeName) -> (remoteRootModel.hasDefined(attributeName))).forEach((attributeName) -> {
+                rootModel.get(attributeName).set(remoteRootModel.get(attributeName));
+            });
+            rootResource.writeModel(rootModel);
+        }
 
         // Reverse, since we are adding the steps on top of the queue
         final List<ModelNode> ops = operations.getReverseList();
