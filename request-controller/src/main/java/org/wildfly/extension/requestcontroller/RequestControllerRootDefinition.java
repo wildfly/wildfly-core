@@ -50,11 +50,13 @@ class RequestControllerRootDefinition extends PersistentResourceDefinition {
     public static final SimpleAttributeDefinition MAX_REQUESTS = SimpleAttributeDefinitionBuilder.create(Constants.MAX_REQUESTS, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(-1))
+            .setRestartAllServices()
             .build();
 
     public static final SimpleAttributeDefinition TRACK_INDIVIDUAL_ENDPOINTS = SimpleAttributeDefinitionBuilder.create(Constants.TRACK_INDIVIDUAL_ENDPOINTS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
+            .setRestartAllServices()
             .build();
 
     public static final SimpleAttributeDefinition ACTIVE_REQUESTS = SimpleAttributeDefinitionBuilder.create(Constants.ACTIVE_REQUESTS, ModelType.INT, true)
