@@ -96,9 +96,9 @@
                         <cleanup.tmp>${cleanup.tmp}</cleanup.tmp>
                         <management.address>${node0}</management.address>
                         <node0>${node0}</node0>
-                        <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.memory.args}</jvm.args>
+                        <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args}</jvm.args>
                         <!-- TODO: domain and standalone use different system properties, investigate if this is deliberate or not-->
-                        <server.jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.memory.args}</server.jvm.args>
+                        <server.jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args}</server.jvm.args>
                         <maven.repo.local>${settings.localRepository}</maven.repo.local>
                     </systemPropertyVariables>
                 </configuration>

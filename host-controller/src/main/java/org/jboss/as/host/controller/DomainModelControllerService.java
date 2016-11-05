@@ -1238,14 +1238,12 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final Iterator<AbstractVaultReader> it = serviceLoader.iterator();
         // TODO WFCORE-114 get rid of catching/suppressing errors once we have a complete impl in WFCORE
         ServiceConfigurationError sce = null;
-        while (it.hasNext()) {
-            try {
+        try {
+            while (it.hasNext()) {
                 return it.next();
-            } catch (ServiceConfigurationError e) {
-                if (sce == null) {
-                    sce = e;
-                }
             }
+        } catch (ServiceConfigurationError e) {
+            sce = e;
         }
         if (sce != null) {
             DomainControllerLogger.HOST_CONTROLLER_LOGGER.debugf(sce, "Cannot instantiate provider of service %s", AbstractVaultReader.class);

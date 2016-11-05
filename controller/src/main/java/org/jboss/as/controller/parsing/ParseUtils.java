@@ -562,28 +562,34 @@ public final class ParseUtils {
             }
             if (node.getType() != ModelType.EXPRESSION) {
                 // Convert the string to the expected type
-                switch (attributeType) {
-                    case BIG_DECIMAL:
-                        node.set(node.asBigDecimal());
-                        break;
-                    case BIG_INTEGER:
-                        node.set(node.asBigInteger());
-                        break;
-                    case BOOLEAN:
-                        node.set(node.asBoolean());
-                        break;
-                    case BYTES:
-                        node.set(node.asBytes());
-                        break;
-                    case DOUBLE:
-                        node.set(node.asDouble());
-                        break;
-                    case INT:
-                        node.set(node.asInt());
-                        break;
-                    case LONG:
-                        node.set(node.asLong());
-                        break;
+                // This is a convenience only and is not a requirement
+                // of this method
+                try {
+                    switch (attributeType) {
+                        case BIG_DECIMAL:
+                            node.set(node.asBigDecimal());
+                            break;
+                        case BIG_INTEGER:
+                            node.set(node.asBigInteger());
+                            break;
+                        case BOOLEAN:
+                            node.set(node.asBoolean());
+                            break;
+                        case BYTES:
+                            node.set(node.asBytes());
+                            break;
+                        case DOUBLE:
+                            node.set(node.asDouble());
+                            break;
+                        case INT:
+                            node.set(node.asInt());
+                            break;
+                        case LONG:
+                            node.set(node.asLong());
+                            break;
+                    }
+                } catch (IllegalArgumentException iae) {
+                    // ignore and return the unconverted node
                 }
             }
         } else {

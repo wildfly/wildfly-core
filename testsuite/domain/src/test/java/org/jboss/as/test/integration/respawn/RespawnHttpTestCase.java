@@ -36,6 +36,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -164,6 +165,10 @@ public class RespawnHttpTestCase {
         args.add("-Xms64m");
         args.add("-Xmx512m");
         args.add("-XX:MaxMetaspaceSize=256m");
+        String cliJvmArgs = System.getProperty("cli.jvm.args");
+        if (cliJvmArgs != null && !cliJvmArgs.trim().isEmpty()) {
+            args.addAll(Arrays.asList(cliJvmArgs.split("\\s+")));
+        }
         args.add("--");
         args.add("-default-jvm");
         args.add(processUtil.getJavaCommand());

@@ -17,7 +17,11 @@
  */
 package org.jboss.as.test.manualmode.deployment;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
@@ -30,6 +34,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import javax.inject.Inject;
 
@@ -37,6 +42,7 @@ import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.protocol.StreamUtils;
@@ -45,6 +51,11 @@ import org.jboss.as.server.deployment.DeploymentUndeployHandler;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
+import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -108,7 +119,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                 try {
                     // Wait until deployed ...
                     long timeout = System.currentTimeMillis() + TIMEOUT;
-                    while (!exists(DEPLOYMENT_ONE) && System.currentTimeMillis() < timeout) {
+                    while (!(exists(DEPLOYMENT_ONE) && exists(DEPLOYMENT_TWO)) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(100);
                     }
                     Assert.assertTrue(exists(DEPLOYMENT_ONE));
@@ -171,6 +182,114 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
         }
     }
 
+
+    /**
+     * https://bugzilla.redhat.com/show_bug.cgi?id=1291710
+     *
+     * When FS deployment failed during boot, persistent deployments were removed too.
+     */
+    @Test
+    public void testFailedDeploymentWithPersistentDeployment() throws Exception {
+        container.start();
+        try {
+            client = TestSuiteEnvironment.getModelControllerClient();
+            try {
+                // deploy a persistent deployment
+
+                Path persistentDeploymentPath = deployDir.resolve(JAR_ONE);
+                PathAddress persistentDeploymentAddress = PathAddress.pathAddress(DEPLOYMENT, JAR_ONE);
+                Archive<?> validDeployment = createDeploymentArchive();
+                deployPersistent(JAR_ONE, validDeployment);
+                Assert.assertTrue(String.format("%s not deployed", persistentDeploymentPath),
+                        exists(persistentDeploymentAddress));
+
+
+                // deploy an invalid file-system deployment
+
+                addDeploymentScanner(0);
+                try {
+                    container.stop();
+                    createDeployment(deployDir.resolve(JAR_TWO), "not.existing.dependency");
+                    container.start();
+
+                    Path failedMarker = deployDir.resolve(JAR_TWO + ".failed");
+                    waitFor(() -> Files.exists(failedMarker));
+
+                    Assert.assertTrue(String.format("%s should be deployed", JAR_ONE),
+                            exists(persistentDeploymentAddress));
+                    Assert.assertFalse(String.format("%s should not be deployed", JAR_TWO),
+                            exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
+                    Assert.assertTrue(String.format("Missing .failed marker for %s", JAR_TWO),
+                            Files.exists(failedMarker));
+                } finally {
+                    removeDeploymentScanner();
+                }
+            } finally {
+                StreamUtils.safeClose(client);
+            }
+        } finally {
+            container.stop();
+        }
+    }
+
+    /**
+     * https://bugzilla.redhat.com/show_bug.cgi?id=997583
+     *
+     * FS deployments that failed during boot were not removed.
+     */
+    @Test
+    public void testFailedFileSystemDeploymentDuringBoot() throws Exception {
+        container.start();
+        try {
+            client = TestSuiteEnvironment.getModelControllerClient();
+
+            addDeploymentScanner(0);
+            try {
+                container.stop();
+
+                createDeployment(deployDir.resolve(JAR_ONE), "not.existing.dependency");
+                container.start();
+                waitFor(() -> Files.exists(deployDir.resolve(JAR_ONE + ".failed")));
+
+                assertFailedMarkerCreated(JAR_ONE);
+                Assert.assertFalse(exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
+            } finally {
+                removeDeploymentScanner();
+            }
+        } finally {
+            StreamUtils.safeClose(client);
+            container.stop();
+        }
+    }
+
+    @Test
+    public void testFailedDeploymentWithCorrectDeploymentDuringBoot() throws Exception {
+        container.start();
+        try {
+            client = TestSuiteEnvironment.getModelControllerClient();
+
+            addDeploymentScanner(0);
+            try {
+                container.stop();
+
+                createDeployment(deployDir.resolve(JAR_ONE), "not.existing.dependency");
+                createDeployment(deployDir.resolve(JAR_TWO), "org.jboss.modules");
+
+                container.start();
+                waitFor(this::isRunning);
+
+                assertFailedMarkerCreated(JAR_ONE);
+                Assert.assertFalse(exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
+                Assert.assertTrue(exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
+            } finally {
+                removeDeploymentScanner();
+            }
+        } finally {
+            StreamUtils.safeClose(client);
+            container.stop();
+        }
+    }
+
     private void addDebugDeploymentLogger() throws Exception {
         boolean ok = false;
         try {
@@ -200,6 +319,46 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
         return PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "logging"), PathElement.pathElement("logger", "org.jboss.as.server.deployment.scanner"));
     }
 
+    private Archive<?> createDeploymentArchive() {
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
+        final String dependencies = "Dependencies: org.jboss.modules";
+        archive.add(new StringAsset(dependencies), "META-INF/MANIFEST.MF");
+        return archive;
+    }
+
+    private void assertFailedMarkerCreated(String deployment) {
+        Assert.assertTrue(String.format("Failed marker for deployment %s was not created.", deployment),
+                Files.exists(deployDir.resolve(deployment + ".failed")));
+    }
+
+    private void waitFor(ExceptionWrappingSupplier<Boolean> condition) throws Exception {
+        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
+        while (!condition.get() && System.currentTimeMillis() < timeout) {
+            Thread.sleep(100);
+        }
+    }
+
+    /**
+     * Creates managed deployment
+     *
+     * @param name deployment runtime name
+     * @param archive archive to deploy
+     */
+    private void deployPersistent(String name, Archive archive) throws IOException {
+        PathAddress address = PathAddress.pathAddress(DEPLOYMENT, name);
+
+        ModelNode operation = Util.createOperation(ADD, address);
+        operation.get(CONTENT).get(0).get(INPUT_STREAM_INDEX).set(0);
+        OperationBuilder ob = new OperationBuilder(operation, true);
+        ob.addInputStream(archive.as(ZipExporter.class).exportAsInputStream());
+        ModelNode result = client.execute(ob.build());
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+
+        operation = Util.createOperation(DEPLOY, address);
+        result = client.execute(operation);
+        Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+    }
+
     @Override
     protected ModelNode executeOperation(ModelNode op) throws IOException {
         return client.execute(op);
@@ -209,4 +368,25 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
     protected File getDeployDir() {
         return deployDir.toFile();
     }
+
+
+    /**
+     * A Supplier that wraps eventual checked exception into runtime exception.
+     *
+     * @param <T> the result type
+     */
+    @FunctionalInterface
+    private interface ExceptionWrappingSupplier<T> extends Supplier<T> {
+        @Override
+        default T get() {
+            try {
+                return throwingGet();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        T throwingGet() throws Exception;
+    }
+
 }

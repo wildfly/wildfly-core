@@ -44,6 +44,11 @@ import org.jboss.dmr.Property;
  */
 public class CapabilityReferenceCompleter extends DefaultCompleter {
 
+    // For testing purpose.
+    public CapabilityReferenceCompleter(CandidatesProvider provider) {
+        super(provider);
+    }
+
     public CapabilityReferenceCompleter(OperationRequestAddress address, String staticPart) {
         super((ctx) -> {
             ModelNode mn;
@@ -75,6 +80,12 @@ public class CapabilityReferenceCompleter extends DefaultCompleter {
             }
         }
         return mn;
+    }
+
+    public List<String> getCapabilityReferenceNames(CommandContext ctx,
+            OperationRequestAddress address,
+            String staticPart) {
+        return getCapabilityNames(ctx, address, staticPart);
     }
 
     public static List<String> getCapabilityNames(CommandContext ctx,

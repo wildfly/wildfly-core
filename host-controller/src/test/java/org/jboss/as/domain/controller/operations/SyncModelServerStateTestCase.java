@@ -65,6 +65,8 @@ import org.jboss.as.controller.access.management.ManagementSecurityIdentitySuppl
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_VERSION;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
@@ -157,6 +159,20 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         for (MockServerProxy proxy : serverProxies.values()) {
             Assert.assertEquals("running", proxy.state);
         }
+    }
+
+    @Test
+    public void testLegacyModelSync() throws Exception {
+        Resource masterRootResource = rootResource.clone();
+        masterRootResource.getModel().get(PRODUCT_NAME).set("WildFly Core Test");
+        masterRootResource.getModel().get(PRODUCT_VERSION).set("test 2.0");
+        Assert.assertFalse(rootResource.getModel().hasDefined(PRODUCT_NAME));
+        Assert.assertFalse(rootResource.getModel().hasDefined(PRODUCT_VERSION));
+        executeTriggerSyncOperation(masterRootResource);
+        Assert.assertTrue(rootResource.getModel().hasDefined(PRODUCT_NAME));
+        Assert.assertEquals("WildFly Core Test", rootResource.getModel().get(PRODUCT_NAME).asString());
+        Assert.assertTrue(rootResource.getModel().hasDefined(PRODUCT_VERSION));
+        Assert.assertEquals("test 2.0",rootResource.getModel().get(PRODUCT_VERSION).asString());
     }
 
     @Test

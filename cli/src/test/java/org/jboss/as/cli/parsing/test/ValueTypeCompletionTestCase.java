@@ -28,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.jboss.as.cli.CommandContext;
@@ -35,6 +36,9 @@ import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.Util;
 
 import org.jboss.as.cli.impl.ValueTypeCompleter;
+import org.jboss.as.cli.impl.ValueTypeCompleter.CapabilityCompleterFactory;
+import org.jboss.as.cli.operation.OperationRequestAddress;
+import org.jboss.as.cli.operation.impl.CapabilityReferenceCompleter;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;
 
@@ -43,6 +47,16 @@ import org.junit.Test;
  * @author Alexey Loubyansky
  */
 public class ValueTypeCompletionTestCase {
+
+    private static final String role_mapper = "{\n"
+            + "            \"type\" => LIST,\n"
+            + "            \"description\" => \"The referenced role mappers to aggregate.\",\n"
+            + "            \"expressions-allowed\" => false,\n"
+            + "            \"required\" => true,\n"
+            + "            \"nillable\" => false,\n"
+            + "            \"capability-reference\" => \"org.wildfly.security.role-mapper\",\n"
+            + "            \"value-type\" => STRING\n"
+            + "        }";
 
     private static final String nested_objects = "{\n"
             + "                \"type\" => OBJECT,\n"
@@ -990,9 +1004,10 @@ public class ValueTypeCompletionTestCase {
         assertEquals(-1, i);
 
         candidates.clear();
-        i = new ValueTypeCompleter(propDescr).complete(null, "[{code=toto,flag=required},{code=\"UsersRoles\",flag=required}]", 0, candidates);
-        assertEquals(Collections.emptyList(), candidates);
-        assertEquals(-1, i);
+        String cmd = "[{code=toto,flag=required},{code=\"UsersRoles\",flag=required}]";
+        i = new ValueTypeCompleter(propDescr).complete(null, cmd, 0, candidates);
+        assertEquals(Arrays.asList(cmd), candidates);
+        assertEquals(0, i);
     }
 
     @Test
@@ -1246,10 +1261,11 @@ public class ValueTypeCompletionTestCase {
         assertEquals(Arrays.asList("}"), candidates);
 
         candidates.clear();
-        i = new ValueTypeCompleter(propDescr).complete(null, "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]},"
+        String cmd = "[{permissions=[{class-name=\"toto\",action=xxx},{}],principals=[],roles=[]},"
                 + "{roles=[],permissions=[{action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},"
-                + "                       {action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},{}],principals=[]}]", 0, candidates);
-        assertEquals(Arrays.asList(), candidates);
+                + "                       {action=cdscds,class-name=cdscds,module=cdscds,target-name=njdsc},{}],principals=[]}]";
+        i = new ValueTypeCompleter(propDescr).complete(null, cmd, 0, candidates);
+        assertEquals(Arrays.asList(cmd), candidates);
 
         candidates.clear();
         i = new ValueTypeCompleter(propDescr).complete(null, "[{roles=", 0, candidates);
@@ -1308,9 +1324,10 @@ public class ValueTypeCompletionTestCase {
         assertEquals(i, 22);
 
         candidates.clear();
-        i = new ValueTypeCompleter(propDescr).complete(null, "[[],[123,qwert,dscds]]", 0, candidates);
-        assertEquals(Arrays.asList(), candidates);
-        assertEquals(i, -1);
+        String cmd = "[[],[123,qwert,dscds]]";
+        i = new ValueTypeCompleter(propDescr).complete(null, cmd, 0, candidates);
+        assertEquals(Arrays.asList(cmd), candidates);
+        assertEquals(i, 0);
     }
 
     @Test
@@ -1410,11 +1427,13 @@ public class ValueTypeCompletionTestCase {
         assertEquals(i, 167);
 
         candidates.clear();
-        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
+        String cmd = "{prop1={prop1_1={prop1_1_1={prop1_1_1_1=true,prop1_1_1_2=false,prop1_1_1_3=true}"
                 + ",prop1_1_2={prop1_1_2_1=true,prop1_1_2_2=false,prop1_1_2_3=false}},"
-                + "prop1_2={}},prop2={}}", 0, candidates);
-        assertEquals(Arrays.asList(), candidates);
-        assertEquals(i, -1);
+                + "prop1_2={}},prop2={}}";
+        i = new ValueTypeCompleter(propDescr).complete(null, cmd, 0, candidates);
+        assertEquals(Arrays.asList(cmd), candidates);
+        // Is one, due to logic when lastStateChar is '}'
+        assertEquals(i, 1);
     }
 
     @Test
@@ -1428,5 +1447,102 @@ public class ValueTypeCompletionTestCase {
         i = new ValueTypeCompleter(propDescr).complete(null, "", 0, candidates);
         assertEquals(Arrays.asList("{"), candidates);
         assertEquals(i, 0);
+    }
+
+    private static class TestCapabilityReferenceCompleter extends CapabilityReferenceCompleter {
+
+        private final List<String> capabilities;
+
+        public TestCapabilityReferenceCompleter(List<String> capabilities) {
+            super(new CandidatesProvider() {
+                @Override
+                public Collection<String> getAllCandidates(CommandContext ctx) {
+                    return capabilities;
+                }
+            });
+            this.capabilities = capabilities;
+        }
+
+        @Override
+        public List<String> getCapabilityReferenceNames(CommandContext ctx,
+                OperationRequestAddress address, String staticPart) {
+            return capabilities;
+        }
+
+    }
+    @Test
+    public void testListCapabilities() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(role_mapper);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<>();
+        List<String> capabilities = new ArrayList<>();
+        CapabilityCompleterFactory factory = (OperationRequestAddress address, String staticPart) -> {
+            return new TestCapabilityReferenceCompleter(capabilities);
+        };
+        int i;
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "", 0, candidates);
+        assertEquals(Arrays.asList("["), candidates);
+        assertEquals(i, 0);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[", 0, candidates);
+        assertEquals(Arrays.asList("]"), candidates);
+        assertEquals(i, 1);
+
+        capabilities.add("coco");
+        capabilities.add("prefMapper001");
+        capabilities.add("prefMapper002");
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[", 0, candidates);
+        assertEquals(capabilities, candidates);
+        assertEquals(i, 1);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[p", 0, candidates);
+        assertEquals(Arrays.asList("prefMapper001", "prefMapper002"), candidates);
+        assertEquals(i, 1);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[prefMapper001", 0, candidates);
+        assertEquals(Arrays.asList(","), candidates);
+        assertEquals(i, 14);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[prefMapper001,", 0, candidates);
+        assertEquals(Arrays.asList("coco", "prefMapper002"), candidates);
+        assertEquals(i, 15);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[prefMapper001,c", 0, candidates);
+        assertEquals(Arrays.asList("coco"), candidates);
+        assertEquals(i, 15);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[prefMapper001,coco", 0, candidates);
+        assertEquals(Arrays.asList(","), candidates);
+        assertEquals(i, 19);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[prefMapper001,coco,", 0, candidates);
+        assertEquals(Arrays.asList("prefMapper002"), candidates);
+        assertEquals(i, 20);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[prefMapper001,coco,c", 0, candidates);
+        assertEquals(Arrays.asList(), candidates);
+        assertEquals(i, -1);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[prefMapper001,coco,p", 0, candidates);
+        assertEquals(Arrays.asList("prefMapper002"), candidates);
+        assertEquals(i, 20);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "[prefMapper001,coco,prefMapper002", 0, candidates);
+        assertEquals(Arrays.asList("]"), candidates);
+        assertEquals(i, 33);
+
     }
 }

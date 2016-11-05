@@ -117,6 +117,7 @@ public class Util {
     public static final String MAX_FAILED_SERVERS = "max-failed-servers";
     public static final String MAX_FAILURE_PERCENTAGE = "max-failure-percentage";
     public static final String MAX_OCCURS = "max-occurs";
+    public static final String METRIC = "metric";
     public static final String MIN_OCCURS = "min-occurs";
     public static final String MODULE = "module";
     public static final String MODULE_SLOT = "module-slot";
@@ -1186,6 +1187,17 @@ public class Util {
                 buf.append(": ").append(t1.getClass().getName());
             }
             t1 = t1.getCause();
+        }
+
+        // Add the suppressed exceptions attached to the passed exception.
+        // suppressed exceptions can contain valuable information to help trace
+        // exception path.
+        for (Throwable suppressed : t.getSuppressed()) {
+            if (suppressed.getLocalizedMessage() != null) {
+                buf.append("\n").append(suppressed.getLocalizedMessage());
+            } else {
+                buf.append("\n").append(suppressed.getClass().getName());
+            }
         }
         return buf.toString();
     }
