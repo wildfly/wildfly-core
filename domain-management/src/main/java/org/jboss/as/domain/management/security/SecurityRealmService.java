@@ -79,6 +79,10 @@ import org.wildfly.security.auth.server.SupportLevel;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.evidence.Evidence;
+import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
+import org.wildfly.security.http.util.FilterServerMechanismFactory;
+import org.wildfly.security.http.util.SecurityProviderServerMechanismFactory;
+import org.wildfly.security.http.util.SetMechanismInformationMechanismFactory;
 import org.wildfly.security.sasl.localuser.LocalUserServer;
 import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
 import org.wildfly.security.sasl.util.PropertiesSaslServerFactory;
@@ -174,6 +178,26 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
         SecurityDomain securityDomain = domainBuilder.build();
 
+        HttpAuthenticationFactory.Builder httpBuilder = HttpAuthenticationFactory.builder();
+        httpBuilder.setSecurityDomain(securityDomain);
+
+        HttpServerAuthenticationMechanismFactory httpServerFactory = new SecurityProviderServerMechanismFactory(() -> new Provider[] {new WildFlyElytronProvider()});
+        httpServerFactory = new SetMechanismInformationMechanismFactory(httpServerFactory);
+        httpServerFactory = new FilterServerMechanismFactory(httpServerFactory, (s) -> {
+            AuthMechanism mechanism = toAuthMechanism("HTTP", s);
+            return mechanism != null && configurationMap.containsKey(mechanism);
+        });
+
+        httpBuilder.setFactory(httpServerFactory);
+        httpBuilder.setMechanismConfigurationSelector((mi) -> {
+            AuthMechanism mechanism = toAuthMechanism(mi.getMechanismType(), mi.getMechanismName());
+            if (mechanism != null) {
+                return configurationMap.get(mechanism);
+            }
+            return null;
+        });
+        httpAuthenticationFactory = httpBuilder.build();
+
         SaslAuthenticationFactory.Builder saslBuilder = SaslAuthenticationFactory.builder();
         saslBuilder.setSecurityDomain(securityDomain);
 
@@ -209,7 +233,12 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 }
                 break;
             case "HTTP":
-
+                switch (mechanismName) {
+                    case "DIGEST":
+                        return AuthMechanism.DIGEST;
+                    case "PLAIN":
+                        return AuthMechanism.PLAIN;
+                }
                 break;
         }
 

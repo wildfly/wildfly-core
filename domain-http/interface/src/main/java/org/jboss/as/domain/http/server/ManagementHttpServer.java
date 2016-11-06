@@ -29,7 +29,6 @@ import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,22 +49,18 @@ import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
-import org.jboss.as.domain.http.server.security.AnonymousMechanism;
-import org.jboss.as.domain.http.server.security.AuthenticationMechanismWrapper;
 import org.jboss.as.domain.http.server.security.DmrFailureReadinessHandler;
-import org.jboss.as.domain.http.server.security.ElytronSubjectDoAsHandler;
+import org.jboss.as.domain.http.server.security.ElytronIdentityHandler;
 import org.jboss.as.domain.http.server.security.LogoutHandler;
-import org.jboss.as.domain.http.server.security.RealmIdentityManager;
 import org.jboss.as.domain.http.server.security.RedirectReadinessHandler;
-import org.jboss.as.domain.http.server.security.ServerSubjectFactory;
-import org.jboss.as.domain.http.server.security.SubjectDoAsHandler;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.modules.ModuleLoadException;
 import org.wildfly.common.Assert;
 import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
-import org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler;
+import org.wildfly.elytron.web.undertow.server.ElytronHttpExchange;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.xnio.BufferAllocator;
 import org.xnio.ByteBufferSlicePool;
@@ -83,21 +78,9 @@ import org.xnio.ssl.SslConnection;
 import org.xnio.ssl.XnioSsl;
 
 import io.undertow.protocols.ssl.UndertowXnioSsl;
-import io.undertow.security.api.AuthenticationMechanism;
-import io.undertow.security.api.AuthenticationMode;
 import io.undertow.security.handlers.AuthenticationCallHandler;
 import io.undertow.security.handlers.AuthenticationConstraintHandler;
-import io.undertow.security.handlers.AuthenticationMechanismsHandler;
-import io.undertow.security.handlers.SecurityInitialHandler;
 import io.undertow.security.handlers.SinglePortConfidentialityHandler;
-import io.undertow.security.idm.DigestAlgorithm;
-import io.undertow.security.impl.BasicAuthenticationMechanism;
-import io.undertow.security.impl.CachedAuthenticatedSessionMechanism;
-import io.undertow.security.impl.ClientCertAuthenticationMechanism;
-import io.undertow.security.impl.DigestAuthenticationMechanism;
-import io.undertow.security.impl.DigestQop;
-import io.undertow.security.impl.GSSAPIAuthenticationMechanism;
-import io.undertow.security.impl.SimpleNonceManager;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.RenegotiationRequiredException;
@@ -415,12 +398,7 @@ public class ManagementHttpServer {
     }
 
     private static HttpHandler associateIdentity(HttpHandler domainHandler, final Builder builder) {
-        if (builder.httpAuthenticationFactory != null) {
-            domainHandler = new ElytronSubjectDoAsHandler(domainHandler, builder.httpAuthenticationFactory.getSecurityDomain());
-            domainHandler = new ElytronRunAsHandler(domainHandler);
-        } else if (builder.securityRealm != null) {
-            domainHandler = new SubjectDoAsHandler(domainHandler);
-        }
+        domainHandler = new ElytronIdentityHandler(domainHandler);
 
         return new BlockingHandler(domainHandler);
     }
@@ -429,54 +407,13 @@ public class ManagementHttpServer {
         if (builder.httpAuthenticationFactory != null) {
             return secureDomainAccess(domainHandler, builder.httpAuthenticationFactory);
         } else if (builder.securityRealm != null) {
-            return secureDomainAccess(domainHandler, builder.securityRealm);
+            HttpAuthenticationFactory httpAuthenticationFactory = builder.securityRealm.getHttpAuthenticationFactory();
+            if (httpAuthenticationFactory != null) {
+                return secureDomainAccess(domainHandler, httpAuthenticationFactory);
+            }
         }
 
         return domainHandler;
-    }
-
-    private static HttpHandler secureDomainAccess(final HttpHandler domainHandler, final SecurityRealm securityRealm) {
-        RealmIdentityManager rim = new RealmIdentityManager(securityRealm);
-        List<AuthenticationMechanism> undertowMechanisms;
-        if (securityRealm != null) {
-            Set<AuthMechanism> mechanisms = securityRealm.getSupportedAuthenticationMechanisms();
-            undertowMechanisms = new ArrayList<AuthenticationMechanism>(mechanisms.size());
-            undertowMechanisms.add(wrap(new CachedAuthenticatedSessionMechanism(), null));
-            for (AuthMechanism current : mechanisms) {
-                switch (current) {
-                    case KERBEROS:
-                        undertowMechanisms.add(wrap(new GSSAPIAuthenticationMechanism(new ServerSubjectFactory(securityRealm,
-                                rim)), current));
-                        break;
-                    case CLIENT_CERT:
-                        undertowMechanisms.add(wrap(new ClientCertAuthenticationMechanism(), current));
-                        break;
-                    case DIGEST:
-                        List<DigestAlgorithm> digestAlgorithms = Collections.singletonList(DigestAlgorithm.MD5);
-                        List<DigestQop> digestQops = Collections.singletonList(DigestQop.AUTH);
-                        undertowMechanisms.add(wrap(new DigestAuthenticationMechanism(digestAlgorithms, digestQops,
-                                securityRealm.getName(), "/management", new SimpleNonceManager()), current));
-                        break;
-                    case PLAIN:
-                        undertowMechanisms.add(wrap(new BasicAuthenticationMechanism(securityRealm.getName(), "BASIC", false, null, StandardCharsets.UTF_8, USER_AGENT_CHARSET_MAP), current));
-                        break;
-                    case LOCAL:
-                        break;
-                }
-            }
-        } else {
-            undertowMechanisms = Collections.singletonList(wrap(new AnonymousMechanism(), null));
-        }
-
-        // If the only mechanism is the cached mechanism then no need to add these.
-        HttpHandler current = domainHandler;
-        current = new AuthenticationCallHandler(current);
-        // Currently the security handlers are being added after a PATH handler so we know authentication is required by
-        // this point.
-        current = new AuthenticationConstraintHandler(current);
-        current = new AuthenticationMechanismsHandler(current, undertowMechanisms);
-
-        return new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, rim, current);
     }
 
     private static Map<Pattern, Charset> generateCharsetMap() {
@@ -486,10 +423,6 @@ public class ManagementHttpServer {
         charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.*; Trident/.*; rv:.*\\).*"), StandardCharsets.ISO_8859_1);
         charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.* MSIE.* Trident/.*\\)"), StandardCharsets.ISO_8859_1);
         return Collections.unmodifiableMap(charsetMap);
-    }
-
-    private static AuthenticationMechanism wrap(final AuthenticationMechanism toWrap, final AuthMechanism mechanism) {
-        return new AuthenticationMechanismWrapper(toWrap, mechanism);
     }
 
     private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final HttpAuthenticationFactory httpAuthenticationFactory) {
@@ -508,6 +441,15 @@ public class ManagementHttpServer {
         domainHandler = ElytronContextAssociationHandler.builder()
                 .setNext(domainHandler)
                 .setMechanismSupplier(mechanismSupplier)
+                .setHttpExchangeSupplier(h -> new ElytronHttpExchange(h) {
+
+                    @Override
+                    public void authenticationComplete(SecurityIdentity securityIdentity, String mechanismName) {
+                        super.authenticationComplete(securityIdentity, mechanismName);
+                        h.putAttachment(ElytronIdentityHandler.IDENTITY_KEY, securityIdentity);
+                    }
+
+                })
                 .build();
 
         return domainHandler;
