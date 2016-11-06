@@ -73,8 +73,10 @@ public class HttpConnectorResource extends SimpleResourceDefinition {
     static final HttpConnectorResource INSTANCE = new HttpConnectorResource();
 
     private HttpConnectorResource() {
-        super(PATH, RemotingExtension.getResourceDescriptionResolver(HTTP_CONNECTOR),
-                HttpConnectorAdd.INSTANCE, HttpConnectorRemove.INSTANCE);
+        super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(HTTP_CONNECTOR))
+                .setAddHandler(HttpConnectorAdd.INSTANCE)
+                .setRemoveHandler(HttpConnectorRemove.INSTANCE)
+                .setCapabilities(HTTP_CONNECTOR_CAPABILITY));
     }
 
     @Override
