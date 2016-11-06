@@ -158,11 +158,11 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
         }
     }
 
-    protected abstract void initializeLocalDomain();
+    abstract void initializeLocalDomain();
 
-    protected abstract void secureRemoteDomain(OperationContext context, ModelNode operation, ModelNode remoteDC) throws OperationFailedException;
+    abstract void secureRemoteDomain(OperationContext context, ModelNode operation, ModelNode remoteDC) throws OperationFailedException;
 
-    protected abstract void initializeRemoteDomain(OperationContext context, ModelNode remoteDC) throws OperationFailedException;
+    abstract void initializeRemoteDomain(OperationContext context, ModelNode remoteDC) throws OperationFailedException;
 
     private static class RealLocalDomainControllerAddHandler extends DomainControllerWriteAttributeHandler {
 
@@ -200,7 +200,7 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
         }
 
         @Override
-        protected void initializeLocalDomain() {
+        void initializeLocalDomain() {
             hostControllerInfo.setMasterDomainController(true);
             overallConfigPersister.initializeDomainConfigurationPersister(false);
             domainController.initializeMasterDomainRegistry(rootRegistration, overallConfigPersister.getDomainPersister(),
@@ -208,7 +208,7 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
         }
 
         @Override
-        protected void initializeRemoteDomain(OperationContext context, ModelNode remoteDC) throws OperationFailedException {
+        void initializeRemoteDomain(OperationContext context, ModelNode remoteDC) throws OperationFailedException {
             hostControllerInfo.setMasterDomainController(false);
             ModelNode protocolNode = DomainControllerWriteAttributeHandler.PROTOCOL.resolveModelAttribute(context, remoteDC);
             ModelNode hostNode = DomainControllerWriteAttributeHandler.HOST.resolveModelAttribute(context, remoteDC);
@@ -246,7 +246,7 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
         }
 
         @Override
-        protected void secureRemoteDomain(OperationContext context, ModelNode operation, ModelNode remoteDC) throws OperationFailedException {
+        void secureRemoteDomain(OperationContext context, ModelNode operation, ModelNode remoteDC) throws OperationFailedException {
             ModelNode parameters = operation.get(VALUE, REMOTE);
             if (parameters.has(DomainControllerWriteAttributeHandler.SECURITY_REALM.getName())) {
                 DomainControllerWriteAttributeHandler.SECURITY_REALM.validateAndSet(parameters, remoteDC);
@@ -260,15 +260,15 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
     private static class TestLocalDomainControllerAddHandler extends DomainControllerWriteAttributeHandler {
 
         @Override
-        protected void initializeLocalDomain() {
+        void initializeLocalDomain() {
         }
 
         @Override
-        protected void initializeRemoteDomain(OperationContext context, ModelNode remoteDC) throws OperationFailedException {
+        void initializeRemoteDomain(OperationContext context, ModelNode remoteDC) throws OperationFailedException {
         }
 
         @Override
-        protected void secureRemoteDomain(OperationContext context, ModelNode operation, ModelNode remoteDC) throws OperationFailedException {
+        void secureRemoteDomain(OperationContext context, ModelNode operation, ModelNode remoteDC) throws OperationFailedException {
         }
 
     }
