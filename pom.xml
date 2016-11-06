@@ -1431,10 +1431,27 @@
 
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl</artifactId>
+                <artifactId>wildfly-openssl-java</artifactId>
                 <version>${version.org.wildfly.openssl}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl-linux</artifactId>
+                <version>${version.org.wildfly.openssl}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl-mac</artifactId>
+                <version>${version.org.wildfly.openssl}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl-windows</artifactId>
+                <version>${version.org.wildfly.openssl}</version>
+            </dependency>
             <dependency>
                 <groupId>org.wildfly.checkstyle</groupId>
                 <artifactId>wildfly-checkstyle-config</artifactId>
