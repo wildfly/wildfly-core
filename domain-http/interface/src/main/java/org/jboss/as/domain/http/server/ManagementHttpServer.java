@@ -578,7 +578,7 @@ public class ManagementHttpServer {
             return this;
         }
 
-        public Builder setHttpServerAuthentication(HttpAuthenticationFactory httpAuthenticationFactory) {
+        public Builder setHttpAuthenticationFactory(HttpAuthenticationFactory httpAuthenticationFactory) {
             assertNotBuilt();
             this.httpAuthenticationFactory = httpAuthenticationFactory;
 

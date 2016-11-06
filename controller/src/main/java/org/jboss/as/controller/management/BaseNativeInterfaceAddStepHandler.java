@@ -46,7 +46,7 @@ public abstract class BaseNativeInterfaceAddStepHandler extends ManagementInterf
 
     @Override
     public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        final String saslServerAuthentication = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SASL_AUTHENTICATION_FACTORY, model);
+        final String saslAuthenticationFactory = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SASL_AUTHENTICATION_FACTORY, model);
         final String sslContext = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SSL_CONTEXT, model);
         final String securityRealm = asStringIfDefined(context, BaseNativeInterfaceResourceDefinition.SECURITY_REALM, model);
 
@@ -61,8 +61,8 @@ public abstract class BaseNativeInterfaceAddStepHandler extends ManagementInterf
         List<ServiceName> requiredServices = installServices(context, new NativeInterfaceCommonPolicy() {
 
             @Override
-            public String getSaslServerAuthentication() {
-                return saslServerAuthentication;
+            public String getSaslAuthenticationFactory() {
+                return saslAuthenticationFactory;
             }
 
             @Override

@@ -74,14 +74,14 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
         final String securityRealm = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SECURITY_REALM, model);
         final boolean consoleEnabled = BaseHttpInterfaceResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
         final boolean httpUpgradeEnabled;
-        final String saslServerAuthentication;
+        final String saslAuthenticationFactory;
         if (model.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE)) {
             ModelNode httpUpgrade = model.require(ModelDescriptionConstants.HTTP_UPGRADE);
             httpUpgradeEnabled = BaseHttpInterfaceResourceDefinition.ENABLED.resolveModelAttribute(context, httpUpgrade).asBoolean();
-            saslServerAuthentication =  asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SASL_AUTHENTICATION_FACTORY, httpUpgrade);
+            saslAuthenticationFactory =  asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SASL_AUTHENTICATION_FACTORY, httpUpgrade);
         } else {
             httpUpgradeEnabled = false;
-            saslServerAuthentication = null;
+            saslAuthenticationFactory = null;
         }
         final List<String> allowedOrigins = BaseHttpInterfaceResourceDefinition.ALLOWED_ORIGINS.unwrap(context, model);
 
@@ -96,7 +96,7 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
         List<ServiceName> requiredServices = installServices(context, new HttpInterfaceCommonPolicy() {
 
             @Override
-            public String getHttpServerAuthentication() {
+            public String getHttpAuthenticationFactory() {
                 return httpAuthenticationFactory;
             }
 
@@ -106,8 +106,8 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
             }
 
             @Override
-            public String getSaslServerAuthentication() {
-                return saslServerAuthentication;
+            public String getSaslAuthenticationFactory() {
+                return saslAuthenticationFactory;
             }
 
             @Override

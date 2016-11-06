@@ -150,12 +150,12 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 .addInjection(service.getSecurePortInjector(), securePort)
                 .addInjection(service.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());
 
-        String httpServerAuthentication = commonPolicy.getHttpServerAuthentication();
+        String httpAuthenticationFactory = commonPolicy.getHttpAuthenticationFactory();
         String securityRealm = commonPolicy.getSecurityRealm();
-        if (httpServerAuthentication != null) {
+        if (httpAuthenticationFactory != null) {
             builder.addDependency(context.getCapabilityServiceName(
-                    buildDynamicCapabilityName(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, httpServerAuthentication),
-                    HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, service.getHttpServerAuthenticationInjector());
+                    buildDynamicCapabilityName(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, httpAuthenticationFactory),
+                    HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, service.getHttpAuthenticationFactoryInjector());
         } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);
         } else {
@@ -195,7 +195,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             }
 
             RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
-                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), securityRealm, commonPolicy.getSaslServerAuthentication());
+                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), securityRealm, commonPolicy.getSaslAuthenticationFactory());
             return Arrays.asList(UndertowHttpManagementService.SERVICE_NAME, HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         }
         return Collections.singletonList(UndertowHttpManagementService.SERVICE_NAME);

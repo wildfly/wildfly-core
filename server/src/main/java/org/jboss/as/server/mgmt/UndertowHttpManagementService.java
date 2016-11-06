@@ -91,7 +91,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<SocketBindingManager> injectedSocketBindingManager = new InjectedValue<SocketBindingManager>();
     private final InjectedValue<Integer> portValue = new InjectedValue<Integer>();
     private final InjectedValue<Integer> securePortValue = new InjectedValue<Integer>();
-    private final InjectedValue<HttpAuthenticationFactory> httpServerAuthenticationValue = new InjectedValue<>();
+    private final InjectedValue<HttpAuthenticationFactory> httpAuthenticationFactoryValue = new InjectedValue<>();
     private final InjectedValue<SecurityRealm> securityRealmValue = new InjectedValue<SecurityRealm>();
     private final InjectedValue<SSLContext> sslContextValue = new InjectedValue<>();
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
@@ -212,7 +212,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         socketBindingManager = injectedSocketBindingManager.getOptionalValue();
 
         final SecurityRealm securityRealm = securityRealmValue.getOptionalValue();
-        final HttpAuthenticationFactory httpServerAuthentication = httpServerAuthenticationValue.getOptionalValue();
+        final HttpAuthenticationFactory httpAuthenticationFactory = httpAuthenticationFactoryValue.getOptionalValue();
         SSLContext sslContext = sslContextValue.getOptionalValue();
         if (sslContext == null && securityRealm != null) {
             sslContext = securityRealm.getSSLContext();
@@ -280,7 +280,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setModelController(modelController)
                     .setSecurityRealm(securityRealm)
                     .setSSLContext(sslContext)
-                    .setHttpServerAuthentication(httpServerAuthentication)
+                    .setHttpAuthenticationFactory(httpAuthenticationFactory)
                     .setControlledProcessStateService(controlledProcessStateService)
                     .setConsoleMode(consoleMode)
                     .setConsoleSlot(consoleSlot)
@@ -453,12 +453,12 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
 
     /**
-     * Get the {@link Injector} for the HTTP server authentication policy.
+     * Get the {@link Injector} for the HTTP authentication factory.
      *
-     * @return The {@link Injector} for the HTTP server authentication policy.
+     * @return The {@link Injector} for the HTTP authentication factory.
      */
-    public Injector<HttpAuthenticationFactory> getHttpServerAuthenticationInjector() {
-        return httpServerAuthenticationValue;
+    public Injector<HttpAuthenticationFactory> getHttpAuthenticationFactoryInjector() {
+        return httpAuthenticationFactoryValue;
     }
 
     /**

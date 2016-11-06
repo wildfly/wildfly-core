@@ -90,13 +90,13 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         ServiceName socketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
 
         String securityRealm = commonPolicy.getSecurityRealm();
-        String saslServerAuthentication = commonPolicy.getSaslServerAuthentication();
-        if (saslServerAuthentication == null && securityRealm == null) {
+        String saslAuthenticationFactory = commonPolicy.getSaslAuthenticationFactory();
+        if (saslAuthenticationFactory == null && securityRealm == null) {
             ServerLogger.ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
         ServiceName securityRealmName = securityRealm != null ? SecurityRealm.ServiceUtil.createServiceName(securityRealm) : null;
-        ServiceName saslAuthenticationFactoryName = saslServerAuthentication != null ? context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, SaslAuthenticationFactory.class) : null;
+        ServiceName saslAuthenticationFactoryName = saslAuthenticationFactory != null ? context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, SaslAuthenticationFactory.class) : null;
         String sslContext = commonPolicy.getSSLContext();
         ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, SSLContext.class) : null;
 
