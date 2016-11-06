@@ -31,15 +31,8 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
-import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.services.path.PathManagerService;
-import org.jboss.as.domain.controller.DomainController;
-import org.jboss.as.host.controller.HostControllerConfigurationPersister;
 import org.jboss.as.host.controller.descriptions.HostResolver;
-import org.jboss.as.repository.ContentRepository;
-import org.jboss.as.repository.HostFileRepository;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -55,16 +48,8 @@ public abstract class LocalDomainControllerAddHandler implements OperationStepHa
             .build();
 
 
-    public static LocalDomainControllerAddHandler getInstance(final ManagementResourceRegistration rootRegistration,
-                                                                 final LocalHostControllerInfoImpl hostControllerInfo,
-                                                                 final HostControllerConfigurationPersister overallConfigPersister,
-                                                                 final HostFileRepository fileRepository,
-                                                                 final ContentRepository contentRepository,
-                                                                 final DomainController domainController,
-                                                                 final ExtensionRegistry extensionRegistry,
-                                                                 final PathManagerService pathManager) {
-        return new RealLocalDomainControllerAddHandler(rootRegistration, hostControllerInfo, overallConfigPersister,
-                fileRepository, contentRepository, domainController, extensionRegistry, pathManager);
+    public static LocalDomainControllerAddHandler getInstance(DomainControllerWriteAttributeHandler writeAttributeHandler) {
+        return new RealLocalDomainControllerAddHandler(writeAttributeHandler);
     }
 
     public static LocalDomainControllerAddHandler getTestInstance() {
@@ -99,48 +84,24 @@ public abstract class LocalDomainControllerAddHandler implements OperationStepHa
         });
     }
 
-    protected abstract void initializeDomain();
+    abstract void initializeDomain();
 
     private static class RealLocalDomainControllerAddHandler extends LocalDomainControllerAddHandler {
-        private final ManagementResourceRegistration rootRegistration;
-        private final HostControllerConfigurationPersister overallConfigPersister;
-        private final HostFileRepository fileRepository;
-        private final LocalHostControllerInfoImpl hostControllerInfo;
-        private final ContentRepository contentRepository;
-        private final DomainController domainController;
-        private final ExtensionRegistry extensionRegistry;
-        private final PathManagerService pathManager;
+        private final DomainControllerWriteAttributeHandler writeAttributeHandler;
 
-        protected RealLocalDomainControllerAddHandler(final ManagementResourceRegistration rootRegistration,
-                final LocalHostControllerInfoImpl hostControllerInfo,
-                final HostControllerConfigurationPersister overallConfigPersister,
-                final HostFileRepository fileRepository,
-                final ContentRepository contentRepository,
-                final DomainController domainController,
-                final ExtensionRegistry extensionRegistry,
-                final PathManagerService pathManager) {
-            this.rootRegistration = rootRegistration;
-            this.overallConfigPersister = overallConfigPersister;
-            this.fileRepository = fileRepository;
-            this.hostControllerInfo = hostControllerInfo;
-            this.contentRepository = contentRepository;
-            this.domainController = domainController;
-            this.extensionRegistry = extensionRegistry;
-            this.pathManager = pathManager;
+        RealLocalDomainControllerAddHandler(DomainControllerWriteAttributeHandler writeAttributeHandler) {
+            this.writeAttributeHandler = writeAttributeHandler;
         }
 
-        protected void initializeDomain() {
-            hostControllerInfo.setMasterDomainController(true);
-            overallConfigPersister.initializeDomainConfigurationPersister(false);
-
-            domainController.initializeMasterDomainRegistry(rootRegistration, overallConfigPersister.getDomainPersister(), contentRepository, fileRepository, extensionRegistry, pathManager);
+        void initializeDomain() {
+            writeAttributeHandler.initializeLocalDomain();
         }
     }
 
     private static class TestLocalDomainControllerAddHandler extends LocalDomainControllerAddHandler {
 
         @Override
-        protected void initializeDomain() {
+        void initializeDomain() {
         }
     }
 }
