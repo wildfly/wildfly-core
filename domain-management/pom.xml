@@ -149,7 +149,7 @@
 
         <dependency>
             <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl</artifactId>
+            <artifactId>wildfly-openssl-java</artifactId>
         </dependency>
 
         <dependency>
