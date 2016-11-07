@@ -43,6 +43,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -69,6 +70,8 @@ public class DomainSuspendResumeTestCase {
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
     private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+
+    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
 
     @BeforeClass
     public static void setupDomain() throws Exception {
@@ -107,7 +110,7 @@ public class DomainSuspendResumeTestCase {
                 }
             });
 
-            Thread.sleep(1000); //nasty, but we need to make sure the HTTP request has started
+            Thread.sleep(ADJUSTED_SECOND); //nasty, but we need to make sure the HTTP request has started
 
             ModelNode op = new ModelNode();
             op.get(ModelDescriptionConstants.OP).set("suspend-servers");
