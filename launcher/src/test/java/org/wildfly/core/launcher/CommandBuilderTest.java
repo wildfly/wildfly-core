@@ -70,6 +70,9 @@ public class CommandBuilderTest {
                 .addJavaOption("-Djava.security.manager")
                 .addJavaOption("-Djava.net.preferIPv4Stack=true")
                 .addJavaOption("-Djava.net.preferIPv4Stack=false")
+                .addJavaOption("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED")
+                .addJavaOption("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED")
+                .addJavaOption("--add-modules=java.base, java.annotation.common")
                 .setBindAddressHint("management", "0.0.0.0");
 
         // Get all the commands
@@ -86,6 +89,9 @@ public class CommandBuilderTest {
         Assert.assertTrue("Missing server configuration file override", commands.contains("-c=standalone-full.xml"));
 
         Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
+
+        Assert.assertTrue("Missing --add-exports option", commands.contains("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"));
+
 
         // A system property should only be added ones
         Assert.assertEquals("There should be only one java.net.preferIPv4Stack system property", 1, commandBuilder.getJavaOptions().stream()
