@@ -3,6 +3,8 @@ package org.wildfly.core.testrunner;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,6 +19,7 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkField;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.TestClass;
+import org.wildfly.security.WildFlyElytronProvider;
 
 /**
  * A lightweight test runner for running management based tests
@@ -24,6 +27,8 @@ import org.junit.runners.model.TestClass;
  * @author Stuart Douglas
  */
 public class WildflyTestRunner extends BlockJUnit4ClassRunner {
+
+    private static final Provider ELYTRON_PROVIDER = new WildFlyElytronProvider();
 
     private final ServerController controller = new ServerController();
     private final boolean automaticServerControl;
@@ -93,12 +98,20 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
         if (!serverSetupTasks.isEmpty() && !automaticServerControl) {
             throw new RuntimeException("Can't run setup tasks with manual server control");
         }
+        boolean providerInstalled = false;
+        if (Security.getProvider(ELYTRON_PROVIDER.getName()) == null) {
+            Security.insertProviderAt(ELYTRON_PROVIDER, 0);
+            providerInstalled = true;
+        }
         if (automaticServerControl) {
             runSetupTasks();
         }
         super.run(notifier);
         if (automaticServerControl) {
             runTearDownTasks();
+        }
+        if (providerInstalled) {
+            Security.removeProvider(ELYTRON_PROVIDER.getName());
         }
     }
 
