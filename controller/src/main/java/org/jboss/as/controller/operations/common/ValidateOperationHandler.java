@@ -30,7 +30,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 
 import java.util.Collections;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationDefinition;
@@ -47,6 +46,7 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.AuthorizationResult.Decision;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.OperationValidator;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -88,7 +88,10 @@ public class ValidateOperationHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        ModelNode op = operation.require(VALUE.getName());
+        if (!operation.hasDefined(VALUE.getName())) {
+            throw ControllerLogger.ROOT_LOGGER.validateOperationRequiresValue();
+        }
+        ModelNode op = operation.get(VALUE.getName());
         PathAddress addr = PathAddress.pathAddress(op.get(OP_ADDR));
         if (slave) {
             op = op.clone();
