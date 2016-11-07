@@ -102,7 +102,6 @@ public class HttpDeploymentUploadUnitTestCase {
             assertEquals("text/html; charset=utf-8", connection.getContentType());
             ModelNode node = readResult(connection.getInputStream());
             assertNotNull(node);
-            System.out.println(node);
             assertEquals(SUCCESS, node.require(OUTCOME).asString());
 
             byte[] hash = node.require(RESULT).asBytes();
@@ -116,7 +115,6 @@ public class HttpDeploymentUploadUnitTestCase {
 
             node = readResult(connection.getInputStream());
             assertNotNull(node);
-            System.out.println(node);
             assertEquals(SUCCESS, node.require(OUTCOME).asString());
 
             connection.disconnect();
