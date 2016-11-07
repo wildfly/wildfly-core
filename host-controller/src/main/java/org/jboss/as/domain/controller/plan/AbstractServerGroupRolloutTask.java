@@ -68,7 +68,7 @@ abstract class AbstractServerGroupRolloutTask implements Runnable {
     public void run() {
         try {
             // TODO Elytron Revisit and use the Elytron SecurityIdentity instead.
-            AccessAuditContext.doAs(null, new PrivilegedAction<Void>() {
+            AccessAuditContext.doAs(null, null, new PrivilegedAction<Void>() {
 
                 @Override
                 public Void run() {

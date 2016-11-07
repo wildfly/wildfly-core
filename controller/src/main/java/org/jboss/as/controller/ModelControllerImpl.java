@@ -783,7 +783,7 @@ class ModelControllerImpl implements ModelController {
                         try {
                             if (opThread.compareAndSet(null, Thread.currentThread())) {
                                 // We need the AccessAuditContext as that will make any inflowed SecurityIdentity available.
-                                OperationResponse response = AccessAuditContext.doAs(securityIdentity, new PrivilegedAction<OperationResponse>() {
+                                OperationResponse response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
 
                                     @Override
                                     public OperationResponse run() {

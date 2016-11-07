@@ -44,6 +44,8 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
@@ -137,6 +139,9 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
         public void handleRequest(final DataInput input, final ActiveOperation.ResultHandler<ModelNode> resultHandler,
                                   final ManagementRequestContext<Void> context) throws IOException {
             ControllerLogger.MGMT_OP_LOGGER.tracef("Handling ExecuteRequest for %d", context.getOperationId());
+            InetSocketAddress peerSocketAddress = channelAssociation.getChannel().getConnection().getPeerAddress(InetSocketAddress.class);
+            final InetAddress remoteAddress = peerSocketAddress != null ? peerSocketAddress.getAddress() : null;
+
             final ModelNode operation = new ModelNode();
             ProtocolUtils.expectHeader(input, ModelControllerProtocol.PARAM_OPERATION);
             operation.readExternal(input);
@@ -149,7 +154,7 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
                     final ManagementResponseHeader response = ManagementResponseHeader.create(context.getRequestHeader());
 
                     try {
-                        AccessAuditContext.doAs(connectionIdentity, new PrivilegedExceptionAction<Void>() {
+                        AccessAuditContext.doAs(connectionIdentity, remoteAddress, new PrivilegedExceptionAction<Void>() {
                             @Override
                             public Void run() throws Exception {
                                 final CompletedCallback callback = new CompletedCallback(response, context, resultHandler);

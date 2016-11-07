@@ -21,6 +21,9 @@
  */
 package org.jboss.as.domain.http.server.security;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
@@ -50,8 +53,12 @@ public class ElytronIdentityHandler implements HttpHandler {
     public void handleRequest(final HttpServerExchange exchange) throws Exception {
         SecurityIdentity securityIdentity = exchange.getAttachment(IDENTITY_KEY);
 
+
+        SocketAddress peerSocketAddress = exchange.getConnection().getPeerAddress();
+        InetAddress remoteAddress = peerSocketAddress instanceof InetSocketAddress ? ((InetSocketAddress) peerSocketAddress).getAddress() : null;
+
         try {
-            AccessAuditContext.doAs(securityIdentity, (PrivilegedExceptionAction<Void>) () -> {
+            AccessAuditContext.doAs(securityIdentity, remoteAddress, (PrivilegedExceptionAction<Void>) () -> {
                 wrapped.handleRequest(exchange);
                 return null;
             });

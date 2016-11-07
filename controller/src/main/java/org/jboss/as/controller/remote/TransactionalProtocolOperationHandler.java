@@ -153,7 +153,8 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
 
                         @Override
                         public Void run() {
-                            AccessAuditContext.doAs(executableRequest.securityIdentity, action);
+                            // TODO Elytron - Inflow the remote address.
+                            AccessAuditContext.doAs(executableRequest.securityIdentity, null, action);
                             return null;
                         }
                     });

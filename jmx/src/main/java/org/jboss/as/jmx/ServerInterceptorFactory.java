@@ -22,6 +22,8 @@
 package org.jboss.as.jmx;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
@@ -55,11 +57,13 @@ class ServerInterceptorFactory implements ServerMessageInterceptorFactory {
 
         @Override
         public void handleEvent(final Event event) throws IOException {
-            // TODO: inflowed identity
             final SecurityIdentity localIdentity = channel.getConnection().getLocalIdentity();
 
+            InetSocketAddress peerSocketAddress = channel.getConnection().getPeerAddress(InetSocketAddress.class);
+            final InetAddress remoteAddress = peerSocketAddress != null ? peerSocketAddress.getAddress() : null;
+
             try {
-                AccessAuditContext.doAs(localIdentity, new PrivilegedExceptionAction<Void>() {
+                AccessAuditContext.doAs(localIdentity, remoteAddress, new PrivilegedExceptionAction<Void>() {
 
                     @Override
                     public Void run() throws IOException {

@@ -292,7 +292,7 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
         final boolean canAccessSpecial = standardRole == null ? true : canAccessSpecial(standardRole);
 
         try {
-            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), new PrivilegedExceptionAction<Void>() {
+            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
                     Set<ObjectInstance> instances = server.queryMBeans(null, null);

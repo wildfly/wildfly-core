@@ -334,7 +334,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
     }
 
     private void checkMBeanAccess(final StandardRole standardRole, final boolean addressable, final boolean readable, final boolean writable, final boolean executable) throws Exception {
-        AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), new PrivilegedExceptionAction<Void>() {
+        AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
             @Override
             public Void run() throws Exception {
                 Set<ObjectName> names = server.queryNames(null, null);
@@ -493,7 +493,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         oneChild.addOperation("test", true, false, null);
         rootRegistration.registerSubModel(oneChild);
 
-        AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), new PrivilegedExceptionAction<Void>() {
+        AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
             @Override
             public Void run() throws Exception {
                 Assert.assertFalse(server.queryNames(null, null).contains(ONE_A_NAME));
@@ -544,7 +544,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             resourceB.getModel().get("attr1").set("${VAULT::AA::bb::cc}");
             rootResource.registerChild(ONE_B, resourceB);
 
-            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), new PrivilegedExceptionAction<Void>() {
+            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
                     Assert.assertEquals("test-a", server.getAttribute(ONE_A_NAME, "attr1"));
@@ -593,7 +593,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             resourceA.getModel().get("attr1").set("test-a");
             rootResource.registerChild(ONE_A, resourceA);
 
-            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), new PrivilegedExceptionAction<Void>() {
+            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
                     try {
@@ -645,7 +645,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             resourceA.getModel().get("attr1").set("test-a");
             rootResource.registerChild(ONE_A, resourceA);
 
-            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), new PrivilegedExceptionAction<Void>() {
+            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
                     try {
@@ -698,7 +698,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             oneChild.addOperation("test", true, false, null);
             rootRegistration.registerSubModel(oneChild);
 
-            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), new PrivilegedExceptionAction<Void>() {
+            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
                     Assert.assertFalse(server.queryNames(null, null).contains(ONE_A_NAME));

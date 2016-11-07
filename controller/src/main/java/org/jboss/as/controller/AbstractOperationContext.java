@@ -52,8 +52,6 @@ import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.security.Principal;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,8 +72,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import javax.security.auth.Subject;
-
 import org.jboss.as.controller.ConfigurationChangesCollector.ConfigurationChange;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
@@ -95,7 +91,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.security.InetAddressPrincipal;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -556,7 +551,7 @@ abstract class AbstractOperationContext implements OperationContext {
                         caller == null ? null : caller.getName(),
                         accessContext == null ? null : accessContext.getDomainUuid(),
                         accessContext == null ? null : accessContext.getAccessMechanism(),
-                        getSubjectInetAddress(null), // TODO Elytron - Get this address some other way.
+                        accessContext == null ? null : accessContext.getRemoteAddress(),
                         getModel(),
                         controllerOperations);
                 auditLogged = true;
@@ -564,24 +559,6 @@ abstract class AbstractOperationContext implements OperationContext {
                 ControllerLogger.MGMT_OP_LOGGER.failedToUpdateAuditLog(e);
             }
         }
-    }
-
-    private InetAddress getSubjectInetAddress(Subject subject) {
-        InetAddressPrincipal principal = getPrincipal(subject, InetAddressPrincipal.class);
-        return principal != null ? principal.getInetAddress() : null;
-    }
-
-
-    private <T extends Principal> T getPrincipal(Subject subject, Class<T> clazz) {
-        if (subject == null) {
-            return null;
-        }
-        Set<T> principals = subject.getPrincipals(clazz);
-        assert principals.size() <= 1;
-        if (principals.isEmpty()) {
-            return null;
-        }
-        return principals.iterator().next();
     }
 
     /**
@@ -601,7 +578,7 @@ abstract class AbstractOperationContext implements OperationContext {
                         currentCaller == null ? null : currentCaller.getName(),
                         accessContext == null ? null : accessContext.getDomainUuid(),
                         accessContext == null ? null : accessContext.getAccessMechanism(),
-                        getSubjectInetAddress(null), // TODO Elytron Get this address some other way.
+                        accessContext == null ? null : accessContext.getRemoteAddress(),
                         controllerOperations));
             } catch (Exception e) {
                 ControllerLogger.MGMT_OP_LOGGER.failedToUpdateAuditLog(e);
