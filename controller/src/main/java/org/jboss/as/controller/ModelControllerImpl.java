@@ -777,6 +777,7 @@ class ModelControllerImpl implements ModelController {
                 }
                 final OpTask<T> opTask = new OpTask<T>(responseConverter);
                 final SecurityIdentity securityIdentity = securityIdentitySupplier.get();
+                final boolean inVmCall = SecurityActions.isInVmCall();
 
                 executor.execute(new Runnable() {
                     public void run() {
@@ -789,7 +790,11 @@ class ModelControllerImpl implements ModelController {
                                     public OperationResponse run() {
                                         Operation op = attachments == null ? Operation.Factory.create(operation) : Operation.Factory.create(operation, attachments.getInputStreams(),
                                                         attachments.isAutoCloseStreams());
-                                        return ModelControllerImpl.this.execute(op, messageHandler, OperationTransactionControl.COMMIT);
+                                        if (inVmCall) {
+                                            return SecurityActions.runInVm((PrivilegedAction<OperationResponse>) () -> ModelControllerImpl.this.execute(op, messageHandler, OperationTransactionControl.COMMIT));
+                                        } else {
+                                            return ModelControllerImpl.this.execute(op, messageHandler, OperationTransactionControl.COMMIT);
+                                        }
                                     }
                                 });
                                 opTask.handleResult(response);

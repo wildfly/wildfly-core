@@ -27,6 +27,7 @@ import static java.security.AccessController.doPrivileged;
 import java.security.PrivilegedAction;
 
 import org.jboss.as.controller.access.Caller;
+import org.jboss.as.controller.access.InVmAccess;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -40,6 +41,14 @@ class SecurityActions {
     private SecurityActions() {
     }
 
+    static boolean isInVmCall() {
+        return createInVmActions().isInVmCall();
+    }
+
+    static <T> T runInVm(PrivilegedAction<T> action) {
+        return createInVmActions().runInVm(action);
+    }
+
     static Caller getCaller(final Caller currentCaller, final SecurityIdentity securityIdentity) {
         return createCallerActions().getCaller(currentCaller, securityIdentity);
     }
@@ -50,6 +59,10 @@ class SecurityActions {
 
     private static AccessAuditContextActions createAccessAuditContextActions() {
         return WildFlySecurityManager.isChecking() ? AccessAuditContextActions.PRIVILEGED : AccessAuditContextActions.NON_PRIVILEGED;
+    }
+
+    private static InVmActions createInVmActions() {
+        return WildFlySecurityManager.isChecking() ? InVmActions.PRIVILEGED : InVmActions.NON_PRIVILEGED;
     }
 
     private static CallerActions createCallerActions() {
@@ -121,5 +134,38 @@ class SecurityActions {
 
         };
 
+    }
+
+    private interface InVmActions {
+
+        boolean isInVmCall();
+
+        <T> T runInVm(PrivilegedAction<T> action);
+
+        InVmActions NON_PRIVILEGED = new InVmActions() {
+
+            @Override
+            public <T> T runInVm(PrivilegedAction<T> action) {
+                return InVmAccess.runInVm(action);
+            }
+
+            @Override
+            public boolean isInVmCall() {
+                return InVmAccess.isInVmCall();
+            }
+        };
+
+        InVmActions PRIVILEGED = new InVmActions() {
+
+            @Override
+            public <T> T runInVm(PrivilegedAction<T> action) {
+                return doPrivileged((PrivilegedAction<T>) () -> InVmAccess.runInVm(action));
+            }
+
+            @Override
+            public boolean isInVmCall() {
+                return doPrivileged((PrivilegedAction<Boolean>) NON_PRIVILEGED::isInVmCall);
+            }
+        };
     }
 }
