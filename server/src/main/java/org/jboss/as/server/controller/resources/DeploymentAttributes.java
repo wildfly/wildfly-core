@@ -224,14 +224,12 @@ public class DeploymentAttributes {
             .setAllowNull(false)
             .build();
     public static final SimpleAttributeDefinition OVERWRITE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.OVERWRITE, ModelType.BOOLEAN, true)
-            .setNullSignificant(false)
             .setDefaultValue(new ModelNode(true))
             .build();
     public static final SimpleAttributeDefinition DEPTH = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEPTH, ModelType.INT, true)
             .setDefaultValue(new ModelNode(-1))
             .build();
     public static final SimpleAttributeDefinition ARCHIVE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ARCHIVE, ModelType.BOOLEAN, true)
-            .setNullSignificant(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 
