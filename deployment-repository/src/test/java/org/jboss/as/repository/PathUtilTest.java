@@ -49,6 +49,11 @@ public class PathUtilTest {
         }
 
         @Override
+        public boolean acceptFile(Path rootPath, Path file, InputStream in) throws IOException {
+            return true;
+        }
+
+        @Override
         public boolean acceptDirectory(Path rootPath, Path dir) throws IOException {
             return true;
         }
@@ -163,6 +168,7 @@ public class PathUtilTest {
             return out.toString("UTF-8");
         }
     }
+
     /**
      * Test of listFiles method, of class PathUtil.
      */
@@ -235,6 +241,66 @@ public class PathUtilTest {
         Assert.assertTrue(result.contains("htdocs/"));
         Assert.assertTrue(result.contains("htdocs/www/"));
         Assert.assertTrue(result.contains("htdocs/www/overlay.xhtml"));
+    }
+
+    /**
+     * Test of listFiles method, of class PathUtil.
+     */
+    @Test
+    public void testListFileInArchives() throws Exception {
+        Path archive = root.resolve("test.zip");
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(archive))) {
+            ZipEntry entry = new ZipEntry("overlay.xhtml");
+            out.putNextEntry(entry);
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+                StreamUtils.copyStream(in, out);
+            }
+            out.closeEntry();
+        }
+        Path unexploded = Files.createDirectory(root.resolve("unexploded")).resolve("unexploded.zip");
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(unexploded))) {
+            ZipEntry entry = new ZipEntry("overlay.xhtml");
+            out.putNextEntry(entry);
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+                StreamUtils.copyStream(in, out);
+            }
+            out.closeEntry();
+            entry = new ZipEntry("test.zip");
+            out.putNextEntry(entry);
+            try (InputStream in = Files.newInputStream(root.resolve("test.zip"))) {
+                StreamUtils.copyStream(in, out);
+            }
+            out.closeEntry();
+            entry = new ZipEntry("zip/test2.zip");
+            out.putNextEntry(entry);
+            try (InputStream in = Files.newInputStream(root.resolve("test.zip"))) {
+                StreamUtils.copyStream(in, out);
+            }
+            out.closeEntry();
+        }
+        Files.delete(archive);
+        List<String> result = PathUtil.listFiles(unexploded, root, ALL).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        Assert.assertEquals(3, result.size());
+        Assert.assertTrue(result.contains("overlay.xhtml"));
+        Assert.assertTrue(result.contains("test.zip"));
+        Assert.assertTrue(result.contains("zip/test2.zip"));
+        result = PathUtil.listFiles(unexploded, root, explodableFileFilter(true)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        Assert.assertEquals(2, result.size());
+        Assert.assertTrue(result.contains("test.zip"));
+        Assert.assertTrue(result.contains("zip/test2.zip"));
+        result = PathUtil.listFiles(unexploded, root, directoryListFileFilter()).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        Assert.assertEquals(2, result.size());
+        Assert.assertTrue(result.contains("overlay.xhtml"));
+        Assert.assertTrue(result.contains("test.zip"));
+        result = PathUtil.listFiles(unexploded, root, ContentFilter.Factory.createContentFilter(2, true)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        Assert.assertEquals(2, result.size());
+        Assert.assertTrue(result.contains("test.zip"));
+        Assert.assertTrue(result.contains("zip/test2.zip"));
+        result = PathUtil.listFiles(unexploded, root, ContentFilter.Factory.createContentFilter(2, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        Assert.assertEquals(3, result.size());
+        Assert.assertTrue(result.contains("overlay.xhtml"));
+        Assert.assertTrue(result.contains("test.zip"));
+        Assert.assertTrue(result.contains("zip/test2.zip"));
     }
 
     /**
