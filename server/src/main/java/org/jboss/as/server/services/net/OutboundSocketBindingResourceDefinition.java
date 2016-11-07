@@ -66,7 +66,9 @@ public abstract class OutboundSocketBindingResourceDefinition extends SimpleReso
             .build();
 
     public static final SimpleAttributeDefinition FIXED_SOURCE_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FIXED_SOURCE_PORT, ModelType.BOOLEAN, true)
-            .setAllowExpression(true).setDefaultValue(new ModelNode().set(false)).build();
+            .setAllowExpression(true).setDefaultValue(new ModelNode().set(false))
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .build();
 
     public static final SimpleAttributeDefinition[] ATTRIBUTES = {SOURCE_PORT,SOURCE_INTERFACE,FIXED_SOURCE_PORT};
 
