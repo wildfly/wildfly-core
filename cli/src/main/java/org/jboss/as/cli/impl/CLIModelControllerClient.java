@@ -80,7 +80,11 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
         // Allow the core threads to time out as well
         executorService.allowCoreThreadTimeOut(true);
 
-        endpoint = Endpoint.getCurrent();
+        try {
+            endpoint = Endpoint.builder().setEndpointName("cli-client").build();
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to create remoting endpoint");
+        }
 
         CliShutdownHook.add(new CliShutdownHook.Handler() {
             @Override

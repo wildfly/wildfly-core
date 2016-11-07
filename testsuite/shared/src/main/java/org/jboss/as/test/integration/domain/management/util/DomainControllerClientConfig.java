@@ -110,7 +110,7 @@ public class DomainControllerClientConfig implements Closeable {
     }
 
     static DomainControllerClientConfig create(final ExecutorService executorService, boolean destroyExecutor) throws IOException {
-        final Endpoint endpoint = Endpoint.getCurrent();
+        final Endpoint endpoint = Endpoint.builder().setEndpointName(ENDPOINT_NAME).build();
 
         return new DomainControllerClientConfig(endpoint, executorService, destroyExecutor);
     }
