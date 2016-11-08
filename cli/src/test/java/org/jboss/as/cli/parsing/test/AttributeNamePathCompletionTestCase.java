@@ -40,8 +40,131 @@ import org.junit.Test;
  */
 public class AttributeNamePathCompletionTestCase {
 
-    private static final String attrsDescr = "{" +
-            "\"str\" => {" +
+    private static final String attrsDescrMapAndLists = "{"
+            + "\"str\" => {"
+            + "      \"type\" => STRING,"
+            + "      \"description\" => \"String attribute\","
+            + "      \"expressions-allowed\" => false,"
+            + "      \"required\" => true,"
+            + "      \"nillable\" => false"
+            + "},"
+            + "\"str2\" => {"
+            + "      \"type\" => STRING,"
+            + "      \"description\" => \"String attribute\","
+            + "      \"expressions-allowed\" => false,"
+            + "      \"required\" => true,"
+            + "      \"nillable\" => false"
+            + "},"
+            + "\"attr-read-only\" => {"
+            + "      \"type\" => STRING,"
+            + "      \"description\" => \"String attribute\","
+            + "      \"expressions-allowed\" => false,"
+            + "      \"required\" => true,"
+            + "      \"nillable\" => false,"
+            + "      \"access-type\" => \"read-only\""
+            + "},"
+            + "\"attr-read-write\" => {"
+            + "      \"type\" => STRING,"
+            + "      \"description\" => \"String attribute\","
+            + "      \"expressions-allowed\" => false,"
+            + "      \"required\" => true,"
+            + "      \"nillable\" => false,"
+            + "      \"access-type\" => \"read-write\""
+            + "},"
+            + "\"attr-metric\" => {"
+            + "      \"type\" => STRING,"
+            + "      \"description\" => \"String attribute\","
+            + "      \"expressions-allowed\" => false,"
+            + "      \"required\" => true,"
+            + "      \"nillable\" => false,"
+            + "      \"access-type\" => \"metric\""
+            + "},"
+            + "\"step1\" => {"
+            + "      \"type\" => OBJECT,"
+            + "      \"description\" => \"Object attribute\","
+            + "      \"expressions-allowed\" => false,"
+            + "      \"required\" => true,"
+            + "      \"nillable\" => true,"
+            + "      \"value-type\" => {"
+            + "          \"str\" => {"
+            + "              \"type\" => STRING,"
+            + "              \"description\" => \"String attribute\","
+            + "              \"expressions-allowed\" => false,"
+            + "              \"required\" => true,"
+            + "              \"nillable\" => false"
+            + "          },"
+            + "          \"step2\" => {"
+            + "              \"type\" => LIST,"
+            + "              \"description\" => \"List attribute\","
+            + "              \"expressions-allowed\" => false,"
+            + "              \"required\" => true,"
+            + "              \"nillable\" => false,"
+            + "              \"value-type\" => {"
+            + "                  \"str\" => {"
+            + "                      \"type\" => STRING,"
+            + "                      \"description\" => \"String attribute\","
+            + "                      \"expressions-allowed\" => false,"
+            + "                      \"required\" => true,"
+            + "                      \"nillable\" => false"
+            + "                  },"
+            + "                  \"module-options2\" => {"
+            + "                      \"type\" => OBJECT,"
+            + "                      \"description\" => \"Map of module options containing a name/value pair.\","
+            + "                      \"expressions-allowed\" => true,"
+            + "                      \"nillable\" => true,"
+            + "                      \"value-type\" => STRING,"
+            + "                      \"access-type\" => \"read-write\","
+            + "                      \"storage\" => \"configuration\","
+            + "                      \"restart-required\" => \"no-services\""
+            + "                   }"
+            + "              }"
+            + "          }"
+            + "      }"
+            + "},"
+            + "\"module-options\" => {"
+            + "      \"type\" => OBJECT,"
+            + "      \"description\" => \"Map of module options containing a name/value pair.\","
+            + "      \"expressions-allowed\" => true,"
+            + "      \"nillable\" => true,"
+            + "      \"value-type\" => STRING,"
+            + "      \"access-type\" => \"read-write\","
+            + "      \"storage\" => \"configuration\","
+            + "      \"restart-required\" => \"no-services\""
+            + "},"
+            + "\"module-options-lst\" => {"
+            + "      \"type\" => OBJECT,"
+            + "      \"description\" => \"Map of module options containing a name/value pair.\","
+            + "      \"expressions-allowed\" => true,"
+            + "      \"nillable\" => true,"
+            + "      \"value-type\" => LIST,"
+            + "      \"access-type\" => \"read-only\","
+            + "      \"storage\" => \"configuration\","
+            + "      \"restart-required\" => \"no-services\""
+            + "},"
+            + "\"lst-options-rw\" => {"
+            + "      \"type\" => LIST,"
+            + "      \"description\" => \"List of module options containing a name/value pair.\","
+            + "      \"expressions-allowed\" => true,"
+            + "      \"nillable\" => true,"
+            + "      \"value-type\" => STRING,"
+            + "      \"access-type\" => \"read-write\","
+            + "      \"storage\" => \"configuration\","
+            + "      \"restart-required\" => \"no-services\""
+            + "},"
+            + "\"lst-options-ro\" => {"
+            + "      \"type\" => LIST,"
+            + "      \"description\" => \"List of module options containing a name/value pair.\","
+            + "      \"expressions-allowed\" => true,"
+            + "      \"nillable\" => true,"
+            + "      \"value-type\" => STRING,"
+            + "      \"access-type\" => \"read-only\","
+            + "      \"storage\" => \"configuration\","
+            + "      \"restart-required\" => \"no-services\""
+            + "}"
+            + "}";
+
+    private static final String attrsDescr = "{"
+            +            "\"str\" => {" +
             "      \"type\" => STRING," +
             "      \"description\" => \"String attribute\"," +
             "      \"expressions-allowed\" => false," +
@@ -237,5 +360,51 @@ public class AttributeNamePathCompletionTestCase {
         i = completer.complete("attr", candidates, propDescr, false);
         assertEquals(Arrays.asList("attr-metric", "attr-read-only", "attr-read-write"), candidates);
         assertEquals(0, i);
+    }
+
+    @Test
+    public void testListOperations() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(attrsDescrMapAndLists);
+        assertTrue(propDescr.isDefined());
+
+        final AttributeNamePathCompleter completer = new AttributeNamePathCompleter(propDescr, AttributeNamePathCompleter.LIST_FILTER);
+        {
+            final List<String> candidates = new ArrayList<>();
+            completer.complete("", candidates, propDescr, false);
+            assertEquals(Arrays.asList("lst-options-ro", "lst-options-rw", "module-options-lst", "step1"), candidates);
+        }
+        {
+            final List<String> candidates = new ArrayList<>();
+            completer.complete("", candidates, propDescr, true);
+            assertEquals(Arrays.asList("lst-options-rw", "step1"), candidates);
+        }
+        {
+            final List<String> candidates = new ArrayList<>();
+            completer.complete("step1.", candidates, propDescr, false);
+            assertEquals(Arrays.asList("step2"), candidates);
+        }
+    }
+
+    @Test
+    public void testMapOperations() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(attrsDescrMapAndLists);
+        assertTrue(propDescr.isDefined());
+
+        final AttributeNamePathCompleter completer = new AttributeNamePathCompleter(propDescr, AttributeNamePathCompleter.MAP_FILTER);
+        {
+            final List<String> candidates = new ArrayList<>();
+            completer.complete("", candidates, propDescr, false);
+            assertEquals(Arrays.asList("module-options", "module-options-lst", "step1"), candidates);
+        }
+        {
+            final List<String> candidates = new ArrayList<>();
+            completer.complete("", candidates, propDescr, true);
+            assertEquals(Arrays.asList("module-options", "step1"), candidates);
+        }
+        {
+            final List<String> candidates = new ArrayList<>();
+            completer.complete("step1.step2[0].", candidates, propDescr, false);
+            assertEquals(Arrays.asList("module-options2"), candidates);
+        }
     }
 }
