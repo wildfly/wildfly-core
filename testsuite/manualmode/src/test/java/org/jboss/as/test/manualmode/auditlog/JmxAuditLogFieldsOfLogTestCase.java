@@ -36,6 +36,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
@@ -50,6 +51,7 @@ import org.xnio.IoUtils;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
+@Ignore("[WFCORE-1956] Audit logging after migrating to WildFly Elytron.")
 public class JmxAuditLogFieldsOfLogTestCase {
     @Inject
     private ServerController container;
