@@ -16,6 +16,7 @@
 package org.jboss.as.repository;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 
 /**
@@ -25,6 +26,8 @@ import java.nio.file.Path;
 public interface ContentFilter {
 
     boolean acceptFile(Path rootPath, Path file) throws IOException;
+
+    boolean acceptFile(Path rootPath, Path file, InputStream in) throws IOException;
 
     boolean acceptDirectory(Path rootPath, Path path) throws IOException;
 
@@ -39,9 +42,17 @@ public interface ContentFilter {
 
         @Override
         public boolean acceptFile(Path rootPath, Path file) throws IOException {
+            return acceptFile(rootPath, file, null);
+        }
+
+        @Override
+        public boolean acceptFile(Path rootPath, Path file, InputStream in) throws IOException {
             Path relativePath = rootPath.relativize(file);
             if(this.depth < 0 || this.depth >= relativePath.getNameCount()) {
                if(archiveOnly) {
+                   if(in != null) {
+                       return PathUtil.isArchive(in);
+                   }
                    return PathUtil.isArchive(file);
                }
                return true;

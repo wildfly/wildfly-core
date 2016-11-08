@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
 
@@ -185,6 +186,23 @@ public class PathUtil {
     }
 
     /**
+     * Test if the target path is an archive.
+     * @param path path to the file.
+     * @return true if the path points to a zip file - false otherwise.
+     * @throws IOException
+     */
+    public static final boolean isArchive(InputStream in) throws IOException {
+        if (in != null) {
+            try (ZipInputStream zip = new ZipInputStream(in)){
+                return zip.getNextEntry() != null;
+            } catch (ZipException e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
      * List files in a path according to the specified filter.
      * @param rootPath the path from which we are listing the files.
      * @param filter the filter to be applied.
@@ -262,23 +280,15 @@ public class PathUtil {
                         result.add(ContentRepositoryElement.createFolder(name));
                     }
                 } else {
-                    if(filter.acceptFile(zipFilePath, entryPath)) {
-                        result.add(ContentRepositoryElement.createFile(name, entry.getSize()));
+                    try (InputStream in = zip.getInputStream(entry)) {
+                        if (filter.acceptFile(zipFilePath, entryPath, in)) {
+                            result.add(ContentRepositoryElement.createFile(name, entry.getSize()));
+                        }
                     }
                 }
             }
         }
         return result;
-    }
-
-    private static FileAttribute[] readFileAttributes(Path path) throws IOException {
-        List<FileAttribute> attributes = new ArrayList<>(2);
-        attributes.addAll(getPosixAttributes(path));
-        attributes.addAll(getAclAttributes(path));
-        if (!attributes.isEmpty()) {
-            return attributes.toArray(new FileAttribute<?>[attributes.size()]);
-        }
-        return new FileAttribute[0];
     }
 
     private static List<FileAttribute<Set<PosixFilePermission>>> getPosixAttributes(Path file) throws IOException {

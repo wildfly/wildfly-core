@@ -74,7 +74,9 @@ public abstract class AbstractSocketBindingResourceDefinition extends SimpleReso
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
     public static final SimpleAttributeDefinition FIXED_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FIXED_PORT, ModelType.BOOLEAN, true)
-            .setAllowExpression(true).setDefaultValue(new ModelNode().set(false)).build();
+            .setAllowExpression(true).setDefaultValue(new ModelNode().set(false))
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .build();
 
     public static final SimpleAttributeDefinition MULTICAST_ADDRESS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MULTICAST_ADDRESS, ModelType.STRING, true)
             .setAllowExpression(true).setValidator(new MulticastAddressValidator(true, true))

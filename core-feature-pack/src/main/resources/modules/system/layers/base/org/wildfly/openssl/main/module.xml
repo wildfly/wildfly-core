@@ -25,7 +25,7 @@
 <module xmlns="urn:jboss:module:1.3" name="org.wildfly.openssl">
 
     <resources>
-        <artifact name="${org.wildfly.openssl:wildfly-openssl}"/>
+        <artifact name="${org.wildfly.openssl:wildfly-openssl-java}"/>
     </resources>
 
     <dependencies>

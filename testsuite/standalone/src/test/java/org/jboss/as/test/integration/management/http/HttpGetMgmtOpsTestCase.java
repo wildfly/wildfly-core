@@ -24,16 +24,30 @@ package org.jboss.as.test.integration.management.http;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.inject.Inject;
+import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
+import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 
 import org.jboss.as.test.integration.management.util.HttpMgmtProxy;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,12 +64,16 @@ public class HttpGetMgmtOpsTestCase {
 
     private static final int MGMT_PORT = 9990;
     private static final String MGMT_CTX = "/management";
+    private static Map<String, String> properties = new HashMap<>();
+    private static final int TIMEOUT = TimeoutUtil.adjust(20000);
 
     @Inject
     protected ManagementClient managementClient;
 
     @BeforeClass
     public static void before() {
+        properties.clear();
+        properties.put("service", "simple test");
     }
 
     @Test
@@ -125,7 +143,6 @@ public class HttpGetMgmtOpsTestCase {
 
         List<ModelNode> names = node.asList();
 
-        System.out.println(names.toString());
         Set<String> strNames = new TreeSet<String>();
         for (ModelNode n : names) { strNames.add(n.asString()); }
 
@@ -152,5 +169,51 @@ public class HttpGetMgmtOpsTestCase {
         assertTrue(node.has("operation-name"));
         assertTrue(node.has("description"));
         assertTrue(node.has("request-properties"));
+    }
+
+    @Test
+    public void testReadContentOperation() throws Exception {
+        try {
+            addDeployment();
+            URL mgmtURL = new URL("http", managementClient.getMgmtAddress(), MGMT_PORT, MGMT_CTX);
+            HttpMgmtProxy httpMgmt = new HttpMgmtProxy(mgmtURL);
+            Assert.assertEquals("service=simple test", httpMgmt.sendGetCommandJson(
+                    "/deployment/test-http-deployment.jar?operation=read-content&path=service-activator-deployment.properties&useStreamAsResponse").trim());
+        } finally {
+            removeDeployment();
+        }
+    }
+
+    private void addDeployment() throws IOException {
+        final ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(managementClient.getControllerClient());
+        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(
+                "test-http-deployment.jar", properties);
+        try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()) {
+            Future<?> future = manager.execute(manager.newDeploymentPlan()
+                    .add("test-http-deployment.jar", is)
+                    .build());
+            awaitDeploymentExecution(future);
+        }
+    }
+
+    private void removeDeployment() {
+        final ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(managementClient.getControllerClient());
+        Future<?> future = manager.execute(manager.newDeploymentPlan().remove("test-deployment.jar").build());
+        awaitDeploymentExecution(future);
+    }
+
+    private void awaitDeploymentExecution(Future<?> future) {
+        Object t = null;
+        try {
+            t = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }
