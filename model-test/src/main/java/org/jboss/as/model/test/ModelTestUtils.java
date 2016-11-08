@@ -497,10 +497,29 @@ public class ModelTestUtils {
     }
 
     /**
-     * A standard test for transformers where things should be rejected.
+     * <P>A standard test for transformers where things should be rejected.
      * Takes the operations and installs them in the main controller.
-     * It then attempts to execute the same operations in the legacy controller, validating that expected failures take place.
-     * It then attempts to fix the operations so they can be executed in the legacy controller, since if an 'add' fails, there could be adds for children later in the list.
+     * </P>
+     * <P>
+     * It then attempts to transform the same operations for the legacy controller, validating that expected
+     * failures take place.
+     * It then attempts to fix the operations so they can be executed in the legacy controller, since if an 'add' fails,
+     * there could be adds for children later in the list.
+     * </P>
+     * <P>
+     * Internally the operations (both for the main and legacy controllers) are added to a composite so that we have
+     * everything we need if any versions of the subsystem use capabilities and requirements. Normally this composite
+     * will contain the original operations that have been fixed by the {@code config}. This composite is then transformed
+     * before executing it in the legacy controller. However, in some extreme cases the one-shot transformation of the
+     * composite intended for the legacy controller may not be possible. For these cases you can call
+     * {@link FailedOperationTransformationConfig#setDontTransformComposite()} and the individually transformed operations
+     * get added to the composite, which is then used as-is (without any transformation).
+     * </P>
+     * <P>
+     * To configure a callback that gets executed before the composite is transformed for the legacy controller,
+     * and executed there, you can call
+     * {@link FailedOperationTransformationConfig#setCallback(FailedOperationTransformationConfig.BeforeExecuteCompositeCallback)}.
+     * </P>
      *
      * @param mainServices The main controller services
      * @param modelVersion The version of the legacy controller

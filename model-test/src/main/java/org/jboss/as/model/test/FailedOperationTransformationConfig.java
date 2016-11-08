@@ -76,9 +76,9 @@ public class FailedOperationTransformationConfig {
 
     /**
      * THe default behaviour is to add the original operations to a composite, once they have been 'fixed'. That composite
-     * is then transformed. However some transformers rely on inspecting the model, and use a {@code config}
-     * that changes the model. For these cases, we can call this method, which instead adds the transformed operations to
-     * the resulting composite.
+     * is then transformed before executing it in the legacy controller. However some transformers rely on inspecting
+     * the model, and use a {@code config} that changes the model. For these cases, we can call this method, which instead
+     * adds the transformed and fully 'fixed' operations to the resulting composite.
      *
      * @return this config
      */
@@ -87,6 +87,12 @@ public class FailedOperationTransformationConfig {
         return this;
     }
 
+    /**
+     * Sets a callback that gets executed before transforming and executing the resulting composite.
+     *
+     * @param callback the callback
+     * @return this config
+     */
     public FailedOperationTransformationConfig setCallback(BeforeExecuteCompositeCallback callback) {
         this.callback = callback;
         return this;
@@ -791,6 +797,10 @@ public class FailedOperationTransformationConfig {
         }
     };
 
+    /**
+     *  A callback that can be used to e.g. make adjustments to the model before transforming and executing the composite
+     *  resulting from the transformation of the boot operations
+     */
     public interface BeforeExecuteCompositeCallback {
         void callback();
     }
