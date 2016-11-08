@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ManagementModel;
@@ -62,6 +63,7 @@ import org.jboss.staxmapper.XMLElementWriter;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * @author Emanuel Muckenhuber
@@ -159,6 +161,10 @@ public abstract class AbstractControllerTestBase {
     }
 
     protected DelegatingConfigurableAuthorizer getAuthorizer() {
+        return null;
+    }
+
+    protected Supplier<SecurityIdentity> getSecurityIdentitySupplier() {
         return null;
     }
 

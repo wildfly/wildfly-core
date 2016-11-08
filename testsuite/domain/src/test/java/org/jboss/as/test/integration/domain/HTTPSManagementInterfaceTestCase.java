@@ -77,6 +77,7 @@ import org.junit.Test;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
+@Ignore("[WFCORE-1954] Wrap CLIENT_CERT behaviour of legacy realms with Elytron components.")
 public class HTTPSManagementInterfaceTestCase {
 
     private static final File WORK_DIR = new File("target" + File.separatorChar + "https-mgmt-workdir");

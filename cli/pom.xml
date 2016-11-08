@@ -166,10 +166,6 @@
             <artifactId>jboss-logmanager</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>org.jboss.sasl</groupId>
-            <artifactId>jboss-sasl</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.jboss.remoting</groupId>

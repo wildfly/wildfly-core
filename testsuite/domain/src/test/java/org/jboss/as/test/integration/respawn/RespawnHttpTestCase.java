@@ -53,10 +53,10 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 import org.xnio.IoUtils;
 
 import static org.jboss.as.test.integration.domain.management.util.Authentication.getCallbackHandler;

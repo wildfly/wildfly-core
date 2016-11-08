@@ -182,6 +182,7 @@
                     </xs:attribute>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="identity" type="identityType" minOccurs="0" />
             <xs:element name="security-realms" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
@@ -257,7 +258,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="access-control" type="domain-access-controlType" minOccurs="0"/>
+            <xs:element name="access-control" type="domain-access-controlType" minOccurs="0"/>            
         </xs:sequence>
     </xs:complexType>
 
@@ -2026,6 +2027,15 @@
     </xs:complexType>
 
     <xs:complexType name="management-interfaceType">
+        <xs:attribute name="ssl-context" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to the SSLContext to use for this management interface.
+                    
+                    If this is not set then the SSLContext will be obtained from any referenced security-realm.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="security-realm" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -2055,7 +2065,7 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="http-management-interfaceType">
+    <xs:complexType name="http-management-interfaceType" abstract="true">
         <xs:complexContent>
             <xs:extension base="management-interfaceType">
                 <xs:sequence>
@@ -2073,9 +2083,37 @@
                                     </xs:documentation>
                                 </xs:annotation>
                             </xs:attribute>
+                            <xs:attribute name="sasl-authentication-factory" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The SASL authentication policy to secure connections upgraded from HTTP.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
                         </xs:complexType>
                     </xs:element>
                 </xs:sequence>
+                <xs:attribute name="http-authentication-factory" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The HTTP authentication factory to use to secure normal HTTP requests.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="native-management-interfaceType" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="management-interfaceType">
+                <xs:attribute name="sasl-authentication-factory" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The SASL server authentication policy to secure connections upgraded from HTTP.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -2087,7 +2125,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
-            <xs:extension base="management-interfaceType">
+            <xs:extension base="native-management-interfaceType">
                 <xs:sequence>
                     <xs:element name="socket" type="native-management-socketType"/>
                 </xs:sequence>
@@ -2228,7 +2266,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
-            <xs:extension base="management-interfaceType">
+            <xs:extension base="native-management-interfaceType">
                 <xs:annotation>
                     <xs:documentation>
                         Configuration of the socket to use for the native management interface is a choice
@@ -4240,6 +4278,29 @@
             <xs:element name="constraints" type="constraintsType" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="provider" type="access-control-providerType" use="optional" default="simple"/>
+    </xs:complexType>
+
+    <xs:complexType name="identityType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of the security domain to use to obtain the current identity and the optional security domains
+                to attempt to inflow the identity from.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="security-domain" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to the security domain to use to obtain the current identity.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="inflow-security-domaint" type="stringListType">
+            <xs:annotation>
+                <xs:documentation>
+                    List of security domain references to attempt to inflow any current identity from.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="role-mappingType">

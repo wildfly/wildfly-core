@@ -22,7 +22,6 @@
 
 package org.jboss.as.remoting.management;
 
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 import static org.jboss.msc.service.ServiceController.Mode.ON_DEMAND;
@@ -84,16 +83,17 @@ public final class ManagementRemotingServices extends RemotingServices {
      * @param securityRealm the security real name
      * @param options the remoting options
      */
-    public static void installDomainConnectorServices(final ServiceTarget serviceTarget,
+    public static void installDomainConnectorServices(final OperationContext context,
+                                                      final ServiceTarget serviceTarget,
                                                       final ServiceName endpointName,
                                                       final ServiceName networkInterfaceBinding,
                                                       final int port,
-                                                      final String securityRealm,
-                                                      final OptionMap options) {
+                                                      final OptionMap options,
+                                                      final ServiceName securityRealm,
+                                                      final ServiceName saslAuthenticationFactory,
+                                                      final ServiceName sslContext) {
         ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
-        ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
-        installSecurityServices(serviceTarget, MANAGEMENT_CONNECTOR, securityRealm, serverCallbackService, tmpDirPath);
-        installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR, networkInterfaceBinding, port, options);
+        installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR, networkInterfaceBinding, port, options, securityRealm, saslAuthenticationFactory, sslContext);
     }
 
     /**

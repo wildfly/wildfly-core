@@ -32,7 +32,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 import org.xnio.OptionMap;
 
 /**
@@ -48,7 +47,7 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
 
     private HttpConnectorAdd() {
         super(HttpConnectorResource.CONNECTOR_REF, HttpConnectorResource.AUTHENTICATION_PROVIDER, HttpConnectorResource.SECURITY_REALM,
-                ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME);
+                HttpConnectorResource.SASL_AUTHENTICATION_FACTORY, ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME);
     }
 
     @Override
@@ -64,11 +63,13 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
 
         ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
         final String realmName= model.hasDefined(SECURITY_REALM) ? model.require(SECURITY_REALM).asString() : null;
-        RemotingServices.installSecurityServices(context.getServiceTarget(), connectorName, realmName, null, tmpDirPath);
 
-        final ServiceTarget target = context.getServiceTarget();
         final String connectorRef = HttpConnectorResource.CONNECTOR_REF.resolveModelAttribute(context, model).asString();
 
-        RemotingHttpUpgradeService.installServices(target, connectorName, connectorRef, RemotingServices.SUBSYSTEM_ENDPOINT, optionMap);
+        ModelNode securityRealmModel = HttpConnectorResource.SECURITY_REALM.resolveModelAttribute(context, model);
+        final String securityRealm = securityRealmModel.isDefined() ? securityRealmModel.asString() : null;
+        ModelNode saslAuthenticationFactoryModel = HttpConnectorResource.SASL_AUTHENTICATION_FACTORY.resolveModelAttribute(context, model);
+        final String saslAuthenticationFactory = saslAuthenticationFactoryModel.isDefined() ? saslAuthenticationFactoryModel.asString() : null;
+        RemotingHttpUpgradeService.installServices(context, connectorName, connectorRef, RemotingServices.SUBSYSTEM_ENDPOINT, optionMap, securityRealm, saslAuthenticationFactory);
     }
 }

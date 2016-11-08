@@ -392,7 +392,7 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
         Assert.assertEquals(type, bootRecord.get("type").asString());
         Assert.assertEquals(readOnly, bootRecord.get("r/o").asBoolean());
         Assert.assertEquals(booting, bootRecord.get("booting").asBoolean());
-        Assert.assertFalse(bootRecord.get("user").isDefined());
+        Assert.assertEquals("anonymous", bootRecord.get("user").asString());
         Assert.assertFalse(bootRecord.get("domainUUID").isDefined());
         Assert.assertFalse(bootRecord.get("access").isDefined());
         Assert.assertFalse(bootRecord.get("remote-address").isDefined());

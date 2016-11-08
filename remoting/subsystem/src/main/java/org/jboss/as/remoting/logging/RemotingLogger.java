@@ -86,11 +86,11 @@ public interface RemotingLogger extends BasicLogger {
     @Message(id = 12, value = "ANONYMOUS mechanism so not expecting a callback")
     UnsupportedCallbackException anonymousMechanismNotExpected(@Param Callback current);
 
-    @Message(id = 13, value = "Unable to create tmp dir for auth tokens as file already exists.")
-    StartException unableToCreateTempDirForAuthTokensFileExists();
+    //@Message(id = 13, value = "Unable to create tmp dir for auth tokens as file already exists.")
+    //StartException unableToCreateTempDirForAuthTokensFileExists();
 
-    @Message(id = 14, value = "Unable to create auth dir %s.")
-    StartException unableToCreateAuthDir(String dir);
+    //@Message(id = 14, value = "Unable to create auth dir %s.")
+    //StartException unableToCreateAuthDir(String dir);
 
     @Message(id = 15, value = "Could not connect")
     RuntimeException couldNotConnect(@Cause URISyntaxException e);

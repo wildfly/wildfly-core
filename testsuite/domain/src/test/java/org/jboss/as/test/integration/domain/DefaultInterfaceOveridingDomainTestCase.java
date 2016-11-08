@@ -21,8 +21,6 @@
  */
 package org.jboss.as.test.integration.domain;
 
-
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
@@ -45,11 +43,12 @@ import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfig
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.logging.Logger;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 
 /**
  * Test setup: 2 servers in 2 server-groups using the same socket-binding-group.
@@ -59,6 +58,7 @@ import org.junit.Test;
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a>  (c) 2014 Red Hat, inc.
  */
+@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class DefaultInterfaceOveridingDomainTestCase {
 
     private static final Logger log = Logger.getLogger(DefaultInterfaceOveridingDomainTestCase.class.getName());

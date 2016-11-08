@@ -36,6 +36,7 @@ import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNo
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.security.Security;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,12 +55,14 @@ import org.jboss.as.test.integration.management.rbac.UserRolesMappingServerSetup
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.security.WildFlyElytronProvider;
 
 /**
  * @author jcechace
@@ -84,6 +87,11 @@ public class RoleMappingRuntimeReconfigurationTestCase {
         jar.addClass(RoleMappingRuntimeReconfigurationTestCase.class);
         return jar;
     }*/
+
+    @BeforeClass
+    public static void installProvider() {
+        Security.insertProviderAt(new WildFlyElytronProvider(), 0);
+    }
 
     @Before
     public void setUp() throws IOException {

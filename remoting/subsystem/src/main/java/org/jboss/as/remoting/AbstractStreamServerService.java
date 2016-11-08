@@ -24,22 +24,30 @@ package org.jboss.as.remoting;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 
+import javax.net.ssl.SSLContext;
+
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.remoting.logging.RemotingLogger;
+import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
-import org.jboss.remoting3.security.ServerAuthenticationProvider;
 import org.jboss.remoting3.spi.NetworkServerProvider;
+import org.wildfly.security.auth.permission.LoginPermission;
+import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
+import org.xnio.StreamConnection;
 import org.xnio.channels.AcceptingChannel;
-import org.xnio.channels.ConnectedStreamChannel;
 
 /**
  * Contains the remoting stream server
@@ -47,15 +55,16 @@ import org.xnio.channels.ConnectedStreamChannel;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @version $Revision: 1.1 $
  */
-public abstract class AbstractStreamServerService implements Service<AcceptingChannel<? extends ConnectedStreamChannel>>{
+public abstract class AbstractStreamServerService implements Service<AcceptingChannel<StreamConnection>>{
 
-    @SuppressWarnings("rawtypes")
-    private final InjectedValue<RemotingSecurityProvider> securityProviderValue = new InjectedValue<RemotingSecurityProvider>();
+    private final InjectedValue<SecurityRealm> securityRealm = new InjectedValue<>();
+    private final InjectedValue<SaslAuthenticationFactory> saslAuthenticationFactory = new InjectedValue<>();
+    private final InjectedValue<SSLContext> sslContext = new InjectedValue<>();
     private final InjectedValue<Endpoint> endpointValue = new InjectedValue<Endpoint>();
     private final InjectedValue<SocketBindingManager> socketBindingManagerValue = new InjectedValue<SocketBindingManager>();
     private final OptionMap connectorPropertiesOptionMap;
 
-    private volatile AcceptingChannel<? extends ConnectedStreamChannel> streamServer;
+    private volatile AcceptingChannel<StreamConnection> streamServer;
     private volatile ManagedBinding managedBinding;
 
     AbstractStreamServerService(final OptionMap connectorPropertiesOptionMap) {
@@ -63,12 +72,20 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
     }
 
     @Override
-    public AcceptingChannel<? extends ConnectedStreamChannel> getValue() throws IllegalStateException, IllegalArgumentException {
+    public AcceptingChannel<StreamConnection> getValue() throws IllegalStateException, IllegalArgumentException {
         return streamServer;
     }
 
-    public InjectedValue<RemotingSecurityProvider> getSecurityProviderInjector() {
-        return securityProviderValue;
+    public Injector<SecurityRealm> getSecurityRealmInjector() {
+        return securityRealm;
+    }
+
+    public Injector<SaslAuthenticationFactory> getSaslAuthenticationFactoryInjector() {
+        return saslAuthenticationFactory;
+    }
+
+    public Injector<SSLContext> getSSLContextInjector() {
+        return sslContext;
     }
 
     public InjectedValue<Endpoint> getEndpointInjector() {
@@ -83,10 +100,9 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
     public void start(final StartContext context) throws StartException {
         try {
             NetworkServerProvider networkServerProvider = endpointValue.getValue().getConnectionProviderInterface("remote", NetworkServerProvider.class);
-            RemotingSecurityProvider rsp = securityProviderValue.getValue();
-            ServerAuthenticationProvider sap = rsp.getServerAuthenticationProvider();
+
+            // TODO Elytron Review assembly of the OptionMap.
             OptionMap.Builder builder = OptionMap.builder();
-            builder.addAll(rsp.getOptionMap());
             if (connectorPropertiesOptionMap != null) {
                 builder.addAll(connectorPropertiesOptionMap);
             }
@@ -94,7 +110,34 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
             if (RemotingLogger.ROOT_LOGGER.isTraceEnabled()) {
                 RemotingLogger.ROOT_LOGGER.tracef("Resulting OptionMap %s", resultingMap.toString());
             }
-            streamServer = networkServerProvider.createServer(getSocketAddress(), resultingMap, sap, rsp.getXnioSsl());
+
+            SecurityRealm securityRealm = this.securityRealm.getOptionalValue();
+            SSLContext sslContext = this.sslContext.getOptionalValue();
+            if (sslContext == null && securityRealm != null) {
+                sslContext = securityRealm.getSSLContext();
+            }
+
+            final InjectedValue<SaslAuthenticationFactory> saslFactoryValue = this.saslAuthenticationFactory;
+            SaslAuthenticationFactory factory = saslFactoryValue.getOptionalValue();
+            if (factory == null && securityRealm != null) {
+                factory = securityRealm.getSaslAuthenticationFactory();
+            }
+
+            if (factory == null) {
+                // TODO Elytron: Just authenticate anonymously
+                RemotingLogger.ROOT_LOGGER.warn("****** All authentication is ANONYMOUS for " + getClass().getName());
+                final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
+                domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
+                domainBuilder.addRealm("default", org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM).build();
+                domainBuilder.setDefaultRealmName("default");
+                factory = SaslAuthenticationFactory
+                    .builder()
+                    .setFactory(new AnonymousServerFactory())
+                    .setMechanismConfigurationSelector(i -> MechanismConfiguration.EMPTY)
+                    .setSecurityDomain(domainBuilder.build())
+                    .build();
+            }
+            streamServer = networkServerProvider.createServer(getSocketAddress(), resultingMap, factory, sslContext);
             SocketBindingManager sbm = socketBindingManagerValue.getOptionalValue();
             if (sbm != null) {
                 managedBinding = registerSocketBinding(sbm);

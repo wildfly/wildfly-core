@@ -51,7 +51,7 @@ public class ServiceActivatorDeploymentUtil {
         sb.append('=');
         sb.append(objectName);
         sb.append("\n");
-        archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.as.server\n"), "MANIFEST.MF");
+        archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
         archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
         archive.as(ZipExporter.class).exportTo(destination);
     }

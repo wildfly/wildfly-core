@@ -21,11 +21,14 @@
  */
 package org.jboss.as.jmx.rbac;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +46,8 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import javax.security.auth.Subject;
 
+import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ManagementModel;
@@ -59,6 +62,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.access.rbac.StandardRole;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -73,7 +77,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
-import org.jboss.as.core.security.RealmUser;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.access.PrincipalResourceDefinition;
@@ -90,9 +93,18 @@ import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.security.auth.permission.LoginPermission;
+import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
+import org.wildfly.security.auth.realm.SimpleRealmEntry;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.auth.server.ServerAuthenticationContext;
 import org.xnio.IoUtils;
 
 /**
@@ -101,6 +113,7 @@ import org.xnio.IoUtils;
  */
 public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
     volatile DelegatingConfigurableAuthorizer authorizer;
+    volatile ManagementSecurityIdentitySupplier securityIdentitySupplier;
     volatile MBeanServer server;
 
     private static final String TEST_USER = "test";
@@ -123,9 +136,30 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
     }
 
     private final boolean enableRbac;
+    private static SecurityDomain testDomain;
 
     JmxRbacTestCase(final boolean enableRbac){
         this.enableRbac = enableRbac;
+    }
+
+    @BeforeClass
+    public static void setupDomain() {
+        Map<String, SimpleRealmEntry> entries = new HashMap<>(StandardRole.values().length);
+        for (StandardRole role : StandardRole.values()) {
+            entries.put(roleToUserName(role), new SimpleRealmEntry(Collections.emptyList()));
+        }
+        SimpleMapBackedSecurityRealm securityRealm = new SimpleMapBackedSecurityRealm();
+        securityRealm.setPasswordMap(entries);
+        testDomain = SecurityDomain.builder()
+                .setDefaultRealmName("Default")
+                .addRealm("Default", securityRealm).build()
+                .setPermissionMapper((p,r) -> new LoginPermission())
+                .build();
+    }
+
+    @AfterClass
+    public static void removeDomain() {
+        testDomain = null;
     }
 
     @Before
@@ -134,7 +168,6 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
         server.registerMBean(new Bean(), OBJECT_NAME);
         server.registerMBean(new TestModelMBean(), OBJECT_NAME_MODEL);
     }
-
 
     @After
     public void clearDependencies() throws Exception {
@@ -229,9 +262,20 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
         checkMBeanAccess(StandardRole.OPERATOR, false);
     }
 
-
-    private String roleToUserName(StandardRole role) {
+    private static String roleToUserName(StandardRole role) {
         return TEST_USER + "_" + role.toString();
+    }
+
+    private static SecurityIdentity roleToSecurityIdentity(StandardRole role) throws RealmUnavailableException {
+        if (role == null) {
+            return testDomain.getAnonymousSecurityIdentity();
+        }
+
+        ServerAuthenticationContext authenticationContext = testDomain.createNewAuthenticationContext();
+        authenticationContext.setAuthenticationName(roleToUserName(role));
+        assertTrue("Authorized", authenticationContext.authorize());
+
+        return authenticationContext.getAuthorizedIdentity();
     }
 
     private void checkMBeanAccess(final StandardRole standardRole, final boolean sensitiveMBeans) throws Exception {
@@ -247,11 +291,8 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
         final boolean canWrite = standardRole == null ? true : canWrite(standardRole, sensitiveMBeans);
         final boolean canAccessSpecial = standardRole == null ? true : canAccessSpecial(standardRole);
 
-
-        Subject subject = standardRole == null ? null :
-                new Subject(true, Collections.singleton(new RealmUser(roleToUserName(standardRole))), Collections.emptySet(), Collections.emptySet());
         try {
-            Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
+            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
                     Set<ObjectInstance> instances = server.queryMBeans(null, null);
@@ -499,6 +540,15 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
 
 
     @Override
+    protected ManagementSecurityIdentitySupplier getSecurityIdentitySupplier() {
+        if (securityIdentitySupplier == null) {
+            securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
+        }
+
+        return securityIdentitySupplier;
+    }
+
+    @Override
     protected void addBootOperations(List<ModelNode> bootOperations) {
         if (enableRbac) {
             for (StandardRole standardRole : EnumSet.allOf(StandardRole.class)) {
@@ -508,6 +558,19 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
                                 AccessAuthorizationResourceDefinition.PATH_ELEMENT,
                                 PathElement.pathElement(RoleMappingResourceDefinition.PATH_KEY, standardRole.getFormalName())));
                 bootOperations.add(addRoleMappingOp);
+
+                // TODO Elytron One supercalifragilisticexpialidocious hack, anonymous should mean no perms but we need to emulate the in-vm SuperUser roles.
+                if (standardRole == StandardRole.SUPERUSER) {
+                    ModelNode addAnonymousUserOp = Util.createAddOperation(
+                            PathAddress.pathAddress(
+                                CoreManagementResourceDefinition.PATH_ELEMENT,
+                                AccessAuthorizationResourceDefinition.PATH_ELEMENT,
+                                PathElement.pathElement(RoleMappingResourceDefinition.PATH_KEY, standardRole.getFormalName()),
+                                PathElement.pathElement(ModelDescriptionConstants.INCLUDE, "anonymous")));
+                    addAnonymousUserOp.get(PrincipalResourceDefinition.NAME.getName()).set("anonymous");
+                    addAnonymousUserOp.get(PrincipalResourceDefinition.TYPE.getName()).set(PrincipalResourceDefinition.Type.USER.toString());
+                    bootOperations.add(addAnonymousUserOp);
+                }
 
                 ModelNode addIncludeUserOp = Util.createAddOperation(
                         PathAddress.pathAddress(
@@ -570,7 +633,8 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
         }
 
         registration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
-        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(getAuthorizer(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
+        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(getAuthorizer(), getSecurityIdentitySupplier(),
+                getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
             public boolean isServer() {
                 return true;
             }
@@ -593,7 +657,7 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
 
 
         ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL),
-                AuditLogger.NO_OP_LOGGER, getAuthorizer(), RuntimeHostControllerInfoAccessor.SERVER);
+                AuditLogger.NO_OP_LOGGER, getAuthorizer(), getSecurityIdentitySupplier(), RuntimeHostControllerInfoAccessor.SERVER);
         extensionRegistry.setPathManager(pathManagerService);
         extensionRegistry.setWriterRegistry(new NullConfigurationPersister());
         JMXExtension extension = new JMXExtension();

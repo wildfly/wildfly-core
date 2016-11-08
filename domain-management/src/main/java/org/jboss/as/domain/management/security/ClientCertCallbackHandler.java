@@ -96,6 +96,12 @@ public class ClientCertCallbackHandler implements Service<CallbackHandlerService
         return this;
     }
 
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        // TODO Elytron implement support for CLIENT_CERT authentication.
+        return null;
+    }
+
     public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
         for (Callback current : callbacks) {
             if (current instanceof AuthorizeCallback) {

@@ -46,6 +46,12 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.security.auth.server.IdentityLocator;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.auth.server.SupportLevel;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.evidence.Evidence;
 
 /**
  * The Service providing the LocalCallbackHandler implementation.
@@ -98,6 +104,81 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
         return new LocalCallbackHander(sharedState);
     }
 
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        return new LocalSecurityRealm();
+    }
+
+    @Override
+    public boolean allowGroupLoading() {
+        return !skipGroupLoading;
+    }
+
+    private class LocalSecurityRealm implements org.wildfly.security.auth.server.SecurityRealm {
+
+        @Override
+        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+            if (locator.hasName()) {
+                String name = locator.getName();
+                if (allowAll || allowedUsersSet.contains(name)) {
+                    return new LocalRealmIdentity(name);
+                }
+            }
+
+            return RealmIdentity.NON_EXISTENT;
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        @Override
+        public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+
+        private class LocalRealmIdentity implements RealmIdentity {
+
+            private final String name;
+
+            LocalRealmIdentity(final String name) {
+                this.name = name;
+            }
+
+            @Override
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                    throws RealmUnavailableException {
+                return LocalSecurityRealm.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            @Override
+            public <C extends Credential> C getCredential(Class<C> credentialType) throws RealmUnavailableException {
+                return null;
+            }
+
+            @Override
+            public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                    throws RealmUnavailableException {
+                return LocalSecurityRealm.this.getEvidenceVerifySupport(evidenceType, algorithmName);
+            }
+
+            @Override
+            public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
+                return false;
+            }
+
+            @Override
+            public boolean exists() throws RealmUnavailableException {
+                return true;
+            }
+
+        }
+
+    }
     /*
      * Service Methods
      */

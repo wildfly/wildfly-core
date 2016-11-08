@@ -40,11 +40,16 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
+import org.wildfly.security.auth.client.MatchRule;
 import org.xnio.IoFuture;
 import org.xnio.OptionMap;
 import org.xnio.Options;
 import org.xnio.Sequence;
 
+import static java.security.AccessController.doPrivileged;
 import static org.xnio.Options.*;
 
 /**
@@ -57,6 +62,9 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
     public static final ServiceName REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("remote-outbound-connection");
 
     private static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
+
+    private static final AuthenticationContextConfigurationClient AUTH_CONFIGURATION_CLIENT = doPrivileged(AuthenticationContextConfigurationClient.ACTION);
+
     private final InjectedValue<OutboundSocketBinding> destinationOutboundSocketBindingInjectedValue = new InjectedValue<OutboundSocketBinding>();
     private final InjectedValue<SecurityRealm> securityRealmInjectedValue = new InjectedValue<SecurityRealm>();
 
@@ -82,6 +90,9 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         }
         final Endpoint endpoint = this.endpointInjectedValue.getValue();
 
+        AuthenticationContext captured = AuthenticationContext.captureCurrent();
+        AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, captured);
+
         final CallbackHandler callbackHandler;
         final CallbackHandlerFactory cbhFactory;
         SSLContext sslContext = null;
@@ -89,12 +100,15 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         if (realm != null && (cbhFactory = realm.getSecretCallbackHandlerFactory()) != null && username != null) {
             callbackHandler = cbhFactory.getCallbackHandler(username);
         } else {
-            callbackHandler = getCallbackHandler();
+            callbackHandler = null;
         }
 
         if (realm != null) {
             sslContext = realm.getSSLContext();
         }
+
+        if (callbackHandler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(callbackHandler);
+        if (sslContext != null) mergedConfiguration = mergedConfiguration.useSslContext(sslContext);
 
         final OptionMap.Builder builder = OptionMap.builder();
         // first set the defaults
@@ -121,7 +135,8 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         // now override with user specified options
         builder.addAll(this.connectionCreationOptions);
 
-        return endpoint.connect(uri, builder.getMap(), callbackHandler, sslContext);
+        final AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
+        return endpoint.connect(uri, builder.getMap(), context);
     }
 
     @Override

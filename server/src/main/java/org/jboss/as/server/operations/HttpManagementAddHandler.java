@@ -22,12 +22,18 @@
 
 package org.jboss.as.server.operations;
 
+
+import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
+
 import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
+
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
 
 import java.util.concurrent.Executor;
+
+import javax.net.ssl.SSLContext;
 
 import io.undertow.server.ListenerRegistry;
 import java.util.Arrays;
@@ -49,7 +55,6 @@ import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.network.SocketBindingManagerImpl;
 import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
-import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ExternalManagementRequestExecutor;
@@ -68,8 +73,10 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.XnioWorker;
+
 
 /**
  * A handler that activates the HTTP management API on a Server.
@@ -78,6 +85,8 @@ import org.xnio.XnioWorker;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
+
+    private static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
 
     public static final HttpManagementAddHandler INSTANCE = new HttpManagementAddHandler();
 
@@ -149,11 +158,22 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 undertowBuilder.addDependency(secureSocketBindingServiceName, SocketBinding.class, undertowService.getSecureSocketBindingInjector());
             }
 
-            String securityRealm = commonPolicy.getSecurityRealm();
-        if (securityRealm != null) {
+        String httpAuthenticationFactory = commonPolicy.getHttpAuthenticationFactory();
+        String securityRealm = commonPolicy.getSecurityRealm();
+        if (httpAuthenticationFactory != null) {
+            undertowBuilder.addDependency(context.getCapabilityServiceName(
+                    buildDynamicCapabilityName(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, httpAuthenticationFactory),
+                    HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, undertowService.getHttpAuthenticationFactoryInjector());
+        } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(undertowBuilder, undertowService.getSecurityRealmInjector(), securityRealm, false);
         } else {
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
+        }
+        String sslContext = commonPolicy.getSSLContext();
+        if (sslContext != null) {
+            undertowBuilder.addDependency(context.getCapabilityServiceName(
+                    buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContext),
+                    SSLContext.class), SSLContext.class, undertowService.getSSLContextInjector());
         }
 
         undertowBuilder.install();
@@ -173,7 +193,6 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);
 
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-            RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, securityRealm, null, tmpDirPath);
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, context.getServiceRegistry(false));
             final String httpConnectorName;
             if (socketBindingServiceName != null || (secureSocketBindingServiceName == null)) {
@@ -182,8 +201,9 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 httpConnectorName = ManagementRemotingServices.HTTPS_CONNECTOR;
             }
 
-            RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
-                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions());
+            RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
+                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), securityRealm, commonPolicy.getSaslAuthenticationFactory());
+
             return Arrays.asList(UndertowHttpManagementService.SERVICE_NAME, HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         }
         return Collections.singletonList(UndertowHttpManagementService.SERVICE_NAME);

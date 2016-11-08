@@ -27,6 +27,7 @@ import java.util.Map;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.security.auth.server.SecurityRealm;
 
 /**
  * Interface to be implemented by services supplying SubjectSupplemental implementations.
@@ -47,6 +48,15 @@ public interface SubjectSupplementalService {
      * @return A SubjectSupplemental instance.
      */
     SubjectSupplemental getSubjectSupplemental(final Map<String, Object> sharedState);
+
+    /**
+     * Get an Elytron {@link SecurityRealm} that is backed by this subject supplemental.
+     *
+     * @return an Elytron {@link SecurityRealm} that is backed by this subject supplemental.
+     */
+    default SecurityRealm getElytronSecurityRealm() {
+        return SecurityRealm.EMPTY_REALM;
+    }
 
     public static final class ServiceUtil {
 

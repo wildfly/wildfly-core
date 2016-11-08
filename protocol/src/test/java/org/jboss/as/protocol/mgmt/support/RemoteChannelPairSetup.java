@@ -31,13 +31,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
-import org.jboss.as.protocol.ProtocolConnectionUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelReceiver;
 import org.jboss.as.protocol.mgmt.ManagementMessageHandler;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.OpenListener;
-import org.jboss.remoting3.security.PasswordClientCallbackHandler;
+import org.jboss.remoting3.Registration;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.threads.QueueExecutor;
 import org.xnio.IoUtils;
@@ -52,7 +51,7 @@ import org.xnio.Options;
 public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
 
     static final String ENDPOINT_NAME = "endpoint";
-    static final String URI_SCHEME = "test123";
+    static final String URI_SCHEME = "remoting";
     static final String TEST_CHANNEL = "Test-Channel";
     static final int PORT = 32123;
     static final int EXECUTOR_MAX_THREADS = 20;
@@ -64,6 +63,7 @@ public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
     protected Channel serverChannel;
     protected Channel clientChannel;
     protected Connection connection;
+    private Registration registration;
 
     final CountDownLatch clientConnectedLatch = new CountDownLatch(1);
 
@@ -93,7 +93,7 @@ public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
 
         final Channel.Receiver receiver = ManagementChannelReceiver.createDelegating(handler);
 
-        channelServer.addChannelOpenListener(TEST_CHANNEL, new OpenListener() {
+        this.registration = channelServer.addChannelOpenListener(TEST_CHANNEL, new OpenListener() {
 
             @Override
             public void registrationTerminated() {
@@ -114,7 +114,7 @@ public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
                 new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""),
                 OptionMap.create(Options.SASL_POLICY_NOANONYMOUS, Boolean.FALSE));
 
-        connection = ProtocolConnectionUtils.connectSync(configuration, new PasswordClientCallbackHandler("TestUser", "localhost.localdomain", "TestUserPassword".toCharArray()));
+        connection = configuration.getEndpoint().connect(configuration.getUri(), OptionMap.create(Options.SSL_ENABLED, false)).get();
         clientChannel = connection.openChannel(TEST_CHANNEL, OptionMap.EMPTY).get();
         try {
             clientConnectedLatch.await();
@@ -124,6 +124,7 @@ public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
     }
 
     public void stopChannels() {
+        IoUtils.safeClose(registration);
         IoUtils.safeClose(clientChannel);
         IoUtils.safeClose(serverChannel);
     }

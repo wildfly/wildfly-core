@@ -52,7 +52,6 @@ import org.jboss.as.controller.remote.TransactionalProtocolHandlers;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.controller.support.ChannelServer;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
-import org.jboss.as.protocol.ProtocolConnectionUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
 import org.jboss.as.protocol.mgmt.ManagementRequestHandlerFactory;
@@ -60,7 +59,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.OpenListener;
-import org.jboss.remoting3.security.PasswordClientCallbackHandler;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -77,7 +75,7 @@ import org.xnio.OptionMap;
 public class TransactionalProtocolClientTestCase {
 
     private static final String ENDPOINT_NAME = "endpoint";
-    private static final String URI_SCHEME = "test123";
+    private static final String URI_SCHEME = "remote";
     private static final String TEST_CHANNEL = "Test-Channel";
     private static final int PORT = 32123;
     private static final int CLIENTS = 10;
@@ -131,7 +129,9 @@ public class TransactionalProtocolClientTestCase {
 
         final ProtocolConnectionConfiguration connectionConfig = ProtocolConnectionConfiguration.create(channelServer.getEndpoint(),
                 new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""));
-        futureConnection = ProtocolConnectionUtils.connect(connectionConfig, new PasswordClientCallbackHandler("bob", ENDPOINT_NAME, "pass".toCharArray()));
+        connectionConfig.setEndpoint(channelServer.getEndpoint());
+        //
+        futureConnection = connectionConfig.getEndpoint().getConnection(connectionConfig.getUri());
     }
 
     @After
@@ -139,7 +139,6 @@ public class TransactionalProtocolClientTestCase {
         for(final Channel channel : channels) {
             channel.close();
         }
-        futureConnection.get().close();
         channelServer.close();
         channelServer = null;
     }

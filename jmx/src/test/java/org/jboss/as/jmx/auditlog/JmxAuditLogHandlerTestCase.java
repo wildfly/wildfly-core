@@ -51,6 +51,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -680,7 +681,7 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
         Assert.assertEquals("core", bootRecord.get("type").asString());
         Assert.assertEquals(readOnly, bootRecord.get("r/o").asBoolean());
         Assert.assertEquals(booting, bootRecord.get("booting").asBoolean());
-        Assert.assertFalse(bootRecord.get("user").isDefined());
+        Assert.assertEquals("anonymous", bootRecord.get("user").asString());
         Assert.assertFalse(bootRecord.get("domainUUID").isDefined());
         Assert.assertFalse(bootRecord.get("access").isDefined());
         Assert.assertFalse(bootRecord.get("remote-address").isDefined());
@@ -763,7 +764,8 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
         }
 
         registration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
-        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(new DelegatingConfigurableAuthorizer(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
+        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
+                getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
             public boolean isServer() {
                 return true;
             }
@@ -786,7 +788,7 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
 
 
         ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.STANDALONE_SERVER,
-                new RunningModeControl(RunningMode.NORMAL), auditLogger, null, RuntimeHostControllerInfoAccessor.SERVER);
+                new RunningModeControl(RunningMode.NORMAL), auditLogger, null, null, RuntimeHostControllerInfoAccessor.SERVER);
         extensionRegistry.setPathManager(pathManagerService);
         extensionRegistry.setWriterRegistry(new NullConfigurationPersister());
         JMXExtension extension = new JMXExtension();

@@ -24,13 +24,11 @@ package org.jboss.as.controller;
 
 import static java.security.AccessController.doPrivileged;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import javax.security.auth.Subject;
-
 import org.jboss.as.controller.access.Caller;
+import org.jboss.as.controller.access.InVmAccess;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -43,13 +41,16 @@ class SecurityActions {
     private SecurityActions() {
     }
 
-    static Caller getCaller(final Caller currentCaller) {
-        AccessControlContext acc = AccessController.getContext();
-        return createCallerActions().getCaller(acc, currentCaller);
+    static boolean isInVmCall() {
+        return createInVmActions().isInVmCall();
     }
 
-    static Subject getSubject(final Caller caller) {
-        return createCallerActions().getSubject(caller);
+    static <T> T runInVm(PrivilegedAction<T> action) {
+        return createInVmActions().runInVm(action);
+    }
+
+    static Caller getCaller(final Caller currentCaller, final SecurityIdentity securityIdentity) {
+        return createCallerActions().getCaller(currentCaller, securityIdentity);
     }
 
     static AccessAuditContext currentAccessAuditContext() {
@@ -58,6 +59,10 @@ class SecurityActions {
 
     private static AccessAuditContextActions createAccessAuditContextActions() {
         return WildFlySecurityManager.isChecking() ? AccessAuditContextActions.PRIVILEGED : AccessAuditContextActions.NON_PRIVILEGED;
+    }
+
+    private static InVmActions createInVmActions() {
+        return WildFlySecurityManager.isChecking() ? InVmActions.PRIVILEGED : InVmActions.NON_PRIVILEGED;
     }
 
     private static CallerActions createCallerActions() {
@@ -97,56 +102,70 @@ class SecurityActions {
 
     private interface CallerActions {
 
-        Caller getCaller(AccessControlContext acc, Caller currentCaller);
+        Caller getCaller(Caller currentCaller, SecurityIdentity securityIdentity);
 
-        Subject getSubject(Caller caller);
 
         CallerActions NON_PRIVILEGED = new CallerActions() {
 
             @Override
-            public Caller getCaller(AccessControlContext acc, Caller currentCaller) {
-                Subject subject = Subject.getSubject(acc);
+            public Caller getCaller(Caller currentCaller, SecurityIdentity securityIdentity) {
                 // This is deliberately checking the Subject is the exact same instance.
-                if (currentCaller == null || subject != currentCaller.getSubject()) {
-                    if (subject != null) {
-                        subject.setReadOnly();
-                    }
-                    return Caller.createCaller(subject);
+                if (currentCaller == null || securityIdentity != currentCaller.getSecurityIdentity()) {
+                    return Caller.createCaller(securityIdentity);
                 }
 
                 return currentCaller;
             }
 
-            @Override
-            public Subject getSubject(Caller caller) {
-                return caller.getSubject();
-            }
         };
 
         CallerActions PRIVILEGED = new CallerActions() {
 
             @Override
-            public Caller getCaller(final AccessControlContext acc, final Caller currentCaller) {
+            public Caller getCaller(final Caller currentCaller, final SecurityIdentity securityIdentity) {
                 return doPrivileged(new PrivilegedAction<Caller>() {
 
                     @Override
                     public Caller run() {
-                        return NON_PRIVILEGED.getCaller(acc, currentCaller);
+                        return NON_PRIVILEGED.getCaller(currentCaller, securityIdentity);
                     }
                 });
+            }
+
+        };
+
+    }
+
+    private interface InVmActions {
+
+        boolean isInVmCall();
+
+        <T> T runInVm(PrivilegedAction<T> action);
+
+        InVmActions NON_PRIVILEGED = new InVmActions() {
+
+            @Override
+            public <T> T runInVm(PrivilegedAction<T> action) {
+                return InVmAccess.runInVm(action);
             }
 
             @Override
-            public Subject getSubject(final Caller caller) {
-                return doPrivileged(new PrivilegedAction<Subject>() {
-
-                    @Override
-                    public Subject run() {
-                        return NON_PRIVILEGED.getSubject(caller);
-                    }
-                });
+            public boolean isInVmCall() {
+                return InVmAccess.isInVmCall();
             }
         };
 
+        InVmActions PRIVILEGED = new InVmActions() {
+
+            @Override
+            public <T> T runInVm(PrivilegedAction<T> action) {
+                return doPrivileged((PrivilegedAction<T>) () -> InVmAccess.runInVm(action));
+            }
+
+            @Override
+            public boolean isInVmCall() {
+                return doPrivileged((PrivilegedAction<Boolean>) NON_PRIVILEGED::isInVmCall);
+            }
+        };
     }
 }

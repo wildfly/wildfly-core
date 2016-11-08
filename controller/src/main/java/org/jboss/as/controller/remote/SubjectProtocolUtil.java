@@ -47,7 +47,9 @@ import org.jboss.as.protocol.mgmt.ProtocolUtils;
  * Utility for writing and reading Subjects.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @deprecated Only used for communication with older host controllers.
  */
+@Deprecated
 class SubjectProtocolUtil {
 
     private static final byte REALM_USER_PRINCIPAL = 0x01;

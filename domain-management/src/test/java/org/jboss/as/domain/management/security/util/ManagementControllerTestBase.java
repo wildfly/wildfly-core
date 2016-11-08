@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
@@ -49,6 +50,8 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
     protected volatile PathManagerService pathManagerService;
     protected volatile ManagedAuditLogger auditLogger;
     protected volatile File logDir;
+    protected volatile File tmpDir;
+
 
     @Override
     protected void initModel(ManagementModel managementModel) {
@@ -61,6 +64,15 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
             }
         }
 
+        if (tmpDir == null) {
+            tmpDir = new File(".");
+            tmpDir = new File(tmpDir, "target");
+            tmpDir = new File(tmpDir, "tmp-test-dir").getAbsoluteFile();
+            if (!tmpDir.exists()){
+                tmpDir.mkdirs();
+            }
+        }
+
         for (File file : logDir.listFiles()){
             file.delete();
         }
@@ -68,6 +80,7 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
         pathManagerService = new PathManagerService() {
             {
                 super.addHardcodedAbsolutePath(getContainer(), "log.dir", logDir.getAbsolutePath());
+                super.addHardcodedAbsolutePath(getContainer(), "jboss.controller.temp.dir", tmpDir.getAbsolutePath());
             }
         };
         GlobalOperationHandlers.registerGlobalOperations(registration, processType);
@@ -89,7 +102,7 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
         }
 
         registration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
-        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(new DelegatingConfigurableAuthorizer(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
+        registration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
             public boolean isServer() {
                 return true;
             }

@@ -36,11 +36,6 @@ import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Endpoint;
-import org.jboss.remoting3.Remoting;
-import org.jboss.remoting3.remote.HttpUpgradeConnectionProviderFactory;
-import org.jboss.remoting3.remote.RemoteConnectionProviderFactory;
-import org.xnio.OptionMap;
-import org.xnio.Options;
 
 /**
  * {@link ModelControllerClient} based on a Remoting {@link Endpoint}.
@@ -94,7 +89,10 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
             }
             // Then the endpoint
             if (endpoint != null) {
-                endpoint.closeAsync();
+                try {
+                    endpoint.closeAsync();
+                } catch (UnsupportedOperationException ignored) {
+                }
                 endpoint = null;
             }
             // Cancel all still active operations
@@ -116,13 +114,7 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
         if (strategy == null) {
             try {
 
-                // TODO move the endpoint creation somewhere else?
-                endpoint = Remoting.createEndpoint("management-client", OptionMap.EMPTY);
-                endpoint.addConnectionProvider("remote", new RemoteConnectionProviderFactory(), OptionMap.EMPTY);
-                endpoint.addConnectionProvider("http-remoting", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE));
-                endpoint.addConnectionProvider("remote+http", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE));
-                endpoint.addConnectionProvider("https-remoting", new HttpUpgradeConnectionProviderFactory(),  OptionMap.create(Options.SSL_ENABLED, Boolean.TRUE));
-                endpoint.addConnectionProvider("remote+https", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.TRUE));
+                endpoint = Endpoint.builder().setEndpointName("management-client").build();
 
                 final ProtocolConnectionConfiguration configuration = ProtocolConfigurationFactory.create(clientConfiguration, endpoint);
 
@@ -134,8 +126,6 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
                         channelAssociation.handleChannelClosed(closed, exception);
                     }
                 });
-            } catch (IOException e) {
-                throw e;
             } catch (RuntimeException e) {
                 throw e;
             } catch (Exception e) {

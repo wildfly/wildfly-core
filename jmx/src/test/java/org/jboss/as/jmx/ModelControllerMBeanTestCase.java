@@ -154,6 +154,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
         System.setProperty("javax.management.builder.initial", PluggableMBeanServerBuilder.class.getName());
     }
 
+    @Override
     @After
     public void cleanup() throws Exception {
         super.cleanup();
@@ -1238,12 +1239,11 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
             if (!notificationListenerOperationsMustSucceed) {
                 Assert.fail("Adding the notification listener must fail");
             }
-        } catch (RuntimeOperationsException e) {
+        } catch (IOException | RuntimeOperationsException e) {
             if (notificationListenerOperationsMustSucceed) {
                 Assert.fail("Unexpected exception when adding the notification listener");
             } else {
-                RuntimeException exception = e.getTargetException();
-                Assert.assertTrue(exception instanceof UnsupportedOperationException);
+                Assert.assertTrue(e.getCause() instanceof UnsupportedOperationException || e.getCause().getCause() instanceof UnsupportedOperationException);
             }
         }
 
@@ -1642,8 +1642,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
             ManagementRemotingServices.installRemotingManagementEndpoint(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "localhost", EndpointService.EndpointType.MANAGEMENT);
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
 
-            RemotingServices.installSecurityServices(target, "server", null, null, tmpDirPath);
-            RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "server", SocketBinding.JBOSS_BINDING_NAME.append("server"), OptionMap.EMPTY);
+            RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "server", SocketBinding.JBOSS_BINDING_NAME.append("server"), OptionMap.EMPTY, null, null, null);
         }
 
         @Override
@@ -1678,6 +1677,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
             extension.initialize(extensionRegistry.getExtensionContext("additional", rootRegistration, ExtensionRegistryType.SLAVE));
         }
 
+        @Override
         String getExtraXml() {
             return "<subsystem xmlns=\"" + TestExtension.NAMESPACE + "\"/>";
         }

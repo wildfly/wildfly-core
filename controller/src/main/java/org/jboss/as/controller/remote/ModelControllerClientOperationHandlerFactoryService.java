@@ -21,14 +21,9 @@
 */
 package org.jboss.as.controller.remote;
 
-
-import javax.security.auth.Subject;
-
-import org.jboss.as.core.security.SubjectUserInfo;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
 import org.jboss.remoting3.Channel;
-import org.jboss.remoting3.security.UserInfo;
 
 /**
  * Service used to create a new client protocol operation handler per channel
@@ -41,16 +36,9 @@ public class ModelControllerClientOperationHandlerFactoryService extends Abstrac
     public ManagementChannelHandler startReceiving(Channel channel) {
         final ManagementChannelHandler handler = new ManagementChannelHandler(ManagementClientChannelStrategy.create(channel),
                 getExecutor());
-        UserInfo userInfo = channel.getConnection().getUserInfo();
-        final Subject subject;
-        if (userInfo instanceof SubjectUserInfo) {
-            subject = ((SubjectUserInfo) userInfo).getSubject();
-        } else {
-            subject = new Subject();
-        }
 
         handler.addHandlerFactory(new ModelControllerClientOperationHandler(getController(), handler,
-                getResponseAttachmentSupport(), getClientRequestExecutor(), subject));
+                getResponseAttachmentSupport(), getClientRequestExecutor(), channel.getConnection().getLocalIdentity()));
 
         channel.receiveMessage(handler.getReceiver());
         return handler;

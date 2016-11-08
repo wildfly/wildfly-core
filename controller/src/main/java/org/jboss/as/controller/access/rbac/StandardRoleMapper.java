@@ -103,7 +103,18 @@ public class StandardRoleMapper implements RoleMapper {
 
         boolean traceEnabled = ACCESS_LOGGER.isTraceEnabled();
 
-        if (caller.hasSubject()) {
+        if (SecurityActions.isInVmCall()) {
+            /*
+             * If the IN-VM code does not have the required permission a SecurityException will be thrown.
+             *
+             * At the moment clients should not be making speculation requests so in a correctly configured installation this
+             * check should pass with no error.
+             */
+            checkPermission(RUN_AS_IN_VM_ROLE);
+            ACCESS_LOGGER.tracef("Assigning role '%s' for call (An IN-VM Call).", IN_VM_ROLE);
+
+            mappedRoles.add(IN_VM_ROLE);
+        } else  if (caller.hasSecurityIdentity()) {
             Map<String, AuthorizerConfiguration.RoleMapping> rolesToCheck;
             if (authorizerConfiguration.isMapUsingRealmRoles()) {
                 rolesToCheck = new HashMap<String, AuthorizerConfiguration.RoleMapping>(authorizerConfiguration.getRoleMappings());
@@ -171,17 +182,6 @@ public class StandardRoleMapper implements RoleMapper {
                     }
                 }
             }
-        } else {
-            /*
-             * If the IN-VM code does not have the required permission a SecurityException will be thrown.
-             *
-             * At the moment clients should not be making speculation requests so in a correctly configured installation this
-             * check should pass with no error.
-             */
-            checkPermission(RUN_AS_IN_VM_ROLE);
-            ACCESS_LOGGER.tracef("Assigning role '%s' for call with no assigned Subject (An IN-VM Call).", IN_VM_ROLE);
-
-            mappedRoles.add(IN_VM_ROLE);
         }
 
         if (traceEnabled) {

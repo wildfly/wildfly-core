@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -79,10 +80,16 @@ import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
-import org.jboss.sasl.callback.DigestHashCallback;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
 import org.jboss.threads.AsyncFuture;
+import org.wildfly.security.auth.callback.CredentialCallback;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.credential.PasswordCredential;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
+import org.wildfly.security.password.Password;
+import org.wildfly.security.password.PasswordFactory;
+import org.wildfly.security.password.interfaces.DigestPassword;
+import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
+import org.wildfly.security.password.spec.EncryptablePasswordSpec;
 
 /**
  * Inventory of the managed servers.
@@ -775,9 +782,9 @@ public class ServerInventoryImpl implements ServerInventory {
                         }
                     } else if (current instanceof PasswordCallback) {
                         toRespondTo.add(current);
-                    } else if (current instanceof VerifyPasswordCallback) {
+                    } else if (current instanceof EvidenceVerifyCallback) {
                         toRespondTo.add(current);
-                    } else if (current instanceof DigestHashCallback) {
+                    } else if (current instanceof CredentialCallback) {
                         toRespondTo.add(current);
                     } else if (current instanceof RealmCallback) {
                         realm = ((RealmCallback)current).getDefaultText();
@@ -802,18 +809,19 @@ public class ServerInventoryImpl implements ServerInventory {
                         authorizeCallback.setAuthorized(authorizeCallback.getAuthenticationID().equals(authorizeCallback.getAuthorizationID()));
                     } else if (current instanceof PasswordCallback) {
                         ((PasswordCallback) current).setPassword(server.getAuthKey().toCharArray());
-                    } else if (current instanceof VerifyPasswordCallback) {
-                        VerifyPasswordCallback vpc = (VerifyPasswordCallback) current;
-                        vpc.setVerified(server.getAuthKey().equals(vpc.getPassword()));
-                    } else if (current instanceof DigestHashCallback) {
-                        DigestHashCallback dhc = (DigestHashCallback) current;
+                    } else if (current instanceof EvidenceVerifyCallback) {
+                        EvidenceVerifyCallback vpc = (EvidenceVerifyCallback) current;
+                        vpc.setVerified(server.getAuthKey().equals(vpc.applyToEvidence(PasswordGuessEvidence.class, e -> new String(e.getGuess()))));
+                    } else if (current instanceof CredentialCallback) {
+                        CredentialCallback dhc = (CredentialCallback) current;
                         try {
-                            UsernamePasswordHashUtil uph = new UsernamePasswordHashUtil();
-                            if (userName == null || realm == null) {
+                            if (realm == null) {
                                 throw HostControllerLogger.ROOT_LOGGER.insufficientInformationToGenerateHash();
                             }
-                            dhc.setHash(uph.generateHashedURP(userName, realm, server.getAuthKey().toCharArray()));
-                        } catch (NoSuchAlgorithmException e) {
+                            final PasswordFactory instance = PasswordFactory.getInstance(DigestPassword.ALGORITHM_DIGEST_MD5);
+                            final Password password = instance.generatePassword(new EncryptablePasswordSpec(server.getAuthKey().toCharArray(), new DigestPasswordAlgorithmSpec(userName, realm)));
+                            dhc.setCredential(new PasswordCredential(password));
+                        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
                             throw HostControllerLogger.ROOT_LOGGER.unableToGenerateHash(e);
                         }
                     }

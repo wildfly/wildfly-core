@@ -56,8 +56,9 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
 import org.jboss.security.SimpleGroup;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
 
 /**
  * A CallbackHandler verifying users usernames and passwords by using a JAAS LoginContext.
@@ -110,6 +111,12 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
     }
 
     @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        // TODO Elytron Add support for calling out to JAAS
+        return null;
+    }
+
+    @Override
     public boolean isReadyForHttpChallenge() {
         // Can't check so assume it is ready.
         return true;
@@ -134,15 +141,15 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
         }
 
         NameCallback nameCallBack = null;
-        VerifyPasswordCallback verifyPasswordCallback = null;
+        EvidenceVerifyCallback evidenceVerifyCallback = null;
         SubjectCallback subjectCallback = null;
 
         for (Callback current : callbacks) {
             if (current instanceof NameCallback) {
                 nameCallBack = (NameCallback) current;
             } else if (current instanceof RealmCallback) {
-            } else if (current instanceof VerifyPasswordCallback) {
-                verifyPasswordCallback = (VerifyPasswordCallback) current;
+            } else if (current instanceof EvidenceVerifyCallback) {
+                evidenceVerifyCallback = (EvidenceVerifyCallback) current;
             } else if (current instanceof SubjectCallback) {
                 subjectCallback = (SubjectCallback) current;
             } else {
@@ -159,11 +166,19 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
             SECURITY_LOGGER.trace("NameCallback either has no username or is 0 length.");
             throw DomainManagementLogger.ROOT_LOGGER.noUsername();
         }
-        if (verifyPasswordCallback == null || verifyPasswordCallback.getPassword() == null) {
+        if (evidenceVerifyCallback == null || evidenceVerifyCallback.getEvidence() == null) {
             SECURITY_LOGGER.trace("No password to verify.");
             throw DomainManagementLogger.ROOT_LOGGER.noPassword();
         }
-        final char[] password = verifyPasswordCallback.getPassword().toCharArray();
+
+        final char[] password;
+
+        if (evidenceVerifyCallback.getEvidence() instanceof PasswordGuessEvidence) {
+            password = ((PasswordGuessEvidence) evidenceVerifyCallback.getEvidence()).getGuess();
+        } else {
+            SECURITY_LOGGER.trace("No password to verify.");
+            throw DomainManagementLogger.ROOT_LOGGER.noPassword();
+        }
 
         Subject subject = subjectCallback != null && subjectCallback.getSubject() != null ? subjectCallback.getSubject()
                 : new Subject();
@@ -172,7 +187,7 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
             try {
                 securityManager.push(name, userName, password, subject);
                 securityManager.authenticate();
-                verifyPasswordCallback.setVerified(true);
+                evidenceVerifyCallback.setVerified(true);
                 subject = securityManager.getSubject();
                 subject.getPrivateCredentials().add(new PasswordCredential(userName, password));
                 if (assignGroups) {
@@ -193,7 +208,7 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
                 }
             } catch (SecurityException e) {
                 SECURITY_LOGGER.debug("Failed to verify password in JAAS callbackhandler " + this.name, e);
-                verifyPasswordCallback.setVerified(false);
+                evidenceVerifyCallback.setVerified(false);
             } finally {
                 securityManager.pop();
             }
@@ -217,7 +232,7 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
                     }
                 });
                 ctx.login();
-                verifyPasswordCallback.setVerified(true);
+                evidenceVerifyCallback.setVerified(true);
                 subject.getPrivateCredentials().add(new PasswordCredential(userName, password));
                 if (assignGroups) {
                     Set<Principal> prinicpals = subject.getPrincipals();
@@ -237,7 +252,7 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
                 }
             } catch (LoginException e) {
                 SECURITY_LOGGER.debug("Login failed in JAAS callbackhandler " + this.name, e);
-                verifyPasswordCallback.setVerified(false);
+                evidenceVerifyCallback.setVerified(false);
             }
         }
     }

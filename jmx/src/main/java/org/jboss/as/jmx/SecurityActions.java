@@ -24,14 +24,11 @@ package org.jboss.as.jmx;
 
 import static java.security.AccessController.doPrivileged;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
-
-import javax.security.auth.Subject;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.access.Caller;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -48,10 +45,9 @@ class SecurityActions {
         return createAccessAuditContextActions().currentContext();
     }
 
-    static Caller createCaller() {
-        AccessControlContext acc = AccessController.getContext();
+    static Caller createCaller(SecurityIdentity securityIdentity) {
 
-        return createCallerActions().createCaller(acc);
+        return createCallerActions().createCaller(securityIdentity);
     }
 
     private static AccessAuditContextActions createAccessAuditContextActions() {
@@ -96,31 +92,31 @@ class SecurityActions {
 
     private interface CallerActions {
 
-        Caller createCaller(AccessControlContext acc);
+        Caller createCaller(SecurityIdentity securityIdentity);
+
 
         CallerActions NON_PRIVILEGED = new CallerActions() {
 
             @Override
-            public Caller createCaller(AccessControlContext acc) {
-                Subject subject = Subject.getSubject(acc);
-
-                return Caller.createCaller(subject);
+            public Caller createCaller(SecurityIdentity securityIdentity) {
+                return Caller.createCaller(securityIdentity);
             }
+
         };
 
         CallerActions PRIVILEGED = new CallerActions() {
 
             @Override
-            public Caller createCaller(final AccessControlContext acc) {
+            public Caller createCaller(final SecurityIdentity securityIdentity) {
                 return doPrivileged(new PrivilegedAction<Caller>() {
 
                     @Override
                     public Caller run() {
-                        return NON_PRIVILEGED.createCaller(acc);
+                        return NON_PRIVILEGED.createCaller(securityIdentity);
                     }
                 });
-
             }
+
         };
 
     }

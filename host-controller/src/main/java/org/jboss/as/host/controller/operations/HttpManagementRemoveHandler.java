@@ -40,7 +40,6 @@ import org.jboss.dmr.ModelNode;
  */
 public class HttpManagementRemoveHandler extends ReloadRequiredRemoveStepHandler {
 
-
     public static final HttpManagementRemoveHandler INSTANCE = new HttpManagementRemoveHandler();
 
     @Override

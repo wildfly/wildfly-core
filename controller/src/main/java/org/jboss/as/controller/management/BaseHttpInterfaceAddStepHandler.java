@@ -43,6 +43,8 @@ import org.xnio.OptionMap.Builder;
  */
 public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfaceAddStepHandler {
 
+    protected static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
+
     protected BaseHttpInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
         super(attributeDefinitions);
     }
@@ -67,10 +69,20 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
 
     @Override
     public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        final String httpAuthenticationFactory = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.HTTP_AUTHENTICATION_FACTORY, model);
+        final String sslContext = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SSL_CONTEXT, model);
         final String securityRealm = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SECURITY_REALM, model);
         final boolean consoleEnabled = BaseHttpInterfaceResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
-        final boolean httpUpgrade = model.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE)
-                && BaseHttpInterfaceResourceDefinition.ENABLED.resolveModelAttribute(context, model.require(ModelDescriptionConstants.HTTP_UPGRADE)).asBoolean();
+        final boolean httpUpgradeEnabled;
+        final String saslAuthenticationFactory;
+        if (model.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE)) {
+            ModelNode httpUpgrade = model.require(ModelDescriptionConstants.HTTP_UPGRADE);
+            httpUpgradeEnabled = BaseHttpInterfaceResourceDefinition.ENABLED.resolveModelAttribute(context, httpUpgrade).asBoolean();
+            saslAuthenticationFactory =  asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SASL_AUTHENTICATION_FACTORY, httpUpgrade);
+        } else {
+            httpUpgradeEnabled = false;
+            saslAuthenticationFactory = null;
+        }
         final List<String> allowedOrigins = BaseHttpInterfaceResourceDefinition.ALLOWED_ORIGINS.unwrap(context, model);
 
         String serverName = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SERVER_NAME, model);
@@ -84,8 +96,23 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
         List<ServiceName> requiredServices = installServices(context, new HttpInterfaceCommonPolicy() {
 
             @Override
+            public String getHttpAuthenticationFactory() {
+                return httpAuthenticationFactory;
+            }
+
+            @Override
+            public String getSSLContext() {
+                return sslContext;
+            }
+
+            @Override
+            public String getSaslAuthenticationFactory() {
+                return saslAuthenticationFactory;
+            }
+
+            @Override
             public boolean isHttpUpgradeEnabled() {
-                return httpUpgrade;
+                return httpUpgradeEnabled;
             }
 
             @Override

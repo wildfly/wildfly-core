@@ -26,10 +26,15 @@ import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.RemotingOptions;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
+import org.wildfly.security.auth.client.MatchRule;
 import org.xnio.IoFuture;
 import org.xnio.OptionMap;
 import org.xnio.Options;
 
+import static java.security.AccessController.doPrivileged;
 import static org.xnio.Options.SASL_POLICY_NOANONYMOUS;
 import static org.xnio.Options.SASL_POLICY_NOPLAINTEXT;
 
@@ -62,6 +67,8 @@ import java.util.Map;
 public class ProtocolConnectionUtils {
 
     private static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
+
+    private static final AuthenticationContextConfigurationClient AUTH_CONFIGURATION_CLIENT = doPrivileged(AuthenticationContextConfigurationClient.ACTION);
 
     /**
      * Connect.
@@ -143,14 +150,24 @@ public class ProtocolConnectionUtils {
         final Endpoint endpoint = configuration.getEndpoint();
         final OptionMap options = getOptions(configuration);
         final CallbackHandler actualHandler = handler != null ? handler : new AnonymousCallbackHandler();
-
+        final SSLContext sslContext = configuration.getSslContext();
+        final URI uri = configuration.getUri();
         String clientBindAddress = configuration.getClientBindAddress();
+
+        AuthenticationContext captured = AuthenticationContext.captureCurrent();
+        AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, captured);
+        if (actualHandler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(actualHandler);
+        if (sslContext != null) mergedConfiguration = mergedConfiguration.useSslContext(sslContext);
+
+        // We don't know the original index or the match rule so create a context with a single match all rule.
+        final AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
+
         if (clientBindAddress == null) {
-            return endpoint.connect(configuration.getUri(), options, actualHandler, configuration.getSslContext());
+            return endpoint.connect(uri, options, context);
         } else {
             InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
-            InetSocketAddress destAddr = new InetSocketAddress(configuration.getUri().getHost(), configuration.getUri().getPort());
-            return endpoint.connect(configuration.getUri().getScheme(), bindAddr, destAddr, options, actualHandler, configuration.getSslContext());
+            // TODO: bind address via connection builder
+            return endpoint.connect(configuration.getUri(), options, context);
         }
     }
 

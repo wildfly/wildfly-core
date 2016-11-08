@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.deployment.scanner;
 
+import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
@@ -31,10 +32,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OWN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-
 import static org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -42,12 +44,15 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.threads.AsyncFuture;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
 * Default implementation of {@link DeploymentOperations}.
@@ -64,7 +69,7 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
 
     @Override
     public Future<ModelNode> deploy(final ModelNode operation, final ExecutorService executorService) {
-        return controllerClient.executeAsync(operation, OperationMessageHandler.DISCARD);
+        return executeAsync(operation, OperationMessageHandler.DISCARD);
     }
 
     @Override
@@ -73,8 +78,10 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
         op.get(CHILD_TYPE).set(DEPLOYMENT);
         ModelNode response;
         try {
-            response = controllerClient.execute(op);
-        } catch (IOException e) {
+            response = execute(op);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -103,8 +110,10 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
         op.get(CHILD_TYPE).set(DEPLOYMENT);
         ModelNode response;
         try {
-            response = controllerClient.execute(op);
-        } catch (IOException e) {
+            response = execute(op);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -122,5 +131,53 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
             }
         }
         return deployments;
+    }
+
+    private ModelNode execute(ModelNode operation) throws Exception {
+        return controllerClient().execute(controllerClient, operation);
+    }
+
+    private AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
+        return controllerClient().executeAsync(controllerClient, operation, messageHandler);
+    }
+
+    private static ControllerClient controllerClient() {
+        return WildFlySecurityManager.isChecking() ? ControllerClient.PRIVILEGED : ControllerClient.NON_PRIVILEGED;
+    }
+
+    private interface ControllerClient {
+
+        ModelNode execute(ModelControllerClient controllerClient, ModelNode operation) throws Exception;
+
+        AsyncFuture<ModelNode> executeAsync(ModelControllerClient controllerClient, ModelNode operation, OperationMessageHandler messageHandler);
+
+        ControllerClient NON_PRIVILEGED = new ControllerClient() {
+
+            @Override
+            public ModelNode execute(ModelControllerClient controllerClient, ModelNode operation) throws Exception {
+                return InVmAccess.runInVm((PrivilegedExceptionAction<ModelNode>) () -> controllerClient.execute(operation) );
+            }
+
+            @Override
+            public AsyncFuture<ModelNode> executeAsync(ModelControllerClient controllerClient, ModelNode operation, OperationMessageHandler messageHandler) {
+                return InVmAccess.runInVm((PrivilegedAction<AsyncFuture<ModelNode>>) () -> controllerClient.executeAsync(operation, messageHandler) );
+            }
+        };
+
+
+        ControllerClient PRIVILEGED = new ControllerClient() {
+
+            @Override
+            public ModelNode execute(ModelControllerClient controllerClient, ModelNode operation) throws Exception {
+                return doPrivileged((PrivilegedExceptionAction<ModelNode>) () -> NON_PRIVILEGED.execute(controllerClient, operation) );
+            }
+
+            @Override
+            public AsyncFuture<ModelNode> executeAsync(ModelControllerClient controllerClient, ModelNode operation, OperationMessageHandler messageHandler) {
+                return doPrivileged((PrivilegedAction<AsyncFuture<ModelNode>>) () -> NON_PRIVILEGED.executeAsync(controllerClient, operation, messageHandler));
+            }
+        };
+
+
     }
 }

@@ -51,16 +51,18 @@ import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfig
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 
 /**
  * Test of migration of the domain controller from one host to another.
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a>  (c) 2015 Red Hat, inc.
  */
+@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class SimpleDomainControllerMigrationTestCase {
 
     private static final Logger log = Logger.getLogger(SimpleDomainControllerMigrationTestCase.class.getName());

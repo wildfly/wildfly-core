@@ -23,14 +23,12 @@ package org.jboss.as.domain.http.server;
 
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 import static org.xnio.Options.SSL_CLIENT_AUTH_MODE;
-import static org.xnio.SslClientAuthMode.REQUESTED;
-import static org.xnio.SslClientAuthMode.REQUIRED;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,28 +37,55 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLPeerUnverifiedException;
+
+import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.controller.ModelController;
+import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
+import org.jboss.as.domain.http.server.logging.HttpServerLogger;
+import org.jboss.as.domain.http.server.security.DmrFailureReadinessHandler;
+import org.jboss.as.domain.http.server.security.ElytronIdentityHandler;
+import org.jboss.as.domain.http.server.security.LogoutHandler;
+import org.jboss.as.domain.http.server.security.RedirectReadinessHandler;
+import org.jboss.as.domain.management.AuthMechanism;
+import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.modules.ModuleLoadException;
+import org.wildfly.common.Assert;
+import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
+import org.wildfly.elytron.web.undertow.server.ElytronHttpExchange;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.http.HttpServerAuthenticationMechanism;
+import org.xnio.BufferAllocator;
+import org.xnio.ByteBufferSlicePool;
+import org.xnio.ChannelListener;
+import org.xnio.ChannelListeners;
+import org.xnio.IoUtils;
+import org.xnio.OptionMap;
+import org.xnio.Options;
+import org.xnio.SslClientAuthMode;
+import org.xnio.StreamConnection;
+import org.xnio.XnioWorker;
+import org.xnio.channels.AcceptingChannel;
+import org.xnio.conduits.StreamSinkConduit;
+import org.xnio.ssl.SslConnection;
+import org.xnio.ssl.XnioSsl;
 
 import io.undertow.protocols.ssl.UndertowXnioSsl;
-import io.undertow.security.api.AuthenticationMechanism;
-import io.undertow.security.api.AuthenticationMode;
 import io.undertow.security.handlers.AuthenticationCallHandler;
 import io.undertow.security.handlers.AuthenticationConstraintHandler;
-import io.undertow.security.handlers.AuthenticationMechanismsHandler;
-import io.undertow.security.handlers.SecurityInitialHandler;
 import io.undertow.security.handlers.SinglePortConfidentialityHandler;
-import io.undertow.security.idm.DigestAlgorithm;
-import io.undertow.security.impl.BasicAuthenticationMechanism;
-import io.undertow.security.impl.CachedAuthenticatedSessionMechanism;
-import io.undertow.security.impl.ClientCertAuthenticationMechanism;
-import io.undertow.security.impl.DigestAuthenticationMechanism;
-import io.undertow.security.impl.DigestQop;
-import io.undertow.security.impl.GSSAPIAuthenticationMechanism;
-import io.undertow.security.impl.SimpleNonceManager;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.RenegotiationRequiredException;
+import io.undertow.server.SSLSessionInfo;
+import io.undertow.server.handlers.BlockingHandler;
 import io.undertow.server.handlers.CanonicalPathHandler;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
 import io.undertow.server.handlers.PathHandler;
@@ -73,37 +98,6 @@ import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.protocol.http.HttpOpenListener;
 import io.undertow.util.Headers;
 import io.undertow.util.Methods;
-import org.jboss.as.controller.ControlledProcessStateService;
-import org.jboss.as.controller.ModelController;
-import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
-import org.jboss.as.domain.http.server.logging.HttpServerLogger;
-import org.jboss.as.domain.http.server.security.AnonymousMechanism;
-import org.jboss.as.domain.http.server.security.AuthenticationMechanismWrapper;
-import org.jboss.as.domain.http.server.security.DmrFailureReadinessHandler;
-import org.jboss.as.domain.http.server.security.LogoutHandler;
-import org.jboss.as.domain.http.server.security.RealmIdentityManager;
-import org.jboss.as.domain.http.server.security.RedirectReadinessHandler;
-import org.jboss.as.domain.http.server.security.ServerSubjectFactory;
-import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.SecurityRealm;
-import org.jboss.modules.ModuleLoadException;
-import org.jboss.msc.service.StartException;
-import org.wildfly.common.Assert;
-import org.xnio.BufferAllocator;
-import org.xnio.ByteBufferSlicePool;
-import org.xnio.ChannelListener;
-import org.xnio.ChannelListeners;
-import org.xnio.IoUtils;
-import org.xnio.OptionMap;
-import org.xnio.OptionMap.Builder;
-import org.xnio.Options;
-import org.xnio.SslClientAuthMode;
-import org.xnio.StreamConnection;
-import org.xnio.XnioWorker;
-import org.xnio.channels.AcceptingChannel;
-import org.xnio.conduits.StreamSinkConduit;
-import org.xnio.ssl.SslConnection;
-import org.xnio.ssl.XnioSsl;
 
 /**
  * The general HTTP server for handling management API requests.
@@ -154,7 +148,7 @@ public class ManagementHttpServer {
     public void start() {
         try {
 
-            Builder serverOptionsBuilder = OptionMap.builder()
+            OptionMap.Builder serverOptionsBuilder = OptionMap.builder()
                     .set(Options.TCP_NODELAY, true)
                     .set(Options.REUSE_ADDRESSES, true);
             ChannelListener acceptListener = ChannelListeners.openListenerAdapter(openListener);
@@ -190,7 +184,7 @@ public class ManagementHttpServer {
             throw new IllegalStateException();
         }
         ResourceHandlerDefinition def = DomainUtil.createStaticContentHandler(resourceManager, context);
-        HttpHandler readinessHandler = new RedirectReadinessHandler(extensionHandlers.securityRealm, def.getHandler(),
+        HttpHandler readinessHandler = new RedirectReadinessHandler(extensionHandlers.readyFunction, def.getHandler(),
                 ErrorContextHandler.ERROR_CONTEXT);
         extensionHandlers.extensionPathHandler.addPrefixPath(context, readinessHandler);
     }
@@ -222,57 +216,119 @@ public class ManagementHttpServer {
         return '/' == contextName.charAt(0) ? contextName : "/" + contextName;
     }
 
-    public static ManagementHttpServer create(InetSocketAddress bindAddress, InetSocketAddress secureBindAddress, int backlog,
-                                              ModelController modelController, SecurityRealm securityRealm, ControlledProcessStateService controlledProcessStateService,
-                                              ConsoleMode consoleMode, String consoleSlot, final ChannelUpgradeHandler upgradeHandler,
-                                              ManagementHttpRequestProcessor managementHttpRequestProcessor, Collection<String> allowedOrigins, XnioWorker worker, Executor managementExecutor) throws IOException, StartException {
+    private static SSLContext getSSLContext(Builder builder) {
+        if (builder.sslContext != null) {
+            return builder.sslContext;
+        } else if (builder.securityRealm != null) {
+            return builder.securityRealm.getSSLContext();
+        } else {
+            throw ROOT_LOGGER.noRealmOrSSLContext();
+        }
+    }
 
-        SSLContext sslContext = null;
-        SslClientAuthMode sslClientAuthMode = null;
-        if (secureBindAddress != null) {
-            sslContext = securityRealm.getSSLContext();
-            if (sslContext == null) {
-                throw ROOT_LOGGER.sslRequestedNoSslContext();
-            }
-            Set<AuthMechanism> supportedMechanisms = securityRealm.getSupportedAuthenticationMechanisms();
+    private static SslClientAuthMode getSslClientAuthMode(Builder builder) {
+        if (builder.sslContext != null) {
+            return null;
+        } else if (builder.securityRealm != null) {
+            Set<AuthMechanism> supportedMechanisms = builder.securityRealm.getSupportedAuthenticationMechanisms();
             if (supportedMechanisms.contains(AuthMechanism.CLIENT_CERT)) {
                 if (supportedMechanisms.contains(AuthMechanism.DIGEST)
                         || supportedMechanisms.contains(AuthMechanism.PLAIN)) {
                     // Username / Password auth is possible so don't mandate a client certificate.
-                    sslClientAuthMode = REQUESTED;
+                    return SslClientAuthMode.REQUESTED;
                 } else {
-                    sslClientAuthMode = REQUIRED;
+                    return SslClientAuthMode.REQUIRED;
                 }
             }
+
+            return null;
+        } else {
+            throw ROOT_LOGGER.noRealmOrSSLContext();
+        }
+    }
+
+    private static ManagementHttpServer create(Builder builder) {
+        SSLContext sslContext = null;
+        SslClientAuthMode sslClientAuthMode = null;
+        if (builder.secureBindAddress != null) {
+            sslContext = getSSLContext(builder);
+            if (sslContext == null) {
+                throw ROOT_LOGGER.sslRequestedNoSslContext();
+            }
+            sslClientAuthMode = getSslClientAuthMode(builder);
         }
 
         HttpOpenListener openListener = new HttpOpenListener(new ByteBufferSlicePool(BufferAllocator.DIRECT_BYTE_BUFFER_ALLOCATOR, 4096, 10 * 4096));
 
-        int secureRedirectPort = secureBindAddress != null ? secureBindAddress.getPort() : -1;
+        int secureRedirectPort = builder.secureBindAddress != null ? builder.secureBindAddress.getPort() : -1;
         // WFLY-2870 -- redirect not supported if bindAddress and secureBindAddress are using different InetAddress
-        boolean redirectSupported = (bindAddress == null || secureBindAddress == null || bindAddress.getAddress().equals(secureBindAddress.getAddress()));
+        boolean redirectSupported = (builder.bindAddress == null || builder.secureBindAddress == null || builder.bindAddress.getAddress().equals(builder.secureBindAddress.getAddress()));
         if (!redirectSupported && secureRedirectPort > 0) {
-            HttpServerLogger.ROOT_LOGGER.httpsRedirectNotSupported(bindAddress.getAddress(), secureBindAddress.getAddress());
+            HttpServerLogger.ROOT_LOGGER.httpsRedirectNotSupported(builder.bindAddress.getAddress(), builder.secureBindAddress.getAddress());
             secureRedirectPort = -1;
         }
 
-        final ExtensionHandlers extensionHandlers = setupOpenListener(openListener, modelController, consoleMode, consoleSlot, controlledProcessStateService,
-                secureRedirectPort, securityRealm, upgradeHandler, managementHttpRequestProcessor, allowedOrigins, managementExecutor);
-        return new ManagementHttpServer(openListener, bindAddress, secureBindAddress, sslContext, sslClientAuthMode, worker, extensionHandlers);
+        final ExtensionHandlers extensionHandlers = setupOpenListener(openListener, secureRedirectPort, builder);
+        return new ManagementHttpServer(openListener, builder.bindAddress, builder.secureBindAddress, sslContext, sslClientAuthMode, builder.worker, extensionHandlers);
+    }
+
+    private static Function<HttpServerExchange, Boolean> createReadyFunction(Builder builder) {
+        if (builder.securityRealm != null) {
+            final SecurityRealm securityRealm = builder.securityRealm;
+            return e -> securityRealm.isReadyForHttpChallenge() || clientCertPotentiallyPossible(securityRealm, e);
+        } else {
+            return e -> Boolean.TRUE;
+        }
+    }
+
+    private static boolean clientCertPotentiallyPossible(final SecurityRealm securityRealm, final HttpServerExchange exchange) {
+        if (securityRealm.getSupportedAuthenticationMechanisms().contains(AuthMechanism.CLIENT_CERT) == false) {
+            return false;
+        }
+
+        SSLSessionInfo session = exchange.getConnection().getSslSessionInfo();
+        if (session != null) {
+            try {
+                // todo: renegotiation?
+                return session.getPeerCertificates()[0] instanceof X509Certificate;
+            } catch (SSLPeerUnverifiedException | RenegotiationRequiredException e) {
+            }
+        }
+
+        return false;
+    }
+
+    private static void addRedirectRedinessHandler(PathHandler pathHandler, ResourceHandlerDefinition consoleHandler, Function<HttpServerExchange, Boolean> readyFunction) {
+        HttpHandler readinessHandler = new RedirectReadinessHandler(readyFunction, consoleHandler.getHandler(), ErrorContextHandler.ERROR_CONTEXT);
+        pathHandler.addPrefixPath(consoleHandler.getContext(), readinessHandler);
+    }
+
+    private static HttpHandler addDmrRedinessHandler(PathHandler pathHandler, HttpHandler domainApiHandler, Function<HttpServerExchange, Boolean> readinessFunction) {
+        HttpHandler readinessHandler = wrapXFrameOptions(new DmrFailureReadinessHandler(readinessFunction, domainApiHandler, ErrorContextHandler.ERROR_CONTEXT));
+        pathHandler.addPrefixPath(DomainApiCheckHandler.PATH, readinessHandler);
+        pathHandler.addExactPath(DomainApiCheckHandler.GENERIC_CONTENT_REQUEST, readinessHandler);
+
+        return readinessHandler;
+    }
+
+    private static void addLogoutHandler(PathHandler pathHandler, Builder builder) {
+        if (builder.securityRealm != null) {
+            pathHandler.addPrefixPath(LogoutHandler.PATH, wrapXFrameOptions(new LogoutHandler(builder.securityRealm.getName())));
+        }
     }
 
     private static class ExtensionHandlers {
         private final PathHandler extensionPathHandler;
         private final HttpHandler managementHandler;
-        private final SecurityRealm securityRealm;
+        private final Function<HttpServerExchange, Boolean> readyFunction;
         private final Set<String> reservedContexts;
         private final Set<String> extensionContexts = new HashSet<>();
 
         private ExtensionHandlers(PathHandler extensionPathHandler, HttpHandler managementHandler,
-                                  SecurityRealm securityRealm, ResourceHandlerDefinition consoleHandler) {
+                Function<HttpServerExchange, Boolean> readyFunction, ResourceHandlerDefinition consoleHandler) {
             this.extensionPathHandler = extensionPathHandler;
             this.managementHandler = managementHandler;
-            this.securityRealm = securityRealm;
+            this.readyFunction = readyFunction;
             if (consoleHandler == null) {
                 this.reservedContexts = RESERVED_CONTEXTS;
             } else {
@@ -283,113 +339,81 @@ public class ManagementHttpServer {
         }
     }
 
-    private static ExtensionHandlers setupOpenListener(HttpOpenListener listener, ModelController modelController, ConsoleMode consoleMode,
-                                                       String consoleSlot, ControlledProcessStateService controlledProcessStateService,
-                                                       int secureRedirectPort, SecurityRealm securityRealm,
-                                                       final ChannelUpgradeHandler upgradeHandler, final ManagementHttpRequestProcessor managementHttpRequestProcessor,
-                                                       final Collection<String> allowedOrigins, Executor managementExecutor) {
-
+    private static ExtensionHandlers setupOpenListener(HttpOpenListener listener, int secureRedirectPort, Builder builder) {
         CanonicalPathHandler canonicalPathHandler = new CanonicalPathHandler();
-        ManagementHttpRequestHandler managementHttpRequestHandler = new ManagementHttpRequestHandler(managementHttpRequestProcessor, canonicalPathHandler);
-        CorsHttpHandler corsHandler = new CorsHttpHandler(managementHttpRequestHandler, allowedOrigins);
+
+        ManagementHttpRequestHandler managementHttpRequestHandler = new ManagementHttpRequestHandler(builder.managementHttpRequestProcessor, canonicalPathHandler);
+        CorsHttpHandler corsHandler = new CorsHttpHandler(managementHttpRequestHandler, builder.allowedOrigins);
         listener.setRootHandler(new UpgradeFixHandler(corsHandler));
 
         PathHandler pathHandler = new PathHandler();
         HttpHandler current = pathHandler;
-        if(upgradeHandler != null) {
-            upgradeHandler.setNonUpgradeHandler(current);
-            current = upgradeHandler;
+        if (builder.upgradeHandler != null) {
+            builder.upgradeHandler.setNonUpgradeHandler(current);
+            current = builder.upgradeHandler;
         }
 
         if (secureRedirectPort > 0) {
             // Add handler for redirect from http to https if needed
             current = new SinglePortConfidentialityHandler(current, secureRedirectPort);
         }
-        //caching handler, used for static resources
-        current = new CacheHandler(new DirectBufferCache(1024,1024 * 10, 1024 * 1000, BufferAllocator.BYTE_BUFFER_ALLOCATOR), current);
+        // caching handler, used for static resources
+        current = new CacheHandler(new DirectBufferCache(1024, 1024 * 10, 1024 * 1000, BufferAllocator.BYTE_BUFFER_ALLOCATOR),
+                current);
         current = new SimpleErrorPageHandler(current);
 
         canonicalPathHandler.setNext(current);
 
         ResourceHandlerDefinition consoleHandler = null;
         try {
-            consoleHandler = consoleMode.createConsoleHandler(consoleSlot);
+            consoleHandler = builder.consoleMode.createConsoleHandler(builder.consoleSlot);
         } catch (ModuleLoadException e) {
-            ROOT_LOGGER.consoleModuleNotFound(consoleSlot == null ? "main" : consoleSlot);
+            ROOT_LOGGER.consoleModuleNotFound(builder.consoleSlot == null ? "main" : builder.consoleSlot);
         }
 
         try {
-            pathHandler.addPrefixPath(ErrorContextHandler.ERROR_CONTEXT, ErrorContextHandler.createErrorContext(consoleSlot));
+            pathHandler.addPrefixPath(ErrorContextHandler.ERROR_CONTEXT, ErrorContextHandler.createErrorContext(builder.consoleSlot));
         } catch (ModuleLoadException e) {
-            ROOT_LOGGER.errorContextModuleNotFound(consoleSlot == null ? "main" : consoleSlot);
+            ROOT_LOGGER.errorContextModuleNotFound(builder.consoleSlot == null ? "main" : builder.consoleSlot);
         }
 
         ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(consoleHandler);
+        HttpHandler domainApiHandler = InExecutorHandler.wrap(
+                builder.executor,
+                associateIdentity(new DomainApiCheckHandler(builder.modelController, builder.controlledProcessStateService,
+                        builder.allowedOrigins), builder)
+        );
+
+        final Function<HttpServerExchange, Boolean> readyFunction = createReadyFunction(builder);
         pathHandler.addPrefixPath("/", rootConsoleRedirectHandler);
         if (consoleHandler != null) {
-            HttpHandler readinessHandler = new RedirectReadinessHandler(securityRealm, consoleHandler.getHandler(),
-                    ErrorContextHandler.ERROR_CONTEXT);
-            pathHandler.addPrefixPath(consoleHandler.getContext(), readinessHandler);
+            addRedirectRedinessHandler(pathHandler, consoleHandler, readyFunction);
         }
 
-        HttpHandler domainApiHandler = InExecutorHandler.wrap(
-                managementExecutor,
-                new DomainApiCheckHandler(modelController, controlledProcessStateService, allowedOrigins)
-        );
-        HttpHandler readinessHandler = wrapXFrameOptions(new DmrFailureReadinessHandler(securityRealm,
-                secureDomainAccess(domainApiHandler, securityRealm), ErrorContextHandler.ERROR_CONTEXT));
-        pathHandler.addPrefixPath(DomainApiCheckHandler.PATH, readinessHandler);
-        pathHandler.addExactPath(DomainApiCheckHandler.GENERIC_CONTENT_REQUEST, readinessHandler);
+        domainApiHandler = secureDomainAccess(domainApiHandler, builder);
+        HttpHandler readinessHandler = addDmrRedinessHandler(pathHandler, domainApiHandler, readyFunction);
+        addLogoutHandler(pathHandler, builder);
 
-        if (securityRealm != null) {
-            pathHandler.addPrefixPath(LogoutHandler.PATH, wrapXFrameOptions(new LogoutHandler(securityRealm.getName())));
-        }
-
-        return new ExtensionHandlers(pathHandler, readinessHandler, securityRealm, consoleHandler);
+        return new ExtensionHandlers(pathHandler, readinessHandler, readyFunction, consoleHandler);
     }
 
-    private static HttpHandler secureDomainAccess(final HttpHandler domainHandler, final SecurityRealm securityRealm) {
-        RealmIdentityManager rim = new RealmIdentityManager(securityRealm);
-        List<AuthenticationMechanism> undertowMechanisms;
-        if (securityRealm != null) {
-            Set<AuthMechanism> mechanisms = securityRealm.getSupportedAuthenticationMechanisms();
-            undertowMechanisms = new ArrayList<AuthenticationMechanism>(mechanisms.size());
-            undertowMechanisms.add(wrap(new CachedAuthenticatedSessionMechanism(), null));
-            for (AuthMechanism current : mechanisms) {
-                switch (current) {
-                    case KERBEROS:
-                        undertowMechanisms.add(wrap(new GSSAPIAuthenticationMechanism(new ServerSubjectFactory(securityRealm,
-                                rim)), current));
-                        break;
-                    case CLIENT_CERT:
-                        undertowMechanisms.add(wrap(new ClientCertAuthenticationMechanism(), current));
-                        break;
-                    case DIGEST:
-                        List<DigestAlgorithm> digestAlgorithms = Collections.singletonList(DigestAlgorithm.MD5);
-                        List<DigestQop> digestQops = Collections.singletonList(DigestQop.AUTH);
-                        undertowMechanisms.add(wrap(new DigestAuthenticationMechanism(digestAlgorithms, digestQops,
-                                securityRealm.getName(), "/management", new SimpleNonceManager()), current));
-                        break;
-                    case PLAIN:
-                        undertowMechanisms.add(wrap(new BasicAuthenticationMechanism(securityRealm.getName(), "BASIC", false, null, StandardCharsets.UTF_8, USER_AGENT_CHARSET_MAP), current));
-                        break;
-                    case LOCAL:
-                        break;
-                }
+    private static HttpHandler associateIdentity(HttpHandler domainHandler, final Builder builder) {
+        domainHandler = new ElytronIdentityHandler(domainHandler);
+
+        return new BlockingHandler(domainHandler);
+    }
+
+    private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final Builder builder) {
+        if (builder.httpAuthenticationFactory != null) {
+            return secureDomainAccess(domainHandler, builder.httpAuthenticationFactory);
+        } else if (builder.securityRealm != null) {
+            HttpAuthenticationFactory httpAuthenticationFactory = builder.securityRealm.getHttpAuthenticationFactory();
+            if (httpAuthenticationFactory != null) {
+                return secureDomainAccess(domainHandler, httpAuthenticationFactory);
             }
-        } else {
-            undertowMechanisms = Collections.singletonList(wrap(new AnonymousMechanism(), null));
         }
 
-        // If the only mechanism is the cached mechanism then no need to add these.
-        HttpHandler current = domainHandler;
-        current = new AuthenticationCallHandler(current);
-        // Currently the security handlers are being added after a PATH handler so we know authentication is required by
-        // this point.
-        current = new AuthenticationConstraintHandler(current);
-        current = new AuthenticationMechanismsHandler(current, undertowMechanisms);
-
-        return new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, rim, current);
+        return domainHandler;
     }
 
     private static Map<Pattern, Charset> generateCharsetMap() {
@@ -401,12 +425,178 @@ public class ManagementHttpServer {
         return Collections.unmodifiableMap(charsetMap);
     }
 
-    private static AuthenticationMechanism wrap(final AuthenticationMechanism toWrap, final AuthMechanism mechanism) {
-        return new AuthenticationMechanismWrapper(toWrap, mechanism);
+    private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final HttpAuthenticationFactory httpAuthenticationFactory) {
+        domainHandler = new AuthenticationCallHandler(domainHandler);
+        domainHandler = new AuthenticationConstraintHandler(domainHandler);
+        Supplier<List<HttpServerAuthenticationMechanism>> mechanismSupplier = () ->
+            httpAuthenticationFactory.getMechanismNames().stream()
+            .map(s -> {
+                    try {
+                        return httpAuthenticationFactory.createMechanism(s);
+                    } catch (Exception e) {
+                        return null;
+                    }
+                })
+            .collect(Collectors.toList());
+        domainHandler = ElytronContextAssociationHandler.builder()
+                .setNext(domainHandler)
+                .setMechanismSupplier(mechanismSupplier)
+                .setHttpExchangeSupplier(h -> new ElytronHttpExchange(h) {
+
+                    @Override
+                    public void authenticationComplete(SecurityIdentity securityIdentity, String mechanismName) {
+                        super.authenticationComplete(securityIdentity, mechanismName);
+                        h.putAttachment(ElytronIdentityHandler.IDENTITY_KEY, securityIdentity);
+                    }
+
+                })
+                .build();
+
+        return domainHandler;
     }
 
     private static HttpHandler wrapXFrameOptions(final HttpHandler toWrap) {
         return new SetHeaderHandler(toWrap, "X-Frame-Options", "SAMEORIGIN");
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+
+        private boolean built = false;
+
+        private InetSocketAddress bindAddress;
+        private InetSocketAddress secureBindAddress;
+        private ModelController modelController;
+        private SecurityRealm securityRealm;
+        private SSLContext sslContext;
+        private HttpAuthenticationFactory httpAuthenticationFactory;
+        private ControlledProcessStateService controlledProcessStateService;
+        private ConsoleMode consoleMode;
+        private String consoleSlot;
+        private ChannelUpgradeHandler upgradeHandler;
+        private ManagementHttpRequestProcessor managementHttpRequestProcessor;
+        private Collection<String> allowedOrigins;
+        private XnioWorker worker;
+        private Executor executor;
+
+        private Builder() {
+        }
+
+        public Builder setBindAddress(InetSocketAddress bindAddress) {
+            assertNotBuilt();
+            this.bindAddress = bindAddress;
+
+            return this;
+        }
+
+        public Builder setSecureBindAddress(InetSocketAddress secureBindAddress) {
+            assertNotBuilt();
+            this.secureBindAddress = secureBindAddress;
+
+            return this;
+        }
+
+        public Builder setModelController(ModelController modelController) {
+            assertNotBuilt();
+            this.modelController = modelController;
+
+            return this;
+        }
+
+        public Builder setSecurityRealm(SecurityRealm securityRealm) {
+            assertNotBuilt();
+            this.securityRealm = securityRealm;
+
+            return this;
+        }
+
+        public Builder setSSLContext(SSLContext sslContext) {
+            assertNotBuilt();
+            this.sslContext = sslContext;
+
+            return this;
+        }
+
+        public Builder setHttpAuthenticationFactory(HttpAuthenticationFactory httpAuthenticationFactory) {
+            assertNotBuilt();
+            this.httpAuthenticationFactory = httpAuthenticationFactory;
+
+            return this;
+        }
+
+        public Builder setControlledProcessStateService(ControlledProcessStateService controlledProcessStateService) {
+            assertNotBuilt();
+            this.controlledProcessStateService = controlledProcessStateService;
+
+            return this;
+        }
+
+        public Builder setConsoleMode(ConsoleMode consoleMode) {
+            assertNotBuilt();
+            this.consoleMode = consoleMode;
+
+            return this;
+        }
+
+        public Builder setConsoleSlot(String consoleSlot) {
+            assertNotBuilt();
+            this.consoleSlot = consoleSlot;
+
+            return this;
+        }
+
+        public Builder setChannelUpgradeHandler(ChannelUpgradeHandler upgradeHandler) {
+            assertNotBuilt();
+            this.upgradeHandler = upgradeHandler;
+
+            return this;
+        }
+
+        public Builder setManagementHttpRequestProcessor(ManagementHttpRequestProcessor managementHttpRequestProcessor) {
+            assertNotBuilt();
+            this.managementHttpRequestProcessor = managementHttpRequestProcessor;
+
+            return this;
+        }
+
+        public Builder setAllowedOrigins(Collection<String> allowedOrigins) {
+            assertNotBuilt();
+            this.allowedOrigins = allowedOrigins;
+
+            return this;
+        }
+
+        public Builder setWorker(XnioWorker worker) {
+            assertNotBuilt();
+            this.worker = worker;
+
+            return this;
+        }
+
+        public Builder setExecutor(Executor executor) {
+            assertNotBuilt();
+            this.executor = executor;
+
+            return this;
+        }
+
+        public ManagementHttpServer build() {
+            assertNotBuilt();
+
+            ManagementHttpServer managementHttpServer = create(this);
+            built = true;
+
+            return managementHttpServer;
+        }
+
+        private void assertNotBuilt() {
+            if (built) {
+                throw ROOT_LOGGER.managementHttpServerAlreadyBuild();
+            }
+        }
     }
 
     /**
@@ -470,4 +660,5 @@ public class ManagementHttpServer {
             next.handleRequest(exchange);
         }
     }
+
 }

@@ -18,6 +18,14 @@
                 </role>
                 <role name="d" base-role="Administrator"/>
             </host-scoped-roles>
+            <role-mapping>
+                <!-- TODO Elytron A Supercalifragilisticexpialidocious hack until we have in-vm permissions sorted. -->
+                <role name="SuperUser">
+                    <include>
+                        <user name="anonymous" />
+                    </include>
+                </role>
+            </role-mapping>
 	         <constraints>
 	            <vault-expression-sensitivity requires-read="false" requires-write="false" />
 	            <sensitive-classifications>

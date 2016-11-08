@@ -22,11 +22,14 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
 
 import java.util.concurrent.Executor;
+
+import javax.net.ssl.SSLContext;
 
 import io.undertow.server.ListenerRegistry;
 import java.util.Arrays;
@@ -65,7 +68,9 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.xnio.XnioWorker;
+
 
 /**
  * A handler that activates the HTTP management API.
@@ -74,6 +79,8 @@ import org.xnio.XnioWorker;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
+
+    private static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
 
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
@@ -96,6 +103,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
     protected List<ServiceName> installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
         populateHostControllerInfo(hostControllerInfo, context, model);
 
+        RunningMode runningMode = context.getRunningMode();
         ServiceTarget serviceTarget = context.getServiceTarget();
         boolean onDemand = context.isBooting();
         String interfaceName = hostControllerInfo.getHttpManagementInterface();
@@ -117,6 +125,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         } else {
             consoleMode = ConsoleMode.NO_CONSOLE;
         }
+
         NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
 
         // Track active requests
@@ -141,11 +150,22 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 .addInjection(service.getSecurePortInjector(), securePort)
                 .addInjection(service.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());
 
+        String httpAuthenticationFactory = commonPolicy.getHttpAuthenticationFactory();
         String securityRealm = commonPolicy.getSecurityRealm();
-        if (securityRealm != null) {
+        if (httpAuthenticationFactory != null) {
+            builder.addDependency(context.getCapabilityServiceName(
+                    buildDynamicCapabilityName(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, httpAuthenticationFactory),
+                    HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, service.getHttpAuthenticationFactoryInjector());
+        } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);
         } else {
-            ROOT_LOGGER.noSecurityRealmDefined();
+            ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
+        }
+        String sslContext = commonPolicy.getSSLContext();
+        if (sslContext != null) {
+            builder.addDependency(context.getCapabilityServiceName(
+                    buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContext),
+                    SSLContext.class), SSLContext.class, service.getSSLContextInjector());
         }
 
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE)
@@ -165,7 +185,6 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         if (commonPolicy.isHttpUpgradeEnabled()) {
             ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
-            ManagementRemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, securityRealm, serverCallbackService, tmpDirPath);
 
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(true), onDemand);
             final String httpConnectorName;
@@ -175,8 +194,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 httpConnectorName = ManagementRemotingServices.HTTPS_CONNECTOR;
             }
 
-            RemotingHttpUpgradeService.installServices(serviceTarget, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
-                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions());
+            RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
+                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), securityRealm, commonPolicy.getSaslAuthenticationFactory());
             return Arrays.asList(UndertowHttpManagementService.SERVICE_NAME, HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         }
         return Collections.singletonList(UndertowHttpManagementService.SERVICE_NAME);

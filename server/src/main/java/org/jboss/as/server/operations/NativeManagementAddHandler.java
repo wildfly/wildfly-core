@@ -22,11 +22,17 @@
 
 package org.jboss.as.server.operations;
 
+
+import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.remoting.RemotingServices.REMOTING_BASE;
 import static org.jboss.as.remoting.management.ManagementRemotingServices.MANAGEMENT_CONNECTOR;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
+
+
+import javax.net.ssl.SSLContext;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,14 +43,15 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseNativeInterfaceAddStepHandler;
 import org.jboss.as.controller.management.NativeInterfaceCommonPolicy;
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.SocketBinding;
-import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -83,16 +90,20 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         ServiceName socketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
 
         String securityRealm = commonPolicy.getSecurityRealm();
-        if (securityRealm == null) {
+        String saslAuthenticationFactory = commonPolicy.getSaslAuthenticationFactory();
+        if (saslAuthenticationFactory == null && securityRealm == null) {
             ServerLogger.ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
-        ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
-        RemotingServices.installSecurityServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_CONNECTOR, securityRealm, null, tmpDirPath);
+        ServiceName securityRealmName = securityRealm != null ? SecurityRealm.ServiceUtil.createServiceName(securityRealm) : null;
+        ServiceName saslAuthenticationFactoryName = saslAuthenticationFactory != null ? context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, SaslAuthenticationFactory.class) : null;
+        String sslContext = commonPolicy.getSSLContext();
+        ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, SSLContext.class) : null;
 
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,
-                    socketBindingServiceName, commonPolicy.getConnectorOptions());
+                    socketBindingServiceName, commonPolicy.getConnectorOptions(),
+                    securityRealmName, saslAuthenticationFactoryName, sslContextName);
         return Arrays.asList(REMOTING_BASE.append("server", MANAGEMENT_CONNECTOR), socketBindingServiceName);
     }
 

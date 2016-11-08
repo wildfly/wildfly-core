@@ -37,14 +37,24 @@ public class HostMgmtInterfacesTestCase extends AbstractCoreModelTest {
 
     @Test
     public void testConfiguration() throws Exception {
+        testConfiguration("host.xml");
+    }
+
+    @Test
+    public void testConfiguration_Legacy() throws Exception {
+        testConfiguration("host_legacy.xml");
+    }
+
+
+    private void testConfiguration(String fileName) throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder(TestModelType.HOST)
-                .setXmlResource("host.xml")
+                .setXmlResource(fileName)
                 .validateDescription()
                 .build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
 
         String marshalled = kernelServices.getPersistedSubsystemXml();
-        ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), "host.xml"), marshalled);
+        ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), fileName), marshalled);
     }
 
 }

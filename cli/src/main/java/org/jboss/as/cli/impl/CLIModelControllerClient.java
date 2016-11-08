@@ -55,12 +55,8 @@ import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
-import org.jboss.remoting3.Remoting;
-import org.jboss.remoting3.remote.HttpUpgradeConnectionProviderFactory;
-import org.jboss.remoting3.remote.RemoteConnectionProviderFactory;
 import org.jboss.threads.JBossThreadFactory;
 import org.xnio.OptionMap;
-import org.xnio.Options;
 
 /**
  * @author Alexey Loubyansky
@@ -85,15 +81,9 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
         executorService.allowCoreThreadTimeOut(true);
 
         try {
-            endpoint = Remoting.createEndpoint("cli-client", OptionMap.create(Options.THREAD_DAEMON, true));
-            endpoint.addConnectionProvider("remote", new RemoteConnectionProviderFactory(), OptionMap.EMPTY);
-            endpoint.addConnectionProvider("remoting", new RemoteConnectionProviderFactory(), OptionMap.EMPTY);
-            endpoint.addConnectionProvider("http-remoting", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE));
-            endpoint.addConnectionProvider("remote+http", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE));
-            endpoint.addConnectionProvider("https-remoting", new HttpUpgradeConnectionProviderFactory(),  OptionMap.create(Options.SSL_ENABLED, Boolean.TRUE));
-            endpoint.addConnectionProvider("remote+https", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.TRUE));
+            endpoint = Endpoint.builder().setEndpointName("cli-client").build();
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to create remoting endpoint", e);
+            throw new IllegalStateException("Failed to create remoting endpoint");
         }
 
         CliShutdownHook.add(new CliShutdownHook.Handler() {

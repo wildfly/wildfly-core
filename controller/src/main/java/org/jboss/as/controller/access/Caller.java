@@ -23,45 +23,43 @@
 package org.jboss.as.controller.access;
 
 import java.security.Permission;
-import java.security.Principal;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.security.auth.Subject;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.security.ControllerPermission;
-import org.jboss.as.core.security.AccountPrincipal;
-import org.jboss.as.core.security.GroupPrincipal;
-import org.jboss.as.core.security.RealmPrincipal;
-import org.jboss.as.core.security.RolePrincipal;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Represents the caller in an access control decision.
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @deprecated Replaced by the Elytron {@link SecurityIdentity}
  */
+@Deprecated
 public final class Caller {
 
     private static final String UNDEFINED = "UNDEFINED";
 
-    private final Subject subject;
+    private final SecurityIdentity securityIdentity;
 
     private volatile String name;
     private volatile String realm = UNDEFINED;
     private volatile Set<String> groups;
     private volatile Set<String> roles;
 
-    private Caller(final Subject subject) {
-        this.subject = subject;
+    private Caller(final SecurityIdentity securityIdentity) {
+        this.securityIdentity = securityIdentity;
     }
 
-    public static Caller createCaller(final Subject subject) {
+    public static Caller createCaller(final SecurityIdentity securityIdentity) {
         checkPermission(ControllerPermission.CREATE_CALLER);
 
-        return new Caller(subject);
+        return new Caller(securityIdentity);
     }
 
     /**
@@ -70,13 +68,8 @@ public final class Caller {
      * @return The name of the caller.
      */
     public String getName() {
-        if (name == null && subject != null) {
-            Set<AccountPrincipal> accounts = subject.getPrincipals(AccountPrincipal.class);
-            if (accounts.size() == 1) {
-                name = accounts.iterator().next().getName();
-            } else if (accounts.size() >= 1) {
-                throw ControllerLogger.ROOT_LOGGER.unexpectedAccountPrincipalCount(accounts.size());
-            }
+        if (name == null && securityIdentity != null) {
+            name = securityIdentity.getPrincipal().getName();
         }
 
         return name;
@@ -90,21 +83,8 @@ public final class Caller {
      * @return The name of the realm used for authentication.
      */
     public String getRealm() {
-        if (UNDEFINED.equals(realm)) {
-            if (subject != null) {
-                Set<RealmPrincipal> realmPrincipals = subject.getPrincipals(RealmPrincipal.class);
-                String foundRealm = null;
-                for (RealmPrincipal current : realmPrincipals) {
-                    if (foundRealm == null) {
-                        foundRealm = current.getRealm();
-                    } else if (foundRealm.equals(current.getRealm()) == false) {
-                        throw ControllerLogger.ROOT_LOGGER.differentRealmsInSubject(foundRealm, current.getRealm());
-                    }
-                }
-                realm = foundRealm; // Note: Initialisation may have now set this to null
-            } else {
-                this.realm = null;
-            }
+        if (UNDEFINED.equals(realm) && securityIdentity!= null && securityIdentity.getAttributes().size("realm") > 0) {
+            realm = securityIdentity.getAttributes().get("realm", 0);
         }
 
         return realm;
@@ -119,13 +99,8 @@ public final class Caller {
      */
     public Set<String> getAssociatedGroups() {
         if (groups == null) {
-            if (subject != null) {
-                Set<GroupPrincipal> groupPrincipals = subject.getPrincipals(GroupPrincipal.class);
-                Set<String> groups = new HashSet<String>(groupPrincipals.size());
-                for (Principal current : groupPrincipals) {
-                    groups.add(current.getName());
-                }
-                this.groups = Collections.unmodifiableSet(groups);
+            if (securityIdentity != null) {
+                groups = StreamSupport.stream(securityIdentity.getRoles().spliterator(), true).collect(Collectors.toSet());
             } else {
                 this.groups = Collections.emptySet();
             }
@@ -143,40 +118,53 @@ public final class Caller {
      * @return The {@link Set} of associated roles or an empty set if none.
      */
     public Set<String> getAssociatedRoles() {
-        if (roles == null) {
-            if (subject != null) {
-                Set<RolePrincipal> rolePrincipals = subject.getPrincipals(RolePrincipal.class);
-                Set<String> roles = new HashSet<String>(rolePrincipals.size());
-                for (Principal current : rolePrincipals) {
-                    roles.add(current.getName());
-                }
-                this.roles = Collections.unmodifiableSet(roles);
-            } else {
-                this.roles = Collections.emptySet();
-            }
-        }
-
-        return roles;
+        return getAssociatedGroups();
     }
 
     /**
      * Check if this {@link Caller} has a {@link Subject} without needing to access it.
      *
+     * This method will always return {@code false} as this is now backed by a {@link SecurityIdentity} this method remains
+     * however for binary compatibility.
+     *
      * @return true if this {@link Caller} has a {@link Subject}
      */
     public boolean hasSubject() {
-        return subject != null;
+        return false;
     }
 
     /**
      * Obtain the {@link Subject} used to create this caller.
+     *
+     * This method will always return {@code null} as this is now backed by a {@link SecurityIdentity} this method remains
+     * however for binary compatibility.
      *
      * @return The {@link Subject} used to create this caller.
      */
     public Subject getSubject() {
         checkPermission(ControllerPermission.GET_CALLER_SUBJECT);
 
-        return subject;
+        return null;
+    }
+
+    /**
+     * Check if this {@link Caller} has a {@link SecurityIdentity} without needing to access it.
+     *
+     * @return {@code true} if this {@link Caller} has a {@link SecurityIdentity}.
+     */
+    public boolean hasSecurityIdentity() {
+        return securityIdentity != null;
+    }
+
+    /**
+     * Obtain the {@link SecurityIdentity} to create this {@link Caller}.
+     *
+     * @return the {@link SecurityIdentity} to create this {@link Caller}.
+     */
+    public SecurityIdentity getSecurityIdentity() {
+        checkPermission(ControllerPermission.GET_CALLER_SECURITY_IDENTITY);
+
+        return securityIdentity;
     }
 
     private static void checkPermission(final Permission permission) {

@@ -40,6 +40,12 @@ class ConnectorCommon {
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
             .build();
 
+    static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(CommonAttributes.SASL_AUTHENTICATION_FACTORY, ModelType.STRING, true)
+            .setMinSize(1)
+            .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
+            .setNullSignificant(true)
+            .build();
+
     static final SimpleAttributeDefinition SASL_PROTOCOL = new SimpleAttributeDefinitionBuilder(CommonAttributes.SASL_PROTOCOL, ModelType.STRING, true)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))

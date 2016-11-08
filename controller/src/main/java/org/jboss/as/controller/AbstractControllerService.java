@@ -32,6 +32,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.access.management.WritableAuthorizerConfiguration;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -115,6 +116,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     protected final ProcessType processType;
     protected final DelegatingConfigurableAuthorizer authorizer;
+    protected final ManagementSecurityIdentitySupplier securityIdentitySupplier;
     private final RunningModeControl runningModeControl;
     private final ResourceDefinition rootResourceDefinition;
     private final ControlledProcessState processState;
@@ -144,9 +146,9 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ConfigurationPersister configurationPersister,
                                         final ControlledProcessState processState, final DescriptionProvider rootDescriptionProvider,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
-                                        final ManagedAuditLogger auditLogger, DelegatingConfigurableAuthorizer authorizer) {
+                                        final ManagedAuditLogger auditLogger, DelegatingConfigurableAuthorizer authorizer, ManagementSecurityIdentitySupplier securityIdentitySupplier) {
         this(processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
-                prepareStep, expressionResolver, auditLogger, authorizer, new CapabilityRegistry(processType.isServer()));
+                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, new CapabilityRegistry(processType.isServer()));
 
     }
 
@@ -169,9 +171,9 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
-                                        final CapabilityRegistry capabilityRegistry) {
+                                        final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
         this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, auditLogger, authorizer, capabilityRegistry);
+                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
     }
 
     /**
@@ -194,7 +196,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ControlledProcessState processState, final DescriptionProvider rootDescriptionProvider,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver) {
         this(processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
-                prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new CapabilityRegistry(processType.isServer()));
+                prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
+                new CapabilityRegistry(processType.isServer()));
 
     }
 
@@ -217,7 +220,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver) {
         this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new CapabilityRegistry(processType.isServer()));
+                prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
+                new CapabilityRegistry(processType.isServer()));
     }
 
     /**
@@ -239,7 +243,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
                                         final DelegatingConfigurableAuthorizer authorizer) {
         this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, auditLogger, authorizer, new CapabilityRegistry(processType.isServer()));
+                prepareStep, expressionResolver, auditLogger, authorizer, new ManagementSecurityIdentitySupplier(),
+                new CapabilityRegistry(processType.isServer()));
 
     }
 
@@ -247,12 +252,14 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                       final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                       final ResourceDefinition rootResourceDefinition, final DescriptionProvider rootDescriptionProvider,
                                       final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
-                                      final DelegatingConfigurableAuthorizer authorizer, CapabilityRegistry capabilityRegistry) {
+                                      final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
+                                      final CapabilityRegistry capabilityRegistry) {
         assert rootDescriptionProvider == null: "description provider cannot be used anymore";
         assert rootResourceDefinition != null: "Null root resource definition";
         assert expressionResolver != null : "Null expressionResolver";
         assert auditLogger != null : "Null auditLogger";
         assert authorizer != null : "Null authorizer";
+        assert securityIdentitySupplier != null : "Null securityIdentitySupplier";
         assert capabilityRegistry!=null : "Null capabilityRegistry";
         this.processType = processType;
         this.runningModeControl = runningModeControl;
@@ -263,6 +270,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.expressionResolver = expressionResolver;
         this.auditLogger = auditLogger;
         this.authorizer = authorizer;
+        this.securityIdentitySupplier = securityIdentitySupplier;
         this.bootErrorCollector = new BootErrorCollector();
         this.capabilityRegistry = capabilityRegistry.createShadowCopy(); //create shadow copy of proper registry so changes can only be visible by .publish()
     }
@@ -287,7 +295,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),
                 configurationPersister, processType, runningModeControl, prepareStep,
-                processState, executorService, expressionResolver, authorizer, auditLogger, notificationSupport,
+                processState, executorService, expressionResolver, authorizer, securityIdentitySupplier, auditLogger, notificationSupport,
                 bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry, getPartialModelIndicator());
 
         // Initialize the model

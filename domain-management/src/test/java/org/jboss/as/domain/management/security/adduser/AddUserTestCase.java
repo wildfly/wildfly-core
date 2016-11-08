@@ -24,8 +24,8 @@ package org.jboss.as.domain.management.security.adduser;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.service.StartException;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
 import org.junit.Test;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

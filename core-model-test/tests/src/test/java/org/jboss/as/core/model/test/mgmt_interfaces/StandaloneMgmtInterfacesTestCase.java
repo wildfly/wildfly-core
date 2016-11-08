@@ -37,14 +37,23 @@ public class StandaloneMgmtInterfacesTestCase extends AbstractCoreModelTest {
 
     @Test
     public void testConfiguration() throws Exception {
+        testConfiguration("standalone.xml");
+    }
+
+    @Test
+    public void testConfiguration_Legacy() throws Exception {
+        testConfiguration("standalone_legacy.xml");
+    }
+
+    public void testConfiguration(String fileName) throws Exception {
         KernelServices kernelServices = createKernelServicesBuilder(TestModelType.STANDALONE)
-                .setXmlResource("standalone.xml")
+                .setXmlResource(fileName)
                 .validateDescription()
                 .build();
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
 
         String marshalled = kernelServices.getPersistedSubsystemXml();
-        ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), "standalone.xml"), marshalled);
+        ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), fileName), marshalled);
     }
 
 }

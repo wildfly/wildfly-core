@@ -25,6 +25,7 @@ package org.jboss.as.test.integration.domain;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.junit.Test;
 import org.junit.Assert;
+import org.junit.Ignore;
 
 import java.io.File;
 
@@ -32,6 +33,7 @@ import java.io.File;
  * Tests server identity configuration on host in case kerberos is used for server identity
  * @author Vlado Pakan
  */
+@Ignore("[WFCORE-1955] Wrap Kerberos behaviour of legacy security realms with Elytron components.")
 public class KerberosServerIdentityTestCase {
     @Test
     public void testServerResolvesKeytabNode() throws Throwable {

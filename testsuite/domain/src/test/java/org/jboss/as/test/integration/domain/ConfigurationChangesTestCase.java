@@ -72,6 +72,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 
@@ -79,6 +80,7 @@ import org.wildfly.core.testrunner.UnsuccessfulOperationException;
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
+@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class ConfigurationChangesTestCase {
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;

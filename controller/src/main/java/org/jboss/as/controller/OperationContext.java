@@ -42,6 +42,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * The context for an operation step execution.
@@ -780,8 +781,17 @@ public interface OperationContext extends ExpressionResolver {
      * Obtain the {@link Caller} for the current request.
      *
      * @return The current caller.
+     * @deprecated Use {@link #getSecurityIdentity()} instead.
      */
+    @Deprecated
     Caller getCaller();
+
+    /**
+     * Obtain the {@link SecurityIdentity} for the current request.
+     *
+     * @return The current {@code SecurityIdentity}.
+     */
+    SecurityIdentity getSecurityIdentity();
 
     /**
      * Emit a {@link org.jboss.as.controller.notification.Notification}.

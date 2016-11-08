@@ -25,6 +25,7 @@ package org.jboss.as.controller;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
@@ -45,6 +46,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * {@link OperationContext} implementation for parallel handling of subsystem operations during boot.
@@ -65,9 +67,9 @@ class ParallelBootOperationContext extends AbstractOperationContext {
                                  final ControlledProcessState processState, final OperationContextImpl primaryContext,
                                  final List<ParsedBootOp> runtimeOps, final Thread controllingThread,
                                  final ModelControllerImpl controller, final int operationId, final AuditLogger auditLogger,
-                                 final Resource model, final OperationStepHandler extraValidationStepHandler) {
+                                 final Resource model, final OperationStepHandler extraValidationStepHandler, final Supplier<SecurityIdentity> securityIdentitySupplier) {
         super(primaryContext.getProcessType(), primaryContext.getRunningMode(), transactionControl, processState, true, auditLogger,
-                controller.getNotificationSupport(), controller, true, extraValidationStepHandler);
+                controller.getNotificationSupport(), controller, true, extraValidationStepHandler, securityIdentitySupplier);
         this.primaryContext = primaryContext;
         this.runtimeOps = runtimeOps;
         AbstractOperationContext.controllingThread.set(controllingThread);

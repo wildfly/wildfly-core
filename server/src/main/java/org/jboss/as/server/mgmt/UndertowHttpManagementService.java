@@ -32,6 +32,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import javax.net.ssl.SSLContext;
+
 import io.undertow.server.handlers.resource.ResourceManager;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
@@ -57,6 +59,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.common.Assert;
 import org.xnio.XnioWorker;
 
@@ -88,7 +91,9 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final InjectedValue<SocketBindingManager> injectedSocketBindingManager = new InjectedValue<SocketBindingManager>();
     private final InjectedValue<Integer> portValue = new InjectedValue<Integer>();
     private final InjectedValue<Integer> securePortValue = new InjectedValue<Integer>();
-    private final InjectedValue<SecurityRealm> securityRealmServiceValue = new InjectedValue<SecurityRealm>();
+    private final InjectedValue<HttpAuthenticationFactory> httpAuthenticationFactoryValue = new InjectedValue<>();
+    private final InjectedValue<SecurityRealm> securityRealmValue = new InjectedValue<SecurityRealm>();
+    private final InjectedValue<SSLContext> sslContextValue = new InjectedValue<>();
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
     private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
     private final InjectedValue<Collection<String>> allowedOriginsValue = new InjectedValue<Collection<String>>();
@@ -183,6 +188,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             return binding;
         }
 
+        @Override
         public boolean hasConsole() {
             return consoleMode.hasConsole();
         }
@@ -199,12 +205,18 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      * @param context The start context
      * @throws StartException If any errors occur
      */
+    @Override
     public synchronized void start(StartContext context) throws StartException {
         final ModelController modelController = modelControllerValue.getValue();
         final ControlledProcessStateService controlledProcessStateService = controlledProcessStateServiceValue.getValue();
         socketBindingManager = injectedSocketBindingManager.getOptionalValue();
 
-        final SecurityRealm securityRealmService = securityRealmServiceValue.getOptionalValue();
+        final SecurityRealm securityRealm = securityRealmValue.getOptionalValue();
+        final HttpAuthenticationFactory httpAuthenticationFactory = httpAuthenticationFactoryValue.getOptionalValue();
+        SSLContext sslContext = sslContextValue.getOptionalValue();
+        if (sslContext == null && securityRealm != null) {
+            sslContext = securityRealm.getSSLContext();
+        }
 
         InetSocketAddress bindAddress = null;
         InetSocketAddress secureBindAddress = null;
@@ -262,10 +274,22 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         final ManagementHttpRequestProcessor requestProcessor = requestProcessorValue.getValue();
 
         try {
-
-            serverManagement = ManagementHttpServer.create(bindAddress, secureBindAddress, 50, modelController,
-                    securityRealmService, controlledProcessStateService, consoleMode, consoleSlot, upgradeHandler,
-                    requestProcessor, allowedOriginsValue.getOptionalValue(), worker.getValue(), managementExecutor.getValue());
+            serverManagement = ManagementHttpServer.builder()
+                    .setBindAddress(bindAddress)
+                    .setSecureBindAddress(secureBindAddress)
+                    .setModelController(modelController)
+                    .setSecurityRealm(securityRealm)
+                    .setSSLContext(sslContext)
+                    .setHttpAuthenticationFactory(httpAuthenticationFactory)
+                    .setControlledProcessStateService(controlledProcessStateService)
+                    .setConsoleMode(consoleMode)
+                    .setConsoleSlot(consoleSlot)
+                    .setChannelUpgradeHandler(upgradeHandler)
+                    .setManagementHttpRequestProcessor(requestProcessor)
+                    .setAllowedOrigins(allowedOriginsValue.getOptionalValue())
+                    .setWorker(worker.getValue())
+                    .setExecutor(managementExecutor.getValue())
+                    .build();
 
             serverManagement.start();
 
@@ -313,6 +337,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      *
      * @param context The stop context
      */
+    @Override
     public synchronized void stop(StopContext context) {
         ListenerRegistry lr = listenerRegistry.getOptionalValue();
         if(lr != null) {
@@ -346,6 +371,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public HttpManagement getValue() throws IllegalStateException {
         return httpManagement;
     }
@@ -413,7 +439,26 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      * @return the securityRealmServiceValue
      */
     public InjectedValue<SecurityRealm> getSecurityRealmInjector() {
-        return securityRealmServiceValue;
+        return securityRealmValue;
+    }
+
+    /**
+     * Get the SSLContext injector.
+     *
+     * @return the SSLContext injector.
+     */
+    public Injector<SSLContext> getSSLContextInjector() {
+        return sslContextValue;
+    }
+
+
+    /**
+     * Get the {@link Injector} for the HTTP authentication factory.
+     *
+     * @return The {@link Injector} for the HTTP authentication factory.
+     */
+    public Injector<HttpAuthenticationFactory> getHttpAuthenticationFactoryInjector() {
+        return httpAuthenticationFactoryValue;
     }
 
     /**

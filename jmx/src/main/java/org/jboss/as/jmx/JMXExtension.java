@@ -33,6 +33,7 @@ import static org.jboss.as.jmx.CommonAttributes.REMOTING_CONNECTOR;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -58,6 +59,7 @@ import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Domain extension used to initialize the JMX subsystem.
@@ -103,11 +105,14 @@ public class JMXExtension implements Extension {
         //This is ugly but for now we don't want to make the authorizer easily available to all extensions
         @SuppressWarnings("deprecation")
         JmxAuthorizer authorizer = ((ExtensionContextSupplement)context).getAuthorizer();
-        //This is ugly but for now we don't want to make the authorizer easily available to all extensions
+      //This is ugly but for now we don't want to make the securityIdentitySupplier easily available to all extensions
+        @SuppressWarnings("deprecation")
+        Supplier<SecurityIdentity> securityIdentitySupplier = ((ExtensionContextSupplement)context).getSecurityIdentitySupplier();
+        //This is ugly but for now we don't want to make the hostInfoAccessor easily available to all extensions
         @SuppressWarnings("deprecation")
         RuntimeHostControllerInfoAccessor hostInfoAccessor = ((ExtensionContextSupplement)context).getHostControllerInfoAccessor();
 
-        registration.registerSubsystemModel(JMXSubsystemRootResource.create(auditLogger, authorizer, hostInfoAccessor));
+        registration.registerSubsystemModel(JMXSubsystemRootResource.create(auditLogger, authorizer, securityIdentitySupplier, hostInfoAccessor));
         registration.registerXMLElementWriter(writer);
     }
 

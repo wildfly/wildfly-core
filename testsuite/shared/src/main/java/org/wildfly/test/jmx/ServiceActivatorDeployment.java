@@ -22,18 +22,21 @@
 package org.wildfly.test.jmx;
 
 
+import static java.security.AccessController.doPrivileged;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
+
+import javax.management.MBeanServer;
+import javax.management.ObjectInstance;
 import javax.management.ObjectName;
+
+import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
@@ -92,21 +95,9 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
         try {
             name =  new ObjectName(properties.getProperty(MBEAN_OBJECT_NAME));
             Class mbeanClass = Class.forName(properties.getProperty(MBEAN_CLASS_NAME));
-            mbeanServerValue.getValue().registerMBean(mbeanClass.newInstance(),name);
-        } catch (InstanceAlreadyExistsException e) {
+            registerMBean(mbeanClass.newInstance(),name);
+        } catch (Exception e) {
             throw new StartException(e);
-        } catch (MBeanException e) {
-            throw new StartException(e);
-        } catch (NotCompliantMBeanException e) {
-            throw new StartException(e);
-        } catch (MalformedObjectNameException e) {
-           throw new StartException(e);
-        } catch (ClassNotFoundException e) {
-           throw new StartException(e);
-        } catch (InstantiationException e) {
-           throw new StartException(e);
-        } catch (IllegalAccessException e) {
-           throw new StartException(e);
         }
     }
 
@@ -114,10 +105,8 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
     public void stop(StopContext context) {
         if(name != null) {
             try {
-                mbeanServerValue.getValue().unregisterMBean(name);
-            } catch (InstanceNotFoundException ex) {
-                Logger.getLogger(ServiceActivatorDeployment.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (MBeanRegistrationException ex) {
+                unregisterMBean(name);
+            } catch (Exception ex) {
                 Logger.getLogger(ServiceActivatorDeployment.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
@@ -126,5 +115,75 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
     @Override
     public Void getValue() throws IllegalStateException, IllegalArgumentException {
         return null;
+    }
+
+    private ObjectInstance registerMBean(Object mbean, ObjectName name) throws Exception {
+        return inVmActions().registerMBean(mbeanServerValue.getValue(), mbean, name);
+    }
+
+    private void unregisterMBean(ObjectName name) throws Exception {
+        inVmActions().unregisterMBean(mbeanServerValue.getValue(), name);
+    }
+
+    private static InVmActions inVmActions() {
+        return System.getSecurityManager() != null ? InVmActions.PRIVILEGED : InVmActions.NON_PRIVILEGED;
+    }
+
+    private interface InVmActions {
+
+        ObjectInstance registerMBean(MBeanServer mbeanServer, Object mbean, ObjectName name) throws Exception;
+
+        void unregisterMBean(MBeanServer mbeanServer, ObjectName name) throws Exception;
+
+        InVmActions NON_PRIVILEGED = new InVmActions() {
+
+            @Override
+            public ObjectInstance registerMBean(MBeanServer mbeanServer, Object mbean, ObjectName name) throws Exception {
+                try {
+                    return InVmAccess.runInVm((PrivilegedExceptionAction<ObjectInstance>) () -> mbeanServer.registerMBean(mbean, name));
+                } catch (PrivilegedActionException e) {
+                    throw e.getException();
+                }
+            }
+
+            @Override
+            public void unregisterMBean(MBeanServer mbeanServer, ObjectName name) throws Exception {
+                try {
+                    InVmAccess.runInVm((PrivilegedExceptionAction<Void>) () -> {
+                        mbeanServer.unregisterMBean(name);
+                        return null;
+                    });
+                } catch (PrivilegedActionException e) {
+                    throw e.getException();
+                }
+            }
+        };
+
+
+        InVmActions PRIVILEGED = new InVmActions() {
+
+            @Override
+            public ObjectInstance registerMBean(MBeanServer mbeanServer, Object mbean, ObjectName name) throws Exception {
+                try {
+                    return doPrivileged((PrivilegedExceptionAction<ObjectInstance>) () -> NON_PRIVILEGED.registerMBean(mbeanServer, mbean, name));
+                } catch (PrivilegedActionException e) {
+                    throw e.getException();
+                }
+            }
+
+            @Override
+            public void unregisterMBean(MBeanServer mbeanServer, ObjectName name) throws Exception {
+                try {
+                    doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+                        NON_PRIVILEGED.unregisterMBean(mbeanServer, name);
+                        return null;
+                    });
+                } catch (PrivilegedActionException e) {
+                    throw e.getException();
+                }
+            }
+        };
+
+
     }
 }

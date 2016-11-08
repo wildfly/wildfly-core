@@ -22,6 +22,8 @@
 
 package org.jboss.as.jmx;
 
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -29,6 +31,7 @@ import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Removes the remoting subsystem
@@ -39,12 +42,14 @@ public class JMXSubsystemRemove extends AbstractRemoveStepHandler {
 
     private final ManagedAuditLogger auditLoggerInfo;
     private final JmxAuthorizer authorizer;
+    private final Supplier<SecurityIdentity> securityIdentitySupplier;
     private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-    JMXSubsystemRemove(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
+    JMXSubsystemRemove(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
         super(JMXSubsystemRootResource.JMX_CAPABILITY);
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
+        this.securityIdentitySupplier = securityIdentitySupplier;
         this.hostInfoAccessor = hostInfoAccessor;
     }
 
@@ -59,7 +64,7 @@ public class JMXSubsystemRemove extends AbstractRemoveStepHandler {
 
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         if (isRemoveService(context)) {
-            JMXSubsystemAdd.launchServices(context, model, auditLoggerInfo, authorizer, hostInfoAccessor);
+            JMXSubsystemAdd.launchServices(context, model, auditLoggerInfo, authorizer, securityIdentitySupplier, hostInfoAccessor);
         } else {
             context.revertReloadRequired();
         }

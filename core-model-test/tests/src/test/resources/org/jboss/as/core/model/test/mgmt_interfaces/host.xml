@@ -13,11 +13,11 @@
         </security-realms>
 
         <management-interfaces>
-            <native-interface security-realm="ManagementRealm" sasl-protocol="myProtocol" server-name="myServer">
+            <native-interface sasl-authentication-factory="management-sasl">
                 <socket interface="management" port="${jboss.management.native.port:9999}"/>
             </native-interface>
-            <http-interface security-realm="ManagementRealm" sasl-protocol="myProtocol" server-name="myServer" allowed-origins="http://www.example.com http://localhost">
-                <http-upgrade enabled="true" />
+            <http-interface http-authentication-factory="management-http" allowed-origins="http://www.example.com http://localhost">
+                <http-upgrade enabled="true" sasl-authentication-factory="management-sasl" />
                 <socket interface="management" port="${jboss.management.http.port:9990}"/>
             </http-interface>
         </management-interfaces>

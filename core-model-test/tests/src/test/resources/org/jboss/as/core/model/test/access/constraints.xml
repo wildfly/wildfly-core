@@ -27,6 +27,12 @@
                   <group name="GroupFour" />
                </exclude>
             </role>
+            <!-- TODO Elytron A Supercalifragilisticexpialidocious hack until we have in-vm permissions sorted. -->
+            <role name="SuperUser" >
+                <include>
+                    <user name="anonymous" />
+                </include>
+            </role>
          </role-mapping>
 
          <constraints>

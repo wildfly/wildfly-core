@@ -26,10 +26,13 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECU
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 import javax.naming.NamingException;
 import javax.security.auth.Subject;
@@ -46,6 +49,14 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.auth.server.IdentityLocator;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.auth.server.SupportLevel;
+import org.wildfly.security.authz.AuthorizationIdentity;
+import org.wildfly.security.authz.MapAttributes;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.evidence.Evidence;
 
 /**
  * A {@link SubjectSupplemental} for loading a users groups from LDAP.
@@ -127,25 +138,46 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
         return new LdapSubjectSupplemental(sharedState);
     }
 
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        return new SecurityRealmImpl();
+    }
+
     /*
      * SubjectSupplementalMethods
      */
 
-    public class LdapSubjectSupplemental implements SubjectSupplemental {
+    class LdapSubjectSupplemental implements SubjectSupplemental {
+
+        private final LdapGroupSearcher ldapGroupSearcher;
+
+        protected LdapSubjectSupplemental(final Map<String, Object> sharedState) {
+            this.ldapGroupSearcher = new LdapGroupSearcher(sharedState);
+        }
+
+        @Override
+        public void supplementSubject(Subject subject) throws IOException {
+            Set<RealmUser> users = subject.getPrincipals(RealmUser.class);
+            Set<Principal> principals = subject.getPrincipals();
+
+            principals.addAll(ldapGroupSearcher.loadGroups(users.stream().map(RealmUser::getName).collect(Collectors.toSet()))
+                    .stream().map(s -> new RealmGroup(realmName, s)).collect(Collectors.toSet()));
+
+        }
+
+    }
+
+    private class LdapGroupSearcher {
 
         private final Set<LdapEntry> searchedPerformed = new HashSet<LdapEntry>();
         private final Map<String, Object> sharedState;
 
-        protected LdapSubjectSupplemental(final Map<String, Object> sharedState) {
+        protected LdapGroupSearcher(final Map<String, Object> sharedState) {
             this.sharedState = sharedState;
         }
 
-        /**
-         * @see org.jboss.as.domain.management.security.SubjectSupplemental#supplementSubject(javax.security.auth.Subject)
-         */
-        public void supplementSubject(Subject subject) throws IOException {
-            Set<RealmUser> users = subject.getPrincipals(RealmUser.class);
-            Set<Principal> principals = subject.getPrincipals();
+        Set<String> loadGroups(Set<String> users) throws IOException {
+            Set<String> groups = new HashSet<>();
 
             final LdapConnectionHandler connectionHandler;
             if (sharedState.containsKey(LdapConnectionHandler.class.getName())) {
@@ -158,11 +190,12 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
             try {
                 // In general we expect exactly one RealmUser, however we could cope with multiple
                 // identities so load the groups for them all.
-                for (RealmUser current : users) {
+                for (String current : users) {
                     SECURITY_LOGGER.tracef("Loading groups for '%s'", current);
-                    principals.addAll(loadGroups(current, connectionHandler));
+                    groups.addAll(loadGroups(current, connectionHandler));
                 }
 
+                return groups;
             } catch (Exception e) {
                 SECURITY_LOGGER.trace("Failure supplementing Subject", e);
                 if (e instanceof IOException) {
@@ -174,29 +207,29 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
             }
         }
 
-        private Set<RealmGroup> loadGroups(RealmUser user, LdapConnectionHandler connectionHandler) throws IOException, NamingException {
+        private Set<String> loadGroups(String user, LdapConnectionHandler connectionHandler) throws IOException, NamingException {
             LdapEntry entry = null;
             if (forceUserDnSearch == false && sharedState.containsKey(LdapEntry.class.getName())) {
                 entry = (LdapEntry) sharedState.get(LdapEntry.class.getName());
                 SECURITY_LOGGER.tracef("Loaded from sharedState '%s'", entry);
             }
-            if (entry == null || user.getName().equals(entry.getSimpleName())==false) {
-                entry = userSearcher.search(connectionHandler, user.getName()).getResult();
+            if (entry == null || user.equals(entry.getSimpleName())==false) {
+                entry = userSearcher.search(connectionHandler, user).getResult();
                 SECURITY_LOGGER.tracef("Performed userSearch '%s'", entry);
             }
 
             return loadGroups(entry, connectionHandler);
         }
 
-        private Set<RealmGroup> loadGroups(LdapEntry entry, LdapConnectionHandler connectionHandler) throws IOException, NamingException {
-            Set<RealmGroup> realmGroups = new HashSet<RealmGroup>();
+        private Set<String> loadGroups(LdapEntry entry, LdapConnectionHandler connectionHandler) throws IOException, NamingException {
+            Set<String> realmGroups = new HashSet<>();
 
             Stack<LdapEntry[]> entries = new Stack<LdapEntry[]>();
             entries.push(loadGroupEntries(entry, connectionHandler));
             while (entries.isEmpty() == false) {
                 LdapEntry[] found = entries.pop();
                 for (LdapEntry current : found) {
-                    RealmGroup group = new RealmGroup(realmName, groupName == GroupName.SIMPLE ? current.getSimpleName() : current.getDistinguishedName());
+                    String group = groupName == GroupName.SIMPLE ? current.getSimpleName() : current.getDistinguishedName();
                     SECURITY_LOGGER.tracef("Adding RealmGroup '%s'", group);
                     realmGroups.add(group);
                     if (iterative) {
@@ -218,6 +251,93 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
             return groupSearcher.search(connectionHandler, entry).getResult();
         }
 
+    }
+
+    private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
+
+        @Override
+        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+            if (! locator.hasName()) return RealmIdentity.NON_EXISTENT;
+
+            return new RealmIdentityImpl(locator.getName(), SecurityRealmService.SharedStateSecurityRealm.getSharedState());
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        @Override
+        public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        private class RealmIdentityImpl implements RealmIdentity {
+
+            private final LdapGroupSearcher ldapGroupSearcher;
+            private final String name;
+            private Set<String> groups;
+
+            public RealmIdentityImpl(final String name, final Map<String, Object> sharedState) {
+                ldapGroupSearcher = new LdapGroupSearcher(sharedState != null ? sharedState : new HashMap<>());
+                this.name = name;
+            }
+
+            @Override
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            @Override
+            public <C extends Credential> C getCredential(Class<C> credentialType) throws RealmUnavailableException {
+                return null;
+            }
+
+            @Override
+            public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getEvidenceVerifySupport(evidenceType, algorithmName);
+            }
+
+            @Override
+            public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
+                return false;
+            }
+
+            @Override
+            public boolean exists() throws RealmUnavailableException {
+                Set<String> groups = getGroups();
+                return groups != null && groups.size() > 0;
+            }
+
+            @Override
+            public AuthorizationIdentity getAuthorizationIdentity() throws RealmUnavailableException {
+                Set<String> groups = getGroups();
+                if (groups != null && groups.size() > 0) {
+                    Map<String, Set<String>> groupsAttributeMap = new HashMap<String, Set<String>>();
+                    groupsAttributeMap.put("GROUPS",Collections.unmodifiableSet(groups));
+
+                    return AuthorizationIdentity.basicIdentity(new MapAttributes(Collections.unmodifiableMap(groupsAttributeMap)));
+                } else {
+                    SECURITY_LOGGER.tracef("No groups found for identity '%s' in LDAP file.", name);
+                    return AuthorizationIdentity.EMPTY;
+                }
+            }
+
+            private synchronized Set<String> getGroups() throws RealmUnavailableException {
+                if (groups == null) {
+                    try {
+                        groups = ldapGroupSearcher.loadGroups(Collections.singleton(name));
+                    } catch (IOException e) {
+                        throw new RealmUnavailableException(e);
+                    }
+                }
+
+                return groups;
+            }
+
+        }
     }
 
     public static final class ServiceUtil {

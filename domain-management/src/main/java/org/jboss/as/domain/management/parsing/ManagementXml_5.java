@@ -37,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_SCOPED_ROLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_SCOPED_ROLES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IDENTITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP_CONNECTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
@@ -104,6 +105,7 @@ import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
+import org.jboss.as.domain.management.access.AccessIdentityResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionPropertyResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition;
 import org.jboss.as.domain.management.security.AbstractPlugInAuthResourceDefinition;
@@ -134,7 +136,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
-
 
 /**
  * Bits of parsing and marshaling logic that are related to {@code <management>} elements in domain.xml, host.xml and
@@ -211,6 +212,10 @@ class ManagementXml_5 extends ManagementXml {
                     }
                     break;
                 }
+                case IDENTITY: {
+                    parseIdentity(reader, managementAddress, list);
+                    break;
+                }
                 case CONFIGURATION_CHANGES: {
                     parseConfigurationChanges(reader, managementAddress, list);
                     break;
@@ -253,6 +258,40 @@ class ManagementXml_5 extends ManagementXml {
         if(reader.hasNext() && reader.nextTag() != END_ELEMENT) {
              throw unexpectedElement(reader);
         }
+    }
+
+    private void parseIdentity(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+        PathAddress operationAddress = PathAddress.pathAddress(address);
+        operationAddress = operationAddress.append(AccessIdentityResourceDefinition.PATH_ELEMENT);
+        final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(operationAddress));
+        final int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            final String value = reader.getAttributeValue(i);
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case SECURITY_DOMAIN: {
+                        AccessIdentityResourceDefinition.SECURITY_DOMAIN.parseAndSetParameter(value, add, reader);
+                        break;
+                    }
+                    case INFLOW_SECURITY_DOMAINS: {
+                        for (String inflowDomain : reader.getListAttributeValue(i)) {
+                            AccessIdentityResourceDefinition.INFLOW_SECURITY_DOMAINS.parseAndAddParameterElement(inflowDomain, add, reader);
+                        }
+                        break;
+                    }
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
+                }
+            }
+        }
+        list.add(add);
+        if(reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            throw unexpectedElement(reader);
+       }
     }
 
     private void parseOutboundConnections(final XMLExtendedStreamReader reader, final ModelNode address,
@@ -1881,16 +1920,24 @@ class ManagementXml_5 extends ManagementXml {
         boolean hasProvider = accessAuthorizationDefined && accessAuthorization.hasDefined(AccessAuthorizationResourceDefinition.PROVIDER.getName());
         boolean hasCombinationPolicy = accessAuthorizationDefined && accessAuthorization.hasDefined(AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName());
         ModelNode auditLog = management.hasDefined(ACCESS) ? management.get(ACCESS, AUDIT) : new ModelNode();
+        ModelNode identity = management.hasDefined(ACCESS) ? management.get(ACCESS, IDENTITY) : new ModelNode();
 
         if (!hasSecurityRealm && !hasConnection && !hasInterface && !hasServerGroupRoles
               && !hasHostRoles && !hasRoleMapping && configuredAccessConstraints.size() == 0
-                && !hasProvider && !hasCombinationPolicy && !auditLog.isDefined()) {
+                && !hasProvider && !hasCombinationPolicy && !auditLog.isDefined() && !identity.isDefined()) {
             return;
         }
 
         writer.writeStartElement(Element.MANAGEMENT.getLocalName());
+
+
+
         if(hasConfigurationChanges) {
             writeConfigurationChanges(writer, management.get(ModelDescriptionConstants.SERVICE, ModelDescriptionConstants.CONFIGURATION_CHANGES));
+        }
+
+        if (identity.isDefined()) {
+            writeIdentity(writer, identity);
         }
 
         if (hasSecurityRealm) {
@@ -1917,6 +1964,13 @@ class ManagementXml_5 extends ManagementXml {
             }
         }
 
+        writer.writeEndElement();
+    }
+
+    private void writeIdentity(XMLExtendedStreamWriter writer, ModelNode identity) throws XMLStreamException {
+        writer.writeStartElement(Element.IDENTITY.getLocalName());
+        AccessIdentityResourceDefinition.SECURITY_DOMAIN.marshallAsAttribute(identity, writer);
+        AccessIdentityResourceDefinition.INFLOW_SECURITY_DOMAINS.getAttributeMarshaller().marshallAsAttribute(AccessIdentityResourceDefinition.INFLOW_SECURITY_DOMAINS, identity, false, writer);
         writer.writeEndElement();
     }
 

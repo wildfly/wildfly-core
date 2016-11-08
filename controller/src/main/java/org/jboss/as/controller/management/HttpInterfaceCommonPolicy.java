@@ -34,6 +34,27 @@ import org.xnio.OptionMap;
 public interface HttpInterfaceCommonPolicy {
 
     /**
+     * Get the name of the HTTP authentication factory to use to secure the interface for normal HTTP requests.
+     *
+     * @return The name of the SASL authentication factory to use to secure the interface for normal HTTP requests.
+     */
+    String getHttpAuthenticationFactory();
+
+    /**
+     * Get the name of the SSLContext to use to enable SSL for this management interface.
+     *
+     * @return the name of the SSLContext to use to enable SSL for this management interface.
+     */
+    String getSSLContext();
+
+    /**
+     * Get the name of the SASL authentication factory to use to secure the interface where HTTP upgrade is used.
+     *
+     * @return The name of the SASL authentication factory to use to secure the interface where HTTP upgrade is used.
+     */
+    String getSaslAuthenticationFactory();
+
+    /**
      * Get the name of the security realm to secure the HTTP interface, or {@code null} if one has not been defined.
      *
      * @return Get the name of the security realm to secure the HTTP interface.
