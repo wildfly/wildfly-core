@@ -42,6 +42,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -50,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Tests of running domain hosts in admin-only move.
  */
+@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class AdminOnlyModeTestCase {
 
     private static DomainTestSupport testSupport;

@@ -85,11 +85,13 @@ import org.jboss.dmr.Property;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * @author Emanuel Muckenhuber
  */
+@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class ServerManagementTestCase {
 
     private static DomainTestSupport testSupport;

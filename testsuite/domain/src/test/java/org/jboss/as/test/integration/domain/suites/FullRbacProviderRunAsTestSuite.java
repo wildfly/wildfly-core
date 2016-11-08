@@ -22,6 +22,8 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+import java.security.Security;
+
 import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
@@ -32,6 +34,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
+import org.wildfly.security.WildFlyElytronProvider;
 
 /**
  * Simple {@code Suite} test wrapper to start the domain only once for multiple
@@ -67,6 +70,7 @@ public class FullRbacProviderRunAsTestSuite {
 
     private static synchronized void start(final String name) {
         try {
+            if (true) return; // [WFCORE-1958] Clean up testsuite Elytron registration.
             support = createAndStartDefaultSupport(name);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -83,6 +87,7 @@ public class FullRbacProviderRunAsTestSuite {
     @BeforeClass
     public static synchronized void beforeClass() {
         initializedLocally = true;
+        Security.addProvider(new WildFlyElytronProvider());
         start(FullRbacProviderRunAsTestSuite.class.getSimpleName());
     }
 

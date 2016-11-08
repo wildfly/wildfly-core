@@ -28,6 +28,7 @@ import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,6 +44,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Marek Kopecky <mkopecky@redhat.com>
  */
+@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class HierarchicalCompositionTestCase extends AbstractCliTestBase {
 
     private static Logger log = Logger.getLogger(HierarchicalCompositionTestCase.class);
