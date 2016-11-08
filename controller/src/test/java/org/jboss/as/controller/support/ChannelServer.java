@@ -30,17 +30,19 @@ import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.OpenListener;
 import org.jboss.remoting3.Registration;
-import org.jboss.remoting3.Remoting;
 import org.jboss.remoting3.ServiceRegistrationException;
-import org.jboss.remoting3.remote.RemoteConnectionProviderFactory;
-import org.jboss.remoting3.security.SimpleServerAuthenticationProvider;
 import org.jboss.remoting3.spi.NetworkServerProvider;
+import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
+import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.password.interfaces.ClearPassword;
+import org.wildfly.security.permission.PermissionVerifier;
+import org.wildfly.security.sasl.util.SaslFactories;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
-import org.xnio.Options;
-import org.xnio.Sequence;
+import org.xnio.StreamConnection;
 import org.xnio.channels.AcceptingChannel;
-import org.xnio.channels.ConnectedStreamChannel;
 
 /**
  *
@@ -49,14 +51,12 @@ import org.xnio.channels.ConnectedStreamChannel;
  */
 public class ChannelServer implements Closeable {
     private final Endpoint endpoint;
-    private final Registration registration;
-    private final AcceptingChannel<? extends ConnectedStreamChannel> streamServer;
+    private Registration registration;
+    private final AcceptingChannel<StreamConnection> streamServer;
 
     private ChannelServer(final Endpoint endpoint,
-            final Registration registration,
-            final AcceptingChannel<? extends ConnectedStreamChannel> streamServer) {
+        final AcceptingChannel<StreamConnection> streamServer) {
         this.endpoint = endpoint;
-        this.registration = registration;
         this.streamServer = streamServer;
     }
 
@@ -66,18 +66,32 @@ public class ChannelServer implements Closeable {
         }
         configuration.validate();
 
-        final Endpoint endpoint = Remoting.createEndpoint(configuration.getEndpointName(), configuration.getOptionMap());
-
-        Registration registration = endpoint.addConnectionProvider(configuration.getUriScheme(), new RemoteConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE));
+        final Endpoint endpoint = Endpoint.getCurrent();
 
         final NetworkServerProvider networkServerProvider = endpoint.getConnectionProviderInterface(configuration.getUriScheme(), NetworkServerProvider.class);
-        SimpleServerAuthenticationProvider provider = new SimpleServerAuthenticationProvider();
-        //There is currently a probable bug in jboss remoting, so the user realm name MUST be the same as
-        //the endpoint name.
-        provider.addUser("bob", configuration.getEndpointName(), "pass".toCharArray());
-        AcceptingChannel<? extends ConnectedStreamChannel> streamServer = networkServerProvider.createServer(configuration.getBindAddress(), OptionMap.create(Options.SASL_MECHANISMS, Sequence.of("CRAM-MD5")), provider, null);
+        final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
+        final SimpleMapBackedSecurityRealm realm = new SimpleMapBackedSecurityRealm();
+        realm.setPasswordMap("bob", ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR, "pass".toCharArray()));
+        domainBuilder.addRealm("default", realm).build();
+        domainBuilder.setDefaultRealmName("default");
+        domainBuilder.setPermissionMapper((permissionMappable, roles) -> PermissionVerifier.ALL);
+        SecurityDomain testDomain = domainBuilder.build();
+        SaslAuthenticationFactory saslAuthenticationFactory = SaslAuthenticationFactory.builder()
+            .setSecurityDomain(testDomain)
+            .setMechanismConfigurationSelector(mechanismInformation -> {
+                switch (mechanismInformation.getMechanismName()) {
+                    case "ANONYMOUS":
+                    case "PLAIN": {
+                        return MechanismConfiguration.EMPTY;
+                    }
+                    default: return null;
+                }
+            })
+            .setFactory(SaslFactories.getElytronSaslServerFactory())
+            .build();
+        AcceptingChannel<StreamConnection> streamServer = networkServerProvider.createServer(configuration.getBindAddress(), OptionMap.EMPTY, saslAuthenticationFactory, null);
 
-        return new ChannelServer(endpoint, registration, streamServer);
+        return new ChannelServer(endpoint, streamServer);
     }
 
     public Endpoint getEndpoint() {
@@ -89,7 +103,7 @@ public class ChannelServer implements Closeable {
     }
 
     public void addChannelOpenListener(final String channelName, final OpenListener openListener) throws ServiceRegistrationException {
-        endpoint.registerService(channelName, new OpenListener() {
+        registration = endpoint.registerService(channelName, new OpenListener() {
             public void channelOpened(final Channel channel) {
                 if (openListener != null) {
                     openListener.channelOpened(channel);
@@ -108,7 +122,7 @@ public class ChannelServer implements Closeable {
     public void close() {
         IoUtils.safeClose(streamServer);
         IoUtils.safeClose(registration);
-        IoUtils.safeClose(endpoint);
+//        IoUtils.safeClose(endpoint);
     }
 
     public static final class Configuration {

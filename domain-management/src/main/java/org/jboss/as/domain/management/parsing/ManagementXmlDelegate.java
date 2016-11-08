@@ -95,11 +95,9 @@ public interface ManagementXmlDelegate {
 
     /**
      * Parse {@link Element#ACCESS_CONTROL} content.
-     * <p>This default implementation throws {@code UnsupportedOperationException}; override to support.</p>
      *
      * @param reader the xml reader
      * @param address the address of the parent resource for any added resources
-     * @param expectedNs the expected namespace for any children
      * @param operationsList list to which any operations should be added
      * @throws XMLStreamException
      */

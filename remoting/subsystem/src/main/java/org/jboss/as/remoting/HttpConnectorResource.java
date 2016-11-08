@@ -21,6 +21,7 @@
  */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
 import static org.jboss.as.remoting.ConnectorCommon.SASL_PROTOCOL;
 import static org.jboss.as.remoting.ConnectorCommon.SERVER_NAME;
@@ -32,6 +33,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelType;
@@ -40,6 +42,11 @@ import org.jboss.dmr.ModelType;
  * @author Stuart Douglas
  */
 public class HttpConnectorResource extends SimpleResourceDefinition {
+
+    private static final String HTTP_CONNECTOR_CAPABILITY_NAME = "org.wildfly.remoting.http-connector";
+    static final RuntimeCapability<Void> HTTP_CONNECTOR_CAPABILITY =
+            RuntimeCapability.Builder.of(HTTP_CONNECTOR_CAPABILITY_NAME, true)
+                    .build();
 
     static final PathElement PATH = PathElement.pathElement(CommonAttributes.HTTP_CONNECTOR);
 
@@ -59,21 +66,28 @@ public class HttpConnectorResource extends SimpleResourceDefinition {
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
             .build();
 
+    static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ConnectorCommon.SASL_AUTHENTICATION_FACTORY)
+            .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, HTTP_CONNECTOR_CAPABILITY)
+            .build();
+
     static final HttpConnectorResource INSTANCE = new HttpConnectorResource();
 
     private HttpConnectorResource() {
-        super(PATH, RemotingExtension.getResourceDescriptionResolver(HTTP_CONNECTOR),
-                HttpConnectorAdd.INSTANCE, HttpConnectorRemove.INSTANCE);
+        super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(HTTP_CONNECTOR))
+                .setAddHandler(HttpConnectorAdd.INSTANCE)
+                .setRemoveHandler(HttpConnectorRemove.INSTANCE)
+                .setCapabilities(HTTP_CONNECTOR_CAPABILITY));
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(AUTHENTICATION_PROVIDER,
-                CONNECTOR_REF, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL);
+                CONNECTOR_REF, SECURITY_REALM, SERVER_NAME, SASL_AUTHENTICATION_FACTORY, SASL_PROTOCOL);
         resourceRegistration.registerReadWriteAttribute(AUTHENTICATION_PROVIDER, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(CONNECTOR_REF, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SECURITY_REALM, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SERVER_NAME, null, writeHandler);
+        resourceRegistration.registerReadWriteAttribute(SASL_AUTHENTICATION_FACTORY, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SASL_PROTOCOL, null, writeHandler);
     }
 }

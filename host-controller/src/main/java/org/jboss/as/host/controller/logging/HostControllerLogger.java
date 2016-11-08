@@ -207,7 +207,7 @@ public interface HostControllerLogger extends BasicLogger {
      */
     @LogMessage(level = Level.WARN)
     @Message(id = 13, value = "No security realm defined for http management service, all access will be unrestricted.")
-    void noSecurityRealmDefined();
+    void httpManagementInterfaceIsUnsecured();
 
     /**
      * Logs an error message indicating no server with the server name is available.

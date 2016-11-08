@@ -22,20 +22,13 @@
 
 package org.jboss.as.domain.http.server.security;
 
-import java.io.IOException;
-import java.security.cert.X509Certificate;
+import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
+import java.io.IOException;
+import java.util.function.Function;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-
-import io.undertow.server.SSLSessionInfo;
-import io.undertow.server.RenegotiationRequiredException;
-import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.SecurityRealm;
-
-import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 
 /**
  * Filter to redirect to the error context while the security realm is not ready.
@@ -44,17 +37,17 @@ import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGG
  */
 abstract class RealmReadinessHandler implements HttpHandler {
 
-    private final SecurityRealm securityRealm;
+    private final Function<HttpServerExchange, Boolean> readyFunction;
     private final HttpHandler next;
 
-    RealmReadinessHandler(final SecurityRealm securityRealm, final HttpHandler next) {
-        this.securityRealm = securityRealm;
+    RealmReadinessHandler(final Function<HttpServerExchange, Boolean> readyFunction, final HttpHandler next) {
+        this.readyFunction = readyFunction;
         this.next = next;
     }
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        if (securityRealm == null || securityRealm.isReadyForHttpChallenge() || clientCertPotentiallyPossible(exchange)) {
+        if (readyFunction.apply(exchange)) {
             next.handleRequest(exchange);
         } else {
             try {
@@ -65,23 +58,6 @@ abstract class RealmReadinessHandler implements HttpHandler {
                 exchange.endExchange();
             }
         }
-    }
-
-    private boolean clientCertPotentiallyPossible(final HttpServerExchange exchange) {
-        if (securityRealm.getSupportedAuthenticationMechanisms().contains(AuthMechanism.CLIENT_CERT) == false) {
-            return false;
-        }
-
-        SSLSessionInfo session = exchange.getConnection().getSslSessionInfo();
-        if (session != null) {
-            try {
-                //todo: renegotiation?
-                return session.getPeerCertificates()[0] instanceof X509Certificate;
-            } catch (SSLPeerUnverifiedException | RenegotiationRequiredException e) {
-            }
-        }
-
-        return false;
     }
 
     /**

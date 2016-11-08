@@ -51,7 +51,8 @@ import org.jboss.as.domain.management.security.operations.OutboundConnectionAddB
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
 
 /**
  * A base class for all LDAP test to allow the server to be initialised if
@@ -97,11 +98,11 @@ public abstract class BaseLdapSuiteTest extends SecurityRealmTestBase {
 
         NameCallback ncb = new NameCallback("Username", userName);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(password);
+        EvidenceVerifyCallback ecb = new EvidenceVerifyCallback(new PasswordGuessEvidence(password.toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, ecb });
 
-        assertTrue("Password verified", vpc.isVerified());
+        assertTrue("Password verified", ecb.isVerified());
 
         Principal user = new SimplePrincipal(userName);
         Collection<Principal> principals = Collections.singleton(user);

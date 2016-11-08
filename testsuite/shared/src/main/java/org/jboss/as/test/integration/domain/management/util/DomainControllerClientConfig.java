@@ -39,12 +39,8 @@ import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.remoting3.Endpoint;
-import org.jboss.remoting3.Remoting;
-import org.jboss.remoting3.remote.HttpUpgradeConnectionProviderFactory;
-import org.jboss.remoting3.remote.RemoteConnectionProviderFactory;
 import org.jboss.threads.JBossThreadFactory;
-import org.xnio.OptionMap;
-import org.xnio.Options;
+
 
 /**
  * Shared test configuration where all {@linkplain org.jboss.as.controller.client.ModelControllerClient}s share a common {@linkplain Endpoint} and
@@ -97,7 +93,7 @@ public class DomainControllerClientConfig implements Closeable {
         }
         if(endpoint != null) try {
             endpoint.close();
-        } catch (IOException e) {
+        } catch (IOException | UnsupportedOperationException e) {
             // ignore
         }
         if(destroyExecutor) {
@@ -114,12 +110,8 @@ public class DomainControllerClientConfig implements Closeable {
     }
 
     static DomainControllerClientConfig create(final ExecutorService executorService, boolean destroyExecutor) throws IOException {
-        final Endpoint endpoint = Remoting.createEndpoint(ENDPOINT_NAME, OptionMap.EMPTY);
-        endpoint.addConnectionProvider("remote", new RemoteConnectionProviderFactory(), OptionMap.EMPTY);
-        endpoint.addConnectionProvider("http-remoting", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE));
-        endpoint.addConnectionProvider("remote+http", new HttpUpgradeConnectionProviderFactory(), OptionMap.create(Options.SSL_ENABLED, Boolean.FALSE));
-        endpoint.addConnectionProvider("https-remoting", new HttpUpgradeConnectionProviderFactory(),  OptionMap.create(Options.SSL_ENABLED, Boolean.TRUE));
-        endpoint.addConnectionProvider("remote+https", new HttpUpgradeConnectionProviderFactory(),  OptionMap.create(Options.SSL_ENABLED, Boolean.TRUE));
+        final Endpoint endpoint = Endpoint.builder().setEndpointName(ENDPOINT_NAME).build();
+
         return new DomainControllerClientConfig(endpoint, executorService, destroyExecutor);
     }
 

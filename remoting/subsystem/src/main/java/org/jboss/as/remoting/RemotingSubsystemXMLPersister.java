@@ -146,11 +146,13 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
         writer.writeAttribute(Attribute.NAME.getLocalName(), name);
 
         ConnectorResource.SOCKET_BINDING.marshallAsAttribute(node, writer);
+        ConnectorResource.SSL_CONTEXT.marshallAsAttribute(node, writer);
         if (node.hasDefined(SECURITY_REALM)) {
             writer.writeAttribute(Attribute.SECURITY_REALM.getLocalName(), node.require(SECURITY_REALM).asString());
         }
         ConnectorCommon.SERVER_NAME.marshallAsAttribute(node, writer);
         ConnectorCommon.SASL_PROTOCOL.marshallAsAttribute(node, writer);
+        ConnectorResource.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(node, writer);
         ConnectorResource.AUTHENTICATION_PROVIDER.marshallAsElement(node, writer);
 
         if (node.hasDefined(PROPERTY)) {
@@ -173,6 +175,7 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
         }
         ConnectorCommon.SERVER_NAME.marshallAsAttribute(node, writer);
         ConnectorCommon.SASL_PROTOCOL.marshallAsAttribute(node, writer);
+        HttpConnectorResource.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(node, writer);
         HttpConnectorResource.AUTHENTICATION_PROVIDER.marshallAsElement(node, writer);
 
         if (node.hasDefined(PROPERTY)) {

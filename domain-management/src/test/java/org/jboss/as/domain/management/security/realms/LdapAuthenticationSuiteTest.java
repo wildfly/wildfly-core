@@ -44,10 +44,11 @@ import org.jboss.as.domain.management.connections.ldap.LdapConnectionManager;
 import org.jboss.as.domain.management.security.operations.SecurityRealmAddBuilder;
 import org.jboss.as.domain.management.security.operations.CacheBuilder.By;
 import org.jboss.dmr.ModelNode;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
 
 /**
  * A test case to test authentication against an LDAP server.
@@ -117,11 +118,11 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
 
         NameCallback ncb = new NameCallback("Username", USER_ONE);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(USER_ONE_PASSWORD);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence(USER_ONE_PASSWORD.toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertTrue("Password Verified", vpc.isVerified());
+        assertTrue("Password Verified", evc.isVerified());
     }
 
     @Test
@@ -134,11 +135,11 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
 
         NameCallback ncb = new NameCallback("Username", USER_TWO);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(USER_TWO_PASSWORD);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence(USER_TWO_PASSWORD.toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertTrue("Password Verified", vpc.isVerified());
+        assertTrue("Password Verified", evc.isVerified());
     }
 
     @Test
@@ -147,11 +148,11 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
 
         NameCallback ncb = new NameCallback("Username", USER_ONE);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(USER_TWO_PASSWORD);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence(USER_TWO_PASSWORD.toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertFalse("Password Not Verified", vpc.isVerified());
+        assertFalse("Password Not Verified", evc.isVerified());
     }
 
 
@@ -161,10 +162,10 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
 
         NameCallback ncb = new NameCallback("Username", "UserThree");
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback("three-password");
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence("three-password".toCharArray()));
 
         try {
-            cbh.handle(new Callback[] { ncb, rcb, vpc });
+            cbh.handle(new Callback[] { ncb, rcb, evc });
             fail("Expected exception not thrown");
         } catch (IOException e) {
         }
@@ -176,10 +177,10 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
 
         NameCallback ncb = new NameCallback("Username", USER_ONE);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback("");
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence("".toCharArray()));
 
         try {
-            cbh.handle(new Callback[] { ncb, rcb, vpc });
+            cbh.handle(new Callback[] { ncb, rcb, evc });
             fail("Expected exception not thrown");
         } catch (IOException e) {
         }
@@ -191,10 +192,10 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
 
         NameCallback ncb = new NameCallback("Username", USER_THREE);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(USER_THREE_PASSWORD);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence(USER_THREE_PASSWORD.toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
-        assertFalse("Password Not Verified", vpc.isVerified());
+        cbh.handle(new Callback[] { ncb, rcb, evc });
+        assertFalse("Password Not Verified", evc.isVerified());
     }
 
     /*
@@ -212,11 +213,11 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
 
         NameCallback ncb = new NameCallback("Username", USER_ONE);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(USER_ONE_PASSWORD);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence(USER_ONE_PASSWORD.toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertTrue("Password Verified", vpc.isVerified());
+        assertTrue("Password Verified", evc.isVerified());
     }
 
     @Test
@@ -225,11 +226,11 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
 
         NameCallback ncb = new NameCallback("Username", USER_ONE);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(USER_TWO_PASSWORD);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence(USER_TWO_PASSWORD.toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertFalse("Password Not Verified", vpc.isVerified());
+        assertFalse("Password Not Verified", evc.isVerified());
     }
 
     @Test
@@ -238,10 +239,10 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
 
         NameCallback ncb = new NameCallback("Username", USER_TWO);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(USER_TWO_PASSWORD);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence(USER_TWO_PASSWORD.toCharArray()));
 
         try {
-            cbh.handle(new Callback[] { ncb, rcb, vpc });
+            cbh.handle(new Callback[] { ncb, rcb, evc });
             fail("Expected exception not thrown");
         } catch (IOException e) {
         }

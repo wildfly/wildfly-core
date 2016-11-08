@@ -11,11 +11,11 @@
             </security-realm>
         </security-realms>
         <management-interfaces>
-            <native-interface security-realm="ManagementRealm" sasl-protocol="myProtocol" server-name="myServer">
+            <native-interface sasl-authentication-factory="management-sasl">
                 <socket-binding native="management-native"/>
             </native-interface>
-            <http-interface security-realm="ManagementRealm" sasl-protocol="myProtocol" server-name="myServer" allowed-origins="http://www.example.com http://localhost">
-                <http-upgrade enabled="true" />
+            <http-interface http-authentication-factory="management-http" allowed-origins="http://www.example.com http://localhost">
+                <http-upgrade enabled="true" sasl-authentication-factory="managament-sasl" />
                 <socket-binding http="management-http"/>
             </http-interface>
         </management-interfaces>

@@ -100,6 +100,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -686,6 +687,11 @@ public abstract class AbstractOperationTestCase {
 
         @Override
         public Caller getCaller() {
+            return null;
+        }
+
+        @Override
+        public SecurityIdentity getSecurityIdentity() {
             return null;
         }
 

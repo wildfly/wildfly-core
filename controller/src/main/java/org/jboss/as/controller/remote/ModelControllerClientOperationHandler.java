@@ -44,6 +44,8 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
@@ -53,8 +55,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-
-import javax.security.auth.Subject;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
@@ -75,6 +75,7 @@ import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
 import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
 import org.jboss.as.protocol.mgmt.ProtocolUtils;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Operation handlers for the remote implementation of {@link org.jboss.as.controller.client.ModelControllerClient}
@@ -89,25 +90,25 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
 
     private final ManagementChannelAssociation channelAssociation;
     private final Executor clientRequestExecutor;
-    private final Subject subject;
+    private final SecurityIdentity connectionIdentity;
     private final ResponseAttachmentInputStreamSupport responseAttachmentSupport;
 
     public ModelControllerClientOperationHandler(final ModelController controller,
                                                  final ManagementChannelAssociation channelAssociation,
                                                  final ResponseAttachmentInputStreamSupport responseAttachmentSupport,
                                                  final ExecutorService clientRequestExecutor) {
-        this(controller, channelAssociation, responseAttachmentSupport, clientRequestExecutor, new Subject());
+        this(controller, channelAssociation, responseAttachmentSupport, clientRequestExecutor, null);
     }
 
     public ModelControllerClientOperationHandler(final ModelController controller,
                                                  final ManagementChannelAssociation channelAssociation,
                                                  final ResponseAttachmentInputStreamSupport responseAttachmentSupport,
                                                  final ExecutorService clientRequestExecutor,
-                                                 final Subject subject) {
+                                                 final SecurityIdentity connectionIdentity) {
         this.controller = controller;
         this.channelAssociation = channelAssociation;
         this.responseAttachmentSupport = responseAttachmentSupport;
-        this.subject = subject;
+        this.connectionIdentity = connectionIdentity;
         this.clientRequestExecutor = clientRequestExecutor;
     }
 
@@ -138,6 +139,9 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
         public void handleRequest(final DataInput input, final ActiveOperation.ResultHandler<ModelNode> resultHandler,
                                   final ManagementRequestContext<Void> context) throws IOException {
             ControllerLogger.MGMT_OP_LOGGER.tracef("Handling ExecuteRequest for %d", context.getOperationId());
+            InetSocketAddress peerSocketAddress = channelAssociation.getChannel().getConnection().getPeerAddress(InetSocketAddress.class);
+            final InetAddress remoteAddress = peerSocketAddress != null ? peerSocketAddress.getAddress() : null;
+
             final ModelNode operation = new ModelNode();
             ProtocolUtils.expectHeader(input, ModelControllerProtocol.PARAM_OPERATION);
             operation.readExternal(input);
@@ -150,7 +154,7 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
                     final ManagementResponseHeader response = ManagementResponseHeader.create(context.getRequestHeader());
 
                     try {
-                        AccessAuditContext.doAs(subject, new PrivilegedExceptionAction<Void>() {
+                        AccessAuditContext.doAs(connectionIdentity, remoteAddress, new PrivilegedExceptionAction<Void>() {
                             @Override
                             public Void run() throws Exception {
                                 final CompletedCallback callback = new CompletedCallback(response, context, resultHandler);

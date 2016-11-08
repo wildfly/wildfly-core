@@ -94,4 +94,11 @@ public interface HttpServerLogger extends BasicLogger {
 
     @Message(id = 13, value = "Invalid useStreamIndex value '%d'. The operation response had %d streams attached.")
     String invalidUseStreamAsResponseIndex(int index, int available);
+
+    @Message(id = 14, value = "The ManagementHttpServer has already been built using this Builder.")
+    IllegalStateException managementHttpServerAlreadyBuild();
+
+    @Message(id = 15, value = "No SecurityRealm or SSLContext has been provided.")
+    IllegalStateException noRealmOrSSLContext();
+
 }

@@ -222,9 +222,11 @@ public class ModelDescriptionConstants {
     public static final String HOST_SCOPED_ROLE = "host-scoped-role";
     public static final String HOST_SCOPED_ROLES = "host-scoped-roles";
     public static final String HOST_STATE = "host-state";
+    public static final String HTTP_AUTHENTICATION_FACTORY = "http-authentication-factory";
     public static final String HTTP_UPGRADE = "http-upgrade";
     public static final String HTTP_UPGRADE_ENABLED = "http-upgrade-enabled";
     public static final String HTTP_INTERFACE = "http-interface";
+    public static final String IDENTITY = "identity";
     public static final String IGNORED = "ignored-by-unaffected-host-controller";
     public static final String IGNORED_RESOURCES = "ignored-resources";
     public static final String IGNORED_RESOURCE_TYPE = "ignored-resource-type";
@@ -467,6 +469,7 @@ public class ModelDescriptionConstants {
     public static final String RESTART_SERVERS = "restart-servers";
     public static final String RESUME_SERVERS = "resume-servers";
     public static final String RESUME = "resume";
+    public static final String SASL_AUTHENTICATION_FACTORY = "sasl-authentication-factory";
     public static final String SASL_PROTOCOL = "sasl-protocol";
     public static final String SELECT = "select";
     public static final String SERVER_LOGGER = "server-logger";
@@ -482,6 +485,7 @@ public class ModelDescriptionConstants {
     public static final String SOURCE_INTERFACE = "source-interface";
     public static final String SOURCE_PORT = "source-port";
     public static final String SSL = "ssl";
+    public static final String SSL_CONTEXT = "ssl-context";
     public static final String STANDARD_ROLE_NAMES = "standard-role-names";
     public static final String START = "start";
     public static final String START_SERVERS = "start-servers";

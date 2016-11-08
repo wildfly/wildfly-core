@@ -39,6 +39,8 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityRealm;
 
 /**
  * Special handler that executes subsystem boot operations in parallel.
@@ -348,6 +350,12 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             boolean interrupted = false;
             ParallelBootOperationContext operationContext = null;
             try {
+                // TODO Elytron - We probably need a way to stop repeating this.
+                final SecurityDomain bootSecurityDomain = SecurityDomain.builder()
+                        .setDefaultRealmName("Empty")
+                        .addRealm("Empty", SecurityRealm.EMPTY_REALM).build()
+                        .build();
+
                 if(bootOperations == null || bootOperations.isEmpty()) {
                     transactionControl.operationPrepared(new ModelController.OperationTransaction() {
                         @Override
@@ -358,9 +366,10 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                     }, new ModelNode());
                     return;
                 }
+
                 operationContext = new ParallelBootOperationContext(transactionControl, processState,
                         primaryContext, runtimeOps, controllingThread, controller, lockId, controller.getAuditLogger(),
-                        controller.getManagementModel().getRootResource(), extraValidationStepHandler);
+                        controller.getManagementModel().getRootResource(), extraValidationStepHandler, bootSecurityDomain::getAnonymousSecurityIdentity);
                 for (ParsedBootOp op : bootOperations) {
                     final OperationStepHandler osh = op.handler == null ? rootRegistration.getOperationHandler(op.address, op.operationName) : op.handler;
                     operationContext.addStep(op.response, op.operation, osh, executionStage);

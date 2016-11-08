@@ -1238,6 +1238,14 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 136, value = "Registered OpenSSL provider")
     void registeredOpenSSLProvider();
 
+    // Was WFLYRMT-13
+    @Message(id = 137, value = "Unable to create tmp dir for auth tokens as file already exists.")
+    StartException unableToCreateTempDirForAuthTokensFileExists();
+
+    // Was WFLYRMT-14
+    @Message(id = 138, value = "Unable to create auth dir %s.")
+    StartException unableToCreateAuthDir(String dir);
+
     /**
      * Information message saying the username and password must be different.
      *

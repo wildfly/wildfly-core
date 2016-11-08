@@ -47,6 +47,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -209,7 +210,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
             ExpressionResolver expressionResolver, CapabilityRegistry capabilityRegistry) {
         super(processType, runningModeControl, persister,
                 processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null,
-                expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), capabilityRegistry);
+                expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
@@ -224,7 +225,8 @@ public abstract class ModelTestModelControllerService extends AbstractController
                                               final ResourceDefinition resourceDefinition, ControlledProcessState processState,
                                               final CapabilityRegistry capabilityRegistry) {
         super(processType, runningModeControl, persister,
-         processState == null ? new ControlledProcessState(true) : processState, resourceDefinition, null, ExpressionResolver.TEST_RESOLVER, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), capabilityRegistry);
+         processState == null ? new ControlledProcessState(true) : processState, resourceDefinition, null, ExpressionResolver.TEST_RESOLVER, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(),
+                 new ManagementSecurityIdentitySupplier(), capabilityRegistry);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;

@@ -25,8 +25,10 @@ package org.jboss.as.domain.http.server.security;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
+
+import java.util.function.Function;
+
 import org.jboss.as.domain.http.server.Common;
-import org.jboss.as.domain.management.SecurityRealm;
 
 /**
  * A readiness filter to redirect users to an error page if the realm is not ready to handle authentication requests.
@@ -37,8 +39,8 @@ public class RedirectReadinessHandler extends RealmReadinessHandler {
 
     private final String redirectTo;
 
-    public RedirectReadinessHandler(final SecurityRealm securityRealm, final HttpHandler next, final String redirectTo) {
-        super(securityRealm, next);
+    public RedirectReadinessHandler(final Function<HttpServerExchange, Boolean> readyFunction, final HttpHandler next, final String redirectTo) {
+        super(readyFunction, next);
         this.redirectTo = redirectTo;
     }
 

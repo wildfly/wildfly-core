@@ -57,7 +57,7 @@ public class GenericOutboundConnectionService extends AbstractOutboundConnection
     @Override
     public IoFuture<Connection> connect() throws IOException {
         final Endpoint endpoint = this.endpointInjectedValue.getValue();
-        return endpoint.connect(this.destination, this.connectionCreationOptions, getCallbackHandler());
+        return endpoint.connect(this.destination, null);
     }
 
     @Override

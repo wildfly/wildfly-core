@@ -50,8 +50,8 @@
         <module name="org.jboss.modules"/>
         <module name="org.jboss.msc"/>
         <module name="org.jboss.remoting"/>
-        <module name="org.jboss.sasl"/>
         <module name="org.jboss.threads"/>
+        <module name="org.wildfly.common"/>
         <module name="org.picketbox" optional="true"/>
         <module name="io.undertow.core" optional="true" />
         <module name="org.wildfly.common"/>

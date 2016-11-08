@@ -32,6 +32,7 @@ public class ModelDescriptionConstants {
     public static final String ALIAS = "alias";
     public static final String ALLOWED_USERS = "allowed-users";
     public static final String ASSIGN_GROUPS = "assign-groups";
+    public static final String ATTRIBUTES = "attributes";
     public static final String AUTHENTICATION = "authentication";
     public static final String AUTHORIZATION = "authorization";
     public static final String BY_ACCESS_TIME = "by-access-time";
@@ -52,6 +53,7 @@ public class ModelDescriptionConstants {
     public static final String HANDLES_REFERRALS_FOR = "handles-referrals-for";
     public static final String IDENTITY = "identity";
     public static final String IGNORE = "ignore";
+    public static final String INFLOW_SECURITY_DOMAINS = "inflow-security-domains";
     public static final String INITIAL_CONTEXT_FACTORY = "initial-context-factory";
     public static final String IS_CALLER_IN_ROLE = "is-caller-in-role";
     public static final String JAAS = "jaas";
@@ -82,6 +84,7 @@ public class ModelDescriptionConstants {
     public static final String ROLES = "roles";
     public static final String SEARCH_CREDENTIAL = "search-credential";
     public static final String SEARCH_DN = "search-dn";
+    public static final String SECURITY_DOMAIN = "security-domain";
     public static final String SECURITY_REALM = "security-realm";
     public static final String SKIP_GROUP_LOADING = "skip-group-loading";
     public static final String SUBJECT = "subject";

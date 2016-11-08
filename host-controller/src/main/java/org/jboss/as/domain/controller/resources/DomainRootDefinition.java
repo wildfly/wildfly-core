@@ -50,6 +50,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
@@ -187,6 +188,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
     private final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
     private final PathManagerService pathManager;
     private final DelegatingConfigurableAuthorizer authorizer;
+    private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
     private final HostRegistrations hostRegistrations;
     private final DomainHostExcludeRegistry domainHostExcludeRegistry;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
@@ -200,6 +202,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
             final ExtensionRegistry extensionRegistry, final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
             final PathManagerService pathManager,
             final DelegatingConfigurableAuthorizer authorizer,
+            final ManagementSecurityIdentitySupplier securityIdentitySupplier,
             final HostRegistrations hostRegistrations,
             final DomainHostExcludeRegistry domainHostExcludeRegistry,
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
@@ -215,6 +218,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         this.ignoredDomainResourceRegistry = ignoredDomainResourceRegistry;
         this.pathManager = pathManager;
         this.authorizer = authorizer;
+        this.securityIdentitySupplier = securityIdentitySupplier;
         this.hostRegistrations = hostRegistrations;
         this.domainHostExcludeRegistry = domainHostExcludeRegistry;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
@@ -316,7 +320,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
                 false
         ));
 
-        final ManagementResourceRegistration coreMgmt = resourceRegistration.registerSubModel(CoreManagementResourceDefinition.forDomain(authorizer));
+        final ManagementResourceRegistration coreMgmt = resourceRegistration.registerSubModel(CoreManagementResourceDefinition.forDomain(authorizer, securityIdentitySupplier));
         coreMgmt.registerSubModel(new HostConnectionResourceDefinition(hostRegistrations));
 
         resourceRegistration.registerSubModel(new ProfileResourceDefinition(hostControllerInfo, ignoredDomainResourceRegistry));

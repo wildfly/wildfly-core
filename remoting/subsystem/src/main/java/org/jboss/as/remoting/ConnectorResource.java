@@ -21,6 +21,8 @@
  */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.jboss.as.remoting.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
 import static org.jboss.as.remoting.ConnectorCommon.SASL_PROTOCOL;
 import static org.jboss.as.remoting.ConnectorCommon.SERVER_NAME;
@@ -72,6 +74,16 @@ public class ConnectorResource extends SimpleResourceDefinition {
             .setNullSignificant(true)
             .build();
 
+    static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ConnectorCommon.SASL_AUTHENTICATION_FACTORY)
+            .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, CONNECTOR_CAPABILITY)
+            .build();
+
+    static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(CommonAttributes.SSL_CONTEXT, ModelType.STRING, true)
+            .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
+            .setNullSignificant(true)
+            .setCapabilityReference(SSL_CONTEXT_CAPABILITY, CONNECTOR_CAPABILITY)
+            .build();
+
     static final ConnectorResource INSTANCE = new ConnectorResource();
 
     private ConnectorResource() {
@@ -90,6 +102,8 @@ public class ConnectorResource extends SimpleResourceDefinition {
         resourceRegistration.registerReadWriteAttribute(SECURITY_REALM, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SERVER_NAME, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SASL_PROTOCOL, null, writeHandler);
+        resourceRegistration.registerReadWriteAttribute(SASL_AUTHENTICATION_FACTORY, null, writeHandler);
+        resourceRegistration.registerReadWriteAttribute(SSL_CONTEXT, null, writeHandler);
     }
 
 }

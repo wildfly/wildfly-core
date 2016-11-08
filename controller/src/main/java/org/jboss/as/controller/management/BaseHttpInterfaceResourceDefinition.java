@@ -24,6 +24,10 @@ package org.jboss.as.controller.management;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.management.Capabilities.HTTP_MANAGEMENT_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.HTTP_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
@@ -57,17 +61,27 @@ import org.jboss.dmr.ModelType;
  */
 public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResourceDefinition {
 
-    protected static final String RUNTIME_CAPABILITY_NAME = "org.wildfly.management.http-interface";
-
-    public static final RuntimeCapability<Void> HTTP_MANAGEMENT_CAPABILITY = RuntimeCapability.Builder.of(RUNTIME_CAPABILITY_NAME)
+    public static final RuntimeCapability<Void> HTTP_MANAGEMENT_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of(HTTP_MANAGEMENT_CAPABILITY)
         .build();
 
     protected static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
+
+    public static final SimpleAttributeDefinition HTTP_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HTTP_AUTHENTICATION_FACTORY, ModelType.STRING, true)
+        .setMinSize(1)
+        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setCapabilityReference(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+        .build();
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
         .setNullSignificant(true)
+        .build();
+
+    public static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
+        .setMinSize(1)
+        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setCapabilityReference(SSL_CONTEXT_CAPABILITY, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
         .build();
 
     public static final SimpleAttributeDefinition CONSOLE_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONSOLE_ENABLED, ModelType.BOOLEAN, true)
@@ -85,7 +99,13 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setDefaultValue(new ModelNode(false))
         .build();
 
-    public static final ObjectTypeAttributeDefinition HTTP_UPGRADE = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HTTP_UPGRADE, ENABLED)
+    public static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_AUTHENTICATION_FACTORY, ModelType.STRING, true)
+        .setMinSize(1)
+        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+        .build();
+
+    public static final ObjectTypeAttributeDefinition HTTP_UPGRADE = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HTTP_UPGRADE, ENABLED, SASL_AUTHENTICATION_FACTORY)
         .build();
 
     public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
@@ -109,7 +129,8 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
-    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SECURITY_REALM,  CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED, HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_AUTHENTICATION_FACTORY, SSL_CONTEXT, SECURITY_REALM, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
+                                                                                                     HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
 
     /**
      * @param parameters
@@ -117,7 +138,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
     protected BaseHttpInterfaceResourceDefinition(Parameters parameters) {
         super(parameters
                 .addAccessConstraints(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
-                .addCapabilities(HTTP_MANAGEMENT_CAPABILITY)
+                .addCapabilities(HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
                 .setDeprecatedSince(ModelVersion.create(1, 7))
         );
     }

@@ -250,4 +250,5 @@ public class ModelParserUtils {
             Assert.assertEquals("\n\"" + node1.asString() + "\"\n\"" + node2.asString() + "\"\n-----", node1.asString().trim(), node2.asString().trim());
         }
     }
+
 }

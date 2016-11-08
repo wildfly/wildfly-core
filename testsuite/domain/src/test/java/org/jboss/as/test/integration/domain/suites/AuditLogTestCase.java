@@ -74,12 +74,14 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xnio.IoUtils;
 
 /**
  * @author: Kabir Khan
  */
+@Ignore("[WFCORE-1956] Audit logging after migrating to WildFly Elytron.")
 public class AuditLogTestCase {
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil masterLifecycleUtil;

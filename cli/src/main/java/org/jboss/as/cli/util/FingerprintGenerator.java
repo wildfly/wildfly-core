@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.cli.CommandLineException;
-import org.jboss.sasl.util.HexConverter;
+import org.wildfly.security.util.ByteIterator;
 
 public class FingerprintGenerator {
 
@@ -52,7 +52,7 @@ public class FingerprintGenerator {
 
         MessageDigest md = MessageDigest.getInstance(algorithm);
         byte[] digested = md.digest(cert);
-        String hex = HexConverter.convertToHexString(digested);
+        String hex = ByteIterator.ofBytes(digested).hexEncode().drainToString();
         boolean started = false;
         for (int i = 0; i < hex.length() - 1; i += 2) {
             if (started) {

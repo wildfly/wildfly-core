@@ -54,6 +54,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -109,7 +110,7 @@ public class InterfaceManagementUnitTestCase {
     public void before() throws Exception {
         final ServiceTarget target = container.subTarget();
         final ExtensionRegistry extensionRegistry =
-                new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
+                new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
         final StringConfigurationPersister persister = new StringConfigurationPersister(Collections.<ModelNode>emptyList(), new StandaloneXml(null, null, extensionRegistry));
         extensionRegistry.setWriterRegistry(persister);
         final ControlledProcessState processState = new ControlledProcessState(true);
@@ -291,7 +292,7 @@ public class InterfaceManagementUnitTestCase {
 
         ModelControllerService(final ControlledProcessState processState, final StringConfigurationPersister persister, final ServerDelegatingResourceDefinition rootResourceDefinition) {
             super(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.ADMIN_ONLY), persister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
-                    AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new CapabilityRegistry(true));
+                    AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), new CapabilityRegistry(true));
             this.persister = persister;
             this.processState = processState;
             this.rootResourceDefinition = rootResourceDefinition;
@@ -303,7 +304,7 @@ public class InterfaceManagementUnitTestCase {
             environment = new ServerEnvironment(hostControllerName, properties, new HashMap<String, String>(), null, null,
                     ServerEnvironment.LaunchType.DOMAIN, null, ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), ".", properties));
             extensionRegistry =
-                    new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
+                    new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
 
             capabilityRegistry = new CapabilityRegistry(processType.isServer());
         }
@@ -331,7 +332,7 @@ public class InterfaceManagementUnitTestCase {
         public void start(StartContext context) throws StartException {
             rootResourceDefinition.setDelegate(new ServerRootResourceDefinition(MockRepository.INSTANCE,
                     persister, environment, processState, null, null, extensionRegistry, false, MOCK_PATH_MANAGER, null,
-                    authorizer, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector(), capabilityRegistry));
+                    authorizer, securityIdentitySupplier, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector(), capabilityRegistry));
             super.start(context);
         }
     }

@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
+
 import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -93,6 +94,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLMapper;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * A registry for information about {@link org.jboss.as.controller.Extension}s to the core application server.
@@ -126,26 +128,10 @@ public class ExtensionRegistry {
     private final RunningModeControl runningModeControl;
     private final ManagedAuditLogger auditLogger;
     private final JmxAuthorizer authorizer;
+    private final Supplier<SecurityIdentity> securityIdentitySupplier;
     private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<String, SubsystemInformation>();
     private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
     private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor;
-
-
-    /**
-     * Constructor
-     *
-     * @param processType the type of the process
-     * @param runningModeControl the process' running mode
-     * @param auditLogger logger for auditing changes
-     * @param authorizer hook for exposing access control information to the JMX subsystem
-     *
-     * @deprecated Remove once there has been a core release and we can update wildfly
-     */
-    @Deprecated
-    public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer) {
-        this(processType, runningModeControl, auditLogger, authorizer, RuntimeHostControllerInfoAccessor.SERVER);
-    }
-
 
     /**
      * Constructor
@@ -156,11 +142,13 @@ public class ExtensionRegistry {
      * @param authorizer hook for exposing access control information to the JMX subsystem
      * @param hostControllerInfoAccessor the host controller
      */
-    public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostControllerInfoAccessor) {
+    public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer,
+            Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostControllerInfoAccessor) {
         this.processType = processType;
         this.runningModeControl = runningModeControl;
         this.auditLogger = auditLogger != null ? auditLogger : AuditLogger.NO_OP_LOGGER;
         this.authorizer = authorizer != null ? authorizer : NO_OP_AUTHORIZER;
+        this.securityIdentitySupplier = securityIdentitySupplier;
         this.hostControllerInfoAccessor = hostControllerInfoAccessor;
     }
 
@@ -173,7 +161,7 @@ public class ExtensionRegistry {
      */
     @Deprecated
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl) {
-        this(processType, runningModeControl, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        this(processType, runningModeControl, null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
     }
 
     /**
@@ -613,6 +601,17 @@ public class ExtensionRegistry {
                 throw new UnsupportedOperationException();
             }
             return authorizer;
+        }
+
+        /**
+         * This method is only for internal use. We do NOT currently want to expose it on the ExtensionContext interface.
+         */
+        @Override
+        public Supplier<SecurityIdentity> getSecurityIdentitySupplier() {
+            if (!allowSupplement) {
+                throw new UnsupportedOperationException();
+            }
+            return securityIdentitySupplier;
         }
 
         @Override

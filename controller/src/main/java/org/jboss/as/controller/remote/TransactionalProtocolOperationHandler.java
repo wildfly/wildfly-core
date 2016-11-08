@@ -36,8 +36,6 @@ import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
-import javax.security.auth.Subject;
-
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.client.Operation;
@@ -59,6 +57,7 @@ import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
 import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
 import org.jboss.as.protocol.mgmt.ProtocolUtils;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * The transactional request handler for a remote {@link TransactionalProtocolClient}.
@@ -154,7 +153,8 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
 
                         @Override
                         public Void run() {
-                            AccessAuditContext.doAs(executableRequest.subject, action);
+                            // TODO Elytron - Inflow the remote address.
+                            AccessAuditContext.doAs(executableRequest.securityIdentity, null, action);
                             return null;
                         }
                     });
@@ -208,12 +208,12 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
     private static class ExecutableRequest {
         private final ModelNode operation;
         private final int attachmentsLength;
-        private final Subject subject;
+        private final SecurityIdentity securityIdentity;
 
-        private ExecutableRequest(ModelNode operation, int attachmentsLength, Subject subject) {
+        private ExecutableRequest(ModelNode operation, int attachmentsLength, SecurityIdentity securityIdentity) {
             this.operation = operation;
             this.attachmentsLength = attachmentsLength;
-            this.subject = subject;
+            this.securityIdentity = securityIdentity;
         }
 
         static ExecutableRequest parse(DataInput input, ManagementChannelAssociation channelAssociation) throws IOException {
@@ -223,14 +223,8 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             ProtocolUtils.expectHeader(input, ModelControllerProtocol.PARAM_INPUTSTREAMS_LENGTH);
             final int attachmentsLength = input.readInt();
 
-            final Subject subject;
-            final Boolean readSubject = channelAssociation.getAttachments().getAttachment(TransactionalProtocolClient.SEND_SUBJECT);
-            if (readSubject != null && readSubject) {
-                subject = readSubject(input);
-            } else {
-                subject = new Subject();
-            }
-            return new ExecutableRequest(operation, attachmentsLength, subject);
+            // TODO Elytron At this point we should be inflowing the identity of the user that has triggered this operation.
+            return new ExecutableRequest(operation, attachmentsLength, channelAssociation.getChannel().getConnection().getLocalIdentity());
         }
     }
 
@@ -549,7 +543,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             if (responseChannel != null) {
                 // Normal case, where a COMPLETE_TX_REQUEST came in after the prepare() call and
                 // established a new responseChannel so the client can correlate the response
-                ControllerLogger.MGMT_OP_LOGGER.tracef("sending completed response %s for %d  --- interrupted: %s", response.getResponseNode(), getOperationId(), (Object) Thread.currentThread().isInterrupted());
+                ControllerLogger.MGMT_OP_LOGGER.tracef("sending completed response %s for %d  --- interrupted: %s", response.getResponseNode(), getOperationId(), Thread.currentThread().isInterrupted());
 
                 streamSupport.registerStreams(operation.getOperationId(), response.getInputStreams());
 
@@ -633,10 +627,6 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                 throw exceptionHolder.exception;
             }
         }
-    }
-
-    static Subject readSubject(final DataInput input) throws IOException {
-        return SubjectProtocolUtil.read(input);
     }
 
     private static class IOExceptionHolder {

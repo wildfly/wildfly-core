@@ -22,10 +22,14 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.remoting.RemotingServices.REMOTING_BASE;
 import static org.jboss.as.remoting.management.ManagementRemotingServices.MANAGEMENT_CONNECTOR;
+
+import javax.net.ssl.SSLContext;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,12 +39,14 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseNativeInterfaceAddStepHandler;
 import org.jboss.as.controller.management.NativeInterfaceCommonPolicy;
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
 import org.xnio.OptionMap.Builder;
 
@@ -79,13 +85,20 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         final ServiceName nativeManagementInterfaceBinding = NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(hostControllerInfo.getNativeManagementInterface());
 
         final String securityRealm = commonPolicy.getSecurityRealm();
-        if (securityRealm == null) {
+        final String saslAuthenticationFactory = commonPolicy.getSaslAuthenticationFactory();
+        if (saslAuthenticationFactory == null && securityRealm == null) {
             ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
+        ServiceName securityRealmName = securityRealm != null ? SecurityRealm.ServiceUtil.createServiceName(securityRealm) : null;
+        ServiceName saslAuthenticationFactoryName = saslAuthenticationFactory != null ? context.getCapabilityServiceName(
+                SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory, SaslAuthenticationFactory.class) : null;
+        String sslContext = commonPolicy.getSSLContext();
+        ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, SSLContext.class) : null;
+
         NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
-        ManagementRemotingServices.installDomainConnectorServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), securityRealm, options);
+        ManagementRemotingServices.installDomainConnectorServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
+                nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), options, securityRealmName, saslAuthenticationFactoryName, sslContextName);
         return Arrays.asList(REMOTING_BASE.append("server", MANAGEMENT_CONNECTOR), nativeManagementInterfaceBinding);
     }
 

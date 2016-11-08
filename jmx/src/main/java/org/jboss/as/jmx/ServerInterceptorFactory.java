@@ -22,18 +22,17 @@
 package org.jboss.as.jmx;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
-import javax.security.auth.Subject;
-
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.core.security.AccessMechanism;
-import org.jboss.as.core.security.SubjectUserInfo;
 import org.jboss.remoting3.Channel;
-import org.jboss.remoting3.security.UserInfo;
 import org.jboss.remotingjmx.ServerMessageInterceptor;
 import org.jboss.remotingjmx.ServerMessageInterceptorFactory;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * A {@link ServerMessageInterceptorFactory} responsible for supplying a {@link ServerMessageInterceptor} for associating the
@@ -58,16 +57,13 @@ class ServerInterceptorFactory implements ServerMessageInterceptorFactory {
 
         @Override
         public void handleEvent(final Event event) throws IOException {
-            UserInfo userInfo = channel.getConnection().getUserInfo();
-            final Subject subject;
-            if (userInfo instanceof SubjectUserInfo) {
-                subject = ((SubjectUserInfo) userInfo).getSubject();
-            } else {
-                subject = new Subject();
-            }
+            final SecurityIdentity localIdentity = channel.getConnection().getLocalIdentity();
+
+            InetSocketAddress peerSocketAddress = channel.getConnection().getPeerAddress(InetSocketAddress.class);
+            final InetAddress remoteAddress = peerSocketAddress != null ? peerSocketAddress.getAddress() : null;
 
             try {
-                AccessAuditContext.doAs(subject, new PrivilegedExceptionAction<Void>() {
+                AccessAuditContext.doAs(localIdentity, remoteAddress, new PrivilegedExceptionAction<Void>() {
 
                     @Override
                     public Void run() throws IOException {

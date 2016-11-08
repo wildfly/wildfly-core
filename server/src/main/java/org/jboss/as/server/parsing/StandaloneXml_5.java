@@ -281,6 +281,10 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             } else {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
+                    case HTTP_AUTHENTICATION_FACTORY: {
+                        HttpManagementResourceDefinition.HTTP_AUTHENTICATION_FACTORY.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
                     case SASL_PROTOCOL: {
                         HttpManagementResourceDefinition.SASL_PROTOCOL.parseAndSetParameter(value, addOp, reader);
                         break;
@@ -291,6 +295,10 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
                     }
                     case SERVER_NAME: {
                         HttpManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case SSL_CONTEXT: {
+                        HttpManagementResourceDefinition.SSL_CONTEXT.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
                     case CONSOLE_ENABLED: {
@@ -319,6 +327,10 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             } else {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
+                    case SASL_AUTHENTICATION_FACTORY: {
+                        NativeManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
                     case SASL_PROTOCOL: {
                         NativeManagementResourceDefinition.SASL_PROTOCOL.parseAndSetParameter(value, addOp, reader);
                         break;
@@ -329,6 +341,10 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
                     }
                     case SERVER_NAME: {
                         NativeManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
+                    case SSL_CONTEXT: {
+                        NativeManagementResourceDefinition.SSL_CONTEXT.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
                     default:
@@ -436,6 +452,11 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
                     case ENABLED: {
                         ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
                         HttpManagementResourceDefinition.ENABLED.parseAndSetParameter(value, httpUpgrade, reader);
+                        break;
+                    }
+                    case SASL_AUTHENTICATION_FACTORY: {
+                        ModelNode httpUpgrade = addOp.get(HTTP_UPGRADE);
+                        HttpManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.parseAndSetParameter(value, httpUpgrade, reader);
                         break;
                     }
                     default:
@@ -874,6 +895,8 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
     public boolean writeNativeManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
 
         writer.writeStartElement(Element.NATIVE_INTERFACE.getLocalName());
+        NativeManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
+        NativeManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
@@ -892,6 +915,8 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
     public boolean writeHttpManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
 
         writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
+        HttpManagementResourceDefinition.HTTP_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
+        HttpManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
@@ -907,6 +932,7 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
         if (HttpManagementResourceDefinition.HTTP_UPGRADE.isMarshallable(protocol)) {
             writer.writeEmptyElement(Element.HTTP_UPGRADE.getLocalName());
             HttpManagementResourceDefinition.ENABLED.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
+            HttpManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
         }
 
         if (HttpManagementResourceDefinition.SOCKET_BINDING.isMarshallable(protocol)

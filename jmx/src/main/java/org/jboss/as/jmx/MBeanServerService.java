@@ -23,6 +23,7 @@
 package org.jboss.as.jmx;
 
 import java.lang.management.ManagementFactory;
+import java.util.function.Supplier;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
@@ -46,6 +47,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Basic service managing and wrapping an MBeanServer instance. Note: Just using the platform mbean server for now.
@@ -65,6 +67,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
     private final boolean legacyWithProperPropertyFormat;
     private final boolean coreMBeanSensitivity;
     private final JmxAuthorizer authorizer;
+    private final Supplier<SecurityIdentity> securityIdentitySupplier;
     private final ManagedAuditLogger auditLoggerInfo;
     private final InjectedValue<ModelController> modelControllerValue = new InjectedValue<ModelController>();
     private final InjectedValue<ManagementModelIntegration.ManagementModelProvider> managementModelProviderValue = new InjectedValue<ManagementModelIntegration.ManagementModelProvider>();
@@ -76,7 +79,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
 
     private MBeanServerService(final String resolvedDomainName, final String expressionsDomainName, final boolean legacyWithProperPropertyFormat,
                                final boolean coreMBeanSensitivity,
-                               final ManagedAuditLogger auditLoggerInfo, final JmxAuthorizer authorizer,
+                               final ManagedAuditLogger auditLoggerInfo, final JmxAuthorizer authorizer, final Supplier<SecurityIdentity> securityIdentitySupplier,
                                final JmxEffect jmxEffect,
                                final ProcessType processType, final boolean isMasterHc) {
         this.resolvedDomainName = resolvedDomainName;
@@ -85,6 +88,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
         this.coreMBeanSensitivity = coreMBeanSensitivity;
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
+        this.securityIdentitySupplier = securityIdentitySupplier;
         this.jmxEffect = jmxEffect;
         this.processType = processType;
         this.isMasterHc = isMasterHc;
@@ -95,11 +99,12 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
                                                   final boolean coreMBeanSensitivity,
                                                   final ManagedAuditLogger auditLoggerInfo,
                                                   final JmxAuthorizer authorizer,
+                                                  final Supplier<SecurityIdentity> securityIdentitySupplier,
                                                   final JmxEffect jmxEffect,
                                                   final ProcessType processType, final boolean isMasterHc,
                                                   final ServiceListener<? super PluggableMBeanServer>... listeners) {
         final MBeanServerService service = new MBeanServerService(resolvedDomainName, expressionsDomainName, legacyWithProperPropertyFormat,
-                coreMBeanSensitivity, auditLoggerInfo, authorizer, jmxEffect, processType, isMasterHc);
+                coreMBeanSensitivity, auditLoggerInfo, authorizer, securityIdentitySupplier, jmxEffect, processType, isMasterHc);
         final ServiceName modelControllerName = processType == ProcessType.HOST_CONTROLLER ?
                 DOMAIN_CONTROLLER_NAME : Services.JBOSS_SERVER_CONTROLLER;
         return batchBuilder.addService(MBeanServerService.SERVICE_NAME, service)
@@ -119,6 +124,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
         MBeanServerDelegate delegate = platform instanceof PluggableMBeanServerImpl ? ((PluggableMBeanServerImpl)platform).getMBeanServerDelegate() : null;
         pluggable.setAuditLogger(auditLoggerInfo);
         pluggable.setAuthorizer(authorizer);
+        pluggable.setSecurityIdentitySupplier(securityIdentitySupplier);
         pluggable.setJmxEffect(jmxEffect);
         authorizer.setNonFacadeMBeansSensitive(coreMBeanSensitivity);
         if (resolvedDomainName != null || expressionsDomainName != null) {

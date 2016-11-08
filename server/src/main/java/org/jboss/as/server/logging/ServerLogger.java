@@ -268,11 +268,11 @@ public interface ServerLogger extends BasicLogger {
     void caughtExceptionRevertingOperation(@Cause Exception cause, String handler, String operation, PathAddress address);
 
     @LogMessage(level = WARN)
-    @Message(id = 34, value = "No security realm defined for native management service; all access will be unrestricted.")
+    @Message(id = 34, value = "No security realm or sasl server authentication defined for native management service; all access will be unrestricted.")
     void nativeManagementInterfaceIsUnsecured();
 
     @LogMessage(level = WARN)
-    @Message(id = 35, value = "No security realm defined for http management service; all access will be unrestricted.")
+    @Message(id = 35, value = "No security realm or http server authentication defined for http management service; all access will be unrestricted.")
     void httpManagementInterfaceIsUnsecured();
 
     @LogMessage(level = INFO)

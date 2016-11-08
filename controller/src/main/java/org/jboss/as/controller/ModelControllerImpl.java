@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller;
 
-import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
@@ -51,7 +50,6 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.operations.common.Util.validateOperation;
 
 import java.io.IOException;
-import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,6 +68,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.access.Authorizer;
 import org.jboss.as.controller.audit.AuditLogger;
@@ -101,8 +100,7 @@ import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
-import org.wildfly.security.manager.action.GetAccessControlContextAction;
-
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Default {@link ModelController} implementation.
@@ -136,6 +134,7 @@ class ModelControllerImpl implements ModelController {
     private final ExecutorService executorService;
     private final ExpressionResolver expressionResolver;
     private final Authorizer authorizer;
+    private final Supplier<SecurityIdentity> securityIdentitySupplier;
 
     private final ConcurrentMap<Integer, OperationContextImpl> activeOperations = new ConcurrentHashMap<>();
     private final Random random = new Random();
@@ -158,7 +157,7 @@ class ModelControllerImpl implements ModelController {
                         final ContainerStateMonitor stateMonitor, final ConfigurationPersister persister,
                         final ProcessType processType, final RunningModeControl runningModeControl,
                         final OperationStepHandler prepareStep, final ControlledProcessState processState, final ExecutorService executorService,
-                        final ExpressionResolver expressionResolver, final Authorizer authorizer,
+                        final ExpressionResolver expressionResolver, final Authorizer authorizer, final Supplier<SecurityIdentity> securityIdentitySupplier,
                         final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport,
                         final BootErrorCollector bootErrorCollector, final OperationStepHandler extraValidationStepHandler,
                         final CapabilityRegistry capabilityRegistry,
@@ -191,6 +190,8 @@ class ModelControllerImpl implements ModelController {
         this.executorService = executorService;
         assert expressionResolver != null;
         this.expressionResolver = expressionResolver;
+        assert securityIdentitySupplier != null;
+        this.securityIdentitySupplier = securityIdentitySupplier;
         assert authorizer != null;
         this.authorizer = authorizer;
         assert auditLogger != null;
@@ -216,8 +217,10 @@ class ModelControllerImpl implements ModelController {
      */
     @Override
     public ModelNode execute(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control, final OperationAttachments attachments) {
-        OperationResponse or = internalExecute(operation, handler, control, attachments, prepareStep, false,
-                partialModelIndicator.isModelPartial());
+        SecurityIdentity securityIdentity = securityIdentitySupplier.get();
+        OperationResponse or = securityIdentity.runAs((PrivilegedAction<OperationResponse>) () -> internalExecute(operation,
+                handler, control, attachments, prepareStep, false, partialModelIndicator.isModelPartial()));
+
         ModelNode result = or.getResponseNode();
         try {
             or.close();
@@ -230,7 +233,9 @@ class ModelControllerImpl implements ModelController {
 
     @Override
     public OperationResponse execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control) {
-        return internalExecute(operation.getOperation(), handler, control, operation, prepareStep, false, partialModelIndicator.isModelPartial());
+        SecurityIdentity securityIdentity = securityIdentitySupplier.get();
+        return securityIdentity.runAs((PrivilegedAction<OperationResponse>) () -> internalExecute(operation.getOperation(),
+                handler, control, operation, prepareStep, false, partialModelIndicator.isModelPartial()));
     }
 
     private AbstractOperationContext getDelegateContext(final int operationId) {
@@ -295,7 +300,7 @@ class ModelControllerImpl implements ModelController {
         };
 
         // Use a read-only context
-        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), txControl, processState, false, model, delegateContext, this, operationId);
+        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), txControl, processState, false, model, delegateContext, this, operationId, securityIdentitySupplier);
         context.addStep(response, operation, prepareStep, OperationContext.Stage.MODEL);
         context.executeOperation();
 
@@ -390,7 +395,7 @@ class ModelControllerImpl implements ModelController {
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
                     bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessContext, notificationSupport,
-                    false, extraValidationStepHandler, partialModel);
+                    false, extraValidationStepHandler, partialModel, securityIdentitySupplier);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
                 //noinspection deprecation
@@ -464,7 +469,7 @@ class ModelControllerImpl implements ModelController {
         final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
                 contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
-                hostServerGroupTracker, null, null, notificationSupport, true, extraValidationStepHandler, true);
+                hostServerGroupTracker, null, null, notificationSupport, true, extraValidationStepHandler, true, securityIdentitySupplier);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
@@ -483,7 +488,7 @@ class ModelControllerImpl implements ModelController {
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                     contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
                             bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, true,
-                            extraValidationStepHandler, partialModel);
+                            extraValidationStepHandler, partialModel, securityIdentitySupplier);
 
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {
                 if (parsedOp.handler == null) {
@@ -513,7 +518,7 @@ class ModelControllerImpl implements ModelController {
                         EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                         contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
                                 bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, false,
-                                extraValidationStepHandler, partialModel);
+                                extraValidationStepHandler, partialModel, securityIdentitySupplier);
                 validateContext.addModifiedResourcesForModelValidation(validateAddresses);
                 resultAction = validateContext.executeOperation();
             }
@@ -771,21 +776,27 @@ class ModelControllerImpl implements ModelController {
                     }
                 }
                 final OpTask<T> opTask = new OpTask<T>(responseConverter);
-                final AccessControlContext acc = doPrivileged(GetAccessControlContextAction.getInstance());
+                final SecurityIdentity securityIdentity = securityIdentitySupplier.get();
+                final boolean inVmCall = SecurityActions.isInVmCall();
+
                 executor.execute(new Runnable() {
                     public void run() {
                         try {
                             if (opThread.compareAndSet(null, Thread.currentThread())) {
-                                OperationResponse response = doPrivileged(new PrivilegedAction<OperationResponse>() {
+                                // We need the AccessAuditContext as that will make any inflowed SecurityIdentity available.
+                                OperationResponse response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
 
                                     @Override
                                     public OperationResponse run() {
-                                        Operation op = attachments == null ? Operation.Factory.create(operation)
-                                                : Operation.Factory.create(operation, attachments.getInputStreams(), attachments.isAutoCloseStreams());
-                                        return ModelControllerImpl.this.execute(op, messageHandler,
-                                                OperationTransactionControl.COMMIT);
+                                        Operation op = attachments == null ? Operation.Factory.create(operation) : Operation.Factory.create(operation, attachments.getInputStreams(),
+                                                        attachments.isAutoCloseStreams());
+                                        if (inVmCall) {
+                                            return SecurityActions.runInVm((PrivilegedAction<OperationResponse>) () -> ModelControllerImpl.this.execute(op, messageHandler, OperationTransactionControl.COMMIT));
+                                        } else {
+                                            return ModelControllerImpl.this.execute(op, messageHandler, OperationTransactionControl.COMMIT);
+                                        }
                                     }
-                                }, acc);
+                                });
                                 opTask.handleResult(response);
                             }
                         } finally {

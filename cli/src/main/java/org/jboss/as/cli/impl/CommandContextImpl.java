@@ -184,9 +184,13 @@ import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
-import org.jboss.sasl.callback.DigestHashCallback;
 import org.jboss.stdio.StdioContext;
+import org.wildfly.security.auth.callback.CredentialCallback;
+import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.security.password.interfaces.ClearPassword;
+import org.wildfly.security.password.interfaces.DigestPassword;
+import org.wildfly.security.util.CodePointIterator;
 import org.xnio.http.RedirectException;
 
 /**
@@ -1794,7 +1798,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             throw new RuntimeException(e);
                         } finally {
                             // in case of success the console will continue after connectController has finished all the initialization required
-                            if (!success || callContinuous) {
+                            if (console != null && (!success || callContinuous)) {
                                 console.continuous();
                             }
                         }
@@ -1853,7 +1857,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     ncb.setName(username);
                 } else if (current instanceof PasswordCallback && digest == null) {
                     // If a digest had been set support for PasswordCallback is disabled.
-                    PasswordCallback pcb = (PasswordCallback) current;
                     if (password == null) {
                         showRealm();
                         String temp;
@@ -1877,13 +1880,43 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             password = temp.toCharArray();
                         }
                     }
+                    PasswordCallback pcb = (PasswordCallback) current;
                     pcb.setPassword(password);
-                } else if (current instanceof DigestHashCallback && digest != null) {
-                    // We don't support an interactive use of this callback so it must have been set in advance.
-                    DigestHashCallback dhc = (DigestHashCallback) current;
-                    dhc.setHexHash(digest);
+                } else if (current instanceof CredentialCallback) {
+                    final CredentialCallback cc = (CredentialCallback) current;
+                    if (digest == null && cc.isCredentialTypeSupported(PasswordCredential.class, ClearPassword.ALGORITHM_CLEAR)) {
+                        if (password == null) {
+                            showRealm();
+                            String temp;
+                            try {
+                                if(console == null) {
+                                    if(ERROR_ON_INTERACT) {
+                                        interactionDisabled();
+                                    }
+                                    initBasicConsole(null);
+                                }
+                                console.setCompletion(false);
+                                console.getHistory().setUseHistory(false);
+                                temp = readLine("Password: ", true);
+                                console.getHistory().setUseHistory(true);
+                                console.setCompletion(true);
+                            } catch (CommandLineException e) {
+                                // the messages of the cause are lost if nested here
+                                throw new IOException("Failed to read password: " + e.getLocalizedMessage());
+                            }
+                            if (temp != null) {
+                                password = temp.toCharArray();
+                            }
+                        }
+                        cc.setCredential(new PasswordCredential(ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR, password)));
+                    } else if (digest != null && cc.isCredentialTypeSupported(PasswordCredential.class, DigestPassword.ALGORITHM_DIGEST_MD5)) {
+                        // We don't support an interactive use of this callback so it must have been set in advance.
+                        final byte[] bytes = CodePointIterator.ofString(digest).hexDecode().drain();
+                        cc.setCredential(new PasswordCredential(DigestPassword.createRaw(DigestPassword.ALGORITHM_DIGEST_MD5, username, realm, bytes)));
+                    } else {
+                        throw new UnsupportedCallbackException(current);
+                    }
                 } else {
-                    error("Unexpected Callback " + current.getClass().getName());
                     throw new UnsupportedCallbackException(current);
                 }
             }

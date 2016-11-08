@@ -22,12 +22,16 @@
 
 package org.jboss.as.domain.management.security;
 
-import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.DIGEST_PLAIN_TEXT;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.VERIFY_PASSWORD_CALLBACK_SUPPORTED;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
+import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
+import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_DIGEST_MD5;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -44,8 +48,8 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 
 import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.plugin.AuthenticationPlugIn;
 import org.jboss.as.domain.management.plugin.Credential;
 import org.jboss.as.domain.management.plugin.DigestCredential;
@@ -55,9 +59,16 @@ import org.jboss.as.domain.management.plugin.PlugInConfigurationSupport;
 import org.jboss.as.domain.management.plugin.ValidatePasswordCredential;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.sasl.callback.DigestHashCallback;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
+import org.wildfly.security.auth.callback.CredentialCallback;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
+import org.wildfly.security.password.PasswordFactory;
+import org.wildfly.security.password.spec.ClearPasswordSpec;
+import org.wildfly.security.password.spec.DigestPasswordSpec;
+import org.wildfly.security.password.spec.PasswordSpec;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
+import org.wildfly.security.util.ByteIterator;
+
 
 /**
  * CallbackHandlerService to integrate the plug-ins.
@@ -168,9 +179,9 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
                         }
                     } else if (current instanceof PasswordCallback) {
                         toRespondTo.add(current);
-                    } else if (current instanceof DigestHashCallback) {
+                    } else if (current instanceof CredentialCallback) {
                         toRespondTo.add(current);
-                    } else if (current instanceof VerifyPasswordCallback) {
+                    } else if (current instanceof EvidenceVerifyCallback) {
                         toRespondTo.add(current);
                     } else if (current instanceof RealmCallback) {
                         String realm = ((RealmCallback) current).getDefaultText();
@@ -204,57 +215,85 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
                         } else {
                             throw new UnsupportedCallbackException(current);
                         }
-                    } else if (current instanceof DigestHashCallback) {
+                    } else if (current instanceof CredentialCallback) {
                         if (credential == null) {
                             SECURITY_LOGGER.tracef("User '%s' not found.", userName);
                             throw new UserNotFoundException(userName);
                         }
 
-                        if (credential instanceof DigestCredential) {
-                            ((DigestHashCallback) current).setHexHash(((DigestCredential) credential).getHash());
+                        CredentialCallback credentialCallback = (CredentialCallback) current;
+                        if (PasswordCredential.class.isAssignableFrom(credentialCallback.getCredentialType()) == false) {
+                            throw new UnsupportedCallbackException(current);
+                        }
+
+                        String algorithm = credentialCallback.getAlgorithm();
+                        final PasswordFactory passwordFactory;
+                        final PasswordSpec passwordSpec;
+                        if (credential instanceof DigestCredential && (algorithm == null || ALGORITHM_DIGEST_MD5.equals(algorithm))) {
+                            passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
+                            byte[] hashed = ByteIterator.ofBytes(((DigestCredential) credential).getHash().getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                            passwordSpec = new DigestPasswordSpec(userName, realmName, hashed);
                         } else if (credential instanceof PasswordCredential) {
-                            UsernamePasswordHashUtil hashUtil = getHashUtil();
-                            String hash;
-                            synchronized (hashUtil) {
-                                hash = hashUtil.generateHashedHexURP(userName, realmName,
-                                        ((PasswordCredential) credential).getPassword());
+                            if (algorithm == null || ALGORITHM_CLEAR.equals(algorithm)) {
+                                passwordFactory = getPasswordFactory(ALGORITHM_CLEAR);
+                                passwordSpec = new ClearPasswordSpec(((PasswordCredential) credential).getPassword());
+                            } else if (ALGORITHM_DIGEST_MD5.equals(algorithm)) {
+                                passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
+                                UsernamePasswordHashUtil hashUtil = getHashUtil();
+                                synchronized (hashUtil) {
+                                    byte[] hashed = hashUtil
+                                            .generateHashedHexURP(userName, realmName,
+                                                    ((PasswordCredential) credential).getPassword()).getBytes(StandardCharsets.UTF_8);
+                                    passwordSpec = new DigestPasswordSpec(userName, realmName, hashed);
+                                }
+                            } else {
+                                throw new UnsupportedCallbackException(current);
                             }
-                            ((DigestHashCallback) current).setHexHash(hash);
                         } else {
                             throw new UnsupportedCallbackException(current);
                         }
-                    } else if (current instanceof VerifyPasswordCallback) {
+
+                        try {
+                            credentialCallback.setCredential(credentialCallback.getCredentialType()
+                                    .cast(new org.wildfly.security.credential.PasswordCredential(
+                                            passwordFactory.generatePassword(passwordSpec))));
+                        } catch (InvalidKeySpecException e) {
+                            throw new IllegalStateException(e);
+                        }
+                    } else if (current instanceof EvidenceVerifyCallback) {
                         if (credential == null) {
                             SECURITY_LOGGER.tracef("User '%s' not found.", userName);
                             throw new UserNotFoundException(userName);
                         }
 
-                        VerifyPasswordCallback vpc = (VerifyPasswordCallback) current;
+                        EvidenceVerifyCallback evc = (EvidenceVerifyCallback) current;
+                        PasswordGuessEvidence evidence = (PasswordGuessEvidence) evc.getEvidence();
+                        char[] guess = evidence.getGuess();
 
                         if (credential instanceof PasswordCredential) {
-                            boolean verified = Arrays.equals(((PasswordCredential) credential).getPassword(), vpc.getPassword().toCharArray());
+                            boolean verified = Arrays.equals(((PasswordCredential) credential).getPassword(), guess);
                             if (verified == false) {
                                 SECURITY_LOGGER.tracef("Password verification failed for user '%s'", userName);
                             }
-                            vpc.setVerified(verified);
+                            evc.setVerified(verified);
                         } else if (credential instanceof DigestCredential) {
                             UsernamePasswordHashUtil hashUtil = getHashUtil();
                             String hash;
                             synchronized (hashUtil) {
-                                hash = hashUtil.generateHashedHexURP(userName, realmName, vpc.getPassword().toCharArray());
+                                hash = hashUtil.generateHashedHexURP(userName, realmName, guess);
                             }
                             String expected = ((DigestCredential) credential).getHash();
                             boolean verified = expected.equals(hash);
                             if (verified == false) {
                                 SECURITY_LOGGER.tracef("Digest verification failed for user '%s'", userName);
                             }
-                            vpc.setVerified(verified);
+                            evc.setVerified(verified);
                         } else if (credential instanceof ValidatePasswordCredential) {
-                            boolean verified = ((ValidatePasswordCredential) credential).validatePassword(vpc.getPassword().toCharArray());
+                            boolean verified = ((ValidatePasswordCredential) credential).validatePassword(guess);
                             if (verified == false) {
                                 SECURITY_LOGGER.tracef("Delegated verification failed for user '%s'", userName);
                             }
-                            vpc.setVerified(verified);
+                            evc.setVerified(verified);
                         }
 
                     }
@@ -262,6 +301,20 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
             }
         };
 
+    }
+
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        // TODO Elytron Add support for legacy plug-in
+        return null;
+    }
+
+    private static PasswordFactory getPasswordFactory(final String algorithm) {
+        try {
+            return PasswordFactory.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public static final class ServiceUtil {

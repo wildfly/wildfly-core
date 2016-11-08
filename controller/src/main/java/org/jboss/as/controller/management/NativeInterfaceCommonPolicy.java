@@ -32,6 +32,20 @@ import org.xnio.OptionMap;
 public interface NativeInterfaceCommonPolicy {
 
     /**
+     * Get the name of the SASL authentication factory to use to secure the native interface.
+     *
+     * @return The name of the SASL authentication factory to use to secure the native interface.
+     */
+    String getSaslAuthenticationFactory();
+
+    /**
+     * Get the name of the SSLContext to use to enable SSL for this management interface.
+     *
+     * @return the name of the SSLContext to use to enable SSL for this management interface.
+     */
+    String getSSLContext();
+
+    /**
      * Get the name of the security realm to secure the HTTP interface, or {@code null} if one has not been defined.
      *
      * @return Get the name of the security realm to secure the HTTP interface.

@@ -22,6 +22,8 @@
 
 package org.jboss.as.domain.http.server.security;
 
+import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_DIGEST_MD5;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.DIGEST_PLAIN_TEXT;
@@ -36,6 +38,7 @@ import io.undertow.util.HexConverter;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
@@ -60,14 +63,19 @@ import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.AuthorizingCallbackHandler;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.SubjectIdentity;
-import org.jboss.sasl.callback.DigestHashCallback;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
+import org.wildfly.security.auth.callback.CredentialCallback;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
+import org.wildfly.security.password.interfaces.DigestPassword;
+import org.wildfly.security.util.ByteIterator;
 
 /**
  * {@link IdentityManager} implementation to wrap the current security realms.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @deprecated Elytron integration will make this obsolete.
  */
+@Deprecated
 public class RealmIdentityManager implements IdentityManager {
 
     private static final ThreadLocal<ThreadLocalStore> requestSpecific = new ThreadLocal<ThreadLocalStore>();
@@ -156,7 +164,7 @@ public class RealmIdentityManager implements IdentityManager {
         Callback[] callbacks = new Callback[3];
         callbacks[0] = new RealmCallback("Realm", securityRealm.getName());
         callbacks[1] = new NameCallback("Username", id);
-        callbacks[2] = new VerifyPasswordCallback(new String(credential.getPassword()));
+        callbacks[2] = new EvidenceVerifyCallback(new PasswordGuessEvidence(credential.getPassword()));
 
         try {
             ach.handle(callbacks);
@@ -165,7 +173,7 @@ public class RealmIdentityManager implements IdentityManager {
             return null;
         }
 
-        if (((VerifyPasswordCallback) callbacks[2]).isVerified() == false) {
+        if (((EvidenceVerifyCallback) callbacks[2]).isVerified() == false) {
             return null;
         }
 
@@ -193,7 +201,7 @@ public class RealmIdentityManager implements IdentityManager {
         if (plainText) {
             callbacks[2] = new PasswordCallback("Password", false);
         } else {
-            callbacks[2] = new DigestHashCallback("Digest");
+            callbacks[2] = new CredentialCallback(org.wildfly.security.credential.PasswordCredential.class, ALGORITHM_DIGEST_MD5);
         }
 
         try {
@@ -223,7 +231,9 @@ public class RealmIdentityManager implements IdentityManager {
                 digest.reset();
             }
         } else {
-            ha1 = ((DigestHashCallback) callbacks[2]).getHexHash().getBytes(UTF_8);
+            org.wildfly.security.credential.PasswordCredential passwordCredential = (org.wildfly.security.credential.PasswordCredential) (((CredentialCallback)callbacks[2]).getCredential());
+            DigestPassword digestPassword = passwordCredential.getPassword(DigestPassword.class);
+            ha1 = ByteIterator.ofBytes(digestPassword.getDigest()).hexEncode().drainToString().getBytes(StandardCharsets.US_ASCII);
         }
 
         try {

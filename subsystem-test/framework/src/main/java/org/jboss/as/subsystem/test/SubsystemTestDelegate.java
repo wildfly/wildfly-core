@@ -171,7 +171,7 @@ final class SubsystemTestDelegate {
     void initializeParser() throws Exception {
         //Initialize the parser
         xmlMapper = XMLMapper.Factory.create();
-        extensionParsingRegistry = new ExtensionRegistry(getProcessType(), new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        extensionParsingRegistry = new ExtensionRegistry(getProcessType(), new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
         testParser = new TestParser(mainSubsystemName, extensionParsingRegistry);
         xmlMapper.registerRootElement(new QName(TEST_NAMESPACE, "test"), testParser);
         mainExtension.initializeParsers(extensionParsingRegistry.getExtensionParsingContext("Test", xmlMapper));
@@ -239,7 +239,7 @@ final class SubsystemTestDelegate {
 
         // Use ProcessType.HOST_CONTROLLER for this ExtensionRegistry so we don't need to provide
         // a PathManager via the ExtensionContext. All we need the Extension to do here is register the xml writers
-        ExtensionRegistry outputExtensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        ExtensionRegistry outputExtensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
         outputExtensionRegistry.setWriterRegistry(persister);
 
 
@@ -258,6 +258,7 @@ final class SubsystemTestDelegate {
      * @return the kernel services allowing access to the controller and service container
      * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
      */
+    @Deprecated
     KernelServices installInController(String subsystemXml) throws Exception {
         return createKernelServicesBuilder(null)
                 .setSubsystemXml(subsystemXml)
@@ -271,6 +272,7 @@ final class SubsystemTestDelegate {
      * @param subsystemXml   the subsystem xml to be parsed
      * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
      */
+    @Deprecated
     KernelServices installInController(AdditionalInitialization additionalInit, String subsystemXml) throws Exception {
         return createKernelServicesBuilder(additionalInit)
                 .setSubsystemXml(subsystemXml)
@@ -283,6 +285,7 @@ final class SubsystemTestDelegate {
      * @param bootOperations the operations
      * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
      */
+    @Deprecated
     KernelServices installInController(List<ModelNode> bootOperations) throws Exception {
         return createKernelServicesBuilder(null)
                 .setBootOperations(bootOperations)
@@ -296,6 +299,7 @@ final class SubsystemTestDelegate {
      * @param bootOperations the operations
      * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
      */
+    @Deprecated
     KernelServices installInController(AdditionalInitialization additionalInit, List<ModelNode> bootOperations) throws Exception {
         return createKernelServicesBuilder(additionalInit)
                 .setBootOperations(bootOperations)
@@ -552,7 +556,7 @@ final class SubsystemTestDelegate {
     }
 
     private ExtensionRegistry cloneExtensionRegistry(AdditionalInitialization additionalInit) {
-        final ExtensionRegistry clone = new ExtensionRegistry(additionalInit.getProcessType(), new RunningModeControl(additionalInit.getExtensionRegistryRunningMode()), null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        final ExtensionRegistry clone = new ExtensionRegistry(additionalInit.getProcessType(), new RunningModeControl(additionalInit.getExtensionRegistryRunningMode()), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
         for (String extension : extensionParsingRegistry.getExtensionModuleNames()) {
             ExtensionParsingContext epc = clone.getExtensionParsingContext(extension, null);
             for (Map.Entry<String, SubsystemInformation> entry : extensionParsingRegistry.getAvailableSubsystems(extension).entrySet()) {

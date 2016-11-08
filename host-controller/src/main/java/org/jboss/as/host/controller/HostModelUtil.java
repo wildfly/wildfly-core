@@ -25,6 +25,7 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
@@ -117,6 +118,7 @@ public class HostModelUtil {
                                           final ControlledProcessState processState,
                                           final PathManagerService pathManager,
                                           final DelegatingConfigurableAuthorizer authorizer,
+                                          final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                           final ManagedAuditLogger auditLogger,
                                           final BootErrorCollector bootErrorCollector) {
         // Add of the host itself
@@ -125,7 +127,8 @@ public class HostModelUtil {
                         environment, runningModeControl, localFileRepository,
                         hostControllerInfo, serverInventory, remoteFileRepository,
                         contentRepository, domainController, hostExtensionRegistry,
-                        vaultReader, ignoredRegistry, processState, pathManager, authorizer, auditLogger, bootErrorCollector));
+                        vaultReader, ignoredRegistry, processState, pathManager, authorizer, securityIdentitySupplier, auditLogger, bootErrorCollector));
+
         final DomainControllerWriteAttributeHandler dcWAH =
                 DomainControllerWriteAttributeHandler.getInstance(root, hostControllerInfo, configurationPersister,
                     localFileRepository, remoteFileRepository, contentRepository, domainController, extensionRegistry, ignoredRegistry, pathManager);

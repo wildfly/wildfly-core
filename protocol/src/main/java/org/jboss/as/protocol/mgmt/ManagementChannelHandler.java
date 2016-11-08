@@ -26,13 +26,12 @@ import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Attachments;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
-import org.jboss.remoting3.security.InetAddressPrincipal;
 import org.jboss.threads.AsyncFuture;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.security.Principal;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -88,18 +87,15 @@ public final class ManagementChannelHandler extends AbstractMessageHandler imple
      * @return the remote address, {@code null} if not available
      */
     public InetAddress getRemoteAddress() {
+        final Channel channel;
         try {
-            final Channel channel = strategy.getChannel();
-            final Connection connection = channel.getConnection();
-            for (Principal principal : connection.getPrincipals()) {
-                if (principal instanceof InetAddressPrincipal) {
-                    return ((InetAddressPrincipal)principal).getInetAddress();
-                }
-            }
+            channel = strategy.getChannel();
         } catch (IOException e) {
             return null;
         }
-        return null;
+        final Connection connection = channel.getConnection();
+        final InetSocketAddress peerAddress = connection.getPeerAddress(InetSocketAddress.class);
+        return peerAddress == null ? null : peerAddress.getAddress();
     }
 
     @Override

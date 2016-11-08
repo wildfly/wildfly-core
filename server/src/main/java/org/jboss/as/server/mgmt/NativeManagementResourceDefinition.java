@@ -58,7 +58,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, RUNTIME_CAPABILITY_NAME, false)
+            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, SOCKET_BINDING);

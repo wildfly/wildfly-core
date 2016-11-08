@@ -29,7 +29,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceName;
 
 /**
  * Removes a connector from the remoting container.
@@ -44,8 +43,6 @@ public class HttpConnectorRemove extends AbstractRemoveStepHandler {
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final String name = address.getLastElement().getValue();
-        final ServiceName securityProviderName = RealmSecurityProviderService.createName(name);
-        context.removeService(securityProviderName);
         context.removeService(RemotingHttpUpgradeService.UPGRADE_SERVICE_NAME.append(name));
     }
 

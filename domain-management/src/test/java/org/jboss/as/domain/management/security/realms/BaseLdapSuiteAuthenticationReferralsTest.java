@@ -43,8 +43,9 @@ import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.security.operations.CacheBuilder.By;
 import org.jboss.as.domain.management.security.operations.SecurityRealmAddBuilder;
 import org.jboss.dmr.ModelNode;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
 import org.junit.Test;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
 
 /**
  * Common base class for testing of both referral modes.
@@ -77,11 +78,11 @@ public abstract class BaseLdapSuiteAuthenticationReferralsTest extends BaseLdapS
 
         NameCallback ncb = new NameCallback("Username", USER_THREE_DIRECT);
         RealmCallback rcb = new RealmCallback("Realm", SLAVE_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(USER_THREE_PASSWORD);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence(USER_THREE_PASSWORD.toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertTrue("Password Verified", vpc.isVerified());
+        assertTrue("Password Verified", evc.isVerified());
     }
 
     @Test
@@ -90,11 +91,11 @@ public abstract class BaseLdapSuiteAuthenticationReferralsTest extends BaseLdapS
 
         NameCallback ncb = new NameCallback("Username", USER_THREE_DIRECT);
         RealmCallback rcb = new RealmCallback("Realm", SLAVE_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback("BAD");
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence("BAD".toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertFalse("Password Not Verified", vpc.isVerified());
+        assertFalse("Password Not Verified", evc.isVerified());
     }
 
     /*
@@ -107,11 +108,11 @@ public abstract class BaseLdapSuiteAuthenticationReferralsTest extends BaseLdapS
 
         NameCallback ncb = new NameCallback("Username", USER_THREE_REFERRAL);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback(USER_THREE_PASSWORD);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence(USER_THREE_PASSWORD.toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertTrue("Password Verified", vpc.isVerified());
+        assertTrue("Password Verified", evc.isVerified());
 
         Collection<Principal> principals = Collections.emptyList();
         SubjectUserInfo userInfo = cbh.createSubjectUserInfo(principals);
@@ -127,11 +128,11 @@ public abstract class BaseLdapSuiteAuthenticationReferralsTest extends BaseLdapS
 
         NameCallback ncb = new NameCallback("Username", USER_THREE_REFERRAL);
         RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
-        VerifyPasswordCallback vpc = new VerifyPasswordCallback("BAD");
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence("BAD".toCharArray()));
 
-        cbh.handle(new Callback[] { ncb, rcb, vpc });
+        cbh.handle(new Callback[] { ncb, rcb, evc });
 
-        assertFalse("Password Not Verified", vpc.isVerified());
+        assertFalse("Password Not Verified", evc.isVerified());
     }
 
     @Override

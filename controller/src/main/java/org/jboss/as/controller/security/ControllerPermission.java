@@ -22,6 +22,7 @@
 package org.jboss.as.controller.security;
 
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 import java.security.BasicPermission;
 
@@ -87,7 +88,10 @@ public class ControllerPermission extends BasicPermission {
     public static final String CAN_ACCESS_MODEL_CONTROLLER_NAME = "canAccessModelController";
     public static final String CREATE_CALLER_NAME = "createCaller";
     public static final String GET_CALLER_SUBJECT_NAME = "getCallerSubject";
+    public static final String GET_CALLER_SECURITY_IDENTITY_NAME = "getCallerSecurityIdentity";
     public static final String GET_CURRENT_ACCESS_AUDIT_CONTEXT_NAME = "getCurrentAccessAuditContext";
+    public static final String GET_IN_VM_CALL_STATE_NAME = "getInVmCallStateName";
+    public static final String PERFORM_IN_VM_CALL_NAME = "performInVmCall";
     private static final String WILDCARD_NAME = "*";
 
     /**
@@ -108,9 +112,22 @@ public class ControllerPermission extends BasicPermission {
      */
     public static final ControllerPermission GET_CALLER_SUBJECT = new ControllerPermission(GET_CALLER_SUBJECT_NAME);
     /**
+     * The Controller Permission named getCallerSubject, which should be used to retrieve the {@link SecurityIdentity} associated with a {@link org.jboss.as.controller.access.Caller}.
+     */
+    public static final ControllerPermission GET_CALLER_SECURITY_IDENTITY = new ControllerPermission(GET_CALLER_SECURITY_IDENTITY_NAME);
+    /**
      * The Controller Permission named getCurrentAccessAuditContext, which should be used to retrieve current {@link org.jboss.as.controller.AccessAuditContext}.
      */
     public static final ControllerPermission GET_CURRENT_ACCESS_AUDIT_CONTEXT = new ControllerPermission(GET_CURRENT_ACCESS_AUDIT_CONTEXT_NAME);
+    /**
+     * The Controller Permission named getInVmCallStateName, which should be used to retrieve in-vm call state.
+     */
+    public static final ControllerPermission GET_IN_VM_CALL_STATE = new ControllerPermission(GET_IN_VM_CALL_STATE_NAME);
+    /**
+     * The Controller Permission named performInVmCall, which should be used to perform an in-vm call.
+     */
+    public static final ControllerPermission PERFORM_IN_VM_CALL = new ControllerPermission(PERFORM_IN_VM_CALL_NAME);
+
 
     private static String validatePermissionName(String name) throws IllegalArgumentException {
         switch (name) {
@@ -119,6 +136,9 @@ public class ControllerPermission extends BasicPermission {
             case CREATE_CALLER_NAME:
             case GET_CALLER_SUBJECT_NAME:
             case GET_CURRENT_ACCESS_AUDIT_CONTEXT_NAME:
+            case GET_CALLER_SECURITY_IDENTITY_NAME:
+            case GET_IN_VM_CALL_STATE_NAME:
+            case PERFORM_IN_VM_CALL_NAME:
             case WILDCARD_NAME:
                 return name;
             default:

@@ -99,10 +99,15 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
         return this;
     }
 
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        // TODO Elytron Add support for this CBH
+        return null;
+    }
+
     /*
      *  Service Methods
      */
-
 
     public void start(StartContext context) throws StartException {
     }

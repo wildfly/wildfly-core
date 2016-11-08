@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
@@ -46,6 +47,8 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.common.Assert;
+import org.wildfly.security.auth.server.SecurityIdentity;
+
 
 /**
  * A read-only {@linkplain OperationContext}, allowing read-only access to the current write model from a different
@@ -66,10 +69,10 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     ReadOnlyContext(final ProcessType processType, final RunningMode runningMode, final ModelController.OperationTransactionControl transactionControl,
                     final ControlledProcessState processState, final boolean booting, final ModelControllerImpl.ManagementModelImpl managementModel,
-                    final AbstractOperationContext primaryContext, final ModelControllerImpl controller, final int operationId) {
+                    final AbstractOperationContext primaryContext, final ModelControllerImpl controller, final int operationId, final Supplier<SecurityIdentity> securityIdentitySupplier) {
         super(processType, runningMode, transactionControl, processState,
                 booting, controller.getAuditLogger(), controller.getNotificationSupport(),
-                controller, true, null);
+                controller, true, null, securityIdentitySupplier);
         this.primaryContext = primaryContext;
         this.controller = controller;
         this.operationId = operationId;

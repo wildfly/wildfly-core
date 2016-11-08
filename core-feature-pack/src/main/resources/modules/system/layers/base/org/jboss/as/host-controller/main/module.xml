@@ -69,7 +69,6 @@
         <module name="org.jboss.msc"/>
         <module name="org.jboss.remoting"/>
         <module name="org.jboss.remoting-jmx"/>
-        <module name="org.jboss.sasl"/>
         <module name="org.jboss.stdio"/>
         <module name="org.jboss.threads"/>
         <module name="org.jboss.xnio"/>

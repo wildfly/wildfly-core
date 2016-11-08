@@ -21,10 +21,13 @@
  */
 package org.jboss.as.jmx.rbac;
 
+import static org.junit.Assert.assertTrue;
+
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,10 +42,10 @@ import javax.management.JMRuntimeException;
 import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import javax.security.auth.Subject;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
+import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ManagementModel;
@@ -65,6 +68,7 @@ import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.constraint.VaultExpressionSensitivityConfig;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
+import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.access.rbac.StandardRole;
 import org.jboss.as.controller.audit.AuditLogger;
@@ -82,7 +86,6 @@ import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
-import org.jboss.as.core.security.RealmUser;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.access.PrincipalResourceDefinition;
@@ -99,9 +102,18 @@ import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.security.auth.permission.LoginPermission;
+import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
+import org.wildfly.security.auth.realm.SimpleRealmEntry;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.auth.server.ServerAuthenticationContext;
 
 /**
  *
@@ -109,6 +121,7 @@ import org.junit.Test;
  */
 public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
     volatile DelegatingConfigurableAuthorizer authorizer;
+    volatile ManagementSecurityIdentitySupplier securityIdentitySupplier;
     volatile MBeanServer server;
 
     private static final String TEST_USER = "test";
@@ -120,6 +133,9 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
     private static final ObjectName ROOT_NAME;
     private static final ObjectName ONE_A_NAME;
     private static final ObjectName ONE_B_NAME;
+
+    private static SecurityDomain testDomain;
+
     static {
         try {
             ROOT_NAME = new ObjectName("jboss.as:management-root=server");
@@ -135,6 +151,26 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
 
     public JmxFacadeRbacEnabledTestCase(){
         super(ProcessType.STANDALONE_SERVER);
+    }
+
+    @BeforeClass
+    public static void setupDomain() {
+        Map<String, SimpleRealmEntry> entries = new HashMap<>(StandardRole.values().length);
+        for (StandardRole role : StandardRole.values()) {
+            entries.put(roleToUserName(role), new SimpleRealmEntry(Collections.emptyList()));
+        }
+        SimpleMapBackedSecurityRealm securityRealm = new SimpleMapBackedSecurityRealm();
+        securityRealm.setPasswordMap(entries);
+        testDomain = SecurityDomain.builder()
+                .setDefaultRealmName("Default")
+                .addRealm("Default", securityRealm).build()
+                .setPermissionMapper((p,r) -> new LoginPermission())
+                .build();
+    }
+
+    @AfterClass
+    public static void removeDomain() {
+        testDomain = null;
     }
 
     @Before
@@ -298,9 +334,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
     }
 
     private void checkMBeanAccess(final StandardRole standardRole, final boolean addressable, final boolean readable, final boolean writable, final boolean executable) throws Exception {
-        Subject subject = standardRole == null ? null :
-            new Subject(true, Collections.singleton(new RealmUser(roleToUserName(standardRole))), Collections.emptySet(), Collections.emptySet());
-        Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
+        AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
             @Override
             public Void run() throws Exception {
                 Set<ObjectName> names = server.queryNames(null, null);
@@ -459,9 +493,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         oneChild.addOperation("test", true, false, null);
         rootRegistration.registerSubModel(oneChild);
 
-        Subject subject = standardRole == null ? null :
-            new Subject(true, Collections.singleton(new RealmUser(roleToUserName(standardRole))), Collections.emptySet(), Collections.emptySet());
-        Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
+        AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
             @Override
             public Void run() throws Exception {
                 Assert.assertFalse(server.queryNames(null, null).contains(ONE_A_NAME));
@@ -512,9 +544,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             resourceB.getModel().get("attr1").set("${VAULT::AA::bb::cc}");
             rootResource.registerChild(ONE_B, resourceB);
 
-            Subject subject = standardRole == null ? null :
-                new Subject(true, Collections.singleton(new RealmUser(roleToUserName(standardRole))), Collections.emptySet(), Collections.emptySet());
-            Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
+            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
                     Assert.assertEquals("test-a", server.getAttribute(ONE_A_NAME, "attr1"));
@@ -563,9 +593,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             resourceA.getModel().get("attr1").set("test-a");
             rootResource.registerChild(ONE_A, resourceA);
 
-            Subject subject = standardRole == null ? null :
-                new Subject(true, Collections.singleton(new RealmUser(roleToUserName(standardRole))), Collections.emptySet(), Collections.emptySet());
-            Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
+            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
                     try {
@@ -617,9 +645,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             resourceA.getModel().get("attr1").set("test-a");
             rootResource.registerChild(ONE_A, resourceA);
 
-            Subject subject = standardRole == null ? null :
-                new Subject(true, Collections.singleton(new RealmUser(roleToUserName(standardRole))), Collections.emptySet(), Collections.emptySet());
-            Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
+            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
                     try {
@@ -672,9 +698,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
             oneChild.addOperation("test", true, false, null);
             rootRegistration.registerSubModel(oneChild);
 
-            Subject subject = standardRole == null ? null :
-                new Subject(true, Collections.singleton(new RealmUser(roleToUserName(standardRole))), Collections.emptySet(), Collections.emptySet());
-            Subject.doAs(subject, new PrivilegedExceptionAction<Void>() {
+            AccessAuditContext.doAs(roleToSecurityIdentity(standardRole), null, new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
                     Assert.assertFalse(server.queryNames(null, null).contains(ONE_A_NAME));
@@ -718,6 +742,15 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
     }
 
     @Override
+    protected ManagementSecurityIdentitySupplier getSecurityIdentitySupplier() {
+        if (securityIdentitySupplier == null) {
+            securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
+        }
+
+        return securityIdentitySupplier;
+    }
+
+    @Override
     protected void addBootOperations(List<ModelNode> bootOperations) {
         for (StandardRole standardRole : EnumSet.allOf(StandardRole.class)) {
             ModelNode addRoleMappingOp = Util.createAddOperation(
@@ -752,8 +785,20 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         bootOperations.add(Util.createAddOperation(subystemAddress.append(ExposeModelResourceResolved.PATH_ELEMENT)));
     }
 
-    private String roleToUserName(StandardRole role) {
+    private static String roleToUserName(StandardRole role) {
         return TEST_USER + "_" + role.toString();
+    }
+
+    private static SecurityIdentity roleToSecurityIdentity(StandardRole role) throws RealmUnavailableException {
+        if (role == null) {
+            return testDomain.getAnonymousSecurityIdentity();
+        }
+
+        ServerAuthenticationContext authenticationContext = testDomain.createNewAuthenticationContext();
+        authenticationContext.setAuthenticationName(roleToUserName(role));
+        assertTrue("Authorized", authenticationContext.authorize());
+
+        return authenticationContext.getAuthorizedIdentity();
     }
 
 
@@ -781,7 +826,8 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         }
 
         rootRegistration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
-        rootRegistration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(getAuthorizer(), getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
+        rootRegistration.registerSubModel(CoreManagementResourceDefinition.forStandaloneServer(getAuthorizer(), getSecurityIdentitySupplier(),
+                getAuditLogger(), pathManagerService, new EnvironmentNameReader() {
             public boolean isServer() {
                 return true;
             }
@@ -803,7 +849,8 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         pathManagerService.addPathManagerResources(rootResource);
 
 
-        ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), AuditLogger.NO_OP_LOGGER, getAuthorizer(), RuntimeHostControllerInfoAccessor.SERVER);
+        ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), AuditLogger.NO_OP_LOGGER,
+                getAuthorizer(), getSecurityIdentitySupplier(), RuntimeHostControllerInfoAccessor.SERVER);
         extensionRegistry.setPathManager(pathManagerService);
         extensionRegistry.setWriterRegistry(new NullConfigurationPersister());
         JMXExtension extension = new JMXExtension();

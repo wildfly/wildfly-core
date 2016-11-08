@@ -22,13 +22,19 @@
 
 package org.jboss.as.domain.management.security;
 
-import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
-import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.DIGEST_PLAIN_TEXT;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.VERIFY_PASSWORD_CALLBACK_SUPPORTED;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
+import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
+import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_DIGEST_MD5;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -46,15 +52,34 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 
 import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
-import org.jboss.sasl.callback.DigestHashCallback;
-import org.jboss.sasl.callback.VerifyPasswordCallback;
-import org.jboss.sasl.util.UsernamePasswordHashUtil;
+import org.wildfly.common.Assert;
+import org.wildfly.security.auth.callback.CredentialCallback;
+import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.auth.server.IdentityLocator;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.auth.server.SupportLevel;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.credential.PasswordCredential;
+import org.wildfly.security.evidence.Evidence;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
+import org.wildfly.security.password.Password;
+import org.wildfly.security.password.PasswordFactory;
+import org.wildfly.security.password.interfaces.ClearPassword;
+import org.wildfly.security.password.interfaces.DigestPassword;
+import org.wildfly.security.password.spec.ClearPasswordSpec;
+import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
+import org.wildfly.security.password.spec.DigestPasswordSpec;
+import org.wildfly.security.password.spec.EncryptablePasswordSpec;
+import org.wildfly.security.password.spec.PasswordSpec;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
+import org.wildfly.security.util.ByteIterator;
 
 /**
  * A CallbackHandler obtaining the users and their passwords from a properties file.
@@ -111,9 +136,16 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
         return this;
     }
 
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        return new SecurityRealmImpl();
+    }
+
     /*
      * Service Methods
      */
+
+
 
     @Override
     protected void verifyProperties(Properties properties) throws IOException {
@@ -167,9 +199,9 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                 userFound = users.containsKey(userName);
             } else if (current instanceof PasswordCallback && plainText) {
                 toRespondTo.add(current);
-            } else if (current instanceof DigestHashCallback && plainText == false) {
+            } else if (current instanceof CredentialCallback) {
                 toRespondTo.add(current);
-            } else if (current instanceof VerifyPasswordCallback) {
+            } else if (current instanceof EvidenceVerifyCallback && ((EvidenceVerifyCallback)current).getEvidence() instanceof PasswordGuessEvidence) {
                 toRespondTo.add(current);
             } else if (current instanceof RealmCallback) {
                 String realm = ((RealmCallback) current).getDefaultText();
@@ -199,42 +231,56 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                 }
                 String password = users.get(userName).toString();
                 ((PasswordCallback) current).setPassword(password.toCharArray());
-            } else if (current instanceof DigestHashCallback) {
+            } else if (current instanceof CredentialCallback) {
                 if (userFound == false) {
                     SECURITY_LOGGER.tracef("User '%s' not found in properties file.", userName);
                     throw new UserNotFoundException(userName);
                 }
-                String hash = users.get(userName).toString();
-                ((DigestHashCallback) current).setHexHash(hash);
-            } else if (current instanceof VerifyPasswordCallback) {
+
+                CredentialCallback cc = (CredentialCallback) current;
+                if (PasswordCredential.class.isAssignableFrom(cc.getCredentialType())) {
+                    String algorithmName = cc.getAlgorithm();
+                    final Password password;
+                    if ((algorithmName == null || ALGORITHM_CLEAR.equals(algorithmName)) && plainText) {
+                        password = ClearPassword.createRaw(ALGORITHM_CLEAR, ((String) users.get(userName)).toCharArray());
+                    } else if ((algorithmName == null || ALGORITHM_DIGEST_MD5.equals(algorithmName)) && plainText == false) {
+                        byte[] hashed = ByteIterator.ofBytes(((String) users.get(userName)).getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                        password = DigestPassword.createRaw(ALGORITHM_DIGEST_MD5, userName, realm, hashed);
+                    } else {
+                        continue;
+                    }
+                    cc.setCredential(cc.getCredentialType().cast(new PasswordCredential(password)));
+                }
+            } else if (current instanceof EvidenceVerifyCallback) {
                 if (userFound == false) {
                     SECURITY_LOGGER.tracef("User '%s' not found in properties file.", userName);
                     throw new UserNotFoundException(userName);
                 }
-                VerifyPasswordCallback vpc = (VerifyPasswordCallback) current;
+                EvidenceVerifyCallback evc = (EvidenceVerifyCallback) current;
+                PasswordGuessEvidence evidence = (PasswordGuessEvidence) evc.getEvidence();
+                char[] guess = evidence.getGuess();
                 if (plainText) {
                     String password = users.get(userName).toString();
-                    boolean verified = password.equals(vpc.getPassword());
+                    boolean verified = password.equals(new String(guess));
                     if (verified == false) {
                         SECURITY_LOGGER.tracef("Password verification failed for user '%s'", userName);
                     }
-                    vpc.setVerified(verified);
+                    evc.setVerified(verified);
                 } else {
                     UsernamePasswordHashUtil hashUtil = getHashUtil();
                     String hash;
                     synchronized (hashUtil) {
-                        hash = hashUtil.generateHashedHexURP(userName, realm, vpc.getPassword().toCharArray());
+                        hash = hashUtil.generateHashedHexURP(userName, realm, guess);
                     }
                     String expected = users.get(userName).toString();
                     boolean verified = expected.equals(hash);
                     if (verified == false) {
                         SECURITY_LOGGER.tracef("Digest verification failed for user '%s'", userName);
                     }
-                    vpc.setVerified(verified);
+                    evc.setVerified(verified);
                 }
             }
         }
-
     }
 
     private static UsernamePasswordHashUtil getHashUtil() {
@@ -246,6 +292,146 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
             }
         }
         return hashUtil;
+    }
+
+    private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
+
+        @Override
+        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+            if (! locator.hasName()) return RealmIdentity.NON_EXISTENT;
+
+            try {
+                Properties users = getProperties();
+
+                String name = locator.getName();
+                return new RealmIdentityImpl(name, users.getProperty(name));
+            } catch (IOException e) {
+                throw new RealmUnavailableException(e);
+            }
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+            Assert.checkNotNullParam("credentialType", credentialType);
+            return PasswordCredential.class.isAssignableFrom(credentialType) && (algorithmName == null || algorithmName.equals(ALGORITHM_CLEAR) && plainText ||
+                    algorithmName.equals(ALGORITHM_DIGEST_MD5)) ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+        }
+
+        @Override
+        public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                throws RealmUnavailableException {
+            return PasswordGuessEvidence.class.isAssignableFrom(evidenceType) ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+        }
+
+        private class RealmIdentityImpl implements RealmIdentity {
+
+            private final String userName;
+            private final String password;
+
+            private RealmIdentityImpl(final String userName, final String password) {
+                this.userName = userName;
+                this.password = password;
+            }
+
+            @Override
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+
+            @Override
+            public <C extends Credential> C getCredential(Class<C> credentialType) throws RealmUnavailableException {
+                return getCredential(credentialType, null);
+            }
+
+            @Override
+            public <C extends Credential> C getCredential(Class<C> credentialType, final String algorithmName) throws RealmUnavailableException {
+                if (password == null || (PasswordCredential.class.isAssignableFrom(credentialType) == false)) {
+                    return null;
+                }
+
+                boolean clear;
+                if (algorithmName == null) {
+                    clear = plainText;
+                } else if (ALGORITHM_CLEAR.equals(algorithmName)) {
+                    clear = true;
+                } else if (ALGORITHM_DIGEST_MD5.equals(algorithmName)) {
+                    clear = false;
+                } else {
+                    return null;
+                }
+
+                final PasswordFactory passwordFactory;
+                final PasswordSpec passwordSpec;
+
+                if (clear) {
+                    passwordFactory = getPasswordFactory(ALGORITHM_CLEAR);
+                    passwordSpec = new ClearPasswordSpec(password.toCharArray());
+                } else {
+                    passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
+                    if (plainText) {
+                        AlgorithmParameterSpec algorithmParameterSpec = new DigestPasswordAlgorithmSpec(userName, realm);
+                        passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), algorithmParameterSpec);
+                    } else {
+                        byte[] hashed = ByteIterator.ofBytes(password.getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                        passwordSpec = new DigestPasswordSpec(userName, realm, hashed);
+                    }
+                }
+
+                try {
+                    return credentialType.cast(new PasswordCredential(passwordFactory.generatePassword(passwordSpec)));
+                } catch (InvalidKeySpecException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getEvidenceVerifySupport(evidenceType, algorithmName);
+            }
+
+            @Override
+            public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
+                if (password == null || evidence instanceof PasswordGuessEvidence == false) {
+                    return false;
+                }
+                final char[] guess = ((PasswordGuessEvidence) evidence).getGuess();
+
+                final PasswordFactory passwordFactory;
+                final PasswordSpec passwordSpec;
+                final Password actualPassword;
+                if (plainText) {
+                    passwordFactory = getPasswordFactory(ALGORITHM_CLEAR);
+                    passwordSpec = new ClearPasswordSpec(password.toCharArray());
+                } else {
+                    passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
+
+                    byte[] hashed = ByteIterator.ofBytes(password.getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                    passwordSpec = new DigestPasswordSpec(userName, realm, hashed);
+                }
+                try {
+                    actualPassword = passwordFactory.generatePassword(passwordSpec);
+
+                    return passwordFactory.verify(actualPassword, guess);
+                } catch (InvalidKeySpecException | InvalidKeyException | IllegalStateException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+
+            @Override
+            public boolean exists() throws RealmUnavailableException {
+                return password != null;
+            }
+
+        }
+    }
+
+    private static PasswordFactory getPasswordFactory(final String algorithm) {
+        try {
+            return PasswordFactory.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public static final class ServiceUtil {

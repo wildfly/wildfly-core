@@ -21,6 +21,8 @@
 */
 package org.jboss.as.jmx;
 
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -39,6 +41,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  *
@@ -48,17 +51,19 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
 
     private final ManagedAuditLogger auditLoggerInfo;
     private final JmxAuthorizer authorizer;
+    private final Supplier<SecurityIdentity> securityIdentitySupplier;
     private final SimpleAttributeDefinition domainName;
     private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-    ExposeModelResource(PathElement pathElement, ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer,
+    ExposeModelResource(PathElement pathElement, ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier,
             RuntimeHostControllerInfoAccessor hostInfoAccessor, SimpleAttributeDefinition domainName, SimpleAttributeDefinition...otherAttributes) {
         super(pathElement,
                 JMXExtension.getResourceDescriptionResolver(CommonAttributes.EXPOSE_MODEL + "." + pathElement.getValue()),
-                new ShowModelAdd(auditLoggerInfo, authorizer, domainName, hostInfoAccessor, otherAttributes),
-                new ShowModelRemove(auditLoggerInfo, authorizer, hostInfoAccessor));
+                new ShowModelAdd(auditLoggerInfo, authorizer, securityIdentitySupplier, domainName, hostInfoAccessor, otherAttributes),
+                new ShowModelRemove(auditLoggerInfo, authorizer, securityIdentitySupplier, hostInfoAccessor));
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
+        this.securityIdentitySupplier = securityIdentitySupplier;
         this.domainName = domainName;
         this.hostInfoAccessor = hostInfoAccessor;
     }
@@ -87,7 +92,7 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
 
         @Override
         protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, hostInfoAccessor);
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, securityIdentitySupplier, hostInfoAccessor);
         }
 
         @Override
@@ -100,16 +105,18 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
 
         private final ManagedAuditLogger auditLoggerInfo;
         private final JmxAuthorizer authorizer;
+        private final Supplier<SecurityIdentity> securityIdentitySupplier;
         private final SimpleAttributeDefinition domainName;
         private final SimpleAttributeDefinition[] otherAttributes;
         private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-        private ShowModelAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer,
+        private ShowModelAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier,
                 SimpleAttributeDefinition domainName, RuntimeHostControllerInfoAccessor hostInfoAccessor,
                 SimpleAttributeDefinition...otherAttributes) {
             super(ModelDescriptionConstants.SUBSYSTEM);
             this.auditLoggerInfo = auditLoggerInfo;
             this.authorizer = authorizer;
+            this.securityIdentitySupplier = securityIdentitySupplier;
             this.domainName = domainName;
             this.otherAttributes = otherAttributes;
             this.hostInfoAccessor = hostInfoAccessor;
@@ -127,7 +134,7 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
 
         @Override
         protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, hostInfoAccessor);
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, securityIdentitySupplier, hostInfoAccessor);
         }
 
         @Override
@@ -140,18 +147,20 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
 
         private final ManagedAuditLogger auditLoggerInfo;
         private final JmxAuthorizer authorizer;
+        private final Supplier<SecurityIdentity> securityIdentitySupplier;
         private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
-        private ShowModelRemove(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
+        private ShowModelRemove(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostInfoAccessor) {
             super(ModelDescriptionConstants.SUBSYSTEM);
             this.auditLoggerInfo = auditLoggerInfo;
             this.authorizer = authorizer;
+            this.securityIdentitySupplier = securityIdentitySupplier;
             this.hostInfoAccessor = hostInfoAccessor;
         }
 
         @Override
         protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, hostInfoAccessor);
+            JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, securityIdentitySupplier, hostInfoAccessor);
         }
 
         @Override
