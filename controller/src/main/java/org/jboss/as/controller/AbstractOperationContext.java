@@ -1170,7 +1170,7 @@ abstract class AbstractOperationContext implements OperationContext {
     @Override
     public Caller getCaller() {
         // TODO Consider threading but in general no harm in multiple instances being created rather than adding synchronization.
-        Caller response = SecurityActions.getCaller(caller, getSecurityIdentity()); // This allows for a change of SecurityIDentity whilst the same OperationContext is in use.
+        Caller response = SecurityActions.getCaller(caller, getSecurityIdentity()); // This allows for a change of SecurityIdentity whilst the same OperationContext is in use.
         caller = response;
 
         return response;
