@@ -116,7 +116,9 @@ public final class ProtocolConnectionManager {
                 connectTask.shutdown();
             }
         }
-        connection.closeAsync();
+        if (connection != null) {
+            connection.closeAsync();
+        }
     }
 
     /**
