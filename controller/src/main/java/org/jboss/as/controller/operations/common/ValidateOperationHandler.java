@@ -88,7 +88,7 @@ public class ValidateOperationHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        ModelNode op = operation.require(VALUE.getName());
+        ModelNode op = VALUE.validateOperation(operation);
         PathAddress addr = PathAddress.pathAddress(op.get(OP_ADDR));
         if (slave) {
             op = op.clone();
