@@ -44,6 +44,7 @@ public class SimpleTabCompleter implements CommandLineCompleter {
             throw new IllegalArgumentException("Candidates can't be null");
         }
         all = Arrays.asList(candidates);
+        Collections.sort(all);
     }
 
     /* (non-Javadoc)
@@ -99,7 +100,6 @@ public class SimpleTabCompleter implements CommandLineCompleter {
                     candidates.add(name);
                 }
             }
-            Collections.sort(candidates);
         }
         return result;
     }
