@@ -48,6 +48,7 @@ import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.process.stdin.Base64InputStream;
+import org.jboss.as.server.SystemExiter;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.logging.MDC;
 import org.jboss.logmanager.Level;
@@ -130,14 +131,18 @@ public final class Main {
         try {
             // TODO make this settable via an embedding process
             final long startTime = Module.getStartTime();
-            final HostControllerEnvironment config = determineEnvironment(args, startTime);
-            if (config == null) {
+            final HostControllerEnvironmentWrapper hostControllerEnvironmentWrapper = determineEnvironment(args, startTime);
+            if (hostControllerEnvironmentWrapper.getHostControllerEnvironment() == null) {
                 usage(); // In case there was an error determining the environment print the usage
-                abort();
+                if (hostControllerEnvironmentWrapper.getHostControllerEnvironmentStatus() == HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR) {
+                    abort();
+                } else {
+                    SystemExiter.safeAbort();
+                }
                 return null;
             } else {
                 try {
-                    final HostControllerBootstrap hc = new HostControllerBootstrap(config, authCode);
+                    final HostControllerBootstrap hc = new HostControllerBootstrap(hostControllerEnvironmentWrapper.getHostControllerEnvironment(), authCode);
                     hc.bootstrap();
                     return hc;
                 } catch(Throwable t) {
@@ -167,32 +172,32 @@ public final class Main {
     }
 
     private static void abort() {
-        SystemExiter.exit(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
+        SystemExiter.abort(ExitCodes.HOST_CONTROLLER_ABORT_EXIT_CODE);
     }
 
     /**
      * Terminates JVM with exit code: 0 - normal termination.
      */
     private static void exit(){
-        SystemExiter.exit(ExitCodes.NORMAL);
+        SystemExiter.logAndExit(HostControllerLogger.ROOT_LOGGER::shuttingDownInResponseToProcessControllerSignal, ExitCodes.NORMAL);
     }
 
     /**
      * Terminates JVM with exit code: 1 - failed termination but not an abort situation.
      */
     private static void fail(){
-        SystemExiter.exit(ExitCodes.FAILED);
+        SystemExiter.abort(ExitCodes.FAILED);
     }
 
     private static void usage() {
         CommandLineArgumentUsageImpl.printUsage(STDOUT);
     }
 
-    public static HostControllerEnvironment determineEnvironment(String[] args, long startTime) {
+    public static HostControllerEnvironmentWrapper determineEnvironment(String[] args, long startTime) {
         return determineEnvironment(args, startTime, ProcessType.HOST_CONTROLLER);
     }
 
-    public static HostControllerEnvironment determineEnvironment(String[] args, long startTime, ProcessType processType) {
+    public static HostControllerEnvironmentWrapper determineEnvironment(String[] args, long startTime, ProcessType processType) {
         Integer pmPort = null;
         InetAddress pmAddress = null;
         final PCSocketConfig pcSocketConfig = new PCSocketConfig();
@@ -223,22 +228,22 @@ public final class Main {
                         || CommandLineConstants.SHORT_PROPERTIES.equals(arg)) {
                     // Set system properties from url/file
                     if (!processProperties(arg, args[++i], hostSystemProperties)) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.PROPERTIES)) {
                     String urlSpec = parseValue(arg, CommandLineConstants.PROPERTIES);
                     if (urlSpec == null || !processProperties(arg, urlSpec, hostSystemProperties)) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.SHORT_PROPERTIES)) {
                     String urlSpec = parseValue(arg, CommandLineConstants.SHORT_PROPERTIES);
                     if (urlSpec == null || !processProperties(arg, urlSpec, hostSystemProperties)) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 }  else if (arg.startsWith(CommandLineConstants.OLD_PROPERTIES)) {
                     String urlSpec = parseValue(arg, CommandLineConstants.OLD_PROPERTIES);
                     if (urlSpec == null || !processProperties(arg, urlSpec, hostSystemProperties)) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (CommandLineConstants.PROCESS_CONTROLLER_BIND_PORT.equals(arg)) {
                     final String port = args[++i];
@@ -246,16 +251,16 @@ public final class Main {
                         pmPort = Integer.valueOf(port);
                     } catch (NumberFormatException e) {
                         STDERR.println(HostControllerLogger.ROOT_LOGGER.invalidValue(CommandLineConstants.PROCESS_CONTROLLER_BIND_PORT, "Integer", port, usageNote()));
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.PROCESS_CONTROLLER_BIND_PORT)) {
                     String val = parseValue(arg, CommandLineConstants.PROCESS_CONTROLLER_BIND_PORT);
                     if (val == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     final Integer port = parsePort(val, CommandLineConstants.PROCESS_CONTROLLER_BIND_PORT);
                     if (port == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     pmPort = port;
                 } else if (CommandLineConstants.PROCESS_CONTROLLER_BIND_ADDR.equals(arg)) {
@@ -264,21 +269,21 @@ public final class Main {
                         pmAddress = InetAddress.getByName(addr);
                     } catch (UnknownHostException e) {
                         STDERR.println(HostControllerLogger.ROOT_LOGGER.unknownHostValue(CommandLineConstants.PROCESS_CONTROLLER_BIND_ADDR, addr, usageNote()));
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.PROCESS_CONTROLLER_BIND_ADDR)) {
                     final String val = parseValue(arg, CommandLineConstants.PROCESS_CONTROLLER_BIND_ADDR);
                     if (val == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     final InetAddress addr = parseAddress(val, arg);
                     if (addr == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     pmAddress = addr;
                 } else if (pcSocketConfig.processPCSocketConfigArgument(arg, args, i)) {
                     if (pcSocketConfig.isParseFailed()) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     i += pcSocketConfig.getArgIncrement();
                 } else if (CommandLineConstants.RESTART_HOST_CONTROLLER.equals(arg)) {
@@ -290,70 +295,70 @@ public final class Main {
                 } else if(CommandLineConstants.DEFAULT_JVM.equals(arg) || CommandLineConstants.OLD_DEFAULT_JVM.equals(arg)) {
                     defaultJVM = checkValueIsNotAnArg(arg, args[++i]);
                     if (defaultJVM == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (CommandLineConstants.DOMAIN_CONFIG.equals(arg)
                         || CommandLineConstants.SHORT_DOMAIN_CONFIG.equals(arg)
                         || CommandLineConstants.OLD_DOMAIN_CONFIG.equals(arg)) {
                     domainConfig = checkValueIsNotAnArg(arg, args[++i]);
                     if (domainConfig == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.DOMAIN_CONFIG)) {
                     String val = parseValue(arg, CommandLineConstants.DOMAIN_CONFIG);
                     if (val == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     domainConfig = val;
                 } else if (arg.startsWith(CommandLineConstants.SHORT_DOMAIN_CONFIG)) {
                     String val = parseValue(arg, CommandLineConstants.SHORT_DOMAIN_CONFIG);
                     if (val == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     domainConfig = val;
                 } else if (arg.startsWith(CommandLineConstants.OLD_DOMAIN_CONFIG)) {
                     String val = parseValue(arg, CommandLineConstants.OLD_DOMAIN_CONFIG);
                     if (val == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     domainConfig = val;
                 } else if (arg.startsWith(CommandLineConstants.READ_ONLY_DOMAIN_CONFIG)) {
                     initialDomainConfig = parseValue(arg, CommandLineConstants.READ_ONLY_DOMAIN_CONFIG);
                     if (initialDomainConfig == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (CommandLineConstants.HOST_CONFIG.equals(arg) || CommandLineConstants.OLD_HOST_CONFIG.equals(arg)) {
                     hostConfig = checkValueIsNotAnArg(arg, args[++i]);
                     if (hostConfig == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.HOST_CONFIG)) {
                     String val = parseValue(arg, CommandLineConstants.HOST_CONFIG);
                     if (val == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     hostConfig = val;
                 } else if (arg.startsWith(CommandLineConstants.OLD_HOST_CONFIG)) {
                     String val = parseValue(arg, CommandLineConstants.OLD_HOST_CONFIG);
                     if (val == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     hostConfig = val;
                 } else if (arg.startsWith(CommandLineConstants.READ_ONLY_HOST_CONFIG)) {
                     initialHostConfig = parseValue(arg, CommandLineConstants.READ_ONLY_HOST_CONFIG);
                     if (initialHostConfig == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.MASTER_ADDRESS)) {
 
                     int idx = arg.indexOf('=');
                     if (idx == arg.length() - 1) {
                         STDERR.println(HostControllerLogger.ROOT_LOGGER.argumentExpected(arg, usageNote()));
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     String value = idx > -1 ? arg.substring(idx + 1) : checkValueIsNotAnArg(arg, args[++i]);
                     if (value == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     value = fixPossibleIPv6URL(value);
                     hostSystemProperties.put(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, value);
@@ -363,12 +368,12 @@ public final class Main {
                     int idx = arg.indexOf('=');
                     if (idx == arg.length() - 1) {
                         STDERR.println(HostControllerLogger.ROOT_LOGGER.argumentExpected(arg, usageNote()));
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     String value = idx > -1 ? arg.substring(idx + 1) : args[++i];
                     final Integer port = parsePort(value, CommandLineConstants.MASTER_PORT);
                     if (port == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
 
                     hostSystemProperties.put(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_PORT, value);
@@ -397,11 +402,11 @@ public final class Main {
                     int idx = arg.indexOf('=');
                     if (idx == arg.length() - 1) {
                         STDERR.println(HostControllerLogger.ROOT_LOGGER.argumentExpected(arg, usageNote()));
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     String value = idx > -1 ? arg.substring(idx + 1) : checkValueIsNotAnArg(arg, args[++i]);
                     if (value == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     value = fixPossibleIPv6URL(value);
                     String propertyName;
@@ -422,11 +427,11 @@ public final class Main {
                     int idx = arg.indexOf('=');
                     if (idx == arg.length() - 1) {
                         STDERR.println(HostControllerLogger.ROOT_LOGGER.argumentExpected(arg, usageNote()));
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     String value = idx > -1 ? arg.substring(idx + 1) : checkValueIsNotAnArg(arg, args[++i]);
                     if (value == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     value = fixPossibleIPv6URL(value);
                     hostSystemProperties.put(HostControllerEnvironment.JBOSS_DEFAULT_MULTICAST_ADDRESS, value);
@@ -434,26 +439,26 @@ public final class Main {
                 } else if (arg.equals(CommandLineConstants.MODULE_PATH)) {
                     modulePath = checkValueIsNotAnArg(arg, args[++i]);
                     if (modulePath == null) {
-                        return null;
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.equals(CommandLineConstants.SECMGR)) {
                     // Enable the security manager
                     securityManagerEnabled = true;
                 } else {
                     STDERR.println(HostControllerLogger.ROOT_LOGGER.invalidOption(arg, usageNote()));
-                    return null;
+                    return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                 }
             } catch (IndexOutOfBoundsException e) {
                 STDERR.println(HostControllerLogger.ROOT_LOGGER.argumentExpected(arg, usageNote()));
-                return null;
+                return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
             }
         }
         productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.HOME_DIR, null), hostSystemProperties);
 
-        return new HostControllerEnvironment(hostSystemProperties, isRestart, modulePath, pmAddress, pmPort,
-                pcSocketConfig.getBindAddress(), pcSocketConfig.getBindPort(), defaultJVM,
-                domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles,
-                cachedDc, productConfig, securityManagerEnabled, startTime, processType);
+        return new HostControllerEnvironmentWrapper(new HostControllerEnvironment(hostSystemProperties, isRestart, modulePath,
+                pmAddress, pmPort, pcSocketConfig.getBindAddress(), pcSocketConfig.getBindPort(), defaultJVM, domainConfig,
+                initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, cachedDc,
+                productConfig, securityManagerEnabled, startTime, processType));
     }
 
     private static String parseValue(final String arg, final String key) {

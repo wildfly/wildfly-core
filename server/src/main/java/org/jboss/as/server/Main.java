@@ -91,14 +91,18 @@ public final class Main {
             }
 
             Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
-            ServerEnvironment serverEnvironment = determineEnvironment(args, WildFlySecurityManager.getSystemPropertiesPrivileged(),
+            ServerEnvironmentWrapper serverEnvironmentWrapper = determineEnvironment(args, WildFlySecurityManager.getSystemPropertiesPrivileged(),
                     WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.STANDALONE,
                     Module.getStartTime());
-            if (serverEnvironment == null) {
-                abort(null);
+            if (serverEnvironmentWrapper.getServerEnvironment() == null) {
+                if (serverEnvironmentWrapper.getServerEnvironmentStatus() == ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR) {
+                    abort(null);
+                } else {
+                    SystemExiter.safeAbort();
+                }
             } else {
                 final Bootstrap bootstrap = Bootstrap.Factory.newInstance();
-                final Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
+                final Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironmentWrapper.getServerEnvironment());
                 configuration.setModuleLoader(Module.getBootModuleLoader());
                 bootstrap.bootstrap(configuration, Collections.<ServiceActivator>emptyList()).get();
                 return;
@@ -114,13 +118,13 @@ public final class Main {
                 t.printStackTrace(STDERR);
             }
         } finally {
-            SystemExiter.exit(ExitCodes.FAILED);
+            SystemExiter.abort(ExitCodes.FAILED);
         }
     }
 
     /** @deprecated use {@link #determineEnvironment(String[], Properties, Map, ServerEnvironment.LaunchType, long)}  */
     @Deprecated
-    public static ServerEnvironment determineEnvironment(String[] args, Properties systemProperties, Map<String, String> systemEnvironment,
+    public static ServerEnvironmentWrapper determineEnvironment(String[] args, Properties systemProperties, Map<String, String> systemEnvironment,
                                                          ServerEnvironment.LaunchType launchType) {
         return determineEnvironment(args, systemProperties, systemEnvironment, launchType, Module.getStartTime());
     }
@@ -134,7 +138,7 @@ public final class Main {
      * @param startTime time in ms since the epoch when the process was considered to be started
      * @return the ServerEnvironment object
      */
-    public static ServerEnvironment determineEnvironment(String[] args, Properties systemProperties, Map<String, String> systemEnvironment,
+    public static ServerEnvironmentWrapper determineEnvironment(String[] args, Properties systemProperties, Map<String, String> systemEnvironment,
                                                          ServerEnvironment.LaunchType launchType, long startTime) {
         final int argsLength = args.length;
         String serverConfig = null;
@@ -149,10 +153,10 @@ public final class Main {
                         || CommandLineConstants.OLD_VERSION.equals(arg) || CommandLineConstants.OLD_SHORT_VERSION.equals(arg)) {
                     productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), null);
                     STDOUT.println(productConfig.getPrettyVersionString());
-                    return null;
+                    return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.NORMAL);
                 } else if (CommandLineConstants.HELP.equals(arg) || CommandLineConstants.SHORT_HELP.equals(arg) || CommandLineConstants.OLD_HELP.equals(arg)) {
                     usage();
-                    return null;
+                    return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.NORMAL);
                 } else if (CommandLineConstants.SERVER_CONFIG.equals(arg) || CommandLineConstants.SHORT_SERVER_CONFIG.equals(arg)
                         || CommandLineConstants.OLD_SERVER_CONFIG.equals(arg)) {
                     assertSingleConfig(serverConfig);
@@ -161,25 +165,25 @@ public final class Main {
                     assertSingleConfig(serverConfig);
                     serverConfig = parseValue(arg, CommandLineConstants.SERVER_CONFIG);
                     if (serverConfig == null) {
-                        return null;
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.SHORT_SERVER_CONFIG)) {
                     assertSingleConfig(serverConfig);
                     serverConfig = parseValue(arg, CommandLineConstants.SHORT_SERVER_CONFIG);
                     if (serverConfig == null) {
-                        return null;
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.READ_ONLY_SERVER_CONFIG)) {
                     assertSingleConfig(serverConfig);
                     serverConfig = parseValue(arg, CommandLineConstants.READ_ONLY_SERVER_CONFIG);
                     if (serverConfig == null) {
-                        return null;
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                     configInteractionPolicy = ConfigurationFile.InteractionPolicy.READ_ONLY;
                 } else if (arg.startsWith(CommandLineConstants.OLD_SERVER_CONFIG)) {
                     serverConfig = parseValue(arg, CommandLineConstants.OLD_SERVER_CONFIG);
                     if (serverConfig == null) {
-                        return null;
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith("--internal-empty-config")) {
                     assert launchType == ServerEnvironment.LaunchType.EMBEDDED;
@@ -194,22 +198,22 @@ public final class Main {
                         || CommandLineConstants.SHORT_PROPERTIES.equals(arg)) {
                     // Set system properties from url/file
                     if (!processProperties(arg, args[++i],systemProperties)) {
-                        return null;
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.PROPERTIES)) {
                     String urlSpec = parseValue(arg, CommandLineConstants.PROPERTIES);
                     if (urlSpec == null || !processProperties(arg, urlSpec,systemProperties)) {
-                        return null;
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.SHORT_PROPERTIES)) {
                     String urlSpec = parseValue(arg, CommandLineConstants.SHORT_PROPERTIES);
                     if (urlSpec == null || !processProperties(arg, urlSpec,systemProperties)) {
-                        return null;
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                 }  else if (arg.startsWith(CommandLineConstants.OLD_PROPERTIES)) {
                     String urlSpec = parseValue(arg, CommandLineConstants.OLD_PROPERTIES);
                     if (urlSpec == null || !processProperties(arg, urlSpec,systemProperties)) {
-                        return null;
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                 } else if (arg.startsWith(CommandLineConstants.SYS_PROP)) {
 
@@ -230,7 +234,7 @@ public final class Main {
                     if (idx == arg.length() - 1) {
                         STDERR.println(ServerLogger.ROOT_LOGGER.noArgValue(arg));
                         usage();
-                        return null;
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                     String value = idx > -1 ? arg.substring(idx + 1) : args[++i];
                     value = fixPossibleIPv6URL(value);
@@ -252,7 +256,7 @@ public final class Main {
                     if (idx == arg.length() - 1) {
                         STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
                         usage();
-                        return null;
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                     String value = idx > -1 ? arg.substring(idx + 1) : args[++i];
                     value = fixPossibleIPv6URL(value);
@@ -283,19 +287,19 @@ public final class Main {
                 } else {
                     STDERR.println(ServerLogger.ROOT_LOGGER.invalidCommandLineOption(arg));
                     usage();
-                    return null;
+                    return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                 }
             } catch (IndexOutOfBoundsException e) {
                 STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
                 usage();
-                return null;
+                return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
             }
         }
 
         String hostControllerName = null; // No host controller unless in domain mode.
         productConfig = new ProductConfig(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), systemProperties);
-        return new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment, serverConfig,
-                configInteractionPolicy, launchType, runningMode, productConfig, startTime);
+        return new ServerEnvironmentWrapper(new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment,
+                serverConfig, configInteractionPolicy, launchType, runningMode, productConfig, startTime));
     }
 
     private static void assertSingleConfig(String serverConfig) {
