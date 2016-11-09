@@ -129,7 +129,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             //if the parent has already attached parsed data for this sub deployment we need to process it
             if (deploymentRoot.hasAttachment(SUB_DEPLOYMENT_STRUCTURE)) {
                 final ModuleSpecification subModuleSpec = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-                handleDeployment(deploymentUnit, subModuleSpec, deploymentRoot.getAttachment(SUB_DEPLOYMENT_STRUCTURE));
+                handleDeployment(phaseContext, deploymentUnit, subModuleSpec, deploymentRoot.getAttachment(SUB_DEPLOYMENT_STRUCTURE));
             }
         }
 
@@ -172,7 +172,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             // handle the the root deployment
             final ModuleStructureSpec rootDeploymentSpecification = result.getRootDeploymentSpecification();
             if (rootDeploymentSpecification != null) {
-                handleDeployment(deploymentUnit, moduleSpec, rootDeploymentSpecification);
+                handleDeployment(phaseContext, deploymentUnit, moduleSpec, rootDeploymentSpecification);
             }
             // handle sub deployments
             final Map<String, ResourceRoot> subDeploymentMap = new HashMap<String, ResourceRoot>();
@@ -230,7 +230,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         }
     }
 
-    private void handleDeployment(final DeploymentUnit deploymentUnit, final ModuleSpecification moduleSpec, final ModuleStructureSpec rootDeploymentSpecification) throws DeploymentUnitProcessingException {
+    private void handleDeployment(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit, final ModuleSpecification moduleSpec, final ModuleStructureSpec rootDeploymentSpecification) throws DeploymentUnitProcessingException {
         final Map<VirtualFile, ResourceRoot> resourceRoots = resourceRoots(deploymentUnit);
         moduleSpec.addUserDependencies(rootDeploymentSpecification.getModuleDependencies());
         moduleSpec.addExclusions(rootDeploymentSpecification.getExclusions());
@@ -258,6 +258,9 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         //handle annotations
         for (final ModuleIdentifier dependency : rootDeploymentSpecification.getAnnotationModules()) {
             deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, dependency);
+            if(dependency.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX)) {
+                phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(dependency));
+            }
         }
         moduleSpec.setLocalLast(rootDeploymentSpecification.isLocalLast());
 
