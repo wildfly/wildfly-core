@@ -496,7 +496,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         settings.historyFilePermission(permissions);
 
         settings.parseOperators(false);
-        settings.parsingQuotes(false);
 
         settings.interruptHook(
                 new InterruptHook() {

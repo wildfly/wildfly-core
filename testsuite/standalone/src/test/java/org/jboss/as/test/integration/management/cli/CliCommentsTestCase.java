@@ -21,7 +21,6 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
-import org.jboss.as.test.integration.management.util.CLIWrapper;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,20 +32,26 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 public class CliCommentsTestCase {
+
+    /**
+     * In comments, " and ' are not parsed. Outside comments, they are and the
+     * '>' prompt is shown.
+     *
+     * @throws Exception
+     */
     @Test
     public void test() throws Exception {
-        CLIWrapper cli = new CLIWrapper(true);
-        cli.sendLine("# Hello ' sdcds ");
-        cli.sendLine("version");
-        assertTrue(cli.readOutput().contains("JBOSS_HOME"));
-        cli.sendLine("# Hello ' sdcds ' ");
-        cli.sendLine("version");
-        assertTrue(cli.readOutput().contains("JBOSS_HOME"));
-        cli.sendLine("# Hello \" sdcds ");
-        cli.sendLine("version");
-        assertTrue(cli.readOutput().contains("JBOSS_HOME"));
-        cli.sendLine("# Hello \" sdcds \"");
-        cli.sendLine("version");
-        assertTrue(cli.readOutput().contains("JBOSS_HOME"));
+        CliProcessWrapper cli = new CliProcessWrapper();
+        cli.executeInteractive();
+        try {
+            assertTrue(cli.pushLineAndWaitForResults("# Hello \" sdcds ", null));
+            assertTrue(cli.pushLineAndWaitForResults("# Hello \' sdcds ", null));
+            assertTrue(cli.pushLineAndWaitForResults("version", null));
+            assertTrue(cli.getOutput().contains("JBOSS_HOME"));
+            assertTrue(cli.pushLineAndWaitForResults("ls \"", ">"));
+            assertTrue(cli.pushLineAndWaitForResults("-l \"", null));
+        } finally {
+            cli.destroyProcess();
+        }
     }
 }
