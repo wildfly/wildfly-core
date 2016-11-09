@@ -31,6 +31,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import java.util.Collections;
 import java.util.Iterator;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -44,6 +45,7 @@ import org.jboss.as.controller.access.Action.ActionEffect;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.AuthorizationResult.Decision;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.operations.validation.PathAddressValidator;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -58,10 +60,12 @@ public class ValidateAddressOperationHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = "validate-address";
     public static final ValidateAddressOperationHandler INSTANCE = new ValidateAddressOperationHandler();
 
+    private static final AttributeDefinition VALUE_PARAM = SimpleAttributeDefinitionBuilder.create(VALUE, ModelType.OBJECT)
+            .setValidator(PathAddressValidator.INSTANCE)
+            .build();
+
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, ControllerResolver.getResolver("global"))
-        .addParameter(
-                SimpleAttributeDefinitionBuilder.create(VALUE, ModelType.OBJECT)
-                    .build())
+        .addParameter(VALUE_PARAM)
         .setReplyParameters(
                 SimpleAttributeDefinitionBuilder.create(VALID, ModelType.BOOLEAN).build(),
                 SimpleAttributeDefinitionBuilder.create(PROBLEM, ModelType.STRING)
@@ -73,10 +77,10 @@ public class ValidateAddressOperationHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final ModelNode address = operation.require(VALUE);
-        final PathAddress pathAddr = PathAddress.pathAddress(address);
-        final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
-        Resource model = resource;
+
+        ModelNode addr = VALUE_PARAM.validateOperation(operation);
+        final PathAddress pathAddr = PathAddress.pathAddress(addr);
+        Resource model = context.readResource(PathAddress.EMPTY_ADDRESS);
         final Iterator<PathElement> iterator = pathAddr.iterator();
         PathAddress current = PathAddress.EMPTY_ADDRESS;
         out: while(iterator.hasNext()) {
