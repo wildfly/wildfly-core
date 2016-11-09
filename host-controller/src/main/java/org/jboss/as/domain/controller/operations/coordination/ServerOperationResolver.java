@@ -29,7 +29,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURATION_CHANGES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
@@ -76,6 +75,8 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EMPTY;
 import org.jboss.as.controller.operations.DomainOperationTransformer;
 import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.operations.common.ResolveExpressionHandler;
@@ -86,6 +87,7 @@ import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ResolveExpressionOnDomainHandler;
 import org.jboss.as.domain.controller.operations.deployment.DeploymentFullReplaceHandler;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.as.server.operations.SystemPropertyAddHandler;
 import org.jboss.as.server.operations.SystemPropertyRemoveHandler;
@@ -517,7 +519,18 @@ public class ServerOperationResolver {
                     if (!serverOp.hasDefined(RUNTIME_NAME)) {
                         serverOp.get(RUNTIME_NAME).set(domainDeployment.get(RUNTIME_NAME));
                     }
-                    serverOp.get(CONTENT).set(domainDeployment.require(CONTENT));
+                    List<ModelNode> contents = domainDeployment.require(CONTENT).asList();
+                    for (ModelNode content : contents) {
+                        if ((content.hasDefined(CONTENT_HASH.getName()))) {
+                            ModelNode contentItemNode = content.clone();
+                            if (contentItemNode.hasDefined(EMPTY)) {
+                                contentItemNode.remove(EMPTY);
+                            }
+                            serverOp.get(CONTENT).add(contentItemNode);
+                        } else {
+                            serverOp.get(CONTENT).add(content);
+                        }
+                    }
                 }
                 PathAddress serverAddress = address.subAddress(1);
                 serverOp.get(OP_ADDR).set(serverAddress.toModelNode());
