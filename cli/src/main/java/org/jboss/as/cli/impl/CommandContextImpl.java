@@ -1050,8 +1050,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         initNewClient(newClient, null, null);
     }
 
-    private void initNewClient(ModelControllerClient newClient, ControllerAddress address,
-            ConnectionInfoBean conInfo) {
+    private void initNewClient(ModelControllerClient newClient, ControllerAddress address, ConnectionInfoBean conInfo) {
         if (newClient != null) {
             if (this.client != null) {
                 disconnectController();
@@ -1459,6 +1458,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         console.setPrompt(getPrompt());
         if(!console.running()) {
             console.start();
+        }
+        // if console is already running before we have started interacting, we need to
+        // make sure that the prompt is correctly displayed
+        else {
+            console.redrawPrompt();
         }
         if(console.isControlled()) {
             console.continuous();
