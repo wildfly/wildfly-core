@@ -46,7 +46,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -75,7 +74,6 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-@Ignore("[WFCORE-1954] Wrap CLIENT_CERT behaviour of legacy realms with Elytron components.")
 public class HTTPSConnectionWithCLITestCase {
 
     private static Logger LOGGER = Logger.getLogger(HTTPSConnectionWithCLITestCase.class);

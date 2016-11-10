@@ -62,7 +62,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -87,7 +86,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
 @Category(CommonCriteria.class)
-@Ignore("[WFCORE-1954] Wrap CLIENT_CERT behaviour of legacy realms with Elytron components.")
 public class HTTPSManagementInterfaceTestCase {
 
     public static Logger LOGGER = Logger.getLogger(HTTPSManagementInterfaceTestCase.class);
