@@ -234,6 +234,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 break;
             case "HTTP":
                 switch (mechanismName) {
+                    case "CLIENT-CERT":
+                        return AuthMechanism.CLIENT_CERT;
                     case "DIGEST":
                         return AuthMechanism.DIGEST;
                     case "PLAIN":
