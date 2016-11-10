@@ -1186,7 +1186,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void bindClient(ModelControllerClient newClient) {
-        initNewClient(newClient, null, null);
+        ConnectionInfoBean conInfo = new ConnectionInfoBean();
+        conInfo.setLoggedSince(new Date());
+        initNewClient(newClient, null, conInfo);
     }
 
     private void initNewClient(ModelControllerClient newClient, ControllerAddress address, ConnectionInfoBean conInfo) {
