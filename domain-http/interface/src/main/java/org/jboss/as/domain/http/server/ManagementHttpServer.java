@@ -250,9 +250,11 @@ public class ManagementHttpServer {
             pathHandler.addPrefixPath(consoleHandler.getContext(), readinessHandler);
         }
 
-        HttpHandler domainApiHandler = InExecutorHandler.wrap(
+        HttpHandler domainApiHandler = StreamReadLimitHandler.wrap(
+            InExecutorHandler.wrap(
                 managementExecutor,
                 new DomainApiCheckHandler(modelController, controlledProcessStateService, allowedOrigins)
+            )
         );
         HttpHandler readinessHandler = wrapXFrameOptions(new DmrFailureReadinessHandler(securityRealm,
                 secureDomainAccess(domainApiHandler, securityRealm), ErrorContextHandler.ERROR_CONTEXT));

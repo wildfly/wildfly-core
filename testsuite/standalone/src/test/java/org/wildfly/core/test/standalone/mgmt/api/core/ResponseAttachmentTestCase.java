@@ -37,7 +37,15 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -61,6 +69,7 @@ import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
 import org.jboss.as.test.integration.management.extension.ExtensionUtils;
 import org.jboss.as.test.integration.management.extension.streams.LogStreamExtension;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.logging.Logger;
@@ -91,16 +100,20 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
 
     private String logMessageContent;
     private HttpClient httpClient;
+    private Set<HttpClient> httpClients = new HashSet<>();
+    private static ExecutorService executorService;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
         ExtensionUtils.createExtensionModule(LogStreamExtension.MODULE_NAME, LogStreamExtension.class,
                 EmptySubsystemParser.class.getPackage());
+        executorService = Executors.newCachedThreadPool();
     }
 
     @AfterClass
     public static void afterClass() {
         ExtensionUtils.deleteExtensionModule(LogStreamExtension.MODULE_NAME);
+        executorService.shutdownNow();
     }
 
 
@@ -124,6 +137,7 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
     public void after() throws IOException, MgmtOperationException {
 
         shutdownHttpClient();
+        shutdownHttpClients();
 
         try {
             ModelNode op = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(SYSTEM_PROPERTY, LogStreamExtension.LOG_MESSAGE_PROP));
@@ -151,6 +165,22 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
                 httpClient = null;
             }
         }
+    }
+
+    private void shutdownHttpClients() {
+        for (Iterator<HttpClient> iter = httpClients.iterator(); iter.hasNext();) {
+            HttpClient client = iter.next();
+            try {
+                // shut down the connection manager to ensure
+                // immediate deallocation of all system resources
+                client.getConnectionManager().shutdown();
+            } catch (Exception e) {
+                log.error(e);
+            } finally {
+                iter.remove();
+            }
+        }
+        httpClients.clear();
     }
 
     @Test
@@ -201,6 +231,48 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
         HttpGet httpget = new HttpGet(url.toURI());
         httpget.setHeader("org.wildfly.useStreamAsResponse", "0");
         readHttpResponse(getHttpClient(url).execute(httpget), 200);
+    }
+
+    /** Ensure that concurrent gets eventually succeed even with the WFCORE-1777 concurrency restriction */
+    @Test
+    public void testConcurrentGets() throws Exception {
+        final int count = 20;
+        CountDownLatch gate = new CountDownLatch(count);
+
+        final URL url = buildURL(true, false, null);
+
+        final Set<Future<Throwable>> futures = new HashSet<>();
+
+        for (int i = 0; i < count; i++) {
+            //final int idx = i;
+            futures.add(executorService.submit(() -> {
+                try {
+                    HttpGet httpget = new HttpGet(url.toURI());
+                    httpget.setHeader("org.wildfly.useStreamAsResponse", "0");
+                    HttpClient client = getConcurrentHttpClient(url);
+                    gate.countDown();
+                    gate.await(TimeoutUtil.adjust(30000), TimeUnit.MILLISECONDS);
+                    readHttpResponse(client.execute(httpget), 200);
+                    //System.out.println(idx + " succeeded");
+                    return null;
+                } catch (Throwable t) {
+                    //System.out.println(idx + " failed: " + t);
+                    return t;
+                }
+            }));
+        }
+
+        for (Future<Throwable> future : futures) {
+            @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
+            Throwable t = future.get(TimeoutUtil.adjust(1), TimeUnit.MINUTES);
+            if (t != null) {
+                if (t instanceof Error) {
+                    throw (Error) t;
+                } else {
+                    throw (Exception) t;
+                }
+            }
+        }
     }
 
     @Test
@@ -408,13 +480,15 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
     private void readLogStream(InputStream stream) throws IOException {
         LineNumberReader reader = new LineNumberReader(new InputStreamReader(stream));
         String read;
+        String lastRead = null;
         boolean readMessage = false;
         String expected = LogStreamExtension.getLogMessage(logMessageContent);
         while ((read = reader.readLine()) != null) {
             readMessage = readMessage || read.contains(expected);
+            lastRead = read;
         }
 
-        Assert.assertTrue("Did not see " + expected, readMessage);
+        Assert.assertTrue("Did not see " + expected + " -- last read was " + lastRead, readMessage);
 
     }
 
@@ -422,11 +496,23 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
 
         shutdownHttpClient();
 
+        httpClient = createHttpClient(url);
+
+        return httpClient;
+    }
+
+    private HttpClient getConcurrentHttpClient(URL url) {
+
+        HttpClient defaultHttpClient = createHttpClient(url) ;
+        httpClients.add(defaultHttpClient);
+        return defaultHttpClient;
+    }
+
+    private HttpClient createHttpClient(URL url) {
+
         DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
         UsernamePasswordCredentials creds = new UsernamePasswordCredentials(Authentication.USERNAME, Authentication.PASSWORD);
         defaultHttpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm"), creds);
-        httpClient = defaultHttpClient;
-
-        return httpClient;
+        return defaultHttpClient;
     }
 }
