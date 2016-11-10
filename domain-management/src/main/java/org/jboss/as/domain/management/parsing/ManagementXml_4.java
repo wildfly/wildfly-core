@@ -83,7 +83,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
-import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
+import org.jboss.as.domain.management.LegacyConfigurationChangeResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionPropertyResourceDefinition;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition;
 import org.jboss.as.domain.management.security.AdvancedUserSearchResourceDefintion;
@@ -207,7 +207,7 @@ class ManagementXml_4 extends ManagementXml {
     private void parseConfigurationChanges(final XMLExtendedStreamReader reader, final ModelNode address,
                                           final List<ModelNode> list) throws XMLStreamException {
         PathAddress operationAddress = PathAddress.pathAddress(address);
-        operationAddress = operationAddress.append(ConfigurationChangeResourceDefinition.PATH);
+        operationAddress = operationAddress.append(LegacyConfigurationChangeResourceDefinition.PATH);
         final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(operationAddress));
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
@@ -218,7 +218,7 @@ class ManagementXml_4 extends ManagementXml {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
                     case MAX_HISTORY: {
-                        ConfigurationChangeResourceDefinition.MAX_HISTORY.parseAndSetParameter(value, add, reader);
+                        LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.parseAndSetParameter(value, add, reader);
                         break;
                     }
                     default: {

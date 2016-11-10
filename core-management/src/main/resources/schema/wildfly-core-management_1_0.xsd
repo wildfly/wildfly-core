@@ -28,6 +28,24 @@
     <!-- The core-management subsystem root element -->
     <xs:element name="subsystem">
         <xs:complexType>
+            <xs:sequence>
+                <xs:element name="configuration-changes" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Configuration for the history of configuration changes.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="max-history" type="xs:integer" use="optional" default="10">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Number of configuration changes that are available in history.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
         </xs:complexType>
     </xs:element>
 

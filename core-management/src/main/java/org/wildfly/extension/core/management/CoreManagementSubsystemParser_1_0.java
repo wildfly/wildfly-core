@@ -46,12 +46,14 @@ class CoreManagementSubsystemParser_1_0 extends PersistentResourceXMLParser {
 
     static {
         xmlDescription = builder(CoreManagementExtension.SUBSYSTEM_PATH, NAMESPACE)
+                .addChild(builder(ConfigurationChangeResourceDefinition.PATH).addAttribute(ConfigurationChangeResourceDefinition.MAX_HISTORY))
                 .build();
     }
 
     private CoreManagementSubsystemParser_1_0() {
     }
 
+    @Override
     public PersistentResourceXMLDescription getParserDescription() {
         return xmlDescription;
     }

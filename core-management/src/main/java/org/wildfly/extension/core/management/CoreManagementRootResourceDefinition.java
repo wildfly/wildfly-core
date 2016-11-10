@@ -22,8 +22,10 @@
 
 package org.wildfly.extension.core.management;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PersistentResourceDefinition;
@@ -47,4 +49,13 @@ class CoreManagementRootResourceDefinition extends PersistentResourceDefinition 
     public Collection<AttributeDefinition> getAttributes() {
         return Collections.emptyList();
     }
+
+    @Override
+    protected List<? extends PersistentResourceDefinition> getChildren() {
+        List<PersistentResourceDefinition> children = new ArrayList<>();
+        children.add(ConfigurationChangeResourceDefinition.INSTANCE);
+        return children;
+    }
+
+
 }

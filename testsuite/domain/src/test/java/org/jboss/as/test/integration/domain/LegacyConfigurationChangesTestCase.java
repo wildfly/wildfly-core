@@ -26,22 +26,20 @@ import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.USER_ID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOWED_ORIGINS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURATION_CHANGES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_DATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
@@ -53,37 +51,31 @@ import java.io.IOException;
 import java.util.List;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.domain.management.LegacyConfigurationChangeResourceDefinition;
 import org.jboss.dmr.ModelNode;
-import org.junit.Assert;
 import org.junit.Test;
-import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 
 /**
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
-public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTestCase {
-
-    private static final PathElement DEFAULT_PROFILE = PathElement.pathElement(PROFILE, "default");
-    private static final PathElement OTHER_PROFILE = PathElement.pathElement(PROFILE, "other");
+public class LegacyConfigurationChangesTestCase extends AbstractConfigurationChangesTestCase {
 
     @Test
     public void testConfigurationChanges() throws Exception {
         try {
-            createProfileConfigurationChange(DEFAULT_PROFILE, MAX_HISTORY_SIZE); // shouldn't appear on slave
-            createProfileConfigurationChange(OTHER_PROFILE, MAX_HISTORY_SIZE);
             createConfigurationChanges(HOST_MASTER);
             createConfigurationChanges(HOST_SLAVE);
             checkConfigurationChanges(readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_MASTER), 11);
             checkConfigurationChanges(readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE), 11);
             checkConfigurationChanges(readConfigurationChanges(domainSlaveLifecycleUtil.getDomainClient(), HOST_SLAVE), 11);
+            checkRootConfigurationChangeWarning(domainMasterLifecycleUtil.getDomainClient());
 
             setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), HOST_MASTER, 19);
             checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
             checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE);
             checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
             checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE);
@@ -91,31 +83,28 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
 
             setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE, 20);
             checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 20, HOST_SLAVE);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 20, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
             checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 20, HOST_SLAVE);
-            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 20, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
             checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
 
-            setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), OTHER_PROFILE, 21);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 20, HOST_SLAVE);
+            setConfigurationChangeMaxHistory(domainSlaveLifecycleUtil.getDomainClient(), HOST_SLAVE, 21);
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 21, HOST_SLAVE);
             checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 21, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
-            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 20, HOST_SLAVE);
+            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 21, HOST_SLAVE);
             checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 21, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
             checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
+            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
         } finally {
-            clearProfileConfigurationChange(OTHER_PROFILE);
-            clearProfileConfigurationChange(DEFAULT_PROFILE);
-            clearConfigurationChanges(HOST_SLAVE);
             clearConfigurationChanges(HOST_MASTER);
+            clearConfigurationChanges(HOST_SLAVE);
         }
     }
 
     @Test
     public void testConfigurationChangesOnSlave() throws Exception {
         try {
-            createProfileConfigurationChange(OTHER_PROFILE, 20);
             createConfigurationChanges(HOST_SLAVE);
             PathAddress systemPropertyAddress = PathAddress.pathAddress().append(HOST_SLAVE).append(SYSTEM_PROPERTY, "slave");
             ModelNode setSystemProperty = Util.createAddOperation(systemPropertyAddress);
@@ -128,77 +117,48 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
             List<ModelNode> changesOnSlaveHC = readConfigurationChanges(domainSlaveLifecycleUtil.getDomainClient(), HOST_SLAVE);
             List<ModelNode> changesOnSlaveDC = readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE);
             checkSlaveConfigurationChanges(changesOnSlaveHC, 12);
+            setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE, 20);
             checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 20, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
             checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 20, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
             assertThat(changesOnSlaveHC.size(), is(changesOnSlaveDC.size()));
         } finally {
-            clearProfileConfigurationChange(OTHER_PROFILE);
             clearConfigurationChanges(HOST_SLAVE);
-        }
-    }
-
-    @Test
-    public void testExcludeLegacyOnHost() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
-        try {
-            createProfileConfigurationChange(OTHER_PROFILE, 5);
-            createConfigurationChanges(HOST_SLAVE);
-            final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(PathAddress.pathAddress()
-                    .append(HOST_SLAVE)
-                    .append(CORE_SERVICE, MANAGEMENT)
-                    .append(SERVICE, CONFIGURATION_CHANGES)));
-            add.get("max-history").set(MAX_HISTORY_SIZE);
-            ModelNode response = client.execute(add);
-            Assert.assertFalse(response.toString(), Operations.isSuccessfulOutcome(response));
-            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
-        } finally {
-            clearProfileConfigurationChange(OTHER_PROFILE);
-            clearConfigurationChanges(HOST_SLAVE);
-            client.execute(Util.createRemoveOperation(PathAddress.pathAddress(PathAddress.pathAddress()
-                    .append(HOST_SLAVE)
-                    .append(CORE_SERVICE, MANAGEMENT)
-                    .append(SERVICE, CONFIGURATION_CHANGES))));
-        }
-    }
-
-    @Test
-    public void testExcludeLegacyOnManagedServers() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
-        try {
-            createProfileConfigurationChange(OTHER_PROFILE, 5);
-            createConfigurationChanges(HOST_SLAVE);
-            clearConfigurationChanges(HOST_SLAVE);
-            final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(PathAddress.pathAddress()
-                    .append(HOST_SLAVE)
-                    .append(CORE_SERVICE, MANAGEMENT)
-                    .append(SERVICE, CONFIGURATION_CHANGES)));
-            add.get("max-history").set(MAX_HISTORY_SIZE);
-            ModelNode response = client.execute(add);
-            Assert.assertFalse(response.toString(), Operations.isSuccessfulOutcome(response));
-            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
-        } finally {
-            clearProfileConfigurationChange(OTHER_PROFILE);
-            client.execute(Util.createRemoveOperation(PathAddress.pathAddress(PathAddress.pathAddress()
-                    .append(HOST_SLAVE)
-                    .append(CORE_SERVICE, MANAGEMENT)
-                    .append(SERVICE, CONFIGURATION_CHANGES))));
         }
     }
 
     @Test
     public void testEnablingConfigurationChangesOnHC() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
         try {
             final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(HOST_SLAVE).append(getAddress()));
-            add.get("max-history").set(MAX_HISTORY_SIZE);
+            add.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
             executeForResult(client, add);
         } finally {
             clearConfigurationChanges(HOST_SLAVE);
         }
     }
 
+    @Test
+    public void testEnablingConfigurationChangesOnHC2() throws Exception {
+        DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
+        final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(getAddress()));
+        add.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
+        ModelNode response = client.execute(add);
+        assertThat(response.asString(), response.get(OUTCOME).asString(), is(FAILED));
+        assertThat(response.get(FAILURE_DESCRIPTION).asString(), containsString("WFLYDC0032"));
+    }
+
+    private void checkRootConfigurationChangeWarning(DomainClient client) throws IOException {
+        PathAddress address = getAddress();
+        ModelNode addConfigurationChanges = Util.createAddOperation(address);
+        addConfigurationChanges.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
+        ModelNode response = client.execute(addConfigurationChanges);
+        assertThat(response.asString(), response.get(OUTCOME).asString(), is(SUCCESS));
+        assertThat(response.get(RESULT).asString(), containsString("WFLYDM0135"));
+    }
+
     private void checkConfigurationChanges(List<ModelNode> changes, int size) throws IOException {
-        assertThat(changes.toString(), changes.size(), is(size));
+        assertThat(changes.size(), is(size));
         for (ModelNode change : changes) {
             assertThat(change.hasDefined(OPERATION_DATE), is(true));
             assertThat(change.hasDefined(USER_ID), is(false));
@@ -213,7 +173,7 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
     }
 
     private void checkSlaveConfigurationChanges( List<ModelNode> changes, int size) throws IOException {
-        assertThat(changes.toString(),changes.size(), is(size));
+        assertThat(changes.size(), is(size));
         for (ModelNode change : changes) {
             assertThat(change.hasDefined(OPERATION_DATE), is(true));
             assertThat(change.hasDefined(USER_ID), is(false));
@@ -267,7 +227,7 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
         assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
         currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(REMOVE));
-        assertThat(removePrefix(currentChangeOp).toString(), is(SYSTEM_PROPERTY_ADDRESS.toString()));
+       assertThat(removePrefix(currentChangeOp).toString(), is(SYSTEM_PROPERTY_ADDRESS.toString()));
 
         currentChange = changes.get(4);
         assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
@@ -297,23 +257,10 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
         assertThat(currentChangeOp.get(NAME).asString(), is(ALLOWED_ORIGINS));
     }
 
-    private void createProfileConfigurationChange(PathElement profile, int maxHistory) throws IOException, UnsuccessfulOperationException {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
-        final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(profile).append(getAddress()));
-        add.get("max-history").set(maxHistory);
-        executeForResult(client, add);
-    }
-
-    private void clearProfileConfigurationChange(PathElement profile) throws IOException, UnsuccessfulOperationException {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
-        final ModelNode remove = Util.createRemoveOperation(PathAddress.pathAddress().append(profile).append(getAddress()));
-        executeForResult(client, remove);
-    }
-
     @Override
     protected PathAddress getAddress() {
-        return PathAddress.pathAddress()
-            .append(PathElement.pathElement(SUBSYSTEM, "core-management"))
-            .append(PathElement.pathElement("service", "configuration-changes"));
+        return  PathAddress.pathAddress()
+            .append(PathElement.pathElement(CORE_SERVICE, MANAGEMENT))
+            .append(LegacyConfigurationChangeResourceDefinition.PATH);
     }
 }

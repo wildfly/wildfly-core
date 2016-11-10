@@ -3,6 +3,7 @@
 <config>
    <subsystems name="default">
       <subsystem>logging.xml</subsystem>
+      <subsystem>core-management.xml</subsystem>
       <subsystem>jmx.xml</subsystem>
       <subsystem>request-controller.xml</subsystem>
    </subsystems>

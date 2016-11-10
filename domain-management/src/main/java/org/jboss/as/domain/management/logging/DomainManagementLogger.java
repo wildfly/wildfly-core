@@ -1232,7 +1232,7 @@ public interface DomainManagementLogger extends BasicLogger {
 
     /* End X.500 exceptions */
     @Message(id = 135, value = "The resource %s wasn't working properly and has been removed.")
-    String removedOutOfOrderResource(final String address);
+    String removedBrokenResource(final String address);
 
     @LogMessage(level = INFO)
     @Message(id = 136, value = "Registered OpenSSL provider")
