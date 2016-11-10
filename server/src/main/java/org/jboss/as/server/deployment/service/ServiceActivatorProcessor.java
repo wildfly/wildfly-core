@@ -19,9 +19,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.server.deployment.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.jboss.as.server.deployment.AttachmentList;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -51,15 +53,27 @@ public class ServiceActivatorProcessor implements DeploymentUnitProcessor {
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final ServicesAttachment servicesAttachment = deploymentUnit.getAttachment(Attachments.SERVICES);
-        if(servicesAttachment == null || servicesAttachment.getServiceImplementations(ServiceActivator.class.getName()).isEmpty())
+        if (servicesAttachment == null || servicesAttachment.getServiceImplementations(ServiceActivator.class.getName()).isEmpty()) {
             return; // Skip it if it has not been marked
-
+        }
         final Module module = deploymentUnit.getAttachment(Attachments.MODULE);
-        if (module == null)
+        if (module == null) {
             return; // Skip deployments with no module
+        }
+
+        AttachmentList<DeploymentUnit> duList = deploymentUnit.getAttachment(Attachments.SUB_DEPLOYMENTS);
+        List<String> serviceAcitvatorList = new ArrayList<String>();
+        if (duList!=null && !duList.isEmpty()) {
+            for (DeploymentUnit du : duList) {
+                ServicesAttachment duServicesAttachment = du.getAttachment(Attachments.SERVICES);
+                for (String serv : duServicesAttachment.getServiceImplementations(ServiceActivator.class.getName())) {
+                    serviceAcitvatorList.add(serv);
+                }
+            }
+        }
 
         ServiceRegistry serviceRegistry = phaseContext.getServiceRegistry();
-        if(WildFlySecurityManager.isChecking()) {
+        if (WildFlySecurityManager.isChecking()) {
             //service registry allows you to modify internal server state across all deployments
             //if a security manager is present we use a version that has permission checks
             serviceRegistry = new SecuredServiceRegistry(serviceRegistry);
@@ -67,11 +81,17 @@ public class ServiceActivatorProcessor implements DeploymentUnitProcessor {
         final ServiceActivatorContext serviceActivatorContext = new ServiceActivatorContextImpl(phaseContext.getServiceTarget(), serviceRegistry);
 
         final ClassLoader current = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+
         try {
             WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(module.getClassLoader());
             for (ServiceActivator serviceActivator : module.loadService(ServiceActivator.class)) {
                 try {
-                    serviceActivator.activate(serviceActivatorContext);
+                    for (String serv : servicesAttachment.getServiceImplementations(ServiceActivator.class.getName())) {
+                        if (serv.compareTo(serviceActivator.getClass().getName()) == 0 && !serviceAcitvatorList.contains(serv)) {
+                            serviceActivator.activate(serviceActivatorContext);
+                            break;
+                        }
+                    }
                 } catch (ServiceRegistryException e) {
                     throw new DeploymentUnitProcessingException(e);
                 }
