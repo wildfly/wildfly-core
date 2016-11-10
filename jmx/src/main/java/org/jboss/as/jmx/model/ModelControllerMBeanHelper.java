@@ -599,6 +599,7 @@ public class ModelControllerMBeanHelper {
         private final ObjectName baseName;
         private final Map<String, String> properties;
         private final ObjectName domainOnlyName;
+        private final boolean propertyListPattern;
 
         protected ObjectNameMatchResourceAction(ObjectName baseName) {
             this.baseName = baseName;
@@ -608,6 +609,7 @@ public class ModelControllerMBeanHelper {
             } catch (MalformedObjectNameException e) {
                 throw new IllegalStateException(e);
             }
+            this.propertyListPattern = baseName != null && baseName.isPropertyListPattern();
         }
 
         @Override
@@ -627,7 +629,7 @@ public class ModelControllerMBeanHelper {
                 if (domainOnlyName.apply(toMatch)) {
                     result = toMatch;
                 }
-            } else if (address.size() >= properties.size()) {
+            } else if (!propertyListPattern && address.size() >= properties.size()) {
                 // We have same or more elements than our target has properties; let it do the match
                 if (baseName.apply(toMatch)) {
                     result = toMatch;
@@ -639,8 +641,9 @@ public class ModelControllerMBeanHelper {
                     for (Map.Entry<String, String> entry : toMatch.getKeyPropertyList().entrySet()) {
 
                         String propertyValue = properties.get(entry.getKey());
-                        if (propertyValue == null
-                                || (!entry.getValue().equals(propertyValue))
+                        if ((propertyValue == null && !propertyListPattern)
+                                || (propertyValue != null
+                                        && !entry.getValue().equals(propertyValue))
                                         && !baseName.isPropertyValuePattern(entry.getKey())) {
                             matches = false;
                             break;
