@@ -207,7 +207,7 @@ public final class CredentialReference implements Destroyable {
     }
 
     /**
-     * Get the attribute builder for credential-reference attribute without default characteristics.
+     * Get the attribute builder for credential-reference attribute with specified characteristics.
      *
      * @param name name of attribute
      * @param xmlName name of xml element
