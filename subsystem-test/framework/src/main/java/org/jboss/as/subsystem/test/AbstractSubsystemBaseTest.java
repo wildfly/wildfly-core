@@ -130,13 +130,16 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
         SchemaValidator.validateXML(getSubsystemXml(), schemaPath, getResolvedProperties());
     }
 
-    @Test
-    public void testSchemaOfSubsystemTemplates() throws Exception {
+    /**
+     * To enable a test for validation of the subsystem templates, override both {@link #getSubsystemXsdPath()} and {@link #getSubsystemTemplatePaths()}
+     * then add a new test just calling this method.
+     */
+    protected void testSchemaOfSubsystemTemplates() throws Exception {
         String schemaPath = getSubsystemXsdPath();
-        Assume.assumeTrue("getSubsystemXsdPath() has been overridden to disable the validation of the subsystem templates",
+        Assert.assertTrue("getSubsystemXsdPath() needs to be overridden to enable the validation of the subsystem templates",
                 schemaPath != null);
         String[] templates = getSubsystemTemplatePaths();
-        Assume.assumeTrue("Override getSubsystemTemplatePaths() to activate the validation of the subsystem templates",
+        Assert.assertTrue("Override getSubsystemTemplatePaths() to activate the validation of the subsystem templates",
                 templates != null && templates.length > 0);
 
         for (String template : templates) {
