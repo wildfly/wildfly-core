@@ -226,6 +226,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 switch (mechanismName) {
                     case "DIGEST-MD5":
                         return AuthMechanism.DIGEST;
+                    case "EXTERNAL":
+                        return AuthMechanism.CLIENT_CERT;
                     case "JBOSS-LOCAL-USER":
                         return AuthMechanism.LOCAL;
                     case "PLAIN":
