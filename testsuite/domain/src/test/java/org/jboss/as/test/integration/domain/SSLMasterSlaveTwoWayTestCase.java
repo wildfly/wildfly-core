@@ -47,7 +47,7 @@ import org.junit.Test;
  *
  * @author Ondrej Kotek <okotek@redhat.com>
  */
-@Ignore("[WFCORE-1954] Wrap CLIENT_CERT behaviour of legacy realms with Elytron components.")
+@Ignore("[WFCORE-1978] Enable Client Cert authentication for slave to master connections.")
 public class SSLMasterSlaveTwoWayTestCase extends AbstractSSLMasterSlaveTestCase {
 
     private static final File WORK_DIR = new File("target" + File.separatorChar +  "ssl-master-slave-2way-workdir");
