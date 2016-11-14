@@ -74,7 +74,6 @@ class StaticProviderAddHandler extends AbstractAddStepHandler {
     static void modifyRegistration(OperationContext context, ModelNode op) throws OperationFailedException {
         final MutableDiscoveryProvider mutableDiscoveryProvider = context.getCapabilityRuntimeAPI(DiscoveryExtension.DISCOVERY_PROVIDER_CAPABILITY, context.getCurrentAddressValue(), MutableDiscoveryProvider.class);
         final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-        System.out.println("Model is: " + model); // XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
         if (model.hasDefined(DiscoveryExtension.SERVICES)) {
             final List<ModelNode> list = StaticProviderDefinition.SERVICES.resolveModelAttribute(context, model).asList();
             final List<ServiceURL> services = new ArrayList<>();
