@@ -39,6 +39,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
 import org.eclipse.aether.collection.DependencyCollectionException;
@@ -283,12 +284,16 @@ public class ChildFirstClassLoaderBuilder {
             try {
                 File file = new File(entry.getKey().toURI());
                 if (file.isDirectory()) {
-                    addParentFirstPatternsFromDirectory(file, "", childFirstNames);
+                    addParentFirstPatternsFromDirectory(file, "");
+                } else if (file.getName().endsWith(".jar")){
+                    addParentFirstPatternsFromJar(file);
                 } else {
                     //TODO - implement something like addParentFirstPatternsFromJar if that becomes needed
                     throw new IllegalStateException("Single class exclusions from jar files is not working: " + entry);
                 }
             } catch (URISyntaxException e) {
+                throw new IllegalStateException(e);
+            } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
         }
@@ -296,19 +301,34 @@ public class ChildFirstClassLoaderBuilder {
         return new ChildFirstClassLoader(parent, parentFirst, childFirst, parentExclusionFilter, classloaderURLs.toArray(new URL[classloaderURLs.size()]));
     }
 
-    private void addParentFirstPatternsFromDirectory(File directory, String prefix, Set<String> childFirstClassNames) {
+    private void addParentFirstPatternsFromDirectory(File directory, String prefix) {
         for (File file : directory.listFiles()) {
             if (file.isDirectory()) {
-                addParentFirstPatternsFromDirectory(file, prefix +file.getName() + ".", childFirstClassNames);
+                addParentFirstPatternsFromDirectory(file, prefix + file.getName() + ".");
             } else {
                 final String fileName = file.getName();
                 if (fileName.endsWith(".class")) {
-                    //TODO we can optimize this by adding parentFirst patterns for the whole package as long as
-                    String className = prefix + file.getName().substring(0, fileName.length() - ".class".length());
-                    parentFirst.add(compilePattern(className));
+                    parentFirst.add(compilePattern(trimDotClass(prefix + fileName)));
                 }
             }
         }
+    }
+
+    private void addParentFirstPatternsFromJar(File jar) throws IOException {
+        JarFile jarFile = new JarFile(jar);
+
+        jarFile.stream()
+                .filter(jarEntry -> !jarEntry.isDirectory() && jarEntry.getName().endsWith(".class"))
+                .map(jarEntry -> compileJarEntryPattern(trimDotClass(jarEntry.getName())))
+                .forEach(pattern -> parentFirst.add(pattern));
+    }
+
+    private String trimDotClass(String fileName) {
+        return fileName.substring(0, fileName.length() - ".class".length());
+    }
+
+    private Pattern compileJarEntryPattern(String pattern) {
+        return compilePattern(pattern.replace("/", "."));
     }
 
     private Pattern compilePattern(String pattern) {

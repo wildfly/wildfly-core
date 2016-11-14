@@ -20,6 +20,7 @@
  */
 package org.jboss.as.model.test;
 
+import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
@@ -29,6 +30,9 @@ import org.jboss.as.model.test.api.SingleChildFirst1;
 import org.jboss.as.model.test.api.SingleChildFirst2;
 import org.jboss.as.model.test.api.SingleParentFirst;
 import org.jboss.as.model.test.api.Welcome;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -65,7 +69,7 @@ public class ChildFirstClassLoadingTest {
     }
 
     @Test
-    public void testSingleClassFromTests() throws Exception {
+    public void testSingleClassFromDirectory() throws Exception {
         ChildFirstClassLoaderBuilder builder = new ChildFirstClassLoaderBuilder(false);
         builder.addSingleChildFirstClass(SingleChildFirst1.class, SingleChildFirst2.class);
         ClassLoader loader = builder.build();
@@ -77,5 +81,34 @@ public class ChildFirstClassLoadingTest {
         Assert.assertNotSame(loader, clazz.getClassLoader());
         clazz = loader.loadClass(ChildFirstClassLoadingTest.class.getName());
         Assert.assertNotSame(loader, clazz.getClassLoader());
+    }
+
+    @Test
+    public void testSingleClassFromJar() throws Exception {
+        JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "single-class-from-jar-test.jar")
+                .addClasses(SingleChildFirst1.class, SingleChildFirst2.class, SingleParentFirst.class);
+        String tempDir = System.getProperty("java.io.tmpdir");
+
+        File file = new File(tempDir + File.separator + jar.getName());
+        try {
+            new ZipExporterImpl(jar).exportTo(file, true);
+            URLClassLoader tmp = new ChildFirstClassLoaderBuilder(false)
+                    .addURL(file.toURI().toURL())
+                    .build();
+            Class<?> scf1 = tmp.loadClass(SingleChildFirst1.class.getName());
+            Assert.assertSame(tmp, scf1.getClassLoader());
+            Class<?> scf2 = tmp.loadClass(SingleChildFirst2.class.getName());
+            Assert.assertSame(tmp, scf2.getClassLoader());
+
+            URLClassLoader loader = new ChildFirstClassLoaderBuilder(false)
+                    .addSingleChildFirstClass(scf1, scf2)
+                    .build();
+            Assert.assertSame(loader, loader.loadClass(SingleChildFirst1.class.getName()).getClassLoader());
+            Assert.assertSame(loader, loader.loadClass(SingleChildFirst2.class.getName()).getClassLoader());
+            Assert.assertNotSame(loader, loader.loadClass(SingleParentFirst.class.getName()).getClassLoader());
+            loader.close();
+        } finally {
+            file.delete();
+        }
     }
 }
