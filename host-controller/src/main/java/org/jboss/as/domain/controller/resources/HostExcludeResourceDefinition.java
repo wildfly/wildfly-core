@@ -112,6 +112,7 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
                     .setAllowNull(true)
                     .setXmlName("minor-version")
                     .setAlternatives(ModelDescriptionConstants.HOST_RELEASE)
+                    .setRequires(ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION)
                     .build();
 
     public static final SimpleAttributeDefinition MANAGEMENT_MICRO_VERSION =
