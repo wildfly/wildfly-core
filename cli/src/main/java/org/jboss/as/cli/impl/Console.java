@@ -231,7 +231,8 @@ public interface Console {
                         try {
                             return console.getInputLine();
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(e);
                         } finally {
                             if(origPrompt != null) {
                                 console.setPrompt(origPrompt);
@@ -242,9 +243,6 @@ public interface Console {
                             console.putProcessInForeground(PID);
                         }
                     }
-
-                    // Something is wrong.
-                    return null;
                 }
 
                 @Override
