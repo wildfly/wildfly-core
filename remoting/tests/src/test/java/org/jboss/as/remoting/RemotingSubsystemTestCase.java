@@ -116,6 +116,12 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
         };
     }
 
+    @Test
+    @Override
+    public void testSchemaOfSubsystemTemplates() throws Exception {
+        super.testSchemaOfSubsystemTemplates();
+    }
+
     @Override
     protected String getSubsystemXml(String resource) throws IOException {
         return readResource(resource);
