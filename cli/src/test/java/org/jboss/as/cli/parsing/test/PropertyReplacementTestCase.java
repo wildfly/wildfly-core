@@ -109,6 +109,8 @@ public class PropertyReplacementTestCase {
         assertEquals("test-op", CLIExpressionResolver.resolve("${unknown:${test.op-name}}"));
         assertEquals("test-op", CLIExpressionResolver.resolve("${test.op-name:${unknown}}"));
         assertEquals("${unknown1:${unknown2}}", CLIExpressionResolver.resolveOrOriginal("${unknown1:${unknown2}}"));
+        assertEquals("test-op${unknown1}", CLIExpressionResolver.resolveLax("${test.op-name}${unknown1}"));
+        assertEquals("${unknown1}test-op", CLIExpressionResolver.resolveLax("${unknown1}${test.op-name}"));
     }
 
     @Test
