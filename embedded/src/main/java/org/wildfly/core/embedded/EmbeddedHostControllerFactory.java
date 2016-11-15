@@ -93,6 +93,7 @@ public class EmbeddedHostControllerFactory {
     private static final String PC_ADDRESS = "--pc-address";
     private static final String PC_PORT = "--pc-port";
 
+
     private EmbeddedHostControllerFactory() {
     }
 
@@ -413,6 +414,12 @@ public class EmbeddedHostControllerFactory {
             // this used to be set in the embedded-hc specific env setup, WFCORE-938 will add support for --admin-only=false
             cmds.add("--admin-only");
 
+            for (final String prop : EmbeddedProcessFactory.DOMAIN_KEYS) {
+                // if we've started with any jboss.domain.base.dir etc, copy those in here.
+                String value = WildFlySecurityManager.getPropertyPrivileged(prop, null);
+                if (value != null)
+                    cmds.add("-D" + prop + "=" + value);
+            }
             return Main.determineEnvironment(cmds.toArray(new String[cmds.size()]), startTime, ProcessType.EMBEDDED_HOST_CONTROLLER).getHostControllerEnvironment();
         }
     }

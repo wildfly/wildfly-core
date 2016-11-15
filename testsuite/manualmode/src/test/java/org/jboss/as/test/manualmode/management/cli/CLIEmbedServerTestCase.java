@@ -40,20 +40,17 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.codehaus.plexus.util.FileUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.protocol.StreamUtils;
@@ -76,6 +73,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Tests embedding a server in the CLI.
@@ -89,7 +87,6 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
      * as the tests play tricks with it later.
      */
     private static final PrintStream out = System.out;
-
     private static final File ROOT = new File(System.getProperty("jboss.home"));
     private static final String JBOSS_HOME = " --jboss-home=" + ROOT.getAbsolutePath();
     private static final String STOP = "stop-embedded-server";
@@ -97,6 +94,20 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
     private static JavaArchive serviceActivatorDeployment;
     private static File serviceActivatorDeploymentFile;
     private static boolean uninstallStdio;
+
+    public static final String JBOSS_SERVER_BASE_DIR = "jboss.server.base.dir";
+    public static final String JBOSS_SERVER_CONFIG_DIR = "jboss.server.config.dir";
+    public static final String JBOSS_SERVER_CONTENT_DIR = "jboss.server.content.dir";
+    public static final String JBOSS_SERVER_DEPLOY_DIR = "jboss.server.deploy.dir";
+    public static final String JBOSS_SERVER_TEMP_DIR = "jboss.server.temp.dir";
+    public static final String JBOSS_SERVER_LOG_DIR = "jboss.server.log.dir";
+    public static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
+    public static final String JBOSS_CONTROLLER_TEMP_DIR = "jboss.controller.temp.dir";
+
+    public static final String[] SERVER_PROPS = {
+        JBOSS_SERVER_BASE_DIR,  JBOSS_SERVER_CONFIG_DIR,  JBOSS_SERVER_DEPLOY_DIR,
+        JBOSS_SERVER_TEMP_DIR,  JBOSS_SERVER_LOG_DIR, JBOSS_SERVER_DATA_DIR
+    };
 
     // Sink for embedding app (i.e. this class and the CLI) and embedded server writes to stdout
     private ByteArrayOutputStream logOut;
@@ -106,7 +117,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
     @BeforeClass
     public static void beforeClass() throws Exception {
 
-        copyConfig("logging.properties", "logging.properties.backup", false);
+        CLIEmbedUtil.copyConfig(ROOT, "standalone", "logging.properties", "logging.properties.backup", false);
 
         // Set up ability to manipulate stdout
         initialStdioContext = StdioContext.getStdioContext();
@@ -134,7 +145,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     @AfterClass
     public static void afterClass() throws IOException {
-        copyConfig("logging.properties.backup", "logging.properties", false);
+        CLIEmbedUtil.copyConfig(ROOT, "standalone", "logging.properties.backup", "logging.properties", false);
         try {
             StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(initialStdioContext));
         } finally {
@@ -152,9 +163,9 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     @Before
     public void setup() throws Exception {
-        copyConfig("logging.properties.backup", "logging.properties", false);
+        CLIEmbedUtil.copyConfig(ROOT, "standalone", "logging.properties.backup", "logging.properties", false);
 
-        copyConfig("standalone.xml", "standalone-cli.xml", true);
+        CLIEmbedUtil.copyConfig(ROOT, "standalone", "standalone.xml", "standalone-cli.xml", true);
 
         // Capture stdout
         logOut = new ByteArrayOutputStream();
@@ -162,15 +173,6 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(replacement));
 
         initCLI(false);
-    }
-
-    private static void copyConfig(String base, String newName, boolean requiresExists) throws IOException {
-        File configDir = new File(ROOT, "standalone" + File.separatorChar + "configuration");
-        File baseFile = new File(configDir, base);
-        assertTrue(!requiresExists || baseFile.exists());
-        File newFile = new File(configDir, newName);
-        Files.copy(baseFile.toPath(), newFile.toPath(), StandardCopyOption.REPLACE_EXISTING,
-                StandardCopyOption.COPY_ATTRIBUTES);
     }
 
     @After
@@ -486,7 +488,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         assertFalse(cli.isConnected());
 
         // Confirm starting with --empty-config and --remove-existing succeeds even if the file exists
-        copyConfig("standalone.xml", "standalone-cli.xml", true);
+        CLIEmbedUtil.copyConfig(ROOT, "standalone", "standalone.xml", "standalone-cli.xml", true);
         line = "embed-server --server-config=standalone-cli.xml --empty-config --remove-existing " + JBOSS_HOME;
         cli.sendLine(line);
         assertTrue(cli.isConnected());
@@ -546,6 +548,137 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     }
 
+    @Test
+    public void testBaseDir() throws IOException, InterruptedException {
+        String currBaseDir = null;
+        final String newStandalone = "CLIEmbedServerTestCaseStandaloneTmp";
+
+        assertFalse(cli.isConnected());
+
+        try {
+            // save the current value
+            currBaseDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_SERVER_BASE_DIR, null);
+            CLIEmbedUtil.copyServerBaseDir(ROOT, "standalone", newStandalone, true);
+            //CLIEmbedUtil.copyConfig(ROOT, newStandalone, "logging.properties.backup", "logging.properties", false);
+
+            String newBaseDir = ROOT + File.separator + newStandalone;
+            setProperties(newBaseDir);
+
+            String line = "embed-server --std-out=echo " + JBOSS_HOME;
+            cli.sendLine(line);
+            assertTrue(cli.isConnected());
+            assertPath(JBOSS_SERVER_BASE_DIR, ROOT + File.separator + newStandalone);
+            assertPath(JBOSS_SERVER_CONFIG_DIR, ROOT + File.separator + newStandalone + File.separator + "configuration");
+            assertPath(JBOSS_SERVER_DATA_DIR, ROOT + File.separator + newStandalone + File.separator + "data");
+            assertPath(JBOSS_SERVER_LOG_DIR, ROOT + File.separator + newStandalone + File.separator + "log");
+            assertPath(JBOSS_SERVER_TEMP_DIR, ROOT + File.separator + newStandalone + File.separator + "tmp");
+            assertPath(JBOSS_CONTROLLER_TEMP_DIR, ROOT + File.separator + newStandalone + File.separator + "tmp");
+
+            cli.sendLine("/system-property=" + newStandalone + ":add(value=" + newStandalone +")");
+            assertProperty(newStandalone, newStandalone, false);
+
+            // WFCORE-1187, when this overrides logging.properties correctly, we can check this
+            // for now it will refer to the previously persisted log file in standalone/configuration/logging.properties
+            //File f = new File(ROOT + File.separator + newStandalone + File.separator + "log" + File.separator + "server.log");
+            //assertTrue(f.exists());
+            //assertTrue(f.length() > 0);
+
+            // stop the hc, and restart it with default properties
+            cli.sendLine("stop-embedded-server");
+
+            setProperties(null);
+            cli.sendLine(line);
+            assertTrue(cli.isConnected());
+            // shouldn't be set
+            assertProperty(newStandalone, null, true);
+            cli.sendLine("stop-embedded-server");
+
+            setProperties(newBaseDir);
+            cli.sendLine(line);
+            assertTrue(cli.isConnected());
+            assertProperty(newStandalone, newStandalone, false);
+
+        } finally {
+            cli.sendLine("stop-embedded-server");
+            // restore the original
+            setProperties(currBaseDir);
+            FileUtils.deleteDirectory(new File(ROOT + File.separator + newStandalone));
+        }
+    }
+
+    @Test
+    public void testLogDir() throws IOException, InterruptedException {
+        testPathDir(JBOSS_SERVER_LOG_DIR, "log");
+    }
+
+    @Test
+    public void testTempDir() throws IOException, InterruptedException {
+        testPathDir(JBOSS_SERVER_TEMP_DIR, "temp");
+    }
+
+    @Test
+    public void testDataDir() throws IOException, InterruptedException {
+        testPathDir(JBOSS_SERVER_DATA_DIR, "data");
+    }
+
+    @Test
+    public void testConfigDir() throws IOException, InterruptedException {
+        testPathDir(JBOSS_SERVER_CONFIG_DIR, "configuration");
+    }
+
+    @Test
+    public void testLogDirProperty() throws IOException, InterruptedException {
+        String currBaseDir = null;
+        final String newStandalone = "CLIEmbedServerTestCaseStandaloneTmp";
+
+        assertFalse(cli.isConnected());
+
+        try {
+            // save the current value
+            currBaseDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_SERVER_BASE_DIR, null);
+            CLIEmbedUtil.copyServerBaseDir(ROOT, "standalone", newStandalone, true);
+
+            String newBaseDir = ROOT + File.separator + newStandalone;
+            setProperties(newBaseDir);
+
+            String line = "embed-server --std-out=echo " + JBOSS_HOME;
+            cli.sendLine(line);
+            assertTrue(cli.isConnected());
+            assertPath(JBOSS_SERVER_BASE_DIR, ROOT + File.separator + newStandalone);
+            assertPath(JBOSS_SERVER_CONFIG_DIR, ROOT + File.separator + newStandalone + File.separator + "configuration");
+            assertPath(JBOSS_SERVER_DATA_DIR, ROOT + File.separator + newStandalone + File.separator + "data");
+            assertPath(JBOSS_SERVER_LOG_DIR, ROOT + File.separator + newStandalone + File.separator + "log");
+            assertPath(JBOSS_SERVER_TEMP_DIR, ROOT + File.separator + newStandalone + File.separator + "tmp");
+            assertPath(JBOSS_CONTROLLER_TEMP_DIR, ROOT + File.separator + newStandalone + File.separator + "tmp");
+
+        } finally {
+            cli.sendLine("stop-embedded-server");
+            // restore the original
+            setProperties(currBaseDir);
+            FileUtils.deleteDirectory(new File(ROOT + File.separator + newStandalone));
+        }
+    }
+
+    private void assertPath(final String path, final String expected) throws IOException, InterruptedException {
+            cli.sendLine("/path=" + path + " :read-attribute(name=path)", true);
+            CLIOpResult result = cli.readAllAsOpResult();
+            ModelNode resp = result.getResponseNode();
+            ModelNode stateNode = result.isIsOutcomeSuccess() ? resp.get(RESULT) : resp.get(FAILURE_DESCRIPTION);
+            assertEquals(expected, stateNode.asString());
+    }
+
+    private void assertProperty(final String propertyName, final String expected, final boolean notPresent) throws IOException, InterruptedException {
+        cli.sendLine("/system-property=" + propertyName + " :read-attribute(name=value)", true);
+        CLIOpResult result = cli.readAllAsOpResult();
+        ModelNode resp = result.getResponseNode();
+        ModelNode stateNode = result.isIsOutcomeSuccess() ? resp.get(RESULT) : resp.get(FAILURE_DESCRIPTION);
+        if (notPresent) {
+            assertTrue(stateNode.asString().indexOf("WFLYCTL0216") != -1);
+        } else {
+            assertEquals(expected, stateNode.asString());
+        }
+    }
+
     private void assertState(String expected, int timeout) throws IOException, InterruptedException {
         long done = timeout < 1 ? 0 : System.currentTimeMillis() + timeout;
         String history = "";
@@ -591,26 +724,13 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
     }
 
     private boolean checkLogging(String logOutput, String line) throws IOException {
-        List<String> output = getOutputLines(logOutput);
+        List<String> output = CLIEmbedUtil.getOutputLines(logOutput);
         for (String s : output) {
             if (s.contains(line)) {
                 return true;
             }
         }
         return false;
-    }
-
-    private List<String> getOutputLines(String raw) throws IOException {
-        if (raw == null) {
-            return Collections.emptyList();
-        }
-        BufferedReader br = new BufferedReader(new StringReader(raw));
-        List<String> result = new ArrayList<>();
-        String line;
-        while ((line = br.readLine()) != null) {
-            result.add(line);
-        }
-        return result;
     }
 
     private int countExtensions() throws IOException {
@@ -651,4 +771,53 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         assertTrue(cli.isConnected());
         validateRemoteConnection(true);
     }
+
+    private void testPathDir(final String propName, final String value) throws IOException, InterruptedException {
+        String currBaseDir = null;
+        final String newStandalone = "CLIEmbedServerTestCaseStandaloneTmp";
+        assertFalse(cli.isConnected());
+        try {
+            // save the current value
+            currBaseDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_SERVER_BASE_DIR, null);
+            //if (currBaseDir == null) {
+            //    currBaseDir = ROOT + File.separator + "standalone";
+            //}
+            CLIEmbedUtil.copyServerBaseDir(ROOT, "standalone", newStandalone, true);
+            String newBaseDir = ROOT + File.separator + newStandalone;
+            WildFlySecurityManager.setPropertyPrivileged(propName, newBaseDir + File.separator + value);
+            String line = "embed-server --std-out=echo " + JBOSS_HOME;
+            cli.sendLine(line);
+            assertTrue(cli.isConnected());
+
+            for(String prop : SERVER_PROPS) {
+                if (prop.equals(propName)) {
+                    assertPath(propName, ROOT + File.separator + newStandalone + File.separator + value);
+                } else {
+                    // just make sure the unchanged property has the default basedir
+                    //assertTrue(WildFlySecurityManager.getPropertyPrivileged(prop, "").indexOf(currBaseDir) != -1);
+                }
+            }
+        } finally {
+            // stop the server
+            cli.sendLine("stop-embedded-server");
+            // restore the original
+            setProperties(currBaseDir);
+            FileUtils.deleteDirectory(new File(ROOT + File.separator + newStandalone));
+        }
+    }
+
+    private void setProperties(final String newBaseDir) {
+        if (newBaseDir == null) {
+            for (String prop : SERVER_PROPS) {
+                WildFlySecurityManager.clearPropertyPrivileged(prop);
+            }
+            return;
+        }
+        WildFlySecurityManager.setPropertyPrivileged(JBOSS_SERVER_BASE_DIR, newBaseDir);
+        WildFlySecurityManager.setPropertyPrivileged(JBOSS_SERVER_CONFIG_DIR, newBaseDir + File.separator + "configuration");
+        WildFlySecurityManager.setPropertyPrivileged(JBOSS_SERVER_DATA_DIR, newBaseDir + File.separator + "data");
+        WildFlySecurityManager.setPropertyPrivileged(JBOSS_SERVER_LOG_DIR, newBaseDir + File.separator + "log");
+        WildFlySecurityManager.setPropertyPrivileged(JBOSS_SERVER_TEMP_DIR, newBaseDir + File.separator + "tmp");
+    }
+
 }
