@@ -25,6 +25,7 @@ package org.jboss.as.logging;
 import static org.jboss.as.logging.LogFileResourceDefinition.LOG_FILE;
 
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -150,7 +151,7 @@ public class LoggingResource implements Resource {
                         final AtomicBoolean found = new AtomicBoolean(false);
                         try {
                             // Walk the tree and look for the first possible match
-                            Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+                            Files.walkFileTree(dir, Collections.singleton(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
                                 @Override
                                 public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
                                     final Path relativeFile = dir.relativize(file);
@@ -322,7 +323,7 @@ public class LoggingResource implements Resource {
         final Collection<String> validFileNames = findValidFileNames(model);
         final Set<Path> logFiles = new TreeSet<>();
         final Path dir = Paths.get(logDir);
-        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(dir, Collections.singleton(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
             boolean first = true;
 
             @Override
