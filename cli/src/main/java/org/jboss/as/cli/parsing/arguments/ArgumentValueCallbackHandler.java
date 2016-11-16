@@ -426,8 +426,11 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
 
         @Override
         public ModelNode getValue() {
-            if(obj == null) {
-                return new ModelNode();
+            if (obj == null) {
+                // An empty Object "{}". Calling the constructor
+                // makes the ModelNode undefined.
+                obj = new ModelNode();
+                obj.setEmptyObject();
             }
             return obj;
         }

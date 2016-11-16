@@ -52,6 +52,21 @@ public class ArgumentValueConverterTestCase {
     }
 
     @Test
+    public void testEmptyObject() throws Exception {
+        final ModelNode value = parseObject("{}");
+        assertNotNull(value);
+        assertEquals(ModelType.OBJECT, value.getType());
+    }
+
+    @Test
+    public void testNestedEmptyObject() throws Exception {
+        final ModelNode value = parseObject("{toto={}}");
+        final List<Property> list = value.asPropertyList();
+        Property prop = list.get(0);
+        assertEquals(ModelType.OBJECT, prop.getValue().getType());
+    }
+
+    @Test
     public void testDefault_List() throws Exception {
         final ModelNode value = parseObject("[\"item1\",\"item2\"]");
         assertNotNull(value);
