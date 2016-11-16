@@ -21,7 +21,6 @@ package org.jboss.as.cli.gui;
 import static java.awt.BorderLayout.CENTER;
 import static java.awt.BorderLayout.NORTH;
 import static java.awt.BorderLayout.SOUTH;
-import static sun.tools.jconsole.Utilities.ensureContrast;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -152,7 +151,7 @@ public class ConnectDialog extends JInternalFrame {
     }
 
     private void createHelpers() {
-        hintTextColor = ensureContrast(UIManager.getColor("Label.disabledForeground"), UIManager.getColor("Panel.background"));
+        hintTextColor = UIManager.getColor("Panel.background");
         setDefaultCloseOperation(HIDE_ON_CLOSE);
         setResizable(false);
     }
