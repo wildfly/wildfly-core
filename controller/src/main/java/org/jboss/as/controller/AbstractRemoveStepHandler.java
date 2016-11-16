@@ -46,6 +46,8 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class AbstractRemoveStepHandler implements OperationStepHandler {
 
+    private static final OperationContext.AttachmentKey<Set<PathAddress>> RECURSION = OperationContext.AttachmentKey.create(Set.class);
+
     private final Set<RuntimeCapability> capabilities;
 
     protected AbstractRemoveStepHandler() {
@@ -100,6 +102,14 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
     protected void performRemove(OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
 
+        Set<PathAddress> removed = context.getAttachment(RECURSION);
+        if (removed != null && removed.contains(context.getCurrentAddress())) {
+            // We have already tried to remove children (see below) and are now back.
+            // So avoid any chance of continual looping and just remove the resource
+            context.removeResource(PathAddress.EMPTY_ADDRESS);
+            return;
+        }
+
         // We're going to add steps to remove any children before we remove the parent
         // First, figure out what child steps we need
 
@@ -144,6 +154,13 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
                 ControllerLogger.MGMT_OP_LOGGER.debugf("Adding remove step for child at %s", child);
                 context.addStep(Util.createRemoveOperation(child), entry.getValue(), OperationContext.Stage.MODEL, true);
             }
+
+            // Record that we have been here so when we come back we avoid looping
+            if (removed == null) {
+                removed = new HashSet<>();
+                context.attach(RECURSION, removed);
+            }
+            removed.add(context.getCurrentAddress());
         }
     }
 
