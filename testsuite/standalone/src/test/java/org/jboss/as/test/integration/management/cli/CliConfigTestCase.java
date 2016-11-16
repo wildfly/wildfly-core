@@ -134,6 +134,56 @@ public class CliConfigTestCase {
     }
 
     @Test
+    public void testOptionFile() throws Exception {
+        testFileOption("file");
+        testFileOption("properties");
+    }
+
+    private void testFileOption(String optionName) throws Exception {
+        File f = new File(temporaryUserHome.getRoot(), "a-script"
+                + System.currentTimeMillis() + ".cli");
+        f.createNewFile();
+        f.deleteOnExit();
+        {
+            CliProcessWrapper cli = new CliProcessWrapper()
+                    .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                    .addCliArgument("--" + optionName + "=" + "~" + File.separator + f.getName());
+            try {
+                cli.executeNonInteractive();
+                assertFalse(cli.getOutput(), cli.getOutput().contains(f.getName()));
+            } finally {
+                cli.destroyProcess();
+            }
+        }
+
+        {
+            CliProcessWrapper cli = new CliProcessWrapper()
+                    .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                    .addCliArgument("--" + optionName + "=" + "~"
+                            + temporaryUserHome.getRoot().getName() + File.separator + f.getName());
+            try {
+                cli.executeNonInteractive();
+                assertFalse(cli.getOutput(), cli.getOutput().contains(f.getName()));
+            } finally {
+                cli.destroyProcess();
+            }
+        }
+
+        {
+            String invalidPath = "~" + System.currentTimeMillis() + "@testOptionFile" + File.separator + f.getName();
+            CliProcessWrapper cli = new CliProcessWrapper()
+                    .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                    .addCliArgument("--" + optionName + "=" + invalidPath);
+            try {
+                cli.executeNonInteractive();
+                assertTrue(cli.getOutput(), cli.getOutput().contains(f.getName()));
+            } finally {
+                cli.destroyProcess();
+            }
+        }
+    }
+
+    @Test
     public void testNegativeConfigTimeoutCommand() throws Exception {
         File f = createConfigFile(false, -1);
         CliProcessWrapper cli = new CliProcessWrapper()

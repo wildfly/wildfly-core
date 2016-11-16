@@ -22,7 +22,9 @@
 package org.jboss.as.cli.handlers;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineCompleter;
@@ -147,6 +149,30 @@ public abstract class FilenameTabCompleter implements CommandLineCompleter {
        final int index = buffer.lastIndexOf(File.separatorChar);
        return index + 1 /* - separator character */;
    }
+
+    public static String expand(String path) throws IOException {
+        Objects.requireNonNull(path);
+        // Can be found on any platform (Windows powershell or shell).
+        if (path.startsWith("~")) {
+            String home = System.getProperty("user.home");
+            if (home == null) {
+                throw new IOException("Path " + path + " can't be expanded. "
+                        + "No user.home property");
+            }
+            if (path.startsWith("~" + File.separator)) {
+                path = new File(home, path.substring(2)).getAbsolutePath();
+            } else {
+                int i = path.indexOf(File.separator);
+                if (i < 0 || i >= path.length() - 1) {
+                    throw new IOException("Invalid file " + path);
+                }
+                String user = path.substring(1, i);
+                File homeDir = new File(new File(home).getParent(), user);
+                path = new File(homeDir, path.substring(i + 1)).getAbsolutePath();
+            }
+        }
+        return path;
+    }
 
    public static void main(String[] args) throws Exception {
        String name = "../../../../my\\ dir/";
