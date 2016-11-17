@@ -158,7 +158,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                 .requirement(redeployPermission)
                 .build());
 
-        pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+        pathCompleter = FilenameTabCompleter.newCompleter(ctx);
         content = new ArgumentWithListValue(this, new CommandLineCompleter(){
             @Override
             public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {

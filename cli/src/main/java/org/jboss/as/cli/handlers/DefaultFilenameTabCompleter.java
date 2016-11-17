@@ -21,7 +21,6 @@
  */
 package org.jboss.as.cli.handlers;
 
-import java.io.File;
 import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
@@ -39,41 +38,36 @@ public class DefaultFilenameTabCompleter extends FilenameTabCompleter {
        public boolean isEscape(char ch) {
            return ch == '\\' || ch == ' ' || ch == '"';
        }
-   };
+    };
+
+    private static final EscapeSelector QUOTES_ONLY_ESCAPE_SELECTOR = new EscapeSelector() {
+        @Override
+        public boolean isEscape(char ch) {
+            return ch == '"';
+        }
+    };
 
    public DefaultFilenameTabCompleter(CommandContext ctx) {
        super(ctx);
    }
 
-   /* (non-Javadoc)
-    * @see org.jboss.as.cli.CommandLineCompleter#complete(org.jboss.as.cli.CommandContext,
-    * java.lang.String, int, java.util.List)
-    */
-   @Override
-   public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
-
-       int result = getCandidates(buffer, candidates);
-
-       int correction = 0;
-       if(buffer.length() > 0) {
-           final int lastSeparator = buffer.lastIndexOf(File.separatorChar);
-           if(lastSeparator > 0) {
-               final String path = buffer.substring(0, lastSeparator);
-               final String escaped = Util.escapeString(path, ESCAPE_SELECTOR);
-               correction = escaped.length() - path.length();
-           }
-       }
-
-       if(candidates.size() == 1) {
-           candidates.set(0, Util.escapeString(candidates.get(0), ESCAPE_SELECTOR));
-       } else {
-           Util.sortAndEscape(candidates, ESCAPE_SELECTOR);
-       }
-       return result + correction;
-   }
-
-   @Override
-   protected boolean startsWithRoot(String path) {
-       return path.startsWith(File.separator);
-   }
+    /**
+     * The only supported syntax at command execution is fully quoted, e.g.:
+     * "/My Files\..." or not quoted at all. Completion supports only these 2
+     * syntaxes.
+     */
+    @Override
+    void completeCandidates(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
+        // No need to escape paths in quoted string except if candidate contains " characters
+        boolean needsEscape = !buffer.startsWith("\"");
+        if (candidates.size() == 1) {
+            boolean containsQuote = candidates.get(0).contains("\"");
+            needsEscape = needsEscape || containsQuote;
+            //if escaping is not needed but candidate contains quote use quotes only escaper.
+            EscapeSelector escSelector = containsQuote && !needsEscape
+                    ? QUOTES_ONLY_ESCAPE_SELECTOR : ESCAPE_SELECTOR;
+            candidates.set(0, needsEscape ? Util.escapeString(candidates.get(0),
+                    escSelector) : candidates.get(0));
+        }
+    }
 }

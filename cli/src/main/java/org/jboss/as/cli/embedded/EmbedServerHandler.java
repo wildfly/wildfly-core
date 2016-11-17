@@ -36,10 +36,8 @@ import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
-import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
-import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
@@ -78,7 +76,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
     static EmbedServerHandler create(final AtomicReference<EmbeddedProcessLaunch> serverReference, CommandContext ctx, boolean modular) {
         EmbedServerHandler result = new EmbedServerHandler(serverReference);
-        final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+        final FilenameTabCompleter pathCompleter = FilenameTabCompleter.newCompleter(ctx);
         if (!modular) {
             result.jbossHome = new FileSystemPathArgument(result, pathCompleter, "--jboss-home");
         }

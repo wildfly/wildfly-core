@@ -104,7 +104,7 @@ public class DeployHandler extends DeploymentHandler {
                 .requirement(fullReplacePermission)
                 .build();
 
-        final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+        final FilenameTabCompleter pathCompleter = FilenameTabCompleter.newCompleter(ctx);
         path = new FileSystemPathArgument(this, pathCompleter, 0, "--path");
         path.addCantAppearAfter(l);
         path.setAccessRequirement(addOrReplacePermission);

@@ -39,9 +39,7 @@ import org.jboss.as.cli.batch.Batch;
 import org.jboss.as.cli.batch.BatchManager;
 import org.jboss.as.cli.batch.BatchedCommand;
 import org.jboss.as.cli.handlers.BaseOperationCommand;
-import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
-import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
@@ -64,7 +62,7 @@ public class BatchRunHandler extends BaseOperationCommand {
     public BatchRunHandler(CommandContext ctx) {
         super(ctx, "batch-run", true);
 
-        final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+        final FilenameTabCompleter pathCompleter = FilenameTabCompleter.newCompleter(ctx);
         file = new FileSystemPathArgument(this, pathCompleter, "--file");
 
         verbose = new ArgumentWithoutValue(this, "--verbose", "-v");
