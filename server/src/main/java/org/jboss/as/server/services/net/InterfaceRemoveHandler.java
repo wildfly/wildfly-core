@@ -22,11 +22,6 @@
 
 package org.jboss.as.server.services.net;
 
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
-
 /**
  * TODO remove this once we can get the superclass out of the controller module to a place
  * where the NetworkInterface class is visible.

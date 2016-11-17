@@ -307,7 +307,7 @@ public interface CapabilityReferenceRecorder {
             }
         }
 
-        private String getRequirementName(OperationContext context, ModelNode model, String attributeValue) {
+        protected String getRequirementName(OperationContext context, ModelNode model, String attributeValue) {
             String[] dynamicParts = new String[attributes.length + 1];
             try {
                 for (int i = 0; i < attributes.length; i++) {
@@ -322,6 +322,26 @@ public interface CapabilityReferenceRecorder {
         }
 
     }
+
+    /**
+         * {@link CapabilityReferenceRecorder} that determines the dependent capability from
+         * the {@link OperationContext}. This assumes that the
+         * {@link OperationContext#getResourceRegistration() resource registration associated with currently executing step}
+         * will expose a {@link ImmutableManagementResourceRegistration#getCapabilities() capability set} including
+         * one and only one capability. <strong>This recorder cannot be used with attributes associated with resources
+         * that do not meet this requirement.</strong>
+         */
+        public class ResourceNameCompositeDependencyRecorder extends CompositeAttributeDependencyRecorder {
+
+            public ResourceNameCompositeDependencyRecorder(String baseRequirementName) {
+                super(baseRequirementName);
+            }
+
+            protected String getRequirementName(OperationContext context, ModelNode model, String attributeValue) {
+                return RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, context.getCurrentAddressValue(), attributeValue);
+            }
+
+        }
 
 
 }

@@ -216,8 +216,6 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         return fromBaseCapability(dynamicNameElement).getCapabilityServiceName(serviceValueType);
     }
 
-
-
     /**
      * Gets the valid type to pass to {@link #getCapabilityServiceName(Class)}.
      *
