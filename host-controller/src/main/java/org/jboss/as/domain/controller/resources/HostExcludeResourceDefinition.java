@@ -60,7 +60,8 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
         EAP63("EAP6.3", 1, 6),
         EAP64("EAP6.4", 1, 7),
         EAP70("EAP7.0", 4, 1),
-        WILDFLY10("WildFly10.0", 4, 0);
+        WILDFLY10("WildFly10.0", 4, 0),
+        WILDFLY10_1("WildFly10.1", 4, 2);
 
         private static final Map<String, KnownRelease> map = new HashMap<>();
         static {
