@@ -260,15 +260,16 @@ public class EmbeddedProcessFactory {
 
         assert modulePath != null : "modulePath not null";
 
-        // verify the supplied modules path exists, and if it does not, stop and allow the user to correct.
+        // verify the the first element of the supplied modules path exists, and if it does not, stop and allow the user to correct.
         // Once modules are initialized and loaded we can't change Module.BOOT_MODULE_LOADER (yet).
 
-        File moduleDir = new File(modulePath);
+        File moduleDir = new File(trimPathToModulesDir(modulePath));
         if (!moduleDir.exists() || !moduleDir.isDirectory()) {
-            throw new RuntimeException("The specified module directory " + modulePath + " is invalid or does not exist.");
+            throw new RuntimeException("The first directory of the specified module path " + modulePath + " is invalid or does not exist.");
         }
 
-        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_MODULES_DIR, trimPathToModulesDir(modulePath));
+        // deprecated property
+        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_MODULES_DIR, moduleDir.getPath());
 
         final String classPath = WildFlySecurityManager.getPropertyPrivileged(SYSPROP_KEY_CLASS_PATH, null);
         try {
