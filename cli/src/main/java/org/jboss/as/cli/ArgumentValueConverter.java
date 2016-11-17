@@ -47,7 +47,7 @@ public interface ArgumentValueConverter {
                 return new ModelNode();
             }
             if(ctx.isResolveParameterValues()) {
-                value = CLIExpressionResolver.resolveOrOriginal(value);
+                value = CLIExpressionResolver.resolveLax(value);
             }
             try {
                 return ModelNode.fromString(value);
@@ -66,7 +66,7 @@ public interface ArgumentValueConverter {
                 return new ModelNode();
             }
             if(ctx.isResolveParameterValues()) {
-                value = CLIExpressionResolver.resolveOrOriginal(value);
+                value = CLIExpressionResolver.resolveLax(value);
             }
             ModelNode toSet = null;
             try {
