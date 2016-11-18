@@ -105,7 +105,8 @@ public class BatchTestCase extends AbstractCliTestBase {
         String expectedErrorCode = ControllerLogger.ROOT_LOGGER.compositeOperationFailed();
         expectedErrorCode = expectedErrorCode.substring(0, expectedErrorCode.indexOf(':'));
         assertTrue("Batch did not fail.", line.contains(expectedErrorCode));
-
+        assertTrue("Operation is not contained in error message.",
+                line.contains("/system-property=prop1:add(value=prop1_b)"));
         assertEquals("prop1_a", readProperty("prop1"));
         assertFalse(cli.isValidPath("system-property", "prop2"));
 
