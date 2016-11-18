@@ -22,6 +22,7 @@ package org.wildfly.core.test.standalone.mgmt.api.core;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.REMOTE_ADDRESS;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.USER_ID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
@@ -40,9 +41,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.assertThat;
+import static org.wildfly.core.test.standalone.mgmt.api.core.AbstractConfigurationChangesTestCase.MAX_HISTORY_SIZE;
 
 import java.io.IOException;
 import java.util.List;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -66,12 +69,11 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @ServerSetup(ServerReload.SetupTask.class)
 @RunWith(WildflyTestRunner.class)
-public class ConfigurationChangesHistoryTestCase extends AbstractConfigurationChangesTestCase {
+public class LegacyConfigurationChangesHistoryTestCase extends AbstractConfigurationChangesTestCase {
 
     private static final PathAddress ADDRESS = PathAddress.pathAddress()
-            .append(PathElement.pathElement(SUBSYSTEM, "core-management"))
-            .append(PathElement.pathElement("service", "configuration-changes"));
-
+            .append(PathElement.pathElement(CORE_SERVICE, MANAGEMENT))
+            .append(LegacyConfigurationChangeResourceDefinition.PATH);
 
     @Before
     public void setConfigurationChanges() throws Exception {
@@ -88,6 +90,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractConfigurationCh
         final ModelNode remove = Util.createRemoveOperation(ADDRESS);
         client.execute(remove);
     }
+
     @Test
     public void testConfigurationChanges() throws Exception {
         final ModelNode listConfigurationChanges = Util.createOperation("list-changes", ADDRESS);
@@ -99,8 +102,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractConfigurationCh
             assertThat(change.hasDefined(DOMAIN_UUID), is(false));
             assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
             assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
-            // TODO Elytron - Restore capturing the Remote address.
-            //assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
+            assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
             assertThat(change.get(OPERATIONS).asList().size(), is(1));
         }
 
@@ -128,7 +130,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractConfigurationCh
 
     @Test
     public void testAllConfigurationChanges() throws Exception {
-        final ModelNode update = Util.getWriteAttributeOperation(ADDRESS,  "max-history", ALL_MAX_HISTORY_SIZE);
+        final ModelNode update = Util.getWriteAttributeOperation(ADDRESS, "max-history", ALL_MAX_HISTORY_SIZE);
         getModelControllerClient().execute(update);
         final ModelNode listConfigurationChanges = Util.createOperation("list-changes", ADDRESS);
         List<ModelNode> changes = getManagementClient().executeForResult(listConfigurationChanges).asList();
@@ -139,8 +141,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractConfigurationCh
             assertThat(change.hasDefined(DOMAIN_UUID), is(false));
             assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
             assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
-            // TODO Elytron - Restore capturing the Remote address.
-            //assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
+            assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
             assertThat(change.get(OPERATIONS).asList().size(), is(1));
         }
 
@@ -172,14 +173,23 @@ public class ConfigurationChangesHistoryTestCase extends AbstractConfigurationCh
     }
 
     @Test
-    public void testExcludeLegacy() throws Exception {
+    public void testExcludeSubSystem() throws Exception {
         ModelControllerClient client = getModelControllerClient();
-        final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(PathAddress.pathAddress()
-                .append(PathElement.pathElement(CORE_SERVICE, MANAGEMENT))
-                .append(LegacyConfigurationChangeResourceDefinition.PATH)));
-        add.get("max-history").set(MAX_HISTORY_SIZE);
-        ModelNode response = client.execute(add);
-        Assert.assertFalse(Operations.isSuccessfulOutcome(response));
-        assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
+        try {
+            final ModelNode listConfigurationChanges = Util.createOperation("list-changes", ADDRESS);
+            List<ModelNode> changes = getManagementClient().executeForResult(listConfigurationChanges).asList();
+            assertThat(changes.toString(), changes.size(), is(MAX_HISTORY_SIZE));
+            final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(PathAddress.pathAddress()
+                    .append(PathElement.pathElement(SUBSYSTEM, "core-management"))
+                    .append(PathElement.pathElement("service", "configuration-changes"))));
+            add.get("max-history").set(MAX_HISTORY_SIZE);
+            ModelNode response = client.execute(add);
+            Assert.assertFalse(response.toString(), Operations.isSuccessfulOutcome(response));
+            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
+        } finally {
+            client.execute(Util.createRemoveOperation(PathAddress.pathAddress(PathAddress.pathAddress()
+                    .append(PathElement.pathElement(SUBSYSTEM, "core-management"))
+                    .append(PathElement.pathElement("service", "configuration-changes")))));
+        }
     }
 }

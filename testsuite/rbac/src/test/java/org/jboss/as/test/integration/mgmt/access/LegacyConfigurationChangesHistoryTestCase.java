@@ -23,7 +23,6 @@ package org.jboss.as.test.integration.mgmt.access;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.REMOTE_ADDRESS;
-import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.USER_ID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
@@ -54,7 +53,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SENSITIVITY_CLASSIFICATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
@@ -69,12 +67,14 @@ import static org.jboss.as.test.integration.management.rbac.RbacUtil.MONITOR_USE
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.OPERATOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.SUPERUSER_USER;
 import static org.junit.Assert.assertThat;
+import static org.productivity.java.syslog4j.impl.message.pci.PCISyslogMessage.USER_ID;
 
 import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.domain.management.LegacyConfigurationChangeResourceDefinition;
 import org.jboss.as.test.integration.management.interfaces.CliManagementInterface;
 import org.jboss.as.test.integration.management.interfaces.ManagementInterface;
 import org.jboss.as.test.integration.management.rbac.RbacAdminCallbackHandler;
@@ -84,6 +84,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -94,7 +95,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerSetup({ServerReload.SetupTask.class, StandardUsersSetupTask.class})
-public class ConfigurationChangesHistoryTestCase extends AbstractManagementInterfaceRbacTestCase {
+public class LegacyConfigurationChangesHistoryTestCase extends AbstractManagementInterfaceRbacTestCase {
 
     private static final int MAX_HISTORY_SIZE = 8;
 
@@ -114,8 +115,8 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
     private static final PathAddress SYSTEM_PROPERTY_ADDRESS = PathAddress.pathAddress()
             .append(SYSTEM_PROPERTY, "test");
     private static final PathAddress ADDRESS = PathAddress.pathAddress()
-            .append(PathElement.pathElement(SUBSYSTEM, "core-management"))
-            .append(PathElement.pathElement("service", "configuration-changes"));
+            .append(PathElement.pathElement(CORE_SERVICE, MANAGEMENT))
+            .append(LegacyConfigurationChangeResourceDefinition.PATH);
     private static final PathAddress IN_MEMORY_HANDLER_ADDRESS = PathAddress.pathAddress()
             .append(CORE_SERVICE, MANAGEMENT)
             .append(ACCESS, AUDIT)
@@ -123,42 +124,42 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
 
     @Before
     public void createConfigurationChanges() throws Exception {
-        ManagementInterface client = getClientForUser(SUPERUSER_USER);
+        ManagementClient client = getManagementClient();
         final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(ADDRESS));
-        add.get("max-history").set(MAX_HISTORY_SIZE);
-        client.execute(add);
+        add.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
+        client.executeForResult(add);
         ModelNode configureSensitivity = Util.getWriteAttributeOperation(SYSTEM_PROPERTY_CLASSIFICATION_ADDRESS, CONFIGURED_REQUIRES_ADDRESSABLE, true);
-        client.execute(configureSensitivity);
+        client.executeForResult(configureSensitivity);
         ModelNode setAllowedOrigins = Util.createEmptyOperation("list-add", ALLOWED_ORIGINS_ADDRESS);
         setAllowedOrigins.get(NAME).set(ALLOWED_ORIGINS);
-        setAllowedOrigins.get(VALUE).set( "http://www.wildfly.org");
-        client.execute(setAllowedOrigins);
+        setAllowedOrigins.get(VALUE).set("http://www.wildfly.org");
+        client.executeForResult(setAllowedOrigins);
         ModelNode disableLogBoot = Util.getWriteAttributeOperation(AUDIT_LOG_ADDRESS, LOG_BOOT, false);
-        client.execute(disableLogBoot);
+        client.executeForResult(disableLogBoot);
         //read
-        client.execute(Util.getReadAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS));
+        client.executeForResult(Util.getReadAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS));
         //invalid operation
-        client.execute(Util.getUndefineAttributeOperation(ALLOWED_ORIGINS_ADDRESS, "not-exists-attribute"));
+        client.getControllerClient().execute(Util.getUndefineAttributeOperation(ALLOWED_ORIGINS_ADDRESS, "not-exists-attribute"));
         //invalid operation
-        client.execute(Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, "not-exists-attribute", "123456"));
+        client.getControllerClient().execute(Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, "not-exists-attribute", "123456"));
         //write operation, failed
         ModelNode setAllowedOriginsFails = Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS, "123456");//wrong type, expected is LIST, op list-add
-        client.execute(setAllowedOriginsFails);
+        client.getControllerClient().execute(setAllowedOriginsFails);
         ModelNode setSystemProperty = Util.createAddOperation(SYSTEM_PROPERTY_ADDRESS);
         setSystemProperty.get(VALUE).set("changeConfig");
-        client.execute(setSystemProperty);
+        client.getControllerClient().execute(setSystemProperty);
         ModelNode unsetAllowedOrigins = Util.getUndefineAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS);
-        client.execute(unsetAllowedOrigins);
+        client.getControllerClient().execute(unsetAllowedOrigins);
         ModelNode enableLogBoot = Util.getWriteAttributeOperation(AUDIT_LOG_ADDRESS, LOG_BOOT, true);
-        client.execute(enableLogBoot);
+        client.getControllerClient().execute(enableLogBoot);
         ModelNode unsetSystemProperty = Util.createRemoveOperation(SYSTEM_PROPERTY_ADDRESS);
-        client.execute(unsetSystemProperty);
+        client.getControllerClient().execute(unsetSystemProperty);
         ModelNode addInMemoryHandler = Util.createAddOperation(IN_MEMORY_HANDLER_ADDRESS);
-        client.execute(addInMemoryHandler);
+        client.getControllerClient().execute(addInMemoryHandler);
         ModelNode editInMemoryHandler = Util.getWriteAttributeOperation(IN_MEMORY_HANDLER_ADDRESS, MAX_HISTORY, 50);
-        client.execute(editInMemoryHandler);
+        client.getControllerClient().execute(editInMemoryHandler);
         ModelNode removeInMemoryHandler = Util.createRemoveOperation(IN_MEMORY_HANDLER_ADDRESS);
-        client.execute(removeInMemoryHandler);
+        client.getControllerClient().execute(removeInMemoryHandler);
     }
 
     @After
@@ -180,47 +181,75 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
     @Test
     public void testMonitor() throws Exception {
         ManagementInterface client = getClientForUser(MONITOR_USER);
-        readConfigurationChanges(client, false, false);
+        try {
+            readConfigurationChanges(client, false, false);
+        } finally {
+            removeClientForUser(MONITOR_USER);
+        }
     }
 
     @Test
     public void testOperator() throws Exception {
         ManagementInterface client = getClientForUser(OPERATOR_USER);
-        readConfigurationChanges(client, false, false);
+        try {
+            readConfigurationChanges(client, false, false);
+        } finally {
+            removeClientForUser(OPERATOR_USER);
+        }
     }
 
     @Test
     public void testMaintainer() throws Exception {
         ManagementInterface client = getClientForUser(MAINTAINER_USER);
-        readConfigurationChanges(client, false, false);
+        try {
+            readConfigurationChanges(client, false, false);
+        } finally {
+            removeClientForUser(MAINTAINER_USER);
+        }
     }
 
     @Test
     public void testDeployer() throws Exception {
         ManagementInterface client = getClientForUser(DEPLOYER_USER);
-        readConfigurationChanges(client, false, false);
+        try {
+            readConfigurationChanges(client, false, false);
+        } finally {
+            removeClientForUser(DEPLOYER_USER);
+        }
     }
 
     @Test
     public void testAdministrator() throws Exception {
         ManagementInterface client = getClientForUser(ADMINISTRATOR_USER);
-        readConfigurationChanges(client, true, false);
+        try {
+            readConfigurationChanges(client, true, false);
+        } finally {
+            removeClientForUser(ADMINISTRATOR_USER);
+        }
     }
 
     @Test
     public void testAuditor() throws Exception {
         ManagementInterface client = getClientForUser(AUDITOR_USER);
-        readConfigurationChanges(client, false, true);
+        try {
+            readConfigurationChanges(client, false, true);
+        } finally {
+            removeClientForUser(AUDITOR_USER);
+        }
     }
 
     @Test
     public void testSuperUser() throws Exception {
         ManagementInterface client = getClientForUser(SUPERUSER_USER);
-        readConfigurationChanges(client, true, true);
+        try {
+            readConfigurationChanges(client, true, true);
+        } finally {
+            removeClientForUser(SUPERUSER_USER);
+        }
     }
 
     private void readConfigurationChanges(ManagementInterface client, boolean authorized, boolean auditAuthorized) {
-        ModelNode readConfigChanges = Util.createOperation("list-changes", ADDRESS);
+        ModelNode readConfigChanges = Util.createOperation(LegacyConfigurationChangeResourceDefinition.OPERATION_NAME, ADDRESS);
         ModelNode response = client.execute(readConfigChanges);
         assertThat(response.asString(), response.get(OUTCOME).asString(), is(SUCCESS));
         List<ModelNode> changes = response.get(RESULT).asList();

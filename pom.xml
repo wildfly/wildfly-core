@@ -175,6 +175,7 @@
         <module>build</module>
         <module>dist</module>
         <module>core-feature-pack</module>
+        <module>core-management</module>
         <module>core-model-test</module>
         <module>core-security</module>
         <module>deployment-repository</module>
@@ -788,6 +789,13 @@
                 <artifactId>wildfly-logging</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-management</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>org.wildfly.core</groupId>
