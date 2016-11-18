@@ -38,6 +38,7 @@ import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.gui.GuiMain;
+import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.VersionHandler;
 import org.jboss.as.protocol.StreamUtils;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -90,8 +91,8 @@ public class CliLauncher {
 
                     final String fileName = arg.startsWith("--") ? arg.substring(7) : arg.substring(5);
                     if(!fileName.isEmpty()) {
-                        file = new File(fileName);
-                        if(!file.exists()) {
+                        file = new File(FilenameTabCompleter.expand(fileName));
+                        if (!file.exists()) {
                             argError = "File " + file.getAbsolutePath() + " doesn't exist.";
                             break;
                         }
@@ -189,7 +190,7 @@ public class CliLauncher {
                     commands = Collections.singletonList("help");
                 } else if (arg.startsWith("--properties=")) {
                     final String value  = arg.substring(13);
-                    final File propertiesFile = new File(value);
+                    final File propertiesFile = new File(FilenameTabCompleter.expand(value));
                     if(!propertiesFile.exists()) {
                         argError = "File doesn't exist: " + propertiesFile.getAbsolutePath();
                         break;
