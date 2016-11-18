@@ -22,7 +22,7 @@
     <authentication-client xmlns="urn:elytron:1.0">
         <rules>
             <rule>
-                <allow-sasl-mechanisms names="JBOSS-LOCAL-USER DIGEST-MD5 PLAIN" />
+                <allow-sasl-mechanisms names="JBOSS-LOCAL-USER DIGEST-MD5 PLAIN ANONYMOUS" />
                 <set-mechanism-properties>
                     <property key="wildfly.sasl.local-user.quiet-auth" value="true" />
                  </set-mechanism-properties>
