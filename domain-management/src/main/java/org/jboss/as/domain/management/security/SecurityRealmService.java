@@ -236,7 +236,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 switch (mechanismName) {
                     case "DIGEST":
                         return AuthMechanism.DIGEST;
-                    case "PLAIN":
+                    case "BASIC":
                         return AuthMechanism.PLAIN;
                 }
                 break;
