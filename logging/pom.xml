@@ -37,11 +37,6 @@
 
     <name>WildFly: Logging Subsystem</name>
 
-    <properties>
-        <byteman.host>127.0.0.1</byteman.host>
-        <byteman.port>9091</byteman.port>
-    </properties>
-
     <build>
         <plugins>
             <!-- this is only needed on windows -->

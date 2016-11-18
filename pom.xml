@@ -166,6 +166,9 @@
         <org.jboss.model.test.cache.root>[pom.xml,testsuite]</org.jboss.model.test.cache.root>
         <!-- Location relative to root that will be used for the cached legacy classpaths used by subsystem-test and core-model-test-->
         <org.jboss.model.test.classpath.cache>target/model-test-cache</org.jboss.model.test.classpath.cache>
+        <!-- Byteman -->
+        <byteman.host>127.0.0.1</byteman.host>
+        <byteman.port>17091</byteman.port>
     </properties>
 
     <modules>
