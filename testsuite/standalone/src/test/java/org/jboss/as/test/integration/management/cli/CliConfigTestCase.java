@@ -174,6 +174,38 @@ public class CliConfigTestCase {
         assertTrue(result, result.contains("Timeout exception for run-batch"));
     }
 
+    @Test
+    public void testValidateOperation() throws Exception {
+        File f = createConfigFile(false, 0, true);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+        cli.executeInteractive();
+        cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
+        String str = cli.getOutput();
+        assertTrue(str, str.contains("'aaaaa' is not found among the supported properties:"));
+    }
+
+    @Test
+    public void testNotValidateOperation() throws Exception {
+        File f = createConfigFile(false, 0, false);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+        cli.executeInteractive();
+        cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
+        String str = cli.getOutput();
+        assertTrue(str, str.contains("\"outcome\" => \"success\","));
+    }
+
     private void testTimeout(CliProcessWrapper cli, int config) throws Exception {
         cli.pushLineAndWaitForResults("command-timeout get");
         String str = cli.getOutput();
@@ -263,6 +295,10 @@ public class CliConfigTestCase {
     }
 
     private static File createConfigFile(Boolean enable, int timeout) {
+        return createConfigFile(enable, timeout, true);
+    }
+
+    private static File createConfigFile(Boolean enable, int timeout, Boolean validate) {
         File f = new File(TestSuiteEnvironment.getTmpDir(), "test-jboss-cli" +
                 System.currentTimeMillis() + ".xml");
         f.deleteOnExit();
@@ -281,6 +317,10 @@ public class CliConfigTestCase {
                 writer.writeCharacters("" + timeout);
                 writer.writeEndElement(); //command-timeout
             }
+            writer.writeStartElement("validate-operation-requests");
+            writer.writeCharacters(validate.toString());
+            writer.writeEndElement(); //validate-operation-requests
+
             writer.writeEndElement(); //jboss-cli
             writer.writeEndDocument();
             writer.flush();
