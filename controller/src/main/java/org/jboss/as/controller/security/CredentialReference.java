@@ -104,11 +104,7 @@ public final class CredentialReference implements Destroyable {
         clearTextAttribute = new SimpleAttributeDefinitionBuilder(CLEAR_TEXT, ModelType.STRING, true)
                 .setXmlName(CLEAR_TEXT)
                 .build();
-        credentialReferenceAttributeDefinition = new ObjectTypeAttributeDefinition.Builder(CREDENTIAL_REFERENCE, credentialStoreAttribute, credentialAliasAttribute, credentialTypeAttribute, clearTextAttribute)
-                .setXmlName(CREDENTIAL_REFERENCE)
-                .setAttributeMarshaller(credentialReferenceAttributeMarshaller())
-                .setAttributeParser(credentialReferenceAttributeParser())
-                .build();
+        credentialReferenceAttributeDefinition = getAttributeBuilder(CREDENTIAL_REFERENCE, CREDENTIAL_REFERENCE, false).build();
     }
 
     private CredentialReference(String credentialStoreName, String alias, String credentialType, char[] secret) {
@@ -211,6 +207,22 @@ public final class CredentialReference implements Destroyable {
     }
 
     /**
+     * Get the attribute builder for credential-reference attribute with specified characteristics.
+     *
+     * @param name name of attribute
+     * @param xmlName name of xml element
+     * @param allowNull whether the attribute is required
+     * @return new {@link ObjectTypeAttributeDefinition.Builder} which can be used to build attribute definition
+     */
+    public static ObjectTypeAttributeDefinition.Builder getAttributeBuilder(String name, String xmlName, boolean allowNull) {
+        return new ObjectTypeAttributeDefinition.Builder(name, credentialStoreAttribute, credentialAliasAttribute, credentialTypeAttribute, clearTextAttribute)
+                .setXmlName(xmlName)
+                .setAttributeMarshaller(credentialReferenceAttributeMarshaller())
+                .setAttributeParser(credentialReferenceAttributeParser())
+                .setAllowNull(allowNull);
+    }
+
+    /**
      * Utility method to return part of {@link ObjectTypeAttributeDefinition} for credential reference attribute.
      *
      * {@see CredentialReference#getAttributeDefinition}
@@ -271,7 +283,7 @@ public final class CredentialReference implements Destroyable {
         return new AttributeMarshaller() {
             @Override
             public void marshallAsElement(AttributeDefinition attribute, ModelNode credentialReferenceModelNode, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-                writer.writeStartElement(CredentialReference.CREDENTIAL_REFERENCE);
+                writer.writeStartElement(attribute.getXmlName());
                 if (credentialReferenceModelNode.hasDefined(clearTextAttribute.getName())) {
                     clearTextAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
                 } else {
