@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -390,7 +391,7 @@ public class InterfaceManagementUnitTestCase {
 
             @Override
             public void commit() {
-                StringConfigurationPersister.this.marshalled = new String(bytes);
+                StringConfigurationPersister.this.marshalled = new String(bytes, StandardCharsets.UTF_8);
             }
 
             @Override

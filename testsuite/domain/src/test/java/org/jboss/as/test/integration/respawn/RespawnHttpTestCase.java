@@ -21,45 +21,6 @@
  */
 package org.jboss.as.test.integration.respawn;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.Assert;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.process.Main;
-import org.jboss.as.process.ProcessController;
-import org.jboss.as.protocol.StreamUtils;
-import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
-import org.xnio.IoUtils;
-
-import static org.jboss.as.test.integration.domain.management.util.Authentication.getCallbackHandler;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -73,6 +34,40 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.test.integration.domain.management.util.Authentication.getCallbackHandler;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.process.Main;
+import org.jboss.as.process.ProcessController;
+import org.jboss.as.protocol.StreamUtils;
+import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
+import org.xnio.IoUtils;
 
 
 /**
@@ -139,11 +134,8 @@ public class RespawnHttpTestCase {
 
         // No point backing up the file in a test scenario, just write what we need.
         File usersFile = new File(domainConfigDir, "mgmt-users.properties");
-        FileOutputStream fos = new FileOutputStream(usersFile);
-        PrintWriter pw = new PrintWriter(fos);
-        pw.println("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray()));
-        pw.close();
-        fos.close();
+        Files.write(usersFile.toPath(),
+                ("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray())+"\n").getBytes(StandardCharsets.UTF_8));
 
         String localRepo = System.getProperty("settings.localRepository");
 
@@ -345,15 +337,7 @@ public class RespawnHttpTestCase {
         try {
             // Replace host.xml with an invalid doc
             File toBreak = new File(domainConfigDir, hostXml.getName());
-            PrintWriter pw = null;
-            try {
-                pw = new PrintWriter(toBreak);
-                pw.println("<host/>");
-            } finally {
-                if (pw != null) {
-                    pw.close();
-                }
-            }
+            Files.write(toBreak.toPath(), "<host/>\n".getBytes(StandardCharsets.UTF_8));
 
             // Execute reload w/ restart-servers=false, admin-only=false
             // The reload should abort the HC due to bad xml
@@ -549,21 +533,7 @@ public class RespawnHttpTestCase {
                 throw new IllegalStateException("Could not delete file " + tgt.getAbsolutePath());
             }
         }
-        final InputStream in = new BufferedInputStream(new FileInputStream(file));
-        try {
-            final OutputStream out = new BufferedOutputStream(new FileOutputStream(tgt));
-            try {
-                int i = in.read();
-                while (i != -1) {
-                    out.write(i);
-                    i = in.read();
-                }
-            } finally {
-                IoUtils.safeClose(out);
-            }
-        } finally {
-            IoUtils.safeClose(in);
-        }
+        Files.copy(file.toPath(), tgt.toPath());
     }
 
     static TestControllerClient getControllerClient() throws IOException {
@@ -621,7 +591,7 @@ public class RespawnHttpTestCase {
             }
 
             List<String> processes = new ArrayList<String>();
-            BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8));
             try {
                 String line;
                 while ((line = input.readLine()) != null) {

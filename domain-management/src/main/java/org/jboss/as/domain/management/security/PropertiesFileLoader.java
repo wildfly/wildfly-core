@@ -30,12 +30,11 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -282,19 +281,7 @@ public class PropertiesFileLoader {
     }
 
     protected List<String> readFile(File file) throws IOException {
-        FileReader fileReader = new FileReader(file);
-        BufferedReader bufferedFileReader = new BufferedReader(fileReader);
-        List<String> content = new ArrayList<String>();
-        try {
-            String line;
-            while ((line = bufferedFileReader.readLine()) != null) {
-                addLineContent(bufferedFileReader, content, line);
-            }
-        } finally {
-            safeClose(bufferedFileReader);
-            safeClose(fileReader);
-        }
-        return content;
+        return Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
     }
 
     /**

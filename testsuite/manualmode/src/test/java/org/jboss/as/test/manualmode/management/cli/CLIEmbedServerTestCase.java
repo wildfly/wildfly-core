@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -577,7 +578,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     private String readLogOut() {
         if (logOut.size() > 0) {
-            String output = new String(logOut.toByteArray()).trim();
+            String output = new String(logOut.toByteArray(), StandardCharsets.UTF_8).trim();
             logOut.reset();
             return output;
         }

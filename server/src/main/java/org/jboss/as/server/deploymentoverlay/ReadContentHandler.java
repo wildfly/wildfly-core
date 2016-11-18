@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -76,7 +77,7 @@ public class ReadContentHandler implements OperationStepHandler {
             StringBuilder builder = new StringBuilder();
             int read = -1;
             while ((read = stream.read(buff)) != -1) {
-                builder.append(new String(buff, 0, read));
+                builder.append(new String(buff, 0, read, StandardCharsets.UTF_8));
             }
             return builder.toString();
         } finally {

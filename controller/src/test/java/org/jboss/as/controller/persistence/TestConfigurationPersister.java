@@ -22,6 +22,7 @@
 package org.jboss.as.controller.persistence;
 
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -53,7 +54,7 @@ public abstract class TestConfigurationPersister extends AbstractConfigurationPe
     @Override
     public void marshallAsXml(ModelNode model, OutputStream output) throws ConfigurationPersistenceException {
         try {
-            output.write(model.asString().getBytes());
+            output.write(model.asString().getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             throw new ConfigurationPersistenceException(e);
         }

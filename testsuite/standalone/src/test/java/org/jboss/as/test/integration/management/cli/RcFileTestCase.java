@@ -28,8 +28,9 @@ import static org.junit.Assert.fail;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
@@ -61,7 +62,7 @@ public class RcFileTestCase {
         ensureRemoved(TMP_JBOSS_CLI_RC);
         BufferedWriter writer = null;
         try {
-            writer = new BufferedWriter(new FileWriter(TMP_JBOSS_CLI_RC));
+            writer = Files.newBufferedWriter(TMP_JBOSS_CLI_RC.toPath(), StandardCharsets.UTF_8);
             writer.write("set " + VAR_NAME + "=" + VAR_VALUE);
             writer.newLine();
         } catch(IOException e) {

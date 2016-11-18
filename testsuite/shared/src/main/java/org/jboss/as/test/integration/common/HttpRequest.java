@@ -28,6 +28,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -128,7 +129,7 @@ public class HttpRequest {
                 final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 if (username != null) {
                     final String userpassword = username + ":" + password;
-                    final String basicAuthorization = Base64.getEncoder().encodeToString(userpassword.getBytes());
+                    final String basicAuthorization = Base64.getEncoder().encodeToString(userpassword.getBytes(StandardCharsets.UTF_8));
                     conn.setRequestProperty("Authorization", "Basic " + basicAuthorization);
                 }
                 conn.setDoInput(true);
@@ -231,7 +232,7 @@ public class HttpRequest {
     }
 
     private static void write(OutputStream out, String message) throws IOException {
-        final OutputStreamWriter writer = new OutputStreamWriter(out);
+        final OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
         writer.write(message);
         writer.flush();
     }

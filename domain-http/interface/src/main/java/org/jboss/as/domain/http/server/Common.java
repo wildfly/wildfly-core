@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 
 import io.undertow.io.IoCallback;
 import io.undertow.server.HttpServerExchange;
@@ -81,7 +82,7 @@ public class Common {
                 exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, String.valueOf(bytes.length));
                 exchange.setStatusCode(errorCode);
 
-                exchange.getResponseSender().send(new String(bytes), IoCallback.END_EXCHANGE);
+                exchange.getResponseSender().send(new String(bytes, StandardCharsets.UTF_8), IoCallback.END_EXCHANGE);
 
             } catch (IOException e) {
                 // fallback, should not happen
@@ -101,7 +102,7 @@ public class Common {
             }
 
             String msgString = stringWriter.toString();
-            byte[] bytes = msgString.getBytes();
+            byte[] bytes = msgString.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, APPLICATION_JSON + "; charset=" + UTF_8);
             exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, String.valueOf(bytes.length));
             exchange.setStatusCode(errorCode);

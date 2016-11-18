@@ -26,6 +26,7 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECU
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -364,7 +365,7 @@ public class LdapGroupSearcherFactory {
                     if (attr != null) {
                         Object value = attr.get();
                         if (value != null) {
-                            return new LdapEntry( (value instanceof byte[]) ? new String((byte[]) value) : value.toString(), dn, groupReferralAddress);
+                            return new LdapEntry( (value instanceof byte[]) ? new String((byte[]) value, StandardCharsets.UTF_8) : value.toString(), dn, groupReferralAddress);
                         }
                     }
                 }

@@ -24,6 +24,7 @@ package org.jboss.as.process.protocol;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.marshalling.ByteInput;
 import org.jboss.marshalling.ByteOutput;
@@ -38,7 +39,7 @@ public class ChunkyByteInputOutputTest {
 
     @Test
     public void testEqualBuffer() throws Exception {
-        final byte[] content = "1234567890".getBytes();
+        final byte[] content = "1234567890".getBytes(StandardCharsets.UTF_8);
 
         final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         final ByteOutput byteOutput = new ChunkyByteOutput(Marshalling.createByteOutput(byteArrayOutputStream), 10);
@@ -60,7 +61,7 @@ public class ChunkyByteInputOutputTest {
 
     @Test
     public void testMultiChunk() throws Exception {
-        final byte[] content = "12345678901234567890123456789012345678901234567890".getBytes();
+        final byte[] content = "12345678901234567890123456789012345678901234567890".getBytes(StandardCharsets.UTF_8);
 
         final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         final ByteOutput byteOutput = new ChunkyByteOutput(Marshalling.createByteOutput(byteArrayOutputStream), 10);
@@ -82,7 +83,7 @@ public class ChunkyByteInputOutputTest {
 
     @Test
     public void testRemainingBytes() throws Exception {
-        final byte[] content = "1234567890123456789012345678901234567890123".getBytes();
+        final byte[] content = "1234567890123456789012345678901234567890123".getBytes(StandardCharsets.UTF_8);
 
         final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         final ByteOutput byteOutput = new ChunkyByteOutput(Marshalling.createByteOutput(byteArrayOutputStream), 10);
@@ -104,7 +105,7 @@ public class ChunkyByteInputOutputTest {
 
     @Test
     public void testIncompleteRead() throws Exception {
-        final byte[] content = "1234567890123456789012345678901234567890123".getBytes();
+        final byte[] content = "1234567890123456789012345678901234567890123".getBytes(StandardCharsets.UTF_8);
 
         final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         final ByteOutput byteOutput = new ChunkyByteOutput(Marshalling.createByteOutput(byteArrayOutputStream), 10);
@@ -130,7 +131,7 @@ public class ChunkyByteInputOutputTest {
 
     @Test
     public void testOffsetRead() throws Exception {
-        final byte[] content = "1234567890123456789012345678901234567890123".getBytes();
+        final byte[] content = "1234567890123456789012345678901234567890123".getBytes(StandardCharsets.UTF_8);
 
         final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         final ByteOutput byteOutput = new ChunkyByteOutput(Marshalling.createByteOutput(byteArrayOutputStream), 10);

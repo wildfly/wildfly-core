@@ -22,15 +22,12 @@
 package org.jboss.as.test.integration.domain.autoignore;
 
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.OutputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 /**
- *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class TestClass implements TestClassMBean {
@@ -45,19 +42,9 @@ public class TestClass implements TestClassMBean {
     @Override
     public void start() {
         final File file = new File(path);
-        try {
-            final BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-            final OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-            try {
-                System.out.println("--- writing");
-                writer.write("Test\n");
-            } finally {
-                try {
-                    writer.close();
-                    System.out.println("--- written");
-                } catch (Exception ignore) {
-                }
-            }
+        try (final Writer writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
+            System.out.println("--- writing");
+            writer.write("Test\n");
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);

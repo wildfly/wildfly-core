@@ -54,9 +54,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1973,16 +1973,8 @@ public class FileSystemDeploymentServiceUnitTestCase {
     private File createFile(File dir, String fileName) throws IOException {
 
         dir.mkdirs();
-
         File f = new File(dir, fileName);
-        FileOutputStream fos = new FileOutputStream(f);
-        try {
-            PrintWriter writer = new PrintWriter(fos);
-            writer.write(fileName);
-            writer.close();
-        } finally {
-            fos.close();
-        }
+        Files.write(f.toPath(), fileName.getBytes(StandardCharsets.UTF_8));
         assertTrue(f.exists());
         return f;
     }
@@ -1991,14 +1983,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         tmpDir.mkdirs();
 
         File f = new File(tmpDir, fileName);
-        FileOutputStream fos = new FileOutputStream(f);
-        try {
-            PrintWriter writer = new PrintWriter(fos);
-            writer.write(contents);
-            writer.close();
-        } finally {
-            fos.close();
-        }
+        Files.write(f.toPath(), contents.getBytes(StandardCharsets.UTF_8));
         assertTrue(f.exists());
         return f;
     }

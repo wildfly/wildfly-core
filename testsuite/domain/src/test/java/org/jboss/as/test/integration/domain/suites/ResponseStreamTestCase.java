@@ -43,6 +43,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.http.HttpEntity;
@@ -513,7 +514,7 @@ public class ResponseStreamTestCase {
 
     private void readLogStream(InputStream stream, boolean forServer, boolean forMaster) throws IOException {
 
-        LineNumberReader reader = new LineNumberReader(new InputStreamReader(stream));
+        LineNumberReader reader = new LineNumberReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
 
         String expected = LogStreamExtension.getLogMessage(logMessageContent);
         boolean readRegisteredServer = false;

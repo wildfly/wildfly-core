@@ -43,6 +43,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -208,7 +209,7 @@ public class PatchInspectUnitTestCase extends AbstractTaskTestCase {
         ctx.handle("patch inspect " + zippedBundle);
 
         ByteArrayInputStream bis = new ByteArrayInputStream(bytesOs.toByteArray());
-        BufferedReader reader = new BufferedReader(new InputStreamReader(bis));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(bis, StandardCharsets.UTF_8));
         try {
             assertTrue(reader.ready());
             CLIPatchInfoUtil.assertPatchInfo(reader, patchID, "http://test.one", true, productConfig.getProductName(),
@@ -225,7 +226,7 @@ public class PatchInspectUnitTestCase extends AbstractTaskTestCase {
         ctx.handle("patch inspect " + zippedBundle + " --verbose");
 
         bis = new ByteArrayInputStream(bytesOs.toByteArray());
-        reader = new BufferedReader(new InputStreamReader(bis));
+        reader = new BufferedReader(new InputStreamReader(bis, StandardCharsets.UTF_8));
         try {
             assertTrue(reader.ready());
             assertEquals("CONTENT OF " + zippedOneOff.getName() + ':', reader.readLine());

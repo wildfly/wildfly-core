@@ -30,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import javax.inject.Inject;
 
@@ -130,7 +131,7 @@ public class DuplicateExtCommandTestCase {
             public InputStream openStream() {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try {
-                    baos.write(clazz.getName().getBytes());
+                    baos.write(clazz.getName().getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

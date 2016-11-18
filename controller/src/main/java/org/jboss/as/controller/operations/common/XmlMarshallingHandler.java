@@ -28,6 +28,7 @@ import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
@@ -95,7 +96,7 @@ public class XmlMarshallingHandler implements OperationStepHandler{
             } finally {
                 safeClose(baos);
             }
-            String xml = new String(baos.toByteArray());
+            String xml = new String(baos.toByteArray(), StandardCharsets.UTF_8);
             context.getResult().set(xml);
         } catch (RuntimeException e) {
             throw e;

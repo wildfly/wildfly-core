@@ -38,6 +38,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.readFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -961,8 +962,8 @@ public class BasicOneOffPatchingScenariosTestCase extends AbstractPatchingTestCa
         final String moduleName = "org.wildfly.test." + randomString();
         final String modulePath = PATCHES_PATH + FILE_SEPARATOR + layerPatchID + FILE_SEPARATOR + moduleName.replace(".", FILE_SEPARATOR) + FILE_SEPARATOR + "main";
 
-        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes());
-        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes());
+        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes(StandardCharsets.UTF_8));
+        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes(StandardCharsets.UTF_8));
 
         Module newModule = new Module.Builder(moduleName)
                 .miscFile(resourceItem1)
@@ -1084,8 +1085,8 @@ public class BasicOneOffPatchingScenariosTestCase extends AbstractPatchingTestCa
         final String moduleName2 = "org.wildfly.test." + randomString();
         final String modulePath2 = PATCHES_PATH + FILE_SEPARATOR + layerPatchID + FILE_SEPARATOR + moduleName2.replace(".", FILE_SEPARATOR) + FILE_SEPARATOR + "main";
 
-        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes());
-        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes());
+        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes(StandardCharsets.UTF_8));
+        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes(StandardCharsets.UTF_8));
 
         Module newModule1 = new Module.Builder(moduleName1)
                 .miscFile(resourceItem1)
@@ -1205,7 +1206,7 @@ public class BasicOneOffPatchingScenariosTestCase extends AbstractPatchingTestCa
         File patchDir = mkdir(tempDir, patchID);
 
         Module updatedModule = new Module.Builder(moduleName)
-                .miscFile(new ResourceItem("res1", "new resource in the module".getBytes()))
+                .miscFile(new ResourceItem("res1", "new resource in the module".getBytes(StandardCharsets.UTF_8)))
                 .build();
 
         // Also see if we can update jboss-modules

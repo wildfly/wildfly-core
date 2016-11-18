@@ -13,6 +13,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.createZippedPatchFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -259,8 +260,8 @@ public class PatchBundleTestCase extends AbstractPatchingTestCase {
 
         final String moduleName = "org.wildfly.test." + randomString();
 
-        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes());
-        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes());
+        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes(StandardCharsets.UTF_8));
+        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes(StandardCharsets.UTF_8));
 
         Module newModule = new Module.Builder(moduleName)
                 .miscFile(resourceItem1)
@@ -309,8 +310,8 @@ public class PatchBundleTestCase extends AbstractPatchingTestCase {
         byte[] patchedAsVersionHash = HashUtils.hashFile(originalVersionModulePath);
         assert patchedAsVersionHash != null;
 
-        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes());
-        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes());
+        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes(StandardCharsets.UTF_8));
+        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes(StandardCharsets.UTF_8));
 
         Module newModule = new Module.Builder(moduleName)
                 .miscFile(resourceItem1)

@@ -175,7 +175,7 @@ public final class PatchUtils {
     }
 
     static void writeLine(final OutputStream os, final String s) throws IOException {
-        os.write(s.getBytes());
+        os.write(s.getBytes(StandardCharsets.UTF_8));
         os.write('\n');
     }
 

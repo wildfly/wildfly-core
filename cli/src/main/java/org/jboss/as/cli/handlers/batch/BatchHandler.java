@@ -23,8 +23,9 @@ package org.jboss.as.cli.handlers.batch;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -150,7 +151,7 @@ public class BatchHandler extends CommandHandlerWithHelp {
 
             BufferedReader reader = null;
             try {
-                reader = new BufferedReader(new FileReader(f));
+                reader = Files.newBufferedReader(f.toPath(), StandardCharsets.UTF_8);
                 String line = reader.readLine();
                 batchManager.activateNewBatch();
                 final Batch batch = batchManager.getActiveBatch();

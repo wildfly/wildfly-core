@@ -26,9 +26,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -140,22 +142,13 @@ public class FileArgumentTestCase {
             }
         }
 
-        FileWriter writer = null;
-        try {
-            writer = new FileWriter(TMP_FILE);
+        try (final Writer writer = Files.newBufferedWriter(TMP_FILE.toPath(),StandardCharsets.UTF_8)){
             for(String line : cmd) {
                 writer.write(line);
                 writer.write('\n');
             }
         } catch (IOException e) {
             fail("Failed to write to " + TMP_FILE.getAbsolutePath() + ": " + e.getLocalizedMessage());
-        } finally {
-            if(writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                }
-            }
         }
     }
 
@@ -226,7 +219,7 @@ public class FileArgumentTestCase {
                 if (bytesTotal > 0) {
                     final byte[] bytes = new byte[bytesTotal];
                     cliProc.getErrorStream().read(bytes);
-                    System.out.println("Command's error log: '" + new String(bytes) + "'");
+                    System.out.println("Command's error log: '" + new String(bytes, StandardCharsets.UTF_8) + "'");
                 } else {
                     System.out.println("No output data for the command.");
                 }
@@ -243,7 +236,7 @@ public class FileArgumentTestCase {
             if (bytesTotal > 0) {
                 final byte[] bytes = new byte[bytesTotal];
                 cliStream.read(bytes);
-                cliOutBuf.append(new String(bytes));
+                cliOutBuf.append(new String(bytes, StandardCharsets.UTF_8));
             }
         } catch (IOException e) {
             fail("Failed to read command's output: " + e.getLocalizedMessage());

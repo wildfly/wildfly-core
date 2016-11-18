@@ -26,6 +26,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,8 +51,8 @@ public class CLIPatchInfoUtil {
     public static void assertPatchInfo(byte[] info, String patchId, String link, boolean oneOff, String targetName, String targetVersion,
             String description) {
         try (final ByteArrayInputStream bis = new ByteArrayInputStream(info);
-                final InputStreamReader reader = new InputStreamReader(bis);
-                final BufferedReader buf = new BufferedReader(reader)){
+             final InputStreamReader reader = new InputStreamReader(bis, StandardCharsets.UTF_8);
+             final BufferedReader buf = new BufferedReader(reader)){
             assertPatchInfo(buf, patchId, link, oneOff, targetName, targetVersion, description);
         } catch (IOException e) {
             //
@@ -78,7 +79,7 @@ public class CLIPatchInfoUtil {
             String description, List<Map<String,String>> elements) {
 
         try (final ByteArrayInputStream bis = new ByteArrayInputStream(info);
-                final InputStreamReader reader = new InputStreamReader(bis);
+                final InputStreamReader reader = new InputStreamReader(bis, StandardCharsets.UTF_8);
                 final BufferedReader buf = new BufferedReader(reader)){
             assertPatchInfo(buf, patchId, link, oneOff, targetName, targetVersion, description, elements);
             if (buf.ready()) {
@@ -133,7 +134,7 @@ public class CLIPatchInfoUtil {
 
     public static Map<String, String> parseTable(byte[] table) throws IOException {
         try (final ByteArrayInputStream bis = new ByteArrayInputStream(table);
-             final InputStreamReader reader = new InputStreamReader(bis);
+             final InputStreamReader reader = new InputStreamReader(bis, StandardCharsets.UTF_8);
              final BufferedReader buf = new BufferedReader(reader)) {
             return parseTable(buf);
         }

@@ -26,6 +26,7 @@ import org.jboss.as.controller.services.path.PathManagerService;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  *  All methods on this class should be called with {@link org.jboss.as.controller.audit.ManagedAuditLoggerImpl}'s lock taken.
@@ -85,7 +86,7 @@ public class SizeRotatingFileAuditLogHandler extends AbstractFileAuditLogHandler
     @Override
     void writeLogItem(String formattedItem) throws IOException {
         super.writeLogItem(formattedItem);
-        currentSize += formattedItem.getBytes().length;
+        currentSize += formattedItem.getBytes(StandardCharsets.UTF_8).length;
         currentSize += LINE_TERMINATOR.length;
     }
 

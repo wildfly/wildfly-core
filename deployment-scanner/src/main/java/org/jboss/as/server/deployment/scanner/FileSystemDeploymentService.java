@@ -52,6 +52,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
@@ -1305,7 +1306,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             // marker.createNewFile(); - Don't create before the write as there is a potential race condition where
             // the file is deleted between the two calls.
             fos = new FileOutputStream(marker);
-            fos.write(deploymentName.getBytes());
+            fos.write(deploymentName.getBytes(StandardCharsets.UTF_8));
         } catch (IOException io) {
             ROOT_LOGGER.errorWritingDeploymentMarker(io, marker.getAbsolutePath());
         } finally {
@@ -1331,7 +1332,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         try {
             // failedMarker.createNewFile();
             fos = new FileOutputStream(failedMarker);
-            fos.write(failureDescription.getBytes());
+            fos.write(failureDescription.getBytes(StandardCharsets.UTF_8));
         } catch (IOException io) {
             ROOT_LOGGER.errorWritingDeploymentMarker(io, failedMarker.getAbsolutePath());
         } finally {

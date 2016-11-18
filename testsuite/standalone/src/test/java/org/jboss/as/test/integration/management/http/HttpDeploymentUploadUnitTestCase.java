@@ -160,7 +160,7 @@ public class HttpDeploymentUploadUnitTestCase {
         op.get("content").get(0).get("hash").set(hash);
         op.get("enabled").set(true);
 
-        os.write(op.toJSONString(true).getBytes());
+        os.write(op.toJSONString(true).getBytes(StandardCharsets.UTF_8));
         os.flush();
     }
 
@@ -170,7 +170,7 @@ public class HttpDeploymentUploadUnitTestCase {
         op.get("operation").set("remove");
         op.get("address").add("deployment", "test-http-deployment.sar");
 
-        os.write(op.toJSONString(true).getBytes());
+        os.write(op.toJSONString(true).getBytes(StandardCharsets.UTF_8));
         os.flush();
     }
 
@@ -187,7 +187,7 @@ public class HttpDeploymentUploadUnitTestCase {
         builder.append(CRLF);
         builder.append(buildPostRequestHeaderSection("form-data; name=\"file\"; filename=\"test.war\"", "application/octet-stream", ""));
 
-        return builder.toString().getBytes();
+        return builder.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     private String buildPostRequestHeaderSection(final String contentDisposition, final String contentType, final String content) {
