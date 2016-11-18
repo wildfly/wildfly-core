@@ -29,6 +29,8 @@ import static org.jboss.as.controller.management.Capabilities.HTTP_AUTHENTICATIO
 import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 
+import java.util.function.Consumer;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
@@ -146,7 +148,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         AttributeDefinition[] attributeDefinitions = getAttributeDefinitions();
-        OperationStepHandler defaultWriteHandler = new ManagementWriteAttributeHandler(attributeDefinitions);
+        OperationStepHandler defaultWriteHandler = new ManagementWriteAttributeHandler(attributeDefinitions, getValidationConsumer());
         for (AttributeDefinition attr : attributeDefinitions) {
             if (attr.equals(HTTP_UPGRADE_ENABLED)) {
                 HttpUpgradeAttributeHandler handler = new HttpUpgradeAttributeHandler();
@@ -157,6 +159,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         }
     }
 
+    protected abstract Consumer<OperationContext> getValidationConsumer();
     protected abstract AttributeDefinition[] getAttributeDefinitions();
 
     protected class HttpUpgradeAttributeHandler implements OperationStepHandler {

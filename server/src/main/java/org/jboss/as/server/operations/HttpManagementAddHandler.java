@@ -47,6 +47,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.management.BaseHttpInterfaceAddStepHandler;
 import org.jboss.as.controller.management.HttpInterfaceCommonPolicy;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.management.SecurityRealm;
@@ -92,6 +93,13 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
     public HttpManagementAddHandler() {
         super(HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
+    }
+
+    @Override
+    protected void populateModel(OperationContext context, ModelNode operation, Resource resource)
+            throws OperationFailedException {
+        super.populateModel(context, operation, resource);
+        HttpManagementResourceDefinition.addAttributeValidator(context);
     }
 
     @Override

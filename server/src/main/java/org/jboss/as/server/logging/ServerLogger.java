@@ -1245,4 +1245,8 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 258, value = "Cannot explode a subdeployment of an unexploded deployment")
     OperationFailedException cannotExplodeSubDeploymentOfUnexplodedDeployment();
+
+    @Message(id = 259, value = "If attribute secure-socket-binding is defined one of ssl-context or security-realm must also be defined")
+    OperationFailedException secureSocketBindingRequiresSSLContext();
+
 }
