@@ -478,15 +478,47 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         addGlobalOpPropCompleter(Util.READ_CHILDREN_NAMES, Util.CHILD_TYPE, childTypeCompleter);
         addGlobalOpPropCompleter(Util.READ_CHILDREN_RESOURCES, Util.CHILD_TYPE, childTypeCompleter);
 
-        addGlobalOpPropCompleter("map-put", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("map-remove", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("map-get", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("map-clear", Util.NAME, attrNameCompleter);
+        final CommandLineCompleterFactory mapAttrNameCompleter = new CommandLineCompleterFactory() {
+            @Override
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
+                return new AttributeNamePathCompleter(address, false,
+                        AttributeNamePathCompleter.MAP_FILTER);
+            }
+        };
 
-        addGlobalOpPropCompleter("list-add", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("list-remove", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("list-get", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("list-clear", Util.NAME, attrNameCompleter);
+        final CommandLineCompleterFactory mapOnlyWritableAttrNameCompleter = new CommandLineCompleterFactory() {
+            @Override
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
+                return new AttributeNamePathCompleter(address, true,
+                        AttributeNamePathCompleter.MAP_FILTER);
+            }
+        };
+
+        final CommandLineCompleterFactory listAttrNameCompleter = new CommandLineCompleterFactory() {
+            @Override
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
+                return new AttributeNamePathCompleter(address,
+                        AttributeNamePathCompleter.LIST_FILTER);
+            }
+        };
+
+        final CommandLineCompleterFactory listOnlyWritableAttrNameCompleter = new CommandLineCompleterFactory() {
+            @Override
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
+                return new AttributeNamePathCompleter(address, true,
+                        AttributeNamePathCompleter.LIST_FILTER);
+            }
+        };
+
+        addGlobalOpPropCompleter("map-put", Util.NAME, mapOnlyWritableAttrNameCompleter);
+        addGlobalOpPropCompleter("map-remove", Util.NAME, mapOnlyWritableAttrNameCompleter);
+        addGlobalOpPropCompleter("map-get", Util.NAME, mapAttrNameCompleter);
+        addGlobalOpPropCompleter("map-clear", Util.NAME, mapOnlyWritableAttrNameCompleter);
+
+        addGlobalOpPropCompleter("list-add", Util.NAME, listOnlyWritableAttrNameCompleter);
+        addGlobalOpPropCompleter("list-remove", Util.NAME, listOnlyWritableAttrNameCompleter);
+        addGlobalOpPropCompleter("list-get", Util.NAME, listAttrNameCompleter);
+        addGlobalOpPropCompleter("list-clear", Util.NAME, listOnlyWritableAttrNameCompleter);
     }
     interface CommandLineCompleterFactory {
         CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address);
