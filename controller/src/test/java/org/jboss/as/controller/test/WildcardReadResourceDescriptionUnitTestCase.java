@@ -65,6 +65,8 @@ public class WildcardReadResourceDescriptionUnitTestCase  extends AbstractContro
     private static final PathElement statistics = PathElement.pathElement("statistics", "test");
 
     private static final PathElement otherSubsystem = PathElement.pathElement("subsystem", "other");
+    private static final PathElement server = PathElement.pathElement("server");
+    private static final PathElement resource = PathElement.pathElement("resource");
 
     @Test
     public void testReadResourceDescription() throws Exception {
@@ -314,6 +316,17 @@ public class WildcardReadResourceDescriptionUnitTestCase  extends AbstractContro
         //validateFailedResponse(response, PathAddress.pathAddress(address).getParent().getParent());
         // That's not perfect but is acceptable
         validateFailedResponse(response, address);
+
+        // WFCORE-2022 multitarget address with a server resource
+        address = new ModelNode();
+        address.add("subsystem", "other");
+        address.add("server", "*");
+        address.add("resource", "*");
+
+        read.get(OP_ADDR).set(address);
+
+        response = controller.execute(read, null, null, null);
+        assertEquals(response.toString(), "success", response.get("outcome").asString());
     }
 
     private boolean validateNode(ModelNode fullResult, ModelNode node) {
@@ -428,6 +441,9 @@ public class WildcardReadResourceDescriptionUnitTestCase  extends AbstractContro
                         new NonResolvingResourceDescriptionResolver()));
         stats.registerReadOnlyAttribute(TestUtils.createNillableAttribute("7", ModelType.STRING), null);
 
-        root.registerSubModel(new SimpleResourceDefinition(otherSubsystem, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration otherSubsystemModel = root.registerSubModel(new SimpleResourceDefinition(otherSubsystem, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration serverModel = otherSubsystemModel.registerSubModel(new SimpleResourceDefinition(server, new NonResolvingResourceDescriptionResolver()));
+        serverModel.registerSubModel(new SimpleResourceDefinition(resource, new NonResolvingResourceDescriptionResolver()));
+
     }
 }
