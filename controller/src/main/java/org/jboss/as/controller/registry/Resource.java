@@ -385,7 +385,7 @@ public interface Resource extends Cloneable {
         }
 
         /**
-         * Navigate from a parent {@code resource} to the descendant resource at the given relative {@code addresss}.
+         * Navigate from a parent {@code resource} to the descendant resource at the given relative {@code address}.
          * <p>
          * {@link Resource#navigate(PathAddress)} implementations can use this as a standard implementation.
          * </p>
