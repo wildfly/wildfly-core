@@ -68,13 +68,13 @@ public class SimpleMapAttributeDefinition extends MapAttributeDefinition {
     public static final class Builder extends MapAttributeDefinition.Builder<Builder, SimpleMapAttributeDefinition> {
         private ModelType valueType = ModelType.STRING;
 
-        public Builder(final String name, boolean allowNull) {
-            super(name, allowNull);
+        public Builder(final String name, boolean optional) {
+            super(name, optional);
             setDefaults();
         }
 
-        public Builder(final String name, final ModelType valueType, final boolean allowNull) {
-            super(name, allowNull);
+        public Builder(final String name, final ModelType valueType, final boolean optional) {
+            super(name, optional);
             this.valueType = valueType;
             setDefaults();
         }

@@ -2476,7 +2476,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 if (ad == null) {
                     return false;
                 }
-                if (!ad.isAllowNull() || (ad.getDefaultValue() != null && ad.getDefaultValue().isDefined())
+                if (ad.isRequired() || (ad.getDefaultValue() != null && ad.getDefaultValue().isDefined())
                         || ad.isNullSignificant()) {
                     // must be set, presence of a default means not setting is the same as setting,
                     // or the AD is specifically configured that null is significant

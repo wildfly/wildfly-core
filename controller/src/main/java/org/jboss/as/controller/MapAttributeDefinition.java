@@ -247,8 +247,8 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
             super(attributeName, ModelType.OBJECT);
         }
 
-        protected Builder(String attributeName, boolean allowNull) {
-            super(attributeName, ModelType.OBJECT, allowNull);
+        protected Builder(String attributeName, boolean optional) {
+            super(attributeName, ModelType.OBJECT, optional);
         }
 
         public Builder(MapAttributeDefinition basis) {
