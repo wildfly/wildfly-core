@@ -48,6 +48,7 @@ import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 /**
  * An extension to {@link AbstractKeyManagerService} so that a KeyManager[] can be provided based on a JKS file based key store.
