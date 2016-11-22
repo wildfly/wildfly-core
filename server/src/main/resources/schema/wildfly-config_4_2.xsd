@@ -3218,11 +3218,11 @@
             </xs:annotation>
 
         </xs:attribute>
-        <xs:attribute name="source-port" type="xs:positiveInteger" use="optional">
+        <xs:attribute name="source-port" type="xs:nonNegativeInteger" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The port number that will be used for setting the source addresss of the outbound socket. If the
-                    source-interface attribute has been specified and the source-port attribute is absent,
+                    The port number that will be used for setting the source address of the outbound socket. If the
+                    source-interface attribute has been specified and the source-port attribute equals 0 or is absent,
                     then the system uses an ephemeral port while binding the socket to a source address.
                 </xs:documentation>
             </xs:annotation>
