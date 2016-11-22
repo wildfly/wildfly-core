@@ -22,7 +22,16 @@
 
 package org.jboss.as.server.mgmt;
 
+import static org.jboss.as.server.logging.ServerLogger.ROOT_LOGGER;
+
+import java.util.function.Consumer;
+
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.Stage;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
@@ -35,6 +44,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.HttpManagementAddHandler;
 import org.jboss.as.server.operations.HttpManagementRemoveHandler;
+import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -57,7 +67,6 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setXmlName(Attribute.HTTPS.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-            .setRequires(SECURITY_REALM.getName())
             .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
             .build();
 
@@ -78,6 +87,28 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
     @Override
     protected AttributeDefinition[] getAttributeDefinitions() {
         return ATTRIBUTE_DEFINITIONS;
+    }
+
+    @Override
+    protected Consumer<OperationContext> getValidationConsumer() {
+        return HttpManagementResourceDefinition::addAttributeValidator;
+    }
+
+    public static void addAttributeValidator(OperationContext context) {
+        context.addStep(new OperationStepHandler() {
+
+            @Override
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+                ModelNode secureSocketBinding = SECURE_SOCKET_BINDING.resolveModelAttribute(context, model);
+                if (secureSocketBinding.isDefined()) {
+                    if (SSL_CONTEXT.resolveModelAttribute(context, model).isDefined() || SECURITY_REALM.resolveModelAttribute(context, model).isDefined()) {
+                        return;
+                    }
+                    throw ROOT_LOGGER.secureSocketBindingRequiresSSLContext();
+                }
+            }
+        }, Stage.MODEL);
     }
 
 }
