@@ -58,7 +58,6 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
     protected static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, NATIVE_INTERFACE);
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
-        .setAlternatives(ModelDescriptionConstants.SASL_AUTHENTICATION_FACTORY)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
         .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
@@ -81,7 +80,6 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .build();
 
     public static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_AUTHENTICATION_FACTORY, ModelType.STRING, true)
-        .setAlternatives(ModelDescriptionConstants.SECURITY_REALM)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
