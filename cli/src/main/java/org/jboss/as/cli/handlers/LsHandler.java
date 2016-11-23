@@ -571,6 +571,9 @@ public class LsHandler extends BaseOperationCommand {
             while (iterator.hasNext()) {
                 OperationRequestAddress.Node node = iterator.next();
                 if (node.getName() != null) {
+                    if (node.getName().equals("*")) {
+                        throw new CommandFormatException("* is not supported in node path argument");
+                    }
                     addressNode.add(node.getType(), node.getName());
                 } else if (iterator.hasNext()) {
                     throw new OperationFormatException(
