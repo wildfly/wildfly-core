@@ -78,6 +78,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
         .setNullSignificant(true)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
@@ -114,6 +115,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setAllowExpression(true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SASL_PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_PROTOCOL, ModelType.STRING, true)
@@ -121,6 +123,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setDefaultValue(new ModelNode(ModelDescriptionConstants.REMOTE))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final StringListAttributeDefinition ALLOWED_ORIGINS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.ALLOWED_ORIGINS)

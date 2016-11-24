@@ -62,6 +62,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
         .setNullSignificant(true)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
@@ -69,6 +70,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setAllowExpression(true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SASL_PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_PROTOCOL, ModelType.STRING, true)
@@ -77,6 +79,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setDefaultValue(new ModelNode(ModelDescriptionConstants.REMOTE))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_AUTHENTICATION_FACTORY, ModelType.STRING, true)
