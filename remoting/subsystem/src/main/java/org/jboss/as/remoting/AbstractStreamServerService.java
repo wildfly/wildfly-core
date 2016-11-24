@@ -46,6 +46,7 @@ import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
+import org.xnio.Options;
 import org.xnio.StreamConnection;
 import org.xnio.channels.AcceptingChannel;
 
@@ -99,22 +100,26 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
     @Override
     public void start(final StartContext context) throws StartException {
         try {
-            NetworkServerProvider networkServerProvider = endpointValue.getValue().getConnectionProviderInterface("remote", NetworkServerProvider.class);
+            NetworkServerProvider networkServerProvider = endpointValue.getValue().getConnectionProviderInterface("remoting", NetworkServerProvider.class);
 
-            // TODO Elytron Review assembly of the OptionMap.
+            SecurityRealm securityRealm = this.securityRealm.getOptionalValue();
+            SSLContext sslContext = this.sslContext.getOptionalValue();
+            if (sslContext == null && securityRealm != null) {
+                sslContext = securityRealm.getSSLContext();
+            }
+
             OptionMap.Builder builder = OptionMap.builder();
+            if (sslContext != null) {
+                builder.set(Options.SSL_ENABLED, true);
+                builder.set(Options.SSL_STARTTLS, true);
+            }
+
             if (connectorPropertiesOptionMap != null) {
                 builder.addAll(connectorPropertiesOptionMap);
             }
             OptionMap resultingMap = builder.getMap();
             if (RemotingLogger.ROOT_LOGGER.isTraceEnabled()) {
                 RemotingLogger.ROOT_LOGGER.tracef("Resulting OptionMap %s", resultingMap.toString());
-            }
-
-            SecurityRealm securityRealm = this.securityRealm.getOptionalValue();
-            SSLContext sslContext = this.sslContext.getOptionalValue();
-            if (sslContext == null && securityRealm != null) {
-                sslContext = securityRealm.getSSLContext();
             }
 
             final InjectedValue<SaslAuthenticationFactory> saslFactoryValue = this.saslAuthenticationFactory;
