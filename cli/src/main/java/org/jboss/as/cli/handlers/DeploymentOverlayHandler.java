@@ -76,6 +76,8 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
     private static final byte REDEPLOY_ONLY_AFFECTED = 1;
     private static final byte REDEPLOY_ALL = 2;
 
+    private static final String WARN_MSG = "WARNING: redeployment is required on deployment ";
+
     private final ArgumentWithoutValue l;
     private final ArgumentWithValue action;
     private final ArgumentWithValue name;
@@ -534,10 +536,10 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
 
         if(ctx.isDomainMode()) {
             for(String group : Util.getServerGroupsReferencingOverlay(overlay, client)) {
-                addRemoveRedeployLinksSteps(client, steps, overlay, group, null, false, REDEPLOY_ALL);
+                addRemoveRedeployLinksSteps(ctx, client, steps, overlay, group, null, false, REDEPLOY_ALL);
             }
         } else {
-            addRemoveRedeployLinksSteps(client, steps, overlay, null, null, false, REDEPLOY_ALL);
+            addRemoveRedeployLinksSteps(ctx, client, steps, overlay, null, null, false, REDEPLOY_ALL);
         }
 
         if(!steps.isDefined() || steps.asList().isEmpty()) {
@@ -660,6 +662,10 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
 
         byte redeploy = this.redeployAffected.isPresent(args) ? REDEPLOY_ONLY_AFFECTED : REDEPLOY_NONE;
 
+        if (!redeployAffected.isPresent(args)) {
+            printWarning(ctx, client, name, contentStr, deploymentStr);
+        }
+
         // remove the content first and determine whether all the linked deployments
         // should be redeployed
         if(contentStr != null || deploymentStr == null && sg == null) {
@@ -692,7 +698,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                 if(deploymentStr == null) {
                     final List<String> groups = sg == null ? Util.getServerGroupsReferencingOverlay(name, client) : sg;
                     for(String group : groups) {
-                        addRemoveRedeployLinksSteps(client, steps, name, group, null, true, redeploy);
+                        addRemoveRedeployLinksSteps(ctx, client, steps, name, group, null, true, redeploy);
                     }
                 } else {
                     if(ctx.isDomainMode() && sg == null) {
@@ -700,25 +706,25 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                     }
                     final List<String> links = Arrays.asList(deploymentStr.split(",+"));
                     for(String group : sg) {
-                        addRemoveRedeployLinksSteps(client, steps, name, group, links, true, redeploy);
+                        addRemoveRedeployLinksSteps(ctx, client, steps, name, group, links, true, redeploy);
                     }
                 }
             } else {
                 if(deploymentStr == null) {
                     // remove all
-                    addRemoveRedeployLinksSteps(client, steps, name, null, null, true, redeploy);
+                    addRemoveRedeployLinksSteps(ctx, client, steps, name, null, null, true, redeploy);
                 } else {
                     final List<String> links = Arrays.asList(deploymentStr.split(",+"));
-                    addRemoveRedeployLinksSteps(client, steps, name, null, links, true, redeploy);
+                    addRemoveRedeployLinksSteps(ctx, client, steps, name, null, links, true, redeploy);
                 }
             }
         } else if(redeploy == REDEPLOY_ALL) {
             if(ctx.isDomainMode()) {
                 for(String group : Util.getServerGroupsReferencingOverlay(name, client)) {
-                    addRemoveRedeployLinksSteps(client, steps, name, group, null, false, redeploy);
+                    addRemoveRedeployLinksSteps(ctx, client, steps, name, group, null, false, redeploy);
                 }
             } else {
-                addRemoveRedeployLinksSteps(client, steps, name, null, null, false, redeploy);
+                addRemoveRedeployLinksSteps(ctx, client, steps, name, null, null, false, redeploy);
             }
         }
 
@@ -741,6 +747,40 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
             throw new CommandFormatException("Failed to remove overlay", e);
         }
 */    }
+
+    // WFCORE-2045 print warning on CLI side when argument '--redeploy-affected' is not specified
+    private void printWarning(CommandContext ctx, final ModelControllerClient client, final String name, final String content,
+            final String deployment) throws CommandLineException {
+        if (ctx.isDomainMode()) {
+            for (String sgName : Util.getServerGroups(client)) {
+                printWarningMessage(ctx, client, name, content, deployment, sgName);
+            }
+        } else {
+            printWarningMessage(ctx, client, name, content, deployment, null);
+        }
+    }
+
+    private void printWarningMessage(CommandContext ctx, final ModelControllerClient client, final String name,
+            final String content, final String deployment, String sgName) throws CommandLineException {
+        if (content == null && deployment != null) { // explicit deployment specified
+            printLine(ctx, Arrays.asList(deployment.split(",+")), sgName);
+        } else {
+            final ModelNode linkResources = loadLinkResources(client, name, sgName);
+            if (linkResources != null && !linkResources.keys().isEmpty()) {
+                printLine(ctx, linkResources.keys(), sgName);
+            }
+        }
+    }
+
+    private void printLine(CommandContext ctx, final Collection<String> deployment, final String sgName) {
+        String message = WARN_MSG + deployment;
+        if (sgName == null) {
+            ctx.printLine(message);
+        } else {
+            // domain mode with server group specified.
+            ctx.printLine(message + " in server group " + sgName);
+        }
+    }
 
     protected ModelNode add(CommandContext ctx, boolean stream) throws CommandLineException {
 
@@ -963,11 +1003,13 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         if(redeployAffected.isPresent(args)) {
             if(ctx.isDomainMode()) {
                 for(String sgName : Util.getServerGroups(client)) {
-                    addRemoveRedeployLinksSteps(client, steps, name, sgName, null, false, REDEPLOY_ALL);
+                    addRemoveRedeployLinksSteps(ctx, client, steps, name, sgName, null, false, REDEPLOY_ALL);
                 }
             } else {
-                addRemoveRedeployLinksSteps(client, steps, name, null, null, false, REDEPLOY_ALL);
+                addRemoveRedeployLinksSteps(ctx, client, steps, name, null, null, false, REDEPLOY_ALL);
             }
+        } else {
+            printWarning(ctx, client, name, contentStr, null);
         }
 
         if(opBuilder == null) {
@@ -1120,6 +1162,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
     protected void addAddRedeployLinksSteps(CommandContext ctx, ModelNode steps,
             String overlay, String serverGroup, String[] links, boolean regexp)
                     throws CommandLineException {
+        boolean warn = false;
         for(String link : links) {
             final ModelNode op = new ModelNode();
             final ModelNode address = op.get(Util.ADDRESS);
@@ -1153,11 +1196,19 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                         }
                     }
                 }
+            } else {
+                warn = true;
             }
+        }
+        if (warn) {
+            String warningMsg = serverGroup == null
+                    ? WARN_MSG + Arrays.toString(links)
+                    : WARN_MSG + Arrays.toString(links) + " in server group " + serverGroup;
+            ctx.printLine(warningMsg);
         }
     }
 
-    protected void addRemoveRedeployLinksSteps(ModelControllerClient client, ModelNode steps,
+    protected void addRemoveRedeployLinksSteps(CommandContext ctx, ModelControllerClient client, ModelNode steps,
             String overlay, String sgName, List<String> specifiedLinks, boolean removeLinks, byte redeploy)
             throws CommandLineException {
         final ModelNode linkResources = loadLinkResources(client, overlay, sgName);
