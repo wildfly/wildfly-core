@@ -296,7 +296,7 @@ public class HTTPSManagementInterfaceTestCase {
 
         ModelControllerClient client = null;
         try {
-            client = ModelControllerClient.Factory.create("remote", InetAddress.getByName(TestSuiteEnvironment.getServerAddress()),
+            client = ModelControllerClient.Factory.create("remoting", InetAddress.getByName(TestSuiteEnvironment.getServerAddress()),
                     MANAGEMENT_NATIVE_PORT, new org.wildfly.core.testrunner.Authentication.CallbackHandler());
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
