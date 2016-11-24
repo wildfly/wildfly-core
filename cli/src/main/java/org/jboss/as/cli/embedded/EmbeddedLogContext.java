@@ -55,16 +55,17 @@ class EmbeddedLogContext {
     /**
      * Configures the log context for the server and returns the configured log context.
      *
-     * @param baseDir            the base directory where the configuration and log directories can be found, e.g. {@code $JBOSS_HOME/standalone}
+     * @param logDir             the logging directory, from jboss.server|domain.log.dir standalone default {@code $JBOSS_HOME/standalone/log}
+     * @param configDir          the configuration directory from jboss.server|domain.config.dir, standalone default {@code $JBOSS_HOME/standalone/configuration}
      * @param defaultLogFileName the name of the log file to pass to {@code org.jboss.boot.log.file}
      * @param ctx                the command context used to report errors to
      *
      * @return the configured log context
      */
-    static synchronized LogContext configureLogContext(final File baseDir, final String defaultLogFileName, final CommandContext ctx) {
+    static synchronized LogContext configureLogContext(final File logDir, final File configDir, final String defaultLogFileName, final CommandContext ctx) {
         final LogContext embeddedLogContext = Holder.LOG_CONTEXT;
-        final Path bootLog = baseDir.toPath().resolve(Paths.get("log", defaultLogFileName));
-        final Path loggingProperties = baseDir.toPath().resolve(Paths.get("configuration", "logging.properties"));
+        final Path bootLog = logDir.toPath().resolve(Paths.get(defaultLogFileName));
+        final Path loggingProperties = configDir.toPath().resolve(Paths.get("logging.properties"));
         if (Files.exists(loggingProperties)) {
             WildFlySecurityManager.setPropertyPrivileged("org.jboss.boot.log.file", bootLog.toAbsolutePath().toString());
 
