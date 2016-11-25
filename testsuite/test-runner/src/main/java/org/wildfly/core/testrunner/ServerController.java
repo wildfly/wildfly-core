@@ -19,6 +19,13 @@ public class ServerController {
     private static final AtomicBoolean started = new AtomicBoolean(false);
     private static volatile Server server;
 
+    /**
+     * @deprecated use the startMode variant instead
+     */
+    @Deprecated
+    public void start(final String serverConfig, boolean adminMode) {
+        start(serverConfig, adminMode ? Server.StartMode.ADMIN_ONLY : Server.StartMode.NORMAL);
+    }
 
     public void start(final String serverConfig, Server.StartMode startMode) {
         start(serverConfig, startMode, System.out);
@@ -104,6 +111,7 @@ public class ServerController {
     public void reload() {
         server.reload(false, 30 * 1000); //by default reload in normal mode with timeout of 30 seconds
     }
+
     public void reload(Server.StartMode startMode) {
         server.reload(startMode, 30 * 1000); //by default reload in normal mode with timeout of 30 seconds
     }
