@@ -2,7 +2,7 @@ SYNOPSIS
 
    Standalone mode:
 
-      reload [--admin-only=true|false]
+      reload [--start-mode=admin-only|normal|suspend]
              [--use-current-server-config=true|false]
              [--server-config=new_server_config_file_name]
 
@@ -41,7 +41,8 @@ DESCRIPTION
 
 ARGUMENTS
 
- --admin-only  - whether the controller should start in running mode ADMIN_ONLY
+--admin-only   - Domain mode only, deprecated for standalone.
+                 Whether the controller should start in running mode ADMIN_ONLY
                  when it restarts. An ADMIN_ONLY controller will start any
                  configured management interfaces and accept management
                  requests, but will not start servers or, if this host
@@ -49,6 +50,22 @@ ARGUMENTS
                  connections from slave host controllers. For embedded host
                  controllers, this value is required and must be set to true.
                  If not present, false value is assumed.
+
+--start-mode   - Standalone mode only.
+                 The state the server will be once reloaded. Can be one of the
+                 following values: admin-only, normal, suspend.
+                 - admin-only: Whether the controller should start in running
+                 mode ADMIN_ONLY when it restarts.
+                 An ADMIN_ONLY controller will start any configured management
+                 interfaces and accept management requests, but will not start
+                 servers or, if this host controller is the master for the domain,
+                 accept incoming connections from slave host controllers.
+                 For embedded host controllers, this value is required.
+                 - normal: Whether the controller should start in running
+                 mode NORMAL when it restarts.
+                 - suspend: Whether the controller should start in suspend state
+                 SUSPENDED when it restarts. A SUSPENDED controller allows
+                 modifications to be made before it starts accepting requests.
 
  --host        - is allowed and required only in the domain mode, specifies
                  the host name to reload.
