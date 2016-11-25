@@ -113,7 +113,7 @@ public class StartServersHandler implements OperationStepHandler {
             String serverName = serverProp.getName();
             if (ServerConfigResourceDefinition.AUTO_START.resolveModelAttribute(context, serverProp.getValue()).asBoolean(true)) {
                 try {
-                    serverInventory.startServer(serverName, domainModel, START_BLOCKING);
+                    serverInventory.startServer(serverName, domainModel, START_BLOCKING, false);
                 } catch (Exception e) {
                     ROOT_LOGGER.failedToStartServer(e, serverName);
                 }
@@ -128,7 +128,7 @@ public class StartServersHandler implements OperationStepHandler {
             boolean auto = servers.get(serverName, AUTO_START).asBoolean(true);
             if (info == null && auto) {
                 try {
-                    serverInventory.startServer(serverName, domainModel, START_BLOCKING);
+                    serverInventory.startServer(serverName, domainModel, START_BLOCKING, false);
                 } catch (Exception e) {
                     ROOT_LOGGER.failedToStartServer(e, serverName);
                 }

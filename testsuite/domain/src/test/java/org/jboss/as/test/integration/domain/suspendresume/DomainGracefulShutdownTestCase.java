@@ -22,7 +22,13 @@
 
 package org.jboss.as.test.integration.domain.suspendresume;
 
-import java.io.IOException;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_STATE;
+
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.Callable;
@@ -30,18 +36,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.jboss.as.controller.client.ModelControllerClient;
+
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.domain.DeploymentPlan;
-import org.jboss.as.controller.client.helpers.domain.DeploymentPlanResult;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.client.helpers.domain.DomainDeploymentManager;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.common.HttpRequest;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
-import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
@@ -68,20 +72,17 @@ public class DomainGracefulShutdownTestCase {
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(DomainGracefulShutdownTestCase.class.getSimpleName());
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
         domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -94,7 +95,7 @@ public class DomainGracefulShutdownTestCase {
         DeploymentPlan plan = deploymentManager.newDeploymentPlan().add(WEB_SUSPEND_JAR, createDeployment().as(ZipExporter.class).exportAsInputStream())
                 .andDeploy().toServerGroup(MAIN_SERVER_GROUP)
                 .build();
-        DeploymentPlanResult res = deploymentManager.execute(plan).get();
+        deploymentManager.execute(plan).get();
 
 
         final String address = "http://" + TestSuiteEnvironment.getServerAddress() + ":8080/web-suspend";
@@ -134,38 +135,96 @@ public class DomainGracefulShutdownTestCase {
 
 
         } finally {
-            ModelNode op = new ModelNode();
-            op.get(ModelDescriptionConstants.OP).set("start-servers");
-            client.execute(op);
-
             plan = deploymentManager.newDeploymentPlan().undeploy(WEB_SUSPEND_JAR)
                     .andRemoveUndeployed()
                     .toServerGroup(MAIN_SERVER_GROUP)
                     .build();
-            res = deploymentManager.execute(plan).get();
+            deploymentManager.execute(plan).get();
         }
 
 
     }
 
-    private static ModelNode createOpNode(String address, String operation) {
-        ModelNode op = new ModelNode();
+    @Test
+    public void testStartSuspendedDomainMode() throws Exception {
 
-        // set address
-        ModelNode list = op.get("address").setEmptyList();
-        if (address != null) {
-            String[] pathSegments = address.split("/");
-            for (String segment : pathSegments) {
-                String[] elements = segment.split("=");
-                list.add(elements[0], elements[1]);
+        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainDeploymentManager deploymentManager = client.getDeploymentManager();
+        DeploymentPlan plan = deploymentManager.newDeploymentPlan().add(WEB_SUSPEND_JAR, createDeployment().as(ZipExporter.class).exportAsInputStream())
+                .andDeploy().toServerGroup(MAIN_SERVER_GROUP)
+                .build();
+        deploymentManager.execute(plan).get();
+
+        try {
+            ModelNode op = new ModelNode();
+            op.get(ModelDescriptionConstants.OP).set("reload-servers");
+            op.get(ModelDescriptionConstants.TIMEOUT).set(60);
+            op.get(ModelDescriptionConstants.BLOCKING).set(true);
+            op.get(ModelDescriptionConstants.SUSPEND).set(true);
+            client.execute(op);
+
+            op = new ModelNode();
+            op.get(ADDRESS).set(PathAddress.parseCLIStyleAddress("/host=master/server=main-one").toModelNode());
+            op.get(OP).set(READ_ATTRIBUTE_OPERATION);
+            op.get(NAME).set(SUSPEND_STATE);
+            Assert.assertEquals("SUSPENDED", client.execute(op).get(RESULT).asString());
+
+            final String address = "http://" + TestSuiteEnvironment.getServerAddress() + ":8080/web-suspend";
+            HttpURLConnection conn = (HttpURLConnection) new URL(address).openConnection();
+            try {
+                conn.setDoInput(true);
+                int responseCode = conn.getResponseCode();
+                Assert.assertEquals(503, responseCode);
+            } finally {
+                conn.disconnect();
             }
-        }
-        op.get("operation").set(operation);
-        return op;
-    }
 
-    private ModelNode executeOperation(final ModelNode op, final ModelControllerClient modelControllerClient) throws IOException, MgmtOperationException {
-        return DomainTestUtils.executeForResult(op, modelControllerClient);
+            op = new ModelNode();
+            op.get(OP).set("resume-servers");
+            client.execute(op);
+            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", 10, TimeUnit.SECONDS);
+            Assert.assertEquals(SuspendResumeHandler.TEXT, HttpRequest.get(address, 60, TimeUnit.SECONDS));
+
+            op = new ModelNode();
+            op.get(ModelDescriptionConstants.OP).set("stop-servers");
+            op.get(ModelDescriptionConstants.TIMEOUT).set(60);
+            op.get(ModelDescriptionConstants.BLOCKING).set(true);
+            client.execute(op);
+
+
+            op.get(ModelDescriptionConstants.OP).set("start-servers");
+            op.get(ModelDescriptionConstants.BLOCKING).set(true);
+            op.get(ModelDescriptionConstants.SUSPEND).set(true);
+            client.execute(op);
+            conn = (HttpURLConnection) new URL(address).openConnection();
+            try {
+                conn.setDoInput(true);
+                int responseCode = conn.getResponseCode();
+                Assert.assertEquals(503, responseCode);
+            } finally {
+                conn.disconnect();
+            }
+            op = new ModelNode();
+            op.get(ADDRESS).set(PathAddress.parseCLIStyleAddress("/host=master/server=main-one").toModelNode());
+            op.get(OP).set(READ_ATTRIBUTE_OPERATION);
+            op.get(NAME).set(SUSPEND_STATE);
+            Assert.assertEquals("SUSPENDED", client.execute(op).get(RESULT).asString());
+
+            op = new ModelNode();
+            op.get(OP).set("resume-servers");
+            client.execute(op);
+            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", 10, TimeUnit.SECONDS);
+            Assert.assertEquals(SuspendResumeHandler.TEXT, HttpRequest.get(address, 60, TimeUnit.SECONDS));
+
+        } finally {
+            plan = deploymentManager.newDeploymentPlan().undeploy(WEB_SUSPEND_JAR)
+                    .andRemoveUndeployed()
+                    .toServerGroup(MAIN_SERVER_GROUP)
+                    .build();
+            deploymentManager.execute(plan).get();
+        }
+
+
     }
 
     public static JavaArchive createDeployment() throws Exception {

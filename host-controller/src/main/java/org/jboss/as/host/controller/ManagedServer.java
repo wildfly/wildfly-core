@@ -25,8 +25,10 @@ package org.jboss.as.host.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESUME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_MODE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIMEOUT;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
@@ -224,8 +226,8 @@ class ManagedServer {
      * @param permit the controller permit
      * @return whether the state was changed successfully or not
      */
-    synchronized boolean reload(int permit) {
-        return internalSetState(new ReloadTask(permit), InternalState.SERVER_STARTED, InternalState.RELOADING);
+    synchronized boolean reload(int permit, boolean suspend) {
+        return internalSetState(new ReloadTask(permit, suspend), InternalState.SERVER_STARTED, InternalState.RELOADING);
     }
 
     /**
@@ -700,7 +702,7 @@ class ManagedServer {
         return protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
     }
 
-    static enum InternalState {
+    enum InternalState {
 
         STOPPED,
         PROCESS_ADDING(true),
@@ -791,7 +793,7 @@ class ManagedServer {
             final ModelNode endpointConfig = bootConfiguration.getSubsystemEndpointConfiguration();
             // Send std.in
             final ServiceActivator hostControllerCommActivator = DomainServerCommunicationServices.create(endpointConfig, managementURI, serverName, serverProcessName, authKey, useSubsystemEndpoint, bootConfiguration.getSSLContextSupplier());
-            final ServerStartTask startTask = new ServerStartTask(hostControllerName, serverName, 0, operationID, Collections.<ServiceActivator>singletonList(hostControllerCommActivator), bootUpdates, launchProperties);
+            final ServerStartTask startTask = new ServerStartTask(hostControllerName, serverName, 0, operationID, Collections.<ServiceActivator>singletonList(hostControllerCommActivator), bootUpdates, launchProperties, bootConfiguration.isSuspended());
             final Marshaller marshaller = MARSHALLER_FACTORY.createMarshaller(CONFIG);
             final OutputStream os = processControllerClient.sendStdin(serverProcessName);
             marshaller.start(Marshalling.createByteOutput(os));
@@ -872,16 +874,21 @@ class ManagedServer {
     private class ReloadTask implements TransitionTask {
 
         private final int permit;
-        private ReloadTask(int permit) {
+        private final boolean suspend;
+        private ReloadTask(int permit, boolean suspend) {
             this.permit = permit;
+            this.suspend = suspend;
         }
 
         @Override
         public boolean execute(ManagedServer server) throws Exception {
 
             final ModelNode operation = new ModelNode();
-            operation.get(OP).set("reload");
+            operation.get(OP).set(RELOAD);
             operation.get(OP_ADDR).setEmptyList();
+            if(suspend) {
+                operation.get(START_MODE).set(SUSPEND);
+            }
             // See WFCORE-1791, Operation-id is sent back again to the HC in
             // HostControllerConnection.ServerRegisterRequest.sendRequest method.
             // With this operation-id ServerRegistrationStepHandler is able to acquire

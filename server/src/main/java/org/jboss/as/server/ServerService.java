@@ -23,6 +23,10 @@
 package org.jboss.as.server;
 
 import static java.security.AccessController.doPrivileged;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 
 import java.io.File;
 import java.security.PrivilegedAction;
@@ -44,8 +48,10 @@ import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
@@ -55,6 +61,7 @@ import org.jboss.as.controller.access.management.ManagementSecurityIdentitySuppl
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.PlaceholderResource;
@@ -244,9 +251,6 @@ public final class ServerService extends AbstractControllerService {
 
     public synchronized void start(final StartContext context) throws StartException {
         ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
-        if (runningModeControl.isReloaded()) {
-
-        }
         Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = configuration.getConfigurationPersisterFactory();
         extensibleConfigurationPersister = configurationPersisterFactory.createConfigurationPersister(serverEnvironment, getExecutorServiceInjector().getOptionalValue());
         setConfigurationPersister(extensibleConfigurationPersister);
@@ -281,8 +285,12 @@ public final class ServerService extends AbstractControllerService {
             newExtDirs[extDirs.length] = new File(serverEnvironment.getServerBaseDir(), "lib/ext");
             serviceTarget.addService(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX,
                     new ExtensionIndexService(newExtDirs)).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
-
-            context.getServiceTarget().addService(SuspendController.SERVICE_NAME, new SuspendController()).install();
+            Boolean suspend = runningModeControl.getSuspend();
+            SuspendController suspendController = new SuspendController(suspend != null ? suspend : serverEnvironment.isStartSuspended());
+            runningModeControl.setSuspend(false);
+            context.getServiceTarget().addService(SuspendController.SERVICE_NAME, suspendController)
+                    .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, suspendController.getModelControllerInjectedValue())
+                    .install();
 
             GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();
             context.getServiceTarget().addService(GracefulShutdownService.SERVICE_NAME, gracefulShutdownService)
@@ -378,6 +386,9 @@ public final class ServerService extends AbstractControllerService {
 
         if (ok) {
             // Trigger the started message
+            Notification notification = new Notification(ModelDescriptionConstants.BOOT_COMPLETE_NOTIFICATION, PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
+                    PathElement.pathElement(SERVICE, MANAGEMENT_OPERATIONS)), ServerLogger.AS_ROOT_LOGGER.bootComplete());
+            getNotificationSupport().emit(notification);
             bootstrapListener.printBootStatistics();
         } else {
             // Die!

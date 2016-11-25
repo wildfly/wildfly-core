@@ -33,6 +33,7 @@ public class RunningModeControl {
     private volatile boolean reloaded;
     private volatile boolean useCurrentConfig;
     private volatile String newBootFileName;
+    private volatile Boolean suspend;
 
     public RunningModeControl(final RunningMode initialMode) {
         this.runningMode = initialMode;
@@ -60,6 +61,18 @@ public class RunningModeControl {
 
     public boolean isUseCurrentConfig() {
         return useCurrentConfig;
+    }
+
+    /**
+     *
+     * @return The suspend mode, or null if if has not been expliticly set
+     */
+    public Boolean getSuspend() {
+        return suspend;
+    }
+
+    public void setSuspend(Boolean suspend) {
+        this.suspend = suspend;
     }
 
     /**

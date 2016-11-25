@@ -110,9 +110,13 @@ public class DomainTransformers {
         //todo we should use ChainedTransformationDescriptionBuilder but it doesn't work properly with "root" resources
         ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(null);
 
+
         // 4.0 and earlier do not understand host-exclude. These are only used by
         // a DC, which must be running current version, so it's safe to discard them
         builder.discardChildResource(HostExcludeResourceDefinition.PATH_ELEMENT);
+        // 4.0 and earlier do not understand the concept of a suspended startup/reload
+        DomainServerLifecycleHandlers.registerSuspendedStartTransformers(builder);
+
         ModelVersion[] versions = {VERSION_3_0, VERSION_4_0};
         for (ModelVersion version : versions){
             TransformersSubRegistration domain = registry.getDomainRegistration(version);

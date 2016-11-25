@@ -23,10 +23,13 @@
 package org.jboss.as.host.controller;
 
 import static java.security.AccessController.doPrivileged;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_CONNECTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
@@ -34,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_LAUNCH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.domain.controller.HostConnectionInfo.Events.create;
@@ -109,6 +113,7 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
@@ -800,6 +805,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     finishBoot();
                 } finally {
                     // Trigger the started message
+                    Notification notification = new Notification(ModelDescriptionConstants.BOOT_COMPLETE_NOTIFICATION, PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
+                            PathElement.pathElement(SERVICE, MANAGEMENT_OPERATIONS)), ControllerLogger.MGMT_OP_LOGGER.bootComplete());
+                    getNotificationSupport().emit(notification);
                     bootstrapListener.printBootStatistics();
                 }
             } else {
@@ -1116,8 +1124,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
-        public ServerStatus reloadServer(String serverName, boolean blocking) {
-            return getServerInventory().reloadServer(serverName, blocking);
+        public ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend) {
+            return getServerInventory().reloadServer(serverName, blocking, suspend);
         }
 
         public void processInventory(Map<String, ProcessInfo> processInfos) {
@@ -1141,8 +1149,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
-        public ServerStatus startServer(String serverName, ModelNode domainModel, boolean blocking) {
-            return getServerInventory().startServer(serverName, domainModel, blocking);
+        public ServerStatus startServer(String serverName, ModelNode domainModel, boolean blocking, boolean suspend) {
+            return getServerInventory().startServer(serverName, domainModel, blocking, suspend);
         }
 
         public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
@@ -1154,8 +1162,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
-        public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking) {
-            return getServerInventory().restartServer(serverName, gracefulTimeout, domainModel, blocking);
+        public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend) {
+            return getServerInventory().restartServer(serverName, gracefulTimeout, domainModel, blocking, suspend);
         }
 
         public ServerStatus stopServer(String serverName, int gracefulTimeout) {
@@ -1420,7 +1428,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
-            public ServerStatus startServer(String serverName, ModelNode domainModel, boolean blocking) {
+            public ServerStatus startServer(String serverName, ModelNode domainModel, boolean blocking, boolean suspend) {
                 return ServerStatus.STOPPED;
             }
 
@@ -1430,7 +1438,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
-            public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking) {
+            public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend) {
                 return ServerStatus.STOPPED;
             }
 
@@ -1459,7 +1467,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
-            public ServerStatus reloadServer(String serverName, boolean blocking) {
+            public ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend) {
                 return ServerStatus.STOPPED;
             }
 
