@@ -23,6 +23,7 @@
 package org.jboss.as.cli.handlers;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -37,6 +38,7 @@ import org.jboss.as.cli.embedded.EmbeddedProcessLaunch;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.AwaiterModelControllerClient;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
+import org.jboss.as.cli.impl.DefaultCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
@@ -48,8 +50,14 @@ import org.jboss.dmr.ModelNode;
  *
  */
 public class ReloadHandler extends BaseOperationCommand {
+    private static final String ADMIN_ONLY = "admin-only";
+    private static final String NORMAL = "normal";
+    private static final String SUSPEND = "suspend";
+    private static final String START_MODE = "start-mode";
 
     private final ArgumentWithValue adminOnly;
+    private final ArgumentWithValue startMode;
+
     // standalone only arguments
     private final ArgumentWithValue useCurrentServerConfig;
     private final ArgumentWithValue serverConfig;
@@ -69,7 +77,33 @@ public class ReloadHandler extends BaseOperationCommand {
 
         this.embeddedServerRef = embeddedServerRef;
 
-        adminOnly = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--admin-only");
+        adminOnly = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--admin-only") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                if (!ctx.isDomainMode()) {
+                    return false;
+                }
+                return super.canAppearNext(ctx);
+            }
+        };
+
+        startMode = new ArgumentWithValue(this, new DefaultCompleter(new DefaultCompleter.CandidatesProvider() {
+            @Override
+            public Collection<String> getAllCandidates(CommandContext ctx) {
+                return Arrays.asList(ADMIN_ONLY, NORMAL, SUSPEND);
+            }
+        }), "--start-mode") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                if (ctx.isDomainMode()) {
+                    return false;
+                }
+                return super.canAppearNext(ctx);
+            }
+        };
+
+        startMode.addCantAppearAfter(adminOnly);
+        adminOnly.addCantAppearAfter(startMode);
 
         useCurrentServerConfig = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--use-current-server-config"){
             @Override
@@ -195,6 +229,13 @@ public class ReloadHandler extends BaseOperationCommand {
         ensureServerRebootComplete(ctx, client);
     }
 
+    private boolean isAdminOnly(CommandContext ctx) throws CommandFormatException {
+        final ParsedCommandLine args = ctx.getParsedCommandLine();
+        boolean legacy = this.adminOnly.isPresent(args) && "TRUE".equalsIgnoreCase(this.adminOnly.getValue(args));
+        boolean mode = this.startMode.isPresent(args) && ADMIN_ONLY.equalsIgnoreCase(this.startMode.getValue(args));
+        return mode || legacy;
+    }
+
     private void doHandleEmbedded(CommandContext ctx, ModelControllerClient client) throws CommandLineException {
 
         assert(embeddedServerRef != null);
@@ -204,9 +245,8 @@ public class ReloadHandler extends BaseOperationCommand {
         if (embeddedServerRef.get().isHostController()) {
             // WFCORE-938
             // for embedded-hc, we require --admin-only=true to be passed until the EHC supports --admin-only=false
-            final ParsedCommandLine args = ctx.getParsedCommandLine();
-            if (!this.adminOnly.isPresent(args) || "FALSE".equalsIgnoreCase(this.adminOnly.getValue(args))) {
-                throw new CommandLineException("Reload into running mode is not supported, --admin-only=true must be specified.");
+            if (!isAdminOnly(ctx)) {
+                throw new CommandLineException("Reload into running mode is not supported, --start-mode=admin-only must be specified.");
             }
         }
 
@@ -329,8 +369,36 @@ public class ReloadHandler extends BaseOperationCommand {
         }
         op.get(Util.OPERATION).set(Util.RELOAD);
 
-        setBooleanArgument(args, op, adminOnly, "admin-only");
+        setStartMode(ctx, args, op);
         return op;
+    }
+
+    private void setStartMode(CommandContext ctx, final ParsedCommandLine args,
+            final ModelNode op) throws CommandFormatException {
+        if (startMode.isPresent(args) && ctx.isDomainMode()) {
+            throw new CommandFormatException("--start-mode can't be used in domain mode.");
+        }
+        if (adminOnly.isPresent(args) && startMode.isPresent(args)) {
+            throw new CommandFormatException("--start-mode and --admin-only can't be used all together.");
+        }
+        // Requires a value
+        if (startMode.isPresent(args)) {
+            String value = startMode.getValue(args, true);
+            if ("true".equals(value)) {
+                throw new CommandFormatException("--start-mode is missing value.");
+            }
+        }
+
+        if (isAdminOnly(ctx)) {
+            // Special case for domain
+            if (ctx.isDomainMode()) {
+                op.get(ADMIN_ONLY).set(true);
+            } else {
+                op.get(START_MODE).set(ADMIN_ONLY);
+            }
+        } else {
+            setStringValue(args, op, startMode, START_MODE);
+        }
     }
 
     protected void setBooleanArgument(final ParsedCommandLine args, final ModelNode op, ArgumentWithValue arg, String paramName)
