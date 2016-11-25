@@ -753,6 +753,14 @@ public class CliCompletionTestCase {
             }
 
             {
+                String cmd = "reload ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertFalse(candidates.contains("--start-mode"));
+            }
+
+            {
                 String cmd = "reload --admin-only";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
