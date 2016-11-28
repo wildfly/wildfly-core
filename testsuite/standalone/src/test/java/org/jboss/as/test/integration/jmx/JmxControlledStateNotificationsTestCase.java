@@ -88,21 +88,21 @@ public class JmxControlledStateNotificationsTestCase {
             //The output after starting the server with the subsystem registering the notication handler enabled,
             //and performing a reload on it
             Assert.assertEquals(Arrays.toString(list.toArray(new String[list.size()])), 4, list.size());
-            Assert.assertTrue("Incorrect line " + list.get(0), list.get(0).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'ok' to 'stopping'"));
-            Assert.assertTrue("Incorrect line " + list.get(1), list.get(1).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'starting' to 'ok'"));
-            Assert.assertTrue("Incorrect line " + list.get(2), list.get(2).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'ok' to 'stopping'"));
-            Assert.assertTrue("Incorrect line " + list.get(3), list.get(3).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'starting' to 'ok'"));
+            Assert.assertTrue("Incorrect line " + list.get(0) + "\nfull list: " + list, list.get(0).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'ok' to 'stopping'"));
+            Assert.assertTrue("Incorrect line " + list.get(1) + "\nfull list: " + list, list.get(1).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'starting' to 'ok'"));
+            Assert.assertTrue("Incorrect line " + list.get(2) + "\nfull list: " + list, list.get(2).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'ok' to 'stopping'"));
+            Assert.assertTrue("Incorrect line " + list.get(3) + "\nfull list: " + list, list.get(3).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'starting' to 'ok'"));
         });
         readAndCheckFile(JMX_FACADE_RUNNING, list -> {
             //The output after starting the server with the subsystem registering the notication handler enabled,
             //and performing a reload on it
             Assert.assertEquals(Arrays.toString(list.toArray(new String[list.size()])), 6, list.size());
-            Assert.assertTrue("Incorrect line " + list.get(0), list.get(0).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'normal' to 'stopping'"));
-            Assert.assertTrue("Incorrect line " + list.get(1), list.get(1).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'starting' to 'suspended'"));
-            Assert.assertTrue("Incorrect line " + list.get(2), list.get(2).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'suspended' to 'normal'"));
-            Assert.assertTrue("Incorrect line " + list.get(3), list.get(3).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'normal' to 'stopping'"));
-            Assert.assertTrue("Incorrect line " + list.get(4), list.get(4).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'starting' to 'suspended'"));
-            Assert.assertTrue("Incorrect line " + list.get(5), list.get(5).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'suspended' to 'normal'"));
+            Assert.assertTrue("Incorrect line " + list.get(0) + list.get(3) + "\nfull list: " + list, list.get(0).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'normal' to 'stopping'"));
+            Assert.assertTrue("Incorrect line " + list.get(1) + list.get(3) + "\nfull list: " + list, list.get(1).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'starting' to 'suspended'"));
+            Assert.assertTrue("Incorrect line " + list.get(2) + list.get(3) + "\nfull list: " + list, list.get(2).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'suspended' to 'normal'"));
+            Assert.assertTrue("Incorrect line " + list.get(3) + list.get(3) + "\nfull list: " + list, list.get(3).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'normal' to 'stopping'"));
+            Assert.assertTrue("Incorrect line " + list.get(4) + list.get(3) + "\nfull list: " + list, list.get(4).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'starting' to 'suspended'"));
+            Assert.assertTrue("Incorrect line " + list.get(5) + list.get(3) + "\nfull list: " + list, list.get(5).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'suspended' to 'normal'"));
         });
     }
 
