@@ -30,6 +30,7 @@
         <extension module="org.jboss.as.remoting"/>
         <extension module="org.wildfly.extension.io"/>
         <extension module="org.wildfly.extension.request-controller"/>
+        <extension module="org.wildfly.extension.core-management"/>
     </extensions>
 
     <system-properties>
@@ -104,6 +105,8 @@
                 <remoting-connector/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:request-controller:1.0">
+            </subsystem>
+            <subsystem xmlns="urn:jboss:domain:core-management:1.0">
             </subsystem>
         </profile>
         <profile name="other">

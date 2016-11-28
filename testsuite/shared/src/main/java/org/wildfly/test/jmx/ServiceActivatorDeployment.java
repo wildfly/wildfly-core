@@ -33,6 +33,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.management.MBeanServer;
+import javax.management.NotificationListener;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 
@@ -62,10 +63,14 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
     public static final String PROPERTIES_RESOURCE = "service-activator-deployment.properties";
     public static final String MBEAN_CLASS_NAME = "mbean.class.name";
     public static final String MBEAN_OBJECT_NAME = "mbean.object.name";
+    public static final String LISTENER_OBJECT_NAME = "listener.object.name";
+    public static final String LISTENER_CLASS_NAME = "listener.class.name";
 
     InjectedValue<PluggableMBeanServer> mbeanServerValue = new InjectedValue<PluggableMBeanServer>();
 
     private ObjectName name = null;
+    private ObjectName targetName = null;
+    private NotificationListener listener = null;
 
     @Override
     public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
@@ -93,9 +98,19 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
             }
         }
         try {
-            name =  new ObjectName(properties.getProperty(MBEAN_OBJECT_NAME));
-            Class mbeanClass = Class.forName(properties.getProperty(MBEAN_CLASS_NAME));
-            registerMBean(mbeanClass.newInstance(),name);
+            if (properties.containsKey(MBEAN_OBJECT_NAME) && properties.containsKey(MBEAN_CLASS_NAME)) {
+                name = new ObjectName(properties.getProperty(MBEAN_OBJECT_NAME));
+                Class mbeanClass = Class.forName(properties.getProperty(MBEAN_CLASS_NAME));
+                registerMBean(mbeanClass.newInstance(), name);
+            }
+            if (properties.containsKey(LISTENER_OBJECT_NAME) && properties.containsKey(LISTENER_CLASS_NAME)) {
+                Class listenerClass = Class.forName(properties.getProperty(LISTENER_CLASS_NAME));
+                if (NotificationListener.class.isAssignableFrom(listenerClass)) {
+                    targetName = new ObjectName(properties.getProperty(LISTENER_OBJECT_NAME));
+                    listener = (NotificationListener) listenerClass.newInstance();
+                    addNotificationListener(targetName, listener);
+                }
+            }
         } catch (Exception e) {
             throw new StartException(e);
         }
@@ -106,6 +121,13 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
         if(name != null) {
             try {
                 unregisterMBean(name);
+            } catch (Exception ex) {
+                Logger.getLogger(ServiceActivatorDeployment.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        if(targetName != null && listener != null) {
+           try {
+                removeNotificationListener(targetName, listener);
             } catch (Exception ex) {
                 Logger.getLogger(ServiceActivatorDeployment.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -125,6 +147,14 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
         inVmActions().unregisterMBean(mbeanServerValue.getValue(), name);
     }
 
+    private void addNotificationListener(ObjectName name, NotificationListener listener) throws Exception {
+        inVmActions().addNotificationListener(mbeanServerValue.getValue(), name, listener);
+    }
+
+    private void removeNotificationListener(ObjectName name, NotificationListener listener) throws Exception {
+        inVmActions().removeNotificationListener(mbeanServerValue.getValue(), name, listener);
+    }
+
     private static InVmActions inVmActions() {
         return System.getSecurityManager() != null ? InVmActions.PRIVILEGED : InVmActions.NON_PRIVILEGED;
     }
@@ -134,6 +164,10 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
         ObjectInstance registerMBean(MBeanServer mbeanServer, Object mbean, ObjectName name) throws Exception;
 
         void unregisterMBean(MBeanServer mbeanServer, ObjectName name) throws Exception;
+
+        void addNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception;
+
+        void removeNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception;
 
         InVmActions NON_PRIVILEGED = new InVmActions() {
 
@@ -151,6 +185,30 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
                 try {
                     InVmAccess.runInVm((PrivilegedExceptionAction<Void>) () -> {
                         mbeanServer.unregisterMBean(name);
+                        return null;
+                    });
+                } catch (PrivilegedActionException e) {
+                    throw e.getException();
+                }
+            }
+
+            @Override
+            public void addNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception {
+                try {
+                    InVmAccess.runInVm((PrivilegedExceptionAction<Void>) () -> {
+                        mbeanServer.addNotificationListener(name, listener, null, null);
+                        return null;
+                    });
+                } catch (PrivilegedActionException e) {
+                    throw e.getException();
+                }
+            }
+
+            @Override
+            public void removeNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception {
+                try {
+                    InVmAccess.runInVm((PrivilegedExceptionAction<Void>) () -> {
+                        mbeanServer.removeNotificationListener(name, listener, null, null);
                         return null;
                     });
                 } catch (PrivilegedActionException e) {
@@ -176,6 +234,30 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
                 try {
                     doPrivileged((PrivilegedExceptionAction<Void>) () -> {
                         NON_PRIVILEGED.unregisterMBean(mbeanServer, name);
+                        return null;
+                    });
+                } catch (PrivilegedActionException e) {
+                    throw e.getException();
+                }
+            }
+
+            @Override
+            public void addNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception {
+                try {
+                    doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+                        NON_PRIVILEGED.addNotificationListener(mbeanServer, name, listener);
+                        return null;
+                    });
+                } catch (PrivilegedActionException e) {
+                    throw e.getException();
+                }
+            }
+
+            @Override
+            public void removeNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception {
+                try {
+                    doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+                        NON_PRIVILEGED.removeNotificationListener(mbeanServer, name, listener);
                         return null;
                     });
                 } catch (PrivilegedActionException e) {
