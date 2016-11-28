@@ -9,11 +9,11 @@ DESCRIPTION
   The default values can be customized by specifying the desired defaults as
   command line arguments when launching the CLI. E.g.
 
-  jboss-cli.sh controller=remote+http://controller-host.net:1234
+  jboss-cli.sh --controller=remote+http://controller-host.net:1234
 
   Or
 
-  jboss-cli.sh controller=controller-host.net
+  jboss-cli.sh --controller=controller-host.net
 
   In this case, the default port will be 9990 and the default protocol will be remote+http.
 
@@ -24,11 +24,11 @@ DESCRIPTION
   To connect automatically after the launch, use '--connect' switch. E.g.
 
   jboss-cli.sh --connect
-  jboss-cli.sh --connect controller=controller-host.net
-  jboss-cli.sh --connect controller=controller-host.net:1234
-  jboss-cli.sh --connect controller=remote://controller-host.net:1234
-  jboss-cli.sh --connect controller=remote+http://controller-host.net:1234
-
+  jboss-cli.sh --connect --controller=controller-host.net
+  jboss-cli.sh --connect --controller=controller-host.net:1234
+  jboss-cli.sh --connect --controller=remote://controller-host.net:1234
+  jboss-cli.sh --connect --controller=remote+http://controller-host.net:1234
+  jboss-cli.sh --connect --controller=remote+https://controller-host.net:1234
   The host may be any of these formats:
   - a host name, e.g. localhost
   - an IPv4 address, e.g. 127.0.0.1
@@ -40,7 +40,8 @@ DESCRIPTION
 
 ARGUMENTS
 
-  protocol  - optional, default value is remote+http.
+  protocol  - optional, default value is remote+http. Use remote+https to 
+              connect using https.
 
   host      - optional, default value is localhost.
 
