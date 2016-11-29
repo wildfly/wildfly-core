@@ -232,7 +232,7 @@ public class TestModule {
      */
     public JavaArchive addResource(String fileName) {
         JavaArchive resource = ShrinkWrap.create(JavaArchive.class, fileName);
-        if (resources.size() == 0) {
+        if (resources.isEmpty()) {
             //Add the test module to the first jar in the module to avoid having to do that from the tests
             resource.addClass(TestModule.class);
         }
@@ -308,7 +308,7 @@ public class TestModule {
 
     private void generateModuleXml(File mainDirectory) throws IOException {
         try (Writer writer = Files.newBufferedWriter(new File(mainDirectory, "module.xml").toPath(), StandardCharsets.UTF_8)){
-            writer.write("<module xmlns=\"urn:jboss:module:1.1\" name=\"" + moduleName + "\">");
+            writer.write("<module xmlns=\"urn:jboss:module:1.5\" name=\"" + moduleName + "\">");
             writer.write("<resources>");
             for (JavaArchive jar : resources) {
                 writer.write("<resource-root path=\"" + jar.getName() + "\"/>");

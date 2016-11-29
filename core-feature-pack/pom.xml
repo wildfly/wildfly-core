@@ -249,12 +249,17 @@
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-management</artifactId>
+            <artifactId>wildfly-core-management-client</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-controller-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-core-management-subsystem</artifactId>
         </dependency>
 
         <dependency>

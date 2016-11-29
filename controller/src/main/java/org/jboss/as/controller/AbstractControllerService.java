@@ -302,6 +302,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
         this.controller = controller;
 
+        this.processState.setStarting();
+
         final long bootStackSize = getBootStackSize();
         final Thread bootThread = new Thread(null, new Runnable() {
             public void run() {
@@ -484,7 +486,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         capabilityRegistry.clear();
         capabilityRegistry.publish();
         controller = null;
-
+        processState.setStopping();
         Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -512,6 +514,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 executorShutdown.start();
             }
         } finally {
+            processState.setStopped();
             context.asynchronous();
         }
     }

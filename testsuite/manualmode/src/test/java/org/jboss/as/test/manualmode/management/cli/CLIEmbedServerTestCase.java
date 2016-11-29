@@ -72,6 +72,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -295,6 +296,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
     }
 
     @Test
+    @Ignore
     public void testTimeout() throws Exception {
         cli.sendLine("command-timeout set 60");
         String line = "embed-server --server-config=standalone-cli.xml " + JBOSS_HOME;
@@ -514,6 +516,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     /** Tests that the quit command stops any embedded server */
     @Test
+    @Ignore
     public void testStopServerOnQuit() throws IOException {
         validateServerConnectivity();
         cli.sendLine("quit");

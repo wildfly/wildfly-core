@@ -54,5 +54,6 @@
         <module name="org.jboss.as.protocol"/>
         <module name="org.jboss.as.version"/>
         <module name="org.jboss.threads"/>
+        <module name="org.wildfly.extension.core-management-client" />
     </dependencies>
 </module>
