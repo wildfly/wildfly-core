@@ -52,7 +52,7 @@ public class WritableAuthorizerConfiguration implements AuthorizerConfiguration,
     private final Map<AccessConstraintKey, Map<PathAddress, AccessConstraintUtilization>> accessConstraintUtilization =
             new HashMap<AccessConstraintKey, Map<PathAddress, AccessConstraintUtilization>>();
     private volatile CombinationPolicy combinationPolicy = CombinationPolicy.PERMISSIVE;
-    private volatile boolean useRealmRoles;
+    private volatile boolean useIdentityRoles;
     private volatile boolean nonFacadeMBeansSensitive;
     private volatile Authorizer.AuthorizerDescription authorizerDescription;
     private volatile RoleMaps roleMaps;
@@ -71,7 +71,7 @@ public class WritableAuthorizerConfiguration implements AuthorizerConfiguration,
      */
     public synchronized void reset() {
         this.authorizerDescription = StandardRBACAuthorizer.AUTHORIZER_DESCRIPTION;
-        this.useRealmRoles = this.nonFacadeMBeansSensitive = false;
+        this.useIdentityRoles = this.nonFacadeMBeansSensitive = false;
         this.roleMappings = new HashMap<String, RoleMappingImpl>();
         RoleMaps oldRoleMaps = this.roleMaps;
         this.roleMaps = new RoleMaps(authorizerDescription.getStandardRoles(), Collections.<String, ScopedRole>emptyMap());
@@ -105,8 +105,8 @@ public class WritableAuthorizerConfiguration implements AuthorizerConfiguration,
     }
 
     @Override
-    public boolean isMapUsingRealmRoles() {
-        return useRealmRoles;
+    public boolean isMapUsingIdentityRoles() {
+        return useIdentityRoles;
     }
 
     @Override
@@ -133,6 +133,10 @@ public class WritableAuthorizerConfiguration implements AuthorizerConfiguration,
     @Override
     public Map<String, RoleMapping> getRoleMappings() {
         return Collections.<String, RoleMapping>unmodifiableMap(roleMappings);
+    }
+
+    public void setUseIdentityRoles(boolean useIdentityRoles) {
+        this.useIdentityRoles = useIdentityRoles;
     }
 
     public synchronized void addScopedRole(ScopedRole toAdd) {

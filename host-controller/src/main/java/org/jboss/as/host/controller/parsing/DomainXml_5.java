@@ -862,6 +862,12 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
                         AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
 
                 operationsList.add(op);
+            } else if (attribute == Attribute.USE_IDENTITY_ROLES) {
+                ModelNode useIdentityRoles = AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.parse(value, reader);
+                ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
+                        AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.getName(), useIdentityRoles);
+
+                operationsList.add(op);
             } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
                 ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.parse(value, reader);
                 ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,

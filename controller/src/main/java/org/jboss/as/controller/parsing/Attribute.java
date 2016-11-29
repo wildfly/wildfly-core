@@ -196,6 +196,7 @@ public enum Attribute {
     TYPE("type"),
     UPDATE_AUTO_START_WITH_SERVER_STATUS("update-auto-start-with-server-status"),
     URL("url"),
+    USE_IDENTITY_ROLES("use-identity-roles"),
     USER("user"),
     USER_DN("user-dn"),
     USER_DN_ATTRIBUTE("user-dn-attribute"),
