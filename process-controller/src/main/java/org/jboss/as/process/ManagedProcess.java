@@ -274,7 +274,7 @@ final class ManagedProcess {
             }
             if (state != State.DOWN || jt == null || jt.isAlive()) { // Cover all bases just to be robust
                 log.debugf("Destroying process '%s'", processName);
-                process.destroy();
+                process.destroyForcibly();
             }
         }
     }
@@ -303,7 +303,7 @@ final class ManagedProcess {
                 if (!ProcessUtils.killProcess(processName)) {
                     // Fallback to destroy if kill is not available
                     log.failedToKillProcess(processName);
-                    process.destroy();
+                    process.destroyForcibly();
                 }
             }
         }
