@@ -258,7 +258,7 @@ final class ManagedProcess {
                 stop(); // Try to stop before destroying the process
             } else {
                 log.debugf("Destroying process '%s'", processName);
-                process.destroy();
+                process.destroyForcibly();
             }
         }
     }
