@@ -274,7 +274,7 @@ class ManagedServer {
     }
 
     synchronized void destroy() {
-        final InternalState required = this.requiredState;
+        InternalState required = this.requiredState;
         if(required == InternalState.STOPPED) {
             if(internalState != InternalState.STOPPED) {
                 try {
@@ -284,12 +284,20 @@ class ManagedServer {
                 }
             }
         } else {
+            // Do the normal stop stuff first
             stop(-1, 0);
+            required = this.requiredState;
+            if (required == InternalState.STOPPED) {
+                // Now proceed to destroy, assuming that there was a reason the user
+                // invoked this op, and that stop() alone will not suffice
+                // The PC will give it a bit of time to do a normal stop before destroying
+                destroy();
+            } // else something is odd but avoid looping. User would have to invoke the op again
         }
     }
 
     synchronized void kill() {
-        final InternalState required = this.requiredState;
+        InternalState required = this.requiredState;
         if(required == InternalState.STOPPED) {
             if(internalState != InternalState.STOPPED) {
                 try {
@@ -299,7 +307,15 @@ class ManagedServer {
                 }
             }
         } else {
+            // Do the normal stop stuff first
             stop(-1, 0);
+            required = this.requiredState;
+            if (required == InternalState.STOPPED) {
+                // Now proceed to kill, assuming that there was a reason the user
+                // invoked this op, and that stop() alone will not suffice
+                // The PC will give it a bit of time to do a normal stop before killing
+                kill();
+            } // else something is odd but avoid looping. User would have to invoke the op again
         }
     }
 

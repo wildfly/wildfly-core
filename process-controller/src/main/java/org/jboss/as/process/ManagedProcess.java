@@ -71,6 +71,7 @@ final class ManagedProcess {
 
     private OutputStream stdin;
     private volatile State state = State.DOWN;
+    private volatile Thread joinThread;
     private Process process;
     private boolean shutdown;
     private boolean stopRequested = false;
@@ -212,7 +213,8 @@ final class ManagedProcess {
         final Thread stdoutThread = new Thread(new ReadTask(stdout, processController.getStdout()));
         stdoutThread.setName(String.format("stdout for %s", processName));
         stdoutThread.start();
-        final Thread joinThread = new Thread(new JoinTask(startTime));
+
+        joinThread = new Thread(new JoinTask(startTime));
         joinThread.setName(String.format("reaper for %s", processName));
         joinThread.start();
         boolean ok = false;
@@ -254,9 +256,23 @@ final class ManagedProcess {
 
     public void destroy() {
         synchronized (lock) {
+            Thread jt = joinThread;
             if(state != State.STOPPING) {
                 stop(); // Try to stop before destroying the process
-            } else {
+            }
+
+            if (state != State.DOWN && jt != null) {
+                try {
+                    // Give stop() a small amount of time to work,
+                    // in case the user asked for a destroy when a normal stop
+                    // was sufficient. But the base assumption is the destroy
+                    // is needed
+                    jt.join(5000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            if (state != State.DOWN || jt == null || jt.isAlive()) { // Cover all bases just to be robust
                 log.debugf("Destroying process '%s'", processName);
                 process.destroy();
             }
@@ -265,11 +281,26 @@ final class ManagedProcess {
 
     public void kill() {
         synchronized (lock) {
+            Thread jt = joinThread;
             if(state != State.STOPPING) {
                 stop(); // Try to stop before killing the process
-            } else {
+            }
+
+            if (state != State.DOWN && jt != null) {
+                try {
+                    // Give stop() a small amount of time to work,
+                    // in case the user asked for a kill when a normal stop
+                    // was sufficient. But the base assumption is the kill
+                    // is needed
+                    jt.join(5000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            if (state != State.DOWN || jt == null || jt.isAlive()) { // Cover all bases just to be robust
                 log.debugf("Attempting to kill -KILL process '%s'", processName);
-                if(! ProcessUtils.killProcess(processName)) {
+                if (!ProcessUtils.killProcess(processName)) {
                     // Fallback to destroy if kill is not available
                     log.failedToKillProcess(processName);
                     process.destroy();
