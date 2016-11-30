@@ -32,9 +32,29 @@
         <copy-artifact artifact="org.jboss.modules:jboss-modules" to-location="jboss-modules.jar"/>
         <copy-artifact artifact="org.wildfly.core:wildfly-launcher" to-location="bin/launcher.jar"/>
 
-        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-linux" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib/linux-x86_64" extract="true" />
-        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-mac" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib/macosx-x86_64" extract="true" />
-        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-windows" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib/windows-x86_64" extract="true" />
+        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-linux-x86_64" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true" >
+            <filter pattern="META-INF*" include="false" />
+        </copy-artifact>
+        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-linux-i686" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
+            <filter pattern="META-INF*" include="false" />
+        </copy-artifact>
+        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-macosx-x86_64" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
+            <filter pattern="META-INF*" include="false" />
+        </copy-artifact>
+        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-windows-i686" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
+            <filter pattern="*.dll" include="true"/>
+            <filter pattern="*" include="false" />
+        </copy-artifact>
+        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-windows-x86_64" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
+            <filter pattern="*.dll" include="true"/>
+            <filter pattern="*" include="false" />
+        </copy-artifact>
+        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-solaris-x86_64" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
+            <filter pattern="META-INF*" include="false" />
+        </copy-artifact>
+        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-solaris-sparcv9" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
+            <filter pattern="META-INF*" include="false" />
+        </copy-artifact>
     </copy-artifacts>
     <mkdirs>
         <dir name="standalone/lib/ext"/>

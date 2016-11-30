@@ -134,7 +134,7 @@
         <version.org.wildfly.client.config>1.0.0.Beta1</version.org.wildfly.client.config>
         <version.org.wildfly.common>1.2.0.Beta1</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.0.0.Beta2</version.org.wildfly.discovery>
-        <version.org.wildfly.openssl>1.0.0.Alpha4</version.org.wildfly.openssl>
+        <version.org.wildfly.openssl>1.0.0.Alpha6</version.org.wildfly.openssl>
         <version.org.wildfly.legacy.test>2.0.2.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.security.elytron>1.1.0.Beta16</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta5</version.org.wildfly.security.elytron-web.undertow-server>
@@ -1468,21 +1468,47 @@
 
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-linux</artifactId>
+                <artifactId>wildfly-openssl-linux-x86_64</artifactId>
                 <version>${version.org.wildfly.openssl}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-mac</artifactId>
+                <artifactId>wildfly-openssl-linux-i686</artifactId>
+                <version>${version.org.wildfly.openssl}</version>
+            </dependency>
+
+
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl-macosx-x86_64</artifactId>
                 <version>${version.org.wildfly.openssl}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-windows</artifactId>
+                <artifactId>wildfly-openssl-windows-i686</artifactId>
                 <version>${version.org.wildfly.openssl}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl-windows-x86_64</artifactId>
+                <version>${version.org.wildfly.openssl}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl-solaris-x86_64</artifactId>
+                <version>${version.org.wildfly.openssl}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl-solaris-sparcv9</artifactId>
+                <version>${version.org.wildfly.openssl}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.wildfly.checkstyle</groupId>
                 <artifactId>wildfly-checkstyle-config</artifactId>
