@@ -27,10 +27,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.wildfly</groupId>
-        <artifactId>wildfly-parent</artifactId>
-        <version>8.0.0.Alpha2-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <groupId>org.wildfly.core</groupId>
+        <artifactId>wildfly-core-parent</artifactId>
+        <version>3.0.0.Alpha14-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-security-manager</artifactId>
