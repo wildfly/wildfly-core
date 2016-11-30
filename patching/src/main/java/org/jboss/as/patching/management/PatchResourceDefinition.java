@@ -22,6 +22,9 @@
 
 package org.jboss.as.patching.management;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
+
 import java.io.IOException;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -77,6 +80,8 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
     static final AttributeDefinition INPUT_STREAM_IDX_DEF = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
             .setAllowNull(true)
+            .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
+            .addArbitraryDescriptor(ATTACHED_STREAMS, new ModelNode(true))
             .build();
     static final AttributeDefinition OVERRIDE_MODULES = SimpleAttributeDefinitionBuilder.create(Constants.OVERRIDE_MODULES, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))

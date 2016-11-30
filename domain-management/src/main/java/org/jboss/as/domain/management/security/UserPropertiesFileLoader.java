@@ -24,8 +24,9 @@ package org.jboss.as.domain.management.security;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -94,10 +95,11 @@ public class UserPropertiesFileLoader extends PropertiesFileLoader {
         super.load();
 
         String realmName = null;
-        BufferedReader br = new BufferedReader(new FileReader(propertiesFile));
+        BufferedReader br = null;
         disabledUserNames.clear();
         enabledUserNames.clear();
         try {
+            br = Files.newBufferedReader(propertiesFile.toPath(), StandardCharsets.UTF_8);
             String currentLine;
             while (realmName == null && (currentLine = br.readLine()) != null) {
                 final String trimmed = currentLine.trim();

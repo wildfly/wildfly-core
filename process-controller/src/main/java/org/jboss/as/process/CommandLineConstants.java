@@ -121,6 +121,12 @@ public class CommandLineConstants {
     public static final String MODULE_PATH = "-mp";
     public static final String SECMGR = "-secmgr";
 
+    public static final String START_MODE = "--start-mode";
+    public static final String NORMAL_MODE = "normal";
+    public static final String SUSPEND_MODE = "suspend";
+    public static final String ADMIN_ONLY_MODE = "admin-only";
+
+
     // java.net properties
     public static final String PREFER_IPV4_STACK = "java.net.preferIPv4Stack";
     public static final String PREFER_IPV6_ADDRESSES = "java.net.preferIPv6Addresses";

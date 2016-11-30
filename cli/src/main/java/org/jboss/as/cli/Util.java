@@ -1143,9 +1143,12 @@ public class Util {
                 throw new OperationFormatException("The argument value is not specified for " + propName + ": '" + value + "'");
             }
             final ModelNode toSet = ArgumentValueConverter.DEFAULT.fromString(ctx, value);
-            if (outcome != null) {
+            if (outcome != null && outcome.hasDefined(propName)) {
                 try {
-                    applyReplacements(propName, toSet, outcome.get(propName), outcome.get(propName).get("type").asType(), attachments);
+                    ModelNode p = outcome.get(propName);
+                    if (p.hasDefined("type")) {
+                        applyReplacements(propName, toSet, p, p.get("type").asType(), attachments);
+                    }
                 } catch (Throwable ex) {
                     //ex.printStackTrace();
                     //System.err.println("OUTCOME " + outcome);
@@ -1366,9 +1369,12 @@ public class Util {
                 ModelType valueTypeType = valueType.getType();
                 if (ModelType.OBJECT.equals(valueTypeType)) {
                     for (String k : value.keys()) {
-                        if (value.get(k).isDefined()) {
-                            applyReplacements(k, value.get(k), valueType.get(k),
-                                    valueType.get(k).get("type").asType(), attachments);
+                        if (value.get(k).isDefined() && valueType.hasDefined(k)) {
+                            ModelNode p = valueType.get(k);
+                            if (p.hasDefined("type")) {
+                                applyReplacements(k, value.get(k), p,
+                                        p.get("type").asType(), attachments);
+                            }
                         }
                     }
                 }

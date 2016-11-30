@@ -218,7 +218,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
         }
         props.put(ServerEnvironment.JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
         ProductConfig pc =  new ProductConfig("Test", Version.AS_VERSION, "main");
-        return new ServerEnvironment(null, props, new HashMap<String, String>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), pc);
+        return new ServerEnvironment(null, props, new HashMap<String, String>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), pc, false);
     }
 
     private HostControllerEnvironment createHostControllerEnvironment() {

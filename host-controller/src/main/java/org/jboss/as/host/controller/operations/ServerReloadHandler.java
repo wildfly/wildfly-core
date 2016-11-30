@@ -30,6 +30,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.dmr.ModelNode;
@@ -43,7 +44,7 @@ import static org.jboss.as.host.controller.operations.ServerStartHandler.getOper
 public class ServerReloadHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = "reload";
-    public static final OperationDefinition DEFINITION = getOperationDefinition(OPERATION_NAME);
+    public static final OperationDefinition DEFINITION = getOperationDefinition(OPERATION_NAME, ServerStartHandler.SUSPEND);
 
     private final ServerInventory serverInventory;
     public ServerReloadHandler(ServerInventory serverInventory) {
@@ -60,7 +61,8 @@ public class ServerReloadHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
-        final boolean blocking = operation.get("blocking").asBoolean(false);
+        final boolean blocking = operation.get(ModelDescriptionConstants.BLOCKING).asBoolean(false);
+        final boolean suspend = operation.get(ModelDescriptionConstants.SUSPEND).asBoolean(false);
 
         context.addStep(new OperationStepHandler() {
             @Override
@@ -68,7 +70,7 @@ public class ServerReloadHandler implements OperationStepHandler {
                 // WFLY-2189 trigger a write-runtime authz check
                 context.getServiceRegistry(true);
 
-                final ServerStatus status = serverInventory.reloadServer(serverName, blocking);
+                final ServerStatus status = serverInventory.reloadServer(serverName, blocking, suspend);
                 context.getResult().set(status.toString());
             }
         }, OperationContext.Stage.RUNTIME);

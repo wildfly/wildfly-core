@@ -28,6 +28,7 @@ import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -145,7 +146,9 @@ public final class Main {
         RunningMode runningMode = RunningMode.NORMAL;
         ProductConfig productConfig;
         ConfigurationFile.InteractionPolicy configInteractionPolicy = ConfigurationFile.InteractionPolicy.STANDARD;
+        boolean startSuspended = false;
         boolean removeConfig = false;
+        boolean startModeSet = false;
         for (int i = 0; i < argsLength; i++) {
             final String arg = args[i];
             try {
@@ -263,12 +266,47 @@ public final class Main {
 
                     systemProperties.setProperty(ServerEnvironment.JBOSS_DEFAULT_MULTICAST_ADDRESS, value);
                 } else if (CommandLineConstants.ADMIN_ONLY.equals(arg)) {
+                    if(startModeSet) {
+                        STDERR.println(ServerLogger.ROOT_LOGGER.cannotSetBothAdminOnlyAndStartMode());
+                        usage();
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                    }
+                    startModeSet = true;
                     runningMode = RunningMode.ADMIN_ONLY;
                 } else if (arg.startsWith(CommandLineConstants.SECURITY_PROP)) {
                     //Value can be a comma separated key value pair
                     //Drop the first 2 characters
                     String token = arg.substring(2);
                     processSecurityProperties(token,systemProperties);
+                } else if (arg.startsWith(CommandLineConstants.START_MODE)) {
+                    if(startModeSet) {
+                        STDERR.println(ServerLogger.ROOT_LOGGER.cannotSetBothAdminOnlyAndStartMode());
+                        usage();
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                    }
+                    startModeSet = true;
+                    int idx = arg.indexOf('=');
+                    if (idx == arg.length() - 1) {
+                        STDERR.println(ServerLogger.ROOT_LOGGER.noArgValue(arg));
+                        usage();
+                        return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                    }
+                    String value = idx > -1 ? arg.substring(idx + 1) : args[++i];
+                    value = value.toLowerCase(Locale.ENGLISH);
+                    switch (value) {
+                        case CommandLineConstants.ADMIN_ONLY_MODE:
+                            runningMode = RunningMode.ADMIN_ONLY;
+                        break;
+                        case CommandLineConstants.SUSPEND_MODE:
+                            startSuspended = true;
+                        break;
+                        case CommandLineConstants.NORMAL_MODE:
+                            break;
+                        default:
+                            STDERR.println(ServerLogger.ROOT_LOGGER.unknownStartMode(value));
+                            usage();
+                            return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                    }
                 } else if (arg.equals(CommandLineConstants.DEBUG)) { // Need to process the debug options as they cannot be filtered out in Windows
                     // The next option may or may not be a port. Assume if it's a number and doesn't start with a - it's the port
                     final int next = i + 1;
@@ -299,7 +337,7 @@ public final class Main {
         String hostControllerName = null; // No host controller unless in domain mode.
         productConfig = ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), systemProperties);
         return new ServerEnvironmentWrapper(new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment,
-                serverConfig, configInteractionPolicy, launchType, runningMode, productConfig, startTime));
+                serverConfig, configInteractionPolicy, launchType, runningMode, productConfig, startTime, startSuspended));
     }
 
     private static void assertSingleConfig(String serverConfig) {
@@ -373,7 +411,7 @@ public final class Main {
 
     private static void processSecurityProperties(String secProperties, Properties systemProperties){
         StringTokenizer tokens = new StringTokenizer(secProperties, ",");
-        while(tokens != null && tokens.hasMoreTokens()){
+        while(tokens.hasMoreTokens()){
             String token = tokens.nextToken();
 
             int idx = token.indexOf('=');

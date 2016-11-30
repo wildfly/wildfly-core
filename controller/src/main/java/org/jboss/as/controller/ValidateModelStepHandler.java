@@ -148,7 +148,7 @@ class ValidateModelStepHandler implements OperationStepHandler {
     }
 
     private boolean isRequired(final AttributeDefinition def, final ModelNode model) {
-        final boolean required = !def.isAllowNull() && !def.isResourceOnly();
+        final boolean required = def.isRequired() && !def.isResourceOnly();
         return required ? !hasAlternative(def.getAlternatives(), model) : required;
     }
 

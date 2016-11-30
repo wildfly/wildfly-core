@@ -49,38 +49,162 @@ import org.jboss.dmr.ModelType;
  */
 public class AttributeNamePathCompleter implements CommandLineCompleter {
 
+    /**
+     * A filter to accept or not completion candidates.
+     */
+    public interface AttributeFilter {
+        boolean accept(ModelNode descr);
+    }
+
+    /**
+     * Accep all candidates.
+     */
+    private static final AttributeFilter DEFAULT_FILTER = (ModelNode descr) -> {
+        return true;
+    };
+    /**
+     * A list can be: an attribute of type LIST or inside an attribute of type
+     * OBJECT (complex or Map of list)
+     */
+    public static final AttributeFilter LIST_FILTER = (descr) -> {
+        ModelNode mn = descr.has(Util.TYPE) ? descr.get(Util.TYPE) : null;
+        if (mn == null) {
+            // We don't know, invalid case, keep the attribute.
+            return true;
+        }
+        ModelType type;
+        try {
+            type = mn.asType();
+        } catch (Exception ex) {
+            // Invalid. TYPE is a complexType, keep the attribute.
+            return true;
+        }
+        // LIST
+        if (type == ModelType.LIST) {
+            return true;
+        }
+        // Can be a path to a LIST inside a Map of LIST
+        // or a complexType.
+        if (type == ModelType.OBJECT) {
+            if (descr.has(Util.VALUE_TYPE)) {
+                ModelNode vt = descr.get(Util.VALUE_TYPE);
+                try {
+                    ModelType mt = vt.asType();
+                    // A map of LIST
+                    if (mt.equals(ModelType.LIST)) {
+                        return true;
+                    }
+                } catch (Exception ex) {
+                    // This is a complex.
+                    // Would be too much to analyze complete data
+                    // structure. Keep it simple, we could
+                    // have a list somewhere.
+                    return true;
+                }
+            } else {
+                // An OBJECT without value type, can't do
+                // a lot with it. Anyway, keep it.
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /**
+     * A map can be: an attribute of type OBJECT or inside an attribute of type
+     * LIST.
+     */
+    public static final AttributeFilter MAP_FILTER = (descr) -> {
+        ModelNode mn = descr.has(Util.TYPE) ? descr.get(Util.TYPE) : null;
+        if (mn == null) {
+            // We don't know, invalid case, keep the attribute.
+            return true;
+        }
+        ModelType type;
+        try {
+            type = mn.asType();
+        } catch (Exception ex) {
+            // Invalid. TYPE is a complexType, keep the attribute.
+            return true;
+        }
+        // A map or inside a complex type
+        if (type == ModelType.OBJECT) {
+            return true;
+        }
+        // A List of complexType or LIST?
+        if (type == ModelType.LIST) {
+            if (descr.has(Util.VALUE_TYPE)) {
+                ModelNode vt = descr.get(Util.VALUE_TYPE);
+                try {
+                    ModelType mt = vt.asType();
+                    // A map of LIST
+                    if (mt.equals(ModelType.LIST)) {
+                        return true;
+                    }
+                } catch (Exception ex) {
+                    // This is a complex.
+                    // Would be too much to analyze complete data
+                    // structure. Keep it simple, we could
+                    // have a map somewhere.
+                    return true;
+                }
+            } else {
+                // A LIST without value type, can't do
+                // a lot with it. Anyway, keep it.
+                return true;
+            }
+        }
+        return false;
+    };
+
     public static final AttributeNamePathCompleter INSTANCE = new AttributeNamePathCompleter();
 
     private final OperationRequestAddress address;
     private final ModelNode attrDescr;
     private final boolean writeOnly;
 
+    private final AttributeFilter filter;
     private AttributeNamePathCompleter() {
         this.address = null;
         this.attrDescr = null;
         writeOnly = false;
+        filter = DEFAULT_FILTER;
+    }
+
+    public AttributeNamePathCompleter(OperationRequestAddress address, AttributeFilter filter) {
+        this(address, false, filter);
     }
 
     public AttributeNamePathCompleter(OperationRequestAddress address) {
-        this(address, false);
+        this(address, null);
     }
 
     public AttributeNamePathCompleter(OperationRequestAddress address, boolean writeOnly) {
-        if(address == null) {
+        this(address, writeOnly, null);
+    }
+
+    public AttributeNamePathCompleter(OperationRequestAddress address, boolean writeOnly, AttributeFilter filter) {
+        if (address == null) {
             throw new IllegalArgumentException("address is null");
         }
         this.address = address;
         this.attrDescr = null;
         this.writeOnly = writeOnly;
+        this.filter = filter == null ? DEFAULT_FILTER : filter;
     }
 
     public AttributeNamePathCompleter(ModelNode typeDescr) {
-        if(typeDescr == null) {
+        this(typeDescr, null);
+    }
+
+    public AttributeNamePathCompleter(ModelNode typeDescr, AttributeFilter filter) {
+        if (typeDescr == null) {
             throw new IllegalArgumentException("typeDescr is null");
         }
         this.attrDescr = typeDescr;
         this.address = null;
         this.writeOnly = false;
+        this.filter = filter == null ? DEFAULT_FILTER : filter;
     }
 
     /* (non-Javadoc)
@@ -172,12 +296,16 @@ public class AttributeNamePathCompleter implements CommandLineCompleter {
             if(DotState.ID.equals(lastEnteredState)) {
                 if(writeOnly) {
                     for(String name : attrNames) {
-                        if(isWritable(typeDescr.get(name))) {
+                        if (isWritable(typeDescr.get(name)) && filter.accept(typeDescr.get(name))) {
                             candidates.add(name);
                         }
                     }
                 } else {
-                    candidates.addAll(attrNames);
+                    for (String name : attrNames) {
+                        if (filter.accept(typeDescr.get(name))) {
+                            candidates.add(name);
+                        }
+                    }
                 }
                 Collections.sort(candidates);
                 return candidates;
@@ -201,7 +329,9 @@ public class AttributeNamePathCompleter implements CommandLineCompleter {
                         chunkDescr = typeDescr.get(candidate);
                         continue;
                     }
-                    candidates.add(candidate);
+                    if (filter.accept(typeDescr.get(candidate))) {
+                        candidates.add(candidate);
+                    }
                 }
             }
             if (chunkDescr != null) {

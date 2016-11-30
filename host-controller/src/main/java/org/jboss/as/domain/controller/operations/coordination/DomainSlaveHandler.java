@@ -86,21 +86,20 @@ public class DomainSlaveHandler implements OperationStepHandler {
         final Map<String, HostControllerUpdateTask.ExecutedHostRequest> finalResults = new HashMap<String, HostControllerUpdateTask.ExecutedHostRequest>();
         final HostControllerUpdateTask.ProxyOperationListener listener = new HostControllerUpdateTask.ProxyOperationListener();
         final Transformers.TransformationInputs transformationInputs = Transformers.TransformationInputs.getOrCreate(context);
+        final List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
         for (Map.Entry<String, ProxyController> entry : hostProxies.entrySet()) {
             // Create the proxy task
             final String host = entry.getKey();
             final TransformingProxyController proxyController = (TransformingProxyController) entry.getValue();
-            List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
-            ModelNode op = operation;
+            ModelNode clonedOp = operation.clone();
             if (transformers != null) {
                 for (final DomainOperationTransformer transformer : transformers) {
-                    op = transformer.transform(context, op);
-                    // Set the flag for host controller operations
-                    op.get(OPERATION_HEADERS, EXECUTE_FOR_COORDINATOR).set(true);
+                    clonedOp = transformer.transform(context, clonedOp);
                 }
             }
 
-            ModelNode clonedOp = op.clone();
+            // Set the flags for host controller operations
+            clonedOp.get(OPERATION_HEADERS, EXECUTE_FOR_COORDINATOR).set(true);
             clonedOp.get(OPERATION_HEADERS, DomainControllerLockIdUtils.DOMAIN_CONTROLLER_LOCK_ID).set(CurrentOperationIdHolder.getCurrentOperationID());
             final HostControllerUpdateTask task = new HostControllerUpdateTask(host, clonedOp, context, proxyController, transformationInputs);
             // Execute the operation on the remote host

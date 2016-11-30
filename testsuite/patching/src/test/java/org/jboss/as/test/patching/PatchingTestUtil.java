@@ -38,15 +38,15 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -69,7 +69,6 @@ import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
 
 import com.google.common.base.Joiner;
 
@@ -112,28 +111,12 @@ public class PatchingTestUtil {
      * @return
      * @throws java.io.FileNotFoundException
      */
-    public static String readFile(String filePath) throws FileNotFoundException {
-        Scanner scanner = null;
-        try {
-            scanner = new Scanner(new File(filePath)).useDelimiter("\\A");
-            return scanner.next();
-        } finally {
-            if (scanner != null) { scanner.close(); }
-        }
+    public static String readFile(String filePath) throws IOException {
+        return new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
     }
 
     public static void setFileContent(String filePath, String content) throws IOException {
-        OutputStream os = null;
-        try {
-            File file = new File(filePath);
-            file.delete();
-            Assert.assertTrue("Cannot create new file", file.createNewFile());
-            os = new FileOutputStream(file);
-            os.write(content.getBytes());
-            os.flush();
-        } finally {
-            if (os != null) { os.close(); }
-        }
+        Files.write(Paths.get(filePath), content.getBytes(StandardCharsets.UTF_8));
     }
 
     public static void tree(File dir) {
@@ -326,7 +309,7 @@ public class PatchingTestUtil {
         final Asset newManifest = new Asset() {
             @Override
             public InputStream openStream() {
-                return new ByteArrayInputStream(ProductInfo.createVersionString(targetVersion).getBytes());
+                return new ByteArrayInputStream(ProductInfo.createVersionString(targetVersion).getBytes(StandardCharsets.UTF_8));
             }
         };
 

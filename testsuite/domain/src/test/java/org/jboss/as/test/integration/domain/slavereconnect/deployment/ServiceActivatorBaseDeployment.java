@@ -26,6 +26,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
@@ -65,7 +66,7 @@ public class ServiceActivatorBaseDeployment implements ServiceActivator, Service
         InputStream in = getClass().getResourceAsStream("overlay");
         if (in != null) {
             try {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))){
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))){
                     String s = reader.readLine();
                     System.setProperty(overridePropertyName, s);
                     System.out.println("===> " + this.getClass() + " setting property " + overridePropertyName + "=" + s);

@@ -36,6 +36,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -279,9 +280,7 @@ public class DeploymentTestCase {
                     }
                     // Create the .dodeploy file
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
-                    try (final OutputStream out = new BufferedOutputStream(new FileOutputStream(dodeploy))){
-                        out.write("test-deployment.jar".getBytes());
-                    }
+                    Files.write(dodeploy.toPath(), "test-deployment.jar".getBytes(StandardCharsets.UTF_8));
                     Assert.assertTrue(dodeploy.exists());
                     for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
                         if (deployed.exists()) {
@@ -571,12 +570,7 @@ public class DeploymentTestCase {
 
                     // Create the .dodeploy file
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
-                    final OutputStream out = new BufferedOutputStream(new FileOutputStream(dodeploy));
-                    try {
-                        out.write("test-deployment.jar".getBytes());
-                    } finally {
-                        StreamUtils.safeClose(out);
-                    }
+                    Files.write(dodeploy.toPath(), "test-deployment.jar".getBytes(StandardCharsets.UTF_8));
                     Assert.assertTrue(dodeploy.exists());
                     for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
                         if (deployed.exists()) {

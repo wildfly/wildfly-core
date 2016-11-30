@@ -27,6 +27,7 @@
 
     <extensions>
         <extension module="org.jboss.as.jmx"/>
+        <extension module="org.wildfly.extension.core-management"/>
     </extensions>
 
     <paths>
@@ -141,5 +142,6 @@
             <expose-expression-model/>
             <remoting-connector/>
         </subsystem>
+        <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
     </profile>
 </host>

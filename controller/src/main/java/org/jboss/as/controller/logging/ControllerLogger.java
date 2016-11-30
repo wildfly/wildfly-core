@@ -3481,4 +3481,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 433, value = "'%s' is not a valid representation of a resource address")
     OperationFailedException invalidAddressFormat(ModelNode address);
+
+    @Message(id = 434, value = "Boot complete")
+    String bootComplete();
 }

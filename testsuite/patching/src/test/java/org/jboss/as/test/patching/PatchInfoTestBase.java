@@ -28,6 +28,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.Patch;
@@ -81,7 +82,7 @@ public class PatchInfoTestBase extends AbstractPatchingTestCase {
         final File patchDir = mkdir(tempDir, patchID);
 
         final Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("resource patch " + patchID).getBytes())).
+                miscFile(new ResourceItem("resource-test", ("resource patch " + patchID).getBytes(StandardCharsets.UTF_8))).
                 build();
 
         // create the patch with the updated module

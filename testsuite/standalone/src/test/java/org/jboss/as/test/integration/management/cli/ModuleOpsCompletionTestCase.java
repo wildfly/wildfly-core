@@ -83,7 +83,7 @@ public class ModuleOpsCompletionTestCase {
     @Test
     public void testModuleAddCompletionSuggestions() throws Exception {
         final CommandContext ctx = cli.getCommandContext();
-        final Stream<String> allTopLevelDirs = listTopLevelModuleDirs().map(File::getName);
+        final Stream<String> allTopLevelDirs = listTopLevelModuleDirs().map(File::getName).distinct().sorted();
 
         // name on add operation should suggest all possible folders (not only valid module names)
         testSuggestion(ctx, allTopLevelDirs, "module add --name=", false);
@@ -118,7 +118,8 @@ public class ModuleOpsCompletionTestCase {
         final CommandContext ctx = cli.getCommandContext();
         final Stream<String> topLevelDirs = listTopLevelModuleDirs()
                                                 .filter(this::isModuleTree)
-                                                .map(f->f.getName() + ".");
+                                                .map(f->f.getName() + ".")
+                                                .distinct().sorted();
 
         // dependencies should suggest all possible modules
         testSuggestion(ctx, topLevelDirs, "module add --name=foo --dependencies=", true);
@@ -132,7 +133,8 @@ public class ModuleOpsCompletionTestCase {
         final CommandContext ctx = cli.getCommandContext();
         final Stream<String> topLevelDirs = listTopLevelModuleDirs()
                 .filter(this::isModuleTree)
-                .map(f -> f.getName() + ".");
+                .map(f -> f.getName() + ".")
+                .distinct().sorted();
 
         // export-dependencies should suggest all possible modules
         testSuggestion(ctx, topLevelDirs, "module add --name=foo --export-dependencies=", true);

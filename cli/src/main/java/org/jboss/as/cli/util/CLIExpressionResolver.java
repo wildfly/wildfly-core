@@ -84,6 +84,23 @@ public class CLIExpressionResolver {
         }
     }
 
+    /**
+     * Attempts to substitute all the found expressions in the input with their corresponding resolved values. If any of the
+     * found expressions failed to resolve, try to resolve expressions as more as possible and return the resolved value. If the
+     * input does not contain any expression, the input is returned as is. see https://issues.jboss.org/browse/WFCORE-1980,
+     *
+     * @param input the input string
+     * @return the input with resolved expressions or the original input in case the input didn't contain any expressions
+     */
+    public static String resolveLax(String input) {
+        try {
+            return resolve(input, false);
+        } catch (UnresolvedExpressionException e) {
+            // XXX OK. It should not reach here as exceptionIfNotResolved is false.
+            return input;
+        }
+    }
+
     private static String resolve(String input, boolean exceptionIfNotResolved)
             throws UnresolvedExpressionException {
 

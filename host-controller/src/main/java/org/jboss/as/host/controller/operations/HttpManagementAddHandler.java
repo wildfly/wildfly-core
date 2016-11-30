@@ -27,14 +27,13 @@ import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOG
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 import javax.net.ssl.SSLContext;
 
-import io.undertow.server.ListenerRegistry;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -71,6 +70,8 @@ import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.xnio.XnioWorker;
 
+import io.undertow.server.ListenerRegistry;
+
 
 /**
  * A handler that activates the HTTP management API.
@@ -91,6 +92,13 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         super(ATTRIBUTE_DEFINITIONS);
         this.hostControllerInfo = hostControllerInfo;
         this.environment = environment;
+    }
+
+    @Override
+    protected void populateModel(OperationContext context, ModelNode operation, Resource resource)
+            throws OperationFailedException {
+        super.populateModel(context, operation, resource);
+        HttpManagementResourceDefinition.addAttributeValidator(context);
     }
 
     @Override

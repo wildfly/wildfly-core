@@ -33,6 +33,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -66,7 +67,7 @@ public class SecretIdentityService implements Service<CallbackHandlerFactory> {
         final char[] thePassword;
         if (base64) {
             byte[] value = Base64.getDecoder().decode(password);
-            String tempPassword = new String(value);
+            String tempPassword = new String(value, StandardCharsets.ISO_8859_1);
             String trimmedPassword = tempPassword.trim();
             if (tempPassword.equals(trimmedPassword) == false) {
                 ROOT_LOGGER.whitespaceTrimmed();

@@ -425,7 +425,6 @@ public interface JmxLogger extends BasicLogger {
     @Message(id = 33, value = "'domain-name' can only be 'jboss.as'")
     String domainNameMustBeJBossAs();
 
-
     @Message(id = 34, value = "'false' is the only acceptable value for 'proper-property-format'")
     String properPropertyFormatMustBeFalse();
 
@@ -480,4 +479,10 @@ public interface JmxLogger extends BasicLogger {
 
     @Message(id = 51, value = "Remove notification listener using ObjectName %s is not supported")
     UnsupportedOperationException removeNotificationListenerNotAllowed(ObjectName name);
+
+    @Message(id = 52, value = "Notification emitted when the process state changes")
+    String processStateChangeNotificationDescription();
+
+    @Message(id = Message.NONE, value = "The attribute '%s' has changed from '%s' to '%s'")
+    String jmxAttributeChange(String name, String oldState, String stateString);
 }

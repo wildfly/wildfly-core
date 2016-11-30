@@ -92,7 +92,7 @@ public class CliCompletionTestCase {
             }
 
             {
-                String cmd = ":reload-servers(blocking";
+                String cmd = ":reload-servers(blocking=true,suspend";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
@@ -160,7 +160,7 @@ public class CliCompletionTestCase {
             }
 
             {
-                String cmd = ":reload-servers(" + Util.NOT_OPERATOR + "blocking";
+                String cmd = ":reload-servers(" + Util.NOT_OPERATOR + "blocking, !suspend";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
@@ -750,6 +750,14 @@ public class CliCompletionTestCase {
                         cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.size() > 1);
                 assertTrue(candidates.toString(), candidates.contains("read-resource"));
+            }
+
+            {
+                String cmd = "reload ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertFalse(candidates.contains("--start-mode"));
             }
 
             {

@@ -35,6 +35,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -418,8 +419,8 @@ final class ManagedProcess {
             final InputStream source = this.source;
             final String processName = ManagedProcess.this.processName;
             try {
-                final BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(source)));
-                final OutputStreamWriter writer = new OutputStreamWriter(target);
+                final BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(source), StandardCharsets.UTF_8));
+                final OutputStreamWriter writer = new OutputStreamWriter(target, StandardCharsets.UTF_8);
                 String s;
                 String prevEscape = "";
                 while ((s = reader.readLine()) != null) {

@@ -33,6 +33,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.createZippedPatchFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.HashUtils;
@@ -255,8 +256,8 @@ public class MergedPatchesTestCase extends AbstractPatchingTestCase {
 
         cp1AddedModuleName = "org.wildfly.test." + randomString("cp1");
 
-        cp1ResourceItem1 = new ResourceItem("testFile1", "content1".getBytes());
-        cp1ResourceItem2 = new ResourceItem("testFile2", "content2".getBytes());
+        cp1ResourceItem1 = new ResourceItem("testFile1", "content1".getBytes(StandardCharsets.UTF_8));
+        cp1ResourceItem2 = new ResourceItem("testFile2", "content2".getBytes(StandardCharsets.UTF_8));
 
         Module newModule = new Module.Builder(cp1AddedModuleName)
                 .miscFile(cp1ResourceItem1)
@@ -310,8 +311,8 @@ public class MergedPatchesTestCase extends AbstractPatchingTestCase {
         byte[] patchedAsVersionHash = HashUtils.hashFile(originalVersionModulePath);
         assert patchedAsVersionHash != null;
 
-        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes());
-        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes());
+        final ResourceItem resourceItem1 = new ResourceItem("testFile1", "content1".getBytes(StandardCharsets.UTF_8));
+        final ResourceItem resourceItem2 = new ResourceItem("testFile2", "content2".getBytes(StandardCharsets.UTF_8));
 
         Module newModule = new Module.Builder(moduleName)
                 .miscFile(resourceItem1)

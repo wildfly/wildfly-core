@@ -24,6 +24,7 @@ package org.jboss.as.cli.handlers;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 import org.jboss.as.cli.CommandContext;
@@ -91,8 +92,9 @@ public abstract class CommandHandlerWithHelp extends CommandHandlerWithArguments
     protected void printHelp(CommandContext ctx) throws CommandLineException {
         InputStream helpInput = WildFlySecurityManager.getClassLoaderPrivileged(CommandHandlerWithHelp.class).getResourceAsStream(filename);
         if(helpInput != null) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(helpInput));
+            BufferedReader reader = null;
             try {
+                reader = new BufferedReader(new InputStreamReader(helpInput, StandardCharsets.UTF_8));
 /*                String helpLine = reader.readLine();
                 while(helpLine != null) {
                     ctx.printLine(helpLine);

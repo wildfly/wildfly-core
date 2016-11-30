@@ -25,6 +25,7 @@ package org.jboss.as.test.integration.management.cli;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
@@ -61,7 +62,7 @@ public class EchoTestCase {
         ctx.setVariable("a", "aa");
         try {
             ctx.handle("echo \\$a is resolved to $a");
-            assertEquals("$a is resolved to aa", new String(cliOut.toByteArray()).trim());
+            assertEquals("$a is resolved to aa", new String(cliOut.toByteArray(), StandardCharsets.UTF_8).trim());
         } finally {
             ctx.terminateSession();
             cliOut.reset();

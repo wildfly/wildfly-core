@@ -35,6 +35,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -103,7 +104,7 @@ public class CoreUtils {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        byte[] bytes = target.getBytes();
+        byte[] bytes = target.getBytes(StandardCharsets.UTF_8);
         byte[] byteHash = md.digest(bytes);
 
         String encodedHash = null;

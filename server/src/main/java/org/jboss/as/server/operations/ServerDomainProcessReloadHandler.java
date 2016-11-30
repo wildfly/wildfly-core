@@ -50,6 +50,7 @@ public class ServerDomainProcessReloadHandler extends ServerProcessReloadHandler
             .build();
 
     private final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater;
+
     public ServerDomainProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl, ControlledProcessState processState,
                                             final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater,
                                             final ServerEnvironment serverEnvironment) {

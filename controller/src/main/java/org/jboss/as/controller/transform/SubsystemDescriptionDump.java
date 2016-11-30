@@ -22,9 +22,11 @@
 
 package org.jboss.as.controller.transform;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Locale;
 
 import org.jboss.as.controller.OperationContext;
@@ -43,7 +45,7 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
-/**
+/** todo move to test code, no need to have it at proper runtime
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
 public class SubsystemDescriptionDump implements OperationStepHandler {
@@ -80,7 +82,7 @@ public class SubsystemDescriptionDump implements OperationStepHandler {
                 SubsystemInformation info = registry.getSubsystemInfo(subsystem);
                 ModelNode desc = readFullModelDescription(PathAddress.pathAddress(pe), registration);
                 String name = subsystem + "-" + info.getManagementInterfaceMajorVersion() + "." + info.getManagementInterfaceMinorVersion() +"."+info.getManagementInterfaceMicroVersion()+ ".dmr";
-                PrintWriter pw = new PrintWriter(new File(path, name));
+                PrintWriter pw = new PrintWriter(Files.newBufferedWriter(Paths.get(path,name), StandardCharsets.UTF_8));
                 desc.writeString(pw, false);
                 pw.close();
             }

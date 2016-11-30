@@ -23,6 +23,7 @@
 package org.jboss.as.domain.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLONE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
@@ -140,6 +141,15 @@ public class ProfileCloneHandler implements OperationStepHandler {
         }, OperationContext.Stage.MODEL, true);
 
         context.addStep(result, describeOp, handler, OperationContext.Stage.MODEL, true);
+
+        context.completeStep(new OperationContext.RollbackHandler() {
+            @Override
+            public void handleRollback(OperationContext context, ModelNode operation) {
+                if (!context.hasFailureDescription()) {
+                    context.getFailureDescription().set(result.get(FAILURE_DESCRIPTION));
+                }
+            }
+        });
     }
 
     private void addOperation(OperationContext context, ModelNode op) {

@@ -48,10 +48,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -489,8 +489,8 @@ public class AuditLogTestCase {
     private final Pattern DATE_STAMP_PATTERN = Pattern.compile("\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d - \\{");
 
     private List<ModelNode> readFile(File file, int expectedRecords) throws IOException {
-        List<ModelNode> list = new ArrayList<ModelNode>();
-        final BufferedReader reader = new BufferedReader(new FileReader(file));
+        List<ModelNode> list = new ArrayList<>();
+        final BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8);
         try {
             StringWriter writer = null;
             String line = reader.readLine();

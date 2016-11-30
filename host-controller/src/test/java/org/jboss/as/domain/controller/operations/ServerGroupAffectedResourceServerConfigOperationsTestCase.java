@@ -565,7 +565,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public ServerStatus startServer(String serverName, ModelNode domainModel, boolean blocking) {
+        public ServerStatus startServer(String serverName, ModelNode domainModel, boolean blocking, boolean suspend) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -575,7 +575,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking) {
+        public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -605,7 +605,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public ServerStatus reloadServer(String serverName, boolean blocking) {
+        public ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 

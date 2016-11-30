@@ -31,7 +31,9 @@ import javax.management.ObjectName;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.server.jmx.RunningStateJmx;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
@@ -45,6 +47,7 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossExecutors;
+import org.wildfly.extension.core.management.client.Process.Type;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -105,8 +108,13 @@ final class BootstrapImpl implements Bootstrap {
         final ServiceTarget tracker = container.subTarget();
         final ControlledProcessState processState = new ControlledProcessState(true);
         shutdownHook.setControlledProcessState(processState);
-        ControlledProcessStateService.addService(tracker, processState);
-        final Service<?> applicationServerService = new ApplicationServerService(extraServices, configuration, processState);
+        ControlledProcessStateService controlledProcessStateService = ControlledProcessStateService.addService(tracker, processState).getValue();
+        final SuspendController suspendController = new SuspendController();
+        RunningStateJmx.registerMBean(
+                controlledProcessStateService, suspendController,
+                configuration.getRunningModeControl(),
+                Type.from(ServerService.getProcessType(configuration.getServerEnvironment()).name()));
+        final Service<?> applicationServerService = new ApplicationServerService(extraServices, configuration, processState, suspendController);
         tracker.addService(Services.JBOSS_AS, applicationServerService)
             .install();
         final ServiceController<?> rootService = container.getRequiredService(Services.JBOSS_AS);

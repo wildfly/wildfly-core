@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -302,7 +303,7 @@ public class InterfaceManagementUnitTestCase {
 
             final String hostControllerName = "hostControllerName"; // Host Controller name may not be null when in a managed domain
             environment = new ServerEnvironment(hostControllerName, properties, new HashMap<String, String>(), null, null,
-                    ServerEnvironment.LaunchType.DOMAIN, null, ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), ".", properties));
+                    ServerEnvironment.LaunchType.DOMAIN, null, ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), ".", properties), false);
             extensionRegistry =
                     new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
 
@@ -390,7 +391,7 @@ public class InterfaceManagementUnitTestCase {
 
             @Override
             public void commit() {
-                StringConfigurationPersister.this.marshalled = new String(bytes);
+                StringConfigurationPersister.this.marshalled = new String(bytes, StandardCharsets.UTF_8);
             }
 
             @Override

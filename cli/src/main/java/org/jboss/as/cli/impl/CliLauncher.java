@@ -25,7 +25,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +38,7 @@ import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.gui.GuiMain;
+import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.VersionHandler;
 import org.jboss.as.protocol.StreamUtils;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -89,8 +91,8 @@ public class CliLauncher {
 
                     final String fileName = arg.startsWith("--") ? arg.substring(7) : arg.substring(5);
                     if(!fileName.isEmpty()) {
-                        file = new File(fileName);
-                        if(!file.exists()) {
+                        file = new File(FilenameTabCompleter.expand(fileName));
+                        if (!file.exists()) {
                             argError = "File " + file.getAbsolutePath() + " doesn't exist.";
                             break;
                         }
@@ -188,7 +190,7 @@ public class CliLauncher {
                     commands = Collections.singletonList("help");
                 } else if (arg.startsWith("--properties=")) {
                     final String value  = arg.substring(13);
-                    final File propertiesFile = new File(value);
+                    final File propertiesFile = new File(FilenameTabCompleter.expand(value));
                     if(!propertiesFile.exists()) {
                         argError = "File doesn't exist: " + propertiesFile.getAbsolutePath();
                         break;
@@ -333,7 +335,7 @@ public class CliLauncher {
 
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new FileReader(file));
+            reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8);
             String line = reader.readLine();
             while (cmdCtx.getExitCode() == 0 && !cmdCtx.isTerminated() && line != null) {
                 cmdCtx.handleSafe(line.trim());

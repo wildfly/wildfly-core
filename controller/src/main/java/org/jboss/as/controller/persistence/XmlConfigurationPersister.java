@@ -46,7 +46,7 @@ import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLMapper;
 import org.projectodd.vdx.core.XMLStreamValidationException;
-import org.projectodd.vdx.wildfly.ErrorReporter;
+import org.projectodd.vdx.wildfly.WildFlyErrorReporter;
 
 /**
  * A configuration persister which uses an XML file for backing storage.
@@ -148,13 +148,9 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
     }
 
     private boolean reportValidationError(final XMLStreamException exception) {
-        final String jbossHome = System.getProperty("jboss.home.dir");
-
-        return jbossHome != null &&
-                new ErrorReporter(this.fileName,
-                                  new File(jbossHome, "docs/schema"),
-                                  ControllerLogger.ROOT_LOGGER)
-                        .report(exception);
+        return new WildFlyErrorReporter(this.fileName,
+                                        ControllerLogger.ROOT_LOGGER)
+                .report(exception);
     }
 
 

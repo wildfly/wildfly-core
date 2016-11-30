@@ -29,17 +29,12 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.0.Alpha13-SNAPSHOT</version>
+        <version>3.0.0.Alpha14-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-deployment-scanner</artifactId>
 
     <name>WildFly: Deployment Scanner</name>
-
-    <properties>
-        <byteman.host>127.0.0.1</byteman.host>
-        <byteman.port>9091</byteman.port>
-    </properties>
 
     <build>
         <plugins>

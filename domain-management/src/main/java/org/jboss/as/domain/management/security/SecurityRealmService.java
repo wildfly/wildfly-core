@@ -65,6 +65,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedSetValue;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.WildFlyElytronProvider;
+import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.AggregateSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
@@ -75,7 +76,6 @@ import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
-import org.wildfly.security.auth.server.SupportLevel;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.evidence.Evidence;
@@ -240,7 +240,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                         return AuthMechanism.CLIENT_CERT;
                     case "DIGEST":
                         return AuthMechanism.DIGEST;
-                    case "PLAIN":
+                    case "BASIC":
                         return AuthMechanism.PLAIN;
                 }
                 break;

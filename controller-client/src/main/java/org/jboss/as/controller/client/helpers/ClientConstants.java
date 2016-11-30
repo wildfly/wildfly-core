@@ -99,4 +99,10 @@ public class ClientConstants {
     public static final String CONTROLLER_PROCESS_STATE_RESTART_REQUIRED = "restart-required";
     public static final String CONTROLLER_PROCESS_STATE_STOPPING = "stopping";
     public static final String CONTROLLER_PROCESS_STATE_STOPPED = "stopped";
+
+    public static final String RUNNING_STATE_PRE_SUSPEND = "pre-suspend";
+    public static final String RUNNING_STATE_NORMAL = "normal";
+    public static final String RUNNING_STATE_ADMIN_ONLY = "admin-only";
+    public static final String RUNNING_STATE_SUSPENDED = "suspended";
+    public static final String RUNNING_STATE_SUSPENDING = "suspending";
 }

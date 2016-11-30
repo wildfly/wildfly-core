@@ -23,6 +23,7 @@ package org.jboss.as.test.integration.mgmt.access;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.REMOTE_ADDRESS;
+import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.USER_ID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
@@ -53,6 +54,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SENSITIVITY_CLASSIFICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
@@ -67,14 +69,12 @@ import static org.jboss.as.test.integration.management.rbac.RbacUtil.MONITOR_USE
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.OPERATOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.SUPERUSER_USER;
 import static org.junit.Assert.assertThat;
-import static org.productivity.java.syslog4j.impl.message.pci.PCISyslogMessage.USER_ID;
 
 import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.domain.management.ConfigurationChangeResourceDefinition;
 import org.jboss.as.test.integration.management.interfaces.CliManagementInterface;
 import org.jboss.as.test.integration.management.interfaces.ManagementInterface;
 import org.jboss.as.test.integration.management.rbac.RbacAdminCallbackHandler;
@@ -114,8 +114,8 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
     private static final PathAddress SYSTEM_PROPERTY_ADDRESS = PathAddress.pathAddress()
             .append(SYSTEM_PROPERTY, "test");
     private static final PathAddress ADDRESS = PathAddress.pathAddress()
-            .append(PathElement.pathElement(CORE_SERVICE, MANAGEMENT))
-            .append(ConfigurationChangeResourceDefinition.PATH);
+            .append(PathElement.pathElement(SUBSYSTEM, "core-management"))
+            .append(PathElement.pathElement("service", "configuration-changes"));
     private static final PathAddress IN_MEMORY_HANDLER_ADDRESS = PathAddress.pathAddress()
             .append(CORE_SERVICE, MANAGEMENT)
             .append(ACCESS, AUDIT)
@@ -125,7 +125,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
     public void createConfigurationChanges() throws Exception {
         ManagementInterface client = getClientForUser(SUPERUSER_USER);
         final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(ADDRESS));
-        add.get(ConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
+        add.get("max-history").set(MAX_HISTORY_SIZE);
         client.execute(add);
         ModelNode configureSensitivity = Util.getWriteAttributeOperation(SYSTEM_PROPERTY_CLASSIFICATION_ADDRESS, CONFIGURED_REQUIRES_ADDRESSABLE, true);
         client.execute(configureSensitivity);
@@ -220,7 +220,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
     }
 
     private void readConfigurationChanges(ManagementInterface client, boolean authorized, boolean auditAuthorized) {
-        ModelNode readConfigChanges = Util.createOperation(ConfigurationChangeResourceDefinition.OPERATION_NAME, ADDRESS);
+        ModelNode readConfigChanges = Util.createOperation("list-changes", ADDRESS);
         ModelNode response = client.execute(readConfigChanges);
         assertThat(response.asString(), response.get(OUTCOME).asString(), is(SUCCESS));
         List<ModelNode> changes = response.get(RESULT).asList();

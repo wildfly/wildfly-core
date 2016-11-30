@@ -22,11 +22,14 @@
 
 package org.jboss.as.version;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileReader;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
@@ -115,9 +118,9 @@ public class ProductConfig implements Serializable {
 
     private static ProductConfProps getProductConfProperties(String home) {
         Properties props = new Properties();
-        FileReader reader = null;
+        BufferedReader reader = null;
         try {
-            reader = new FileReader(getProductConf(home));
+            reader = Files.newBufferedReader(Paths.get(getProductConf(home)), StandardCharsets.UTF_8);
             props.load(reader);
         } catch (Exception e) {
             // Don't care

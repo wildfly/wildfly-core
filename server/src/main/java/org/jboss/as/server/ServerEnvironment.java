@@ -322,20 +322,32 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final RunningModeControl runningModeControl;
     private final UUID serverUUID;
     private final long startTime;
+    private final boolean startSuspended;
 
-    /**
-     * Only for use by internal test fixtures.
-     */
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
                              final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
-                             final RunningMode initialRunningMode, ProductConfig productConfig) {
+                             final RunningMode initialRunningMode, ProductConfig productConfig, boolean startSuspended) {
         this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
-                System.currentTimeMillis());
+                System.currentTimeMillis(), startSuspended);
     }
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
                              final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
-                                 final RunningMode initialRunningMode, ProductConfig productConfig, long startTime) {
+                             final RunningMode initialRunningMode, ProductConfig productConfig) {
+        this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
+                System.currentTimeMillis(), false);
+    }
+
+    public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
+                             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
+                             final RunningMode initialRunningMode, ProductConfig productConfig, long startTime) {
+        this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig, startTime, false);
+    }
+
+    public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
+                             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
+                             final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, boolean startSuspended) {
+        this.startSuspended = startSuspended;
         assert props != null;
 
         this.launchType = launchType;
@@ -894,6 +906,15 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      */
     public File getServerTempDir() {
         return serverTempDir;
+    }
+
+    /**
+     * If this is true then the server will start in suspended mode
+     *
+     * @return <code>true</code> if the server should start in suspended mode
+     */
+    public boolean isStartSuspended() {
+        return startSuspended;
     }
 
     private File configureServerTempDir(String path, Properties providedProps) {
