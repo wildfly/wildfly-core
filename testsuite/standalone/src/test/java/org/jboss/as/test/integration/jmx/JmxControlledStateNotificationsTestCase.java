@@ -17,9 +17,9 @@ limitations under the License.
 package org.jboss.as.test.integration.jmx;
 
 
-import static org.wildfly.test.jmx.AbstractStateNotificationListener.RUNNING_FILENAME;
-import static org.wildfly.test.jmx.AbstractStateNotificationListener.RUNTIME_CONFIGURATION_FILENAME;
 import static org.wildfly.test.jmx.ControlledStateNotificationListener.JMX_FACADE_FILE;
+import static org.wildfly.test.jmx.ControlledStateNotificationListener.RUNNING_FILENAME;
+import static org.wildfly.test.jmx.ControlledStateNotificationListener.RUNTIME_CONFIGURATION_FILENAME;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,14 +42,14 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.wildfly.test.jmx.JMXFacadeListenerDeploymentSetupTask;
+import org.wildfly.test.jmx.JMXListenerDeploymentSetupTask;
 
 /**
  *
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
 @RunWith(WildflyTestRunner.class)
-@ServerSetup({JMXFacadeListenerDeploymentSetupTask.class})
+@ServerSetup({JMXListenerDeploymentSetupTask.class})
 public class JmxControlledStateNotificationsTestCase {
     static final Path DATA = Paths.get("target/notifications/data");
 

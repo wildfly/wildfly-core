@@ -60,7 +60,6 @@ public class ServiceActivatorDeploymentUtil {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
         archive.addClass(ServiceActivatorDeployment.class);
         archive.addClass(listenerClass);
-        archive.addClass(AbstractStateNotificationListener.class);
         archive.addAsServiceProvider(ServiceActivator.class, ServiceActivatorDeployment.class);
         StringBuilder sb = new StringBuilder();
         sb.append(ServiceActivatorDeployment.LISTENER_CLASS_NAME);
@@ -71,7 +70,7 @@ public class ServiceActivatorDeploymentUtil {
         sb.append('=');
         sb.append(targetName);
         sb.append("\n");
-        archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
+        archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.logging,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
         archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
         archive.as(ZipExporter.class).exportTo(destination);
     }

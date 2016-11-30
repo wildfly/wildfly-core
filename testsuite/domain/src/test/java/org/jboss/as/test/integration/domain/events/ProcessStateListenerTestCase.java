@@ -182,9 +182,11 @@ public class ProcessStateListenerTestCase {
             checkLines(runningStatePath.toFile(),expectedRunningLines.toArray(new String[expectedRunningLines.size()]));
         } finally {
             try {
+                testSupport = DomainTestSupport.create(DomainTestSupport.Configuration.create(ProcessStateListenerTestCase.class.getSimpleName(),
+                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
                 testSupport.start();
                 testSupport.getDomainMasterLifecycleUtil().getDomainClient().execute(Util.createRemoveOperation(address));
-            } catch (Exception ex) {
+            } catch (IOException ex) {
             } finally {
                 testSupport.stop();
             }
