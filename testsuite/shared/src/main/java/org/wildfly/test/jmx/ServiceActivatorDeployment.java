@@ -92,11 +92,13 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
             }
         }
         try {
+            //Deploy a JMX MBean
             if (properties.containsKey(MBEAN_OBJECT_NAME) && properties.containsKey(MBEAN_CLASS_NAME)) {
                 name = new ObjectName(properties.getProperty(MBEAN_OBJECT_NAME));
                 Class mbeanClass = Class.forName(properties.getProperty(MBEAN_CLASS_NAME));
                 registerMBean(mbeanClass.newInstance(), name);
             }
+            //Deploy a JMX notification listener
             if (properties.containsKey(LISTENER_OBJECT_NAME) && properties.containsKey(LISTENER_CLASS_NAME)) {
                 Class listenerClass = Class.forName(properties.getProperty(LISTENER_CLASS_NAME));
                 if (NotificationListener.class.isAssignableFrom(listenerClass)) {

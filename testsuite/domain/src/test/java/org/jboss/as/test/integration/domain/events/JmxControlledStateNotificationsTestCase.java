@@ -15,9 +15,9 @@ limitations under the License.
  */
 package org.jboss.as.test.integration.domain.events;
 
-import static org.wildfly.test.jmx.AbstractStateNotificationListener.RUNNING_FILENAME;
-import static org.wildfly.test.jmx.AbstractStateNotificationListener.RUNTIME_CONFIGURATION_FILENAME;
 import static org.wildfly.test.jmx.ControlledStateNotificationListener.JMX_FACADE_FILE;
+import static org.wildfly.test.jmx.ControlledStateNotificationListener.RUNNING_FILENAME;
+import static org.wildfly.test.jmx.ControlledStateNotificationListener.RUNTIME_CONFIGURATION_FILENAME;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +40,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.wildfly.test.jmx.JMXFacadeListenerDeploymentSetupTask;
+import org.wildfly.test.jmx.JMXListenerDeploymentSetupTask;
 
 /**
  *
@@ -55,7 +55,7 @@ public class JmxControlledStateNotificationsTestCase {
 
     static final File JMX_FACADE_RUNNING = DATA.resolve(JMX_FACADE_FILE).resolve(RUNNING_FILENAME).toAbsolutePath().toFile();
     static final File JMX_FACADE_RUNTIME = DATA.resolve(JMX_FACADE_FILE).resolve(RUNTIME_CONFIGURATION_FILENAME).toAbsolutePath().toFile();
-    private static JMXFacadeListenerDeploymentSetupTask task = new JMXFacadeListenerDeploymentSetupTask();
+    private static JMXListenerDeploymentSetupTask task = new JMXListenerDeploymentSetupTask();
 
     @BeforeClass
     public static void setupDomain() throws Exception {

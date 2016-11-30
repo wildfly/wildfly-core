@@ -15,9 +15,9 @@
  */
 package org.wildfly.core.test.standalone.mgmt.events;
 
-import static org.wildfly.test.jmx.AbstractStateNotificationListener.RUNNING_FILENAME;
-import static org.wildfly.test.jmx.AbstractStateNotificationListener.RUNTIME_CONFIGURATION_FILENAME;
 import static org.wildfly.test.jmx.ControlledStateNotificationListener.JMX_FACADE_FILE;
+import static org.wildfly.test.jmx.ControlledStateNotificationListener.RUNNING_FILENAME;
+import static org.wildfly.test.jmx.ControlledStateNotificationListener.RUNTIME_CONFIGURATION_FILENAME;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +38,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.wildfly.test.jmx.JMXFacadeListenerDeploymentSetupTask;
+import org.wildfly.test.jmx.JMXListenerDeploymentSetupTask;
 
 /**
  *
@@ -48,7 +48,7 @@ import org.wildfly.test.jmx.JMXFacadeListenerDeploymentSetupTask;
 @ServerControl(manual = true)
 public class JmxControlledStateNotificationsTestCase {
     static final Path DATA = Paths.get("target/notifications/data");
-    static final JMXFacadeListenerDeploymentSetupTask task = new JMXFacadeListenerDeploymentSetupTask();
+    static final JMXListenerDeploymentSetupTask task = new JMXListenerDeploymentSetupTask();
 
     static final File JMX_FACADE_RUNNING = DATA.resolve(JMX_FACADE_FILE).resolve(RUNNING_FILENAME).toAbsolutePath().toFile();
     static final File JMX_FACADE_RUNTIME = DATA.resolve(JMX_FACADE_FILE).resolve(RUNTIME_CONFIGURATION_FILENAME).toAbsolutePath().toFile();
