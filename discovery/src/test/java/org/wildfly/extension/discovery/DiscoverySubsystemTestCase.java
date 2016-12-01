@@ -21,6 +21,7 @@ package org.wildfly.extension.discovery;
 import java.io.IOException;
 
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
@@ -49,4 +50,9 @@ public class DiscoverySubsystemTestCase extends AbstractSubsystemBaseTest {
         };
     }
 
+    @Test
+    @Override
+    public void testSchemaOfSubsystemTemplates() throws Exception {
+        super.testSchemaOfSubsystemTemplates();
+    }
 }

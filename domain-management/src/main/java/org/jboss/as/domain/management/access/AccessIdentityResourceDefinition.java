@@ -34,9 +34,11 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -170,9 +172,10 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
         @Override
         protected boolean requiresRuntime(OperationContext context) {
-            return true;
+            return (context.getProcessType() != ProcessType.EMBEDDED_SERVER
+                    || context.getRunningMode() != RunningMode.ADMIN_ONLY)
+                    && (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
         }
-
     }
 
     private static FutureTask<SecurityDomain> toFutureTask(InjectedValue<SecurityDomain> injectedValue) {

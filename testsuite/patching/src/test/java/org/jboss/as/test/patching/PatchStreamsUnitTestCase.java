@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -265,7 +266,7 @@ public class PatchStreamsUnitTestCase extends PatchInfoTestBase {
 
     protected File createModule(String targetLayer) throws IOException {
         final Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         return module.writeToDisk(new File(PatchingTestUtil.LAYERS_DIRECTORY, targetLayer));
     }
@@ -333,14 +334,14 @@ public class PatchStreamsUnitTestCase extends PatchInfoTestBase {
 
         void refresh() {
             if(bytesOs.size() > 0) {
-                reader = new BufferedReader(new StringReader(new String(bytesOs.toByteArray())));
+                reader = new BufferedReader(new StringReader(new String(bytesOs.toByteArray(), StandardCharsets.UTF_8)));
             } else {
                 reader = null;
             }
         }
 
         protected String readOutput() {
-            return new String(bytesOs.toByteArray());
+            return new String(bytesOs.toByteArray(), StandardCharsets.UTF_8);
         }
 
         protected Map<String, String> readTable() throws IOException {

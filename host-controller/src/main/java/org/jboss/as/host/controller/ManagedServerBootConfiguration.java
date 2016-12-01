@@ -78,4 +78,6 @@ public interface ManagedServerBootConfiguration {
      */
     Supplier<SSLContext> getSSLContextSupplier();
 
+    boolean isSuspended();
+
 }

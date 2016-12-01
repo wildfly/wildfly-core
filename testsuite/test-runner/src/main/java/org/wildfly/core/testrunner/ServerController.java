@@ -19,17 +19,25 @@ public class ServerController {
     private static final AtomicBoolean started = new AtomicBoolean(false);
     private static volatile Server server;
 
+    /**
+     * @deprecated use the startMode variant instead
+     */
+    @Deprecated
     public void start(final String serverConfig, boolean adminMode) {
-        start(serverConfig, adminMode, System.out);
+        start(serverConfig, adminMode ? Server.StartMode.ADMIN_ONLY : Server.StartMode.NORMAL);
     }
 
-    public void start(final String serverConfig, boolean adminMode, PrintStream out) {
+    public void start(final String serverConfig, Server.StartMode startMode) {
+        start(serverConfig, startMode, System.out);
+    }
+
+    public void start(final String serverConfig, Server.StartMode startMode, PrintStream out) {
         if (started.compareAndSet(false, true)) {
             server = new Server();
             if (serverConfig != null) {
                 server.setServerConfig(serverConfig);
             }
-            server.setAdminMode(adminMode);
+            server.setStartMode(startMode);
             try {
                 server.start(out);
             } catch (final Throwable t) {
@@ -46,13 +54,16 @@ public class ServerController {
     }
 
     public void start(PrintStream out) {
-        start(null, false, out);
+        start(null, Server.StartMode.NORMAL, out);
     }
 
     public void startInAdminMode(){
-        start(null, true);
+        start(null, Server.StartMode.ADMIN_ONLY);
     }
 
+    public void startSuspended() {
+        start(null, Server.StartMode.SUSPEND);
+    }
 
     public void stop() {
         if (server != null) {
@@ -101,6 +112,10 @@ public class ServerController {
         server.reload(false, 30 * 1000); //by default reload in normal mode with timeout of 30 seconds
     }
 
+    public void reload(Server.StartMode startMode) {
+        server.reload(startMode, 30 * 1000); //by default reload in normal mode with timeout of 30 seconds
+    }
+
     public void reload(int timeout) {
         server.reload(false, timeout);
     }
@@ -113,6 +128,13 @@ public class ServerController {
         server.reload(adminMode, timeout, serverConfig);
     }
 
+    public void reload(Server.StartMode startMode, int timeout) {
+        server.reload(startMode, timeout);
+    }
+
+    public void reload(Server.StartMode startMode, int timeout, String serverConfig) {
+        server.reload(startMode, timeout, serverConfig);
+    }
     public void reload(String serverConfig) {
         server.reload(false, 30 * 1000, serverConfig);
     }
@@ -120,4 +142,5 @@ public class ServerController {
     public void waitForLiveServerToReload(int timeout){
         server.waitForLiveServerToReload(timeout);
     }
+
 }

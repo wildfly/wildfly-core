@@ -21,11 +21,18 @@
 */
 package org.jboss.as.model.test;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALTERNATIVES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NILLABLE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REPLY_PROPERTIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
@@ -36,9 +43,12 @@ import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
@@ -84,11 +94,10 @@ public class ModelTestUtils {
      * @throws IOException
      */
     public static String readResource(final Class<?> clazz, final String name) throws IOException {
-
         URL configURL = clazz.getResource(name);
         Assert.assertNotNull(name + " url is null", configURL);
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(configURL.openStream()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(configURL.openStream(), StandardCharsets.UTF_8));
         StringWriter writer = new StringWriter();
         try {
             String line;
@@ -139,7 +148,8 @@ public class ModelTestUtils {
     }
 
     public static void validateModelDescriptions(PathAddress address, ImmutableManagementResourceRegistration reg) {
-        ModelNode attributes = reg.getModelDescription(PathAddress.EMPTY_ADDRESS).getModelDescription(Locale.getDefault()).get(ATTRIBUTES);
+        ModelNode description = reg.getModelDescription(PathAddress.EMPTY_ADDRESS).getModelDescription(Locale.getDefault());
+        ModelNode attributes = description.get(ATTRIBUTES);
         Set<String> regAttributeNames = reg.getAttributeNames(PathAddress.EMPTY_ADDRESS);
         Set<String> attributeNames = new HashSet<String>();
         if (attributes.isDefined()) {
@@ -155,10 +165,12 @@ public class ModelTestUtils {
                     Assert.fail("More attributes defined in description than on resource registration, missing: " + attributeNames + " for " + address);
                 }
             }
+            Map<String, ModelNode> attrMap = new LinkedHashMap<>();
+            for (Property p : attributes.asPropertyList()) {
+                attrMap.put(p.getName(), p.getValue());
+            }
+            attributeNames = attrMap.keySet();
             if (!attributeNames.containsAll(regAttributeNames)) {
-                for (Property p : attributes.asPropertyList()) {
-                    attributeNames.add(p.getName());
-                }
                 Set<String> missDesc = new HashSet<String>(attributeNames);
                 missDesc.removeAll(regAttributeNames);
 
@@ -172,11 +184,51 @@ public class ModelTestUtils {
                     Assert.fail("There are different attributes defined on resource registration than in description, registered only int description: " + missDesc + " for " + address);
                 }
             }
+            for (Map.Entry<String, ModelNode> entry : attrMap.entrySet()) {
+                validateRequiredNillable(ATTRIBUTE + " " + entry.getKey(), entry.getValue());
+            }
+        }
+        if (description.hasDefined(OPERATIONS)) {
+            ModelNode operations = description.get(OPERATIONS);
+
+            // TODO compare operation descriptions to the MRR (e.g. same names)
+
+            for (Property property : operations.asPropertyList()) {
+                ModelNode opDesc = property.getValue();
+                if (opDesc.hasDefined(REQUEST_PROPERTIES)) {
+                    String prefix = "operation " + property.getName() + " param ";
+                    for (Property param : opDesc.get(REQUEST_PROPERTIES).asPropertyList()) {
+                        validateRequiredNillable(prefix + param.getName(), param.getValue());
+                    }
+                }
+                if (opDesc.hasDefined(REPLY_PROPERTIES)) {
+                    String prefix = "operation " + property.getName() + " reply field ";
+                    for (Property field : opDesc.get(REPLY_PROPERTIES).asPropertyList()) {
+                        validateRequiredNillable(prefix + field.getName(), field.getValue());
+                    }
+                }
+            }
         }
         for (PathElement pe : reg.getChildAddresses(PathAddress.EMPTY_ADDRESS)) {
             ImmutableManagementResourceRegistration sub = reg.getSubModel(PathAddress.pathAddress(pe));
             validateModelDescriptions(address.append(pe), sub);
         }
+    }
+
+    private static void validateRequiredNillable(String name, ModelNode desc) {
+        Assert.assertTrue(name + " does not have 'required' metadata", desc.hasDefined(REQUIRED));
+        Assert.assertEquals(name + " does not have boolean 'required' metadata", ModelType.BOOLEAN, desc.get(REQUIRED).getType());
+        Assert.assertTrue(name + " does not have 'nillable' metadata", desc.hasDefined(NILLABLE));
+        Assert.assertEquals(name + " does not have boolean 'nillable' metadata", ModelType.BOOLEAN, desc.get(NILLABLE).getType());
+        boolean alternatives = false;
+        if (desc.hasDefined(ALTERNATIVES)) {
+            Assert.assertEquals(name + " does not have 'alternatives' metadata in list form", ModelType.LIST, desc.get(ALTERNATIVES).getType());
+            alternatives = desc.get(ALTERNATIVES).asInt() > 0;
+        }
+        boolean required = desc.get(REQUIRED).asBoolean();
+        Assert.assertEquals(name + " does not have correct 'nillable' metadata. required: " + required + " -- alternatives: " + desc.get(ALTERNATIVES),
+                !required || alternatives, desc.get("nillable").asBoolean());
+
     }
 
     /**
@@ -440,12 +492,12 @@ public class ModelTestUtils {
                 AttributeDefinition ad = aa.getAttributeDefinition();
                 if (!value.isDefined()) {
                     // check if the attribute definition allows null *or* if its default value is null
-                    Assert.assertTrue(getComparePathAsString(stack) + " Attribute " + name + " does not allow null", (ad.isAllowNull() || ad.getDefaultValue() == null));
+                    Assert.assertTrue(getComparePathAsString(stack) + " Attribute " + name + " does not allow null", (!ad.isRequired() || ad.getDefaultValue() == null));
                 } else {
                    // Assert.assertEquals("Attribute '" + name + "' type mismatch", value.getType(), ad.getType()); //todo re-enable this check
                 }
                 try {
-                    if (!ad.isAllowNull()&&value.isDefined()){
+                    if (ad.isRequired() && value.isDefined()){
                         ad.getValidator().validateParameter(name, value);
                     }
                 } catch (OperationFailedException e) {

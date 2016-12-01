@@ -35,6 +35,8 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -112,7 +114,6 @@ import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.wildfly.legacy.test.spi.Version;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -466,14 +467,11 @@ final class SubsystemTestDelegate {
         PathAddress pathAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, mainSubsystemName));
         ModelNode desc = ((KernelServicesInternal)legacy).readFullModelDescription(pathAddress.toModelNode());
         File dmrFile = getDmrFile(kernelServices, modelVersion);
-        PrintWriter pw = new PrintWriter(dmrFile);
-        try {
+        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(dmrFile.toPath(), StandardCharsets.UTF_8))){
             desc.writeString(pw, false);
             //Leave this println - it only gets executed when people generate the legacy dmr files, and is useful to know where it has been written.
             System.out.println("Legacy resource definition dmr written to: " + dmrFile.getAbsolutePath());
             return dmrFile;
-        } finally {
-            IoUtils.safeClose(pw);
         }
     }
 

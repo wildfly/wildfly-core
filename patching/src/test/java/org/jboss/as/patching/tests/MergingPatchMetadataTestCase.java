@@ -24,6 +24,7 @@ package org.jboss.as.patching.tests;
 
 import static org.junit.Assert.assertEquals;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -66,7 +67,7 @@ public class MergingPatchMetadataTestCase {
 
     static byte[] digest(String str) {
         DIGEST.reset();
-        return DIGEST.digest(str.getBytes());
+        return DIGEST.digest(str.getBytes(StandardCharsets.UTF_8));
     }
 
     @Test

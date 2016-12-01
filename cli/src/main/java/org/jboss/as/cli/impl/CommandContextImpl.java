@@ -25,12 +25,14 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
@@ -496,7 +498,6 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         settings.historyFilePermission(permissions);
 
         settings.parseOperators(false);
-        settings.parsingQuotes(false);
 
         settings.interruptHook(
                 new InterruptHook() {
@@ -1186,7 +1187,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void bindClient(ModelControllerClient newClient) {
-        initNewClient(newClient, null, null);
+        ConnectionInfoBean conInfo = new ConnectionInfoBean();
+        conInfo.setLoggedSince(new Date());
+        initNewClient(newClient, null, conInfo);
     }
 
     private void initNewClient(ModelControllerClient newClient, ControllerAddress address, ConnectionInfoBean conInfo) {
@@ -1575,14 +1578,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             this.outputTarget = null;
             return;
         }
-        FileWriter writer;
         try {
-            writer = new FileWriter(filePath, false);
+            this.outputTarget = Files.newBufferedWriter(Paths.get(filePath), StandardCharsets.UTF_8);
         } catch (IOException e) {
             error(e.getLocalizedMessage());
-            return;
         }
-        this.outputTarget = new BufferedWriter(writer);
     }
 
     protected void notifyListeners(CliEvent event) {

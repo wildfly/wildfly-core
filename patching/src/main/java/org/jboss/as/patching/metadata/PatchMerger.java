@@ -23,7 +23,6 @@
 package org.jboss.as.patching.metadata;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Writer;
@@ -188,32 +187,27 @@ public class PatchMerger {
             }
             copyDir(modSrcDir, modTrgDir);
         } else {
+            final String slot;
             if (contentType.equals(ContentType.MODULE)) {
                 modSrcDir = new File(modSrcDir, Constants.MODULES);
                 modTrgDir = new File(modTrgDir, Constants.MODULES);
-                for (String name : mod.getItem().getName().split("\\.")) {
-                    modSrcDir = new File(modSrcDir, name);
-                    modTrgDir = new File(modTrgDir, name);
-                }
+                slot = ((ModuleItem)mod.getItem()).getSlot();
             } else if (contentType.equals(ContentType.BUNDLE)) {
                 modSrcDir = new File(modSrcDir, Constants.BUNDLES);
                 modTrgDir = new File(modTrgDir, Constants.BUNDLES);
-                for (String name : mod.getItem().getName().split("\\.")) {
-                    modSrcDir = new File(modSrcDir, name);
-                    modTrgDir = new File(modTrgDir, name);
-                }
+                slot = ((BundleItem)mod.getItem()).getSlot();
             } else {
                 throw new PatchingException("Unexpected content type " + contentType);
             }
-            // copy actual module slots skipping possibly nested modules
-            for (File subDir : modSrcDir.listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    return pathname.isDirectory() && new File(pathname, "module.xml").exists();
-                }
-            })) {
-                copyDir(subDir, new File(modTrgDir, subDir.getName()));
+
+            for (String name : mod.getItem().getName().split("\\.")) {
+                modSrcDir = new File(modSrcDir, name);
+                modTrgDir = new File(modTrgDir, name);
             }
+            modSrcDir = new File(modSrcDir, slot);
+            modTrgDir = new File(modTrgDir, slot);
+
+            copyDir(modSrcDir, modTrgDir);
         }
     }
 
@@ -221,7 +215,7 @@ public class PatchMerger {
         try {
             IoUtils.copyFile(src, trg);
         } catch (IOException e) {
-            throw new PatchingException("Failed to copy modification content from " + src.getAbsolutePath() + " to " + trg.getAbsolutePath());
+            throw new PatchingException("Failed to copy modification content from " + src.getAbsolutePath() + " to " + trg.getAbsolutePath(), e);
         }
     }
 

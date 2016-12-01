@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -91,7 +92,7 @@ abstract class ProcessUtils {
         }
         final Process p = Runtime.getRuntime().exec(jpsCommand);
         final List<String> processes = new ArrayList<>();
-        final BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        final BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8));
         try {
             String line;
             // See if the process contains "jboss-modules.jar" and "-D[Server:server-one]"

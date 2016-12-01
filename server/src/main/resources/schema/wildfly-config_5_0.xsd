@@ -2211,8 +2211,8 @@
 
                             If not specified the port will not be opened.
 
-                            If specified the security-realm will be required to obtain
-                            the SSL configuration.
+                            If specified an ssl-context or security-realm will be 
+                            required to obtain the SSL configuration.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -2244,6 +2244,9 @@
                             If specified with a different value from the 'interface'
                             attribute, redirect of HTTPS requests received on the HTTP
                             socket to the HTTPS address will not be supported.
+
+                            If specified an ssl-context or security-realm will be 
+                            required to obtain the SSL configuration.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -2366,7 +2369,7 @@
                 <xs:documentation>
                     Name of a socket-binding configuration declared in the server's socket-binding-group to use for a HTTPS socket.
 
-                    Note: When specified the interface must also be configured to reference a security realm with a configured keystore.
+                    Note: When specified the interface must also be configured to reference an ssl-context or a security realm with a configured keystore.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3297,11 +3300,11 @@
             </xs:annotation>
 
         </xs:attribute>
-        <xs:attribute name="source-port" type="xs:positiveInteger" use="optional">
+        <xs:attribute name="source-port" type="xs:nonNegativeInteger" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The port number that will be used for setting the source addresss of the outbound socket. If the
-                    source-interface attribute has been specified and the source-port attribute is absent,
+                    The port number that will be used for setting the source address of the outbound socket. If the
+                    source-interface attribute has been specified and the source-port attribute equals 0 or is absent,
                     then the system uses an ephemeral port while binding the socket to a source address.
                 </xs:documentation>
             </xs:annotation>

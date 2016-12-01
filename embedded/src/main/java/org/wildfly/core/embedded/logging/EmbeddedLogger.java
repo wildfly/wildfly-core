@@ -194,4 +194,7 @@ public interface EmbeddedLogger extends BasicLogger {
     @Message(id = 26, value = "Cannot create host controller using factory: %s")
     IllegalStateException cannotCreateHostController(@Cause Throwable cause, Method createMethod);
 
+    @Message(id = 27, value = "The embedded server is stopped and invocations on the ModelControllerClient are not available")
+    IllegalStateException processIsStopped();
+
 }

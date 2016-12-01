@@ -162,10 +162,9 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
                                            boolean forOperation, final ResourceDescriptionResolver resolver, Locale locale) {
         node.get(ModelDescriptionConstants.DESCRIPTION); // placeholder
         node.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(valueType.isAllowExpression());
-        if (forOperation) {
-            node.get(ModelDescriptionConstants.REQUIRED).set(!valueType.isAllowNull());
-        }
-        node.get(ModelDescriptionConstants.NILLABLE).set(isAllowNull());
+        node.get(ModelDescriptionConstants.REQUIRED).set(valueType.isRequired());
+        // TODO why before WFCORE-1556 did we use valueType for REQUIRED but not for NILLABLE?
+        node.get(ModelDescriptionConstants.NILLABLE).set(valueType.isNillable());
         final ModelNode defaultValue = valueType.getDefaultValue();
         if (!forOperation && defaultValue != null && defaultValue.isDefined()) {
             node.get(ModelDescriptionConstants.DEFAULT).set(defaultValue);

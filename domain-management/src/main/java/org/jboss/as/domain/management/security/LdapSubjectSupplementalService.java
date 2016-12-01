@@ -49,10 +49,9 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.security.auth.server.IdentityLocator;
+import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
-import org.wildfly.security.auth.server.SupportLevel;
 import org.wildfly.security.authz.AuthorizationIdentity;
 import org.wildfly.security.authz.MapAttributes;
 import org.wildfly.security.credential.Credential;
@@ -256,10 +255,9 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
     private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
 
         @Override
-        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
-            if (! locator.hasName()) return RealmIdentity.NON_EXISTENT;
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
 
-            return new RealmIdentityImpl(locator.getName(), SecurityRealmService.SharedStateSecurityRealm.getSharedState());
+            return new RealmIdentityImpl(principal.getName(), SecurityRealmService.SharedStateSecurityRealm.getSharedState());
         }
 
         @Override

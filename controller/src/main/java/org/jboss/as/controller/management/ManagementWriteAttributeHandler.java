@@ -22,9 +22,13 @@
 
 package org.jboss.as.controller.management;
 
+import java.util.function.Consumer;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
+import org.jboss.as.controller.registry.Resource;
 
 /**
  * An extension of {@link ReloadRequiredWriteAttributeHandler} that takes into account that management interfaces run in all
@@ -34,8 +38,23 @@ import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
  */
 class ManagementWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
 
+    private final Consumer<OperationContext> contextConsumer;
+
     ManagementWriteAttributeHandler(AttributeDefinition[] attributes) {
         super(attributes);
+        contextConsumer = null;
+    }
+
+    ManagementWriteAttributeHandler(AttributeDefinition[] attributes, Consumer<OperationContext> contextConsumer) {
+        super(attributes);
+        this.contextConsumer = contextConsumer;
+    }
+
+    @Override
+    protected void validateUpdatedModel(OperationContext context, Resource model) throws OperationFailedException {
+        if (contextConsumer != null) {
+            contextConsumer.accept(context);
+        }
     }
 
     @Override

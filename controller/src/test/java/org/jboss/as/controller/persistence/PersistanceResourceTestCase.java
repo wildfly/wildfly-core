@@ -31,12 +31,9 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.AclEntry;
@@ -62,7 +59,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -916,12 +912,7 @@ public class PersistanceResourceTestCase {
         checkDirectoryExists(dir);
         File file = new File(dir, name);
         if (contents != null) {
-            Writer out = new BufferedWriter(new FileWriter(file));
-            try {
-                out.write(contents);
-            } finally {
-                IoUtils.safeClose(out);
-            }
+            Files.write(file.toPath(), contents.getBytes(StandardCharsets.UTF_8));
         }
         return file;
     }
@@ -945,15 +936,12 @@ public class PersistanceResourceTestCase {
     private void assertFileContents(File file, String expectedContents) throws Exception {
         Assert.assertTrue(file + " does not exist", file.exists());
         StringBuilder sb = new StringBuilder();
-        BufferedReader in = new BufferedReader(new FileReader(file));
-        try {
+        try (BufferedReader in = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)){
             String s = in.readLine();
             while (s != null) {
                 sb.append(s);
                 s = in.readLine();
             }
-        } finally {
-            in.close();
         }
         Assert.assertEquals(expectedContents, sb.toString());
     }

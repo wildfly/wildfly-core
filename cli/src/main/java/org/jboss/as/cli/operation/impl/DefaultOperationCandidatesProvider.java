@@ -333,52 +333,57 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
             propCompleter = factory.createCompleter(ctx, address);
         }
         if (propCompleter == null) {
-            ModelNode attrDescr = prop.getValue();
-            final ModelNode typeNode = attrDescr.get(Util.TYPE);
-            if (typeNode.isDefined() && ModelType.BOOLEAN.equals(typeNode.asType())) {
-                return SimpleTabCompleter.BOOLEAN;
-            }
-            if (attrDescr.has(Util.VALUE_TYPE)) {
-                final ModelNode valueTypeNode = attrDescr.get(Util.VALUE_TYPE);
-                if (typeNode.isDefined() && ModelType.LIST.equals(typeNode.asType())) {
-                    return new ValueTypeCompleter(attrDescr, address);
-                }
-                try {
-                    // the logic is: if value-type is set to a specific type
-                    // (i.e. doesn't describe a custom structure)
-                    // then if allowed is specified, use it.
-                    // it might be broken but so far this is not looking clear to me
-                    valueTypeNode.asType();
-                    if (attrDescr.has(Util.ALLOWED)) {
-                        return getAllowedCompleter(prop);
-                    }
-                    // Possibly a Map.
-                    if (typeNode.isDefined() && ModelType.OBJECT.equals(typeNode.asType())) {
-                        return new ValueTypeCompleter(attrDescr, address);
-                    }
-                } catch (IllegalArgumentException e) {
-                    // TODO this means value-type describes a custom structure
-                    return new ValueTypeCompleter(attrDescr, address);
-                }
-            }
-            if (attrDescr.has(Util.FILESYSTEM_PATH) && attrDescr.get(Util.FILESYSTEM_PATH).asBoolean()) {
-                return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
-            }
-            if (attrDescr.has(Util.RELATIVE_TO) && attrDescr.get(Util.RELATIVE_TO).asBoolean()) {
-                return new DeploymentItemCompleter(address);
-            }
-            if (attrDescr.has(Util.ALLOWED)) {
-                return getAllowedCompleter(prop);
-            }
-            if (attrDescr.has(Util.CAPABILITY_REFERENCE)) {
-                return new CapabilityReferenceCompleter(address,
-                        attrDescr.get(Util.CAPABILITY_REFERENCE).asString());
-            }
+            propCompleter = getCompleter(prop, ctx, address);
         }
         return propCompleter;
     }
 
-    private CommandLineCompleter getAllowedCompleter(final Property prop) {
+    static CommandLineCompleter getCompleter(final Property prop, CommandContext ctx, OperationRequestAddress address) {
+        ModelNode attrDescr = prop.getValue();
+        final ModelNode typeNode = attrDescr.get(Util.TYPE);
+        if (typeNode.isDefined() && ModelType.BOOLEAN.equals(typeNode.asType())) {
+            return SimpleTabCompleter.BOOLEAN;
+        }
+        if (attrDescr.has(Util.VALUE_TYPE)) {
+            final ModelNode valueTypeNode = attrDescr.get(Util.VALUE_TYPE);
+            if (typeNode.isDefined() && ModelType.LIST.equals(typeNode.asType())) {
+                return new ValueTypeCompleter(attrDescr, address);
+            }
+            try {
+                // the logic is: if value-type is set to a specific type
+                // (i.e. doesn't describe a custom structure)
+                // then if allowed is specified, use it.
+                // it might be broken but so far this is not looking clear to me
+                valueTypeNode.asType();
+                if (attrDescr.has(Util.ALLOWED)) {
+                    return getAllowedCompleter(prop);
+                }
+                // Possibly a Map.
+                if (typeNode.isDefined() && ModelType.OBJECT.equals(typeNode.asType())) {
+                    return new ValueTypeCompleter(attrDescr, address);
+                }
+            } catch (IllegalArgumentException e) {
+                // TODO this means value-type describes a custom structure
+                return new ValueTypeCompleter(attrDescr, address);
+            }
+        }
+        if (attrDescr.has(Util.FILESYSTEM_PATH) && attrDescr.get(Util.FILESYSTEM_PATH).asBoolean()) {
+            return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+        }
+        if (attrDescr.has(Util.RELATIVE_TO) && attrDescr.get(Util.RELATIVE_TO).asBoolean()) {
+            return new DeploymentItemCompleter(address);
+        }
+        if (attrDescr.has(Util.ALLOWED)) {
+            return getAllowedCompleter(prop);
+        }
+        if (attrDescr.has(Util.CAPABILITY_REFERENCE)) {
+            return new CapabilityReferenceCompleter(address,
+                    attrDescr.get(Util.CAPABILITY_REFERENCE).asString());
+        }
+        return null;
+    }
+
+    private static CommandLineCompleter getAllowedCompleter(final Property prop) {
         final ModelNode allowedNode = prop.getValue().get(Util.ALLOWED);
         if(allowedNode.isDefined()) {
             final List<ModelNode> nodeList = allowedNode.asList();
@@ -456,11 +461,8 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
                     return NO_CANDIDATES_COMPLETER;
                 }
 
-                if (attrDescr.has(Util.FILESYSTEM_PATH) && attrDescr.get(Util.FILESYSTEM_PATH).asBoolean()) {
-                    return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
-                }
-
-                return new AttributeTypeDescrValueCompleter(attrDescr, address);
+                Property prop = new Property(propName, attrDescr);
+                return getCompleter(prop, ctx, address);
             }});
         addGlobalOpPropCompleter(Util.READ_OPERATION_DESCRIPTION, Util.NAME, new CommandLineCompleterFactory(){
             @Override
@@ -476,15 +478,47 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         addGlobalOpPropCompleter(Util.READ_CHILDREN_NAMES, Util.CHILD_TYPE, childTypeCompleter);
         addGlobalOpPropCompleter(Util.READ_CHILDREN_RESOURCES, Util.CHILD_TYPE, childTypeCompleter);
 
-        addGlobalOpPropCompleter("map-put", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("map-remove", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("map-get", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("map-clear", Util.NAME, attrNameCompleter);
+        final CommandLineCompleterFactory mapAttrNameCompleter = new CommandLineCompleterFactory() {
+            @Override
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
+                return new AttributeNamePathCompleter(address, false,
+                        AttributeNamePathCompleter.MAP_FILTER);
+            }
+        };
 
-        addGlobalOpPropCompleter("list-add", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("list-remove", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("list-get", Util.NAME, attrNameCompleter);
-        addGlobalOpPropCompleter("list-clear", Util.NAME, attrNameCompleter);
+        final CommandLineCompleterFactory mapOnlyWritableAttrNameCompleter = new CommandLineCompleterFactory() {
+            @Override
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
+                return new AttributeNamePathCompleter(address, true,
+                        AttributeNamePathCompleter.MAP_FILTER);
+            }
+        };
+
+        final CommandLineCompleterFactory listAttrNameCompleter = new CommandLineCompleterFactory() {
+            @Override
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
+                return new AttributeNamePathCompleter(address,
+                        AttributeNamePathCompleter.LIST_FILTER);
+            }
+        };
+
+        final CommandLineCompleterFactory listOnlyWritableAttrNameCompleter = new CommandLineCompleterFactory() {
+            @Override
+            public CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address) {
+                return new AttributeNamePathCompleter(address, true,
+                        AttributeNamePathCompleter.LIST_FILTER);
+            }
+        };
+
+        addGlobalOpPropCompleter("map-put", Util.NAME, mapOnlyWritableAttrNameCompleter);
+        addGlobalOpPropCompleter("map-remove", Util.NAME, mapOnlyWritableAttrNameCompleter);
+        addGlobalOpPropCompleter("map-get", Util.NAME, mapAttrNameCompleter);
+        addGlobalOpPropCompleter("map-clear", Util.NAME, mapOnlyWritableAttrNameCompleter);
+
+        addGlobalOpPropCompleter("list-add", Util.NAME, listOnlyWritableAttrNameCompleter);
+        addGlobalOpPropCompleter("list-remove", Util.NAME, listOnlyWritableAttrNameCompleter);
+        addGlobalOpPropCompleter("list-get", Util.NAME, listAttrNameCompleter);
+        addGlobalOpPropCompleter("list-clear", Util.NAME, listOnlyWritableAttrNameCompleter);
     }
     interface CommandLineCompleterFactory {
         CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address);

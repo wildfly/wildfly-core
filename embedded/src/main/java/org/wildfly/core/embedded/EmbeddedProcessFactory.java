@@ -67,10 +67,22 @@ public class EmbeddedProcessFactory {
 
     private static final String SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
     private static final String SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
-    private static final String SYSPROP_KEY_JBOSS_DOMAIN_DEPLOY_DIR = "jboss.domain.deploy.dir";
+    private static final String SYSPROP_KEY_JBOSS_DOMAIN_DEPLOYMENT_DIR = "jboss.domain.deployment.dir";
     private static final String SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR = "jboss.domain.temp.dir";
     private static final String SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR = "jboss.domain.log.dir";
     private static final String SYSPROP_KEY_JBOSS_DOMAIN_DATA_DIR = "jboss.domain.data.dir";
+    private static final String SYSPROP_KEY_JBOSS_CONTROLLER_BASE_DIR = "jboss.server.controller.base.dir";
+
+    // these properties set in the CLI when starting -Dfoo.bar=quux and passed as the to the embedded process creation.
+    static final String[] STANDALONE_KEYS = {
+            SYSPROP_KEY_JBOSS_SERVER_BASE_DIR, SYSPROP_KEY_JBOSS_SERVER_CONFIG_DIR, SYSPROP_KEY_JBOSS_SERVER_DEPLOY_DIR,
+            SYSPROP_KEY_JBOSS_SERVER_TEMP_DIR, SYSPROP_KEY_JBOSS_SERVER_LOG_DIR, SYSPROP_KEY_JBOSS_SERVER_DATA_DIR
+    };
+
+    static final String[] DOMAIN_KEYS = {
+            SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR, SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR, SYSPROP_KEY_JBOSS_DOMAIN_DEPLOYMENT_DIR,
+            SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR, SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR, SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR
+    };
 
     private static final String JBOSS_MODULES_DIR_NAME = "modules";
 
@@ -136,7 +148,6 @@ public class EmbeddedProcessFactory {
      * @return the running embedded server. Will not be {@code null}
      */
     public static StandaloneServer createStandaloneServer(ModuleLoader moduleLoader, File jbossHomeDir, String... cmdargs) {
-
 
         // in the case of a stop and a restart with a different jbossHomeDir, we need to reset some properties.
         // that are set in @org.jboss.as.ServerEnvironment
@@ -260,15 +271,16 @@ public class EmbeddedProcessFactory {
 
         assert modulePath != null : "modulePath not null";
 
-        // verify the supplied modules path exists, and if it does not, stop and allow the user to correct.
+        // verify the the first element of the supplied modules path exists, and if it does not, stop and allow the user to correct.
         // Once modules are initialized and loaded we can't change Module.BOOT_MODULE_LOADER (yet).
 
-        File moduleDir = new File(modulePath);
+        File moduleDir = new File(trimPathToModulesDir(modulePath));
         if (!moduleDir.exists() || !moduleDir.isDirectory()) {
-            throw new RuntimeException("The specified module directory " + modulePath + " is invalid or does not exist.");
+            throw new RuntimeException("The first directory of the specified module path " + modulePath + " is invalid or does not exist.");
         }
 
-        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_MODULES_DIR, trimPathToModulesDir(modulePath));
+        // deprecated property
+        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_MODULES_DIR, moduleDir.getPath());
 
         final String classPath = WildFlySecurityManager.getPropertyPrivileged(SYSPROP_KEY_CLASS_PATH, null);
         try {
@@ -299,7 +311,7 @@ public class EmbeddedProcessFactory {
         try {
             vfsModule = moduleLoader.loadModule(vfsModuleID);
         } catch (final ModuleLoadException mle) {
-            throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle, MODULE_ID_VFS, moduleLoader);
+            throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle,MODULE_ID_VFS, moduleLoader);
         }
         Module.registerURLStreamHandlerFactoryModule(vfsModule);
     }
@@ -310,7 +322,7 @@ public class EmbeddedProcessFactory {
         try {
             logModule = moduleLoader.loadModule(logModuleId);
         } catch (final ModuleLoadException mle) {
-            throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle,MODULE_ID_LOGMANAGER, moduleLoader);
+            throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle, MODULE_ID_LOGMANAGER, moduleLoader);
         }
 
         final ModuleClassLoader logModuleClassLoader = logModule.getClassLoader();
@@ -355,39 +367,49 @@ public class EmbeddedProcessFactory {
     private static void resetEmbeddedServerProperties(final String jbossHomeDir, final ProcessType embeddedServerType) {
         assert jbossHomeDir != null;
         String oldJbossHomeDir = WildFlySecurityManager.getPropertyPrivileged(SYSPROP_KEY_JBOSS_PREV_HOME_DIR, null);
-        String jbossBaseDir;
         boolean shouldReset = oldJbossHomeDir != null && !jbossHomeDir.equals(oldJbossHomeDir);
         WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, jbossHomeDir);
         // store this for the next server start, if we need it. This avoids having to mess with the environment restorer, if we were
         // started with JBOSS_HOME etc.
         WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_PREV_HOME_DIR, jbossHomeDir);
+
+        if (shouldReset) {
+            // we only reset in non-modular when --jboss-home is changed. In case we've started with -Djboss.server.base.dir (or similar) set,
+            // warn the user that these properties will be reset if --jboss-home has changed). For normal ("modular") use, jboss-home can't
+            // be changed (yet) without exiting the CLI.
+            EmbeddedLogger.ROOT_LOGGER.warn("JBOSS_HOME has been changed, all configuration system properties will be set to the default directories below this new JBOSS_HOME");
+            resetProperties(embeddedServerType, jbossHomeDir);
+        }
+    }
+
+    private static void resetProperties(final ProcessType embeddedServerType, final String jbossHomeDir) {
+        assert jbossHomeDir != null;
+        String jbossBaseDir;
         switch (embeddedServerType) {
             case STANDALONE_SERVER:
                 jbossBaseDir = jbossHomeDir + File.separator + "standalone";
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_CONFIG_DIR, jbossBaseDir + File.separator + "configuration", shouldReset);
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_DEPLOY_DIR, jbossBaseDir + File.separator + "data" + File.separator + "content", shouldReset);
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_TEMP_DIR, jbossBaseDir + File.separator + "data" + File.separator + "tmp", shouldReset);
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_LOG_DIR, jbossBaseDir + File.separator + "log", shouldReset);
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_DATA_DIR, jbossBaseDir + File.separator + "data", shouldReset);
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_BASE_DIR, jbossBaseDir, shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_BASE_DIR, jbossBaseDir);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_CONFIG_DIR, jbossBaseDir + File.separator + "configuration");
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_DATA_DIR, jbossBaseDir + File.separator + "data");
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_DEPLOY_DIR, jbossBaseDir + File.separator + "data" + File.separator + "content");
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_TEMP_DIR, jbossBaseDir + File.separator + "data" + File.separator + "tmp");
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_SERVER_LOG_DIR, jbossBaseDir + File.separator + "log");
                 break;
             case HOST_CONTROLLER:
                 jbossBaseDir = jbossHomeDir + File.separator + "domain";
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR, jbossBaseDir + File.separator + "configuration", shouldReset);
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_DEPLOY_DIR, jbossBaseDir + File.separator + "data" + File.separator + "content", shouldReset);
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR, jbossBaseDir + File.separator + "data" + File.separator + "tmp", shouldReset);
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR, jbossBaseDir + File.separator + "log", shouldReset);
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_DATA_DIR, jbossBaseDir + File.separator + "data", shouldReset);
-                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR, jbossBaseDir, shouldReset);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR, jbossBaseDir);
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR, jbossBaseDir + File.separator + "configuration");
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_DATA_DIR, jbossBaseDir + File.separator + "data");
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_DEPLOYMENT_DIR, jbossBaseDir + File.separator + "data" + File.separator + "content");
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR, jbossBaseDir + File.separator + "data" + File.separator + "tmp");
+                resetEmbeddedServerProperty(SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR, jbossBaseDir + File.separator + "log");
                 break;
             default:
                 throw new RuntimeException("Unknown embedded server type: " + embeddedServerType);
         }
     }
 
-    private static void resetEmbeddedServerProperty(String propertyName, String value, boolean shouldReset) {
-        if(shouldReset || WildFlySecurityManager.getPropertyPrivileged(propertyName, null) == null) {
+    private static void resetEmbeddedServerProperty(String propertyName, String value) {
             WildFlySecurityManager.setPropertyPrivileged(propertyName, value);
-        }
     }
 }

@@ -49,7 +49,7 @@ public class ContentModificationUtils {
         File baseDir = newFile(patchDir, patchElementID, MODULES);
         File mainDir = newModule.writeToDisk(baseDir);
         byte[] newHash = hashFile(mainDir);
-        ContentModification moduleAdded = new ContentModification(new ModuleItem(newModule.getName(), ModuleItem.MAIN_SLOT, newHash), NO_CONTENT, ADD);
+        ContentModification moduleAdded = new ContentModification(new ModuleItem(newModule.getName(), newModule.getSlot(), newHash), NO_CONTENT, ADD);
         return moduleAdded;
     }
 
@@ -57,7 +57,6 @@ public class ContentModificationUtils {
         byte[] existingHash = hashFile(existingModule);
         return new ContentModification(new ModuleItem(moduleName, ModuleItem.MAIN_SLOT, NO_CONTENT), existingHash, REMOVE);
     }
-
 
     public static ContentModification modifyModule(File patchDir, String patchElementID, byte[] existingHash, Module newModule) throws IOException {
         File baseDir = newFile(patchDir, patchElementID, MODULES);

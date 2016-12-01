@@ -23,6 +23,8 @@
 package org.jboss.as.domain.management.security.adduser;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
+
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static org.jboss.as.domain.management.security.adduser.AddUser.NEW_LINE;
@@ -43,7 +45,7 @@ public class DisplaySecret implements State {
     }
 
     public State execute() {
-        String pwdBase64 = Base64.getEncoder().encodeToString(stateValues.getPassword().getBytes());
+        String pwdBase64 = Base64.getEncoder().encodeToString(stateValues.getPassword().getBytes(StandardCharsets.UTF_8));
         theConsole.printf(DomainManagementLogger.ROOT_LOGGER.secretElement(pwdBase64));
         theConsole.printf(NEW_LINE);
 

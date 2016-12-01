@@ -21,11 +21,14 @@
  */
 package org.jboss.as.cli.handlers.batch;
 
+
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
+import org.jboss.aesh.console.Config;
 import org.jboss.as.cli.Attachments;
 
 import org.jboss.as.cli.CommandContext;
@@ -47,6 +50,7 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 
 /**
  *
@@ -90,7 +94,11 @@ public class BatchRunHandler extends BaseOperationCommand {
                 throw new CommandFormatException("Failed to perform operation: " + e.getLocalizedMessage());
             }
             if (!Util.isSuccess(response.getResponseNode())) {
-                throw new CommandFormatException(Util.getFailureDescription(response.getResponseNode()));
+                String msg = formatBatchError(ctx, response.getResponseNode());
+                if (msg == null) {
+                    msg = Util.getFailureDescription(response.getResponseNode());
+                }
+                throw new CommandFormatException(msg);
             }
 
             ModelNode steps = response.getResponseNode().get(Util.RESULT);
@@ -137,6 +145,47 @@ public class BatchRunHandler extends BaseOperationCommand {
         }
     }
 
+    private static String formatBatchError(CommandContext ctx, ModelNode responseNode) {
+        if (responseNode == null) {
+            return null;
+        }
+        ModelNode mn = responseNode.get(Util.RESULT);
+        String msg = null;
+        try {
+            if (mn.isDefined()) {
+                int index = 0;
+                Batch batch = ctx.getBatchManager().getActiveBatch();
+                StringBuilder b = new StringBuilder();
+                ModelNode fd = responseNode.get(Util.FAILURE_DESCRIPTION);
+                if (fd.isDefined()) {
+                    Property p = fd.asProperty();
+                    b.append(Config.getLineSeparator()).
+                            append(p.getName()).append(Config.getLineSeparator());
+                    boolean foundError = false;
+                    for (Property prop : mn.asPropertyList()) {
+                        ModelNode val = prop.getValue();
+                        if (val.hasDefined(Util.FAILURE_DESCRIPTION)) {
+                            b.append("Step: step-").append(index + 1).
+                                    append(Config.getLineSeparator());
+                            b.append("Operation: ").append(batch.getCommands().
+                                    get(index).getCommand()).append(Config.getLineSeparator());
+                            b.append("Failure: ").append(val.get(Util.FAILURE_DESCRIPTION).asString()).
+                                    append(Config.getLineSeparator());
+                            foundError = true;
+                        }
+                        index += 1;
+                    }
+                    if (foundError) {
+                        msg = b.toString();
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            // XXX OK, will fallback to null msg.
+        }
+        return msg;
+    }
+
     @Override
     protected ModelNode buildRequestWOValidation(CommandContext ctx) throws CommandFormatException {
 
@@ -175,7 +224,7 @@ public class BatchRunHandler extends BaseOperationCommand {
 
             BufferedReader reader = null;
             try {
-                reader = new BufferedReader(new FileReader(f));
+                reader = Files.newBufferedReader(f.toPath(), StandardCharsets.UTF_8);
                 String line = reader.readLine();
                 batchManager.activateNewBatch();
                 while(line != null) {

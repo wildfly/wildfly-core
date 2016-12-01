@@ -43,10 +43,9 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.wildfly.security.auth.server.IdentityLocator;
+import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
-import org.wildfly.security.auth.server.SupportLevel;
 import org.wildfly.security.authz.AuthorizationIdentity;
 import org.wildfly.security.authz.MapAttributes;
 import org.wildfly.security.credential.Credential;
@@ -141,13 +140,11 @@ public class PropertiesSubjectSupplemental extends PropertiesFileLoader implemen
     private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
 
         @Override
-        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
-            if (! locator.hasName()) return RealmIdentity.NON_EXISTENT;
-
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
             try {
                 Properties groups = getProperties();
 
-                String name = locator.getName();
+                String name = principal.getName();
                 return new RealmIdentityImpl(name, groups.getProperty(name, "").trim());
             } catch (IOException e) {
                 throw new RealmUnavailableException(e);

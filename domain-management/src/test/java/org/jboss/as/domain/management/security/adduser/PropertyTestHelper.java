@@ -26,11 +26,11 @@ import org.jboss.as.domain.management.security.PropertiesFileLoader;
 import org.jboss.msc.service.StartException;
 import org.junit.Before;
 
-import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -275,25 +275,6 @@ public class PropertyTestHelper {
     }
 
     private List<String> readContent(String filePath) throws IOException {
-        List<String> content = new ArrayList<String>();
-        FileReader fileReader = new FileReader(filePath);
-        BufferedReader bufferedFileReader = new BufferedReader(fileReader);
-        try {
-            String line;
-            while ((line = bufferedFileReader.readLine()) != null) {
-                content.add(line);
-            }
-        } finally {
-            safeClose(bufferedFileReader);
-            safeClose(fileReader);
-        }
-        return content;
-    }
-
-    private void safeClose(final Closeable c) {
-        try {
-            c.close();
-        } catch (IOException ignored) {
-        }
+        return Files.readAllLines(Paths.get(filePath), StandardCharsets.UTF_8);
     }
 }

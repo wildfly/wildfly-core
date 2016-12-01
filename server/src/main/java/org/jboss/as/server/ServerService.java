@@ -23,6 +23,10 @@
 package org.jboss.as.server;
 
 import static java.security.AccessController.doPrivileged;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 
 import java.io.File;
 import java.security.PrivilegedAction;
@@ -44,8 +48,10 @@ import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
@@ -55,6 +61,7 @@ import org.jboss.as.controller.access.management.ManagementSecurityIdentitySuppl
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.PlaceholderResource;
@@ -152,7 +159,7 @@ public final class ServerService extends AbstractControllerService {
     private volatile ExtensibleConfigurationPersister extensibleConfigurationPersister;
     private final AbstractVaultReader vaultReader;
     private final ServerDelegatingResourceDefinition rootResourceDefinition;
-
+    private final SuspendController suspendController;
     public static final String SERVER_NAME = "server";
 
     /**
@@ -163,7 +170,8 @@ public final class ServerService extends AbstractControllerService {
     private ServerService(final Bootstrap.Configuration configuration, final ControlledProcessState processState,
                           final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final ServerDelegatingResourceDefinition rootResourceDefinition,
                           final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
-                          final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
+                          final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry,
+                          final SuspendController suspendController) {
         super(getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStep, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
         this.configuration = configuration;
@@ -172,6 +180,7 @@ public final class ServerService extends AbstractControllerService {
         this.runningModeControl = runningModeControl;
         this.vaultReader = vaultReader;
         this.rootResourceDefinition = rootResourceDefinition;
+        this.suspendController = suspendController;
     }
 
     static ProcessType getProcessType(ServerEnvironment serverEnvironment) {
@@ -202,7 +211,8 @@ public final class ServerService extends AbstractControllerService {
     public static void addService(final ServiceTarget serviceTarget, final Bootstrap.Configuration configuration,
                                   final ControlledProcessState processState, final BootstrapListener bootstrapListener,
                                   final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
-                                  final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier) {
+                                  final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
+                                  final SuspendController suspendController) {
 
         final ThreadGroup threadGroup = new ThreadGroup("ServerService ThreadGroup");
         final String namePattern = "ServerService Thread Pool -- %t";
@@ -225,9 +235,8 @@ public final class ServerService extends AbstractControllerService {
                 .install();
         ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, Services.JBOSS_SERVER_EXECUTOR);
         final CapabilityRegistry capabilityRegistry = configuration.getCapabilityRegistry();
-
         ServerService service = new ServerService(configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(),
-                runningModeControl, vaultReader, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
+                runningModeControl, vaultReader, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, suspendController);
         ServiceBuilder<?> serviceBuilder = serviceTarget.addService(Services.JBOSS_SERVER_CONTROLLER, service);
         serviceBuilder.addDependency(DeploymentMountProvider.SERVICE_NAME,DeploymentMountProvider.class, service.injectedDeploymentRepository);
         serviceBuilder.addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.injectedContentRepository);
@@ -244,9 +253,6 @@ public final class ServerService extends AbstractControllerService {
 
     public synchronized void start(final StartContext context) throws StartException {
         ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
-        if (runningModeControl.isReloaded()) {
-
-        }
         Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = configuration.getConfigurationPersisterFactory();
         extensibleConfigurationPersister = configurationPersisterFactory.createConfigurationPersister(serverEnvironment, getExecutorServiceInjector().getOptionalValue());
         setConfigurationPersister(extensibleConfigurationPersister);
@@ -281,8 +287,12 @@ public final class ServerService extends AbstractControllerService {
             newExtDirs[extDirs.length] = new File(serverEnvironment.getServerBaseDir(), "lib/ext");
             serviceTarget.addService(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX,
                     new ExtensionIndexService(newExtDirs)).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
-
-            context.getServiceTarget().addService(SuspendController.SERVICE_NAME, new SuspendController()).install();
+            Boolean suspend = runningModeControl.getSuspend();
+            suspendController.setStartSuspended(suspend != null ? suspend : serverEnvironment.isStartSuspended());
+            runningModeControl.setSuspend(false);
+            context.getServiceTarget().addService(SuspendController.SERVICE_NAME, suspendController)
+                    .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, suspendController.getModelControllerInjectedValue())
+                    .install();
 
             GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();
             context.getServiceTarget().addService(GracefulShutdownService.SERVICE_NAME, gracefulShutdownService)
@@ -378,6 +388,9 @@ public final class ServerService extends AbstractControllerService {
 
         if (ok) {
             // Trigger the started message
+            Notification notification = new Notification(ModelDescriptionConstants.BOOT_COMPLETE_NOTIFICATION, PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
+                    PathElement.pathElement(SERVICE, MANAGEMENT_OPERATIONS)), ServerLogger.AS_ROOT_LOGGER.bootComplete());
+            getNotificationSupport().emit(notification);
             bootstrapListener.printBootStatistics();
         } else {
             // Die!

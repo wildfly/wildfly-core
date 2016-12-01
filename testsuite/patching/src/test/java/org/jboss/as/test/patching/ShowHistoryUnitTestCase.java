@@ -29,6 +29,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -75,7 +76,7 @@ public class ShowHistoryUnitTestCase extends PatchInfoTestBase {
     @Test
     public void testCP() throws Exception {
         Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
@@ -97,7 +98,7 @@ public class ShowHistoryUnitTestCase extends PatchInfoTestBase {
     @Test
     public void testOneOff() throws Exception {
         Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
@@ -119,7 +120,7 @@ public class ShowHistoryUnitTestCase extends PatchInfoTestBase {
     @Test
     public void testOneOffAndCP() throws Exception {
         Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 
@@ -147,7 +148,7 @@ public class ShowHistoryUnitTestCase extends PatchInfoTestBase {
 
         // create a module
         Module module = new Module.Builder("module-test").
-                miscFile(new ResourceItem("resource-test", ("module resource").getBytes())).
+                miscFile(new ResourceItem("resource-test", ("module resource").getBytes(StandardCharsets.UTF_8))).
                 build();
         File moduleDir = module.writeToDisk(new File(MODULES_PATH));
 

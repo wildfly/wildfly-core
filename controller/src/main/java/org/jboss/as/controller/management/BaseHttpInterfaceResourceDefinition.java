@@ -29,6 +29,8 @@ import static org.jboss.as.controller.management.Capabilities.HTTP_AUTHENTICATIO
 import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 
+import java.util.function.Consumer;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
@@ -76,6 +78,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
         .setNullSignificant(true)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
@@ -112,6 +115,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setAllowExpression(true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SASL_PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_PROTOCOL, ModelType.STRING, true)
@@ -119,6 +123,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setDefaultValue(new ModelNode(ModelDescriptionConstants.REMOTE))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final StringListAttributeDefinition ALLOWED_ORIGINS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.ALLOWED_ORIGINS)
@@ -146,7 +151,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         AttributeDefinition[] attributeDefinitions = getAttributeDefinitions();
-        OperationStepHandler defaultWriteHandler = new ManagementWriteAttributeHandler(attributeDefinitions);
+        OperationStepHandler defaultWriteHandler = new ManagementWriteAttributeHandler(attributeDefinitions, getValidationConsumer());
         for (AttributeDefinition attr : attributeDefinitions) {
             if (attr.equals(HTTP_UPGRADE_ENABLED)) {
                 HttpUpgradeAttributeHandler handler = new HttpUpgradeAttributeHandler();
@@ -157,6 +162,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         }
     }
 
+    protected abstract Consumer<OperationContext> getValidationConsumer();
     protected abstract AttributeDefinition[] getAttributeDefinitions();
 
     protected class HttpUpgradeAttributeHandler implements OperationStepHandler {

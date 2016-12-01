@@ -121,8 +121,8 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
         //for backward compatibilty, until we get new core out and used by wildfly full.
         private boolean xmlNameExplicitlySet = false;
 
-        public Builder(final String name, boolean allowNull) {
-            super(name, allowNull);
+        public Builder(final String name, boolean optional) {
+            super(name, optional);
         }
 
         public Builder(final PropertiesAttributeDefinition basis) {

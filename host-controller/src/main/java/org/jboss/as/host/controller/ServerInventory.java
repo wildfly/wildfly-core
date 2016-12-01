@@ -101,9 +101,10 @@ public interface ServerInventory {
      * @param serverName the name of the server
      * @param domainModel the configuration model for the domain
      * @param blocking whether to block until the server is started
+     * @param suspend If the server should start suspended
      * @return the status of the server following the attempt to start
      */
-    ServerStatus startServer(String serverName, ModelNode domainModel, boolean blocking);
+    ServerStatus startServer(String serverName, ModelNode domainModel, boolean blocking, boolean suspend);
 
     /**
      * Restart the server with the given name. Note that returning from this method does not mean the server
@@ -124,9 +125,10 @@ public interface ServerInventory {
      * @param gracefulTimeout time in ms the server should allow for graceful shutdown (if supported) before terminating all services
      * @param domainModel the configuration model for the domain
      * @param blocking whether to block until the server is restarted
+     * @param suspend if the servers should restart in suspended mode
      * @return the status of the server following the attempt to restart
      */
-    ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking);
+    ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend);
 
     /**
      * Stop the server with the given name. Note that returning from this method does not mean the server
@@ -184,7 +186,7 @@ public interface ServerInventory {
      * @param serverName the name of the server
      * @blockign whether to block until the server is started
      */
-    ServerStatus reloadServer(String serverName, boolean blocking);
+    ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend);
 
     /**
      * Destroy a stopping server process. In case the the server is not stopping, this will attempt to stop the server

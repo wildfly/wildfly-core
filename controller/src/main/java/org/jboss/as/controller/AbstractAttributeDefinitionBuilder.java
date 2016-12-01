@@ -90,12 +90,12 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * Creates a builder for an attribute with the give name and type and nullability setting.
      * @param attributeName the {@link AttributeDefinition#getName() name} of the attribute. Cannot be {@code null}
      * @param type the {@link AttributeDefinition#getType() type} of the attribute. Cannot be {@code null}
-     * @param allowNull {@code true} if the {@link AttributeDefinition#isAllowNull() allows undefined values}
+     * @param optional {@code true} if the attribute {@link AttributeDefinition#isAllowNull() allows undefined values} in the absence of {@link #setAlternatives(String...) alternatives}
      */
-    public AbstractAttributeDefinitionBuilder(final String attributeName, final ModelType type, final boolean allowNull) {
+    public AbstractAttributeDefinitionBuilder(final String attributeName, final ModelType type, final boolean optional) {
         this.name = attributeName;
         this.type = type;
-        this.allowNull = allowNull;
+        this.allowNull = optional;
         this.xmlName = name;
     }
 
@@ -126,7 +126,6 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         this.measurementUnit = basis.getMeasurementUnit();
         this.corrector = basis.getCorrector();
         this.validator = basis.getValidator();
-        this.validateNull = basis.isValidatingNull();
         this.alternatives = basis.getAlternatives();
         this.requires = basis.getRequires();
         this.attributeMarshaller = basis.getAttributeMarshaller();
@@ -196,13 +195,32 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
-     * Sets whether the attribute should {@link AttributeDefinition#isAllowNull() allow undefined values}.
+     * Sets whether the attribute should {@link AttributeDefinition#isRequired() require a defined value}
+     * in the absence of {@link #setAlternatives(String...) alternatives}.
+     * If not set the default value is the value provided to the builder constructor, or {@code true}
+     * if no value is provided.
+     *
+     * @param required {@code true} if undefined values should not be allowed in the absence of alternatives
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public BUILDER setRequired(boolean required) {
+        this.allowNull = !required;
+        return (BUILDER) this;
+    }
+
+    /**
+     * Inverse of the preferred {@link #setRequired(boolean)}; sets whether the attribute should
+     * {@link AttributeDefinition#isAllowNull() allow undefined values}
+     * in the absence of {@link #setAlternatives(String...) alternatives}.
      * If not set the default value is the value provided to the builder constructor, or {@code false}
      * if no value is provided.
      *
-     * @param allowNull {@code true} if undefined values should be allowed
+     * @param allowNull {@code true} if undefined values should be allowed in the absence of alternatives
      * @return a builder that can be used to continue building the attribute definition
+     *
+     * @deprecated use {@link #setRequired(boolean)}
      */
+    @Deprecated
     public BUILDER setAllowNull(boolean allowNull) {
         this.allowNull = allowNull;
         return (BUILDER) this;
@@ -269,16 +287,17 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
-     * Sets whether the attribute definition should check for {@link org.jboss.dmr.ModelNode#isDefined() undefined} values if
-     * {@link #setAllowNull(boolean) null is not allowed} in addition to any validation provided by any
-     * {@link #setValidator(org.jboss.as.controller.operations.validation.ParameterValidator) configured validator}. The default if not set is {@code true}. The use
-     * case for setting this to {@code false} would be to ignore undefined values in the basic validation performed
-     * by the {@link org.jboss.as.controller.AttributeDefinition} and instead let operation handlers validate using more complex logic
-     * (e.g. checking for {@link #setAlternatives(String...) alternatives}.
+     * Has no effect. The behavior of {@link AttributeDefinition} now is to allow undefined values
+     * for {@link #setRequired(boolean) required} attributes if alternatives have been declared via
+     * {@link #setAlternatives(String...)} or {@link #addAlternatives(String...)}. Handling such
+     * situations was the original purpose for this setting.
      *
-     * @param validateNull {@code true} if additional validation should be performed; {@code false} otherwise
+     * @param validateNull ignored
      * @return a builder that can be used to continue building the attribute definition
+     *
+     * @deprecated has no effect
      */
+    @Deprecated
     public BUILDER setValidateNull(boolean validateNull) {
         this.validateNull = validateNull;
         return (BUILDER) this;
@@ -591,7 +610,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * Sets whether an access control check is required to implicitly set an attribute to {@code undefined}
      * in a resource "add" operation. "Implicitly" setting an attribute refers to not providing a value for
      * it in the add operation, leaving the attribute in an undefined state. If not set
-     * the default value is whether the attribute {@link AttributeDefinition#isAllowNull() allows null} and
+     * the default value is whether the attribute {@link AttributeDefinition#isRequired()} () is not required} and
      * has a {@link AttributeDefinition#getDefaultValue() default value}.
      *
      * @param nullSignificant {@code true} if an undefined value is significant
@@ -804,6 +823,8 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return validator;
     }
 
+    /** @deprecated meaningless and not used. */
+    @Deprecated
     public boolean isValidateNull() {
         return validateNull;
     }

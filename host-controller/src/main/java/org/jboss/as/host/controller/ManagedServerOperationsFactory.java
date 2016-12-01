@@ -116,6 +116,12 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLASSIFICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURED_APPLICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURED_REQUIRES_ADDRESSABLE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURED_REQUIRES_READ;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURED_REQUIRES_WRITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.SchemaLocationAddHandler;
 import org.jboss.as.server.services.net.SocketBindingAddHandler;
@@ -593,11 +599,10 @@ public final class ManagedServerOperationsFactory {
             if (domainConfig.hasDefined(CONSTRAINT)) {
                 ModelNode constraints = domainConfig.get(CONSTRAINT);
                 if (constraints.hasDefined(APPLICATION_CLASSIFICATION)) {
-                    convertSimpleResources(constraints.get(APPLICATION_CLASSIFICATION), APPLICATION_CLASSIFICATION, baseAddress, updates);
+                    convertApplicationClassificationConstraints(constraints.get(APPLICATION_CLASSIFICATION), baseAddress, updates);
                 }
                 if (constraints.hasDefined(SENSITIVITY_CLASSIFICATION)) {
-                    convertSimpleResources(constraints.get(SENSITIVITY_CLASSIFICATION), SENSITIVITY_CLASSIFICATION,
-                            baseAddress, updates);
+                    convertSensitivityClassificationConstraints(constraints.get(SENSITIVITY_CLASSIFICATION), baseAddress, updates);
                 }
                 if (constraints.hasDefined(VAULT_EXPRESSION)) {
                     ModelNode address = baseAddress.clone().add(CONSTRAINT, VAULT_EXPRESSION);
@@ -865,14 +870,54 @@ public final class ManagedServerOperationsFactory {
         }
     }
 
-    private ModelNode addAddNameAndAddress(ModelNode op, PathAddress address){
-        return addAddNameAndAddress(op, address.toModelNode());
-    }
-
     private ModelNode addAddNameAndAddress(ModelNode op, ModelNode address){
         op.get(OP).set(ADD);
         op.get(OP_ADDR).set(address);
         return op;
+    }
+
+    private static void convertApplicationClassificationConstraints(ModelNode model, ModelNode baseAddress, ModelNodeList updates) {
+        PathAddress constraintAddress = PathAddress.pathAddress(baseAddress).append(CONSTRAINT, APPLICATION_CLASSIFICATION);
+        if (model.hasDefined(TYPE)) {
+            for (Property prop : model.get(TYPE).asPropertyList()) {
+                PathAddress constraintTypeAddress = constraintAddress.append(TYPE, prop.getName());
+                if (prop.getValue().hasDefined(CLASSIFICATION)) {
+                    for (Property classification : prop.getValue().get(CLASSIFICATION).asPropertyList()) {
+                        PathAddress classificationAddress = constraintTypeAddress.append(CLASSIFICATION, classification.getName());
+                        if (classification.getValue().hasDefined(CONFIGURED_APPLICATION)) {
+                            ModelNode addOp = Util.getWriteAttributeOperation(classificationAddress, CONFIGURED_APPLICATION, classification.getValue().get(CONFIGURED_APPLICATION).asBoolean());
+                            updates.add(addOp);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void convertSensitivityClassificationConstraints(ModelNode model, ModelNode baseAddress, ModelNodeList updates) {
+        PathAddress constraintAddress = PathAddress.pathAddress(baseAddress).append(CONSTRAINT, SENSITIVITY_CLASSIFICATION);
+        if (model.hasDefined(TYPE)) {
+            for (Property prop : model.get(TYPE).asPropertyList()) {
+                PathAddress constraintTypeAddress = constraintAddress.append(TYPE, prop.getName());
+                if (prop.getValue().hasDefined(CLASSIFICATION)) {
+                    for (Property classification : prop.getValue().get(CLASSIFICATION).asPropertyList()) {
+                        PathAddress classificationAddress = constraintTypeAddress.append(CLASSIFICATION, classification.getName());
+                        if (classification.getValue().hasDefined(CONFIGURED_REQUIRES_READ)) {
+                            ModelNode addOp = Util.getWriteAttributeOperation(classificationAddress, CONFIGURED_REQUIRES_READ, classification.getValue().get(CONFIGURED_REQUIRES_READ).asBoolean());
+                            updates.add(addOp);
+                        }
+                        if (classification.getValue().hasDefined(CONFIGURED_REQUIRES_WRITE)) {
+                            ModelNode addOp = Util.getWriteAttributeOperation(classificationAddress, CONFIGURED_REQUIRES_WRITE, classification.getValue().get(CONFIGURED_REQUIRES_WRITE).asBoolean());
+                            updates.add(addOp);
+                        }
+                        if (classification.getValue().hasDefined(CONFIGURED_REQUIRES_ADDRESSABLE)) {
+                            ModelNode addOp = Util.getWriteAttributeOperation(classificationAddress, CONFIGURED_REQUIRES_ADDRESSABLE, classification.getValue().get(CONFIGURED_REQUIRES_ADDRESSABLE).asBoolean());
+                            updates.add(addOp);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static void convertSimpleResources(ModelNode model, String type, ModelNode baseAddress, ModelNodeList updates) {

@@ -62,6 +62,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -86,6 +87,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
 @Category(CommonCriteria.class)
+@Ignore("[WFCORE-2068] Test failure during clean up.")
 public class HTTPSManagementInterfaceTestCase {
 
     public static Logger LOGGER = Logger.getLogger(HTTPSManagementInterfaceTestCase.class);
@@ -296,7 +298,7 @@ public class HTTPSManagementInterfaceTestCase {
 
         ModelControllerClient client = null;
         try {
-            client = ModelControllerClient.Factory.create("remote", InetAddress.getByName(TestSuiteEnvironment.getServerAddress()),
+            client = ModelControllerClient.Factory.create("remoting", InetAddress.getByName(TestSuiteEnvironment.getServerAddress()),
                     MANAGEMENT_NATIVE_PORT, new org.wildfly.core.testrunner.Authentication.CallbackHandler());
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);

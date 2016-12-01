@@ -134,6 +134,56 @@ public class CliConfigTestCase {
     }
 
     @Test
+    public void testOptionFile() throws Exception {
+        testFileOption("file");
+        testFileOption("properties");
+    }
+
+    private void testFileOption(String optionName) throws Exception {
+        File f = new File(temporaryUserHome.getRoot(), "a-script"
+                + System.currentTimeMillis() + ".cli");
+        f.createNewFile();
+        f.deleteOnExit();
+        {
+            CliProcessWrapper cli = new CliProcessWrapper()
+                    .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                    .addCliArgument("--" + optionName + "=" + "~" + File.separator + f.getName());
+            try {
+                cli.executeNonInteractive();
+                assertFalse(cli.getOutput(), cli.getOutput().contains(f.getName()));
+            } finally {
+                cli.destroyProcess();
+            }
+        }
+
+        {
+            CliProcessWrapper cli = new CliProcessWrapper()
+                    .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                    .addCliArgument("--" + optionName + "=" + "~"
+                            + temporaryUserHome.getRoot().getName() + File.separator + f.getName());
+            try {
+                cli.executeNonInteractive();
+                assertFalse(cli.getOutput(), cli.getOutput().contains(f.getName()));
+            } finally {
+                cli.destroyProcess();
+            }
+        }
+
+        {
+            String invalidPath = "~" + System.currentTimeMillis() + "@testOptionFile" + File.separator + f.getName();
+            CliProcessWrapper cli = new CliProcessWrapper()
+                    .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                    .addCliArgument("--" + optionName + "=" + invalidPath);
+            try {
+                cli.executeNonInteractive();
+                assertTrue(cli.getOutput(), cli.getOutput().contains(f.getName()));
+            } finally {
+                cli.destroyProcess();
+            }
+        }
+    }
+
+    @Test
     public void testNegativeConfigTimeoutCommand() throws Exception {
         File f = createConfigFile(false, -1);
         CliProcessWrapper cli = new CliProcessWrapper()
@@ -172,6 +222,38 @@ public class CliConfigTestCase {
         final String result = cli.executeNonInteractive();
         assertNotNull(result);
         assertTrue(result, result.contains("Timeout exception for run-batch"));
+    }
+
+    @Test
+    public void testValidateOperation() throws Exception {
+        File f = createConfigFile(false, 0, true);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+        cli.executeInteractive();
+        cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
+        String str = cli.getOutput();
+        assertTrue(str, str.contains("'aaaaa' is not found among the supported properties:"));
+    }
+
+    @Test
+    public void testNotValidateOperation() throws Exception {
+        File f = createConfigFile(false, 0, false);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+        cli.executeInteractive();
+        cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
+        String str = cli.getOutput();
+        assertTrue(str, str.contains("\"outcome\" => \"success\","));
     }
 
     private void testTimeout(CliProcessWrapper cli, int config) throws Exception {
@@ -263,6 +345,10 @@ public class CliConfigTestCase {
     }
 
     private static File createConfigFile(Boolean enable, int timeout) {
+        return createConfigFile(enable, timeout, true);
+    }
+
+    private static File createConfigFile(Boolean enable, int timeout, Boolean validate) {
         File f = new File(TestSuiteEnvironment.getTmpDir(), "test-jboss-cli" +
                 System.currentTimeMillis() + ".xml");
         f.deleteOnExit();
@@ -281,6 +367,10 @@ public class CliConfigTestCase {
                 writer.writeCharacters("" + timeout);
                 writer.writeEndElement(); //command-timeout
             }
+            writer.writeStartElement("validate-operation-requests");
+            writer.writeCharacters(validate.toString());
+            writer.writeEndElement(); //validate-operation-requests
+
             writer.writeEndElement(); //jboss-cli
             writer.writeEndDocument();
             writer.flush();

@@ -3,6 +3,7 @@
 <config>
    <subsystems>
       <subsystem>logging.xml</subsystem>
+      <subsystem>core-management.xml</subsystem>
       <subsystem>discovery.xml</subsystem>
       <subsystem>jmx.xml</subsystem>
       <subsystem>request-controller.xml</subsystem>

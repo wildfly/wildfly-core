@@ -26,9 +26,10 @@ package org.jboss.as.jmx.auditlog;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -588,8 +589,7 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
 
     private List<ModelNode> readFile(File file, int expectedRecords) throws IOException {
         List<ModelNode> list = new ArrayList<ModelNode>();
-        final BufferedReader reader = new BufferedReader(new FileReader(file));
-        try {
+        try (final BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)){
             StringWriter writer = null;
             String line = reader.readLine();
             while (line != null) {
@@ -607,8 +607,6 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
             if (writer != null) {
                 list.add(ModelNode.fromJSONString(writer.getBuffer().toString()));
             }
-        } finally {
-            reader.close();
         }
         Assert.assertEquals(list.toString(), expectedRecords, list.size());
         return list;

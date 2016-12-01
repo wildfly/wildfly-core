@@ -136,7 +136,7 @@ public final class InterfaceCriteriaWriteHandler implements OperationStepHandler
         }
 
         boolean isRequired(final AttributeDefinition def, final ModelNode model) {
-            final boolean required = ! def.isAllowNull();
+            final boolean required = def.isRequired();
             return required ? ! hasAlternative(def.getAlternatives(), model, true) : required;
         }
 

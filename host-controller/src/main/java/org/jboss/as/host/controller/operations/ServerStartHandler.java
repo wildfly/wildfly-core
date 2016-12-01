@@ -60,7 +60,10 @@ public class ServerStartHandler implements OperationStepHandler {
     private static final AttributeDefinition BLOCKING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.BLOCKING, ModelType.BOOLEAN, true)
         .build();
 
-    public static final OperationDefinition DEFINITION = getOperationDefinition(OPERATION_NAME);
+    static final AttributeDefinition SUSPEND = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SUSPEND, ModelType.BOOLEAN, true)
+            .build();
+
+    public static final OperationDefinition DEFINITION = getOperationDefinition(OPERATION_NAME, ServerStartHandler.SUSPEND);
 
     private final ServerInventory serverInventory;
 
@@ -97,6 +100,7 @@ public class ServerStartHandler implements OperationStepHandler {
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
         final boolean blocking = operation.get(ModelDescriptionConstants.BLOCKING).asBoolean(false);
+        final boolean suspend = operation.get(ModelDescriptionConstants.SUSPEND).asBoolean(false);
 
         final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
         context.addStep(new OperationStepHandler() {
@@ -107,7 +111,7 @@ public class ServerStartHandler implements OperationStepHandler {
 
                 final ServerStatus origStatus = serverInventory.determineServerStatus(serverName);
                 if (origStatus != ServerStatus.STARTED && origStatus != ServerStatus.STARTING) {
-                    final ServerStatus status = serverInventory.startServer(serverName, model, blocking);
+                    final ServerStatus status = serverInventory.startServer(serverName, model, blocking, suspend);
                     persistAutoStart(context);
                     context.getResult().set(status.toString());
                 } else {

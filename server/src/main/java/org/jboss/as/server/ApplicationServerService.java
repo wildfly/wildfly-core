@@ -45,6 +45,7 @@ import org.jboss.as.server.moduleservice.ExternalModuleService;
 import org.jboss.as.server.moduleservice.ModuleIndexService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.as.server.services.security.AbstractVaultReader;
+import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
@@ -72,13 +73,14 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
     private final Bootstrap.Configuration configuration;
     private final RunningModeControl runningModeControl;
     private final ControlledProcessState processState;
+    private final SuspendController suspendController;
     private final boolean standalone;
     private final boolean selfContained;
     private volatile FutureServiceContainer futureContainer;
     private volatile long startTime;
 
     ApplicationServerService(final List<ServiceActivator> extraServices, final Bootstrap.Configuration configuration,
-                             final ControlledProcessState processState) {
+                             final ControlledProcessState processState, final SuspendController suspendController) {
         this.extraServices = extraServices;
         this.configuration = configuration;
         runningModeControl = configuration.getRunningModeControl();
@@ -86,16 +88,16 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         standalone = configuration.getServerEnvironment().isStandalone();
         selfContained = configuration.getServerEnvironment().isSelfContained();
         this.processState = processState;
+        this.suspendController = suspendController;
     }
 
     @Override
     public synchronized void start(final StartContext context) throws StartException {
 
-        processState.setStarting();
-
+        //Moved to AbstractControllerService.start()
+        //processState.setStarting();
         final Bootstrap.Configuration configuration = this.configuration;
         final ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
-
         final ProductConfig config = serverEnvironment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion);
@@ -156,7 +158,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         final AbstractVaultReader vaultReader = loadVaultReaderService();
         ServerLogger.AS_ROOT_LOGGER.debugf("Using VaultReader %s", vaultReader);
         ServerService.addService(serviceTarget, configuration, processState, bootstrapListener, runningModeControl, vaultReader, configuration.getAuditLogger(),
-                configuration.getAuthorizer(), configuration.getSecurityIdentitySupplier());
+                configuration.getAuthorizer(), configuration.getSecurityIdentitySupplier(), suspendController);
         final ServiceActivatorContext serviceActivatorContext = new ServiceActivatorContext() {
             @Override
             public ServiceTarget getServiceTarget() {
@@ -200,7 +202,8 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
 
     @Override
     public synchronized void stop(final StopContext context) {
-        processState.setStopping();
+        //Moved to AbstractControllerService.stop()
+        //processState.setStopping();
         CurrentServiceContainer.setServiceContainer(null);
         String prettyVersion = configuration.getServerEnvironment().getProductConfig().getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, Integer.valueOf((int) (context.getElapsedTime() / 1000000L)));

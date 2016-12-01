@@ -300,6 +300,7 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
                     in = new FileInputStream(file);
                 }
                 if (encoding == null) {
+                    //system default used on purpose
                     reader = new BufferedReader(new InputStreamReader(in));
                 } else {
                     reader = new BufferedReader(new InputStreamReader(in, encoding));

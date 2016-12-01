@@ -29,10 +29,10 @@ import static org.junit.Assert.fail;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -95,8 +95,8 @@ public class FileWithPropertiesTestCase {
         BufferedReader reader = null;
         BufferedWriter writer = null;
         try {
-            reader = new BufferedReader(new FileReader(jbossCliXml));
-            writer = new BufferedWriter(new FileWriter(TMP_JBOSS_CLI_FILE));
+            reader = Files.newBufferedReader(jbossCliXml.toPath(), StandardCharsets.UTF_8);
+            writer = Files.newBufferedWriter(TMP_JBOSS_CLI_FILE.toPath(), StandardCharsets.UTF_8);
             String line = reader.readLine();
             boolean replaced = false;
             while(line != null) {
@@ -133,7 +133,7 @@ public class FileWithPropertiesTestCase {
         ensureRemoved(SCRIPT_FILE);
         ensureRemoved(PROPS_FILE);
         try {
-            writer = new BufferedWriter(new FileWriter(SCRIPT_FILE));
+            writer = Files.newBufferedWriter(SCRIPT_FILE.toPath(), StandardCharsets.UTF_8);
             writer.write(CONNECT_COMMAND);
             writer.newLine();
             writer.write(SET_PROP_COMMAND);
@@ -155,7 +155,7 @@ public class FileWithPropertiesTestCase {
 
         writer = null;
         try {
-            writer = new BufferedWriter(new FileWriter(PROPS_FILE));
+            writer = Files.newBufferedWriter(PROPS_FILE.toPath(), StandardCharsets.UTF_8);
             writer.write(CLI_PROP_NAME); writer.write('='); writer.write(CLI_PROP_VALUE); writer.newLine();
             writer.write(HOST_PROP_NAME); writer.write('='); writer.write(HOST_PROP_VALUE); writer.newLine();
             writer.write(PORT_PROP_NAME); writer.write('='); writer.write(PORT_PROP_VALUE); writer.newLine();
@@ -301,7 +301,7 @@ public class FileWithPropertiesTestCase {
                 if (bytesTotal > 0) {
                     final byte[] bytes = new byte[bytesTotal];
                     cliProc.getErrorStream().read(bytes);
-                    System.out.println("Command's error log: '" + new String(bytes) + "'");
+                    System.out.println("Command's error log: '" + new String(bytes, StandardCharsets.UTF_8) + "'");
                 } else {
                     System.out.println("No output data for the command.");
                 }
@@ -319,7 +319,7 @@ public class FileWithPropertiesTestCase {
             if (bytesTotal > 0) {
                 final byte[] bytes = new byte[bytesTotal];
                 cliStream.read(bytes);
-                cliOutBuf.append(new String(bytes));
+                cliOutBuf.append(new String(bytes, StandardCharsets.UTF_8));
             }
         } catch (IOException e) {
             fail("Failed to read command's output: " + e.getLocalizedMessage());

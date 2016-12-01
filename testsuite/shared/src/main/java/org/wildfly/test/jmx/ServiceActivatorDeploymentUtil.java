@@ -56,6 +56,26 @@ public class ServiceActivatorDeploymentUtil {
         archive.as(ZipExporter.class).exportTo(destination);
     }
 
+    public static void createServiceActivatorListenerDeployment(File destination, String targetName, Class listenerClass) throws IOException {
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
+        archive.addClass(ServiceActivatorDeployment.class);
+        archive.addClass(listenerClass);
+        archive.addClass(AbstractStateNotificationListener.class);
+        archive.addAsServiceProvider(ServiceActivator.class, ServiceActivatorDeployment.class);
+        StringBuilder sb = new StringBuilder();
+        sb.append(ServiceActivatorDeployment.LISTENER_CLASS_NAME);
+        sb.append('=');
+        sb.append(listenerClass.getName());
+        sb.append("\n");
+        sb.append(ServiceActivatorDeployment.LISTENER_OBJECT_NAME);
+        sb.append('=');
+        sb.append(targetName);
+        sb.append("\n");
+        archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
+        archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
+        archive.as(ZipExporter.class).exportTo(destination);
+    }
+
     private ServiceActivatorDeploymentUtil() {
         // prevent instantiation
     }

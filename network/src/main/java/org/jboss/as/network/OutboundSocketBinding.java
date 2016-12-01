@@ -200,7 +200,7 @@ public class OutboundSocketBinding {
 
     /**
      * Returns the source address of this outbound socket binding if one is configured. If no explicit source address
-     * is specified for this binding, then this method returns {@code null}. Use {@link org.jboss.as.network.OutboundSocketBinding#getSourceAddress()}
+     * is specified for this binding, then this method returns {@code null}. Use {@link #getSourceAddress()}
      * instead to obtain the default interface of the socket binding manager if none is specified for this binding.
      *
      * @return source address of this outbound socket binding if specified,
@@ -215,10 +215,10 @@ public class OutboundSocketBinding {
      * this outbound socket binding has a port offset. To get the absolute source port, use the {@link #getAbsoluteSourcePort()}
      * method.
      *
-     * @return the source port for this outbound socket binding
+     * @return the source port for this outbound socket binding not accounting for port offset/fixation; {@code null} if an ephemeral port should be used
      */
     public Integer getSourcePort() {
-        return this.sourcePort;
+        return (this.sourcePort == null || this.sourcePort == 0) ? null : this.sourcePort;
     }
 
     /**
@@ -226,10 +226,10 @@ public class OutboundSocketBinding {
      * if the outbound socket binding is marked for "fixed source port". Else, it is the sum of {@link #getSourcePort()}
      * and the port offset configured on the {@link SocketBindingManager}.
      *
-     * @return the absolute source port accounting for port offset/fixation
+     * @return the absolute source port accounting for port offset/fixation; {@code null} if an ephemeral port should be used
      */
     public Integer getAbsoluteSourcePort() {
-        if (this.sourcePort == null) {
+        if (this.getSourcePort() == null) {
             return null;
         }
         if (this.fixedSourcePort) {

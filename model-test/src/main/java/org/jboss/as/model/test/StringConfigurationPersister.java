@@ -22,6 +22,7 @@
 package org.jboss.as.model.test;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
@@ -94,7 +95,7 @@ public class StringConfigurationPersister extends AbstractConfigurationPersister
 
         @Override
         public void commit() {
-            marshalled = new String(bytes);
+            marshalled = new String(bytes, StandardCharsets.UTF_8);
         }
 
         @Override

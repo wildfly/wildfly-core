@@ -29,10 +29,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -932,7 +932,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             File file = new File(tempDir, "content");
             this.vf = VFS.getChild(file.toURI());
 
-            try (final PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file)));){
+            try (final PrintWriter out = new PrintWriter(Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8))){
                 dmr.writeString(out, true);
             }
         }

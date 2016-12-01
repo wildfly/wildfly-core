@@ -29,6 +29,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.ServerInventory;
@@ -42,7 +43,7 @@ import org.jboss.dmr.ModelNode;
 public class ServerRestartHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = "restart";
-    public static final OperationDefinition DEFINITION = ServerStartHandler.getOperationDefinition(OPERATION_NAME);
+    public static final OperationDefinition DEFINITION = ServerStartHandler.getOperationDefinition(OPERATION_NAME, ServerStartHandler.SUSPEND);
 
     private final ServerInventory serverInventory;
 
@@ -66,7 +67,8 @@ public class ServerRestartHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
-        final boolean blocking = operation.get("blocking").asBoolean(false);
+        final boolean blocking = operation.get(ModelDescriptionConstants.BLOCKING).asBoolean(false);
+        final boolean suspend = operation.get(ModelDescriptionConstants.SUSPEND).asBoolean(false);
 
         final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
         context.addStep(new OperationStepHandler() {
@@ -79,7 +81,7 @@ public class ServerRestartHandler implements OperationStepHandler {
                 if (origStatus != ServerStatus.STARTED) {
                     throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotRestartServer(serverName, origStatus));
                 }
-                final ServerStatus status = serverInventory.restartServer(serverName, -1, model, blocking);
+                final ServerStatus status = serverInventory.restartServer(serverName, -1, model, blocking, suspend);
                 context.getResult().set(status.toString());
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }

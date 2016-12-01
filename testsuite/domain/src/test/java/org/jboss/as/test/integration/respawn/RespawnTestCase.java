@@ -21,45 +21,6 @@
  */
 package org.jboss.as.test.integration.respawn;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import org.junit.Assert;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.process.Main;
-import org.jboss.as.process.ProcessController;
-import org.jboss.as.protocol.StreamUtils;
-import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
-import org.xnio.IoUtils;
-
-import static org.jboss.as.test.integration.domain.management.util.Authentication.getCallbackHandler;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -73,6 +34,45 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.test.integration.domain.management.util.Authentication.getCallbackHandler;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.process.Main;
+import org.jboss.as.process.ProcessController;
+import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
+import org.xnio.IoUtils;
 
 /**
  * RespawnTestCase
@@ -138,12 +138,9 @@ public class RespawnTestCase {
 
         // No point backing up the file in a test scenario, just write what we need.
         File usersFile = new File(domainConfigDir, "mgmt-users.properties");
-        FileOutputStream fos = new FileOutputStream(usersFile);
-        PrintWriter pw = new PrintWriter(fos);
-        pw.println("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray()));
-        pw.close();
-        fos.close();
-
+        Files.write(usersFile.toPath(),
+                ("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray())+"\n")
+                        .getBytes(StandardCharsets.UTF_8));
         String localRepo = System.getProperty("settings.localRepository");
 
         final String address = System.getProperty("jboss.test.host.master.address", "127.0.0.1");
@@ -346,15 +343,7 @@ public class RespawnTestCase {
         try {
             // Replace host.xml with an invalid doc
             File toBreak = new File(domainConfigDir, hostXml.getName());
-            PrintWriter pw = null;
-            try {
-                pw = new PrintWriter(toBreak);
-                pw.println("<host/>");
-            } finally {
-                if (pw != null) {
-                    pw.close();
-                }
-            }
+            Files.write(toBreak.toPath(), "<host/>\n".getBytes(StandardCharsets.UTF_8));
 
             // Execute reload w/ restart-servers=false, admin-only=false
             // The reload should abort the HC due to bad xml
@@ -626,7 +615,7 @@ public class RespawnTestCase {
             try {
                 String line;
                 while ((line = input.readLine()) != null) {
-                    if (line.contains("jboss-modules.jar")){
+                    if (line.contains("jboss-modules.jar")) {
                         processes.add(line);
                     }
 
@@ -634,7 +623,7 @@ public class RespawnTestCase {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } finally {
-                StreamUtils.safeClose(input);
+                IoUtils.safeClose(input);
             }
             return processes;
         }

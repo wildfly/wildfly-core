@@ -54,6 +54,7 @@ import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.model.jvm.JvmElement;
 import org.jboss.as.host.controller.model.jvm.JvmOptionsBuilderFactory;
 import org.jboss.as.host.controller.resources.SslLoopbackResourceDefinition;
+import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.DefaultJvmUtils;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.server.ServerEnvironment;
@@ -92,13 +93,15 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     private final ExpressionResolver expressionResolver;
     private final DirectoryGrouping directoryGrouping;
     private final Supplier<SSLContext> sslContextSupplier;
+    private final boolean suspend;
 
-    public ManagedServerBootCmdFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel, final HostControllerEnvironment environment, final ExpressionResolver expressionResolver) {
+    public ManagedServerBootCmdFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel, final HostControllerEnvironment environment, final ExpressionResolver expressionResolver, boolean suspend) {
         this.serverName = serverName;
         this.domainModel = domainModel;
         this.hostModel = hostModel;
         this.environment = environment;
         this.expressionResolver = expressionResolver;
+        this.suspend = suspend;
         this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName), expressionResolver, true);
         this.directoryGrouping = resolveDirectoryGrouping(hostModel, expressionResolver);
         final String serverGroupName = serverModel.require(GROUP).asString();
@@ -309,6 +312,9 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         }
         command.add("org.jboss.as.server");
 
+        if(suspend) {
+            command.add(CommandLineConstants.START_MODE + "=" + CommandLineConstants.SUSPEND_MODE);
+        }
         return command;
     }
 
@@ -355,6 +361,11 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     @Override
     public Supplier<SSLContext> getSSLContextSupplier() {
         return sslContextSupplier;
+    }
+
+    @Override
+    public boolean isSuspended() {
+        return suspend;
     }
 
     private String getJavaCommand() {
