@@ -43,7 +43,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.security.auth.SupportLevel;
-import org.wildfly.security.auth.server.IdentityLocator;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.credential.Credential;
@@ -129,8 +128,7 @@ public class ClientCertCallbackHandler implements Service<CallbackHandlerService
     private class ClientCertSecurityRealm implements org.wildfly.security.auth.server.SecurityRealm {
 
         @Override
-        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
-            Evidence evidence = locator.getEvidence();
+        public RealmIdentity getRealmIdentity(Evidence evidence) throws RealmUnavailableException {
             if (evidence instanceof X509PeerCertificateChainEvidence) {
                 return new ClientCertRealmIdentity(((X509PeerCertificateChainEvidence)evidence).getPrincipal());
             }

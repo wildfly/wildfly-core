@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Collections;
@@ -62,7 +63,6 @@ import org.wildfly.common.Assert;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
-import org.wildfly.security.auth.server.IdentityLocator;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.credential.Credential;
@@ -297,13 +297,11 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
     private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
 
         @Override
-        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
-            if (! locator.hasName()) return RealmIdentity.NON_EXISTENT;
-
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
             try {
                 Properties users = getProperties();
 
-                String name = locator.getName();
+                String name = principal.getName();
                 return new RealmIdentityImpl(name, users.getProperty(name));
             } catch (IOException e) {
                 throw new RealmUnavailableException(e);

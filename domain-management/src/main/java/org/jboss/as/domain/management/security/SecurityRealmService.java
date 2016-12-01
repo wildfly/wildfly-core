@@ -69,7 +69,6 @@ import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.AggregateSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
-import org.wildfly.security.auth.server.IdentityLocator;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.RealmIdentity;
@@ -506,10 +505,20 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         }
 
         @Override
-        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
             try {
                 sharedStateLocal.set(new HashMap<>());
-                return wrapped.getRealmIdentity(locator);
+                return wrapped.getRealmIdentity(principal);
+            } finally {
+                sharedStateLocal.remove();
+            }
+        }
+
+        @Override
+        public RealmIdentity getRealmIdentity(Evidence evidence) throws RealmUnavailableException {
+            try {
+                sharedStateLocal.set(new HashMap<>());
+                return wrapped.getRealmIdentity(evidence);
             } finally {
                 sharedStateLocal.remove();
             }

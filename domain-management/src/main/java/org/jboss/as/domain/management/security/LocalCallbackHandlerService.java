@@ -27,6 +27,7 @@ import static org.jboss.as.domain.management.RealmConfigurationConstants.LOCAL_D
 import static org.jboss.as.domain.management.security.SecurityRealmService.SKIP_GROUP_LOADING_KEY;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,7 +48,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.security.auth.SupportLevel;
-import org.wildfly.security.auth.server.IdentityLocator;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.credential.Credential;
@@ -117,12 +117,10 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
     private class LocalSecurityRealm implements org.wildfly.security.auth.server.SecurityRealm {
 
         @Override
-        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
-            if (locator.hasName()) {
-                String name = locator.getName();
-                if (allowAll || allowedUsersSet.contains(name)) {
-                    return new LocalRealmIdentity(name);
-                }
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
+            String name = principal.getName();
+            if (allowAll || allowedUsersSet.contains(name)) {
+                return new LocalRealmIdentity(name);
             }
 
             return RealmIdentity.NON_EXISTENT;
