@@ -190,7 +190,7 @@ public final class ProcessControllerClient implements Closeable {
         }
     }
 
-    public void addProcess(String processName, String authKey, String[] cmd, String workingDir, Map<String, String> env) throws IOException {
+    public void addProcess(String processName, int processId, String authKey, String[] cmd, String workingDir, Map<String, String> env) throws IOException {
         Assert.checkNotNullParam("processName", processName);
         Assert.checkNotNullParam("authKey", authKey);
         Assert.checkNotNullParam("cmd", cmd);
@@ -206,6 +206,7 @@ public final class ProcessControllerClient implements Closeable {
         try {
             os.write(Protocol.ADD_PROCESS);
             writeUTFZBytes(os, processName);
+            writeInt(os, processId);
             os.write(authKey.getBytes(Charset.forName("US-ASCII")));
             writeInt(os, cmd.length);
             for (String c : cmd) {

@@ -799,4 +799,25 @@ public interface ProcessLogger extends BasicLogger {
     @Message(id = 62, value = "Writes are already shut down")
     IOException writesAlreadyShutdown();
 
+    @LogMessage(level = INFO)
+    @Message(id = 63, value = "Process '%s' did not complete normal stop within %d ms; attempting to kill process using OS calls")
+    void attemptingToKillProcess(String process, long timeout);
+
+    @LogMessage(level = INFO)
+    @Message(id = 64, value = "Cannot locate process '%s' -- could not find the 'jps' command")
+    void jpsCommandNotFound(String process);
+
+    @LogMessage(level = INFO)
+    @Message(id = 65, value = "No process identifiable as '%s' could be found")
+    void processNotFound(String process);
+
+    @LogMessage(level = INFO)
+    @Message(id = 66, value = "Multiple processes identifiable as '%s' found; OS level kill cannot be safely performed")
+    void multipleProcessesFound(String process);
+
+    @LogMessage(level = INFO)
+    @Message(id = 67, value = "Process '%s' did not complete normal stop within %d ms; attempting to destroy process " +
+            "using java.lang.Process.destroyForcibly()")
+    void destroyingProcess(String process, long timeout);
+
 }
