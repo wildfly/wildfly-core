@@ -64,7 +64,7 @@ public class RemotingConnectorService implements Service<RemotingConnectorServer
 
     @Override
     public synchronized void start(final StartContext context) throws StartException {
-        MBeanServer forwarder = new BlockingNotificationMBeanServer(mBeanServer.getValue(), resolvedDomain, expressionsDomain);
+        MBeanServer forwarder = AuthorizingMBeanServer.wrap(new BlockingNotificationMBeanServer(mBeanServer.getValue(), resolvedDomain, expressionsDomain));
         server = new RemotingConnectorServer(forwarder, endpoint.getValue(), new ServerInterceptorFactory());
         try {
             server.start();
