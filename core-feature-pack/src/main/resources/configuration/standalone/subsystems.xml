@@ -7,5 +7,6 @@
       <subsystem>discovery.xml</subsystem>
       <subsystem>jmx.xml</subsystem>
       <subsystem>request-controller.xml</subsystem>
+      <subsystem>security-manager.xml</subsystem>
    </subsystems>
 </config>
