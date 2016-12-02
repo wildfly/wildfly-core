@@ -82,6 +82,7 @@ import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefiniti
 import org.jboss.as.domain.management.access.PrincipalResourceDefinition;
 import org.jboss.as.domain.management.access.RoleMappingResourceDefinition;
 import org.jboss.as.domain.management.audit.EnvironmentNameReader;
+import org.jboss.as.jmx.AuthorizingMBeanServer;
 import org.jboss.as.jmx.JMXExtension;
 import org.jboss.as.jmx.JMXSubsystemRootResource;
 import org.jboss.as.jmx.MBeanServerService;
@@ -164,9 +165,10 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
 
     @Before
     public void installMBeans() throws Exception {
-        server = getMBeanServer();
+        MBeanServer server = getMBeanServer();
         server.registerMBean(new Bean(), OBJECT_NAME);
         server.registerMBean(new TestModelMBean(), OBJECT_NAME_MODEL);
+        this.server = AuthorizingMBeanServer.wrap(server);
     }
 
     @After
