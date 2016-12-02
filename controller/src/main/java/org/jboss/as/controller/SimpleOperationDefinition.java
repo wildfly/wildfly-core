@@ -25,7 +25,6 @@
 package org.jboss.as.controller;
 
 import java.util.EnumSet;
-import java.util.Locale;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
@@ -135,11 +134,6 @@ public class SimpleOperationDefinition extends OperationDefinition {
         return new DefaultOperationDescriptionProvider(getName(), resolver, attributeResolver, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints);
     }
 
-    private static DescriptionProvider PRIVATE_PROVIDER = new DescriptionProvider() {
-        @Override
-        public ModelNode getModelDescription(Locale locale) {
-            return new ModelNode();
-        }
-    };
+    private static DescriptionProvider PRIVATE_PROVIDER = locale -> new ModelNode();
 
 }

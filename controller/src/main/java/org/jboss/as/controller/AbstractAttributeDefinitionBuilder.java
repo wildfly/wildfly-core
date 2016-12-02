@@ -76,6 +76,8 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     protected Map<String, ModelNode> arbitraryDescriptors = null;
     private ModelNode undefinedMetricValue;
 
+    private static AccessConstraintDefinition[] ZERO_CONSTRAINTS = new AccessConstraintDefinition[0];
+
     /**
      * Creates a builder for an attribute with the give name and type. Equivalent to
      * {@link #AbstractAttributeDefinitionBuilder(String, org.jboss.dmr.ModelType, boolean) AbstractAttributeDefinitionBuilder(attributeName, type, false}
@@ -906,6 +908,9 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     private AccessConstraintDefinition[] copyConstraints(AccessConstraintDefinition[] toCopy) {
         if (toCopy == null) {
             return null;
+        }
+        if (toCopy.length == 0){
+            return ZERO_CONSTRAINTS;
         }
         AccessConstraintDefinition[] result = new AccessConstraintDefinition[toCopy.length];
         System.arraycopy(toCopy, 0, result, 0, toCopy.length);

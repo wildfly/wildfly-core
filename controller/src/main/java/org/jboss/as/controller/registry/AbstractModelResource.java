@@ -250,7 +250,7 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
         }
     }
 
-    private class DefaultResourceProvider implements ResourceProvider {
+    private static class DefaultResourceProvider implements ResourceProvider {
 
         private final Map<String, Resource> children = new LinkedHashMap<String, Resource>();
 
