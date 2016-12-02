@@ -77,7 +77,7 @@ public interface AuthorizerConfiguration {
      *
      * @return {@code true} if role
      */
-    boolean isMapUsingRealmRoles();
+    boolean isMapUsingIdentityRoles();
 
     /**
      * Gets whether JMX calls to non-facade mbeans (i.e. those that result in invocations to
