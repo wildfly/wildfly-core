@@ -157,7 +157,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                         .build();
                 configurationMap.put(mechanism,
                         MechanismConfiguration.builder()
-                            .setRealmMapper((n, p, e) -> mechanism.toString())
+                            .setRealmMapper((p, e) -> mechanism.toString())
                             .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName(name).build())
                             .build());
                 for (Entry<String, String> currentOption : currentRegistration.getValue().getConfigurationOptions().entrySet()) {
