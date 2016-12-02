@@ -23,10 +23,10 @@
 
 package org.wildfly.extension.security.manager;
 
+import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
+
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.PersistentResourceXMLParser;
-
-import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 
 /**
  * This class implements a parser for version 1.0 of the security manager subsystem.
@@ -35,29 +35,17 @@ import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
  */
 class SecurityManagerSubsystemParser_1_0 extends PersistentResourceXMLParser {
 
-    static final SecurityManagerSubsystemParser_1_0 INSTANCE = new SecurityManagerSubsystemParser_1_0();
-
-    private static final PersistentResourceXMLDescription xmlDescription;
-
-    static {
-        xmlDescription = builder(SecurityManagerRootDefinition.INSTANCE, Namespace.SECURITY_MANAGER_1_0.getUriString())
-                .addChild(builder(DeploymentPermissionsResourceDefinition.INSTANCE)
-                                .setXmlElementName(Constants.DEPLOYMENT_PERMISSIONS)
-                                .addAttribute(DeploymentPermissionsResourceDefinition.MINIMUM_PERMISSIONS)
-                                .addAttribute(DeploymentPermissionsResourceDefinition.MAXIMUM_PERMISSIONS)
-                )
-                .build();
-    }
-
-
-    /**
-     * Private constructor to enforce usage of the static singleton instance.
-     */
-    private SecurityManagerSubsystemParser_1_0() {
+    SecurityManagerSubsystemParser_1_0() {
     }
 
     @Override
     public PersistentResourceXMLDescription getParserDescription() {
-        return xmlDescription;
+        return builder(SecurityManagerRootDefinition.INSTANCE.getPathElement(), Namespace.SECURITY_MANAGER_1_0.getUriString())
+                .addChild(builder(DeploymentPermissionsResourceDefinition.INSTANCE.getPathElement())
+                        .setXmlElementName(Constants.DEPLOYMENT_PERMISSIONS)
+                        .addAttribute(DeploymentPermissionsResourceDefinition.MINIMUM_PERMISSIONS)
+                        .addAttribute(DeploymentPermissionsResourceDefinition.MAXIMUM_PERMISSIONS)
+                )
+                .build();
     }
 }
