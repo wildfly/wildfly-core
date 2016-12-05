@@ -34,7 +34,7 @@
 
         <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-linux" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib/linux-x86_64" extract="true" />
         <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-mac" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib/macosx-x86_64" extract="true" />
-        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-windows" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib/windows-x86_64" extract="true" />
+        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-windows" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib/win-x86_64" extract="true" />
     </copy-artifacts>
     <mkdirs>
         <dir name="standalone/lib/ext"/>
