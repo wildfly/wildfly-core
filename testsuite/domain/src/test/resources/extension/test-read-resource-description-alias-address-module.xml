@@ -1,4 +1,4 @@
-<module xmlns="urn:jboss:module:1.1" name="org.wildfly.extension.test-alias-read-resource-description-address">
+<module xmlns="urn:jboss:module:1.5" name="org.wildfly.extension.test-alias-read-resource-description-address">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
