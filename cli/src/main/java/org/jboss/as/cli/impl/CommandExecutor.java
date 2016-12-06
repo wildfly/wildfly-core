@@ -677,8 +677,10 @@ public class CommandExecutor {
             try {
                 task.get(timeout, unit);
             } catch (TimeoutException ex) {
-                task.cancel(true);
+                // First make the context unusable
                 context.timeout();
+                // Then cancel the task.
+                task.cancel(true);
                 throw ex;
             }
         }
