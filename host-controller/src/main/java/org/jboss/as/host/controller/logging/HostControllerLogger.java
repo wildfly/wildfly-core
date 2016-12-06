@@ -87,8 +87,8 @@ public interface HostControllerLogger extends BasicLogger {
      * @param cause       the cause
      */
     @LogMessage(level = Level.WARN)
-    @Message(id = 1, value = "Could not connect to remote domain controller %s -- %s")
-    void cannotConnect(URI uri, Exception cause);
+    @Message(id = 1, value = "Could not connect to remote domain controller %s")
+    void cannotConnect(URI uri, @Cause Exception cause);
 
     /**
      * Logs an error message indicating this host is a slave and cannot connect to the master host controller.
