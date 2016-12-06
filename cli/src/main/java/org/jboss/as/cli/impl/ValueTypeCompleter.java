@@ -33,8 +33,7 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.Util;
-import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
-import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
+import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.impl.CapabilityReferenceCompleter;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
@@ -403,9 +402,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             List<String> candidates = null;
             if (propType.has(Util.FILESYSTEM_PATH)
                     && propType.get(Util.FILESYSTEM_PATH).asBoolean()) {
-                CommandLineCompleter completer = Util.isWindows()
-                        ? new WindowsFilenameTabCompleter(ctx)
-                        : new DefaultFilenameTabCompleter(ctx);
+                CommandLineCompleter completer = FilenameTabCompleter.newCompleter(ctx);
                 candidates = new ArrayList<>();
                 completer.complete(ctx, path, offset, candidates);
                 // candidates only contain the last part of a path.

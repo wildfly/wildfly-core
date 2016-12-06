@@ -131,7 +131,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     public ASModuleHandler(CommandContext ctx) {
         super("module", false);
 
-        final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+        final FilenameTabCompleter pathCompleter = FilenameTabCompleter.newCompleter(ctx);
 
         moduleRootDir = new FileSystemPathArgument(this, pathCompleter, "--module-root-dir");
 

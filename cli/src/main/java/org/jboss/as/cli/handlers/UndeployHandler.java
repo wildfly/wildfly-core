@@ -185,7 +185,7 @@ public class UndeployHandler extends DeploymentHandler {
         keepContent.addRequiredPreceding(name);
         keepContent.setAccessRequirement(undeployPermission);
 
-        final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+        final FilenameTabCompleter pathCompleter = FilenameTabCompleter.newCompleter(ctx);
         path = new FileSystemPathArgument(this, pathCompleter, "--path");
         path.addCantAppearAfter(l);
         path.setAccessRequirement(removeOrUndeployPermission);

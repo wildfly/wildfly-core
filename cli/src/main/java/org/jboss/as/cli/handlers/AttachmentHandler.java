@@ -165,8 +165,7 @@ public class AttachmentHandler extends BatchModeCommandHandler {
         };
 
         operation.addRequiredPreceding(action);
-        final FilenameTabCompleter pathCompleter = Util.isWindows()
-                ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+        final FilenameTabCompleter pathCompleter = FilenameTabCompleter.newCompleter(ctx);
         targetFile = new FileSystemPathArgument(this, pathCompleter, "--file") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {

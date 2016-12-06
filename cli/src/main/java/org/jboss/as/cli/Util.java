@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.jboss.as.cli.CommandContext.Scope;
+import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.OperationRequestAddress.Node;
@@ -1147,7 +1148,7 @@ public class Util {
                 try {
                     ModelNode p = outcome.get(propName);
                     if (p.hasDefined("type")) {
-                        applyReplacements(propName, toSet, p, p.get("type").asType(), attachments);
+                        applyReplacements(ctx, propName, toSet, p, p.get("type").asType(), attachments);
                     }
                 } catch (Throwable ex) {
                     //ex.printStackTrace();
@@ -1311,7 +1312,7 @@ public class Util {
         }
     }
 
-    static void applyReplacements(String name, ModelNode value,
+    static void applyReplacements(CommandContext ctx, String name, ModelNode value,
             ModelNode description, ModelType mt, Attachments attachments) {
         if (value == null || !value.isDefined()) {
             return;
@@ -1323,7 +1324,9 @@ public class Util {
                     break;
                 }
                 if (isFileAttachment(description)) {
-                    value.set(attachments.addFileAttachment(value.asString()));
+                    FilenameTabCompleter completer = FilenameTabCompleter.newCompleter(ctx);
+                    value.set(attachments.addFileAttachment(completer.
+                            translatePath(value.asString())));
                 }
                 break;
             case LIST: {
@@ -1337,14 +1340,16 @@ public class Util {
                     // of Objects
                     if (ModelType.OBJECT.equals(valueTypeType)) {
                         for (int i = 0; i < value.asInt(); i++) {
-                            applyReplacements("value-type", value.get(i),
+                            applyReplacements(ctx, "value-type", value.get(i),
                                     valueType, ModelType.OBJECT, attachments);
                         }
                     // of INT
                     } else if (ModelType.INT.equals(valueType.asType())) {
                         if (isFileAttachment(description)) {
+                            FilenameTabCompleter completer = FilenameTabCompleter.newCompleter(ctx);
                             for (int i = 0; i < value.asInt(); i++) {
-                                value.get(i).set(attachments.addFileAttachment(value.get(i).asString()));
+                                value.get(i).set(attachments.addFileAttachment(completer.
+                                        translatePath(value.get(i).asString())));
                             }
                         }
 
@@ -1372,7 +1377,7 @@ public class Util {
                         if (value.get(k).isDefined() && valueType.hasDefined(k)) {
                             ModelNode p = valueType.get(k);
                             if (p.hasDefined("type")) {
-                                applyReplacements(k, value.get(k), p,
+                                applyReplacements(ctx, k, value.get(k), p,
                                         p.get("type").asType(), attachments);
                             }
                         }

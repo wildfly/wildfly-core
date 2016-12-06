@@ -31,7 +31,11 @@ import org.junit.Test;
  */
 public class AttachmentTestCase {
 
-    private static final String PATH = "/a/nice/attachment/path";
+    private static final String PATH = Util.isWindows()
+            ? "c:\\\\a\\\\nice\\\\attachment\\\\path" : "/a/nice/attachment/path";
+
+    private static final String EXPECTED_PATH = Util.isWindows()
+            ? "c:\\a\\nice\\attachment\\path" : PATH;
 
     private static final String VAULT_ADD_DESCRIPTION = "{\n"
             + "          \"request-properties\" : {\n"
@@ -151,7 +155,7 @@ public class AttachmentTestCase {
     private static final String VALUE = "{\n"
             + "    \"toto\": [\"a\", \"b\", \"c\"],\n"
             + "    \"titi_a\": \"" + PATH + "0\",\n"
-            + "    \"tata_a\": [\"" + PATH + "1\", \"" + PATH + "2\", \"/a/nice/attachment/path3\"],\n"
+            + "    \"tata_a\": [\"" + PATH + "1\", \"" + PATH + "2\", \"" + PATH + "3\"],\n"
             + "    \"tutu\": {\n"
             + "        \"p1_a\": \"" + PATH + "4\",\n"
             + "        \"p2_a\": \"" + PATH + "5\",\n"
@@ -231,14 +235,15 @@ public class AttachmentTestCase {
         ModelNode expected = ModelNode.fromJSONString(RESULT);
         ModelNode req = description.get(Util.REQUEST_PROPERTIES).asObject();
         Attachments attachments = new Attachments();
+        CommandContext ctx = CommandContextFactory.getInstance().newCommandContext();
         for (String k : value.keys()) {
-            Util.applyReplacements(k, value.get(k), req.get(k), req.get(k).get(Util.TYPE).asType(), attachments);
+            Util.applyReplacements(ctx, k, value.get(k), req.get(k), req.get(k).get(Util.TYPE).asType(), attachments);
         }
         Assert.assertEquals("Should be equal", expected, value);
         Assert.assertEquals(11, attachments.getAttachedFiles().size());
         for (int i = 0; i < attachments.getAttachedFiles().size(); i++) {
             String p = attachments.getAttachedFiles().get(i);
-            Assert.assertEquals(p, PATH + i);
+            Assert.assertEquals(p, EXPECTED_PATH + i);
         }
     }
 
@@ -249,8 +254,9 @@ public class AttachmentTestCase {
         ModelNode value = ModelNode.fromJSONString(VAULT_ADD_VALUE);
         ModelNode req = description.get(Util.REQUEST_PROPERTIES).asObject();
         Attachments attachments = new Attachments();
+        CommandContext ctx = CommandContextFactory.getInstance().newCommandContext();
         for (String k : value.keys()) {
-            Util.applyReplacements(k, value.get(k), req.get(k), req.get(k).get(Util.TYPE).asType(), attachments);
+            Util.applyReplacements(ctx, k, value.get(k), req.get(k), req.get(k).get(Util.TYPE).asType(), attachments);
         }
     }
 }

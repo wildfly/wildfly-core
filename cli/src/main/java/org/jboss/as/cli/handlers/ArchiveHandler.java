@@ -60,7 +60,7 @@ public class ArchiveHandler extends BatchModeCommandHandler {
 
     public ArchiveHandler(CommandContext ctx) {
         super(ctx, "archive", true);
-        final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+        final FilenameTabCompleter pathCompleter = FilenameTabCompleter.newCompleter(ctx);
         path = new FileSystemPathArgument(this, pathCompleter, 0, "--path");
 
         script = new ArgumentWithValue(this, "--script");

@@ -22,6 +22,7 @@
 package org.jboss.as.test.integration.management.cli;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,10 +30,12 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.junit.AfterClass;
+import org.junit.After;
 import static org.junit.Assert.assertTrue;
-import org.junit.BeforeClass;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
@@ -43,15 +46,21 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @RunWith(WildflyTestRunner.class)
 public class ExplodedDeploymentTestCase {
 
-    private static CLIWrapper cli;
+    @Rule
+    public final TemporaryFolder temporaryUserHome = new TemporaryFolder();
+    private File index;
+    private CLIWrapper cli;
 
-    @BeforeClass
-    public static void before() throws Exception {
+    @Before
+    public void before() throws Exception {
+        System.setProperty("user.home", temporaryUserHome.getRoot().getAbsolutePath());
+        index = temporaryUserHome.newFile();
+        Files.write(index.toPath(), "<html></html>".getBytes(StandardCharsets.UTF_8));
         cli = new CLIWrapper(true, null, System.in);
     }
 
-    @AfterClass
-    public static void after() throws Exception {
+    @After
+    public void after() throws Exception {
         cli.close();
     }
 
@@ -62,10 +71,6 @@ public class ExplodedDeploymentTestCase {
         cli.sendLine(deploymentUnit + ":add(content=[{empty=true}])");
         assertTrue(cli.readOutput().contains("success"));
         try {
-            File index = new File(TestSuiteEnvironment.getTmpDir(), "index.xhtml");
-            index.createNewFile();
-            Files.write(index.toPath(), "<html></html>".getBytes());
-
             File css = new File(TestSuiteEnvironment.getTmpDir(), "index.css");
             css.createNewFile();
             Files.write(css.toPath(), "p { text-align: center; }".getBytes());
@@ -75,7 +80,7 @@ public class ExplodedDeploymentTestCase {
             Files.write(js.toPath(), "".getBytes());
 
             cli.sendLine(deploymentUnit + ":add-content(content=["
-                    + "{input-stream-index=" + escapePath(index.getAbsolutePath()) + ", target-path=index.xhtml}"
+                    + "{input-stream-index=" + escapePath("~" + File.separator + index.getName()) + ", target-path=index.xhtml}"
                     + "{input-stream-index=" + escapePath(css.getAbsolutePath()) + ", target-path=css/theme.css}"
                     + "{input-stream-index=" + escapePath(js.getAbsolutePath()) + ", target-path=code/js/script.js}"
                     + "]");
