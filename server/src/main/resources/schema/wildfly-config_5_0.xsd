@@ -4205,6 +4205,7 @@
             <xs:element name="constraints" type="constraintsType" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="provider" type="access-control-providerType" use="optional" default="simple"/>
+        <xs:attribute name="use-identity-roles" type="xs:boolean" default="false" />
         <xs:attribute name="permission-combination-policy" type="permission-combination-policyType" use="optional" default="permissive"/>
     </xs:complexType>
 
@@ -4281,6 +4282,7 @@
             <xs:element name="constraints" type="constraintsType" minOccurs="0"/>
         </xs:sequence>
         <xs:attribute name="provider" type="access-control-providerType" use="optional" default="simple"/>
+        <xs:attribute name="use-identity-roles" type="xs:boolean" default="false" />
     </xs:complexType>
 
     <xs:complexType name="identityType">
