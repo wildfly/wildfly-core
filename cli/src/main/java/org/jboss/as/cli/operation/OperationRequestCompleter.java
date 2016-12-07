@@ -35,6 +35,9 @@ import org.jboss.as.cli.EscapeSelector;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
+import org.jboss.as.cli.operation.impl.SegmentParsingInitialState;
+import org.jboss.as.cli.parsing.StateParser;
+import org.jboss.logging.Logger;
 
 
 /**
@@ -60,9 +63,21 @@ public class OperationRequestCompleter implements CommandLineCompleter {
     public static final EscapeSelector ESCAPE_SELECTOR = new EscapeSelector() {
         @Override
         public boolean isEscape(char ch) {
-            return ch == ':' || ch == '/' || ch == '=' || ch == ' ' || ch == '"' || ch == '\\';
+            return ch == ':' || ch == '/' || ch == '=' || ch == ' ' || ch == '"' || ch == '\\' || ch == '\'';
         }
     };
+
+    /**
+     * Escape selector for quoted strings - only " and \ chars should be escaped
+     */
+    public static final EscapeSelector ESCAPE_SELECTOR_INSIDE_QUOTES = new EscapeSelector() {
+        @Override
+        public boolean isEscape(char ch) {
+            return ch == '"' || ch == '\\';
+        }
+    };
+
+    private static final Logger LOGGER = Logger.getLogger(OperationRequestCompleter.class);
 
     @Override
     public int complete(CommandContext ctx, final String buffer, int cursor, List<String> candidates) {
@@ -452,7 +467,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
         } else if (address.endsOnType()) {
             chunk = address.getNodeType();
             address.toParentNode();
-        } else {
+        } else { // address ends on node name
             chunk = address.toNodeType();
         }
 
@@ -477,26 +492,84 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             }
         }
 
+
+        // get all characters after the last separator - including spaces and quotes - and parse it
+        String lastSegment = "";
+        if (parsedCmd.getSubstitutedLine().length() >= parsedCmd.getLastSeparatorIndex()) {
+            lastSegment = parsedCmd.getSubstitutedLine().substring(parsedCmd.getLastSeparatorIndex() + 1);
+        }
+        SegmentParsingInitialState.SegmentParsingCallbackHandler parsedSegment = parseLastSegment(lastSegment);
+
+        // offset to where the completion should inline its content
+        int offset;
+
         if(candidates.size() == 1) {
             final String candidate = candidates.get(0);
-            if(address.endsOnType()) {
-                if(chunk != null && chunk.equals(candidate)) {
-                    candidates.set(0, parsedCmd.getFormat().getAddressOperationSeparator());
-                    candidates.add(parsedCmd.getFormat().getNodeSeparator());
+            if (address.endsOnType()) { // completing node name
+                if (chunk != null && chunk.equals(candidate)) {
+                    // inline a '"' to terminate the quoted name.
+                    if (parsedSegment.isOpenQuotes()) {
+                        candidates.set(0, "\"");
+                    } else {
+                        // propose the common separators.
+                        candidates.set(0, parsedCmd.getFormat().getAddressOperationSeparator());
+                        candidates.add(parsedCmd.getFormat().getNodeSeparator());
+                    }
                     return buffer.length();
                 }
-                candidates.set(0, Util.escapeString(candidate, ESCAPE_SELECTOR));
-            } else {
-                if(chunk != null && chunk.equals(candidate)) {
-                    candidates.set(0, "=");
+                // We are inlining the candidate, ends it with quotes if it is starting with quotes
+                if (parsedSegment.isOpenQuotes()) {
+                    String escapedCandidate = Util.escapeString(candidate, ESCAPE_SELECTOR_INSIDE_QUOTES);
+                    offset = parsedSegment.getOffset() - 1; // decrementing one char because the leading quote is included in the candidate
+                    candidates.set(0, "\"" + escapedCandidate + "\"");
+                } else {
+                    String escapedCandidate = Util.escapeString(candidate, ESCAPE_SELECTOR);
+                    offset = parsedSegment.getOffset();
+                    candidates.set(0, escapedCandidate);
+                }
+            } else { // completing node type
+                if (chunk != null && chunk.equals(candidate)) {
+                    // inline a '"' to terminate the quoted type.
+                    if (parsedSegment.isOpenQuotes()) {
+                        candidates.set(0, "\"");
+                    } else {
+                        // propose the type=name separator.
+                        candidates.set(0, "=");
+                    }
                     return buffer.length();
                 }
-                candidates.set(0, Util.escapeString(candidate, ESCAPE_SELECTOR) + '=');
+                // We are inlining the candidate, ends it with quotes +'=' if it is starting with quotes
+                if (parsedSegment.isOpenQuotes()) {
+                    String escapedCandidate = Util.escapeString(candidate, ESCAPE_SELECTOR_INSIDE_QUOTES);
+                    offset = parsedSegment.getOffset() - 1; // decrementing one char because the leading quote is included in the candidate
+                    candidates.set(0, "\"" + escapedCandidate + "\"=");
+                } else {
+                    String escapedCandidate = Util.escapeString(candidate, ESCAPE_SELECTOR);
+                    offset = parsedSegment.getOffset();
+                    candidates.set(0, escapedCandidate + "=");
+                }
             }
-        } else {
-            Util.sortAndEscape(candidates, ESCAPE_SELECTOR);
+        } else { // multiple candidates
+            if (parsedSegment.isOpenQuotes()) {
+                Util.sortAndEscape(candidates, ESCAPE_SELECTOR_INSIDE_QUOTES);
+            } else {
+                Util.sortAndEscape(candidates, ESCAPE_SELECTOR);
+            }
+            offset = parsedSegment.getOffset();
         }
-        return parsedCmd.endsOnSeparator() ? parsedCmd.getLastSeparatorIndex() + 1 : parsedCmd.getLastChunkIndex();
+
+        return parsedCmd.getLastSeparatorIndex() + 1 + offset;
+    }
+
+    private SegmentParsingInitialState.SegmentParsingCallbackHandler parseLastSegment(String chunk) {
+        SegmentParsingInitialState.SegmentParsingCallbackHandler handler = new SegmentParsingInitialState.SegmentParsingCallbackHandler();
+        try {
+            StateParser.parse(chunk, handler, SegmentParsingInitialState.INSTANCE, false);
+        } catch (CommandFormatException e) {
+            // this should not happen during non-strict parsing
+            LOGGER.debug("Error when parsing last chunk of operation request", e);
+        }
+        return handler;
     }
 
     private boolean suggestionEqualsUserEntry(List<String> candidates, String chunk, int suggestionOffset) {

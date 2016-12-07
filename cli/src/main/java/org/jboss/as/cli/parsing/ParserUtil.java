@@ -238,10 +238,13 @@ public class ParserUtil {
                         }
                     } else {
                         final String value = buffer.toString().trim();
-                        if (ch == '=') {
+                        // If ctx.isEndOfContent() is true and the last character is '=' or ':', it must be escaped and
+                        // it won't be considered a type/name separator (if it wasn't escaped the NodeState would've
+                        // been left already).
+                        if (ch == '=' && !ctx.isEndOfContent()) {
                             handler.nodeType(bufferStartIndex, value);
                             handler.nodeTypeNameSeparator(ctx.getLocation());
-                        } else if (ch == ':') {
+                        } else if (ch == ':' && !ctx.isEndOfContent()) {
                             handler.nodeName(bufferStartIndex, value);
                         } else {
                             if (".".equals(value)) {
