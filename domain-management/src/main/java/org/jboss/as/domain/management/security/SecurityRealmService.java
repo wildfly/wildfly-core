@@ -181,7 +181,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         HttpAuthenticationFactory.Builder httpBuilder = HttpAuthenticationFactory.builder();
         httpBuilder.setSecurityDomain(securityDomain);
 
-        HttpServerAuthenticationMechanismFactory httpServerFactory = new SecurityProviderServerMechanismFactory(() -> new Provider[] {new WildFlyElytronProvider()});
+        final Provider elytronProvider = new WildFlyElytronProvider();
+        HttpServerAuthenticationMechanismFactory httpServerFactory = new SecurityProviderServerMechanismFactory(() -> new Provider[] {elytronProvider});
         httpServerFactory = new SetMechanismInformationMechanismFactory(httpServerFactory);
         httpServerFactory = new FilterServerMechanismFactory(httpServerFactory, (s) -> {
             AuthMechanism mechanism = toAuthMechanism("HTTP", s);
@@ -201,7 +202,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         SaslAuthenticationFactory.Builder saslBuilder = SaslAuthenticationFactory.builder();
         saslBuilder.setSecurityDomain(securityDomain);
 
-        SaslServerFactory saslServerFactory = new SecurityProviderSaslServerFactory(() -> new Provider[] {new WildFlyElytronProvider()});
+        SaslServerFactory saslServerFactory = new SecurityProviderSaslServerFactory(() -> new Provider[] {elytronProvider});
         saslServerFactory = new FilterMechanismSaslServerFactory(saslServerFactory, (s) -> {
             AuthMechanism mechanism = toAuthMechanism("SASL", s);
             return mechanism != null && configurationMap.containsKey(mechanism);
