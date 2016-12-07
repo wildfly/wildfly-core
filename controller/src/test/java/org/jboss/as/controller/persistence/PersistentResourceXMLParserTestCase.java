@@ -978,6 +978,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setWrapperElement(Constants.PROPERTIES)
                 .setXmlName(Constants.PROPERTY)
                 .setAllowExpression(true)
+                .setRestartAllServices()
                 .build();
 
         //ior transport config attributes
