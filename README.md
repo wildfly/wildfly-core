@@ -12,12 +12,26 @@ This project provides the core runtime that is used by the Wildfly application s
 Building
 -------------------
 
-Ensure you have JDK 8 (or newer) and Maven 3.2.2 installed, then run:
+Prerequisites:
+
+* JDK 8 or newer
+* Maven 3.3.1 or newer
+
+To build with your own Maven installation:
 
 > mvn install
 
+Alternatively, you can use the Maven Wrapper script that downloads and installs (if necessary) the required Maven version to
+`~/.m2/wrapper` and runs it from there. On Linux, run
 
-Starting and Stopping WildFly 
+> ./mvnw install
+
+On Windows
+
+> mvnw install
+
+
+Starting and Stopping WildFly
 ------------------------------------------
 Change to the bin directory after a successful build:
 
