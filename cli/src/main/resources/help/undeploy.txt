@@ -29,12 +29,14 @@ ARGUMENTS
                     is required in domain mode. This argument is not applicable
                     in the standalone mode.
 
- --keep-content   - by default undeploy, besides disabling the deployment, also
-                    removes its content from the repository. The presence of
-                    --keep-content will only disable the deployment w/o removing
-                    its content from the repository. This argument can be used
-                    in both standalone and domain modes.
-						
+ --keep-content   - Only disable the deployment w/o removing its content from the
+                    repository. By default undeploy, besides disabling the deployment,
+                    also removes its content from the repository. There is an exception
+                    in domain mode if not all server-groups that reference the
+                    deployment are listed. In this case, the content is kept in
+                    the repository. This argument can be used in both standalone and
+                    domain modes.
+
  -l               - in case the deployment name isn't specified, the presence of
                     the -l switch will make the existing deployments printed one
                     deployment per line, instead of in columns (the default).

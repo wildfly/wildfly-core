@@ -294,7 +294,7 @@ public class UndeployHandler extends DeploymentHandler {
         final ParsedCommandLine args = ctx.getParsedCommandLine();
 
         final String name = this.name.getValue(args);
-        final boolean keepContent = this.keepContent.isPresent(args);
+        boolean keepContent = this.keepContent.isPresent(args);
         final boolean allRelevantServerGroups = this.allRelevantServerGroups.isPresent(args);
         final String serverGroupsStr = this.serverGroups.getValue(args);
 
@@ -428,6 +428,16 @@ public class UndeployHandler extends DeploymentHandler {
                         throw new OperationFormatException("None of the server groups is specified or references specified deployment.");
                     }
                 } else {
+                    // If !keepContent, check that all server groups have been listed by user.
+                    if (!keepContent) {
+                        try {
+                            List<String> sg = Util.getServerGroupsReferencingDeployment(deploymentName, client);
+                            // Keep the content if some groups are missing.
+                            keepContent = !serverGroups.containsAll(sg);
+                        } catch (CommandLineException e) {
+                            throw new CommandFormatException("Failed to retrieve all referencing server groups", e);
+                        }
+                    }
                     for (String group : serverGroups){
                         ModelNode groupStep = Util.configureDeploymentOperation(Util.UNDEPLOY, deploymentName, group);
                         steps.add(groupStep);
