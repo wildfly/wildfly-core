@@ -28,7 +28,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_ALL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLE_MAPPING;
 
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Locale;
@@ -41,11 +40,12 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition.Provider;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -75,18 +75,19 @@ public class RbacSanityCheckOperation implements OperationStepHandler {
          *
          * Checks to perform: -
          *   1 - Provider if not RBAC no further checking required.
+         *   2 - Using Identity Roles Directly.
          *   3 - Else iterate role definitions and verify at least one contains an include.
          *
          * Note: This operation if validating different parts of the model, although the user had access to modify one part they
          * may not have access to the remaining parts - this Operation uses a PrivilegedAction to run as an in-vm client.
          */
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+            InVmAccess.runInVm(new PrivilegedExceptionAction<Void>() {
 
                 @Override
                 public Void run() throws OperationFailedException {
                     final ModelChecker checker = new ModelChecker(context, context.readResource(PathAddress.EMPTY_ADDRESS));
-                    if (checker.isRbacEnabled() && (checker.doRoleMappingsExist() == false)) {
+                    if (checker.isRbacEnabled() && (checker.usingIdentityRoles() == false) && (checker.doRoleMappingsExist() == false)) {
                         throw DomainManagementLogger.ROOT_LOGGER.inconsistentRbacConfiguration();
                     }
 
@@ -157,6 +158,10 @@ public class RbacSanityCheckOperation implements OperationStepHandler {
             String value = AccessAuthorizationResourceDefinition.PROVIDER.resolveModelAttribute(context, accessAuthorization)
                     .asString().toUpperCase(Locale.ENGLISH);
             return Provider.valueOf(value) == Provider.RBAC;
+        }
+
+        boolean usingIdentityRoles() throws OperationFailedException {
+            return AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.resolveModelAttribute(context, getAccessAuthorization()).asBoolean();
         }
 
 

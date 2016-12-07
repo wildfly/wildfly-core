@@ -543,6 +543,7 @@ public class ModelDescriptionConstants {
     public static final String USE_CURRENT_DOMAIN_CONFIG = "use-current-domain-config";
     public static final String USE_CURRENT_HOST_CONFIG = "use-current-host-config";
     public static final String USE_CURRENT_SERVER_CONFIG = "use-current-server-config";
+    public static final String USE_IDENTITY_ROLES = "use-identity-roles";
     public static final String USER = "user";
     public static final String USER_DN = "user-dn";
     public static final String USER_DN_ATTRIBUTE = "user-dn-attribute";

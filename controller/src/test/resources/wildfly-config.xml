@@ -31,9 +31,11 @@
             <configuration name="default">
                 <allow-sasl-mechanisms names="PLAIN ANONYMOUS"/>
                 <set-user-name name="bob"/>
-                <clear-password password="pass"/>
+                <credentials>
+                    <clear-password password="pass"/>
+                </credentials>
                 <use-service-loader-providers />
-             </configuration>
+            </configuration>
         </authentication-configurations>
     </authentication-client>
     <endpoint name="test-endpoint" xmlns="urn:jboss-remoting:5.0">

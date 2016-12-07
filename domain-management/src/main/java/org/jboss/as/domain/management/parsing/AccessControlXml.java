@@ -572,6 +572,7 @@ public class AccessControlXml {
         writer.writeStartElement(Element.ACCESS_CONTROL.getLocalName());
 
         AccessAuthorizationResourceDefinition.PROVIDER.marshallAsAttribute(accessAuthorization, writer);
+        AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.marshallAsAttribute(accessAuthorization, writer);
         AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.marshallAsAttribute(accessAuthorization, writer);
 
         if (hasServerGroupRoles) {

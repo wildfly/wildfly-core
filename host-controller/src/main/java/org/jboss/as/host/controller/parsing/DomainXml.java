@@ -63,15 +63,18 @@ public class DomainXml extends CommonXml {
             case 3:
                 new DomainXml_Legacy(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
                 break;
-            default:
+            case 4:
                 new DomainXml_4(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
+                break;
+            default:
+                new DomainXml_5(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
                 break;
         }
     }
 
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context) throws XMLStreamException {
-        new DomainXml_4(extensionXml, extensionRegistry, CURRENT).writeContent(writer, context);
+        new DomainXml_5(extensionXml, extensionRegistry, CURRENT).writeContent(writer, context);
     }
 
 }

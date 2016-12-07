@@ -84,6 +84,9 @@ public class AccessAuthorizationResourceDefinition extends SimpleResourceDefinit
             .setValidator(new EnumValidator<Provider>(Provider.class, true, false))
             .build();
 
+    public static final SimpleAttributeDefinition USE_IDENTITY_ROLES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USE_IDENTITY_ROLES, ModelType.BOOLEAN, true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
 
     static final ListAttributeDefinition STANDARD_ROLE_NAMES = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.STANDARD_ROLE_NAMES)
             .setStorageRuntime()
@@ -125,6 +128,7 @@ public class AccessAuthorizationResourceDefinition extends SimpleResourceDefinit
         super.registerAttributes(resourceRegistration);
         WritableAuthorizerConfiguration authorizerConfiguration = configurableAuthorizer.getWritableAuthorizerConfiguration();
         resourceRegistration.registerReadWriteAttribute(PROVIDER, null, new AccessAuthorizationProviderWriteAttributeHander(configurableAuthorizer));
+        resourceRegistration.registerReadWriteAttribute(USE_IDENTITY_ROLES, null, new AccessAuthorizationUseIdentityRolesWriteAttributeHander(configurableAuthorizer.getWritableAuthorizerConfiguration()));
         resourceRegistration.registerReadWriteAttribute(PERMISSION_COMBINATION_POLICY, null,
                 new AccessAuthorizationCombinationPolicyWriteAttributeHandler(authorizerConfiguration));
 

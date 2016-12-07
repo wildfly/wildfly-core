@@ -35,6 +35,7 @@ import java.util.Set;
 import org.jboss.as.controller.access.JmxAction;
 import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizerConfiguration;
 import org.jboss.as.controller.access.Caller;
@@ -116,11 +117,11 @@ public class StandardRoleMapper implements RoleMapper {
             mappedRoles.add(IN_VM_ROLE);
         } else  if (caller.hasSecurityIdentity()) {
             Map<String, AuthorizerConfiguration.RoleMapping> rolesToCheck;
-            if (authorizerConfiguration.isMapUsingRealmRoles()) {
+            if (authorizerConfiguration.isMapUsingIdentityRoles()) {
                 rolesToCheck = new HashMap<String, AuthorizerConfiguration.RoleMapping>(authorizerConfiguration.getRoleMappings());
-                Set<String> realmRoles = caller.getAssociatedRoles();
-                for (String current : realmRoles) {
-                    String roleName = current.toUpperCase(Locale.ENGLISH);
+                SecurityIdentity securityIdentity = caller.getSecurityIdentity();
+                securityIdentity.getRoles().forEach(r -> {
+                    String roleName = r.toUpperCase(Locale.ENGLISH);
                     if (rolesToCheck.containsKey(roleName)) {
                         AuthorizerConfiguration.RoleMapping roleMapping = rolesToCheck.remove(roleName);
                         AuthorizerConfiguration.MappingPrincipal exclusion = roleMapping.isExcluded(caller);
@@ -146,7 +147,7 @@ public class StandardRoleMapper implements RoleMapper {
                         }
                         mappedRoles.add(roleName);
                     }
-                }
+                });
             } else {
                 // A clone is not needed here as the whole set of values is to be iterated with no need for removal.
                 rolesToCheck = authorizerConfiguration.getRoleMappings();
