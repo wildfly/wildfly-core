@@ -1350,7 +1350,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
 
         @Override
         public boolean shouldAuthorize() {
-            return true;
+            return AuthorizingMBeanServer.isAuthorizing();
         }
 
         public void addNotificationListener(ObjectName name, NotificationListener listener, NotificationFilter filter, Object handback)

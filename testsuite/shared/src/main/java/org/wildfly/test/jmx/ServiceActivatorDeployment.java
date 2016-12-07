@@ -22,22 +22,16 @@
 package org.wildfly.test.jmx;
 
 
-import static java.security.AccessController.doPrivileged;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.management.MBeanServer;
 import javax.management.NotificationListener;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 
-import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
@@ -140,132 +134,19 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
     }
 
     private ObjectInstance registerMBean(Object mbean, ObjectName name) throws Exception {
-        return inVmActions().registerMBean(mbeanServerValue.getValue(), mbean, name);
+        return mbeanServerValue.getValue().registerMBean(mbean, name);
     }
 
     private void unregisterMBean(ObjectName name) throws Exception {
-        inVmActions().unregisterMBean(mbeanServerValue.getValue(), name);
+        mbeanServerValue.getValue().unregisterMBean(name);
     }
 
     private void addNotificationListener(ObjectName name, NotificationListener listener) throws Exception {
-        inVmActions().addNotificationListener(mbeanServerValue.getValue(), name, listener);
+        mbeanServerValue.getValue().addNotificationListener(name, listener, null, null);
     }
 
     private void removeNotificationListener(ObjectName name, NotificationListener listener) throws Exception {
-        inVmActions().removeNotificationListener(mbeanServerValue.getValue(), name, listener);
+        mbeanServerValue.getValue().removeNotificationListener(name, listener);
     }
 
-    private static InVmActions inVmActions() {
-        return System.getSecurityManager() != null ? InVmActions.PRIVILEGED : InVmActions.NON_PRIVILEGED;
-    }
-
-    private interface InVmActions {
-
-        ObjectInstance registerMBean(MBeanServer mbeanServer, Object mbean, ObjectName name) throws Exception;
-
-        void unregisterMBean(MBeanServer mbeanServer, ObjectName name) throws Exception;
-
-        void addNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception;
-
-        void removeNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception;
-
-        InVmActions NON_PRIVILEGED = new InVmActions() {
-
-            @Override
-            public ObjectInstance registerMBean(MBeanServer mbeanServer, Object mbean, ObjectName name) throws Exception {
-                try {
-                    return InVmAccess.runInVm((PrivilegedExceptionAction<ObjectInstance>) () -> mbeanServer.registerMBean(mbean, name));
-                } catch (PrivilegedActionException e) {
-                    throw e.getException();
-                }
-            }
-
-            @Override
-            public void unregisterMBean(MBeanServer mbeanServer, ObjectName name) throws Exception {
-                try {
-                    InVmAccess.runInVm((PrivilegedExceptionAction<Void>) () -> {
-                        mbeanServer.unregisterMBean(name);
-                        return null;
-                    });
-                } catch (PrivilegedActionException e) {
-                    throw e.getException();
-                }
-            }
-
-            @Override
-            public void addNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception {
-                try {
-                    InVmAccess.runInVm((PrivilegedExceptionAction<Void>) () -> {
-                        mbeanServer.addNotificationListener(name, listener, null, null);
-                        return null;
-                    });
-                } catch (PrivilegedActionException e) {
-                    throw e.getException();
-                }
-            }
-
-            @Override
-            public void removeNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception {
-                try {
-                    InVmAccess.runInVm((PrivilegedExceptionAction<Void>) () -> {
-                        mbeanServer.removeNotificationListener(name, listener, null, null);
-                        return null;
-                    });
-                } catch (PrivilegedActionException e) {
-                    throw e.getException();
-                }
-            }
-        };
-
-
-        InVmActions PRIVILEGED = new InVmActions() {
-
-            @Override
-            public ObjectInstance registerMBean(MBeanServer mbeanServer, Object mbean, ObjectName name) throws Exception {
-                try {
-                    return doPrivileged((PrivilegedExceptionAction<ObjectInstance>) () -> NON_PRIVILEGED.registerMBean(mbeanServer, mbean, name));
-                } catch (PrivilegedActionException e) {
-                    throw e.getException();
-                }
-            }
-
-            @Override
-            public void unregisterMBean(MBeanServer mbeanServer, ObjectName name) throws Exception {
-                try {
-                    doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                        NON_PRIVILEGED.unregisterMBean(mbeanServer, name);
-                        return null;
-                    });
-                } catch (PrivilegedActionException e) {
-                    throw e.getException();
-                }
-            }
-
-            @Override
-            public void addNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception {
-                try {
-                    doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                        NON_PRIVILEGED.addNotificationListener(mbeanServer, name, listener);
-                        return null;
-                    });
-                } catch (PrivilegedActionException e) {
-                    throw e.getException();
-                }
-            }
-
-            @Override
-            public void removeNotificationListener(MBeanServer mbeanServer, ObjectName name, NotificationListener listener) throws Exception {
-                try {
-                    doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                        NON_PRIVILEGED.removeNotificationListener(mbeanServer, name, listener);
-                        return null;
-                    });
-                } catch (PrivilegedActionException e) {
-                    throw e.getException();
-                }
-            }
-        };
-
-
-    }
 }
