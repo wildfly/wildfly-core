@@ -419,7 +419,17 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
     }
 
     private ModelNode incorporateServerOperationHeaders(ModelNode op) {
-        op.get(OPERATION_HEADERS).set(serverOperationHeaders);
+        if (serverOperationHeaders.isDefined()) {
+            if (op.hasDefined(OPERATION_HEADERS)) {
+                // WFCORE-2055 -- preserve any existing headers not declared at the server level
+                ModelNode headers = op.get(OPERATION_HEADERS);
+                for (Property prop : serverOperationHeaders.asPropertyList()) {
+                    headers.get(prop.getName()).set(prop.getValue());
+                }
+            } else {
+                op.get(OPERATION_HEADERS).set(serverOperationHeaders);
+            }
+        }
         return op;
     }
 
