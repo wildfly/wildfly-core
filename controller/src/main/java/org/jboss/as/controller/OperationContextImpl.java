@@ -156,6 +156,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private Map<PathAddress, Object> restartedResources = Collections.emptyMap();
     private final ContextAttachments contextAttachments = new ContextAttachments();    private final Map<OperationId, AuthorizationResponseImpl> authorizations =
             new ConcurrentHashMap<OperationId, AuthorizationResponseImpl>();
+    private final Set<ContextServiceTarget> serviceTargets = new HashSet<>();
     private final ModelNode blockingTimeoutConfig;
     private volatile BlockingTimeout blockingTimeout;
     private final long startTime = System.nanoTime();
@@ -724,7 +725,7 @@ final class OperationContextImpl extends AbstractOperationContext {
      *                           the {@link org.jboss.as.controller.OperationStepHandler} that is making the call.
      * @return the service target
      */
-    ServiceTarget getServiceTarget(Step targetActiveStep) throws UnsupportedOperationException {
+    ServiceTarget getServiceTarget(final Step targetActiveStep) throws UnsupportedOperationException {
 
         readOnly = false;
 
@@ -734,7 +735,27 @@ final class OperationContextImpl extends AbstractOperationContext {
             throw ControllerLogger.ROOT_LOGGER.serviceTargetRuntimeOperationsOnly();
         }
         ensureWriteLockForRuntime();
-        return new ContextServiceTarget(targetActiveStep);
+
+        final ContextServiceBuilderSupplier supplier = new ContextServiceBuilderSupplier() {
+            @Override
+            public <T> ContextServiceBuilder<T> getContextServiceBuilder(ServiceBuilder<T> delegate, final ServiceName name) {
+
+                final ContextServiceInstaller csi = new ContextServiceInstaller() {
+
+                    @Override
+                    public <X> ServiceController<X> installService(ServiceBuilder<X> realBuilder) {
+                        return OperationContextImpl.this.installService(realBuilder, name, targetActiveStep);
+                    }
+                };
+                return new ContextServiceBuilder<T>(delegate, csi);
+            }
+        };
+        ServiceTarget delegate = targetActiveStep.getScopedServiceTarget(modelController.getServiceTarget());
+        ContextServiceTarget cst = new ContextServiceTarget(delegate, supplier);
+        synchronized (serviceTargets) {  // synchronized because this can be called concurrently by ParallelBootOperationContext
+            serviceTargets.add(cst);
+        }
+        return cst;
     }
 
 
@@ -1363,12 +1384,18 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
             return super.executeOperation();
         } finally {
-            synchronized (done) {
-                if (done.done) {
-                    // late cancellation; clear the thread status
-                    Thread.interrupted();
-                } else {
-                    done.done = true;
+            try {
+                // Decouple any ServiceTarget we have created from this object
+                serviceTargets.forEach(ContextServiceTarget::done);
+                serviceTargets.clear();
+            } finally {
+                synchronized (done) {
+                    if (done.done) {
+                        // late cancellation; clear the thread status
+                        Thread.interrupted();
+                    } else {
+                        done.done = true;
+                    }
                 }
             }
         }
@@ -1935,19 +1962,99 @@ final class OperationContextImpl extends AbstractOperationContext {
         return CapabilityScope.Factory.create(getProcessType(), step.address);
     }
 
-    class ContextServiceTarget implements ServiceTarget {
+    private <T> ServiceController<T> installService(ServiceBuilder<T> builder, ServiceName name, Step step)
+            throws ServiceRegistryException, IllegalStateException {
 
-        private final Step targetActiveStep;
+        synchronized (realRemovingControllers) {
+            boolean intr = false;
+            try {
+                boolean containsKey = realRemovingControllers.containsKey(name);
+                long timeout = getBlockingTimeout().getLocalBlockingTimeout();
+                long waitTime = timeout;
+                long end = System.currentTimeMillis() + waitTime;
+                while (containsKey && waitTime > 0) {
+                    try {
+                        realRemovingControllers.wait(waitTime);
+                    } catch (InterruptedException e) {
+                        intr = true;
+                        if (respectInterruption) {
+                            cancelled = true;
+                            throw ControllerLogger.ROOT_LOGGER.serviceInstallCancelled();
+                        } // else keep waiting and mark the thread interrupted at the end
+                    }
+                    containsKey = realRemovingControllers.containsKey(name);
+                    waitTime = end - System.currentTimeMillis();
+                }
+
+                if (containsKey) {
+                    // We timed out
+                    throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, name);
+                }
+
+                // If a step removed this ServiceName before, it's no longer responsible
+                // for any ill effect
+                removalSteps.remove(name);
+
+                ServiceController<T> controller = builder.install();
+                step.serviceAdded(controller);
+                return controller;
+            } finally {
+                if (intr) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+    /** Integration between ContextServiceTarget and the OperationContext that created it*/
+    private interface ContextServiceBuilderSupplier {
+        <T> ContextServiceBuilder<T> getContextServiceBuilder(final ServiceBuilder<T> delegate, ServiceName name);
+    }
+
+    /**
+     * Service target that delegates to another target for most calls, but during execution of the
+     * management op that created it does management specific integration and limits the available API.
+     */
+    private static class ContextServiceTarget implements ServiceTarget {
+
         private final ServiceTarget delegate;
+        private final Set<ContextServiceBuilder> builders = new HashSet<>();
+        private volatile ContextServiceBuilderSupplier builderSupplier;
 
-        ContextServiceTarget(final Step targetActiveStep) {
-            this.targetActiveStep = targetActiveStep;
-            this.delegate = targetActiveStep.getScopedServiceTarget(modelController.getServiceTarget());
+        ContextServiceTarget(final ServiceTarget delegate, final ContextServiceBuilderSupplier builderSupplier) {
+            this.delegate = delegate;
+            this.builderSupplier = builderSupplier;
+        }
+
+        /**
+         * Signal that any management op that was executing when this target was created is done
+         * and any future use of it should not integrate with that op nor be limited to authorized management uses.
+         */
+        void done() {
+            builderSupplier = null;
+            builders.forEach(ContextServiceBuilder::done);
+            builders.clear();
+        }
+
+        private void checkNotInManagementOperation() {
+            if (this.builderSupplier != null) {
+                throw new UnsupportedOperationException(); // TODO most calls to this are things we could perhaps support.
+            }
         }
 
         public <T> ServiceBuilder<T> addServiceValue(final ServiceName name, final Value<? extends Service<T>> value) {
             final ServiceBuilder<T> realBuilder = delegate.addServiceValue(name, value);
-            return new ContextServiceBuilder<T>(realBuilder, name, targetActiveStep);
+            // If done() has been called we are no longer associated with a management op and should just
+            // return the builder from delegate
+            final ContextServiceBuilderSupplier delegateSupplier = this.builderSupplier;
+            if (delegateSupplier == null) {
+                return realBuilder;
+            }
+            ContextServiceBuilder<T> csb = delegateSupplier.getContextServiceBuilder(realBuilder, name);
+            synchronized (builders) {
+                builders.add(csb);
+            }
+            return csb;
         }
 
         public <T> ServiceBuilder<T> addService(final ServiceName name, final Service<T> service) {
@@ -1955,87 +2062,116 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         public ServiceTarget addMonitor(final StabilityMonitor monitor) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.addMonitor(monitor);
         }
 
         public ServiceTarget addMonitors(final StabilityMonitor... monitors) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.addMonitors(monitors);
         }
 
         public ServiceTarget removeMonitor(final StabilityMonitor monitor) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.removeMonitor(monitor);
         }
 
         public Set<StabilityMonitor> getMonitors() {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.getMonitors();
         }
 
         @SuppressWarnings("deprecation")
         public ServiceTarget addListener(final ServiceListener<Object> listener) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.addListener(listener);
         }
 
         @SafeVarargs
         @SuppressWarnings("deprecation")
         public final ServiceTarget addListener(final ServiceListener<Object>... listeners) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.addListener(listeners);
         }
 
         @SuppressWarnings("deprecation")
         public ServiceTarget addListener(final Collection<ServiceListener<Object>> listeners) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.addListener(listeners);
         }
 
         @SuppressWarnings("deprecation")
         public ServiceTarget removeListener(final ServiceListener<Object> listener) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.removeListener(listener);
         }
 
         @SuppressWarnings("deprecation")
         public Set<ServiceListener<Object>> getListeners() {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.getListeners();
         }
 
         public ServiceTarget addDependency(final ServiceName dependency) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.addDependency(dependency);
         }
 
         public ServiceTarget addDependency(final ServiceName... dependencies) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.addDependency(dependencies);
         }
 
         public ServiceTarget addDependency(final Collection<ServiceName> dependencies) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.addDependency(dependencies);
         }
 
         public ServiceTarget removeDependency(final ServiceName dependency) {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.removeDependency(dependency);
         }
 
         public Set<ServiceName> getDependencies() {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.getDependencies();
         }
 
         public ServiceTarget subTarget() {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.subTarget();
         }
 
         public BatchServiceTarget batchTarget() {
-            throw new UnsupportedOperationException();
+            checkNotInManagementOperation();
+            return delegate.batchTarget();
         }
     }
 
-    class ContextServiceBuilder<T> implements ServiceBuilder<T> {
+    /** Integration between ContextServiceBuilder and the OperationContext that created it*/
+    private interface ContextServiceInstaller {
+        <T> ServiceController<T> installService(ServiceBuilder<T> realBuilder);
+    }
+
+    /**
+     * Service builder that integrates service installation work with overall execution of a management op.
+     */
+    private static class ContextServiceBuilder<T> implements ServiceBuilder<T> {
 
         private final ServiceBuilder<T> realBuilder;
-        private final ServiceName name;
-        private final Step targetActiveStep;
+        private volatile ContextServiceInstaller serviceInstaller;
 
-
-        ContextServiceBuilder(final ServiceBuilder<T> realBuilder, final ServiceName name, final Step targetActiveStep) {
+        ContextServiceBuilder(final ServiceBuilder<T> realBuilder, final ContextServiceInstaller serviceInstaller) {
             this.realBuilder = realBuilder;
-            this.name = name;
-            this.targetActiveStep = targetActiveStep;
+            this.serviceInstaller = serviceInstaller;
+        }
+
+        /**
+         * Signal that any management op that was executing when this builder was created is done
+         * and hence any future use of it should not involve integration with that op.
+         */
+        void done() {
+            this.serviceInstaller = null;
         }
 
         public ServiceBuilder<T> addAliases(final ServiceName... aliases) {
@@ -2144,45 +2280,8 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         public ServiceController<T> install() throws ServiceRegistryException, IllegalStateException {
 
-            synchronized (realRemovingControllers) {
-                boolean intr = false;
-                try {
-                    boolean containsKey = realRemovingControllers.containsKey(name);
-                    long timeout = getBlockingTimeout().getLocalBlockingTimeout();
-                    long waitTime = timeout;
-                    long end = System.currentTimeMillis() + waitTime;
-                    while (containsKey && waitTime > 0) {
-                        try {
-                            realRemovingControllers.wait(waitTime);
-                        } catch (InterruptedException e) {
-                            intr = true;
-                            if (respectInterruption) {
-                                cancelled = true;
-                                throw ControllerLogger.ROOT_LOGGER.serviceInstallCancelled();
-                            } // else keep waiting and mark the thread interrupted at the end
-                        }
-                        containsKey = realRemovingControllers.containsKey(name);
-                        waitTime = end - System.currentTimeMillis();
-                    }
-
-                    if (containsKey) {
-                        // We timed out
-                        throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, name);
-                    }
-
-                    // If a step removed this ServiceName before, it's no longer responsible
-                    // for any ill effect
-                    removalSteps.remove(name);
-
-                    ServiceController<T> controller = realBuilder.install();
-                    targetActiveStep.serviceAdded(controller);
-                    return controller;
-                } finally {
-                    if (intr) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
+            ContextServiceInstaller installer = this.serviceInstaller;
+            return installer == null ? realBuilder.install() : installer.installService(realBuilder);
         }
     }
 
