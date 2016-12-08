@@ -1350,4 +1350,9 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 197, value = "If attribute %s is defined one of ssl-context or security-realm must also be defined")
     OperationFailedException attributeRequiresSSLContext(String attribute);
 
+    @LogMessage(level = Level.WARN)
+    @Message( id = 198, value = "Server '%s' is unstable and should be stopped or restarted. An unstable server may not stop normally, " +
+            "so the 'kill' operation may be required to terminate the server process.")
+    void managedServerUnstable(String serverName);
+
 }
