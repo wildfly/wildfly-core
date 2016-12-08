@@ -40,17 +40,18 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
 public class SimpleOperationDefinitionBuilder {
+    private static AttributeDefinition[] NO_ATTRIBUTES = new AttributeDefinition[0];
     ResourceDescriptionResolver resolver;
     ResourceDescriptionResolver attributeResolver;
     protected String name;
     protected OperationEntry.EntryType entryType = OperationEntry.EntryType.PUBLIC;
     protected EnumSet<OperationEntry.Flag> flags = EnumSet.noneOf(OperationEntry.Flag.class);
-    protected AttributeDefinition[] parameters = new AttributeDefinition[0];
+    protected AttributeDefinition[] parameters = NO_ATTRIBUTES;
     protected ModelType replyType;
     protected ModelType replyValueType;
     protected boolean replyAllowNull;
     protected DeprecationData deprecationData = null;
-    protected AttributeDefinition[] replyParameters = new AttributeDefinition[0];
+    protected AttributeDefinition[] replyParameters = NO_ATTRIBUTES;
     protected AccessConstraintDefinition[] accessConstraints;
     DescriptionProvider descriptionProvider;
 

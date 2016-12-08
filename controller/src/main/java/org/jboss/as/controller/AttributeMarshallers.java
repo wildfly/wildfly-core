@@ -161,6 +161,31 @@ public interface AttributeMarshallers {
         }
     }
 
+    class SimpleListAttributeMarshaller extends AttributeMarshaller {
+        private final boolean wrap;
+
+        SimpleListAttributeMarshaller(boolean wrap) {
+            this.wrap = wrap;
+        }
+
+        @Override
+        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            assert attribute instanceof SimpleListAttributeDefinition;
+            SimpleListAttributeDefinition attr = (SimpleListAttributeDefinition) attribute;
+            if (resourceModel.hasDefined(attribute.getName())) {
+                if (wrap) {
+                    writer.writeStartElement(attribute.getXmlName());
+                }
+                for (ModelNode handler : resourceModel.get(attribute.getName()).asList()) {
+                    attr.getValueType().marshallAsElement(handler, writer);
+                }
+                if (wrap) {
+                    writer.writeEndElement();
+                }
+            }
+        }
+    }
+
     static AttributeMarshaller getObjectMapAttributeMarshaller(String keyElementName) {
         return new ObjectMapAttributeMarshaller(null, null, true, keyElementName);
     }
@@ -175,5 +200,9 @@ public interface AttributeMarshallers {
 
     static AttributeMarshaller getObjectMapAttributeMarshaller(String wrapperElementName, boolean wrapElement, String elementName, String keyElementName) {
         return new ObjectMapAttributeMarshaller(wrapperElementName, elementName, wrapElement, keyElementName);
+    }
+
+    static AttributeMarshaller getSimpleListMarshaller(boolean wrapper) {
+        return new SimpleListAttributeMarshaller(wrapper);
     }
 }

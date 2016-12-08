@@ -25,9 +25,6 @@ package org.jboss.as.controller;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.dmr.ModelNode;
@@ -170,24 +167,12 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
 
         public SimpleListAttributeDefinition build() {
             if (attributeMarshaller == null) {
-                final boolean wrap = wrapXmlList;
-                attributeMarshaller = new AttributeMarshaller() {
-                    @Override
-                    public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-                        if (resourceModel.hasDefined(attribute.getName())) {
-                            if (wrap) {
-                                writer.writeStartElement(attribute.getXmlName());
-                            }
-                            for (ModelNode handler : resourceModel.get(attribute.getName()).asList()) {
-                                valueType.marshallAsElement(handler, writer);
-                            }
-                            if (wrap) {
-                                writer.writeEndElement();
-                            }
-                        }
-                    }
-                };
+                attributeMarshaller = AttributeMarshallers.getSimpleListMarshaller(wrapXmlList);
             }
+            //todo add parser for SimpleListAttributeDefinition, for now no one is using it yet.
+            /*if (parser == null) {
+                parser = AttributeParser..
+            }*/
             return new SimpleListAttributeDefinition(this, valueType);
         }
 

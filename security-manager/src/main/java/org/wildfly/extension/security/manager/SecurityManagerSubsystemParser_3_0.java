@@ -35,29 +35,17 @@ import org.jboss.as.controller.PersistentResourceXMLParser;
  */
 class SecurityManagerSubsystemParser_3_0 extends PersistentResourceXMLParser {
 
-    static final SecurityManagerSubsystemParser_3_0 INSTANCE = new SecurityManagerSubsystemParser_3_0();
-
-    private static final PersistentResourceXMLDescription xmlDescription;
-
-    static {
-        xmlDescription = builder(SecurityManagerRootDefinition.INSTANCE, Namespace.SECURITY_MANAGER_3_0.getUriString())
-                .addChild(builder(DeploymentPermissionsResourceDefinition.INSTANCE)
-                                .setXmlElementName(Constants.DEPLOYMENT_PERMISSIONS)
-                                .addAttribute(DeploymentPermissionsResourceDefinition.MINIMUM_PERMISSIONS)
-                                .addAttribute(DeploymentPermissionsResourceDefinition.MAXIMUM_PERMISSIONS)
-                )
-                .build();
-    }
-
-
-    /**
-     * Private constructor to enforce usage of the static singleton instance.
-     */
-    private SecurityManagerSubsystemParser_3_0() {
+    SecurityManagerSubsystemParser_3_0() {
     }
 
     @Override
     public PersistentResourceXMLDescription getParserDescription() {
-        return xmlDescription;
+        return builder(SecurityManagerRootDefinition.INSTANCE.getPathElement(), Namespace.SECURITY_MANAGER_3_0.getUriString())
+                .addChild(builder(DeploymentPermissionsResourceDefinition.INSTANCE.getPathElement())
+                        .setXmlElementName(Constants.DEPLOYMENT_PERMISSIONS)
+                        .addAttribute(DeploymentPermissionsResourceDefinition.MINIMUM_PERMISSIONS)
+                        .addAttribute(DeploymentPermissionsResourceDefinition.MAXIMUM_PERMISSIONS)
+                )
+                .build();
     }
 }
