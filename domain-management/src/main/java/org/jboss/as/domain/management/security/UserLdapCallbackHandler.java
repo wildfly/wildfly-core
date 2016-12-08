@@ -28,6 +28,7 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,7 +57,6 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
-import org.wildfly.security.auth.server.IdentityLocator;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.credential.Credential;
@@ -302,9 +302,9 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
     private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
 
         @Override
-        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
-            final String name;
-            if (locator.hasName() == false || (name = locator.getName()).length() == 0) {
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
+            final String name = principal.getName();
+            if (name.length() == 0) {
                 return RealmIdentity.NON_EXISTENT;
             }
 

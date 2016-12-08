@@ -58,11 +58,11 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
     protected static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, NATIVE_INTERFACE);
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
-        .setAlternatives(ModelDescriptionConstants.SASL_AUTHENTICATION_FACTORY)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
         .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
         .setNullSignificant(true)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
@@ -70,6 +70,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setAllowExpression(true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SASL_PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_PROTOCOL, ModelType.STRING, true)
@@ -78,10 +79,10 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setDefaultValue(new ModelNode(ModelDescriptionConstants.REMOTE))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_AUTHENTICATION_FACTORY, ModelType.STRING, true)
-        .setAlternatives(ModelDescriptionConstants.SECURITY_REALM)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)

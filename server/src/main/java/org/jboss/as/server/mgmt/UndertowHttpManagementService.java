@@ -30,6 +30,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 import javax.net.ssl.SSLContext;
@@ -41,6 +42,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.http.server.ManagementHttpServer;
+import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.ManagedBindingRegistry;
@@ -61,6 +63,7 @@ import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.common.Assert;
+import org.xnio.SslClientAuthMode;
 import org.xnio.XnioWorker;
 
 /**
@@ -213,9 +216,13 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
 
         final SecurityRealm securityRealm = securityRealmValue.getOptionalValue();
         final HttpAuthenticationFactory httpAuthenticationFactory = httpAuthenticationFactoryValue.getOptionalValue();
+        final SslClientAuthMode sslClientAuthMode;
         SSLContext sslContext = sslContextValue.getOptionalValue();
         if (sslContext == null && securityRealm != null) {
             sslContext = securityRealm.getSSLContext();
+            sslClientAuthMode = getSslClientAuthMode(securityRealm);
+        } else {
+            sslClientAuthMode = null;
         }
 
         InetSocketAddress bindAddress = null;
@@ -280,6 +287,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setModelController(modelController)
                     .setSecurityRealm(securityRealm)
                     .setSSLContext(sslContext)
+                    .setSSLClientAuthMode(sslClientAuthMode)
                     .setHttpAuthenticationFactory(httpAuthenticationFactory)
                     .setControlledProcessStateService(controlledProcessStateService)
                     .setConsoleMode(consoleMode)
@@ -489,4 +497,20 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     public InjectedValue<Executor> getManagementExecutor() {
         return managementExecutor;
     }
+
+    private static SslClientAuthMode getSslClientAuthMode(final SecurityRealm securityRealm) {
+        Set<AuthMechanism> supportedMechanisms = securityRealm.getSupportedAuthenticationMechanisms();
+        if (supportedMechanisms.contains(AuthMechanism.CLIENT_CERT)) {
+            if (supportedMechanisms.contains(AuthMechanism.DIGEST)
+                    || supportedMechanisms.contains(AuthMechanism.PLAIN)) {
+                // Username / Password auth is possible so don't mandate a client certificate.
+                return SslClientAuthMode.REQUESTED;
+            } else {
+                return SslClientAuthMode.REQUIRED;
+            }
+        }
+
+        return null;
+    }
+
 }

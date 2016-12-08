@@ -25,7 +25,6 @@ import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.CredentialStoreException;
-import org.wildfly.security.credential.store.UnsupportedCredentialTypeException;
 import org.wildfly.security.password.interfaces.ClearPassword;
 
 /**
@@ -113,7 +112,7 @@ public class CredentialStoreClient {
             } else {
                 return credentialStore.retrieve(alias, PasswordCredential.class);
             }
-        } catch (UnsupportedCredentialTypeException | CredentialStoreException e) {
+        } catch (CredentialStoreException e) {
             ROOT_LOGGER.log(Logger.Level.INFO, e);
         }
         return null;

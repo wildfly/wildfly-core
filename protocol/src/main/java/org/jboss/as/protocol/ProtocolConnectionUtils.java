@@ -157,10 +157,10 @@ public class ProtocolConnectionUtils {
         AuthenticationContext captured = AuthenticationContext.captureCurrent();
         AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, captured);
         if (actualHandler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(actualHandler);
-        if (sslContext != null) mergedConfiguration = mergedConfiguration.useSslContext(sslContext);
 
         // We don't know the original index or the match rule so create a context with a single match all rule.
-        final AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
+        AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
+        if (sslContext != null) context = context.withSsl(MatchRule.ALL, () -> sslContext);
 
         if (clientBindAddress == null) {
             return endpoint.connect(uri, options, context);

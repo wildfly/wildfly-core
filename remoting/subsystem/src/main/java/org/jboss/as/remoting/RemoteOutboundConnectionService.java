@@ -108,7 +108,6 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         }
 
         if (callbackHandler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(callbackHandler);
-        if (sslContext != null) mergedConfiguration = mergedConfiguration.useSslContext(sslContext);
 
         final OptionMap.Builder builder = OptionMap.builder();
         // first set the defaults
@@ -135,7 +134,11 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         // now override with user specified options
         builder.addAll(this.connectionCreationOptions);
 
-        final AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
+        AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
+        if (sslContext != null) {
+            final SSLContext theSslConect = sslContext;
+            context = context.withSsl(MatchRule.ALL, () -> theSslConect);
+        }
         return endpoint.connect(uri, builder.getMap(), context);
     }
 
