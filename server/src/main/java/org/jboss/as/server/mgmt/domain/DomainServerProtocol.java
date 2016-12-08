@@ -30,6 +30,7 @@ public interface DomainServerProtocol {
     byte REGISTER_REQUEST = 0x00;
     byte SERVER_STARTED_REQUEST = 0x02;
     byte SERVER_RECONNECT_REQUEST = 0x03;
+    byte SERVER_INSTABILITY_REQUEST = 0x04;
 
 
     byte PARAM_SERVER_NAME = 0x01;

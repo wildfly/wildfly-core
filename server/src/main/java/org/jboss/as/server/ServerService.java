@@ -110,6 +110,7 @@ import org.jboss.as.server.deployment.reflect.InstallReflectionIndexProcessor;
 import org.jboss.as.server.deployment.service.ServiceActivatorDependencyProcessor;
 import org.jboss.as.server.deployment.service.ServiceActivatorProcessor;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
 import org.jboss.as.server.moduleservice.ExtensionIndexService;
 import org.jboss.as.server.moduleservice.ExternalModuleService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
@@ -236,6 +237,10 @@ public final class ServerService extends AbstractControllerService {
         serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.injectedPathManagerService);
         if (configuration.getServerEnvironment().isAllowModelControllerExecutor()) {
             serviceBuilder.addDependency(Services.JBOSS_SERVER_EXECUTOR, ExecutorService.class, service.getExecutorServiceInjector());
+        }
+        if (configuration.getServerEnvironment().getLaunchType() == ServerEnvironment.LaunchType.DOMAIN) {
+            serviceBuilder.addDependency(HostControllerConnectionService.SERVICE_NAME, ControllerInstabilityListener.class,
+                    service.getContainerInstabilityInjector());
         }
 
         serviceBuilder.install();

@@ -142,6 +142,7 @@ class ModelControllerImpl implements ModelController {
     private final Resource.ResourceEntry modelControllerResource;
     private final OperationStepHandler extraValidationStepHandler;
 
+    private final AbstractControllerService.ControllerInstabilityListener instabilityListener;
 
     ModelControllerImpl(final ServiceRegistry serviceRegistry, final ServiceTarget serviceTarget,
                         final ManagementResourceRegistration rootRegistration,
@@ -151,7 +152,9 @@ class ModelControllerImpl implements ModelController {
                         final ExpressionResolver expressionResolver, final Authorizer authorizer,
                         final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport,
                         final BootErrorCollector bootErrorCollector, final OperationStepHandler extraValidationStepHandler,
-                        final CapabilityRegistry capabilityRegistry) {
+                        final CapabilityRegistry capabilityRegistry,
+                        final AbstractControllerService.ControllerInstabilityListener instabilityListener) {
+        this.instabilityListener = instabilityListener;
         assert serviceRegistry != null;
         this.serviceRegistry = serviceRegistry;
         assert serviceTarget != null;
@@ -391,6 +394,13 @@ class ModelControllerImpl implements ModelController {
                     ControllerLogger.MGMT_OP_LOGGER.tracef("Executing %s", operation);
                     context.executeOperation();
                     responseStreams = context.getResponseStreams();
+                } catch (Error e) {
+                    try {
+                        controllerUnstable();
+                    } catch (Error ignored) {
+                        // we already have the main error
+                    }
+                    throw e;
                 } finally {
 
                     if (!responseNode.hasDefined(RESPONSE_HEADERS) || !responseNode.get(RESPONSE_HEADERS).hasDefined(PROCESS_STATE)) {
@@ -867,6 +877,18 @@ class ModelControllerImpl implements ModelController {
     ContainerStateMonitor.ContainerStateChangeReport awaitContainerStateChangeReport(long timeout, TimeUnit timeUnit)
             throws InterruptedException, TimeoutException {
         return stateMonitor.awaitContainerStateChangeReport(timeout, timeUnit);
+    }
+
+    /** Notification from an operation that MSC could not stabilize before operation completion. */
+    void containerCannotStabilize() {
+        controllerUnstable();
+    }
+
+    private void controllerUnstable() {
+        processState.setRestartRequired();
+        if (instabilityListener != null) {
+            instabilityListener.controllerUnstable();
+        }
     }
 
     ServiceRegistry getServiceRegistry() {

@@ -127,6 +127,10 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
             case DomainServerProtocol.SERVER_STARTED_REQUEST:
                 handlers.registerActiveOperation(header.getBatchId(), serverInventory);
                 return new ServerStartedHandler(serverProcessName);
+            case DomainServerProtocol.SERVER_INSTABILITY_REQUEST:
+                handlers.registerActiveOperation(header.getBatchId(), serverInventory);
+                return new ServerUnstableHandler(serverProcessName);
+
         }
         return handlers.resolveNext();
     }
@@ -342,6 +346,31 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
                         } else {
                             inventory.serverStartFailed(serverProcessName);
                         }
+                    } finally {
+                        resultHandler.done(null);
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Handler responsible for handling a server instability notification.
+     */
+    private class ServerUnstableHandler implements ManagementRequestHandler<Void, ServerInventory> {
+
+        private final String serverProcessName;
+        private ServerUnstableHandler(String serverProcessName) {
+            this.serverProcessName = serverProcessName;
+        }
+
+        @Override
+        public void handleRequest(final DataInput input, final ActiveOperation.ResultHandler<Void> resultHandler, final ManagementRequestContext<ServerInventory> context) throws IOException {
+            context.executeAsync(new ManagementRequestContext.AsyncTask<ServerInventory>() {
+                @Override
+                public void execute(ManagementRequestContext<ServerInventory> serverInventoryManagementRequestContext) throws Exception {
+                    try {
+                        serverInventory.serverUnstable(serverProcessName);
                     } finally {
                         resultHandler.done(null);
                     }

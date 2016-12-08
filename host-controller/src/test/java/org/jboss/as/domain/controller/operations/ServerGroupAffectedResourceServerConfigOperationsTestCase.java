@@ -653,6 +653,11 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
+        public void serverUnstable(String serverProcessName) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
         public void serverProcessStopped(String serverProcessName) {
             throw new UnsupportedOperationException("Not supported yet.");
         }

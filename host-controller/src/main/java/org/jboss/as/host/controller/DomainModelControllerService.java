@@ -1017,20 +1017,29 @@ public class DomainModelControllerService extends AbstractControllerService impl
             return result;
         }
 
+        @Override
         public ProxyController serverCommunicationRegistered(String serverProcessName, ManagementChannelHandler channelHandler) {
             return getServerInventory().serverCommunicationRegistered(serverProcessName, channelHandler);
         }
 
+        @Override
         public boolean serverReconnected(String serverProcessName, ManagementChannelHandler channelHandler) {
             return getServerInventory().serverReconnected(serverProcessName, channelHandler);
         }
 
+        @Override
         public void serverProcessAdded(String serverProcessName) {
             getServerInventory().serverProcessAdded(serverProcessName);
         }
 
+        @Override
         public void serverStartFailed(String serverProcessName) {
             getServerInventory().serverStartFailed(serverProcessName);
+        }
+
+        @Override
+        public void serverUnstable(String serverProcessName) {
+            getServerInventory().serverUnstable(serverProcessName);
         }
 
         @Override
@@ -1038,14 +1047,17 @@ public class DomainModelControllerService extends AbstractControllerService impl
             getServerInventory().serverStarted(serverProcessName);
         }
 
+        @Override
         public void serverProcessStopped(String serverProcessName) {
             getServerInventory().serverProcessStopped(serverProcessName);
         }
 
+        @Override
         public String getServerProcessName(String serverName) {
             return getServerInventory().getServerProcessName(serverName);
         }
 
+        @Override
         public String getProcessServerName(String processName) {
             return getServerInventory().getProcessServerName(processName);
         }
@@ -1055,22 +1067,27 @@ public class DomainModelControllerService extends AbstractControllerService impl
             return getServerInventory().reloadServer(serverName, blocking);
         }
 
+        @Override
         public void processInventory(Map<String, ProcessInfo> processInfos) {
             getServerInventory().processInventory(processInfos);
         }
 
+        @Override
         public Map<String, ProcessInfo> determineRunningProcesses() {
             return getServerInventory().determineRunningProcesses();
         }
 
+        @Override
         public Map<String, ProcessInfo> determineRunningProcesses(boolean serversOnly) {
             return getServerInventory().determineRunningProcesses(serversOnly);
         }
 
+        @Override
         public ServerStatus determineServerStatus(String serverName) {
             return getServerInventory().determineServerStatus(serverName);
         }
 
+        @Override
         public ServerStatus startServer(String serverName, ModelNode domainModel) {
             return getServerInventory().startServer(serverName, domainModel);
         }
@@ -1080,10 +1097,12 @@ public class DomainModelControllerService extends AbstractControllerService impl
             return getServerInventory().startServer(serverName, domainModel, blocking);
         }
 
+        @Override
         public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
             getServerInventory().reconnectServer(serverName, domainModel, authKey, running, stopping);
         }
 
+        @Override
         public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel) {
             return getServerInventory().restartServer(serverName, gracefulTimeout, domainModel);
         }
@@ -1093,6 +1112,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             return getServerInventory().restartServer(serverName, gracefulTimeout, domainModel, blocking);
         }
 
+        @Override
         public ServerStatus stopServer(String serverName, int gracefulTimeout) {
             return getServerInventory().stopServer(serverName, gracefulTimeout);
         }
@@ -1102,6 +1122,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             return getServerInventory().stopServer(serverName, gracefulTimeout, blocking);
         }
 
+        @Override
         public CallbackHandler getServerCallbackHandler() {
             return getServerInventory().getServerCallbackHandler();
         }
@@ -1434,6 +1455,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
             @Override
             public void serverStartFailed(String serverProcessName) {
+            }
+
+            @Override
+            public void serverUnstable(String serverProcessName) {
+
             }
 
             @Override

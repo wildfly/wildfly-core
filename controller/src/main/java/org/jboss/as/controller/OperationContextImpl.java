@@ -1140,13 +1140,18 @@ final class OperationContextImpl extends AbstractOperationContext {
                 try {
                     modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, true);
                 }  catch (InterruptedException e) {
+                    // Cancelled in some way
                     interrupted = true;
-                    MGMT_OP_LOGGER.interruptedWaitingStability();
+                    // Cancellation prevented us ensuring that MSC will be stable when this operation completes.
+                    // We can no longer have any sense of MSC state or how the model relates to the runtime and
+                    // we need to start from a fresh service container. Notify the controller of this.
+                    modelController.containerCannotStabilize();
+                    MGMT_OP_LOGGER.interruptedWaitingStability(activeStep.operationId.name, activeStep.operationId.address);
                 } catch (TimeoutException te) {
                     // If we can't attain stability on the way out after rollback ops have run,
                     // we can no longer have any sense of MSC state or how the model relates to the runtime and
-                    // we need to start from a fresh service container.
-                    processState.setRestartRequired(); // don't use our restartRequired() method as this is not reversible in rollback
+                    // we need to start from a fresh service container. Notify the controller of this.
+                    modelController.containerCannotStabilize();
                     // Just log; this doesn't change the result of the op. And if we're not stable here
                     // it's almost certain we never stabilized during execution or we are rolling back and destabilized there.
                     // Either one means there is already a failure message associated with this op.

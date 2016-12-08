@@ -1300,4 +1300,9 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 181, value = "Host Controller shutdown has been requested via an OS signal")
     void shutdownHookInvoked();
 
+    @LogMessage(level = Level.WARN)
+    @Message( id = 198, value = "Server '%s' is unstable and should be stopped or restarted. An unstable server may not stop normally, " +
+            "so the 'kill' operation may be required to terminate the server process.")
+    void managedServerUnstable(String serverName);
+
 }
