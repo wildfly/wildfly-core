@@ -211,7 +211,7 @@ public abstract class AttributeDefinition {
     }
 
     private static List<AccessConstraintDefinition> wrapConstraints(AccessConstraintDefinition[] accessConstraints) {
-        if (accessConstraints == null) {
+        if (accessConstraints == null || accessConstraints.length == 0) {
             return Collections.<AccessConstraintDefinition>emptyList();
         } else {
             return Collections.unmodifiableList(Arrays.asList(accessConstraints));
