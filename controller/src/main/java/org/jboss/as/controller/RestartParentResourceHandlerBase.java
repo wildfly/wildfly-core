@@ -21,8 +21,11 @@
  */
 package org.jboss.as.controller;
 
+import java.util.Collection;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
@@ -36,17 +39,50 @@ import org.jboss.msc.service.ServiceName;
  *
  * @author Jason T. Greene
  */
-public abstract class RestartParentResourceHandlerBase implements OperationStepHandler {
+public abstract class RestartParentResourceHandlerBase extends AbstractBaseStepHandler implements OperationStepHandler {
     private final String parentKeyName;
 
     protected RestartParentResourceHandlerBase(String parentKeyName) {
         this.parentKeyName = parentKeyName;
     }
 
+    public RestartParentResourceHandlerBase(Collection<? extends AttributeDefinition> attributes, String parentKeyName) {
+        super(attributes);
+        this.parentKeyName = parentKeyName;
+    }
+
+    public RestartParentResourceHandlerBase(RuntimeCapability capability, Collection<? extends AttributeDefinition> attributes, String parentKeyName) {
+        super(capability, attributes);
+        this.parentKeyName = parentKeyName;
+    }
+
+    public RestartParentResourceHandlerBase(Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes, String parentKeyName) {
+        super(capabilities, attributes);
+        this.parentKeyName = parentKeyName;
+    }
+
+    public RestartParentResourceHandlerBase(RuntimeCapability capability, String parentKeyName, AttributeDefinition... attributes) {
+        super(capability, attributes);
+        this.parentKeyName = parentKeyName;
+    }
+
+    public RestartParentResourceHandlerBase(String parentKeyName, AttributeDefinition... attributes) {
+        super(attributes);
+        this.parentKeyName = parentKeyName;
+    }
+
+    public RestartParentResourceHandlerBase(Set<RuntimeCapability> capabilities, String parentKeyName, AttributeDefinition... attributes) {
+        super(capabilities, attributes);
+        this.parentKeyName = parentKeyName;
+    }
+
+    public RestartParentResourceHandlerBase(Parameters parameters, String parentKeyName) {
+        super(parameters);
+        this.parentKeyName = parentKeyName;
+    }
+
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-
-        // Do the simple model part
         updateModel(context, operation);
 
         if (!context.isBooting() && requiresRuntime(context)) {
@@ -226,6 +262,13 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
             return Resource.Tools.readModel(resource);
         } catch (NoSuchElementException e) {
             return null;
+        }
+    }
+
+    public class Parameters extends AbstractBaseStepHandler.Parameters{
+
+        public Parameters(){
+
         }
     }
 }
