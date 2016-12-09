@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.remote;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+
 import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -107,6 +109,7 @@ public class BlockingQueueOperationListener<T extends TransactionalProtocolClien
 
         private final T operation;
         private final ModelNode finalResult;
+        private final boolean timedOut;
 
         /**
          * Create a failed operation.
@@ -132,13 +135,26 @@ public class BlockingQueueOperationListener<T extends TransactionalProtocolClien
         public static <T extends TransactionalProtocolClient.Operation> TransactionalProtocolClient.PreparedOperation<T> create(final T operation, final String failureDescription) {
             final ModelNode failedResult = new ModelNode();
             failedResult.get(ModelDescriptionConstants.OUTCOME).set(ModelDescriptionConstants.FAILED);
-            failedResult.get(ModelDescriptionConstants.FAILURE_DESCRIPTION).set(failureDescription);
-            return new FailedOperation<T>(operation, failedResult);
+            failedResult.get(FAILURE_DESCRIPTION).set(failureDescription);
+            return new FailedOperation<T>(operation, failedResult, false);
+        }
+
+        private static boolean isTimeoutFailureDescription(final ModelNode response) {
+            boolean result = response.hasDefined(FAILURE_DESCRIPTION);
+            if (result) {
+                result = response.get(FAILURE_DESCRIPTION).asString().startsWith("WFLYCTL0409");
+            }
+            return result;
         }
 
         public FailedOperation(final T operation, final ModelNode finalResult) {
+            this(operation, finalResult, isTimeoutFailureDescription(finalResult));
+        }
+
+        public FailedOperation(final T operation, final ModelNode finalResult, final boolean timedOut) {
             this.operation = operation;
             this.finalResult = finalResult;
+            this.timedOut = timedOut;
         }
 
         @Override
@@ -159,6 +175,11 @@ public class BlockingQueueOperationListener<T extends TransactionalProtocolClien
         @Override
         public boolean isFailed() {
             return true;
+        }
+
+        @Override
+        public boolean isTimedOut() {
+            return timedOut;
         }
 
         @Override

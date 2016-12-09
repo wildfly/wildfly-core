@@ -1355,4 +1355,8 @@ public interface HostControllerLogger extends BasicLogger {
             "so the 'kill' operation may be required to terminate the server process.")
     void managedServerUnstable(String serverName);
 
+    @LogMessage(level = Level.WARN)
+    @Message(id = 199, value = "Server '%s' (managed by host '%s') has not responded to an operation request within the configured timeout. This may mean the server has become unstable.")
+    void serverSuspected(String serverName, String hostName);
+
 }
