@@ -53,7 +53,7 @@ import org.junit.Test;
  *
  * @author Ondrej Kotek <okotek@redhat.com>
  */
-@Ignore("[WFCORE-1954] Wrap CLIENT_CERT behaviour of legacy realms with Elytron components.")
+@Ignore("[WFCORE-2068] Test failure during clean up.")
 public class SSLMasterSlaveOneWayTestCase extends AbstractSSLMasterSlaveTestCase {
 
     private static final File WORK_DIR = new File("target" + File.separatorChar +  "ssl-master-slave-1way-workdir");

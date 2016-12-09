@@ -69,7 +69,6 @@ import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.AggregateSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
-import org.wildfly.security.auth.server.IdentityLocator;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.RealmIdentity;
@@ -158,7 +157,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                         .build();
                 configurationMap.put(mechanism,
                         MechanismConfiguration.builder()
-                            .setRealmMapper((n, p, e) -> mechanism.toString())
+                            .setRealmMapper((p, e) -> mechanism.toString())
                             .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName(name).build())
                             .build());
                 for (Entry<String, String> currentOption : currentRegistration.getValue().getConfigurationOptions().entrySet()) {
@@ -227,6 +226,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 switch (mechanismName) {
                     case "DIGEST-MD5":
                         return AuthMechanism.DIGEST;
+                    case "EXTERNAL":
+                        return AuthMechanism.CLIENT_CERT;
                     case "JBOSS-LOCAL-USER":
                         return AuthMechanism.LOCAL;
                     case "PLAIN":
@@ -235,6 +236,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 break;
             case "HTTP":
                 switch (mechanismName) {
+                    case "CLIENT-CERT":
+                        return AuthMechanism.CLIENT_CERT;
                     case "DIGEST":
                         return AuthMechanism.DIGEST;
                     case "BASIC":
@@ -503,10 +506,20 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         }
 
         @Override
-        public RealmIdentity getRealmIdentity(IdentityLocator locator) throws RealmUnavailableException {
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
             try {
                 sharedStateLocal.set(new HashMap<>());
-                return wrapped.getRealmIdentity(locator);
+                return wrapped.getRealmIdentity(principal);
+            } finally {
+                sharedStateLocal.remove();
+            }
+        }
+
+        @Override
+        public RealmIdentity getRealmIdentity(Evidence evidence) throws RealmUnavailableException {
+            try {
+                sharedStateLocal.set(new HashMap<>());
+                return wrapped.getRealmIdentity(evidence);
             } finally {
                 sharedStateLocal.remove();
             }

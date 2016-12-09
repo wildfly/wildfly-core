@@ -400,7 +400,7 @@ public final class CredentialReference implements Destroyable {
          * @throws RuntimeException any time it is called as this method is not implemented
          */
         @Override
-        public <C extends Credential> void remove(String credentialAlias, Class<C> credentialType) {
+        public void remove(String credentialAlias, Class<? extends Credential> credentialType) {
             throw new RuntimeException("method not implemented");
         }
 

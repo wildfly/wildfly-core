@@ -96,9 +96,10 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         }
 
         ServiceName securityRealmName = securityRealm != null ? SecurityRealm.ServiceUtil.createServiceName(securityRealm) : null;
-        ServiceName saslAuthenticationFactoryName = saslAuthenticationFactory != null ? context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, SaslAuthenticationFactory.class) : null;
+        ServiceName saslAuthenticationFactoryName = saslAuthenticationFactory != null ? context.getCapabilityServiceName(
+                SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory, SaslAuthenticationFactory.class) : null;
         String sslContext = commonPolicy.getSSLContext();
-        ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, SSLContext.class) : null;
+        ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, sslContext, SSLContext.class) : null;
 
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,

@@ -226,36 +226,14 @@ public class ManagementHttpServer {
         }
     }
 
-    private static SslClientAuthMode getSslClientAuthMode(Builder builder) {
-        if (builder.sslContext != null) {
-            return null;
-        } else if (builder.securityRealm != null) {
-            Set<AuthMechanism> supportedMechanisms = builder.securityRealm.getSupportedAuthenticationMechanisms();
-            if (supportedMechanisms.contains(AuthMechanism.CLIENT_CERT)) {
-                if (supportedMechanisms.contains(AuthMechanism.DIGEST)
-                        || supportedMechanisms.contains(AuthMechanism.PLAIN)) {
-                    // Username / Password auth is possible so don't mandate a client certificate.
-                    return SslClientAuthMode.REQUESTED;
-                } else {
-                    return SslClientAuthMode.REQUIRED;
-                }
-            }
-
-            return null;
-        } else {
-            throw ROOT_LOGGER.noRealmOrSSLContext();
-        }
-    }
-
     private static ManagementHttpServer create(Builder builder) {
         SSLContext sslContext = null;
-        SslClientAuthMode sslClientAuthMode = null;
+        SslClientAuthMode sslClientAuthMode = builder.sslClientAuthMode;
         if (builder.secureBindAddress != null) {
             sslContext = getSSLContext(builder);
             if (sslContext == null) {
                 throw ROOT_LOGGER.sslRequestedNoSslContext();
             }
-            sslClientAuthMode = getSslClientAuthMode(builder);
         }
 
         HttpOpenListener openListener = new HttpOpenListener(new ByteBufferSlicePool(BufferAllocator.DIRECT_BYTE_BUFFER_ALLOCATOR, 4096, 10 * 4096));
@@ -472,6 +450,7 @@ public class ManagementHttpServer {
         private ModelController modelController;
         private SecurityRealm securityRealm;
         private SSLContext sslContext;
+        private SslClientAuthMode sslClientAuthMode;
         private HttpAuthenticationFactory httpAuthenticationFactory;
         private ControlledProcessStateService controlledProcessStateService;
         private ConsoleMode consoleMode;
@@ -516,6 +495,21 @@ public class ManagementHttpServer {
         public Builder setSSLContext(SSLContext sslContext) {
             assertNotBuilt();
             this.sslContext = sslContext;
+
+            return this;
+        }
+
+        /**
+         * Set the SSL client authentication mode.
+         *
+         * Note: This should only be used for {@link SecurityRealm} provided {@link SSLContext} instances.
+         *
+         * @param sslClientAuthMode the SSL client authentication mode.
+         * @return {@code this} to allow chaining of commands.
+         */
+        public Builder setSSLClientAuthMode(SslClientAuthMode sslClientAuthMode) {
+            assertNotBuilt();
+            this.sslClientAuthMode = sslClientAuthMode;
 
             return this;
         }
