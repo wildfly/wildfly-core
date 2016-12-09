@@ -397,12 +397,16 @@ class ManagedServer {
 
     /**
      * Notification that the process has become unstable.
+     *
+     * @return {@code true} if this is a change in status
      */
-    void processUnstable() {
-        if (!unstable) {  // Only once until the process is removed. A process is unstable until removed.
+    boolean processUnstable() {
+        boolean change = !unstable;
+        if (change) {  // Only once until the process is removed. A process is unstable until removed.
             unstable = true;
             HostControllerLogger.ROOT_LOGGER.managedServerUnstable(serverName);
         }
+        return change;
     }
 
     synchronized TransactionalProtocolClient channelRegistered(final ManagementChannelHandler channelAssociation) {

@@ -242,6 +242,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     private volatile ScheduledExecutorService pingScheduler;
     private volatile ManagementResourceRegistration hostModelRegistration;
+    private volatile MasterDomainControllerClient masterDomainControllerClient;
 
     static ServiceController<ModelController> addService(final ServiceTarget serviceTarget,
                                                             final HostControllerEnvironment environment,
@@ -461,6 +462,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
         ManagementResourceRegistration hostRegistration = modelNodeRegistration.getSubModel(pa);
         hostRegistration.unregisterProxyController(pe);
         serverProxies.remove(serverName);
+    }
+
+    @Override
+    public void reportServerInstability(String serverName) {
+        MasterDomainControllerClient mdc = masterDomainControllerClient;
+        if (mdc != null) {
+            mdc.reportServerInstability(serverName);
+        }
     }
 
     @Override
@@ -890,7 +899,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 currentRunningMode,
                 serverProxies,
                 domainModelComplete);
-        MasterDomainControllerClient masterDomainControllerClient = getFuture(clientFuture);
+        masterDomainControllerClient = getFuture(clientFuture);
         //Registers us with the master and gets down the master copy of the domain model to our DC
         // if --cached-dc is used and the DC is unavailable, we'll use a cached copy of the domain config
         // (if available), and poll for reconnection to the DC. Once the DC becomes available again, the domain
