@@ -21,7 +21,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FULL_REPLACE_DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
@@ -222,6 +225,47 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                             () -> !exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
                 } finally {
                     removeDeploymentScanner();
+                    client.execute(Util.createRemoveOperation(persistentDeploymentAddress));
+                }
+            } finally {
+                StreamUtils.safeClose(client);
+            }
+        } finally {
+            container.stop();
+        }
+    }
+
+/**
+     * https://issues.jboss.org/browse/WFCORE-1890
+     *
+     * When FS deployment is erplaced with a managed deployment with same name it is not marked as undeployed and reboot will fail.
+     */
+    @Test
+    public void testReplaceDeploymentWithPersistentDeployment() throws Exception {
+        container.start();
+        try {
+            client = TestSuiteEnvironment.getModelControllerClient();
+            try {
+                final PathAddress persistentDeploymentAddress = PathAddress.pathAddress(DEPLOYMENT, JAR_ONE);
+                addDeploymentScanner(0);
+                try {
+                    // deploy an file-system deployment
+                    container.stop();
+                    createDeployment(deployDir.resolve(JAR_ONE), "org.jboss.modules");
+                    container.start();
+                    Path deployedMarker = deployDir.resolve(JAR_ONE + ".deployed");
+                    waitFor(String.format("Missing .deployed marker for %s", JAR_ONE),
+                            () -> Files.exists(deployedMarker));
+                    Assert.assertTrue(String.format("%s should be deployed", JAR_ONE), exists(persistentDeploymentAddress));
+                    //Replace deployment
+                    Archive<?> validDeployment = createDeploymentArchive();
+                    replaceWithPersistent(JAR_ONE, validDeployment);
+                    Assert.assertTrue(String.format("%s should be deployed", JAR_ONE), exists(persistentDeploymentAddress));
+                    waitFor(String.format("Missing .undeployed marker for %s", JAR_ONE),
+                            () -> Files.exists(deployDir.resolve(JAR_ONE + ".undeployed")));
+                } finally {
+                    removeDeploymentScanner();
+                    client.execute(Util.createRemoveOperation(persistentDeploymentAddress));
                 }
             } finally {
                 StreamUtils.safeClose(client);
@@ -353,6 +397,17 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
         operation = Util.createOperation(DEPLOY, address);
         result = client.execute(operation);
         Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
+    }
+
+    private void replaceWithPersistent(String name, Archive archive) throws IOException {
+        ModelNode operation = Util.createOperation(FULL_REPLACE_DEPLOYMENT, PathAddress.EMPTY_ADDRESS);
+        operation.get(CONTENT).get(0).get(INPUT_STREAM_INDEX).set(0);
+        operation.get(ENABLED).set(true);
+        operation.get(NAME).set(name);
+        OperationBuilder ob = new OperationBuilder(operation, true);
+        ob.addInputStream(archive.as(ZipExporter.class).exportAsInputStream());
+        ModelNode result = client.execute(ob.build());
+        Assert.assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
     }
 
     @Override
