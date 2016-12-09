@@ -161,6 +161,13 @@ public interface TransactionalProtocolClient {
         boolean isFailed();
 
         /**
+         * Check if prepare timed out.
+         *
+         * @return whether the operation failed due to timeout
+         */
+        boolean isTimedOut();
+
+        /**
          * Is done.
          *
          * @return whether the operation is complete (done or failed).

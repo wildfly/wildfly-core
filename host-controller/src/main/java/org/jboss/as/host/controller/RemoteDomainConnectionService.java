@@ -344,6 +344,17 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     }
 
     @Override
+    public synchronized void reportServerInstability(String serverName) {
+        if (connection.isConnected()) {
+            try {
+                handler.executeRequest(new ControllerInstabilityNotificationRequest(serverName), null);
+            } catch (Exception e) {
+                HostControllerLogger.ROOT_LOGGER.failedReportingServerInstabilityToMaster(e, serverName);
+            }
+        }
+    }
+
+    @Override
     public ModelNode execute(ModelNode operation) throws IOException {
         return execute(operation, OperationMessageHandler.logging);
     }
@@ -830,4 +841,30 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         }
     }
 
+    private class ControllerInstabilityNotificationRequest extends AbstractManagementRequest<Void, Void> {
+
+        private final String server;
+
+        private ControllerInstabilityNotificationRequest(String server) {
+            this.server = server;
+        }
+
+        @Override
+        public byte getOperationType() {
+            return DomainControllerProtocol.SERVER_INSTABILITY_REQUEST;
+        }
+
+        @Override
+        protected void sendRequest(ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context, FlushableDataOutput output) throws IOException {
+            output.write(DomainControllerProtocol.PARAM_SERVER_ID);
+            output.writeUTF(server);
+            output.write(DomainControllerProtocol.PARAM_HOST_ID);
+            output.writeUTF(localHostInfo.getLocalHostName());
+        }
+
+        @Override
+        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context) throws IOException {
+            resultHandler.done(null);
+        }
+    }
 }

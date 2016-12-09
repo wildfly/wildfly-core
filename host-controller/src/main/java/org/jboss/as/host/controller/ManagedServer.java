@@ -55,6 +55,7 @@ import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.remote.TransactionalProtocolHandlers;
 import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.Transformers;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.server.DomainServerCommunicationServices;
@@ -128,6 +129,7 @@ class ManagedServer {
 
     private volatile int operationID = CurrentOperationIdHolder.getCurrentOperationID();
     private volatile ManagedServerBootConfiguration bootConfiguration;
+    private volatile boolean unstable;
 
     private final PathAddress address;
 
@@ -393,6 +395,20 @@ class ManagedServer {
         finishTransition(InternalState.PROCESS_STARTING, InternalState.PROCESS_STARTED);
     }
 
+    /**
+     * Notification that the process has become unstable.
+     *
+     * @return {@code true} if this is a change in status
+     */
+    boolean processUnstable() {
+        boolean change = !unstable;
+        if (change) {  // Only once until the process is removed. A process is unstable until removed.
+            unstable = true;
+            HostControllerLogger.ROOT_LOGGER.managedServerUnstable(serverName);
+        }
+        return change;
+    }
+
     synchronized TransactionalProtocolClient channelRegistered(final ManagementChannelHandler channelAssociation) {
         final InternalState current = this.internalState;
         // Create the remote controller client
@@ -496,6 +512,7 @@ class ManagedServer {
      */
     void processRemoved() {
         finishTransition(InternalState.PROCESS_REMOVING, InternalState.STOPPED);
+        unstable = false;
     }
 
     private void transition() {

@@ -17,6 +17,7 @@ limitations under the License.
 package org.jboss.as.test.integration.domain;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTION_STATUS;
@@ -28,6 +29,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PLATFORM_MBEAN;
@@ -107,6 +109,7 @@ public class OperationTimeoutTestCase {
     private static final String TIMEOUT_CONFIG = "-Djboss.as.management.blocking.timeout=1";
     private static final String TIMEOUT_ADDER_CONFIG = "-Dorg.wildfly.unsupported.test.domain-timeout-adder=1000";
 
+    private static final long SAFE_TIMEOUT = TimeoutUtil.adjust(20);
     private static final long GET_TIMEOUT = TimeoutUtil.adjust(10000);
 
     private static DomainTestSupport testSupport;
@@ -134,12 +137,12 @@ public class OperationTimeoutTestCase {
 
         ModelNode addExtension = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, BlockerExtension.MODULE_NAME)));
 
-        executeForResult(addExtension, masterClient);
+        executeForResult(safeTimeout(addExtension), masterClient);
 
         ModelNode addSubsystem = Util.createAddOperation(PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
                 PathElement.pathElement(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME)));
-        executeForResult(addSubsystem, masterClient);
+        executeForResult(safeTimeout(addSubsystem), masterClient);
 
         restoreServerTimeouts("master", "main-one");
         restoreServerTimeouts("slave", "main-three");
@@ -155,11 +158,11 @@ public class OperationTimeoutTestCase {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, host), PathElement.pathElement(SERVER_CONFIG, server));
         ModelNode op = Util.createAddOperation(pa.append(PathAddress.pathAddress(SYSTEM_PROPERTY, "jboss.as.management.blocking.timeout")));
         op.get(VALUE).set("300");
-        executeForResult(op, masterClient);
+        executeForResult(safeTimeout(op), masterClient);
 
         op.get(OP_ADDR).set(pa.append(PathAddress.pathAddress(SYSTEM_PROPERTY, "org.wildfly.unsupported.test.domain-timeout-adder")).toModelNode());
         op.get(VALUE).set("5000");
-        executeForResult(op, masterClient);
+        executeForResult(safeTimeout(op), masterClient);
     }
 
     private static void validateTimeoutProperties(String host, String server, String baseTimeout, String domainAdder) throws IOException, MgmtOperationException {
@@ -181,15 +184,21 @@ public class OperationTimeoutTestCase {
         }
     }
 
+    /** Applies a more normal blocking-timeout to an op so it does not get tripped up by the low timeouts on the domain processes */
+    private static ModelNode safeTimeout(ModelNode op) {
+        op.get(OPERATION_HEADERS, BLOCKING_TIMEOUT).set(SAFE_TIMEOUT);
+        return op;
+    }
+
     @AfterClass
     public static void tearDownDomain() throws Exception {
         ModelNode removeSubsystem = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
                 PathElement.pathElement(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME)));
-        executeForResult(removeSubsystem, masterClient);
+        executeForResult(safeTimeout(removeSubsystem), masterClient);
 
         ModelNode removeExtension = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(PathElement.pathElement(EXTENSION, BlockerExtension.MODULE_NAME)));
-        executeForResult(removeExtension, masterClient);
+        executeForResult(safeTimeout(removeExtension), masterClient);
 
         testSupport.stop();
         testSupport = null;
