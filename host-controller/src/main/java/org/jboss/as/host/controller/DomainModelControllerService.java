@@ -225,6 +225,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     private volatile ScheduledExecutorService pingScheduler;
     private volatile ManagementResourceRegistration hostModelRegistration;
+    private volatile MasterDomainControllerClient masterDomainControllerClient;
 
 
     static ServiceController<ModelController> addService(final ServiceTarget serviceTarget,
@@ -440,6 +441,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
         ManagementResourceRegistration hostRegistration = modelNodeRegistration.getSubModel(pa);
         hostRegistration.unregisterProxyController(pe);
         serverProxies.remove(serverName);
+    }
+
+    @Override
+    public void reportServerInstability(String serverName) {
+        MasterDomainControllerClient mdc = masterDomainControllerClient;
+        if (mdc != null) {
+            mdc.reportServerInstability(serverName);
+        }
     }
 
     @Override
@@ -825,7 +834,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 getExecutorServiceInjector().getValue(),
                 currentRunningMode,
                 serverProxies);
-        MasterDomainControllerClient masterDomainControllerClient = getFuture(clientFuture);
+        masterDomainControllerClient = getFuture(clientFuture);
         //Registers us with the master and gets down the master copy of the domain model to our DC
         //TODO make sure that the RDCS checks env.isUseCachedDC, and if true falls through to that
         // BES 2012/02/04 Comment ^^^ implies the semantic is to use isUseCachedDC as a fallback to
