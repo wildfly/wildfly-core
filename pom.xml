@@ -65,6 +65,7 @@
           -->
         <maven.min.version>3.2.1</maven.min.version>
         <version.surefire.plugin>2.18.1</version.surefire.plugin>
+        <version.compiler.plugin>3.6.0</version.compiler.plugin>
 
         <!-- use older version of checkstyle as otherwise lots of checks fail -->
         <version.checkstyle>6.8</version.checkstyle>
@@ -1605,41 +1606,50 @@
     <!-- Profiles -->
     <profiles>
         <!--
-          Name: modularizedJdk
-          Descr: various workarounds activation for modularized JDK
+          Name: JDK9
+          Descr: various workarounds activation for JDK9
         -->
         <profile>
-            <id>modularizedJdk</id>
+            <id>JDK9</id>
             <activation>
                 <jdk>9</jdk>
             </activation>
             <properties>
-                <!-- [WFCORE-1431] remove SASL workaround -->
-                <modular.jdk.args>--add-exports=java.security.sasl/com.sun.security.sasl.digest=ALL-UNNAMED
-                    --add-exports=java.security.sasl/com.sun.security.sasl=ALL-UNNAMED
-                    --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED
-                    --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+                <modular.jdk.args>
+                    --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                    --add-opens=java.base/java.io=ALL-UNNAMED
+                    --add-opens=java.base/java.lang=ALL-UNNAMED
+                    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                    --add-opens=java.base/java.math=ALL-UNNAMED
+                    --add-opens=java.base/java.net=ALL-UNNAMED
+                    --add-opens=java.base/java.security=ALL-UNNAMED
+                    --add-opens=java.base/java.util=ALL-UNNAMED
+                    --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+                    --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED
+                    --add-opens=java.management/javax.management=ALL-UNNAMED
+                    --add-opens=java.management/javax.management.openmbean=ALL-UNNAMED
                 </modular.jdk.args>
                 <!-- [WFCORE-1494] remove JUL workaround -->
-                <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true</modular.jdk.props>
+                <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true -Dsun.reflect.debugModuleAccessChecks=true</modular.jdk.props>
+                <version.org.jboss.byteman>4.0.0-ALPHA</version.org.jboss.byteman>
             </properties>
             <build>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-compiler-plugin</artifactId>
-                            <version>${version.compiler.plugin}</version>
-                            <configuration>
-                                <!-- fork is needed so compiler args can be used -->
-                                <fork>true</fork>
-                                <compilerArgs>
-                                    <arg>-J--add-modules</arg>
-                                    <arg>-Jjava.annotations.common</arg>
-                                </compilerArgs>
-                            </configuration>
-                        </plugin>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>${version.compiler.plugin}</version>
+                        <configuration>
+                            <release>8</release>
+                            <!-- fork is needed so compiler args can be used -->
+                            <fork>true</fork>
+                            <compilerArgs>
+                                <arg>-J--add-modules=java.annotations.common</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
 
-                    </plugins>
+                </plugins>
             </build>
         </profile>
         <!--
