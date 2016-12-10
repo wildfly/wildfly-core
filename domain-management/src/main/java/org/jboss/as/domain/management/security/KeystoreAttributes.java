@@ -61,6 +61,7 @@ public class KeystoreAttributes {
 
     public static final SimpleAttributeDefinition KEYSTORE_RELATIVE_TO = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.KEYSTORE_RELATIVE_TO, ModelType.STRING, true)
             .setXmlName(ModelDescriptionConstants.RELATIVE_TO).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
+            .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES).build();
 
     public static final SimpleAttributeDefinition KEYSTORE_PROVIDER = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.KEYSTORE_PROVIDER, ModelType.STRING, true)
