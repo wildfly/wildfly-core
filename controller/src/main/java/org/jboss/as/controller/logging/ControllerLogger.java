@@ -421,7 +421,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 27, value = "Operation was interrupted before service container stability could be reached. Process should be restarted. Step that first updated the service container was '%s' at address '%s'")
     void interruptedWaitingStability(String operation, PathAddress address);
 
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = Level.WARN)
     @Message(id = 28, value = "Attribute '%s' in the resource at address '%s' is deprecated, and may be removed in " +
             "future version. See the attribute description in the output of the read-resource-description operation " +
             "to learn more about the deprecation.")
@@ -3319,7 +3319,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 394, value = "Capability '%s' does not provide services of type '%s'")
     IllegalArgumentException invalidCapabilityServiceType(String capabilityName, Class<?> serviceType);
 
-    @LogMessage(level = Level.INFO)
+    @LogMessage(level = Level.WARN)
     @Message(id = 395, value = "Operation %s against the resource at address %s is deprecated, and it might be removed in " +
             "future version. See the the output of the read-operation-description operation" +
             "to learn more about the deprecation.")
