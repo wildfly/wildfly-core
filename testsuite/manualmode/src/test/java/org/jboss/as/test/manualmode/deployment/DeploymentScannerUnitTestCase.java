@@ -79,6 +79,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
     private static final int TIMEOUT = TimeoutUtil.adjust(30000);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss,SSS");
 
+    @SuppressWarnings("unused")
     @Inject
     private ServerController container;
 
@@ -213,14 +214,12 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                     container.start();
 
                     Path failedMarker = deployDir.resolve(JAR_TWO + ".failed");
-                    waitFor(() -> Files.exists(failedMarker));
-
-                    Assert.assertTrue(String.format("%s should be deployed", JAR_ONE),
-                            exists(persistentDeploymentAddress));
-                    Assert.assertFalse(String.format("%s should not be deployed", JAR_TWO),
-                            exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
-                    Assert.assertTrue(String.format("Missing .failed marker for %s", JAR_TWO),
-                            Files.exists(failedMarker));
+                    waitFor(String.format("Missing .failed marker for %s", JAR_TWO),
+                            () -> Files.exists(failedMarker));
+                    waitFor(String.format("%s should be deployed", JAR_ONE),
+                            () -> exists(persistentDeploymentAddress));
+                    waitFor(String.format("%s should not be deployed", JAR_TWO),
+                            () -> !exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
                 } finally {
                     removeDeploymentScanner();
                 }
@@ -249,10 +248,10 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
 
                 createDeployment(deployDir.resolve(JAR_ONE), "not.existing.dependency");
                 container.start();
-                waitFor(() -> Files.exists(deployDir.resolve(JAR_ONE + ".failed")));
-
-                assertFailedMarkerCreated(JAR_ONE);
-                Assert.assertFalse(exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
+                waitFor(String.format("Failed marker was not created for %s", JAR_ONE),
+                        () -> Files.exists(deployDir.resolve(JAR_ONE + ".failed")));
+                waitFor(String.format("%s should not be deployed", JAR_ONE),
+                        () -> !exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
             } finally {
                 removeDeploymentScanner();
             }
@@ -276,11 +275,12 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                 createDeployment(deployDir.resolve(JAR_TWO), "org.jboss.modules");
 
                 container.start();
-                waitFor(this::isRunning);
-
-                assertFailedMarkerCreated(JAR_ONE);
-                Assert.assertFalse(exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
-                Assert.assertTrue(exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
+                waitFor(String.format("Failed marker was not created for %s", JAR_ONE),
+                        () -> Files.exists(deployDir.resolve(JAR_ONE + ".failed")));
+                waitFor(String.format("%s should not be deployed", JAR_ONE),
+                        () -> !exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
+                waitFor(String.format("%s should be deployed", JAR_TWO),
+                        () -> exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
             } finally {
                 removeDeploymentScanner();
             }
@@ -326,16 +326,12 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
         return archive;
     }
 
-    private void assertFailedMarkerCreated(String deployment) {
-        Assert.assertTrue(String.format("Failed marker for deployment %s was not created.", deployment),
-                Files.exists(deployDir.resolve(deployment + ".failed")));
-    }
-
-    private void waitFor(ExceptionWrappingSupplier<Boolean> condition) throws Exception {
+    private void waitFor(String message, ExceptionWrappingSupplier<Boolean> condition) throws Exception {
         long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
         while (!condition.get() && System.currentTimeMillis() < timeout) {
             Thread.sleep(100);
         }
+        Assert.assertTrue(message, condition.get());
     }
 
     /**
