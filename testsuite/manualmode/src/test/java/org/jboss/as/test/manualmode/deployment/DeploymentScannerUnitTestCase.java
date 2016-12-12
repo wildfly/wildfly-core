@@ -26,7 +26,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -79,43 +78,43 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
     private static final int TIMEOUT = 30000;
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss,SSS");
 
+    @SuppressWarnings("unused")
     @Inject
     private ServerController container;
 
     private ModelControllerClient client;
 
-    private static final String tempDir = System.getProperty("java.io.tmpdir");
-    private static File deployDir;
+    private static Path deployDir;
 
     @Before
     public void before() throws IOException {
-        deployDir = new File(tempDir + File.separator + "deployment-test-" + UUID.randomUUID().toString());
-        if (deployDir.exists()) {
-            FileUtils.deleteDirectory(deployDir);
+        deployDir = Files.createTempDirectory("deployment-test-" + UUID.randomUUID().toString());
+        if (Files.exists(deployDir)) {
+            FileUtils.deleteDirectory(deployDir.toFile());
         }
-        assertTrue("Unable to create deployment scanner directory.", deployDir.mkdir());
+        Files.createDirectory(deployDir);
     }
 
     @After
     public void after() throws IOException {
-        FileUtils.deleteDirectory(deployDir);
+        FileUtils.deleteDirectory(deployDir.toFile());
     }
 
     @Test
     public void testStartup() throws Exception {
-        final Path oneDeployed = deployDir.toPath().resolve(JAR_ONE + ".deployed");
-        final Path twoFailed = deployDir.toPath().resolve(JAR_TWO + ".failed");
+        final Path oneDeployed = deployDir.resolve(JAR_ONE + ".deployed");
+        final Path twoFailed = deployDir.resolve(JAR_TWO + ".failed");
         container.start();
         try {
             client = TestSuiteEnvironment.getModelControllerClient();
             //set the logging to debug
             addDebugDeploymentLogger();
             try {
-                final File deploymentOne = new File(deployDir, JAR_ONE);
-                final File deploymentTwo = new File(deployDir, JAR_TWO);
+                final Path deploymentOne = deployDir.resolve(JAR_ONE);
+                final Path deploymentTwo = deployDir.resolve(JAR_TWO);
 
-                createDeployment(deploymentOne, "org.jboss.modules");
-                createDeployment(deploymentTwo, "non.existing.dependency");
+                createDeployment(deploymentOne.toFile(), "org.jboss.modules");
+                createDeployment(deploymentTwo.toFile(), "non.existing.dependency");
                 addDeploymentScanner(0);
                 try {
                     // Wait until deployed ...
@@ -207,18 +206,16 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                 addDeploymentScanner(0);
                 try {
                     container.stop();
-                    createDeployment(new File(deployDir, JAR_TWO), "not.existing.dependency");
+                    createDeployment(new File(deployDir.toFile(), JAR_TWO), "not.existing.dependency");
                     container.start();
 
-                    File failedMarker = new File(deployDir, JAR_TWO + ".failed");
-                    waitFor(failedMarker::exists);
-
-                    Assert.assertTrue(String.format("%s should be deployed", JAR_ONE),
-                            exists(persistentDeploymentAddress));
-                    Assert.assertFalse(String.format("%s should not be deployed", JAR_TWO),
-                            exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
-                    Assert.assertTrue(String.format("Missing .failed marker for %s", JAR_TWO),
-                            failedMarker.exists());
+                    Path failedMarker = deployDir.resolve(JAR_TWO + ".failed");
+                    waitFor(String.format("Missing .failed marker for %s", JAR_TWO),
+                            () -> Files.exists(failedMarker));
+                    waitFor(String.format("%s should be deployed", JAR_ONE),
+                            () -> exists(persistentDeploymentAddress));
+                    waitFor(String.format("%s should not be deployed", JAR_TWO),
+                            () -> !exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
                 } finally {
                     removeDeploymentScanner();
                 }
@@ -245,12 +242,12 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
             try {
                 container.stop();
 
-                createDeployment(new File(deployDir, JAR_ONE), "not.existing.dependency");
+                createDeployment(deployDir.resolve(JAR_ONE).toFile(), "not.existing.dependency");
                 container.start();
-                waitFor(() -> new File(deployDir, JAR_ONE + ".failed").exists());
-
-                assertFailedMarkerCreated(JAR_ONE);
-                Assert.assertFalse(exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
+                waitFor(String.format("Failed marker was not created for %s", JAR_ONE),
+                        () -> Files.exists(deployDir.resolve(JAR_ONE + ".failed")));
+                waitFor(String.format("%s should not be deployed", JAR_ONE),
+                        () -> !exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
             } finally {
                 removeDeploymentScanner();
             }
@@ -270,15 +267,16 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
             try {
                 container.stop();
 
-                createDeployment(new File(deployDir, JAR_ONE), "not.existing.dependency");
-                createDeployment(new File(deployDir, JAR_TWO), "org.jboss.modules");
+                createDeployment(deployDir.resolve(JAR_ONE).toFile(), "not.existing.dependency");
+                createDeployment(deployDir.resolve(JAR_TWO).toFile(), "org.jboss.modules");
 
                 container.start();
-                waitFor(this::isRunning);
-
-                assertFailedMarkerCreated(JAR_ONE);
-                Assert.assertFalse(exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
-                Assert.assertTrue(exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
+                waitFor(String.format("Failed marker was not created for %s", JAR_ONE),
+                        () -> Files.exists(deployDir.resolve(JAR_ONE + ".failed")));
+                waitFor(String.format("%s should not be deployed", JAR_ONE),
+                        () -> !exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
+                waitFor(String.format("%s should be deployed", JAR_TWO),
+                        () -> exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
             } finally {
                 removeDeploymentScanner();
             }
@@ -324,16 +322,12 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
         return archive;
     }
 
-    private void assertFailedMarkerCreated(String deployment) {
-        Assert.assertTrue(String.format("Failed marker for deployment %s was not created.", deployment),
-                new File(deployDir, deployment + ".failed").exists());
-    }
-
-    private void waitFor(ExceptionWrappingSupplier<Boolean> condition) throws Exception {
+    private void waitFor(String message, ExceptionWrappingSupplier<Boolean> condition) throws Exception {
         long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
         while (!condition.get() && System.currentTimeMillis() < timeout) {
             Thread.sleep(100);
         }
+        Assert.assertTrue(message, condition.get());
     }
 
     /**
@@ -364,7 +358,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
 
     @Override
     protected File getDeployDir() {
-        return deployDir;
+        return deployDir.toFile();
     }
 
 
