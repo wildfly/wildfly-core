@@ -145,12 +145,8 @@ class NotificationHandlerNodeRegistry {
                 return subregistry;
             } else {
                 final NotificationHandlerNodeSubregistry newRegistry = new NotificationHandlerNodeSubregistry(key, this);
-                final NotificationHandlerNodeSubregistry appearing = childrenUpdater.putAtomic(this, key, newRegistry, snapshot);
-                if (appearing == null) {
+                if (childrenUpdater.putAtomic(this, key, newRegistry, snapshot)) {
                     return newRegistry;
-                } else if (appearing != newRegistry) {
-                    // someone else added one
-                    return appearing;
                 }
                 // otherwise, retry the loop because the map changed
             }

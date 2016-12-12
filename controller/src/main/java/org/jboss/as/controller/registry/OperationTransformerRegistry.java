@@ -321,13 +321,12 @@ public class OperationTransformerRegistry {
         for (;;) {
             final Map<String, SubRegistry> subRegistries = subRegistriesUpdater.get(this);
             SubRegistry registry = subRegistries.get(key);
-            if(registry == null) {
+            if (registry != null) {
+                return registry;
+            } else {
                 registry = new SubRegistry();
-                SubRegistry existing = subRegistriesUpdater.putAtomic(this, key, registry, subRegistries);
-                if(existing == null) {
+                if(subRegistriesUpdater.putAtomic(this, key, registry, subRegistries)) {
                     return registry;
-                } else if (existing != registry) {
-                    return existing;
                 }
             }
             return registry;
@@ -389,11 +388,8 @@ public class OperationTransformerRegistry {
                     return entry;
                 } else {
                     entry = new OperationTransformerRegistry(pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
-                    final OperationTransformerRegistry existing = childrenUpdater.putAtomic(this, value, entry, entries);
-                    if(existing == null) {
+                    if(childrenUpdater.putAtomic(this, value, entry, entries)) {
                         return entry;
-                    } else if(existing != entry) {
-                        return existing;
                     }
                 }
             }

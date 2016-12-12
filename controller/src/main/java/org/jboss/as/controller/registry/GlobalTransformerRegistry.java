@@ -271,16 +271,14 @@ public class GlobalTransformerRegistry {
         for (;;) {
             final Map<String, SubRegistry> subRegistries = subRegistriesUpdater.get(this);
             SubRegistry registry = subRegistries.get(key);
-            if(registry == null) {
+            if(registry != null) {
+                return registry;
+            } else {
                 registry = new SubRegistry();
-                SubRegistry existing = subRegistriesUpdater.putAtomic(this, key, registry, subRegistries);
-                if(existing == null) {
+                if (subRegistriesUpdater.putAtomic(this, key, registry, subRegistries)) {
                     return registry;
-                } else if (existing != registry) {
-                    return existing;
                 }
             }
-            return registry;
         }
     }
 
@@ -288,16 +286,14 @@ public class GlobalTransformerRegistry {
         for(;;) {
             final Map<ModelVersion, OperationTransformerRegistry> snapshot = registryUpdater.get(this);
             OperationTransformerRegistry registry = snapshot.get(version);
-            if(registry == null) {
+            if(registry != null) {
+                return registry;
+            } else {
                 registry = new OperationTransformerRegistry(pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
-                OperationTransformerRegistry existing = registryUpdater.putAtomic(this, version, registry, snapshot);
-                if(existing == null) {
+                if (registryUpdater.putAtomic(this, version, registry, snapshot)) {
                     return registry;
-                } else if (existing != registry) {
-                    return existing;
                 }
             }
-            return registry;
         }
     }
 
@@ -318,11 +314,8 @@ public class GlobalTransformerRegistry {
                     return entry;
                 } else {
                     entry = new GlobalTransformerRegistry();
-                    final GlobalTransformerRegistry existing = childrenUpdater.putAtomic(this, value, entry, entries);
-                    if(existing == null) {
+                    if (childrenUpdater.putAtomic(this, value, entry, entries)) {
                         return entry;
-                    } else if(existing != entry) {
-                        return existing;
                     }
                 }
             }
