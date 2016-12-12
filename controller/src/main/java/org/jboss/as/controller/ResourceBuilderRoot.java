@@ -261,7 +261,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
         return children;
     }
 
-    private class BuilderResourceDefinition extends SimpleResourceDefinition {
+    private static class BuilderResourceDefinition extends SimpleResourceDefinition {
         final ResourceBuilderRoot builder;
 
         private BuilderResourceDefinition(ResourceBuilderRoot builder) {
@@ -280,7 +280,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
         @Override
         public void registerOperations(ManagementResourceRegistration resourceRegistration) {
             super.registerOperations(resourceRegistration);
-            for (OperationBinding ob : operations) {
+            for (OperationBinding ob : builder.operations) {
                 ob.register(resourceRegistration);
             }
         }

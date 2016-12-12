@@ -34,6 +34,7 @@ import org.jboss.as.test.integration.domain.management.cli.CliCompletionTestCase
 import org.jboss.as.test.integration.domain.management.cli.CloneProfileTestCase;
 import org.jboss.as.test.integration.domain.management.cli.DeployAllDomainTestCase;
 import org.jboss.as.test.integration.domain.management.cli.HierarchicalCompositionTestCase;
+import org.jboss.as.test.integration.domain.management.cli.UndeployTestCase;
 import org.jboss.as.test.integration.domain.management.cli.UndeployWildcardDomainTestCase;
 import org.jboss.as.test.integration.domain.management.cli.WildCardReadsTestCase;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
@@ -53,6 +54,7 @@ import org.junit.runners.Suite;
     CliCompletionTestCase.class,
     CloneProfileTestCase.class,
     UndeployWildcardDomainTestCase.class,
+    UndeployTestCase.class,
     HierarchicalCompositionTestCase.class,
     WildCardReadsTestCase.class,
     DeployAllDomainTestCase.class

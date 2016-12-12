@@ -64,7 +64,7 @@
             <xs:annotation>
                 <xs:documentation>
                     Flag indicating that all scanning (including initial scanning at startup)
-                    should be disabled.
+                    should be enabled or disabled.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

@@ -57,7 +57,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.0.Alpha14-SNAPSHOT</version>
+        <version>3.0.0.Alpha16-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-testsuite</artifactId>
@@ -132,7 +132,7 @@
 
 
         <!-- Common surefire properties. -->
-        <surefire.memory.args>-Xmx512m -XX:MaxMetaspaceSize=256m</surefire.memory.args>
+        <surefire.memory.args>-Xmx512m -XX:MetaspaceSize=128m</surefire.memory.args>
         <surefire.jpda.args></surefire.jpda.args>
         <as.debug.port>8787</as.debug.port>
         <surefire.system.args>${surefire.memory.args} ${surefire.jpda.args} ${modular.jdk.args} ${modular.jdk.props} -Djboss.dist=${jboss.dist}</surefire.system.args>

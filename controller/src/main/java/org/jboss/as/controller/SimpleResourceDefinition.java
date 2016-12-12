@@ -52,6 +52,8 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private static final EnumSet<OperationEntry.Flag> RESTART_FLAGS = EnumSet.of(OperationEntry.Flag.RESTART_NONE,
             OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_JVM);
 
+    private static final RuntimeCapability[] NO_CAPABILITIES = new RuntimeCapability[0];
+
     private final PathElement pathElement;
     private final ResourceDescriptionResolver descriptionResolver;
     private final DescriptionProvider descriptionProvider;
@@ -90,7 +92,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.deprecationData = null;
         this.runtime = false;
         this.orderedChild = false;
-        this.capabilities = new RuntimeCapability[0];
+        this.capabilities = NO_CAPABILITIES;
         this.incorporatingCapabilities = null;
         this.accessConstraints = Collections.emptyList();
         this.minOccurs = 0;
@@ -281,7 +283,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.deprecationData = deprecationData;
         this.runtime = runtime;
         this.orderedChild = false;
-        this.capabilities = new RuntimeCapability[0];
+        this.capabilities = NO_CAPABILITIES;
         this.incorporatingCapabilities = null;
         this.accessConstraints = Collections.emptyList();
         this.minOccurs = 0;

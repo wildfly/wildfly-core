@@ -248,6 +248,13 @@ public interface ServerInventory {
     void serverStartFailed(String serverProcessName);
 
     /**
+     * Notification that a server process has become unstable.
+     *
+     * @param serverProcessName the name of the server process
+     */
+    void serverUnstable(String serverProcessName);
+
+    /**
      * Notification that a server has stopped.
      *
      * @param serverProcessName the name of the server process

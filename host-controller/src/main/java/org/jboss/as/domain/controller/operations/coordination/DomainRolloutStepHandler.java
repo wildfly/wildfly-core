@@ -77,6 +77,7 @@ import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.plan.RolloutPlanController;
 import org.jboss.as.domain.controller.plan.ServerTaskExecutor;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.threads.AsyncFuture;
@@ -199,9 +200,13 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
             // Clear any thread interrupted status to ensure the finalizeTransaction message goes out
             interrupted = Thread.interrupted() || interrupted;
 
+            final ServerIdentity identity = preparedResult.getServerIdentity();
+            if (preparedResult.isTimedOut()) {
+                HostControllerLogger.ROOT_LOGGER.serverSuspected(identity.getServerName(), identity.getHostName());
+            }
+
             // Require a server reload, in case the operation failed, but the overall state was commit
             if (! preparedResult.finalizeTransaction(! rollback)) {
-                final ServerIdentity identity = preparedResult.getServerIdentity();
                 try {
                     // Replace the original proxyTask with the requireReloadTask
                     final ModelNode result = preparedResult.getPreparedOperation().getPreparedResult();
@@ -419,7 +424,17 @@ public class DomainRolloutStepHandler implements OperationStepHandler {
     }
 
     private ModelNode incorporateServerOperationHeaders(ModelNode op) {
-        op.get(OPERATION_HEADERS).set(serverOperationHeaders);
+        if (serverOperationHeaders.isDefined()) {
+            if (op.hasDefined(OPERATION_HEADERS)) {
+                // WFCORE-2055 -- preserve any existing headers not declared at the server level
+                ModelNode headers = op.get(OPERATION_HEADERS);
+                for (Property prop : serverOperationHeaders.asPropertyList()) {
+                    headers.get(prop.getName()).set(prop.getValue());
+                }
+            } else {
+                op.get(OPERATION_HEADERS).set(serverOperationHeaders);
+            }
+        }
         return op;
     }
 

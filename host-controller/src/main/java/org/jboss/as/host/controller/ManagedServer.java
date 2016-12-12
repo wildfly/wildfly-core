@@ -55,6 +55,7 @@ import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.remote.TransactionalProtocolHandlers;
 import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.Transformers;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.server.DomainServerCommunicationServices;
@@ -128,6 +129,7 @@ class ManagedServer {
 
     private volatile int operationID = CurrentOperationIdHolder.getCurrentOperationID();
     private volatile ManagedServerBootConfiguration bootConfiguration;
+    private volatile boolean unstable;
 
     private final PathAddress address;
 
@@ -274,7 +276,7 @@ class ManagedServer {
     }
 
     synchronized void destroy() {
-        final InternalState required = this.requiredState;
+        InternalState required = this.requiredState;
         if(required == InternalState.STOPPED) {
             if(internalState != InternalState.STOPPED) {
                 try {
@@ -284,12 +286,20 @@ class ManagedServer {
                 }
             }
         } else {
+            // Do the normal stop stuff first
             stop(-1, 0);
+            required = this.requiredState;
+            if (required == InternalState.STOPPED) {
+                // Now proceed to destroy, assuming that there was a reason the user
+                // invoked this op, and that stop() alone will not suffice
+                // The PC will give it a bit of time to do a normal stop before destroying
+                destroy();
+            } // else something is odd but avoid looping. User would have to invoke the op again
         }
     }
 
     synchronized void kill() {
-        final InternalState required = this.requiredState;
+        InternalState required = this.requiredState;
         if(required == InternalState.STOPPED) {
             if(internalState != InternalState.STOPPED) {
                 try {
@@ -299,7 +309,15 @@ class ManagedServer {
                 }
             }
         } else {
+            // Do the normal stop stuff first
             stop(-1, 0);
+            required = this.requiredState;
+            if (required == InternalState.STOPPED) {
+                // Now proceed to kill, assuming that there was a reason the user
+                // invoked this op, and that stop() alone will not suffice
+                // The PC will give it a bit of time to do a normal stop before killing
+                kill();
+            } // else something is odd but avoid looping. User would have to invoke the op again
         }
     }
 
@@ -375,6 +393,20 @@ class ManagedServer {
      */
     void processStarted() {
         finishTransition(InternalState.PROCESS_STARTING, InternalState.PROCESS_STARTED);
+    }
+
+    /**
+     * Notification that the process has become unstable.
+     *
+     * @return {@code true} if this is a change in status
+     */
+    boolean processUnstable() {
+        boolean change = !unstable;
+        if (change) {  // Only once until the process is removed. A process is unstable until removed.
+            unstable = true;
+            HostControllerLogger.ROOT_LOGGER.managedServerUnstable(serverName);
+        }
+        return change;
     }
 
     synchronized TransactionalProtocolClient channelRegistered(final ManagementChannelHandler channelAssociation) {
@@ -480,6 +512,7 @@ class ManagedServer {
      */
     void processRemoved() {
         finishTransition(InternalState.PROCESS_REMOVING, InternalState.STOPPED);
+        unstable = false;
     }
 
     private void transition() {

@@ -32,9 +32,8 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.Util;
-import org.jboss.as.cli.handlers.DefaultFilenameTabCompleter;
+import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
-import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.impl.AttributeNamePathCompleter;
 import org.jboss.as.cli.impl.DeploymentItemCompleter;
 import org.jboss.as.cli.impl.ValueTypeCompleter;
@@ -368,7 +367,7 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
             }
         }
         if (attrDescr.has(Util.FILESYSTEM_PATH) && attrDescr.get(Util.FILESYSTEM_PATH).asBoolean()) {
-            return Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
+            return FilenameTabCompleter.newCompleter(ctx);
         }
         if (attrDescr.has(Util.RELATIVE_TO) && attrDescr.get(Util.RELATIVE_TO).asBoolean()) {
             return new DeploymentItemCompleter(address);

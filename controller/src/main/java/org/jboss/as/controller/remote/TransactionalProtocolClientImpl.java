@@ -547,6 +547,11 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
         }
 
         @Override
+        public boolean isTimedOut() {
+            return false;
+        }
+
+        @Override
         public boolean isDone() {
             return finalResult.isDone();
         }

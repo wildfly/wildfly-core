@@ -117,7 +117,8 @@ abstract class AbstractServerGroupRolloutTask implements Runnable {
         final ModelNode failureNode = new ModelNode();
         failureNode.get(OUTCOME).set(FAILED);
         failureNode.get(FAILURE_DESCRIPTION).set(failureMsg);
-        final BlockingQueueOperationListener.FailedOperation<ServerTaskExecutor.ServerOperation> prepared = new BlockingQueueOperationListener.FailedOperation<>(serverOperation, failureNode);
+        final BlockingQueueOperationListener.FailedOperation<ServerTaskExecutor.ServerOperation> prepared =
+                new BlockingQueueOperationListener.FailedOperation<>(serverOperation, failureNode, true);
 
         final ModelNode preparedResult = prepared.getPreparedResult();
         updatePolicy.recordServerResult(identity, preparedResult);

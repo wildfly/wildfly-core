@@ -25,7 +25,6 @@ import java.io.File;
 import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.Util;
 
 /**
  *
@@ -33,115 +32,25 @@ import org.jboss.as.cli.Util;
  */
 public class WindowsFilenameTabCompleter extends FilenameTabCompleter {
 
-
-   public WindowsFilenameTabCompleter(CommandContext ctx) {
+    public WindowsFilenameTabCompleter(CommandContext ctx) {
         super(ctx);
     }
 
-/* (non-Javadoc)
-    * @see org.jboss.as.cli.CommandLineCompleter#complete(org.jboss.as.cli.CommandContext,
-    * java.lang.String, int, java.util.List)
-    */
-   @Override
-   public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
-
-       boolean openQuote = false;
-       boolean dontCloseQuote = false;
-       if(buffer.length() >= 2 && buffer.charAt(0) == '"') {
-           int lastQuote = buffer.lastIndexOf('"');
-           if(lastQuote > 0) {
-               StringBuilder buf = new StringBuilder();
-               buf.append(buffer.substring(1, lastQuote));
-               if(lastQuote != buffer.length() - 1) {
-                   buf.append(buffer.substring(lastQuote + 1));
-               }
-               buffer = buf.toString();
-               openQuote = true;
-               dontCloseQuote = cursor <= lastQuote;
-           }
-       }
-
-       int result = getCandidates(buffer, candidates);
-
-       final String path;
-       if(buffer.length() == 0) {
-           path = null;
-       } else {
-           final int lastSeparator = buffer.lastIndexOf(File.separatorChar);
-           if(lastSeparator > 0) {
-               path = buffer.substring(0, lastSeparator + 1);
-           } else {
-               path = null;
-           }
-       }
-
-       if(path != null && !openQuote) {
-           openQuote = path.indexOf(' ') >= 0;
-      }
-
-       if(candidates.size() == 1) {
-           final String candidate = candidates.get(0);
-           if(!openQuote) {
-               openQuote = candidate.indexOf(' ') >= 0;
-           }
-           if(openQuote) {
-               StringBuilder buf = new StringBuilder();
-               buf.append('"');
-               if(path != null) {
-                   buf.append(path);
-               }
-               buf.append(candidate);
-               if(!dontCloseQuote) {
-                   buf.append('"');
-               }
-               candidates.set(0, buf.toString());
-           }
-       } else {
-           final String common = Util.getCommonStart(candidates);
-           if(!openQuote && common != null) {
-               openQuote = common.indexOf(' ') >= 0;
-           }
-           if(openQuote) {
-               for(int i = 0; i < candidates.size(); ++i) {
-                   StringBuilder buf = new StringBuilder();
-                   buf.append('"');
-                   if(path != null) {
-                       buf.append(path);
-                   }
-
-                   if(common == null) {
-                       if(!dontCloseQuote) {
-                           buf.append('"');
-                       }
-                       buf.append(candidates.get(i));
-                   } else {
-                       buf.append(common);
-                       if(!dontCloseQuote) {
-                           buf.append('"');
-                       }
-                       buf.append(candidates.get(i).substring(common.length()));
-                   }
-
-                   candidates.set(i, buf.toString());
-               }
-           }
-       }
-
-       if(openQuote) {
-           return 0;
-       }
-
-       if (candidates.isEmpty() && buffer.length() == 2) {
-           if (buffer.endsWith(":")) {
-               candidates.add(buffer + File.separator);
-           }
-       }
-
-       return result;
-   }
-
-   @Override
-   protected boolean startsWithRoot(String path) {
-       return path.contains(":\\") || path.startsWith("\\\\");
-   }
+    /**
+     * The only supported syntax at command execution is fully quoted, e.g.:
+     * "c:\Program Files\..." or not quoted at all. Completion supports only
+     * these 2 syntaxes.
+     */
+    @Override
+    void completeCandidates(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
+        if (candidates.isEmpty()) {
+            if (buffer.startsWith("\"") && buffer.length() >= 2) {
+                // Quotes are added back by super class.
+                buffer = buffer.substring(1);
+            }
+            if (buffer.length() == 2 && buffer.endsWith(":")) {
+                candidates.add(buffer + File.separator);
+            }
+        }
+    }
 }

@@ -68,6 +68,9 @@ class MasterDomainControllerOperationHandlerImpl implements ManagementRequestHan
             } case DomainControllerProtocol.GET_FILE_REQUEST: {
                 handlers.registerActiveOperation(header.getBatchId(), null);
                 return new GetFileOperation();
+            } case DomainControllerProtocol.SERVER_INSTABILITY_REQUEST: {
+                handlers.registerActiveOperation(header.getBatchId(), null);
+                return new ServerUnstableHandler();
             }
         }
         return handlers.resolveNext();
@@ -139,6 +142,33 @@ class MasterDomainControllerOperationHandlerImpl implements ManagementRequestHan
             return context.writeMessage(header);
         }
 
+    }
+
+    /**
+     * Handler responsible for handling a server instability notification.
+     */
+    private class ServerUnstableHandler implements ManagementRequestHandler<Void, Void> {
+
+        private ServerUnstableHandler() {
+        }
+
+        @Override
+        public void handleRequest(final DataInput input, final ActiveOperation.ResultHandler<Void> resultHandler, final ManagementRequestContext<Void> context) throws IOException {
+            expectHeader(input, DomainControllerProtocol.PARAM_SERVER_ID);
+            final String serverName = input.readUTF();
+            expectHeader(input, DomainControllerProtocol.PARAM_HOST_ID);
+            final String hostName = input.readUTF();
+            context.executeAsync(new ManagementRequestContext.AsyncTask<Void>() {
+                @Override
+                public void execute(ManagementRequestContext<Void> context) throws Exception {
+                    try {
+                        HostControllerLogger.ROOT_LOGGER.managedServerUnstable(serverName, hostName);
+                    } finally {
+                        resultHandler.done(null);
+                    }
+                }
+            });
+        }
     }
 
 }

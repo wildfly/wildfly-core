@@ -96,8 +96,6 @@ import org.wildfly.security.sasl.util.SortedMechanismSaslServerFactory;
  */
 public class SecurityRealmService implements Service<SecurityRealm>, SecurityRealm {
 
-    private static final Provider ELYTRON_PROVIDER = new WildFlyElytronProvider();
-
     public static final String LOADED_USERNAME_KEY = SecurityRealmService.class.getName() + ".LOADED_USERNAME";
     public static final String SKIP_GROUP_LOADING_KEY = SecurityRealmService.class.getName() + ".SKIP_GROUP_LOADING";
 
@@ -182,7 +180,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         HttpAuthenticationFactory.Builder httpBuilder = HttpAuthenticationFactory.builder();
         httpBuilder.setSecurityDomain(securityDomain);
 
-        HttpServerAuthenticationMechanismFactory httpServerFactory = new SecurityProviderServerMechanismFactory(() -> new Provider[] {ELYTRON_PROVIDER});
+        final Provider elytronProvider = new WildFlyElytronProvider();
+        HttpServerAuthenticationMechanismFactory httpServerFactory = new SecurityProviderServerMechanismFactory(() -> new Provider[] {elytronProvider});
         httpServerFactory = new SetMechanismInformationMechanismFactory(httpServerFactory);
         httpServerFactory = new FilterServerMechanismFactory(httpServerFactory, (s) -> {
             AuthMechanism mechanism = toAuthMechanism("HTTP", s);
@@ -202,7 +201,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         SaslAuthenticationFactory.Builder saslBuilder = SaslAuthenticationFactory.builder();
         saslBuilder.setSecurityDomain(securityDomain);
 
-        SaslServerFactory saslServerFactory = new SecurityProviderSaslServerFactory(() -> new Provider[] {ELYTRON_PROVIDER});
+        SaslServerFactory saslServerFactory = new SecurityProviderSaslServerFactory(() -> new Provider[] {elytronProvider});
         saslServerFactory = new FilterMechanismSaslServerFactory(saslServerFactory, (s) -> {
             AuthMechanism mechanism = toAuthMechanism("SASL", s);
             return mechanism != null && configurationMap.containsKey(mechanism);

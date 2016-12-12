@@ -417,27 +417,27 @@ public class CommandTimeoutHandlerTestCase {
             }
         }
         {
-            List<Boolean> holder = new ArrayList<>();
+            List<Object> holder = new ArrayList<>();
             CommandHandlerWrapper wrapper = new CommandHandlerWrapper(ctx, ls, (context) -> {
                 TimeoutCommandContext tc = (TimeoutCommandContext) context;
                 tc.setLastHandlerTask(null);
                 try {
                     Thread.sleep(200);
-                    holder.add(false);
+                    holder.add(null);
                 } catch (InterruptedException ex) {
-                    holder.add(true);
+                    holder.add(ex);
                     Thread.currentThread().interrupt();
                 }
                 try {
                     ls.handle(context);
-                    holder.add(false);
+                    holder.add(null);
                 } catch (Exception ex) {
                     // Expecting a timeout exception,
                     // the task has already been canceled.
-                    holder.add(true);
+                    holder.add(ex);
                 }
                 Future<?> future = tc.getLastTask();
-                holder.add(future == null);
+                holder.add(future);
             });
             try {
                 executor.execute(wrapper, 100, TimeUnit.MILLISECONDS);
@@ -454,14 +454,15 @@ public class CommandTimeoutHandlerTestCase {
             if (holder.size() != 3) {
                 throw new Exception("Task didn't terminate");
             }
-            if (!holder.get(0)) {
+            if (holder.get(0) == null) {
                 throw new Exception("Task thread not interrupted");
             }
-            if (!holder.get(1)) {
+            if (holder.get(1) == null) {
                 throw new Exception("Ls has not timeouted");
             }
-            if (!holder.get(2)) {
-                throw new Exception("Future task is not null");
+            if (holder.get(2) != null) {
+                throw new Exception("Future task is not null. Steps: "
+                        + holder);
             }
         }
     }

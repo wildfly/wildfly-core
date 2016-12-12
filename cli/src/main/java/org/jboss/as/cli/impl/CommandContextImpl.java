@@ -1612,6 +1612,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         else {
             console.redrawPrompt();
         }
+
+        // We unlock the console for it to continue process inputstream.
+        // Could have been put in controlled mode during username/password prompt.
         if(console.isControlled()) {
             console.continuous();
         }
@@ -1778,29 +1781,24 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
                     @Override
                     public void run() {
-                        boolean success = false;
-                        boolean callContinuous = false;
                         try {
                             if (username == null || password == null) {
-                                if (console == null) {
-                                    initBasicConsole(null, false);
-                                }
-                                console.controlled();
-                                if (!console.running()) {
-                                    console.start();
-                                } else {
-                                    callContinuous = true;
+                                // Only control the console if not already interacting.
+                                if (!INTERACT) {
+                                    if (console == null) {
+                                        initBasicConsole(null, false);
+                                    }
+                                    // That is required to stop the console from executing any command
+                                    // before to be done with credentials.
+                                    console.controlled();
+                                    if (!console.running()) {
+                                        console.start();
+                                    }
                                 }
                             }
                             dohandle(callbacks);
-                            success = true;
                         } catch (IOException | UnsupportedCallbackException | CliInitializationException e) {
                             throw new RuntimeException(e);
-                        } finally {
-                            // in case of success the console will continue after connectController has finished all the initialization required
-                            if (console != null && (!success || callContinuous)) {
-                                console.continuous();
-                            }
                         }
                     }
                 });
