@@ -43,6 +43,7 @@ public class CliCommentsTestCase {
     public void test() throws Exception {
         CliProcessWrapper cli = new CliProcessWrapper();
         cli.executeInteractive();
+        cli.clearOutput();
         try {
             assertTrue(cli.pushLineAndWaitForResults("# Hello \" sdcds ", null));
             assertTrue(cli.pushLineAndWaitForResults("# Hello \' sdcds ", null));
