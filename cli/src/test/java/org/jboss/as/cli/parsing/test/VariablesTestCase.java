@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.parsing.test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -227,6 +229,56 @@ public class VariablesTestCase {
         final ParsedCommandLine parsed = parse("$myvar:re");
         assertEquals("re", parsed.getOperationName());
         assertEquals(7, parsed.getLastChunkIndex());
+    }
+
+    @Test
+    public void echoHandler() throws Exception {
+        CommandContext ctx = CommandContextFactory.getInstance().
+                newCommandContext(null, null, null, System.in, System.out);
+        ctx.setVariable("toto", "v1");
+        ctx.setVariable("tata", "v2");
+        ctx.setVariable("vota","v3");
+        {
+            List<String> candidates = new ArrayList<>();
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo ", 0, candidates);
+            assertTrue(candidates.isEmpty());
+            assertEquals(-1, index);
+        }
+
+        {
+            List<String> candidates = new ArrayList<>();
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo t", 0, candidates);
+            assertTrue(candidates.isEmpty());
+            assertEquals(-1, index);
+        }
+
+        {
+            List<String> candidates = new ArrayList<>();
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $", 0, candidates);
+            assertEquals(Arrays.asList("tata", "toto", "vota"), candidates);
+            assertEquals(6, index);
+        }
+
+        {
+            List<String> candidates = new ArrayList<>();
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $t", 0, candidates);
+            assertEquals(Arrays.asList("tata", "toto"), candidates);
+            assertEquals(6, index);
+        }
+
+        {
+            List<String> candidates = new ArrayList<>();
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $tata/$", 0, candidates);
+            assertEquals(Arrays.asList("tata", "toto", "vota"), candidates);
+            assertEquals(12, index);
+        }
+
+        {
+            List<String> candidates = new ArrayList<>();
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $tata/$v", 0, candidates);
+            assertEquals(Arrays.asList("vota"), candidates);
+            assertEquals(12, index);
+        }
     }
 
     private void assertFailedToParse(String line) {

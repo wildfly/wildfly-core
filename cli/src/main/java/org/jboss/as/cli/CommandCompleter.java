@@ -154,6 +154,7 @@ public class CommandCompleter implements CommandLineCompleter {
                     if (!candidateVariables.isEmpty()) {
                         candidates.addAll(candidateVariables);
                         Collections.sort(candidates);
+                        return index + 1;
                     }
                 } else {
                     // failed to resolve a variable in the middle of the line

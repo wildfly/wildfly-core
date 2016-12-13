@@ -23,14 +23,11 @@ package org.jboss.as.cli.handlers;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.impl.ArgumentWithValue;
-import org.jboss.as.cli.impl.DefaultCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.cli.util.CLIExpressionResolver;
 
@@ -42,33 +39,12 @@ public class EchoVariableHandler extends CommandHandlerWithHelp {
 
     public EchoVariableHandler() {
         super("echo");
-        new ArgumentWithValue(this, new DefaultCompleter(new DefaultCompleter.CandidatesProvider() {
-            @Override
-            public Collection<String> getAllCandidates(CommandContext ctx) {
-                final List<String> specified = ctx.getParsedCommandLine().getOtherProperties();
-                if(specified.isEmpty()) {
-                    return ctx.getVariables();
-                }
-                if(ctx.getVariables().isEmpty()) {
-                    return Collections.emptyList();
-                }
-                final ArrayList<String> all = new ArrayList<String>(ctx.getVariables());
-                all.removeAll(specified);
-                return all;
-            }
-        }), 0, "--variable") {
-            @Override
-            public boolean canAppearNext(CommandContext ctx) {
-                try {
-                    if(helpArg.isPresent(ctx.getParsedCommandLine())) {
-                        return false;
-                    }
-                } catch (CommandFormatException e) {
-                    return false;
-                }
-                return true;
-            }
-        };
+        // The line takes benefit of top level operation/command completer
+        // that does handle variable completion of any value starting with '$'
+        // and followed by 0 to n characters.
+        // No reference is kept for this argument, it is automaticaly added to this
+        // handler in the ArgumentWithValue constructor.
+        new ArgumentWithValue(this, 0, "--variable");
     }
 
     /* (non-Javadoc)
