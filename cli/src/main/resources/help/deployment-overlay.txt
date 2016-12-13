@@ -1,18 +1,29 @@
 SYNOPSIS
 
-Covering all the actions and options in one line is difficult to compose
-correctly and difficult to read and understand. Instead, the synopsis
-will be described per action. 
+  Covering all the actions and options in one line is difficult to compose
+  correctly and difficult to read and understand. Instead, the synopsis
+  will be described for each action in the DESCRIPTION section.
 
-The command supports the following actions (action is always the first
-argument of the command): add, link, list-content, list-links,
-list-content, list-links, redeploy-affected, remove, upload.
+DESCRIPTION
+
+  Deployment overlays are a way of 'overlaying' content into an existing deployment, 
+  without physically modifying the contents of the deployment archive. 
+  Possible use cases include swapping out deployment descriptors, 
+  modifying static web resources to change the branding of an application, 
+  or even replacing jar libraries with different versions.
+
+  The command supports the following actions (action is always the first
+  argument of the command): add, link, list-content, list-links,
+  list-content, list-links, redeploy-affected, remove, upload.
+
+  NOTE: When you modify or create an overlay it will not affect existing deployments, 
+        they must be redeployed in order to take effect.
  
-NOTE: --server-group, --all-server-groups and --all-relevant-server-groups
-      arguments in all the descriptions below are shown as optional
-      in brackets, in fact, their appearance depends on the mode:
-      one of them is allowed or required in the domain mode
-      but in the standalone mode none of them is allowed.
+  NOTE: --server-group, --all-server-groups and --all-relevant-server-groups
+        arguments in all the descriptions below are shown as optional
+        in brackets, in fact, their appearance depends on the mode:
+        one of them is allowed or required in the domain mode
+        but in the standalone mode none of them is allowed.
       
 ACTION: add
 
