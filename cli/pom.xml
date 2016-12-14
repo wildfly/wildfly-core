@@ -229,6 +229,31 @@
                 </dependency>
             </dependencies>
         </profile>
+        <profile>
+            <id>JDK9</id>
+            <activation>
+                <jdk>9</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>${version.compiler.plugin}</version>
+                        <configuration>
+                            <release>9</release>
+                            <!-- fork is needed so compiler args can be used -->
+                            <fork>true</fork>
+                            <compilerArgs>
+                                <arg>-J--add-modules=java.annotations.common,jdk.jconsole</arg>
+                                <arg>--add-modules=jdk.jconsole</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
 </project>
