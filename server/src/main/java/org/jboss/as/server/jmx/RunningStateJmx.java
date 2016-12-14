@@ -48,7 +48,7 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
     private final ObjectName objectName;
     private final AtomicLong sequence = new AtomicLong(0);
     private volatile RuntimeConfigurationState state = RuntimeConfigurationState.STOPPED;
-    private volatile RunningState runningState = null;
+    private volatile RunningState runningState = RunningState.STOPPED;
     private volatile RunningMode mode = null;
     private final boolean isServer;
 
@@ -105,31 +105,6 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
                 ServerLogger.ROOT_LOGGER.jmxAttributeChange(RUNTIME_CONFIGURATION_STATE, oldStateString, stateString),
                 RUNTIME_CONFIGURATION_STATE, String.class.getName(), oldStateString, stateString);
         sendNotification(notification);
-        if (runningState == null) {
-            switch (oldState) {
-                case RUNNING:
-                    if (!isServer) {
-                        if (mode == RunningMode.NORMAL) {
-                            runningState = RunningState.NORMAL;
-                        } else {
-                            runningState = RunningState.ADMIN_ONLY;
-                        }
-                    }
-                    break;
-                case STARTING:
-                    runningState = RunningState.STARTING;
-                    break;
-                case STOPPING:
-                    runningState = RunningState.STOPPING;
-                    break;
-                case STOPPED:
-                    runningState = RunningState.STOPPED;
-                    break;
-                case RELOAD_REQUIRED:
-                case RESTART_REQUIRED:
-                default:
-            }
-        }
         switch(newState) {
             case RUNNING:
                 if (RunningState.NORMAL != runningState && RunningState.ADMIN_ONLY != runningState && !isServer) {
@@ -186,8 +161,6 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
             server.registerMBean(mbean, name);
             registerStateListener(mbean, processStateService);
             if (suspendController != null) {
-                RunningState state = getInitialRunningState(suspendController, mode);
-                mbean.setRunningState(RunningState.STARTING, state);
                 suspendController.addListener(new OperationListener() {
                     @Override
                     public void suspendStarted() {
@@ -221,23 +194,6 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-private static RunningState getInitialRunningState(SuspendController suspendController, RunningMode mode) {
-        switch (suspendController.getState()) {
-            case PRE_SUSPEND:
-                return RunningState.PRE_SUSPEND;
-            case RUNNING:
-                if (mode == RunningMode.NORMAL) {
-                    return RunningState.NORMAL;
-                }
-                return RunningState.ADMIN_ONLY;
-            case SUSPENDED:
-                return RunningState.SUSPENDED;
-            case SUSPENDING:
-                return RunningState.SUSPENDING;
-        }
-        return RunningState.STARTING;
     }
 
     private static void registerStateListener(RunningStateJmxMBean mbean, ControlledProcessStateService processStateService) {
