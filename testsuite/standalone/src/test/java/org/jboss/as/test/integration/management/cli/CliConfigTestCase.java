@@ -117,6 +117,7 @@ public class CliConfigTestCase {
                         + TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect");
         cli.executeInteractive();
+        cli.clearOutput();
         testTimeout(cli, 1);
     }
 
@@ -130,6 +131,7 @@ public class CliConfigTestCase {
                 .addCliArgument("--connect")
                 .addCliArgument("--command-timeout=77");
         cli.executeInteractive();
+        cli.clearOutput();
         testTimeout(cli, 77);
     }
 
@@ -235,6 +237,7 @@ public class CliConfigTestCase {
                         + TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect");
         cli.executeInteractive();
+        cli.clearOutput();
         cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
         String str = cli.getOutput();
         assertTrue(str, str.contains("'aaaaa' is not found among the supported properties:"));
@@ -251,6 +254,7 @@ public class CliConfigTestCase {
                         + TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect");
         cli.executeInteractive();
+        cli.clearOutput();
         cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
         String str = cli.getOutput();
         assertTrue(str, str.contains("\"outcome\" => \"success\","));
