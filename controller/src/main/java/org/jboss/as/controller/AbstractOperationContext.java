@@ -124,6 +124,7 @@ abstract class AbstractOperationContext implements OperationContext {
     static final ThreadLocal<Thread> controllingThread = new ThreadLocal<Thread>();
 
     static final String INTERNAL_MODEL_VALIDATION_NAME = "internal-model-validation";
+    static final String INTERNAL_MODEL_PREPARE_PERSISTENCE = "internal-model-prepare-persistence";
 
     /** Thread that initiated execution of the overall operation for which this context is the whole or a part */
     final Thread initiatingThread;
@@ -136,12 +137,17 @@ abstract class AbstractOperationContext implements OperationContext {
     private final RunningMode runningMode;
     private final Environment callEnvironment;
     private final ConfigurationChangesCollector configurationChangesCollector = ConfigurationChangesCollector.INSTANCE;
+    private ConfigurationPersister.PersistenceResource persistenceResource;
     // We only respect interruption on the way in; once we complete all steps
     // and begin
     // returning, any calls that can throw InterruptedException are converted to
     // an uninterruptible form. This is to ensure rollback changes are not
     // interrupted
     boolean respectInterruption = true;
+
+    // if we need to prepare persistent resources (example domain.xml) to check if we can write to the directory etc.
+    // this is only used on Hostcontrollers that have a non-null persister defined.
+    private boolean persistencePrepared = false;
 
     /**
      * The notifications are stored when {@code emit(Notification)} is called and effectively
@@ -177,6 +183,7 @@ abstract class AbstractOperationContext implements OperationContext {
     private final AuditLogger auditLogger;
     private final ModelControllerImpl controller;
     private final OperationStepHandler extraValidationStepHandler;
+    private final OperationStepHandler domainPersistencePrepareStepHandler;
     // protected by this
     private Map<String, OperationResponse.StreamEntry> responseStreams;
 
@@ -228,6 +235,29 @@ abstract class AbstractOperationContext implements OperationContext {
         modifiedResourcesForModelValidation = skipModelValidation == false ?  new HashSet<PathAddress>() : null;
         this.extraValidationStepHandler = extraValidationStepHandler;
         this.securityIdentitySupplier = securityIdentitySupplier;
+
+        this.domainPersistencePrepareStepHandler = new OperationStepHandler() {
+            @Override
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                // Prepare persistence of any configuration changes
+                // if we don't run this in Stage.MODEL, by the time we're in
+                // Stage.DONE, its too late to roll back on the servers, so they'll already
+                // have the changes committed.
+                if (isModelAffected() && resultAction != ResultAction.ROLLBACK) {
+                    try {
+                        persistenceResource = createPersistenceResource();
+                        if (persistenceResource != null) {
+                            persistenceResource.prepare();
+                        }
+                    } catch (ConfigurationPersistenceException e) {
+                        MGMT_OP_LOGGER.failedToPersistConfigurationChange(e);
+                        context.getResult().get(OUTCOME).set(FAILED);
+                        context.getResult().get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.failedToPersistConfigurationChange(e.getLocalizedMessage()));
+                        resultAction = ResultAction.ROLLBACK;
+                    }
+                }
+            }
+        };
     }
 
     /**
@@ -517,8 +547,8 @@ abstract class AbstractOperationContext implements OperationContext {
     /**
      * Notification that all steps in a stage have been executed.
      * <p>This default implementation always returns {@code true}.</p>
-     * @param stage the stage that is completed. Will not be {@code null}
      *
+     * @param stage the stage that is completed. Will not be {@code null}
      * @return {@code true} if execution should proceed to the next stage; {@code false} if execution should halt
      */
     boolean stageCompleted(Stage stage) {
@@ -675,6 +705,11 @@ abstract class AbstractOperationContext implements OperationContext {
                 if (currentStage == Stage.MODEL && addModelValidationSteps()) {
                     continue;
                 }
+
+                if (currentStage == Stage.MODEL && addDomainPersistenceSteps()) {
+                    continue;
+                }
+
                 // No steps remain in this stage; give subclasses a chance to check status
                 // and approve moving to the next stage
                 if (!tryStageCompleted(currentStage)) {
@@ -791,17 +826,21 @@ abstract class AbstractOperationContext implements OperationContext {
         Throwable toThrow = null;
         try {
             // Prepare persistence of any configuration changes
-            ConfigurationPersister.PersistenceResource persistenceResource = null;
             if (isModelAffected() && resultAction != ResultAction.ROLLBACK) {
-                try {
-                    persistenceResource = createPersistenceResource();
-                } catch (ConfigurationPersistenceException e) {
-                    MGMT_OP_LOGGER.failedToPersistConfigurationChange(e);
-                    primaryResponse.get(OUTCOME).set(FAILED);
-                    primaryResponse.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.failedToPersistConfigurationChange(e.getLocalizedMessage()));
-                    resultAction = ResultAction.ROLLBACK;
-                    executeResultHandlerPhase(null);
-                    return;
+                if (persistenceResource == null) {
+                    try {
+                        persistenceResource = createPersistenceResource();
+                        if (persistenceResource != null) {
+                            persistenceResource.prepare();
+                        }
+                    } catch (ConfigurationPersistenceException e) {
+                        MGMT_OP_LOGGER.failedToPersistConfigurationChange(e);
+                        primaryResponse.get(OUTCOME).set(FAILED);
+                        primaryResponse.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.failedToPersistConfigurationChange(e.getLocalizedMessage()));
+                        resultAction = ResultAction.ROLLBACK;
+                        executeResultHandlerPhase(null);
+                        return;
+                    }
                 }
             }
 
@@ -1280,6 +1319,17 @@ abstract class AbstractOperationContext implements OperationContext {
         return true;
     }
 
+    private boolean addDomainPersistenceSteps() {
+        if (!(processType == ProcessType.HOST_CONTROLLER || processType == ProcessType.EMBEDDED_HOST_CONTROLLER) || persistencePrepared || isBooting()) {
+            return false;
+        }
+        synchronized (domainPersistencePrepareStepHandler) {
+            ModelNode op = Util.createOperation(INTERNAL_MODEL_PREPARE_PERSISTENCE, PathAddress.EMPTY_ADDRESS);
+            addStep(op, domainPersistencePrepareStepHandler, Stage.MODEL);
+            persistencePrepared = true;
+        }
+        return true;
+    }
 
     class Step {
         private final Step parent;

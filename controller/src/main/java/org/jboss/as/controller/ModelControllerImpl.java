@@ -694,6 +694,11 @@ class ModelControllerImpl implements ModelController {
         return new ConfigurationPersister.PersistenceResource() {
 
             @Override
+            public void prepare() throws ConfigurationPersistenceException {
+                delegate.prepare();
+            }
+
+            @Override
             public void commit() {
                 // Discard the tracker first, so if there's any race the new OperationContextImpl
                 // gets a cleared tracker

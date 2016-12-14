@@ -99,9 +99,11 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
     public PersistenceResource store(final ModelNode model, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException {
         if(!successfulBoot.get()) {
             return new PersistenceResource() {
+                @Override
                 public void commit() {
                 }
 
+                @Override
                 public void rollback() {
                 }
             };

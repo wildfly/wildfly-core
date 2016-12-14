@@ -248,6 +248,7 @@ final class SubsystemTestDelegate {
         extension.initialize(outputExtensionRegistry.getExtensionContext("Test", MOCK_RESOURCE_REG, ExtensionRegistryType.SLAVE));
 
         ConfigurationPersister.PersistenceResource resource = persister.store(model, Collections.<PathAddress>emptySet());
+        resource.prepare();
         resource.commit();
         return persister.getMarshalled();
     }
