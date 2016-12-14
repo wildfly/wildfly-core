@@ -25,7 +25,6 @@ import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MA
 import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_NATIVE_PORT;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertThat;
-import static org.wildfly.core.test.standalone.mgmt.HTTPSConnectionWithCLITestCase.reloadServer;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -38,9 +37,12 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.categories.CommonCriteria;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -53,20 +55,13 @@ import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
- * Testing https connection to HTTP Management interface with configured two-way SSL. HTTP client has set client
- * keystore with valid/invalid certificate, which is used for authentication to management interface. Result of
- * authentication depends on whether client certificate is accepted in server truststore. HTTP client uses client
- * truststore with accepted server certificate to authenticate server identity.
- * <p/>
- * Keystores and truststores have valid certificates until 25 Octover 2033.
- *
- * @author Filip Bogyai
- * @author Josef Cacek
+ * Testing the removal of management interfaces.
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
 @Category(CommonCriteria.class)
 public class RemoveManagementInterfaceTestCase {
+    public static Logger LOGGER = Logger.getLogger(RemoveManagementInterfaceTestCase.class);
 
     @Inject
     protected static ServerController controller;
@@ -90,7 +85,7 @@ public class RemoveManagementInterfaceTestCase {
         operation = createOpNode("core-service=management/management-interface=http-interface", ModelDescriptionConstants.REMOVE);
         CoreUtils.applyUpdate(operation, client);
         client.close();
-        reloadServer();
+        ServerReload.executeReloadAndWaitForCompletion(getNativeModelControllerClient(), TimeoutUtil.adjust(30000), false, "remote", TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT);
         client = getNativeModelControllerClient();
         operation = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-http", ModelDescriptionConstants.READ_RESOURCE_OPERATION);
         response = client.execute(operation);
@@ -114,8 +109,7 @@ public class RemoveManagementInterfaceTestCase {
 
     @AfterClass
     public static void stopContainer() throws Exception {
-        ModelControllerClient client = getNativeModelControllerClient();
-        serverTearDown(client);
+        serverTearDown();
         controller.stop();
     }
 
@@ -133,7 +127,8 @@ public class RemoveManagementInterfaceTestCase {
         CoreUtils.applyUpdate(operation, client);
     }
 
-    private static void serverTearDown(final ModelControllerClient client) throws Exception {
+    private static void serverTearDown() throws Exception {
+        ModelControllerClient client = getNativeModelControllerClient();
         ModelNode operation = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-http", ModelDescriptionConstants.READ_RESOURCE_OPERATION);
         ModelNode response = client.execute(operation);
         if (response.hasDefined(OUTCOME) && FAILED.equals(response.get(OUTCOME).asString())) {
@@ -154,16 +149,20 @@ public class RemoveManagementInterfaceTestCase {
             CoreUtils.applyUpdate(operation, client);
         }
         // To recreate http interface, a reload of server is required
-        controller.reload();
+        ServerReload.executeReloadAndWaitForCompletion(getNativeModelControllerClient(), TimeoutUtil.adjust(30000), false, "remote", TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT);
+        client = getHttpModelControllerClient();
         //Remove native interface
-        operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.REMOVE);
-        CoreUtils.applyUpdate(operation, client);
-        operation = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-native", ModelDescriptionConstants.REMOVE);
-        CoreUtils.applyUpdate(operation, client);
+        try {
+            operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.REMOVE);
+            CoreUtils.applyUpdate(operation, client);
+            operation = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-native", ModelDescriptionConstants.REMOVE);
+            CoreUtils.applyUpdate(operation, client);
+        } finally {
+            safeCloseClient(client);
+        }
     }
 
     static ModelControllerClient getNativeModelControllerClient() {
-
         ModelControllerClient client = null;
         try {
             client = ModelControllerClient.Factory.create("remote", InetAddress.getByName(TestSuiteEnvironment.getServerAddress()),
@@ -183,5 +182,15 @@ public class RemoveManagementInterfaceTestCase {
             throw new RuntimeException(e);
         }
         return client;
+    }
+
+    private static void safeCloseClient(ModelControllerClient client) {
+        try {
+            if (client != null) {
+                client.close();
+            }
+        } catch (final Exception e) {
+            LOGGER.warnf(e, "Caught exception closing ModelControllerClient");
+        }
     }
 }
