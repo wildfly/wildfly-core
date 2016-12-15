@@ -80,6 +80,7 @@
             For example: <version.org.jboss.hal.release-stream>
          -->
 
+        <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
         <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
         <version.io.undertow>1.4.8.Final</version.io.undertow>
@@ -1584,6 +1585,22 @@
                 <artifactId>xercesImpl</artifactId>
                 <version>${version.org.apache.xerces}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.io7m.xom</groupId>
+                <artifactId>xom</artifactId>
+                <version>${version.com.io7m.xom}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xalan</groupId>
+                        <artifactId>xalan</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>xml-apis</groupId>
                         <artifactId>xml-apis</artifactId>

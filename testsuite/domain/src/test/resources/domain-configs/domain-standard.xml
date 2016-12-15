@@ -31,6 +31,7 @@
         <extension module="org.wildfly.extension.io"/>
         <extension module="org.wildfly.extension.request-controller"/>
         <extension module="org.wildfly.extension.core-management"/>
+        <extension module="org.wildfly.extension.security.manager"/>
     </extensions>
 
     <system-properties>
@@ -108,6 +109,13 @@
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:core-management:1.0">
             </subsystem>
+            <subsystem xmlns="urn:jboss:domain:security-manager:3.0">
+                <deployment-permissions>
+                    <maximum-set>
+                        <permission class="java.security.AllPermission"/>
+                    </maximum-set>
+                </deployment-permissions>
+            </subsystem>
         </profile>
         <profile name="other">
             <!-- include profile="default"/ -->
@@ -155,6 +163,13 @@
             </subsystem>
 
             <subsystem xmlns="urn:jboss:domain:request-controller:1.0">
+            </subsystem>
+            <subsystem xmlns="urn:jboss:domain:security-manager:3.0">
+                <deployment-permissions>
+                    <maximum-set>
+                        <permission class="java.security.AllPermission"/>
+                    </maximum-set>
+                </deployment-permissions>
             </subsystem>
         </profile>
         <profile name="ignored">

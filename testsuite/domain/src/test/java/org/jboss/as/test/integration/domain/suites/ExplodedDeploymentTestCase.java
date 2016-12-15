@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.PropertyPermission;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -86,6 +87,7 @@ import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -183,13 +185,14 @@ public class ExplodedDeploymentTestCase {
         readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is replaced");
         readContent("org/wildfly/test/deployment/trivial/simple.properties", "is added");
         browseContent("", new ArrayList<>(Arrays.asList("META-INF/", "META-INF/MANIFEST.MF", "META-INF/services/",
-                "META-INF/services/org.jboss.msc.service.ServiceActivator", "org/", "org/jboss/", "org/jboss/as/",
+                "META-INF/permissions.xml", "META-INF/services/org.jboss.msc.service.ServiceActivator", "org/", "org/jboss/",
+                "org/jboss/as/",
                 "org/jboss/as/test/", "org/jboss/as/test/deployment/", "org/jboss/as/test/deployment/trivial/",
                 "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class",
                 "service-activator-deployment.properties", "org/wildfly/","org/wildfly/test/",
                 "org/wildfly/test/deployment/", "org/wildfly/test/deployment/trivial/",
                 "org/wildfly/test/deployment/trivial/simple.properties")));
-        browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF", "services/", "services/org.jboss.msc.service.ServiceActivator")));
+        browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF", "services/", "services/org.jboss.msc.service.ServiceActivator", "permissions.xml")));
         //Redeploy
         future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
@@ -234,6 +237,9 @@ public class ExplodedDeploymentTestCase {
                 new ByteArrayInputStream("Dependencies: org.jboss.msc\n".getBytes(StandardCharsets.UTF_8)));
         initialContents.put("META-INF/services/org.jboss.msc.service.ServiceActivator",
                 new ByteArrayInputStream("org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment\n".getBytes(StandardCharsets.UTF_8)));
+        initialContents.put("META-INF/permissions.xml", new ByteArrayInputStream(PermissionUtils.createPermissionsXml(
+                new PropertyPermission("test.deployment.trivial.prop", "write"),
+                new PropertyPermission("service", "write"))));
         initialContents.put(ServiceActivatorDeployment.PROPERTIES_RESOURCE,
                 toStream(properties, "Creating content"));
         future = masterClient.executeAsync(addContentToDeployment(initialContents), null); //Add content to deployment
@@ -257,13 +263,14 @@ public class ExplodedDeploymentTestCase {
         readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is replaced");
         readContent("org/wildfly/test/deployment/trivial/simple.properties", "is added");
         browseContent("", new ArrayList<>(Arrays.asList("META-INF/", "META-INF/MANIFEST.MF", "META-INF/services/",
-                "META-INF/services/org.jboss.msc.service.ServiceActivator", "org/", "org/jboss/", "org/jboss/as/",
+                "META-INF/permissions.xml", "META-INF/services/org.jboss.msc.service.ServiceActivator", "org/", "org/jboss/",
+                "org/jboss/as/",
                 "org/jboss/as/test/", "org/jboss/as/test/deployment/", "org/jboss/as/test/deployment/trivial/",
                 "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class",
                 "service-activator-deployment.properties", "org/wildfly/","org/wildfly/test/",
                 "org/wildfly/test/deployment/", "org/wildfly/test/deployment/trivial/",
                 "org/wildfly/test/deployment/trivial/simple.properties")));
-        browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF","services/", "services/org.jboss.msc.service.ServiceActivator")));
+        browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF","services/", "services/org.jboss.msc.service.ServiceActivator", "permissions.xml")));
         //Redeploy
         future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
