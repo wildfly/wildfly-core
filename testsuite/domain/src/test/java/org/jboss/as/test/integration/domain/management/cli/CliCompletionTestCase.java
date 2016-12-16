@@ -92,7 +92,7 @@ public class CliCompletionTestCase {
             }
 
             {
-                String cmd = ":reload-servers(blocking=true,suspend";
+                String cmd = ":reload-servers(start-mode=normal,blocking";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
@@ -160,7 +160,7 @@ public class CliCompletionTestCase {
             }
 
             {
-                String cmd = ":reload-servers(" + Util.NOT_OPERATOR + "blocking, !suspend";
+                String cmd = ":reload-servers(start-mode=normal," + Util.NOT_OPERATOR + "blocking";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);

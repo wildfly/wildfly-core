@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_STATE;
 
 import java.net.HttpURLConnection;
@@ -160,7 +161,7 @@ public class DomainGracefulShutdownTestCase {
             op.get(ModelDescriptionConstants.OP).set("reload-servers");
             op.get(ModelDescriptionConstants.TIMEOUT).set(60);
             op.get(ModelDescriptionConstants.BLOCKING).set(true);
-            op.get(ModelDescriptionConstants.SUSPEND).set(true);
+            op.get(ModelDescriptionConstants.START_MODE).set(SUSPEND);
             client.execute(op);
 
             op = new ModelNode();
@@ -194,7 +195,7 @@ public class DomainGracefulShutdownTestCase {
 
             op.get(ModelDescriptionConstants.OP).set("start-servers");
             op.get(ModelDescriptionConstants.BLOCKING).set(true);
-            op.get(ModelDescriptionConstants.SUSPEND).set(true);
+            op.get(ModelDescriptionConstants.START_MODE).set(SUSPEND);
             client.execute(op);
             conn = (HttpURLConnection) new URL(address).openConnection();
             try {
