@@ -58,16 +58,13 @@ public class DefaultFilenameTabCompleter extends FilenameTabCompleter {
      */
     @Override
     void completeCandidates(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
-        // No need to escape paths in quoted string except if candidate contains " characters
-        boolean needsEscape = !buffer.startsWith("\"");
+        boolean quoted = buffer.startsWith("\"");
         if (candidates.size() == 1) {
-            boolean containsQuote = candidates.get(0).contains("\"");
-            needsEscape = needsEscape || containsQuote;
-            //if escaping is not needed but candidate contains quote use quotes only escaper.
-            EscapeSelector escSelector = containsQuote && !needsEscape
+            // Escaping must occur in all cases.
+            // if quoted, only " will be escaped.
+            EscapeSelector escSelector = quoted
                     ? QUOTES_ONLY_ESCAPE_SELECTOR : ESCAPE_SELECTOR;
-            candidates.set(0, needsEscape ? Util.escapeString(candidates.get(0),
-                    escSelector) : candidates.get(0));
+            candidates.set(0, Util.escapeString(candidates.get(0), escSelector));
         }
     }
 }
