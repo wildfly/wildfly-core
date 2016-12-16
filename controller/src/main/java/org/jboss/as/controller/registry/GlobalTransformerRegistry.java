@@ -168,7 +168,7 @@ public class GlobalTransformerRegistry {
         return registry;
     }
 
-    protected void process(final OperationTransformerRegistry registry, final PathAddress address, final ModelVersion version, Map<PathAddress, ModelVersion> versions) {
+    private void process(final OperationTransformerRegistry registry, final PathAddress address, final ModelVersion version, Map<PathAddress, ModelVersion> versions) {
         final OperationTransformerRegistry current = getRegistryUpdater(version);
         if(current != null) {
             final OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer = current.getResourceTransformer();
@@ -213,7 +213,7 @@ public class GlobalTransformerRegistry {
         return null;
     }
 
-    protected void createChildRegistry(final Iterator<PathElement> iterator, ModelVersion version, PathAddressTransformer pathAddressTransformer, OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer, OperationTransformerRegistry.OperationTransformerEntry entry, boolean placeholder) {
+    private void createChildRegistry(final Iterator<PathElement> iterator, ModelVersion version, PathAddressTransformer pathAddressTransformer, OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer, OperationTransformerRegistry.OperationTransformerEntry entry, boolean placeholder) {
         if(! iterator.hasNext()) {
             getOrCreate(version, pathAddressTransformer, resourceTransformer, entry, placeholder);
         } else {
@@ -222,7 +222,7 @@ public class GlobalTransformerRegistry {
         }
     }
 
-    protected void registerTransformer(final Iterator<PathElement> iterator, ModelVersion version, String operationName, OperationTransformerRegistry.OperationTransformerEntry entry) {
+    private void registerTransformer(final Iterator<PathElement> iterator, ModelVersion version, String operationName, OperationTransformerRegistry.OperationTransformerEntry entry) {
         if(! iterator.hasNext()) {
             // by default skip the default transformer
             getOrCreate(version, PathAddressTransformer.DEFAULT, null, null, false).registerTransformer(PathAddress.EMPTY_ADDRESS.iterator(), operationName, entry);
@@ -250,7 +250,7 @@ public class GlobalTransformerRegistry {
         }
     }
 
-    GlobalTransformerRegistry navigate(final Iterator<PathElement> iterator) {
+    private GlobalTransformerRegistry navigate(final Iterator<PathElement> iterator) {
         if(! iterator.hasNext()) {
             return this;
         } else {
@@ -267,46 +267,42 @@ public class GlobalTransformerRegistry {
         }
     };
 
-    SubRegistry getOrCreate(final String key) {
+    private SubRegistry getOrCreate(final String key) {
         for (;;) {
             final Map<String, SubRegistry> subRegistries = subRegistriesUpdater.get(this);
             SubRegistry registry = subRegistries.get(key);
-            if(registry == null) {
+            if(registry != null) {
+                return registry;
+            } else {
                 registry = new SubRegistry();
-                SubRegistry existing = subRegistriesUpdater.putAtomic(this, key, registry, subRegistries);
-                if(existing == null) {
+                if (subRegistriesUpdater.putAtomic(this, key, registry, subRegistries)) {
                     return registry;
-                } else if (existing != registry) {
-                    return existing;
                 }
             }
-            return registry;
         }
     }
 
-    OperationTransformerRegistry getOrCreate(final ModelVersion version, PathAddressTransformer pathAddressTransformer, OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer, final OperationTransformerRegistry.OperationTransformerEntry defaultTransformer, boolean placeholder) {
+    private OperationTransformerRegistry getOrCreate(final ModelVersion version, PathAddressTransformer pathAddressTransformer, OperationTransformerRegistry.ResourceTransformerEntry resourceTransformer, final OperationTransformerRegistry.OperationTransformerEntry defaultTransformer, boolean placeholder) {
         for(;;) {
             final Map<ModelVersion, OperationTransformerRegistry> snapshot = registryUpdater.get(this);
             OperationTransformerRegistry registry = snapshot.get(version);
-            if(registry == null) {
+            if(registry != null) {
+                return registry;
+            } else {
                 registry = new OperationTransformerRegistry(pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
-                OperationTransformerRegistry existing = registryUpdater.putAtomic(this, version, registry, snapshot);
-                if(existing == null) {
+                if (registryUpdater.putAtomic(this, version, registry, snapshot)) {
                     return registry;
-                } else if (existing != registry) {
-                    return existing;
                 }
             }
-            return registry;
         }
     }
 
-    static class SubRegistry {
+    private static class SubRegistry {
 
         private static final AtomicMapFieldUpdater<SubRegistry, String, GlobalTransformerRegistry> childrenUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(SubRegistry.class, Map.class, "children"));
         private volatile Map<String, GlobalTransformerRegistry> children;
 
-        SubRegistry() {
+        private SubRegistry() {
             childrenUpdater.clear(this);
         }
 
@@ -318,11 +314,8 @@ public class GlobalTransformerRegistry {
                     return entry;
                 } else {
                     entry = new GlobalTransformerRegistry();
-                    final GlobalTransformerRegistry existing = childrenUpdater.putAtomic(this, value, entry, entries);
-                    if(existing == null) {
+                    if (childrenUpdater.putAtomic(this, value, entry, entries)) {
                         return entry;
-                    } else if(existing != entry) {
-                        return existing;
                     }
                 }
             }
