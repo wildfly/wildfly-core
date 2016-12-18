@@ -142,7 +142,7 @@
         <version.org.wildfly.client.config>1.0.0.Final-redhat-1</version.org.wildfly.client.config>
         <version.org.wildfly.common>1.2.0.Final-redhat-1</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.0.0.Final-redhat-1</version.org.wildfly.discovery>
-        <version.org.wildfly.openssl>1.0.2.Final</version.org.wildfly.openssl>
+        <version.org.wildfly.openssl>1.0.2.Final-redhat-1</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>${version.org.wildfly.openssl}</version.org.wildfly.openssl.natives>
         <version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-linux-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-i386>
