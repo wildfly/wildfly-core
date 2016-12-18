@@ -132,7 +132,7 @@
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.jmockit>1.33</version.org.jmockit>
         <version.org.mockito>2.8.47</version.org.mockito>
-        <version.org.picketbox>5.0.2.Final</version.org.picketbox>
+        <version.org.picketbox>5.0.2.Final-redhat-1</version.org.picketbox>
         <version.org.projectodd.vdx>1.1.6.redhat-1</version.org.projectodd.vdx>
         <version.org.slf4j>1.7.22.redhat-1</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
