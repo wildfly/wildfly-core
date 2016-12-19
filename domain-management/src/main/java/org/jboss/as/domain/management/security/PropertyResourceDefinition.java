@@ -46,12 +46,12 @@ public class PropertyResourceDefinition extends SimpleResourceDefinition {
             .setRequired(false).setAllowExpression(true).setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES).build();
 
     public PropertyResourceDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.PROPERTY),
-                ControllerResolver.getResolver("core.management.security-realm.property"),
-                new SecurityRealmChildAddHandler(true, false, VALUE),
-                new SecurityRealmChildRemoveHandler(true),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.PROPERTY),
+                ControllerResolver.getResolver("core.management.security-realm.property"))
+                .setAddHandler(new SecurityRealmChildAddHandler(true, false, VALUE))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(true))
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
     }
 
     @Override

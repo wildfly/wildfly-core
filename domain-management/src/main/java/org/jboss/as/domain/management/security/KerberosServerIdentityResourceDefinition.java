@@ -41,13 +41,13 @@ public class KerberosServerIdentityResourceDefinition extends SimpleResourceDefi
 
 
     KerberosServerIdentityResourceDefinition() {
-        super(PathElement.pathElement(SERVER_IDENTITY, KERBEROS),
-                ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY, "core.management.security-realm.server-identity.kerberos"),
-                new SecurityRealmChildAddHandler(false, false),
-                new SecurityRealmChildRemoveHandler(true),
-                OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+        super(new Parameters(PathElement.pathElement(SERVER_IDENTITY, KERBEROS),
+                ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY, "core.management.security-realm.server-identity.kerberos"))
+                .setAddHandler(new SecurityRealmChildAddHandler(false, false))
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(true))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override

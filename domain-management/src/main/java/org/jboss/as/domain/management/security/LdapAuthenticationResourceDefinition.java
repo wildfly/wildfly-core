@@ -101,12 +101,14 @@ public class LdapAuthenticationResourceDefinition extends LdapResourceDefinition
     };
 
     public LdapAuthenticationResourceDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.LDAP),
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.LDAP),
                 ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
-                        "core.management.security-realm.authentication.ldap"),
-                new LdapAuthenticationAddHandler(), new SecurityRealmChildRemoveHandler(true),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+                        "core.management.security-realm.authentication.ldap"))
+                .setAddHandler(new LdapAuthenticationAddHandler())
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(true))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override

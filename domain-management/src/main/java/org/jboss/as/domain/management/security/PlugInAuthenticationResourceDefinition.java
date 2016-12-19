@@ -55,12 +55,14 @@ public class PlugInAuthenticationResourceDefinition extends AbstractPlugInAuthRe
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = { NAME, MECHANISM };
 
     public PlugInAuthenticationResourceDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.PLUG_IN),
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.PLUG_IN),
                 ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
-                        "core.management.security-realm.authentication.plug-in"),
-                new SecurityRealmChildAddHandler(true, false, ATTRIBUTE_DEFINITIONS), new SecurityRealmChildRemoveHandler(true),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+                        "core.management.security-realm.authentication.plug-in"))
+                .setAddHandler(new SecurityRealmChildAddHandler(true, false, ATTRIBUTE_DEFINITIONS))
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(true))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override

@@ -36,12 +36,14 @@ import org.jboss.as.domain.management.ModelDescriptionConstants;
 public class PlugInAuthorizationResourceDefinition extends AbstractPlugInAuthResourceDefinition {
 
     public PlugInAuthorizationResourceDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.AUTHORIZATION, ModelDescriptionConstants.PLUG_IN),
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.AUTHORIZATION, ModelDescriptionConstants.PLUG_IN),
                 ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
-                        "core.management.security-realm.authorization.plug-in"),
-                new SecurityRealmChildAddHandler(false, true, NAME), new SecurityRealmChildRemoveHandler(false),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+                        "core.management.security-realm.authorization.plug-in"))
+                .setAddHandler(new SecurityRealmChildAddHandler(false, true, NAME))
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(false))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
 }

@@ -32,6 +32,7 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
 
 /**
  * Remove handler for a child resource of a management security realm.
@@ -49,6 +50,11 @@ public class SecurityRealmChildRemoveHandler extends SecurityRealmParentRestartH
     public SecurityRealmChildRemoveHandler(boolean validateAuthentication, RuntimeCapability... capabilities) {
         super(capabilities);
         this.validateAuthentication = validateAuthentication;
+    }
+
+    @Override
+    protected boolean isResourceServiceRestartAllowed(OperationContext context, ServiceController<?> service) {
+        return false;
     }
 
     @Override

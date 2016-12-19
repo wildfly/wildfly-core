@@ -31,6 +31,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
 
 /**
  * Add handler for a child resource of a management security realm.
@@ -53,6 +54,11 @@ public class SecurityRealmChildAddHandler extends SecurityRealmParentRestartHand
         this.validateAuthentication = validateAuthentication;
         this.validateAuthorization = validateAuthorization;
         this.attributeDefinitions = attributeDefinitions == null ? new AttributeDefinition[0] : attributeDefinitions;
+    }
+
+    @Override
+    protected boolean isResourceServiceRestartAllowed(OperationContext context, ServiceController<?> service) {
+        return false;
     }
 
     @Override

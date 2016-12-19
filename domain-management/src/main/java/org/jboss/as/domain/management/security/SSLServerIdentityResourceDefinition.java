@@ -83,13 +83,13 @@ public class SSLServerIdentityResourceDefinition extends SimpleResourceDefinitio
     };
 
     public SSLServerIdentityResourceDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.SERVER_IDENTITY, ModelDescriptionConstants.SSL),
-                ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY, "core.management.security-realm.server-identity.ssl"),
-                new SecurityRealmChildAddHandler(false, false, ATTRIBUTE_DEFINITIONS),
-                new SecurityRealmChildRemoveHandler(false),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.SERVER_IDENTITY, ModelDescriptionConstants.SSL),
+                ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY, "core.management.security-realm.server-identity.ssl"))
+                .setAddHandler(new SecurityRealmChildAddHandler(false, false, ATTRIBUTE_DEFINITIONS))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(false))
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override

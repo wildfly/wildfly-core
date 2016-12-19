@@ -73,7 +73,7 @@ import org.jboss.msc.service.ServiceRegistry;
  */
 public class LdapCacheResourceDefinition extends SimpleResourceDefinition {
 
-    private static final CacheDefintionValidatingHandler VALIDATION_INSTANCE = new CacheDefintionValidatingHandler();
+    private static final CacheDefinitionValidatingHandler VALIDATION_INSTANCE = new CacheDefinitionValidatingHandler();
 
     /*
      * Configuration Attributes
@@ -163,17 +163,17 @@ public class LdapCacheResourceDefinition extends SimpleResourceDefinition {
     private LdapCacheResourceDefinition(final PathElement pathElement,
             final SimpleAttributeDefinition[] configurationAttributes, final SimpleAttributeDefinition[] runtimeAttributes,
             final SimpleOperationDefinition[] runtimeOperations, final OperationStepHandler runtimeStepHandler) {
-        super(pathElement,
-                ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
-                        "core.management.security-realm.ldap.cache"),
-                new CacheChildAddHandler(configurationAttributes), new SecurityRealmChildRemoveHandler(
-                        false), OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-
+        super(new Parameters(pathElement, ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
+                        "core.management.security-realm.ldap.cache"))
+                .setAddHandler(new CacheChildAddHandler(configurationAttributes))
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(false))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
         this.configurationAttributes = configurationAttributes;
         this.runtimeAttributes = runtimeAttributes;
         this.runtimeOperations = runtimeOperations;
         this.runtimeStepHandler = runtimeStepHandler;
-        setDeprecated(ModelVersion.create(1, 7));
     }
 
     private static ResourceDefinition create(final PathElement pathElement, final CacheFor cacheFor) {
@@ -444,7 +444,7 @@ public class LdapCacheResourceDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static class CacheDefintionValidatingHandler implements OperationStepHandler {
+    private static class CacheDefinitionValidatingHandler implements OperationStepHandler {
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

@@ -44,14 +44,14 @@ public class TruststoreAuthenticationResourceDefinition extends SimpleResourceDe
     };
 
     public TruststoreAuthenticationResourceDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.TRUSTSTORE),
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.TRUSTSTORE),
                 ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
-                        "core.management.security-realm.authentication.truststore"),
-                new SecurityRealmChildAddHandler(true, false, ATTRIBUTE_DEFINITIONS),
-                new SecurityRealmChildRemoveHandler(true),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+                        "core.management.security-realm.authentication.truststore"))
+                .setAddHandler(new SecurityRealmChildAddHandler(true, false, ATTRIBUTE_DEFINITIONS))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(true))
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override

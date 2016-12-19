@@ -50,8 +50,15 @@ public abstract class AbstractPlugInAuthResourceDefinition extends SimpleResourc
             SecurityRealmChildAddHandler securityRealmChildAddHandler,
             SecurityRealmChildRemoveHandler securityRealmChildRemoveHandler, Flag restartResourceServices,
             Flag restartResourceServices2) {
-        super(pathElement, resourceDescriptionResolver, securityRealmChildAddHandler, securityRealmChildRemoveHandler,
-                restartResourceServices, restartResourceServices2);
+        this(new Parameters(pathElement, resourceDescriptionResolver)
+                .setAddHandler(securityRealmChildAddHandler)
+                .setAddRestartLevel(restartResourceServices)
+                .setRemoveHandler(securityRealmChildRemoveHandler)
+                .setRemoveRestartLevel(restartResourceServices2));
+    }
+
+    AbstractPlugInAuthResourceDefinition(Parameters params) {
+        super(params);
     }
 
     @Override

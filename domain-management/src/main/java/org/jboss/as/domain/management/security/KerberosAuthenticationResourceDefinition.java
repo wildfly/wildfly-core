@@ -55,12 +55,14 @@ public class KerberosAuthenticationResourceDefinition extends SimpleResourceDefi
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = { REMOVE_REALM };
 
     public KerberosAuthenticationResourceDefinition() {
-        super(PathElement.pathElement(AUTHENTICATION, KERBEROS),
+        super(new Parameters(PathElement.pathElement(AUTHENTICATION, KERBEROS),
                 ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
-                        "core.management.security-realm.authentication.kerberos"),
-                new SecurityRealmChildAddHandler(true, false, ATTRIBUTE_DEFINITIONS), new SecurityRealmChildRemoveHandler(false),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+                        "core.management.security-realm.authentication.kerberos"))
+                .setAddHandler(new SecurityRealmChildAddHandler(true, false, ATTRIBUTE_DEFINITIONS))
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(false))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override
