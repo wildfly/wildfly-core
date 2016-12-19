@@ -111,6 +111,9 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         } else {
             ServerLogger.DEPLOYMENT_LOGGER.stoppedSubDeployment(deploymentName, (int) (context.getElapsedTime() / 1000000L));
         }
+        //clear up all attachments
+        SimpleAttachable attachable = (SimpleAttachable)deploymentUnit;
+        attachable.attachmentKeys().forEach(key -> deploymentUnit.removeAttachment(key));
         deploymentUnit = null;
         monitor.removeController(context.getController());
         monitor = null;
