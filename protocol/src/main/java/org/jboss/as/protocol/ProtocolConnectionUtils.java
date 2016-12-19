@@ -44,7 +44,6 @@ import org.xnio.Sequence;
 import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
 import java.io.IOException;
@@ -111,11 +110,10 @@ public class ProtocolConnectionUtils {
         if (timeoutHandler == null) {
             GeneralTimeoutHandler defaultTimeoutHandler = new GeneralTimeoutHandler();
             // No point wrapping our AnonymousCallbackHandler.
-            actualHandler = handler != null ? new WrapperCallbackHandler(defaultTimeoutHandler, handler)
-                    : new AnonymousCallbackHandler();
+            actualHandler = handler != null ? new WrapperCallbackHandler(defaultTimeoutHandler, handler) : null;
             timeoutHandler = defaultTimeoutHandler;
         } else {
-            actualHandler = handler != null ? handler : new AnonymousCallbackHandler();
+            actualHandler = handler != null ? handler : null;
         }
 
         final IoFuture<Connection> future = connect(actualHandler, configuration);
@@ -149,14 +147,13 @@ public class ProtocolConnectionUtils {
         configuration.validate();
         final Endpoint endpoint = configuration.getEndpoint();
         final OptionMap options = getOptions(configuration);
-        final CallbackHandler actualHandler = handler != null ? handler : new AnonymousCallbackHandler();
         final SSLContext sslContext = configuration.getSslContext();
         final URI uri = configuration.getUri();
         String clientBindAddress = configuration.getClientBindAddress();
 
         AuthenticationContext captured = AuthenticationContext.captureCurrent();
         AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, captured);
-        if (actualHandler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(actualHandler);
+        if (handler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(handler);
 
         // We don't know the original index or the match rule so create a context with a single match all rule.
         AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
@@ -290,21 +287,5 @@ public class ProtocolConnectionUtils {
         }
 
     }
-
-    private static final class AnonymousCallbackHandler implements CallbackHandler {
-
-        public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-            for (Callback current : callbacks) {
-                if (current instanceof NameCallback) {
-                    NameCallback ncb = (NameCallback) current;
-                    ncb.setName("anonymous");
-                } else {
-                    throw new UnsupportedCallbackException(current);
-                }
-            }
-        }
-
-    }
-
 
 }
