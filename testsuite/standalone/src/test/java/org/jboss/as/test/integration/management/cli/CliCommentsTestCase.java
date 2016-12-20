@@ -22,7 +22,10 @@
 package org.jboss.as.test.integration.management.cli;
 
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
@@ -33,6 +36,9 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @RunWith(WildflyTestRunner.class)
 public class CliCommentsTestCase {
 
+    @Rule
+    public final TemporaryFolder temporaryUserHome = new TemporaryFolder();
+
     /**
      * In comments, " and ' are not parsed. Outside comments, they are and the
      * '>' prompt is shown.
@@ -41,7 +47,8 @@ public class CliCommentsTestCase {
      */
     @Test
     public void test() throws Exception {
-        CliProcessWrapper cli = new CliProcessWrapper();
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         cli.executeInteractive();
         cli.clearOutput();
         try {

@@ -3487,4 +3487,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 435, value = "Attribute %s of resource %s was not marked as reload required, either set the RESTART_ALL_SERVICES flag, or register a custom write handler.")
     RuntimeException attributeWasNotMarkedAsReloadRequired(String name, PathAddress pathAddress);
+
+    @Message(id = NONE, value = "Couldn't convert %s to %s")
+    String typeConversionError(ModelNode value, Collection<ModelType> validTypes);
 }
