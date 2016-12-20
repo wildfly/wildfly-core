@@ -37,6 +37,10 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -166,6 +170,73 @@ public class RemotingSubsystem40Parser extends RemotingSubsystem30Parser {
         }
     }
 
+    @Override
+    void parseRemoteOutboundConnection(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final List<ModelNode> operations) throws XMLStreamException {
+        final EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.OUTBOUND_SOCKET_BINDING_REF);
+        final int count = reader.getAttributeCount();
+        String name = null;
+        final ModelNode addOperation = Util.createAddOperation();
+        for (int i = 0; i < count; i++) {
+            requireNoNamespaceAttribute(reader, i);
+            final String value = reader.getAttributeValue(i);
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            required.remove(attribute);
+            switch (attribute) {
+                case NAME: {
+                    name = value;
+                    break;
+                }
+                case OUTBOUND_SOCKET_BINDING_REF: {
+                    RemoteOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_REF.parseAndSetParameter(value, addOperation, reader);
+                    break;
+                }
+                case USERNAME: {
+                    RemoteOutboundConnectionResourceDefinition.USERNAME.parseAndSetParameter(value, addOperation, reader);
+                    break;
+                }
+                case SECURITY_REALM: {
+                    RemoteOutboundConnectionResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOperation, reader);
+                    break;
+                }
+                case PROTOCOL: {
+                    RemoteOutboundConnectionResourceDefinition.PROTOCOL.parseAndSetParameter(value, addOperation, reader);
+                    break;
+                }
+                case AUTHENTICATION_CONTEXT: {
+                    RemoteOutboundConnectionResourceDefinition.AUTHENTICATION_CONTEXT.parseAndSetParameter(value, addOperation, reader);
+                    break;
+                }
+                default:
+                    throw unexpectedAttribute(reader, i);
+            }
+        }
+        if (!required.isEmpty()) {
+            throw missingRequired(reader, required);
+        }
+        final PathAddress address = PathAddress.pathAddress(PathAddress.pathAddress(parentAddress), PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION, name));
+        addOperation.get(OP_ADDR).set(address.toModelNode());
+        // create add operation add it to the list of operations
+        operations.add(addOperation);
+        // parse the nested elements
+        final EnumSet<Element> visited = EnumSet.noneOf(Element.class);
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            final Element element = Element.forName(reader.getLocalName());
+            if (visited.contains(element)) {
+                throw ParseUtils.unexpectedElement(reader);
+            }
+            visited.add(element);
+            switch (element) {
+                case PROPERTIES: {
+                    parseProperties(reader, address.toModelNode(), operations);
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+
+    }
 
 
 }
