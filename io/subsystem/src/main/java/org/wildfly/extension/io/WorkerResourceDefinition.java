@@ -24,20 +24,41 @@
 
 package org.wildfly.extension.io;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.DelegatingResource;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.PlaceholderResource;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.registry.ResourceProvider;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
+import org.wildfly.extension.io.logging.IOLogger;
+import org.xnio.Option;
 import org.xnio.Options;
 import org.xnio.XnioWorker;
+import org.xnio.management.XnioWorkerMXBean;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
@@ -46,7 +67,8 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
 
     static final String IO_WORKER_RUNTIME_CAPABILITY_NAME = "org.wildfly.io.worker";
     static final RuntimeCapability<Void> IO_WORKER_RUNTIME_CAPABILITY =
-            RuntimeCapability.Builder.of(IO_WORKER_RUNTIME_CAPABILITY_NAME, true, XnioWorker.class).build();
+            RuntimeCapability.Builder.of(IO_WORKER_RUNTIME_CAPABILITY_NAME, true, XnioWorker.class)
+                    .build();
 
     static final OptionAttributeDefinition WORKER_TASK_MAX_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_MAX_THREADS, Options.WORKER_TASK_MAX_THREADS)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -69,6 +91,13 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             WORKER_TASK_MAX_THREADS,
             STACK_SIZE
     };
+
+    private static final AttributeDefinition SHUTDOWN_REQUESTED = new SimpleAttributeDefinitionBuilder("shutdown-requested", ModelType.BOOLEAN).setStorageRuntime().build();
+    private static final AttributeDefinition CORE_WORKER_POOL_SIZE = new SimpleAttributeDefinitionBuilder("core-pool-size", ModelType.INT).setStorageRuntime().build();
+    private static final AttributeDefinition MAX_WORKER_POOL_SIZE = new SimpleAttributeDefinitionBuilder("max-pool-size", ModelType.INT).setStorageRuntime().build();
+    private static final AttributeDefinition IO_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("io-thread-count", ModelType.INT).setStorageRuntime().build();
+    private static final AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinitionBuilder("queue-size", ModelType.INT).setStorageRuntime().build();
+
 
     static final Map<String, OptionAttributeDefinition> ATTRIBUTES_BY_XMLNAME;
 
@@ -101,5 +130,181 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     @Override
     public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerCapability(IO_WORKER_RUNTIME_CAPABILITY);
+    }
+
+    @Override
+    public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+        for (OptionAttributeDefinition attr:  ATTRIBUTES){
+            resourceRegistration.registerReadOnlyAttribute(attr, new WorkerReadAttributeHandler(attr.getOption()));
+        }
+
+        WorkerMetricsHandler metricsHandler = new WorkerMetricsHandler();
+        resourceRegistration.registerMetric(SHUTDOWN_REQUESTED, metricsHandler);
+        resourceRegistration.registerMetric(CORE_WORKER_POOL_SIZE, metricsHandler);
+        resourceRegistration.registerMetric(MAX_WORKER_POOL_SIZE, metricsHandler);
+        resourceRegistration.registerMetric(IO_THREAD_COUNT, metricsHandler);
+        resourceRegistration.registerMetric(QUEUE_SIZE, metricsHandler);
+    }
+
+    @Override
+    public void registerChildren(ManagementResourceRegistration resourceRegistration) {
+        super.registerChildren(resourceRegistration);
+        resourceRegistration.registerSubModel(new WorkerServerDefinition());
+    }
+
+    private abstract static class AbstractWorkerAttributeHandler implements OperationStepHandler {
+
+        public void execute(OperationContext outContext, ModelNode operation) throws OperationFailedException {
+             outContext.addStep((context, op) -> {
+                 XnioWorker worker = getXnioWorker(context);
+                 if (worker == null || worker.getMXBean() == null) {
+                     context.getResult().set(IOExtension.NO_METRICS);
+                     return;
+                 }
+                 executeWithWorker(context, op, worker);
+             }, OperationContext.Stage.RUNTIME);
+         }
+         abstract void executeWithWorker(OperationContext context, ModelNode operation, XnioWorker worker) throws OperationFailedException;
+    }
+
+    private static class WorkerReadAttributeHandler extends AbstractWorkerAttributeHandler {
+        final Option<?> option;
+
+        public WorkerReadAttributeHandler(Option<?> option) {
+            this.option = option;
+        }
+
+        @Override
+        void executeWithWorker(OperationContext context, ModelNode operation, XnioWorker worker) throws OperationFailedException {
+            try {
+                Object result = worker.getOption(option);
+                if (result!=null){
+                    context.getResult().set(new ModelNode(result.toString()));
+                }
+            } catch (IOException e) {
+                throw new OperationFailedException(e);
+            }
+        }
+    }
+
+    private static class WorkerMetricsHandler extends AbstractWorkerAttributeHandler{
+
+        @Override
+        void executeWithWorker(OperationContext context, ModelNode operation, XnioWorker worker) throws OperationFailedException {
+            XnioWorkerMXBean metrics = worker.getMXBean();
+            String name = operation.require(ModelDescriptionConstants.NAME).asString();
+            context.getResult().set(getMetricValue(name, metrics));
+        }
+    }
+
+    static XnioWorker getXnioWorker(OperationContext context) {
+        String name = context.getCurrentAddressValue();
+        if (!context.getCurrentAddress().getLastElement().getKey().equals(IOExtension.WORKER_PATH.getKey())) { //we are somewhere deeper, lets find worker name
+            for (PathElement pe : context.getCurrentAddress()) {
+                if (pe.getKey().equals(IOExtension.WORKER_PATH.getKey())) {
+                    name = pe.getValue();
+                    break;
+                }
+            }
+        }
+        return getXnioWorker(context.getServiceRegistry(false), name);
+    }
+
+    static XnioWorker getXnioWorker(ServiceRegistry serviceRegistry, String name) {
+        ServiceName serviceName = IO_WORKER_RUNTIME_CAPABILITY.getCapabilityServiceName(name, XnioWorker.class);
+        ServiceController<XnioWorker> controller = (ServiceController<XnioWorker>) serviceRegistry.getService(serviceName);
+        if (controller == null || controller.getState() != ServiceController.State.UP) {
+            return null;
+        }
+        return controller.getValue();
+    }
+
+    private static XnioWorkerMXBean getMetrics(ServiceRegistry serviceRegistry, String name) {
+        XnioWorker worker = getXnioWorker(serviceRegistry, name);
+        if (worker != null && worker.getMXBean() != null) {
+            return worker.getMXBean();
+        }
+        return null;
+    }
+
+
+    private static ModelNode getMetricValue(String attributeName, XnioWorkerMXBean metric) throws OperationFailedException {
+        if (SHUTDOWN_REQUESTED.getName().equals(attributeName)) {
+            return new ModelNode(metric.isShutdownRequested());
+        } else if (CORE_WORKER_POOL_SIZE.getName().equals(attributeName)) {
+            return new ModelNode(metric.getCoreWorkerPoolSize());
+        } else if (MAX_WORKER_POOL_SIZE.getName().equals(attributeName)) {
+            return new ModelNode(metric.getMaxWorkerPoolSize());
+        } else if (IO_THREAD_COUNT.getName().equals(attributeName)) {
+            return new ModelNode(metric.getIoThreadCount());
+        } else if (QUEUE_SIZE.getName().equals(attributeName)) {
+            return new ModelNode(metric.getWorkerQueueSize());
+        } else {
+            throw new OperationFailedException(IOLogger.ROOT_LOGGER.noMetrics());
+        }
+    }
+
+    static class WorkerResource extends DelegatingResource {
+        private final ServiceRegistry serviceRegistry;
+        private final PathAddress pathAddress;
+
+        public WorkerResource(OperationContext context) {
+            super(Resource.Factory.create());
+            this.serviceRegistry = context.getServiceRegistry(false);
+            this.pathAddress = context.getCurrentAddress();
+            super.registerResourceProvider("server", new ResourceProvider() {
+                @Override
+                public boolean has(String name) {
+                    return children().contains(name);
+                }
+
+                @Override
+                public Resource get(String name) {
+                    return PlaceholderResource.INSTANCE;
+                }
+
+                @Override
+                public boolean hasChildren() {
+                    return false;
+                }
+
+                @Override
+                public Set<String> children() {
+                    XnioWorkerMXBean metrics = getMetrics(serviceRegistry, pathAddress.getLastElement().getValue());
+                    if (metrics == null) {
+                        return Collections.emptySet();
+                    }
+                    Set<String> res = new LinkedHashSet<>();
+                    metrics.getServerMXBeans().forEach(serverMXBean -> res.add(serverMXBean.getBindAddress()));
+                    return res;
+                }
+
+                @Override
+                public void register(String name, Resource resource) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public void register(String value, int index, Resource resource) {
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public Resource remove(String name) {
+                    return null;
+                }
+
+                @Override
+                public ResourceProvider clone() {
+                    return this;
+                }
+            });
+        }
+
+        @Override
+        public Set<String> getChildTypes() {
+            return Collections.singleton("server");
+        }
+
     }
 }

@@ -65,4 +65,9 @@ public interface IOLogger extends BasicLogger {
     @Message(id = 5, value = "Your system is configured with %d file descriptors, but your current application server configuration will require a minimum of %d (and probably more than that); attempting to adjust, however you should expect stability problems unless you increase this number")
     void lowGlobalFD(int maxFd, int requiredCount);
 
+    @Message(id = 6, value = "no metrics available")
+    String noMetrics();
+
+
+
 }
