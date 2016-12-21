@@ -15,10 +15,6 @@
  */
 package org.wildfly.core.test.standalone.mgmt.events;
 
-import static org.wildfly.test.jmx.ControlledStateNotificationListener.JMX_FACADE_FILE;
-import static org.wildfly.test.jmx.ControlledStateNotificationListener.RUNNING_FILENAME;
-import static org.wildfly.test.jmx.ControlledStateNotificationListener.RUNTIME_CONFIGURATION_FILENAME;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,8 +28,9 @@ import javax.inject.Inject;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.test.shared.TimeoutUtil;
+import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -43,28 +40,31 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.core.testrunner.Server;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.wildfly.test.jmx.JMXListenerDeploymentSetupTask;
+import org.wildfly.test.jmx.ControlledStateNotificationListener;
+import org.wildfly.test.jmx.staticmodule.JMXFacadeListenerInStaticModuleSetupTask;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.wildfly.test.jmx.ControlledStateNotificationListener.JMX_FACADE_FILE;
 
 /**
- * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
+ * @author Jan Martiska
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class JmxControlledStateNotificationsTestCase {
+public class JmxControlledStateNotificationsInStaticModuleTestCase {
     static final Path DATA = Paths.get("target/notifications/data");
-    static final JMXListenerDeploymentSetupTask task = new JMXListenerDeploymentSetupTask();
+    static final JMXFacadeListenerInStaticModuleSetupTask task
+            = new JMXFacadeListenerInStaticModuleSetupTask();
 
-    static final File JMX_FACADE_RUNNING = DATA.resolve(JMX_FACADE_FILE).resolve(RUNNING_FILENAME)
+    static final File JMX_FACADE_RUNNING = DATA.resolve(JMX_FACADE_FILE).resolve(
+            ControlledStateNotificationListener.RUNNING_FILENAME)
             .toAbsolutePath().toFile();
     static final File JMX_FACADE_RUNTIME = DATA.resolve(JMX_FACADE_FILE)
-            .resolve(RUNTIME_CONFIGURATION_FILENAME).toAbsolutePath().toFile();
+            .resolve(ControlledStateNotificationListener.RUNTIME_CONFIGURATION_FILENAME).toAbsolutePath().toFile();
 
     @Rule
     public ErrorCollector errorCollector = new ErrorCollector();
@@ -88,70 +88,117 @@ public class JmxControlledStateNotificationsTestCase {
 
     @Before
     @After
-    public void clearNotificationFiles() throws Exception {
-        JMX_FACADE_RUNTIME.delete();
+    public void clean() throws Exception {
         JMX_FACADE_RUNNING.delete();
+        JMX_FACADE_RUNTIME.delete();
     }
 
     @Test
-    public void checkNotifications_startReloadStop() throws Exception {
-        controller.start();
-        controller.reload();
+    public void checkNotifications_startInAdminOnly() throws Exception {
+        controller.startInAdminMode();
         controller.stop();
+
         checkFacadeJmxNotifications(
                 createListOf("starting", "ok",
                         "ok", "stopping",
+                        "stopping", "stopped"),
+                createListOf("starting", "suspended",
+                        "suspended", "admin-only",
+                        "admin-only", "suspending",
+                        "suspending", "suspended",
+                        "suspended", "stopping",
+                        "stopping", "stopped"
+                )
+        );
+    }
+
+
+    @Test
+    public void checkNotifications_reloadIntoAdminOnly() throws Exception {
+        controller.start();
+        controller.reload(Server.StartMode.ADMIN_ONLY);
+        controller.stop();
+
+        checkFacadeJmxNotifications(
+                createListOf("starting", "ok",
+                        "ok", "stopping",
+                        "stopping", "stopped",
+                        "stopped", "starting",
                         "starting", "ok",
-                        "ok", "stopping"),
+                        "ok", "stopping",
+                        "stopping", "stopped"),
                 createListOf("starting", "suspended",
                         "suspended", "normal",
                         "normal", "stopping",
+                        "stopping", "stopped",
+                        "stopped", "starting",
+                        "starting", "suspended",
+                        "suspended", "admin-only",
+                        "admin-only", "suspending",
+                        "suspending", "suspended",
+                        "suspended", "stopping",
+                        "stopping", "stopped"
+                )
+        );
+    }
+
+    @Test
+    public void checkNotifications_startSuspended() throws Exception {
+        controller.startSuspended();
+        controller.reload(Server.StartMode.NORMAL);
+        controller.stop();
+
+        checkFacadeJmxNotifications(
+                createListOf("starting", "ok",
+                        "ok", "stopping",
+                        "stopping", "stopped",
+                        "stopped", "starting",
+                        "starting", "ok",
+                        "ok", "stopping",
+                        "stopping", "stopped"),
+                createListOf("starting", "suspended",
+                        "suspended", "stopping",
+                        "stopping", "stopped",
+                        "stopped", "starting",
                         "starting", "suspended",
                         "suspended", "normal",
                         "normal", "suspending",
                         "suspending", "suspended",
-                        "suspended", "stopping"
+                        "suspended", "stopping",
+                        "stopping", "stopped"
                 )
         );
     }
 
-    /**
-     * Test transition to restart-required state after an operation which requires restart is triggered.
-     */
     @Test
-    public void checkNotifications_restartRequired() throws Exception {
+    public void checkNotifications_suspendResume() throws Exception {
         controller.start();
-        forceRestartRequired(controller.getClient());
-        controller.stop();
-        controller.start();
+
+        final ModelNode suspend = new ModelNode();
+        suspend.get(ClientConstants.OP).set("suspend");
+        controller.getClient().executeForResult(suspend);
+
+        final ModelNode resume = new ModelNode();
+        resume.get(ClientConstants.OP).set("resume");
+        controller.getClient().executeForResult(resume);
+
         controller.stop();
 
         checkFacadeJmxNotifications(
-                createListOf("starting", "ok",          // start
-                        "ok", "restart-required",                      // force restart required
-                        "restart-required", "stopping",                // stop
-                        "starting", "ok",                              // start
-                        "ok", "stopping"),                             // stop
-                createListOf("starting", "suspended",   // start
+                createListOf("starting", "ok",
+                        "ok", "stopping",
+                        "stopping", "stopped"),
+                createListOf("starting", "suspended",
                         "suspended", "normal",
-                        "normal", "suspending",                        // stop
+                        "normal", "suspending",
+                        "suspending", "suspended",
+                        "suspended", "normal",
+                        "normal", "suspending",
                         "suspending", "suspended",
                         "suspended", "stopping",
-                        "starting", "suspended",                       // start
-                        "suspended", "normal",
-                        "normal", "suspending",                        // stop
-                        "suspending", "suspended",
-                        "suspended", "stopping"
+                        "stopping", "stopped"
                 )
         );
-
-    }
-
-    /**
-     * Force transition of the server into restart-required state.
-     */
-    private void forceRestartRequired(ManagementClient client) throws UnsuccessfulOperationException {
-        client.executeForResult(Operations.createOperation("server-set-restart-required"));
     }
 
     private List<Pair<String, String>> createListOf(String... transitionPairs) {
@@ -172,7 +219,7 @@ public class JmxControlledStateNotificationsTestCase {
         while (true) {
             try {
                 readAndCheckFile(JMX_FACADE_RUNTIME, list -> {
-                      Assert.assertEquals(String.join(", ", list),
+                    Assert.assertEquals(String.join(", ", list),
                             configurationStateTransitions.size(), list.size());
                     for (int i = 0; i < configurationStateTransitions.size(); i++) {
                         Pair<String, String> transition = configurationStateTransitions.get(i);
