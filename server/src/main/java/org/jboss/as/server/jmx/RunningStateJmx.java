@@ -49,15 +49,15 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
     private final AtomicLong sequence = new AtomicLong(0);
     private volatile RuntimeConfigurationState state = RuntimeConfigurationState.STOPPED;
     private volatile RunningState runningState = RunningState.STOPPED;
-    private volatile RunningMode mode = null;
+    private volatile RunningModeControl runningModeControl = null;
     private final boolean isServer;
 
     public static final String RUNTIME_CONFIGURATION_STATE = "RuntimeConfigurationState";
     public static final String RUNNING_STATE = "RunningState";
 
-    private RunningStateJmx(ObjectName objectName, RunningMode mode, Type type) {
+    private RunningStateJmx(ObjectName objectName, RunningModeControl runningModeControl, Type type) {
         this.objectName = objectName;
-        this.mode = mode;
+        this.runningModeControl = runningModeControl;
         this.isServer = type == DOMAIN_SERVER || type == EMBEDDED_SERVER || type == STANDALONE_SERVER;
     }
 
@@ -73,7 +73,7 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
 
     @Override
     public RunningMode getRunningMode() {
-        return mode;
+        return RunningMode.from(runningModeControl.getRunningMode().name());
     }
 
     @Override
@@ -108,7 +108,7 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
         switch(newState) {
             case RUNNING:
                 if (RunningState.NORMAL != runningState && RunningState.ADMIN_ONLY != runningState && !isServer) {
-                    if (mode == RunningMode.NORMAL) {
+                    if (getRunningMode() == RunningMode.NORMAL) {
                         setRunningState(runningState, RunningState.NORMAL);
                     } else {
                         setRunningState(runningState, RunningState.ADMIN_ONLY);
@@ -153,8 +153,7 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
         try {
             final ObjectName name = new ObjectName(OBJECT_NAME);
             final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            final RunningMode mode = RunningMode.from(runningModeControl.getRunningMode().name());
-            final RunningStateJmxMBean mbean = new RunningStateJmx(name, mode, type);
+            final RunningStateJmxMBean mbean = new RunningStateJmx(name, runningModeControl, type);
             if (server.isRegistered(name)) {
                 server.unregisterMBean(name);
             }
