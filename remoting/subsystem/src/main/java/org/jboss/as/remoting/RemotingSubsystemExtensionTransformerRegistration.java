@@ -97,6 +97,9 @@ public class RemotingSubsystemExtensionTransformerRegistration implements Extens
 
         builder.addChildResource(HttpConnectorResource.PATH).getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY);
+
+        builder.addChildResource(RemoteOutboundConnectionResourceDefinition.ADDRESS).getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.DEFINED, RemoteOutboundConnectionResourceDefinition.AUTHENTICATION_CONTEXT);
     }
 
     private static ResourceTransformationDescriptionBuilder endpointTransform(ResourceTransformationDescriptionBuilder parent) {
