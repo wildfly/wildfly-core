@@ -53,12 +53,18 @@ public class SetVariableHandler extends CommandHandlerWithHelp {
                     return -1;
                 }
                 // the problem is splitting values with whitespaces, e.g. for command substitution
-                final String value = buffer.substring(equals + 1);
-                final int valueIndex = ctx.getDefaultCommandCompleter().complete(ctx, value, cursor, candidates);
-                if(valueIndex < 0) {
+                String value = buffer.substring(equals + 1);
+                if (value.startsWith("`")) {
+                    value = value.substring(1);
+                    final int valueIndex = ctx.getDefaultCommandCompleter().complete(ctx, value, cursor, candidates);
+                    if (valueIndex < 0) {
+                        return -1;
+                    }
+                    // + 1 for '=', +1 for '`'
+                    return equals + 1 + valueIndex + 1;
+                } else {
                     return -1;
                 }
-                return equals + 1 + valueIndex;
             }}, Integer.MAX_VALUE, "--variable") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
