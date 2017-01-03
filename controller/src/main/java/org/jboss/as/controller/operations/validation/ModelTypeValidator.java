@@ -128,23 +128,36 @@ public class ModelTypeValidator implements ParameterValidator {
      */
     @Override
     public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+        RuntimeException cause = null;
         if (!value.isDefined()) {
-            if (!nullable)
+            if (!nullable) {
                 throw ControllerLogger.ROOT_LOGGER.nullNotAllowed(parameterName);
+            }
         } else  {
             boolean matched = false;
             if (strictType) {
                 matched = validTypes.contains(value.getType());
             } else {
                 for (ModelType validType : validTypes) {
-                    if (matches(value, validType)) {
-                        matched = true;
-                        break;
+                    try {
+                        if (matches(value, validType)) {
+                            matched = true;
+                            break;
+                        }
+                    } catch (RuntimeException e) {
+                        cause = e;
                     }
                 }
             }
-            if  (!matched)
-                throw ControllerLogger.ROOT_LOGGER.incorrectType(parameterName, validTypes, value.getType());
+            if (!matched) {
+                if (cause == null) {
+                    throw ControllerLogger.ROOT_LOGGER.incorrectType(parameterName, validTypes, value.getType());
+                }
+                String message = String.format("%s. %s",
+                        ControllerLogger.ROOT_LOGGER.incorrectType(parameterName, validTypes, value.getType()).getLocalizedMessage(),
+                        ControllerLogger.ROOT_LOGGER.typeConversionError(value, validTypes));
+                throw new OperationFailedException(message, cause);
+            }
         }
     }
 
@@ -157,12 +170,11 @@ public class ModelTypeValidator implements ParameterValidator {
     }
 
     private boolean matches(ModelNode value, ModelType validType) {
-        try {
+        if (validType == value.getType()) {
+            return true;
+        }
 
-            if (validType == value.getType())
-                return true;
-
-            switch (validType) {
+        switch (validType) {
             case BIG_DECIMAL: {
                 value.asBigDecimal();
                 return true;
@@ -176,7 +188,7 @@ public class ModelTypeValidator implements ParameterValidator {
                 return true;
             }
             case INT: {
-                switch (value.getType()){
+                switch (value.getType()) {
                     case BIG_DECIMAL:
                         BigDecimal valueBigDecimal = value.asBigDecimal();
                         return (valueBigDecimal.compareTo(BIGDECIMAL_MAX) <= 0) && (valueBigDecimal.compareTo(BIGDECIMAL_MIN) >= 0);
@@ -197,7 +209,7 @@ public class ModelTypeValidator implements ParameterValidator {
                 }
             }
             case LONG: {
-                switch(value.getType()){
+                switch (value.getType()) {
                     case BIG_DECIMAL:
                         BigDecimal valueBigDecimal = value.asBigDecimal();
                         return (valueBigDecimal.compareTo(BIGDECIMAL_MAX) <= 0) && (valueBigDecimal.compareTo(BIGDECIMAL_MIN) >= 0);
@@ -224,13 +236,13 @@ public class ModelTypeValidator implements ParameterValidator {
             case BOOLEAN: {
                 // Allow some type conversions, not others.
                 switch (value.getType()) {
-                case STRING: {
-                    String s = value.asString();
-                    return "false".equalsIgnoreCase(s) || "true".equalsIgnoreCase(s);
-                }
-                case BOOLEAN:
-                //case INT:
-                    return true;
+                    case STRING: {
+                        String s = value.asString();
+                        return "false".equalsIgnoreCase(s) || "true".equalsIgnoreCase(s);
+                    }
+                    case BOOLEAN:
+                        //case INT:
+                        return true;
                 }
                 return false;
             }
@@ -266,20 +278,16 @@ public class ModelTypeValidator implements ParameterValidator {
                 return false;
             }
             case BYTES:
-                // we could handle STRING but IMO if people want to allow STRING to byte[] conversion
-                // they should use a different validator class
+            // we could handle STRING but IMO if people want to allow STRING to byte[] conversion
+            // they should use a different validator class
             case LIST:
-                // we could handle OBJECT but IMO if people want to allow OBJECT to LIST conversion
-                // they should use a different validator class
+            // we could handle OBJECT but IMO if people want to allow OBJECT to LIST conversion
+            // they should use a different validator class
             case EXPRESSION:
             case TYPE:
             case UNDEFINED:
             default:
                 return false;
-            }
-        }
-        catch (RuntimeException e) {
-            return false;
         }
     }
 
