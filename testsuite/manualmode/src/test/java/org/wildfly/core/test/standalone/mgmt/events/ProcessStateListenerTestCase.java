@@ -290,8 +290,6 @@ public class ProcessStateListenerTestCase {
         runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.STOPPING);
         runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.STARTING, Process.RunningState.SUSPENDED);
         // stop bug in SuspendController ?
-        runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.SUSPENDING);
-        runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.SUSPENDING, Process.RunningState.SUSPENDED);
         runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.STOPPING);
         runningStateChanges.verify();
     }
