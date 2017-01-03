@@ -266,6 +266,9 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
         if (model.hasDefined(CommonAttributes.PROTOCOL)) {
             writer.writeAttribute(Attribute.PROTOCOL.getLocalName(), model.require(PROTOCOL).asString());
         }
+        if (model.hasDefined(CommonAttributes.AUTHENTICATION_CONTEXT)) {
+            writer.writeAttribute(Attribute.AUTHENTICATION_CONTEXT.getLocalName(), model.require(AUTHENTICATION_CONTEXT).asString());
+        }
         // write the connection-creation-options if any
         if (model.hasDefined(PROPERTY)) {
             writeProperties(writer, model.get(PROPERTY));

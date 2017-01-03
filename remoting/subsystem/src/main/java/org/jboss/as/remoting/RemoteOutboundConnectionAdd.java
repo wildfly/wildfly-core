@@ -23,6 +23,7 @@
 package org.jboss.as.remoting;
 
 import static org.jboss.as.remoting.AbstractOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME;
+import static org.jboss.as.remoting.RemoteOutboundConnectionResourceDefinition.AUTHENTICATION_CONTEXT_CAPABILITY;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
@@ -36,6 +37,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.remoting3.Endpoint;
+import org.wildfly.security.auth.client.AuthenticationContext;
 import org.xnio.OptionMap;
 
 /**
@@ -66,6 +68,7 @@ class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
         final OptionMap connectionCreationOptions = ConnectorUtils.getOptions(context, fullModel.get(CommonAttributes.PROPERTY));
         final String username = RemoteOutboundConnectionResourceDefinition.USERNAME.resolveModelAttribute(context, fullModel).asString();
         final String securityRealm = fullModel.hasDefined(CommonAttributes.SECURITY_REALM) ? fullModel.require(CommonAttributes.SECURITY_REALM).asString() : null;
+        final String authenticationContext = fullModel.hasDefined(CommonAttributes.AUTHENTICATION_CONTEXT) ? fullModel.require(CommonAttributes.AUTHENTICATION_CONTEXT).asString() : null;
 
         // create the service
         final RemoteOutboundConnectionService outboundConnectionService = new RemoteOutboundConnectionService(connectionName, connectionCreationOptions, username, protocol);
@@ -79,6 +82,11 @@ class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
 
         if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(svcBuilder, outboundConnectionService.getSecurityRealmInjector(), securityRealm, false);
+        }
+        if (authenticationContext != null) {
+            svcBuilder.addDependency(
+                    context.getCapabilityServiceName(AUTHENTICATION_CONTEXT_CAPABILITY, authenticationContext, AuthenticationContext.class),
+                    AuthenticationContext.class, outboundConnectionService.getAuthenticationContextInjector());
         }
         svcBuilder.install();
 

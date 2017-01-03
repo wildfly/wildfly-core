@@ -412,6 +412,7 @@ public enum Phase {
     public static final int CONFIGURE_MODULE_SPEC                       = 0x0200;
     public static final int CONFIGURE_DEFERRED_PHASE                    = 0x0300;
     public static final int CONFIGURE_SINGLETON_DEPLOYMENT              = 0x0400;
+    public static final int CONFIGURE_AUTHENTICATION_CONTEXT            = 0x0500;
 
     // FIRST_MODULE_USE
     public static final int FIRST_MODULE_USE_PERSISTENCE_CLASS_FILE_TRANSFORMER = 0x0100; // need to be before POST_MODULE_REFLECTION_INDEX
@@ -420,6 +421,7 @@ public enum Phase {
     public static final int FIRST_MODULE_USE_PERSISTENCE_PREPARE        = 0x0300;
     public static final int FIRST_MODULE_USE_DSXML_DEPLOYMENT           = 0x0400;
     public static final int FIRST_MODULE_USE_TRANSFORMER                = 0x0500;
+    public static final int FIRST_MODULE_USE_AUTHENTICATION_CONTEXT     = 0x0600;
 
     // POST_MODULE
     public static final int POST_MODULE_INJECTION_ANNOTATION            = 0x0100;
