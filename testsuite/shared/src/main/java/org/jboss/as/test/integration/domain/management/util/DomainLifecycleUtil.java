@@ -218,7 +218,13 @@ public class DomainLifecycleUtil {
 
             if (configuration.getDomainConfigFile() != null) {
                 final String prefix = configuration.isCachedDC() ? null : "testing-";
-                final String name = copyConfigFile(configuration.getDomainConfigFile(), configDir, prefix);
+                String name = null;
+                if(configuration.isRewriteConfigFiles()) {
+                    name = copyConfigFile(configuration.getDomainConfigFile(), configDir, prefix);
+                } else {
+                    name = configDir.resolve(prefix + Paths.get(configuration.getDomainConfigFile()).getFileName())
+                            .getFileName().toString();
+                }
                 if (configuration.isReadOnlyDomain()) {
                     commandBuilder.setReadOnlyDomainConfiguration(name);
                 } else if (!configuration.isCachedDC()) {
@@ -226,7 +232,14 @@ public class DomainLifecycleUtil {
                 }
             }
             if (configuration.getHostConfigFile() != null) {
-                final String name = copyConfigFile(configuration.getHostConfigFile(), configDir);
+                final String prefix = "testing-";
+                String name = null;
+                if(configuration.isRewriteConfigFiles()) {
+                    name = copyConfigFile(configuration.getHostConfigFile(), configDir, prefix);
+                } else {
+                    name = configDir.resolve(prefix + Paths.get(configuration.getHostConfigFile()).getFileName())
+                            .getFileName().toString();
+                }
                 if (configuration.isReadOnlyHost()) {
                     commandBuilder.setReadOnlyHostConfiguration(name);
                 } else {
@@ -614,18 +627,6 @@ public class DomainLifecycleUtil {
         }
     }
 
-    private static String copyConfigFile(final String file, final String dir) {
-        return copyConfigFile(file, dir, "testing-");
-    }
-
-    private static String copyConfigFile(final String file, final Path dir) {
-        return copyConfigFile(Paths.get(file), dir, "testing-");
-    }
-
-    private static String copyConfigFile(final String file, final String dir, final String prefix) {
-        return copyConfigFile(Paths.get(file), Paths.get(dir), prefix);
-    }
-
     private static String copyConfigFile(final String file, final Path dir, final String prefix) {
         return copyConfigFile(Paths.get(file), dir, prefix);
     }
@@ -641,7 +642,7 @@ public class DomainLifecycleUtil {
     }
 
     private static void createFile(final Path file, final String line) throws IOException {
-        try (final PrintWriter pw = new PrintWriter(Files.newBufferedWriter(file, StandardCharsets.UTF_8), true)) {
+        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(file, StandardCharsets.UTF_8), true)) {
             pw.println(line);
         }
     }
