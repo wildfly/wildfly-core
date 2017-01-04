@@ -1009,6 +1009,14 @@ class ModelControllerImpl implements ModelController {
         return modelControllerResourceAddress;
     }
 
+    /**
+     * Wait up to 5 seconds for MSC stability. Workaround for issues where removing a service
+     * and then immediately re-adding it causes MSC problems.
+     */
+    void pauseForStability() throws InterruptedException {
+        stateMonitor.getStabilityMonitor().awaitStability(5, TimeUnit.SECONDS);
+    }
+
     private class DefaultPrepareStepHandler implements OperationStepHandler {
 
         @Override

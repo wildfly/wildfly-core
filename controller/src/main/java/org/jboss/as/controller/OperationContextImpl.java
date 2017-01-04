@@ -1974,26 +1974,40 @@ final class OperationContextImpl extends AbstractOperationContext {
             boolean intr = false;
             try {
                 boolean containsKey = realRemovingControllers.containsKey(name);
-                long timeout = getBlockingTimeout().getLocalBlockingTimeout();
-                long waitTime = timeout;
-                long end = System.currentTimeMillis() + waitTime;
-                while (containsKey && waitTime > 0) {
+                if (containsKey) {
+                    long timeout = getBlockingTimeout().getLocalBlockingTimeout();
+                    long waitTime = timeout;
+                    long end = System.currentTimeMillis() + waitTime;
+                    while (containsKey && waitTime > 0) {
+                        try {
+                            realRemovingControllers.wait(waitTime);
+                        } catch (InterruptedException e) {
+                            intr = true;
+                            if (respectInterruption) {
+                                cancelled = true;
+                                throw ControllerLogger.ROOT_LOGGER.serviceInstallCancelled();
+                            } // else keep waiting and mark the thread interrupted at the end
+                        }
+                        containsKey = realRemovingControllers.containsKey(name);
+                        waitTime = end - System.currentTimeMillis();
+                    }
+
+                    if (containsKey) {
+                        // We timed out
+                        throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, name);
+                    }
+
+                    // Before we reinstall the service, work around potential MSC issues by
+                    // giving MSC a chance to stabilize
                     try {
-                        realRemovingControllers.wait(waitTime);
+                        modelController.pauseForStability();
                     } catch (InterruptedException e) {
                         intr = true;
                         if (respectInterruption) {
                             cancelled = true;
                             throw ControllerLogger.ROOT_LOGGER.serviceInstallCancelled();
-                        } // else keep waiting and mark the thread interrupted at the end
+                        }
                     }
-                    containsKey = realRemovingControllers.containsKey(name);
-                    waitTime = end - System.currentTimeMillis();
-                }
-
-                if (containsKey) {
-                    // We timed out
-                    throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, name);
                 }
 
                 // If a step removed this ServiceName before, it's no longer responsible

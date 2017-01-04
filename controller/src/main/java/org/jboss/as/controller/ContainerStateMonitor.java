@@ -60,6 +60,14 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
     }
 
     /**
+     * Provides access to the underlying stability monitor to the ModelController.
+     * @return the stability monitor. Will not return {@code null}
+     */
+    StabilityMonitor getStabilityMonitor() {
+        return monitor;
+    }
+
+    /**
      * Log a report of any problematic container state changes and reset container state change history
      * so another run of this method or of {@link #awaitContainerStateChangeReport(long, java.util.concurrent.TimeUnit)}
      * will produce a report not including any changes included in a report returned by this run.
