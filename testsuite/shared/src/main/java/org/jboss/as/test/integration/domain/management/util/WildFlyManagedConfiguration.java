@@ -107,6 +107,8 @@ public class WildFlyManagedConfiguration {
 
     private boolean enableAssertions = true;
 
+    private boolean rewriteConfigFiles = true;
+
     public WildFlyManagedConfiguration(String jbossHome) {
         if (jbossHome != null) {
             this.jbossHome = jbossHome;
@@ -137,8 +139,9 @@ public class WildFlyManagedConfiguration {
     /**
      * @param jbossHome the jbossHome to set
      */
-    public void setJbossHome(String jbossHome) {
+    public WildFlyManagedConfiguration setJbossHome(String jbossHome) {
         this.jbossHome = jbossHome;
+        return this;
     }
 
     /**
@@ -151,8 +154,9 @@ public class WildFlyManagedConfiguration {
     /**
      * @param javaHome the javaHome to set
      */
-    public void setJavaHome(String javaHome) {
+    public WildFlyManagedConfiguration setJavaHome(String javaHome) {
         this.javaHome = javaHome;
+        return this;
     }
 
     /**
@@ -165,8 +169,9 @@ public class WildFlyManagedConfiguration {
     /**
      * @param controllerJavaHome the javaHome to set
      */
-    public void setControllerJavaHome(String controllerJavaHome) {
+    public WildFlyManagedConfiguration setControllerJavaHome(String controllerJavaHome) {
         this.controllerJavaHome = controllerJavaHome;
+        return this;
     }
 
     /**
@@ -179,15 +184,17 @@ public class WildFlyManagedConfiguration {
     /**
      * @param javaVmArguments the javaVmArguments to set
      */
-    public void setJavaVmArguments(String javaVmArguments) {
+    public WildFlyManagedConfiguration setJavaVmArguments(String javaVmArguments) {
         this.javaVmArguments = javaVmArguments;
+        return this;
     }
 
     /**
      * @param startupTimeoutInSeconds the startupTimeoutInSeconds to set
      */
-    public void setStartupTimeoutInSeconds(int startupTimeoutInSeconds) {
+    public WildFlyManagedConfiguration setStartupTimeoutInSeconds(int startupTimeoutInSeconds) {
         this.startupTimeoutInSeconds = startupTimeoutInSeconds;
+        return this;
     }
 
     /**
@@ -200,8 +207,9 @@ public class WildFlyManagedConfiguration {
     /**
      * @param outputToConsole the outputToConsole to set
      */
-    public void setOutputToConsole(boolean outputToConsole) {
+    public WildFlyManagedConfiguration setOutputToConsole(boolean outputToConsole) {
         this.outputToConsole = outputToConsole;
+        return this;
     }
 
     /**
@@ -215,72 +223,81 @@ public class WildFlyManagedConfiguration {
         return hostControllerManagementProtocol;
     }
 
-    public void setHostControllerManagementProtocol(String hostControllerManagementProtocol) {
+    public WildFlyManagedConfiguration setHostControllerManagementProtocol(String hostControllerManagementProtocol) {
         this.hostControllerManagementProtocol = hostControllerManagementProtocol;
+        return this;
     }
 
     public String getHostControllerManagementAddress() {
         return hostControllerManagementAddress;
     }
 
-    public void setHostControllerManagementAddress(String hostControllerManagementAddress) {
+    public WildFlyManagedConfiguration setHostControllerManagementAddress(String hostControllerManagementAddress) {
         this.hostControllerManagementAddress = hostControllerManagementAddress;
+        return this;
     }
 
     public int getHostControllerManagementPort() {
         return hostControllerManagementPort;
     }
 
-    public void setHostControllerManagementPort(int hostControllerManagementPort) {
+    public WildFlyManagedConfiguration setHostControllerManagementPort(int hostControllerManagementPort) {
         this.hostControllerManagementPort = hostControllerManagementPort;
+        return this;
     }
 
     public String getDomainDirectory() {
         return domainDir;
     }
 
-    public void setDomainDirectory(String domainDir) {
+    public WildFlyManagedConfiguration setDomainDirectory(String domainDir) {
         this.domainDir = domainDir;
+        return this;
     }
 
     public String getDomainConfigFile() {
         return domainConfigFile;
     }
 
-    public void setDomainConfigFile(String domainConfigFile) {
+    public WildFlyManagedConfiguration setDomainConfigFile(String domainConfigFile) {
         this.domainConfigFile = domainConfigFile;
+        return this;
     }
 
     public String getHostConfigFile() {
         return hostConfigFile;
     }
 
-    public void setHostConfigFile(String hostConfigFile) {
+    public WildFlyManagedConfiguration setHostConfigFile(String hostConfigFile) {
         this.hostConfigFile = hostConfigFile;
+        return this;
     }
 
     public String getMgmtUsersFile() {
         return mgmtUsersFile;
     }
 
-    public void setMgmtUsersFile(String mgmtUsersFile) {
+    public WildFlyManagedConfiguration setMgmtUsersFile(String mgmtUsersFile) {
         this.mgmtUsersFile = mgmtUsersFile;
+        return this;
     }
 
     public String getMgmtGroupsFile() {
         return mgmtGroupsFile;
     }
 
-    public void setMgmtGroupsFile(String mgmtGroupsFile) {
+    public WildFlyManagedConfiguration setMgmtGroupsFile(String mgmtGroupsFile) {
         this.mgmtGroupsFile = mgmtGroupsFile;
+        return this;
     }
 
     public String getHostCommandLineProperties() {
         return hostCommandLineProperties;
     }
 
-    public void setHostCommandLineProperties(String hostCommandLineProperties) {
+    public WildFlyManagedConfiguration setHostCommandLineProperties(String hostCommandLineProperties) {
         this.hostCommandLineProperties = hostCommandLineProperties;
+        return this;
     }
 
     public void addHostCommandLineProperty(String hostCommandLineProperty) {
@@ -292,71 +309,89 @@ public class WildFlyManagedConfiguration {
         return hostName;
     }
 
-    public void setHostName(String hostName) {
+    public WildFlyManagedConfiguration setHostName(String hostName) {
         this.hostName = hostName;
+        return this;
     }
 
     public String getModulePath() {
         return modulePath;
     }
 
-    public void setModulePath(final String modulePath) {
+    public WildFlyManagedConfiguration setModulePath(final String modulePath) {
         this.modulePath = modulePath;
+        return this;
     }
 
     public boolean isAdminOnly() {
         return adminOnly;
     }
 
-    public void setAdminOnly(boolean adminOnly) {
+    public WildFlyManagedConfiguration setAdminOnly(boolean adminOnly) {
         this.adminOnly = adminOnly;
+        return this;
     }
 
     public boolean isReadOnlyDomain() {
         return readOnlyDomain;
     }
 
-    public void setReadOnlyDomain(boolean readOnlyDomain) {
+    public WildFlyManagedConfiguration setReadOnlyDomain(boolean readOnlyDomain) {
         this.readOnlyDomain = readOnlyDomain;
+        return this;
     }
 
     public boolean isReadOnlyHost() {
         return readOnlyHost;
     }
 
-    public void setReadOnlyHost(boolean readOnlyHost) {
+    public WildFlyManagedConfiguration setReadOnlyHost(boolean readOnlyHost) {
         this.readOnlyHost = readOnlyHost;
+        return this;
     }
 
     public CallbackHandler getCallbackHandler() {
         return callbackHandler;
     }
 
-    public void setCallbackHandler(CallbackHandler callbackHandler) {
+    public WildFlyManagedConfiguration setCallbackHandler(CallbackHandler callbackHandler) {
         this.callbackHandler = callbackHandler;
+        return this;
     }
 
     public boolean isBackupDC() {
         return backupDC;
     }
 
-    public void setBackupDC(boolean backupDC) {
+    public WildFlyManagedConfiguration setBackupDC(boolean backupDC) {
         this.backupDC = backupDC;
+        return this;
     }
 
     public boolean isCachedDC() {
         return cachedDC;
     }
 
-    public void setCachedDC(boolean cachedDC) {
+    public WildFlyManagedConfiguration setCachedDC(boolean cachedDC) {
         this.cachedDC = cachedDC;
+        return this;
     }
 
     public boolean isEnableAssertions() {
         return enableAssertions;
     }
 
-    public void setEnableAssertions(boolean enableAssertions) {
+    public WildFlyManagedConfiguration setEnableAssertions(boolean enableAssertions) {
         this.enableAssertions = enableAssertions;
+        return this;
+    }
+
+    public boolean isRewriteConfigFiles() {
+        return rewriteConfigFiles;
+    }
+
+    public WildFlyManagedConfiguration setRewriteConfigFiles(boolean rewriteConfigFiles) {
+        this.rewriteConfigFiles = rewriteConfigFiles;
+        return this;
     }
 }
