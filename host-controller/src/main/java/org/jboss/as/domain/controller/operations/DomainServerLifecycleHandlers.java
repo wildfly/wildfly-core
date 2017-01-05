@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUS
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -51,6 +52,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
@@ -75,8 +77,9 @@ public class DomainServerLifecycleHandlers {
             .setDefaultValue(new ModelNode(false))
             .build();
 
-    private static final AttributeDefinition SUSPEND = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+    private static final AttributeDefinition START_MODE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.START_MODE, ModelType.STRING, true)
+            .setDefaultValue(new ModelNode(StartMode.NORMAL.toString()))
+            .setValidator(new EnumValidator<>(StartMode.class, true, true))
             .build();
 
     private static final AttributeDefinition TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TIMEOUT, ModelType.INT, true)
@@ -119,7 +122,7 @@ public class DomainServerLifecycleHandlers {
         return new SimpleOperationDefinitionBuilder(operationName,
                 DomainResolver.getResolver(serverGroup ? ModelDescriptionConstants.SERVER_GROUP : ModelDescriptionConstants.DOMAIN))
                 .addParameter(BLOCKING)
-                .addParameter(SUSPEND)
+                .addParameter(START_MODE)
                 .setRuntimeOnly()
                 .build();
     }
@@ -230,7 +233,7 @@ public class DomainServerLifecycleHandlers {
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
             final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
-            final boolean suspend = SUSPEND.resolveModelAttribute(context, operation).asBoolean();
+            final boolean suspend = START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(StartMode.SUSPEND.toString());
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -275,7 +278,7 @@ public class DomainServerLifecycleHandlers {
             final String group = getServerGroupName(operation);
             final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
             final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
-            final boolean suspend = SUSPEND.resolveModelAttribute(context, operation).asBoolean();
+            final boolean suspend = START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(StartMode.SUSPEND.toString());
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -312,7 +315,7 @@ public class DomainServerLifecycleHandlers {
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
             final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
-            final boolean suspend = SUSPEND.resolveModelAttribute(context, operation).asBoolean();
+            final boolean suspend = START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(StartMode.SUSPEND.toString());
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -422,19 +425,34 @@ public class DomainServerLifecycleHandlers {
 
     public static void registerSuspendedStartTransformers(ResourceTransformationDescriptionBuilder builder) {
         builder.addOperationTransformationOverride(START_SERVERS)
-                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(false)), SUSPEND)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, SUSPEND)
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(StartMode.NORMAL.toString())), START_MODE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, START_MODE)
                 .end()
                 .addOperationTransformationOverride(RELOAD_SERVERS)
-                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(false)), SUSPEND)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, SUSPEND)
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(StartMode.NORMAL.toString())), START_MODE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, START_MODE)
                 .end()
                 .addOperationTransformationOverride(RESTART_SERVERS)
-                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(false)), SUSPEND)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, SUSPEND)
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(StartMode.NORMAL.toString())), START_MODE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, START_MODE)
                 .end();
 
     }
 
+    enum StartMode {
+        NORMAL("normal"),
+        SUSPEND("suspend");
+
+        private final String localName;
+
+        StartMode(String localName) {
+            this.localName = localName;
+        }
+
+        @Override
+        public String toString() {
+            return localName;
+        }
+    }
 
 }

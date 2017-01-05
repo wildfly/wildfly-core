@@ -67,6 +67,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
 
     private final InjectedValue<OutboundSocketBinding> destinationOutboundSocketBindingInjectedValue = new InjectedValue<OutboundSocketBinding>();
     private final InjectedValue<SecurityRealm> securityRealmInjectedValue = new InjectedValue<SecurityRealm>();
+    private final InjectedValue<AuthenticationContext> authenticationContext = new InjectedValue<>();
 
     private final String username;
     private final String protocol;
@@ -90,56 +91,63 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         }
         final Endpoint endpoint = this.endpointInjectedValue.getValue();
 
-        AuthenticationContext captured = AuthenticationContext.captureCurrent();
-        AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, captured);
-
-        final CallbackHandler callbackHandler;
-        final CallbackHandlerFactory cbhFactory;
-        SSLContext sslContext = null;
-        SecurityRealm realm = securityRealmInjectedValue.getOptionalValue();
-        if (realm != null && (cbhFactory = realm.getSecretCallbackHandlerFactory()) != null && username != null) {
-            callbackHandler = cbhFactory.getCallbackHandler(username);
-        } else {
-            callbackHandler = null;
-        }
-
-        if (realm != null) {
-            sslContext = realm.getSSLContext();
-        }
-
-        if (callbackHandler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(callbackHandler);
-
+        AuthenticationContext authenticationContext = this.authenticationContext.getOptionalValue();
         final OptionMap.Builder builder = OptionMap.builder();
-        // first set the defaults
-        builder.set(SASL_POLICY_NOANONYMOUS, Boolean.FALSE);
-        builder.set(SASL_POLICY_NOPLAINTEXT, Boolean.FALSE);
-        builder.set(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
-        Protocol protocol = Protocol.forName(uri.getScheme());
-        switch (protocol) {
-            case HTTP_REMOTING:
-            case REMOTE_HTTP:
-                builder.set(SSL_ENABLED, false);
-                break;
-            case HTTPS_REMOTING:
-            case REMOTE_HTTPS:
-                builder.set(SSL_ENABLED, true);
-                builder.set(SSL_STARTTLS, false);
-                break;
-            default:
-                builder.set(Options.SSL_ENABLED, true);
-                builder.set(Options.SSL_STARTTLS, true);
-                break;
+
+        if (authenticationContext == null) {
+            AuthenticationContext captured = AuthenticationContext.captureCurrent();
+            AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri,
+                    captured);
+
+            final CallbackHandler callbackHandler;
+            final CallbackHandlerFactory cbhFactory;
+            SSLContext sslContext = null;
+            SecurityRealm realm = securityRealmInjectedValue.getOptionalValue();
+            if (realm != null && (cbhFactory = realm.getSecretCallbackHandlerFactory()) != null && username != null) {
+                callbackHandler = cbhFactory.getCallbackHandler(username);
+            } else {
+                callbackHandler = null;
+            }
+
+            if (realm != null) {
+                sslContext = realm.getSSLContext();
+            }
+
+            if (callbackHandler != null)
+                mergedConfiguration = mergedConfiguration.useCallbackHandler(callbackHandler);
+
+            // first set the defaults
+            builder.set(SASL_POLICY_NOANONYMOUS, Boolean.FALSE);
+            builder.set(SASL_POLICY_NOPLAINTEXT, Boolean.FALSE);
+            builder.set(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
+            Protocol protocol = Protocol.forName(uri.getScheme());
+            switch (protocol) {
+                case HTTP_REMOTING:
+                case REMOTE_HTTP:
+                    builder.set(SSL_ENABLED, false);
+                    break;
+                case HTTPS_REMOTING:
+                case REMOTE_HTTPS:
+                    builder.set(SSL_ENABLED, true);
+                    builder.set(SSL_STARTTLS, false);
+                    break;
+                default:
+                    builder.set(Options.SSL_ENABLED, true);
+                    builder.set(Options.SSL_STARTTLS, true);
+                    break;
+            }
+
+            authenticationContext = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
+            if (sslContext != null) {
+                final SSLContext theSslConect = sslContext;
+                authenticationContext = authenticationContext.withSsl(MatchRule.ALL, () -> theSslConect);
+            }
         }
 
         // now override with user specified options
         builder.addAll(this.connectionCreationOptions);
 
-        AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
-        if (sslContext != null) {
-            final SSLContext theSslConect = sslContext;
-            context = context.withSsl(MatchRule.ALL, () -> theSslConect);
-        }
-        return endpoint.connect(uri, builder.getMap(), context);
+        return endpoint.connect(uri, builder.getMap(), authenticationContext);
     }
 
     @Override
@@ -153,6 +161,10 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
 
     Injector<SecurityRealm> getSecurityRealmInjector() {
         return securityRealmInjectedValue;
+    }
+
+    Injector<AuthenticationContext> getAuthenticationContextInjector() {
+        return authenticationContext;
     }
 
     /**

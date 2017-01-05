@@ -74,10 +74,7 @@ public class ControlledProcessStateService implements Service<ControlledProcessS
      * Returns the current process state.
      *
      * @return  the current state
-     *
-     * @deprecated This service should not be used outside the AS7 codebase itself, as it may be replaced in AS 7.2
      */
-    @Deprecated
     public ControlledProcessState.State getCurrentState() {
         return processState;
     }
@@ -86,10 +83,7 @@ public class ControlledProcessStateService implements Service<ControlledProcessS
      * Registers a listener for changes to the process state.
      *
      * @param listener the listener
-     *
-     * @deprecated This service should not be used outside the AS7 codebase itself, as it may be replaced in AS 7.2
      */
-    @Deprecated
     public void addPropertyChangeListener(
             PropertyChangeListener listener) {
         changeSupport.addPropertyChangeListener(listener);
@@ -99,10 +93,7 @@ public class ControlledProcessStateService implements Service<ControlledProcessS
      * Removes a previously {@link #addPropertyChangeListener(PropertyChangeListener) registered listener}.
      *
      * @param listener the listener
-     *
-     * @deprecated This service should not be used outside the AS7 codebase itself, as it may be replaced in AS 7.2
      */
-    @Deprecated
     public void removePropertyChangeListener(
             PropertyChangeListener listener) {
         changeSupport.removePropertyChangeListener(listener);

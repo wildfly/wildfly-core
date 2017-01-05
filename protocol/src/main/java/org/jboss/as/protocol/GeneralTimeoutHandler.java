@@ -23,6 +23,7 @@
 package org.jboss.as.protocol;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.xnio.IoFuture;
 import org.xnio.IoFuture.Status;
@@ -36,7 +37,7 @@ import org.xnio.IoFuture.Status;
 public class GeneralTimeoutHandler implements ProtocolTimeoutHandler {
 
     private volatile boolean thinking = false;
-    private volatile long thinkTime = 0;
+    private final AtomicLong thinkTime = new AtomicLong(0);
 
     public void suspendAndExecute(final Runnable runnable) {
         thinking = true;
@@ -44,7 +45,7 @@ public class GeneralTimeoutHandler implements ProtocolTimeoutHandler {
         try {
             runnable.run();
         } finally {
-            thinkTime += System.currentTimeMillis() - startThinking;
+            thinkTime.addAndGet(System.currentTimeMillis() - startThinking);
             thinking = false;
         }
     }
@@ -58,7 +59,7 @@ public class GeneralTimeoutHandler implements ProtocolTimeoutHandler {
             if (thinking) {
                 status = future.await(timeoutMillis, TimeUnit.MILLISECONDS);
             } else {
-                long timeToWait = (timeoutMillis + thinkTime) - (System.currentTimeMillis() - startTime);
+                long timeToWait = (timeoutMillis + thinkTime.get()) - (System.currentTimeMillis() - startTime);
                 if (timeToWait > 0) {
                     status = future.await(timeToWait, TimeUnit.MILLISECONDS);
                 } else {

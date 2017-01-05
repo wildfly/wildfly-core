@@ -112,6 +112,9 @@ class WorkerAdd extends AbstractAddStepHandler {
 
     private static int getGlobalSuggestedCount(final OperationContext context, final ModelNode workers) throws OperationFailedException {
         int count = 0;
+        if (!workers.isDefined()){
+            return count;
+        }
         for (Property property : workers.asPropertyList()) {
             ModelNode worker = property.getValue();
             ModelNode ioThreadsModel = WORKER_IO_THREADS.resolveModelAttribute(context, worker);
@@ -142,6 +145,12 @@ class WorkerAdd extends AbstractAddStepHandler {
         }
     }
 
+    @Override
+    protected Resource createResource(OperationContext context) {
+        Resource r = new WorkerResourceDefinition.WorkerResource(context);
+        context.addResource(PathAddress.EMPTY_ADDRESS, r);
+        return r;
+    }
 
     @Override
     @SuppressWarnings("unchecked")

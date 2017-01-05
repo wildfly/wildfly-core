@@ -321,13 +321,12 @@ public class OperationTransformerRegistry {
         for (;;) {
             final Map<String, SubRegistry> subRegistries = subRegistriesUpdater.get(this);
             SubRegistry registry = subRegistries.get(key);
-            if(registry == null) {
+            if (registry != null) {
+                return registry;
+            } else {
                 registry = new SubRegistry();
-                SubRegistry existing = subRegistriesUpdater.putAtomic(this, key, registry, subRegistries);
-                if(existing == null) {
+                if(subRegistriesUpdater.putAtomic(this, key, registry, subRegistries)) {
                     return registry;
-                } else if (existing != registry) {
-                    return existing;
                 }
             }
             return registry;
@@ -339,11 +338,11 @@ public class OperationTransformerRegistry {
         private static final AtomicMapFieldUpdater<SubRegistry, String, OperationTransformerRegistry> childrenUpdater = AtomicMapFieldUpdater.newMapUpdater(AtomicReferenceFieldUpdater.newUpdater(SubRegistry.class, Map.class, "entries"));
         private volatile Map<String, OperationTransformerRegistry> entries;
 
-        SubRegistry() {
+        private SubRegistry() {
             childrenUpdater.clear(this);
         }
 
-        public OperationTransformerRegistry createChild(Iterator<PathElement> iterator, String value, final PathAddressTransformer pathAddressTransformer, ResourceTransformerEntry resourceTransformer, OperationTransformerEntry defaultTransformer, boolean placeholder) {
+        private OperationTransformerRegistry createChild(Iterator<PathElement> iterator, String value, final PathAddressTransformer pathAddressTransformer, ResourceTransformerEntry resourceTransformer, OperationTransformerEntry defaultTransformer, boolean placeholder) {
             if(! iterator.hasNext()) {
                 return create(value, pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
             } else {
@@ -355,11 +354,11 @@ public class OperationTransformerRegistry {
             }
         }
 
-        public void registerTransformer(Iterator<PathElement> iterator, String value, String operationName,  OperationTransformerEntry entry) {
+        private void registerTransformer(Iterator<PathElement> iterator, String value, String operationName,  OperationTransformerEntry entry) {
             get(value).registerTransformer(iterator, operationName, entry);
         }
 
-        OperationTransformerRegistry get(final String value) {
+        private OperationTransformerRegistry get(final String value) {
             OperationTransformerRegistry entry = childrenUpdater.get(this, value);
             if(entry == null) {
                 entry = childrenUpdater.get(this, "*");
@@ -370,7 +369,7 @@ public class OperationTransformerRegistry {
             return entry;
         }
 
-        OperationTransformerRegistry get(final String value, Iterator<PathElement> iterator) {
+        private OperationTransformerRegistry get(final String value, Iterator<PathElement> iterator) {
             OperationTransformerRegistry entry = childrenUpdater.get(this, value);
             if(entry == null) {
                 entry = childrenUpdater.get(this, "*");
@@ -381,7 +380,7 @@ public class OperationTransformerRegistry {
             return entry.resolveChild(iterator);
         }
 
-        OperationTransformerRegistry create(final String value, final PathAddressTransformer pathAddressTransformer, final ResourceTransformerEntry resourceTransformer, final OperationTransformerEntry defaultTransformer, boolean placeholder) {
+        private OperationTransformerRegistry create(final String value, final PathAddressTransformer pathAddressTransformer, final ResourceTransformerEntry resourceTransformer, final OperationTransformerEntry defaultTransformer, boolean placeholder) {
             for(;;) {
                 final Map<String, OperationTransformerRegistry> entries = childrenUpdater.get(this);
                 OperationTransformerRegistry entry = entries.get(value);
@@ -389,17 +388,14 @@ public class OperationTransformerRegistry {
                     return entry;
                 } else {
                     entry = new OperationTransformerRegistry(pathAddressTransformer, resourceTransformer, defaultTransformer, placeholder);
-                    final OperationTransformerRegistry existing = childrenUpdater.putAtomic(this, value, entry, entries);
-                    if(existing == null) {
+                    if(childrenUpdater.putAtomic(this, value, entry, entries)) {
                         return entry;
-                    } else if(existing != entry) {
-                        return existing;
                     }
                 }
             }
         }
 
-        public ResourceTransformerEntry resolveResourceTransformer(Iterator<PathElement> iterator, String value, ResourceTransformerEntry inheritedEntry, PlaceholderResolver placeholderResolver) {
+        private ResourceTransformerEntry resolveResourceTransformer(Iterator<PathElement> iterator, String value, ResourceTransformerEntry inheritedEntry, PlaceholderResolver placeholderResolver) {
             final OperationTransformerRegistry registry = get(value);
             if(registry == null) {
                 return inheritedEntry;

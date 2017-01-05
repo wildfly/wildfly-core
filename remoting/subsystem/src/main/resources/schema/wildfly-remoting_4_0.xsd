@@ -568,6 +568,7 @@
                 <xs:attribute name="username" type="xs:string" use="optional"/>
                 <xs:attribute name="security-realm" type="xs:string" use="optional"/>
                 <xs:attribute name="protocol" type="xs:string" use="optional"/>
+                <xs:attribute name="authentication-context" type="xs:string" />
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

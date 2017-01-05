@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Managed {@code ServerSocket} binding, automatically registering itself
@@ -38,7 +39,7 @@ public class ManagedServerSocketBinding extends ServerSocket implements ManagedB
     private final String name;
     private final SocketBindingManager socketBindings;
     private final boolean metrics;
-    private volatile long acceptCount = 0;
+    private final AtomicLong acceptCount = new AtomicLong(0);
 
     ManagedServerSocketBinding(final SocketBindingManager socketBindings) throws IOException {
         this(null, socketBindings, false);
@@ -83,7 +84,7 @@ public class ManagedServerSocketBinding extends ServerSocket implements ManagedB
         final Socket socket = metrics ? new ManagedSocketBinding(socketBindings.getUnnamedRegistry()) : new Socket();
         implAccept(socket);
         if(metrics) {
-            acceptCount++;
+            acceptCount.incrementAndGet();
         }
         return socket;
     }
@@ -102,7 +103,7 @@ public class ManagedServerSocketBinding extends ServerSocket implements ManagedB
     }
 
     public long getAcceptCount() {
-        return acceptCount;
+        return acceptCount.get();
     }
 
 }

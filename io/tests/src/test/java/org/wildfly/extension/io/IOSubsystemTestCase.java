@@ -27,7 +27,9 @@ package org.wildfly.extension.io;
 import java.io.IOException;
 
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
@@ -90,6 +92,10 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
         XnioWorker worker = workerServiceController.getService().getValue();
         Assert.assertEquals(ProcessorInfo.availableProcessors() * 2, worker.getIoThreadCount());
         Assert.assertEquals(ProcessorInfo.availableProcessors() * 16, worker.getOption(Options.WORKER_TASK_MAX_THREADS).intValue());
+        PathAddress addr = PathAddress.parseCLIStyleAddress("/subsystem=io/worker=default");
+        ModelNode op = Util.createOperation("read-resource", addr);
+        op.get("include-runtime").set(true);
+        mainServices.executeOperation(op);
     }
 
     @Override

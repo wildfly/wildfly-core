@@ -18,6 +18,8 @@
  */
 package org.jboss.as.controller.operation.validation;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.math.BigDecimal;
@@ -94,6 +96,9 @@ public class ModelTypeValidatorUnitTestCase {
         testee = new ModelTypeValidator(ModelType.INT, false, false, true);
         assertOk(testee, new ModelNode().set(1));
         assertInvalid(testee, new ModelNode().set((double) 1));
+        testee = new ModelTypeValidator(ModelType.INT, false, false, false);
+        assertOk(testee, new ModelNode().set("99"));
+        assertInvalid(testee, new ModelNode().set("999999999999"), true);
     }
 
     @Test
@@ -243,12 +248,20 @@ public class ModelTypeValidatorUnitTestCase {
     }
 
     private static void assertInvalid(ModelTypeValidator validator, ModelNode toTest) {
+        assertInvalid(validator, toTest, false);
+    }
+
+    private static void assertInvalid(ModelTypeValidator validator, ModelNode toTest, boolean hasCause) {
         try {
             validator.validateParameter("test", toTest);
             fail("Validation should have failed ");
         }
         catch (OperationFailedException e) {
-            // good
+            if(hasCause) {
+                assertNotNull(e.getCause());
+            } else {
+                assertNull(e.getCause());
+            }
         }
     }
 }

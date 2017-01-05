@@ -85,15 +85,16 @@ final class AtomicMapFieldUpdater<C, K, V> {
     }
 
     /**
-     * Put a value if and only if the map has not changed since the given snapshot was taken.
+     * Put a value if and only if the map has not changed since the given snapshot was taken. If the put fails,
+     * it is the caller's responsibility to retry.
      *
      * @param instance the instance with the map field
      * @param key the key
      * @param value the value
      * @param snapshot the map snapshot
-     * @return {@code value} if the snapshot is out of date, {@code null} if it succeeded, the existing value if the put failed
+     * @return {@code false} if the snapshot is out of date and we could not update, {@code true} if the put succeeded
      */
-    public V putAtomic(C instance, K key, V value, Map<K, V> snapshot) {
+    public boolean putAtomic(C instance, K key, V value, Map<K, V> snapshot) {
         Assert.checkNotNullParam("key", key);
         final Map<K, V> newMap;
         final int oldSize = snapshot.size();
@@ -103,7 +104,7 @@ final class AtomicMapFieldUpdater<C, K, V> {
             final Map.Entry<K, V> entry = snapshot.entrySet().iterator().next();
             final K oldKey = entry.getKey();
             if (oldKey.equals(key)) {
-                return entry.getValue();
+                return false;
             } else {
                 newMap = new FastCopyHashMap<K, V>(snapshot);
                 newMap.put(key, value);
@@ -112,11 +113,7 @@ final class AtomicMapFieldUpdater<C, K, V> {
             newMap = new FastCopyHashMap<K, V>(snapshot);
             newMap.put(key, value);
         }
-        if (updater.compareAndSet(instance, snapshot, newMap)) {
-            return null;
-        } else {
-            return value;
-        }
+        return updater.compareAndSet(instance, snapshot, newMap);
     }
 
     public V putIfAbsent(C instance, K key, V value) {

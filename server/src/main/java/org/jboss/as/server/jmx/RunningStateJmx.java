@@ -48,16 +48,16 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
     private final ObjectName objectName;
     private final AtomicLong sequence = new AtomicLong(0);
     private volatile RuntimeConfigurationState state = RuntimeConfigurationState.STOPPED;
-    private volatile RunningState runningState = null;
-    private volatile RunningMode mode = null;
+    private volatile RunningState runningState = RunningState.STOPPED;
+    private volatile RunningModeControl runningModeControl = null;
     private final boolean isServer;
 
     public static final String RUNTIME_CONFIGURATION_STATE = "RuntimeConfigurationState";
     public static final String RUNNING_STATE = "RunningState";
 
-    private RunningStateJmx(ObjectName objectName, RunningMode mode, Type type) {
+    private RunningStateJmx(ObjectName objectName, RunningModeControl runningModeControl, Type type) {
         this.objectName = objectName;
-        this.mode = mode;
+        this.runningModeControl = runningModeControl;
         this.isServer = type == DOMAIN_SERVER || type == EMBEDDED_SERVER || type == STANDALONE_SERVER;
     }
 
@@ -73,7 +73,7 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
 
     @Override
     public RunningMode getRunningMode() {
-        return mode;
+        return RunningMode.from(runningModeControl.getRunningMode().name());
     }
 
     @Override
@@ -105,35 +105,10 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
                 ServerLogger.ROOT_LOGGER.jmxAttributeChange(RUNTIME_CONFIGURATION_STATE, oldStateString, stateString),
                 RUNTIME_CONFIGURATION_STATE, String.class.getName(), oldStateString, stateString);
         sendNotification(notification);
-        if (runningState == null) {
-            switch (oldState) {
-                case RUNNING:
-                    if (!isServer) {
-                        if (mode == RunningMode.NORMAL) {
-                            runningState = RunningState.NORMAL;
-                        } else {
-                            runningState = RunningState.ADMIN_ONLY;
-                        }
-                    }
-                    break;
-                case STARTING:
-                    runningState = RunningState.STARTING;
-                    break;
-                case STOPPING:
-                    runningState = RunningState.STOPPING;
-                    break;
-                case STOPPED:
-                    runningState = RunningState.STOPPED;
-                    break;
-                case RELOAD_REQUIRED:
-                case RESTART_REQUIRED:
-                default:
-            }
-        }
         switch(newState) {
             case RUNNING:
                 if (RunningState.NORMAL != runningState && RunningState.ADMIN_ONLY != runningState && !isServer) {
-                    if (mode == RunningMode.NORMAL) {
+                    if (getRunningMode() == RunningMode.NORMAL) {
                         setRunningState(runningState, RunningState.NORMAL);
                     } else {
                         setRunningState(runningState, RunningState.ADMIN_ONLY);
@@ -178,16 +153,13 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
         try {
             final ObjectName name = new ObjectName(OBJECT_NAME);
             final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            final RunningMode mode = RunningMode.from(runningModeControl.getRunningMode().name());
-            final RunningStateJmxMBean mbean = new RunningStateJmx(name, mode, type);
+            final RunningStateJmxMBean mbean = new RunningStateJmx(name, runningModeControl, type);
             if (server.isRegistered(name)) {
                 server.unregisterMBean(name);
             }
             server.registerMBean(mbean, name);
             registerStateListener(mbean, processStateService);
             if (suspendController != null) {
-                RunningState state = getInitialRunningState(suspendController, mode);
-                mbean.setRunningState(RunningState.STARTING, state);
                 suspendController.addListener(new OperationListener() {
                     @Override
                     public void suspendStarted() {
@@ -221,23 +193,6 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-private static RunningState getInitialRunningState(SuspendController suspendController, RunningMode mode) {
-        switch (suspendController.getState()) {
-            case PRE_SUSPEND:
-                return RunningState.PRE_SUSPEND;
-            case RUNNING:
-                if (mode == RunningMode.NORMAL) {
-                    return RunningState.NORMAL;
-                }
-                return RunningState.ADMIN_ONLY;
-            case SUSPENDED:
-                return RunningState.SUSPENDED;
-            case SUSPENDING:
-                return RunningState.SUSPENDING;
-        }
-        return RunningState.STARTING;
     }
 
     private static void registerStateListener(RunningStateJmxMBean mbean, ControlledProcessStateService processStateService) {

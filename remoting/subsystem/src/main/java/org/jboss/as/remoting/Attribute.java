@@ -31,6 +31,7 @@ import java.util.Map;
 public enum Attribute {
     UNKNOWN(null),
     /* Remoting 1.0 attributes, in alpha order */
+    AUTHENTICATION_CONTEXT(CommonAttributes.AUTHENTICATION_CONTEXT),
     CONNECTOR_REF(CommonAttributes.CONNECTOR_REF),
     NAME(CommonAttributes.NAME),
     OUTBOUND_SOCKET_BINDING_REF(CommonAttributes.OUTBOUND_SOCKET_BINDING_REF),

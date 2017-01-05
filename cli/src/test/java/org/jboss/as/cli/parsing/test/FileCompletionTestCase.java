@@ -54,6 +54,7 @@ public class FileCompletionTestCase {
     private File sub_file1;
     private File sub_file_ws;
     private File sub_file_q;
+    private File sub_file_q_ws;
     private File sub_dir1;
 
     private File dot_sub_file1;
@@ -62,6 +63,7 @@ public class FileCompletionTestCase {
     private final List<String> allSubFileNames = new ArrayList<>();
     private final String escapedWSFile = "spaces\\ file.txt";
     private final String escapedQuotedFile = "quotes\\\"file.txt";
+    private final String escapedQuotedWSFile = "anotherquo tes\\\"file.txt";
 
     private final String escapedWSFile2 = "spaces\\ file2.txt";
     private final String escapedQuotedFile2 = "quotes\\\"file2.txt";
@@ -100,7 +102,11 @@ public class FileCompletionTestCase {
             sub_file_q = new File(dir1, "quotes\"file2.txt");
             sub_file_q.createNewFile();
             allSubFileNames.add(sub_file_q.getName());
+            sub_file_q_ws = new File(dir1, "anotherquo tes\"file.txt");
+            sub_file_q_ws.createNewFile();
+            allSubFileNames.add(sub_file_q_ws.getName());
         }
+
         sub_dir1 = new File(dir1, "adirectory2");
         sub_dir1.mkdir();
 
@@ -372,6 +378,15 @@ public class FileCompletionTestCase {
                         path, 1, candidates);
                 Assert.assertEquals(0, i);
                 Assert.assertTrue(candidates.toString(), candidates.contains("\"" + escapedQuotedFile2));
+            }
+            {
+                //Quoted path requires escaped quote but not escaped whitespace.
+                List<String> candidates = new ArrayList<>();
+                String path = "\"" + sub_file_q_ws.getName().substring(0, 2);
+                int i = completer.complete(ctx,
+                        path, 1, candidates);
+                Assert.assertEquals(0, i);
+                Assert.assertTrue(candidates.toString(), candidates.contains("\"" + escapedQuotedWSFile));
             }
         }
     }
