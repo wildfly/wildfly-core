@@ -22,6 +22,8 @@
 package org.wildfly.core.test.standalone.mgmt.events;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.jboss.as.controller.client.helpers.ClientConstants.SUBSYSTEM;
+import static org.junit.Assert.fail;
 import static org.wildfly.extension.core.management.client.Process.RunningMode.ADMIN_ONLY;
 import static org.wildfly.extension.core.management.client.Process.RunningMode.NORMAL;
 import static org.wildfly.extension.core.management.client.Process.Type.STANDALONE_SERVER;
@@ -34,13 +36,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import javax.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.repository.PathUtil;
-import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
+import org.jboss.as.test.manualmode.logging.AbstractLoggingTestCase;
 import org.jboss.as.test.module.util.TestModule;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
@@ -62,11 +66,18 @@ import org.wildfly.test.events.provider.TestListener;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class ProcessStateListenerTestCase {
+public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
 
     private static final PathAddress LISTENER_ADDRESS = PathAddress.EMPTY_ADDRESS
             .append("subsystem", "core-management")
             .append("process-state-listener", "my-listener");
+    private static final PathAddress WRONG_MODULE_LISTENER_ADDRESS = PathAddress.EMPTY_ADDRESS.append("subsystem", "core-management")
+            .append("process-state-listener", "wrong-module-listener");
+    private static final PathAddress FAIL_STATE_CHANGED_MODULE_LISTENER_ADDRESS = PathAddress.EMPTY_ADDRESS.append("subsystem", "core-management")
+            .append("process-state-listener", "fail-state-changed-listener");
+    private static final PathAddress TIMEOUT_LISTENER_ADDRESS = PathAddress.EMPTY_ADDRESS.append("subsystem", "core-management")
+            .append("process-state-listener", "timeout-listener");
+
     private static Path runtimeConfigurationStateChangeFile;
     private static Path runningStateChangeFile;
     private static TestModule module;
@@ -81,20 +92,29 @@ public class ProcessStateListenerTestCase {
         runtimeConfigurationStateChangeFile = data.resolve(TestListener.RUNTIME_CONFIGURATION_STATE_CHANGE_FILENAME);
         runningStateChangeFile = data.resolve(TestListener.RUNNING_STATE_CHANGE_FILENAME);
         module = createModule();
-        addListener();
+
+        // setup listener in server
+        try {
+            controller.startInAdminMode();
+            addListener(LISTENER_ADDRESS, TestListener.class.getPackage().getName(), null, null);
+        } finally {
+            controller.stop();
+        }
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
         try {
             controller.startInAdminMode();
-            DomainTestUtils.executeForResult(Util.createRemoveOperation(LISTENER_ADDRESS), controller.getClient().getControllerClient());
+            // cleanup resources added for reload-required tests
+            cleanupAfterReloadRequired();
+            // remove listener
+            controller.getClient().executeForResult(Util.createRemoveOperation(LISTENER_ADDRESS));
         } finally {
             controller.stop();
         }
         module.remove();
-        PathUtil.deleteSilentlyRecursively(runtimeConfigurationStateChangeFile);
-        PathUtil.deleteSilentlyRecursively(runningStateChangeFile);
+        PathUtil.deleteSilentlyRecursively(data);
     }
 
     private static TestModule createModule() throws IOException, URISyntaxException {
@@ -112,19 +132,22 @@ public class ProcessStateListenerTestCase {
         return new File(tccl.getResource("extension/" + name).toURI());
     }
 
-    private static void addListener() throws Exception {
-        try {
-            controller.startInAdminMode();
-            ModelNode addListener = Util.createAddOperation(LISTENER_ADDRESS);
-            addListener.get("class").set(TestListener.class.getName());
-            addListener.get("module").set(TestListener.class.getPackage().getName());
-            ModelNode props = new ModelNode();
-            props.add("file", data.toAbsolutePath().toString());
-            addListener.get("properties").set(props);
-            DomainTestUtils.executeForResult(addListener, controller.getClient().getControllerClient());
-        } finally {
-            controller.stop();
+    private static void addListener(PathAddress address, String module, Properties properties, Integer timeout) throws Exception {
+        ModelNode addListener = Util.createAddOperation(address);
+        addListener.get("class").set(TestListener.class.getName());
+        addListener.get("module").set(module);
+        ModelNode props = new ModelNode();
+        props.add("file", data.toAbsolutePath().toString());
+        if (properties != null && !properties.isEmpty()) {
+            for (String name : properties.stringPropertyNames()) {
+                props.add(name, properties.getProperty(name));
+            }
         }
+        addListener.get("properties").set(props);
+        if (timeout != null)
+            addListener.get("timeout").set(timeout);
+
+        controller.getClient().executeForResult(addListener);
     }
 
     @Before
@@ -139,8 +162,31 @@ public class ProcessStateListenerTestCase {
     public void testListenerStartInAdminOnly() throws Exception {
         try {
             controller.startInAdminMode();
+
+            // try to add new listener with non-existing module
+            try {
+                addListener(WRONG_MODULE_LISTENER_ADDRESS, "non.existing.module", null, null);
+                fail("Command should fail");
+            } catch (UnsuccessfulOperationException uoe) {
+                // expected
+            }
+
+            // add listener where both *stateChanged methods throws exception
+            Properties p = new Properties();
+            p.setProperty(TestListener.FAIL_RUNTIME_CONFIGURATION_STATE_CHANGED, "true");
+            p.setProperty(TestListener.FAIL_RUNNING_STATE_CHANGED, "true");
+            addListener(FAIL_STATE_CHANGED_MODULE_LISTENER_ADDRESS, TestListener.class.getPackage().getName(), p, null);
+
             controller.stop();
             controller.startInAdminMode();
+
+            // remove listener where both *stateChanged methods throws exception
+            controller.getClient().executeForResult(Util.createRemoveOperation(FAIL_STATE_CHANGED_MODULE_LISTENER_ADDRESS));
+
+            // check log for NPE introduced by listener where both *stateChanged methods throws exception
+            assertLogContains("java.lang.NullPointerException: " + TestListener.FAIL_RUNTIME_CONFIGURATION_STATE_CHANGED);
+            assertLogContains("java.lang.NullPointerException: " + TestListener.FAIL_RUNNING_STATE_CHANGED);
+
             controller.reload(true, 30 * 1000);
             controller.reload();
             controller.reload(true, 30 * 1000);
@@ -208,6 +254,9 @@ public class ProcessStateListenerTestCase {
             controller.reload();
             suspendServer();
             resumeServer();
+            forceReloadRequired();
+            controller.reload();
+            forceRestartRequired();
         } finally {
             controller.stop();
         }
@@ -225,8 +274,15 @@ public class ProcessStateListenerTestCase {
         // reload to normal mode
         runtimeConfigChanges.add(STANDALONE_SERVER, ADMIN_ONLY, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.STOPPING);
         runtimeConfigChanges.add(STANDALONE_SERVER, NORMAL, Process.RuntimeConfigurationState.STARTING, Process.RuntimeConfigurationState.RUNNING);
+        // force reload-required
+        runtimeConfigChanges.add(STANDALONE_SERVER, NORMAL, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.RELOAD_REQUIRED);
+        // reload to normal mode
+        runtimeConfigChanges.add(STANDALONE_SERVER, NORMAL, Process.RuntimeConfigurationState.RELOAD_REQUIRED, Process.RuntimeConfigurationState.STOPPING);
+        runtimeConfigChanges.add(STANDALONE_SERVER, NORMAL, Process.RuntimeConfigurationState.STARTING, Process.RuntimeConfigurationState.RUNNING);
+        // force restart-required
+        runtimeConfigChanges.add(STANDALONE_SERVER, NORMAL, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.RESTART_REQUIRED);
         // stop
-        runtimeConfigChanges.add(STANDALONE_SERVER, NORMAL, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.STOPPING);
+        runtimeConfigChanges.add(STANDALONE_SERVER, NORMAL, Process.RuntimeConfigurationState.RESTART_REQUIRED, Process.RuntimeConfigurationState.STOPPING);
         runtimeConfigChanges.verify();
 
         RunningStateChanges runningStateChanges = new RunningStateChanges(runningStateChangeFile);
@@ -252,6 +308,10 @@ public class ProcessStateListenerTestCase {
         runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.SUSPENDING);
         runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.SUSPENDING, Process.RunningState.SUSPENDED);
         // resume
+        runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.NORMAL);
+        // reload to normal mode after reload-required
+        runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.STOPPING);
+        runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.STARTING, Process.RunningState.SUSPENDED);
         runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.NORMAL);
         // stop
         runningStateChanges.add(STANDALONE_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.SUSPENDING);
@@ -294,6 +354,43 @@ public class ProcessStateListenerTestCase {
         runningStateChanges.verify();
     }
 
+    @Test
+    public void testTimeout() throws Exception {
+        final String timeoutRuntimeConfigurationStateFileName = "timeoutRuntimeConfigurationState.txt";
+        final String timeoutRunningStateFileName = "timeoutRunningState.txt";
+        final Path timeoutRuntimeConfigurationStateChangeFile = data.resolve(timeoutRuntimeConfigurationStateFileName);
+        final Path timeoutRunningStateChangeFile = data.resolve(timeoutRunningStateFileName);
+        try {
+            controller.startInAdminMode();
+            // add listener with timeout
+            final long hangListener = 1100; // ms
+            final Integer timeout = 1; // s
+            Properties p = new Properties();
+            p.clear();
+            p.setProperty(TestListener.TIMEOUT, Long.toString(hangListener));
+            p.setProperty(TestListener.RUNTIME_CONFIGURATION_STATE_CHANGE_FILE, timeoutRuntimeConfigurationStateFileName);
+            p.setProperty(TestListener.RUNNING_STATE_CHANGE_FILE, timeoutRunningStateFileName);
+            addListener(TIMEOUT_LISTENER_ADDRESS, TestListener.class.getPackage().getName(), p, timeout);
+
+            // this transition to restart-required should timeout runtimeConfigChanges, so there shouldn't be a record in file
+            forceRestartRequired();
+            // remove listener with timeout
+            controller.getClient().executeForResult(Util.createRemoveOperation(TIMEOUT_LISTENER_ADDRESS));
+            assertLogContains("The process state listener timeout-listener took to much time to complete.");
+
+            // should be empty as change RUNNING -> RESTART_REQUIRED shouldn't be logged due to timeout
+            RuntimeConfigurationStateChanges timeoutRuntimeConfigChanges = new RuntimeConfigurationStateChanges(timeoutRuntimeConfigurationStateChangeFile);
+            timeoutRuntimeConfigChanges.verify();
+
+            RunningStateChanges timeoutRunningStateChanges = new RunningStateChanges(timeoutRunningStateChangeFile);
+            timeoutRunningStateChanges.verify();
+        } finally {
+            controller.stop();
+            PathUtil.deleteSilentlyRecursively(timeoutRuntimeConfigurationStateChangeFile);
+            PathUtil.deleteSilentlyRecursively(timeoutRunningStateChangeFile);
+        }
+    }
+
     private void resumeServer() throws UnsuccessfulOperationException {
         final ModelNode resume = new ModelNode();
         resume.get(ClientConstants.OP).set("resume");
@@ -306,9 +403,42 @@ public class ProcessStateListenerTestCase {
         controller.getClient().executeForResult(resume);
     }
 
+    private void forceReloadRequired() throws UnsuccessfulOperationException {
+        ModelNode op = Operations
+                .createOperation("list-add",
+                        PathAddress.pathAddress(SUBSYSTEM, "security-manager")
+                                .append("deployment-permissions", "default")
+                                .toModelNode());
+        op.get("name").set("minimum-permissions");
+        op.get("value").set("class", "java.security.AllPermission");
+        controller.getClient().executeForResult(op);
+    }
+
+    private static void cleanupAfterReloadRequired()
+            throws UnsuccessfulOperationException {
+        ModelNode op = Operations
+                .createOperation("list-clear",
+                        PathAddress.pathAddress(SUBSYSTEM, "security-manager")
+                                .append("deployment-permissions", "default")
+                                .toModelNode());
+        op.get("name").set("minimum-permissions");
+        controller.getClient().executeForResult(op);
+    }
+
+    private void forceRestartRequired() throws UnsuccessfulOperationException {
+        final ModelNode setRestartRequired = new ModelNode();
+        setRestartRequired.get(ClientConstants.OP).set("server-set-restart-required");
+        controller.getClient().executeForResult(setRestartRequired);
+    }
+
+    private void assertLogContains(final String msg) throws Exception {
+        Path logFile = AbstractLoggingTestCase.getAbsoluteLogFilePath("server.log");
+        checkLogs(msg, logFile, true);
+    }
+
     private abstract static class StateChanges {
 
-        protected List<String> changes;
+        final List<String> changes;
         private final Path file;
 
         public StateChanges(Path file) {

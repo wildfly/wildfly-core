@@ -308,7 +308,7 @@ public abstract class AbstractLoggingTestCase {
         return ((HttpURLConnection) url.openConnection()).getResponseCode();
     }
 
-    static void checkLogs(final String msg, final Path file, final boolean expected) throws Exception {
+    protected static void checkLogs(final String msg, final Path file, final boolean expected) throws Exception {
         boolean logFound = false;
         if (Files.exists(file)) {
             try (final BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {

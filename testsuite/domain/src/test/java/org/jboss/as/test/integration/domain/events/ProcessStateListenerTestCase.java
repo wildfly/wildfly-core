@@ -22,45 +22,53 @@
 package org.jboss.as.test.integration.domain.events;
 
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.wildfly.extension.core.management.client.Process.RunningMode.ADMIN_ONLY;
+import static org.wildfly.extension.core.management.client.Process.RunningMode.NORMAL;
+import static org.wildfly.extension.core.management.client.Process.Type.DOMAIN_SERVER;
+import static org.wildfly.extension.core.management.client.Process.Type.HOST_CONTROLLER;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
+import org.jboss.as.repository.PathUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
-import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.StreamExporter;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.extension.core.management.client.Process;
 import org.wildfly.test.events.provider.TestListener;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2016 Red Hat inc.
  */
 public class ProcessStateListenerTestCase {
+    private static final PathAddress MAIN_SERVER_GROUP_ADDRESS = PathAddress.pathAddress("server-group", "main-server-group");
+    private static Path data;
+    private static Path runtimeConfigurationStateChangeFile;
+    private static Path runningStateChangeFile;
 
-    private DomainTestSupport testSupport;
+    private static DomainTestSupport testSupport;
 
-    public static void initializeModule(final DomainTestSupport support) throws IOException {
+    private static void initializeModule(final DomainTestSupport support) throws IOException {
         // Get module.xml, create modules.jar and add to test config
         final InputStream moduleXml = getModuleXml("process-state-listener-module.xml");
         StreamExporter exporter = createResourceRoot(TestListener.class.getPackage());
@@ -68,13 +76,13 @@ public class ProcessStateListenerTestCase {
         support.addTestModule(TestListener.class.getPackage().getName(), moduleXml, content);
     }
 
-    static InputStream getModuleXml(final String name) {
+    private static InputStream getModuleXml(final String name) {
         // Get the module xml
         final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         return tccl.getResourceAsStream("extension/" + name);
     }
 
-    static StreamExporter createResourceRoot(Package... additionalPackages) throws IOException {
+    private static StreamExporter createResourceRoot(Package... additionalPackages) {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
         if (additionalPackages != null) {
             for (Package pkg : additionalPackages) {
@@ -84,37 +92,81 @@ public class ProcessStateListenerTestCase {
         return archive.as(ZipExporter.class);
     }
 
-    private static ModelNode executeForResult(final ModelNode op, final ModelControllerClient modelControllerClient) throws IOException, MgmtOperationException {
-        try {
-            return DomainTestUtils.executeForResult(op, modelControllerClient);
-        } catch (MgmtOperationException e) {
-            System.out.println(" Op failed:");
-            System.out.println(e.getOperation());
-            System.out.println("with result");
-            System.out.println(e.getResult());
-            throw e;
-        }
+    private static ModelNode executeForResult(final ModelNode op) throws RuntimeException {
+        return testSupport.getDomainMasterLifecycleUtil().executeForResult(op);
     }
 
-    @Before
-    public void setupDomain() throws Exception {
+    @BeforeClass
+    public static void setup() throws Exception {
+        data = Files.createTempDirectory("notifications");
+        runtimeConfigurationStateChangeFile = data.resolve(TestListener.DEFAULT_RUNTIME_CONFIGURATION_STATE_CHANGE_FILENAME);
+        runningStateChangeFile = data.resolve(TestListener.DEFAULT_RUNNING_STATE_CHANGE_FILENAME);
+
+        // create domain test support
         testSupport = DomainTestSupport.create(DomainTestSupport.Configuration.create(ProcessStateListenerTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
+        // add module
         initializeModule(testSupport);
     }
 
+    @AfterClass
+    public static void tearDown() throws Exception {
+        testSupport.stop();
+        PathUtil.deleteSilentlyRecursively(data);
+    }
+
+    @Before
+    public void clearNotificationFiles() throws Exception {
+        Files.deleteIfExists(runtimeConfigurationStateChangeFile);
+        Files.createFile(runtimeConfigurationStateChangeFile);
+        Files.deleteIfExists(runningStateChangeFile);
+        Files.createFile(runningStateChangeFile);
+    }
+
     /**
-     *
      * Add a process-state-listener on the master host by invoking a management operation. The listener will write a
      * line in a file for every host controller state changes.
      */
     @Test
     public void testListenerOnHostController() throws Throwable {
-        DomainLifecycleUtil domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        PathAddress address = domainMasterLifecycleUtil.getAddress()
+        PathAddress address = testSupport.getDomainMasterLifecycleUtil().getAddress()
                 .append("subsystem", "core-management")
                 .append("process-state-listener", "my-listener");
-        doTestListenerServer(address, ProcessType.HOST_CONTROLLER);
+        startMasterHost();
+        try {
+            addListener(address, TestListener.class.getPackage().getName(), null, null);
+
+            performStateChanges();
+
+            RuntimeConfigurationStateChanges runtimeConfigChanges = new RuntimeConfigurationStateChanges(runtimeConfigurationStateChangeFile);
+            // reload to admin only
+            runtimeConfigChanges.add(HOST_CONTROLLER, NORMAL, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.STOPPING);
+            runtimeConfigChanges.add(HOST_CONTROLLER, ADMIN_ONLY, Process.RuntimeConfigurationState.STARTING, Process.RuntimeConfigurationState.RUNNING);
+            // reload to normal
+            runtimeConfigChanges.add(HOST_CONTROLLER, ADMIN_ONLY, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.STOPPING);
+            runtimeConfigChanges.add(HOST_CONTROLLER, NORMAL, Process.RuntimeConfigurationState.STARTING, Process.RuntimeConfigurationState.RUNNING);
+            // stop
+            runtimeConfigChanges.add(HOST_CONTROLLER, NORMAL, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.STOPPING);
+
+            runtimeConfigChanges.verify();
+
+            RunningStateChanges runningStateChanges = new RunningStateChanges(runningStateChangeFile);
+            // reload to admin only
+            runningStateChanges.add(HOST_CONTROLLER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.STOPPING);
+            runningStateChanges.add(HOST_CONTROLLER, ADMIN_ONLY, Process.RunningState.STARTING, Process.RunningState.ADMIN_ONLY);
+            // reload to normal
+            runningStateChanges.add(HOST_CONTROLLER, ADMIN_ONLY, Process.RunningState.ADMIN_ONLY, Process.RunningState.STOPPING);
+            runningStateChanges.add(HOST_CONTROLLER, NORMAL, Process.RunningState.STARTING, Process.RunningState.NORMAL);
+            // restart servers
+            // suspend servers
+            // resume servers
+            // stop
+            runningStateChanges.add(HOST_CONTROLLER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.STOPPING);
+
+            runningStateChanges.verify();
+        } finally {
+            stopMasterHost();
+        }
     }
 
     @Test
@@ -122,93 +174,161 @@ public class ProcessStateListenerTestCase {
         PathAddress address = PathAddress.pathAddress("profile", "default")
                 .append("subsystem", "core-management")
                 .append("process-state-listener", "my-listener");
-        doTestListenerServer(address, ProcessType.DOMAIN_SERVER);
-    }
-
-    private void doTestListenerServer(PathAddress address, ProcessType processType) throws Throwable {
-        testSupport.start();
-        Path tempFile = Files.createTempDirectory("notifications");
-        Path runningStatePath = tempFile.resolve("runningState.txt");
-        Path runtimeConfigStatePath = tempFile.resolve("runtimeConfigurationState.txt");
+        startMasterHost();
         try {
-            DomainLifecycleUtil domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-            ModelNode addListener = Util.createAddOperation(address);
-            addListener.get("class").set(TestListener.class.getName());
-            addListener.get("module").set(TestListener.class.getPackage().getName());
-            ModelNode props = new ModelNode();
-            props.add("file", tempFile.toFile().getAbsolutePath());
-            addListener.get("properties").set(props);
-            executeForResult(addListener, domainMasterLifecycleUtil.getDomainClient());
+            addListener(address, TestListener.class.getPackage().getName(), null, null);
 
-            reload(testSupport);
-            // => changes state twice: running -> stopping & starting -> running
-            if(processType == ProcessType.DOMAIN_SERVER) {
-                PathAddress serverGroupAddress = PathAddress.pathAddress("server-group", "main-server-group");
-                ModelNode suspend = Util.createEmptyOperation("suspend-servers", serverGroupAddress);
-                executeForResult(suspend, domainMasterLifecycleUtil.getDomainClient());
-                ModelNode resume = Util.createEmptyOperation("resume-servers", serverGroupAddress);
-                executeForResult(resume, domainMasterLifecycleUtil.getDomainClient());
-            }
-            // => changes state twice: running -> suspended -> running
-            ModelNode shutdown = Util.createEmptyOperation("shutdown", domainMasterLifecycleUtil.getAddress());
-            testSupport.getDomainMasterLifecycleUtil().executeAwaitConnectionClosed(shutdown);
-            // => changes state : running -> stopping
-            testSupport.stop();
-            List<String> expectedRutimeConfigLines = new ArrayList<>(9);
-            List<String> expectedRunningLines = new ArrayList<>(9);
-            // state changed after invoking reload
-            expectedRutimeConfigLines.add(processType + " normal ok stopping");
-            expectedRunningLines.add(processType + " normal normal stopping");
-            // state changed after server is reloading
-            if (processType == ProcessType.DOMAIN_SERVER) {
-                expectedRunningLines.add(processType + " normal starting suspended");
-                expectedRunningLines.add(processType + " normal suspended normal");
-                expectedRutimeConfigLines.add(processType + " normal starting ok");
-            } else {
-                expectedRutimeConfigLines.add(processType + " normal starting ok");
-                expectedRunningLines.add(processType + " normal starting normal");
-            }
-            if (processType == ProcessType.DOMAIN_SERVER) {
-                expectedRunningLines.add(processType + " normal normal suspending");
-                // state changed after server is suspended
-                expectedRunningLines.add(processType + " normal suspending suspended");
-                // state changed after server is resumed
-                expectedRunningLines.add(processType + " normal suspended normal");
-            }
-            // state changed after server is shutdown
-            expectedRutimeConfigLines.add(processType + " normal ok stopping");
-            expectedRunningLines.add(processType + " normal normal stopping");
+            performStateChanges();
 
-            checkLines(runtimeConfigStatePath.toFile(),expectedRutimeConfigLines.toArray(new String[expectedRutimeConfigLines.size()]));
-            checkLines(runningStatePath.toFile(),expectedRunningLines.toArray(new String[expectedRunningLines.size()]));
+            RuntimeConfigurationStateChanges runtimeConfigChanges = new RuntimeConfigurationStateChanges(runtimeConfigurationStateChangeFile);
+            // reload to admin only
+            runtimeConfigChanges.add(DOMAIN_SERVER, NORMAL, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.STOPPING);
+            runtimeConfigChanges.add(DOMAIN_SERVER, NORMAL, Process.RuntimeConfigurationState.STARTING, Process.RuntimeConfigurationState.RUNNING);
+            // reload to normal
+            runtimeConfigChanges.add(DOMAIN_SERVER, NORMAL, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.STOPPING);
+            runtimeConfigChanges.add(DOMAIN_SERVER, NORMAL, Process.RuntimeConfigurationState.STARTING, Process.RuntimeConfigurationState.RUNNING);
+            // stop
+            runtimeConfigChanges.add(DOMAIN_SERVER, NORMAL, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.STOPPING);
+
+            runtimeConfigChanges.verify();
+
+            RunningStateChanges runningStateChanges = new RunningStateChanges(runningStateChangeFile);
+            // reload to admin only
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.STOPPING);
+            // reload to normal
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.STARTING, Process.RunningState.SUSPENDED);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.NORMAL);
+
+            // restart servers
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.SUSPENDING);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDING, Process.RunningState.SUSPENDED);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.STOPPING);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.STARTING, Process.RunningState.SUSPENDED);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.NORMAL);
+            // suspend servers
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.SUSPENDING);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDING, Process.RunningState.SUSPENDED);
+            // resume servers
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.NORMAL);
+            // stop
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.STOPPING);
+
+            runningStateChanges.verify();
         } finally {
-            try {
-                testSupport = DomainTestSupport.create(DomainTestSupport.Configuration.create(ProcessStateListenerTestCase.class.getSimpleName(),
-                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
-                testSupport.start();
-                testSupport.getDomainMasterLifecycleUtil().getDomainClient().execute(Util.createRemoveOperation(address));
-            } catch (IOException ex) {
-            } finally {
-                testSupport.stop();
+            stopMasterHost();
+        }
+    }
+
+    private void performStateChanges() throws Exception {
+        reloadMasterHost(true);
+        reloadMasterHost(false);
+        restartMainServerGroup();
+        suspendMainServerGroup();
+        resumeMainServerGroup();
+        shutdownMasterHost();
+    }
+
+    private static void addListener(PathAddress address, String module, Properties properties, Integer timeout) {
+        ModelNode addListener = Util.createAddOperation(address);
+        addListener.get("class").set(TestListener.class.getName());
+        addListener.get("module").set(module);
+        ModelNode props = new ModelNode();
+        props.add("file", data.toAbsolutePath().toString());
+        if (properties != null && !properties.isEmpty()) {
+            for (String name : properties.stringPropertyNames()) {
+                props.add(name, properties.getProperty(name));
             }
-            Files.deleteIfExists(runtimeConfigStatePath);
-            Files.deleteIfExists(runningStatePath);
         }
+        addListener.get("properties").set(props);
+        if (timeout != null)
+            addListener.get("timeout").set(timeout);
+
+        executeForResult(addListener);
     }
 
-    public static void checkLines(File file, String... expectedLines) throws IOException {
-        List<String> lines = Files.readAllLines(file.toPath());
-        assertEquals("Expected lines: " + Arrays.toString(expectedLines) + " but was " + Arrays.toString(lines.toArray()), expectedLines.length, lines.size());
-        for (String expectedLine : expectedLines) {
-            Assert.assertTrue("Incorrect line " + expectedLine + " not found in " + Arrays.toString(lines.toArray()), lines.remove(expectedLine));
-        }
-        Assert.assertTrue(lines.isEmpty());
-    }
-
-    private void reload(DomainTestSupport testSupport) throws Exception {
+    private void reloadMasterHost(boolean adminOnly) throws Exception {
         ModelNode reload = Util.createEmptyOperation("reload", testSupport.getDomainMasterLifecycleUtil().getAddress());
+        if (adminOnly)
+            reload.get("admin-only").set(true);
         testSupport.getDomainMasterLifecycleUtil().executeAwaitConnectionClosed(reload);
         testSupport.getDomainMasterLifecycleUtil().connect();
+        if (adminOnly) {
+            testSupport.getDomainMasterLifecycleUtil().awaitHostController(System.currentTimeMillis());
+        } else {
+            testSupport.getDomainMasterLifecycleUtil().awaitServers(System.currentTimeMillis());
+        }
+    }
+
+    private void shutdownMasterHost() throws Exception {
+        ModelNode shutdown = Util.createEmptyOperation("shutdown", testSupport.getDomainMasterLifecycleUtil().getAddress());
+        testSupport.getDomainMasterLifecycleUtil().executeAwaitConnectionClosed(shutdown);
+    }
+
+    private void startMasterHost() {
+        testSupport.getDomainMasterLifecycleUtil().start();
+    }
+
+    private void stopMasterHost() {
+        testSupport.getDomainMasterLifecycleUtil().stop();
+    }
+
+    private void restartMainServerGroup() throws TimeoutException, InterruptedException {
+        ModelNode suspend = Util.createEmptyOperation("restart-servers", MAIN_SERVER_GROUP_ADDRESS);
+        executeForResult(suspend);
         testSupport.getDomainMasterLifecycleUtil().awaitServers(System.currentTimeMillis());
+    }
+
+    private void suspendMainServerGroup() {
+        ModelNode suspend = Util.createEmptyOperation("suspend-servers", MAIN_SERVER_GROUP_ADDRESS);
+        executeForResult(suspend);
+    }
+
+    private void resumeMainServerGroup() throws Exception {
+        ModelNode resume = Util.createEmptyOperation("resume-servers", MAIN_SERVER_GROUP_ADDRESS);
+        executeForResult(resume);
+        testSupport.getDomainMasterLifecycleUtil().awaitServers(System.currentTimeMillis());
+    }
+
+    private abstract static class StateChanges {
+
+        final List<String> changes;
+        private final Path file;
+
+        public StateChanges(Path file) {
+            this.file = file;
+            this.changes = new ArrayList<>();
+        }
+
+        public void verify() throws IOException {
+            List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+            //MatcherAssert.assertThat(lines, Is.is(changes));
+            for (int i = 0; i < lines.size(); i++) {
+                Assert.assertThat("Incorrect match at line " + i, lines.get(i), is(changes.get(i)));
+            }
+        }
+    }
+
+    private static class RunningStateChanges extends StateChanges {
+
+        public RunningStateChanges(Path file) {
+            super(file);
+        }
+
+        public void add(Process.Type processType, Process.RunningMode runningMode,
+                        Process.RunningState oldState, Process.RunningState newState) {
+            changes.add(processType + " " + runningMode + " " + oldState + " " + newState);
+        }
+    }
+
+    private static class RuntimeConfigurationStateChanges extends StateChanges {
+
+        public RuntimeConfigurationStateChanges(Path file) {
+            super(file);
+        }
+
+        public void add(Process.Type processType, Process.RunningMode runningMode,
+                        Process.RuntimeConfigurationState oldState, Process.RuntimeConfigurationState newState) {
+            changes.add(processType + " " + runningMode + " " + oldState + " " + newState);
+        }
     }
 }
