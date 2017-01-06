@@ -313,10 +313,9 @@ public class DeploymentHandlerUtil {
                             if (resultAction == OperationContext.ResultAction.ROLLBACK) {
 
                                 DeploymentResourceSupport.cleanup(deployment);
-                                final String name = originalDeployment.require(NAME).asString();
                                 final String runtimeName = originalDeployment.require(RUNTIME_NAME).asString();
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(originalDeployment.require(CONTENT));
-                                doDeploy(context, runtimeName, name, deployment, registration, mutableRegistration, vaultReader, contents);
+                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
 
                                 if (context.hasFailureDescription()) {
                                     ServerLogger.ROOT_LOGGER.replaceRolledBack(replacedDeploymentUnitName, deploymentUnitName, getFormattedFailureDescription(context));
