@@ -45,6 +45,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.PlaceholderResource;
@@ -66,6 +67,10 @@ import org.jboss.modules.ModuleClassLoader;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class HostModelRegistrationHandler implements OperationStepHandler {
+
+    private static final RuntimeCapability<Void> HOST_RUNTIME_CAPABILITY = RuntimeCapability
+            .Builder.of("org.wildfly.host.controller", false)
+            .build();
 
     public static final String OPERATION_NAME = "register-host-model";
 
@@ -97,6 +102,8 @@ public class HostModelRegistrationHandler implements OperationStepHandler {
         if (!context.isBooting()) {
             throw HostControllerLogger.ROOT_LOGGER.invocationNotAllowedAfterBoot(OPERATION_NAME);
         }
+
+        context.registerCapability(HOST_RUNTIME_CAPABILITY);
 
         final String hostName = operation.require(NAME).asString();
 

@@ -41,6 +41,7 @@ import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorize
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
@@ -123,6 +124,9 @@ import org.jboss.dmr.ModelType;
  */
 public class HostResourceDefinition extends SimpleResourceDefinition {
 
+    private static final RuntimeCapability<Void> HOST_RUNTIME_CAPABILITY = RuntimeCapability
+            .Builder.of("org.wildfly.host.controller", false)
+            .build();
 
     public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING)
             .setAllowNull(true)
@@ -212,6 +216,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
                 DomainControllerWriteAttributeHandler.PROTOCOL,
                 DomainControllerWriteAttributeHandler.HOST,
                 DomainControllerWriteAttributeHandler.PORT,
+                DomainControllerWriteAttributeHandler.AUTHENTICATION_CONTEXT,
                 DomainControllerWriteAttributeHandler.USERNAME,
                 DomainControllerWriteAttributeHandler.SECURITY_REALM,
                 DomainControllerWriteAttributeHandler.IGNORE_UNUSED_CONFIG,
@@ -261,7 +266,8 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
                                   final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                   final ManagedAuditLogger auditLogger,
                                   final BootErrorCollector bootErrorCollector) {
-        super(PathElement.pathElement(HOST, hostName), HostModelUtil.getResourceDescriptionResolver());
+        super(new Parameters(PathElement.pathElement(HOST, hostName), HostModelUtil.getResourceDescriptionResolver())
+                .setCapabilities(HOST_RUNTIME_CAPABILITY));
         this.configurationPersister = configurationPersister;
         this.environment = environment;
         this.runningModeControl = runningModeControl;

@@ -33,6 +33,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.EnumValidator;
@@ -45,6 +46,7 @@ import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.remoting.Protocol;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.security.auth.client.AuthenticationContext;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -79,13 +81,22 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .setRequires(ModelDescriptionConstants.HOST, ModelDescriptionConstants.PORT)
             .build();
 
+    public static final SimpleAttributeDefinition AUTHENTICATION_CONTEXT =
+            new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.AUTHENTICATION_CONTEXT,  ModelType.STRING,  true)
+                    .setCapabilityReference("org.wildfly.security.authentication-context", "org.wildfly.host.controller", false)
+                    .setAlternatives(ModelDescriptionConstants.SECURITY_REALM, ModelDescriptionConstants.USERNAME)
+                    .build();
+
     public static final SimpleAttributeDefinition USERNAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USERNAME, STRING, true)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-            .setFlags(AttributeAccess.Flag.RESTART_JVM).build();
+            .setFlags(AttributeAccess.Flag.RESTART_JVM)
+            .setDeprecated(ModelVersion.create(5))
+            .build();
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, STRING, true)
             .setValidator(new StringLengthValidator(1, true))
+            .setDeprecated(ModelVersion.create(5))
             .build();
 
     public static final SimpleAttributeDefinition IGNORE_UNUSED_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.IGNORE_UNUSED_CONFIG, ModelType.BOOLEAN, true)
@@ -102,7 +113,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))
-            .setParameters(PROTOCOL, PORT, HOST, USERNAME, SECURITY_REALM, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY)
+            .setParameters(PROTOCOL, PORT, HOST, AUTHENTICATION_CONTEXT, USERNAME, SECURITY_REALM, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.DOMAIN_CONTROLLER)
             .setDeprecated(ModelVersion.create(5, 0, 0))
             .build();
@@ -128,6 +139,21 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
         USERNAME.validateAndSet(operation, remoteDC);
         IGNORE_UNUSED_CONFIG.validateAndSet(operation, remoteDC);
         ADMIN_ONLY_POLICY.validateAndSet(operation, remoteDC);
+
+        if (operation.has(AUTHENTICATION_CONTEXT.getName())) {
+            AUTHENTICATION_CONTEXT.validateAndSet(operation, remoteDC);
+            final String authenticationContext = AUTHENTICATION_CONTEXT.resolveModelAttribute(context, operation).asString();
+            context.addStep(new OperationStepHandler() {
+
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    hostControllerInfo.setAuthenticationContext(context.getCapabilityServiceName(
+                            "org.wildfly.security.authentication-context", authenticationContext, AuthenticationContext.class));
+                }
+            }, Stage.RUNTIME);
+        } else {
+            remoteDC.get(AUTHENTICATION_CONTEXT.getName()).clear();
+        }
 
         if (operation.has(SECURITY_REALM.getName())) {
             SECURITY_REALM.validateAndSet(operation, remoteDC);

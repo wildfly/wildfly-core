@@ -2429,6 +2429,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="authentication-context" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to the authentication-context to use when establishing the remote connection.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="security-realm" type="xs:string" use="optional" />
         <xs:attribute name="username" type="xs:string" use="optional" />
         <xs:attribute name="ignore-unused-configuration" type="xs:boolean" use="optional">

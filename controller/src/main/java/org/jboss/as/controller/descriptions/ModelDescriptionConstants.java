@@ -75,6 +75,7 @@ public class ModelDescriptionConstants {
     public static final String AUDIT = "audit";
     public static final String AUDIT_LOG = "audit-log";
     public static final String AUTHENTICATION = "authentication";
+    public static final String AUTHENTICATION_CONTEXT = "authentication-context";
     public static final String AUTHORIZATION = "authorization";
     public static final String AUTO_START = "auto-start";
     public static final String BASE_DN = "base-dn";
