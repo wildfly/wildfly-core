@@ -114,6 +114,7 @@ public class SlaveReconnectTestCase {
     }
 
     private void testReconnect(ReconnectTestScenario[] scenarios) throws Exception {
+        Throwable t = null;
         int initialisedScenarios = -1;
         try {
             DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
@@ -165,11 +166,36 @@ public class SlaveReconnectTestCase {
             for (ReconnectTestScenario scenario : scenarios) {
                 scenario.testAfterReconnect(masterClient, slaveClient);
             }
-        } finally {
-            for (int i = initialisedScenarios; i >=0 ; i--) {
-                scenarios[i].tearDownDomain(
-                        domainMasterLifecycleUtil.getDomainClient(), domainSlaveLifecycleUtil.getDomainClient());
+        } catch (Throwable thrown) {
+            t = thrown;
+            if (thrown instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
             }
+        }
+        finally {
+            for (int i = initialisedScenarios; i >=0 ; i--) {
+                try {
+                    scenarios[i].tearDownDomain(
+                            domainMasterLifecycleUtil.getDomainClient(), domainSlaveLifecycleUtil.getDomainClient());
+                } catch (Throwable thrown) {
+                    if (t == null) {
+                        t = thrown;
+                    } else {
+                        System.out.println("Caught second failure during cleanup following initial '" + t.toString() + "' failure. Second failure:");
+                        thrown.printStackTrace(System.out);
+                    }
+                    if (thrown instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+
+        if (t != null) {
+            if (t instanceof Exception) {
+                throw (Exception) t;
+            }
+            throw (Error) t;
         }
     }
 
