@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.msc.service.AbstractServiceListener;
@@ -39,8 +40,6 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartException;
-
-import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -93,9 +92,9 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
      * @param timeout maximum period to wait for service container stability
      * @param timeUnit unit in which {@code timeout} is expressed
      *
-     * @throws java.util.concurrent.TimeoutException if service container stability is not reached before the specified timeout
+     * @throws StabilityTimeoutException if service container stability is not reached before the specified timeout
      */
-    void awaitStabilityUninterruptibly(long timeout, TimeUnit timeUnit) throws TimeoutException {
+    void awaitStabilityUninterruptibly(long timeout, TimeUnit timeUnit) throws StabilityTimeoutException {
         boolean interrupted = false;
         try {
             long toWait = timeUnit.toMillis(timeout);
@@ -106,7 +105,7 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
                 }
                 try {
                     if (toWait <= 0 || !monitor.awaitStability(toWait, TimeUnit.MILLISECONDS, failed, problems)) {
-                        throw new TimeoutException();
+                        throw new StabilityTimeoutException(toWait);
                     }
                     break;
                 } catch (InterruptedException e) {
@@ -127,11 +126,11 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
      * @param timeUnit unit in which {@code timeout} is expressed
      *
      * @throws java.lang.InterruptedException if the thread is interrupted while awaiting service container stability
-     * @throws java.util.concurrent.TimeoutException if service container stability is not reached before the specified timeout
+     * @throws StabilityTimeoutException if service container stability is not reached before the specified timeout
      */
-    void awaitStability(long timeout, TimeUnit timeUnit) throws InterruptedException, TimeoutException {
+    void awaitStability(long timeout, TimeUnit timeUnit) throws InterruptedException, StabilityTimeoutException {
         if (!monitor.awaitStability(timeout, timeUnit, failed, problems)) {
-            throw new TimeoutException();
+            throw new StabilityTimeoutException(timeout, timeUnit);
         }
     }
 
@@ -146,13 +145,13 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
      * @return a change report, or {@code null} if there is nothing to report
      *
      * @throws java.lang.InterruptedException if the thread is interrupted while awaiting service container stability
-     * @throws java.util.concurrent.TimeoutException if service container stability is not reached before the specified timeout
+     * @throws StabilityTimeoutException if service container stability is not reached before the specified timeout
      */
-    ContainerStateChangeReport awaitContainerStateChangeReport(long timeout, TimeUnit timeUnit) throws InterruptedException, TimeoutException {
+    ContainerStateChangeReport awaitContainerStateChangeReport(long timeout, TimeUnit timeUnit) throws InterruptedException, StabilityTimeoutException {
         if (monitor.awaitStability(timeout, timeUnit, failed, problems)) {
             return createContainerStateChangeReport(false);
         }
-        throw new TimeoutException();
+        throw new StabilityTimeoutException(timeout, timeUnit);
     }
 
     /**

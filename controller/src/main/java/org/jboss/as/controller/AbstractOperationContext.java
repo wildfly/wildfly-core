@@ -469,7 +469,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
     /**
      * If appropriate for this implementation, block waiting for the
-     * {@link ModelControllerImpl#awaitContainerStability(long, java.util.concurrent.TimeUnit, boolean)} method to return,
+     * {@link ModelControllerImpl#awaitContainerStability(BlockingTimeout, boolean, boolean)} method to return,
      * ensuring that the controller's MSC ServiceContainer is settled and it is safe to proceed to service status verification.
      *
      * @throws InterruptedException if the thread is interrupted while blocking

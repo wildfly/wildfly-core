@@ -29,13 +29,12 @@ import java.util.ListIterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jboss.as.controller.ServiceRestartController;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.DelegatingServiceRegistry;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -56,6 +55,7 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
     private static final AttachmentKey<AttachmentList<DeploymentUnit>> UNVISITED_DEFERRED_MODULES = AttachmentKey.createList(DeploymentUnit.class);
 
     private final InjectedValue<DeployerChains> deployerChainsInjector = new InjectedValue<DeployerChains>();
+    private final InjectedValue<ServiceRestartController> restartControllerInjector = new InjectedValue<ServiceRestartController>();
     private final DeploymentUnit deploymentUnit;
     private final Phase phase;
     private final AttachmentKey<T> valueKey;
@@ -88,28 +88,16 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
             ServerLogger.DEPLOYMENT_LOGGER.deploymentRestartDetected(deploymentUnit.getName());
             //this only happens on deployment restart, which we don't support at the moment.
             //instead we are going to restart the complete deployment.
-
-            //we get the deployment unit service name
-            //add a listener to perform a restart when the service goes down
-            //then stop the deployment unit service
+            //we get the deployment unit service name and tell the restart controller
+            //to restart it
             final ServiceName serviceName;
             if(deploymentUnit.getParent() == null) {
                 serviceName = deploymentUnit.getServiceName();
             } else {
                 serviceName = deploymentUnit.getParent().getServiceName();
             }
-            ServiceController<?> controller = context.getController().getServiceContainer().getRequiredService(serviceName);
-            controller.addListener(new AbstractServiceListener<Object>() {
-
-                @Override
-                public void transition(final ServiceController<?> controller, final ServiceController.Transition transition) {
-                    if(transition.getAfter().equals(ServiceController.Substate.DOWN)) {
-                        controller.setMode(Mode.ACTIVE);
-                        controller.removeListener(this);
-                    }
-                }
-            });
-            controller.setMode(Mode.NEVER);
+            restartControllerInjector.getValue().serviceRequiresRestart(serviceName,
+                    context.getController().getServiceContainer());
             return;
         }
         runOnce.set(true);
@@ -168,6 +156,7 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
             }
 
             phaseServiceBuilder.addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector());
+            phaseServiceBuilder.addDependency(org.jboss.as.server.Services.JBOSS_SERVICE_RESTART_CONTROLLER, ServiceRestartController.class, phaseService.getRestartControllerInjector());
             phaseServiceBuilder.addDependency(context.getController().getName());
 
             final List<ServiceName> nextPhaseDeps = processorContext.getAttachment(Attachments.NEXT_PHASE_DEPS);
@@ -282,6 +271,10 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
 
     InjectedValue<DeployerChains> getDeployerChainsInjector() {
         return deployerChainsInjector;
+    }
+
+    InjectedValue<ServiceRestartController> getRestartControllerInjector() {
+        return restartControllerInjector;
     }
 
     private static boolean shouldRun(final DeploymentUnit unit, final RegisteredDeploymentUnitProcessor deployer) {

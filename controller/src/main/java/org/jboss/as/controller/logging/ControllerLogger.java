@@ -3490,4 +3490,10 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = NONE, value = "Couldn't convert %s to %s")
     String typeConversionError(ModelNode value, Collection<ModelType> validTypes);
+
+    @LogMessage(level = Level.INFO) // TODO perhaps WARN
+    @Message(id = 436, value = "Restart of service %s has been requested while no managment write operation is " +
+            "executing; immediately initiating restart.")
+    void serviceRestartRequestedOutsideManagementOp(ServiceName serviceName);
+
 }

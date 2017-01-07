@@ -65,7 +65,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -124,6 +123,7 @@ class ModelControllerImpl implements ModelController {
     private final ServiceTarget serviceTarget;
     private final ModelControllerLock controllerLock = new ModelControllerLock();
     private final ContainerStateMonitor stateMonitor;
+    private final ServiceRestartController restartController;
     private final AtomicReference<ManagementModelImpl> managementModel = new AtomicReference<>();
     private final ConfigurationPersister persister;
     private final ProcessType processType;
@@ -155,7 +155,9 @@ class ModelControllerImpl implements ModelController {
 
     ModelControllerImpl(final ServiceRegistry serviceRegistry, final ServiceTarget serviceTarget,
                         final ManagementResourceRegistration rootRegistration,
-                        final ContainerStateMonitor stateMonitor, final ConfigurationPersister persister,
+                        final ContainerStateMonitor stateMonitor,
+                        final ServiceRestartController restartController,
+                        final ConfigurationPersister persister,
                         final ProcessType processType, final RunningModeControl runningModeControl,
                         final OperationStepHandler prepareStep, final ControlledProcessState processState, final ExecutorService executorService,
                         final ExpressionResolver expressionResolver, final Authorizer authorizer, final Supplier<SecurityIdentity> securityIdentitySupplier,
@@ -178,6 +180,7 @@ class ModelControllerImpl implements ModelController {
         mmi.publish();
         assert stateMonitor != null;
         this.stateMonitor = stateMonitor;
+        this.restartController = restartController;
         assert persister != null;
         this.persister = persister;
         assert processType != null;
@@ -865,6 +868,9 @@ class ModelControllerImpl implements ModelController {
             //noinspection LockAcquiredButNotSafelyReleased
             controllerLock.lock(permit);
         }
+        if (restartController != null) {
+            restartController.enterManagementOperation();
+        }
     }
 
     void acquireReadLock(Integer permit, final boolean interruptibly) throws InterruptedException {
@@ -877,48 +883,55 @@ class ModelControllerImpl implements ModelController {
         }
     }
 
-    boolean acquireWriteLock(Integer permit, final boolean interruptibly, long timeout) throws InterruptedException {
-        if (interruptibly) {
-            //noinspection LockAcquiredButNotSafelyReleased
-            return controllerLock.lockInterruptibly(permit, timeout, TimeUnit.SECONDS);
-        } else {
-            //noinspection LockAcquiredButNotSafelyReleased
-            return controllerLock.lock(permit, timeout, TimeUnit.SECONDS);
-        }
-    }
-
     void releaseWriteLock(Integer permit) {
+        if (restartController != null) {
+            restartController.exitManagementOperation();
+        }
         controllerLock.unlock(permit);
     }
 
     void releaseReadLock(Integer permit) {
         controllerLock.unlockShared(permit);
     }
+
     /**
      * Log a report of any problematic container state changes and reset container state change history
-     * so another run of this method or of {@link #awaitContainerStateChangeReport(long, java.util.concurrent.TimeUnit)}
+     * so another run of this method or of {@link #awaitContainerStateChangeReport(BlockingTimeout)}
      * will produce a report not including any changes included in a report returned by this run.
+     *
+     * This is expected to be invoked when an operation has completed any possible service container changes,
+     * including those introduced by operation rollback.
      */
     void logContainerStateChangesAndReset() {
         stateMonitor.logContainerStateChangesAndReset();
     }
 
     /**
-     * Await service container stability.
+     * Await service container stability before an operation begins making changes or after it is done
+     * making any changes.
      *
-     * @param timeout maximum period to wait for service container stability
-     * @param timeUnit unit in which {@code timeout} is expressed
+     * @param blockingTimeout control for how long to block awaiting stability
      * @param interruptibly {@code true} if thread interruption should be ignored
+     * @param before {@code true} if this call is before the operation has begun making changes; {@code false}
+     *               if it is when the operation is done making changes
      *
      * @throws java.lang.InterruptedException if {@code interruptibly} is {@code false} and the thread is interrupted while awaiting service container stability
-     * @throws java.util.concurrent.TimeoutException if service container stability is not reached before the specified timeout
+     * @throws StabilityTimeoutException if service container stability is not reached before the specified timeout
      */
-    void awaitContainerStability(long timeout, TimeUnit timeUnit, final boolean interruptibly)
-            throws InterruptedException, TimeoutException {
+    void awaitContainerStability(BlockingTimeout blockingTimeout, final boolean interruptibly, boolean before)
+            throws InterruptedException, StabilityTimeoutException {
+
+        if (!before && restartController != null) {
+            // We're exiting so we need to give the ServiceRestartController a chance
+            // to do any restarts that may have been recorded during a rollback
+            restartController.processRestarts(blockingTimeout, serviceRegistry, stateMonitor.getStabilityMonitor());
+        }
+
+        long timeout = blockingTimeout.getLocalBlockingTimeout();
         if (interruptibly) {
-            stateMonitor.awaitStability(timeout, timeUnit);
+            stateMonitor.awaitStability(timeout, TimeUnit.MILLISECONDS);
         } else {
-            stateMonitor.awaitStabilityUninterruptibly(timeout, timeUnit);
+            stateMonitor.awaitStabilityUninterruptibly(timeout, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -927,17 +940,22 @@ class ModelControllerImpl implements ModelController {
      * so another run of this method with no intervening call to {@link #logContainerStateChangesAndReset()} will produce a report including
      * any changes included in a report returned by the first run.
      *
-     * @param timeout maximum period to wait for service container stability
-     * @param timeUnit unit in which {@code timeout} is expressed
+     * The expected use of this method is at the end of Stage.RUNTIME for an operation. The service container is
+     * expected to stablize and the change report is used to react to any changes introduced by the operation.
      *
-     * @return a change report, or {@code null} if there is nothing to report
+     *
+     * @param blockingTimeout@return a change report, or {@code null} if there is nothing to report
      *
      * @throws java.lang.InterruptedException if the thread is interrupted while awaiting service container stability
-     * @throws java.util.concurrent.TimeoutException if service container stability is not reached before the specified timeout
+     * @throws StabilityTimeoutException if service container stability is not reached before the specified timeout
      */
-    ContainerStateMonitor.ContainerStateChangeReport awaitContainerStateChangeReport(long timeout, TimeUnit timeUnit)
-            throws InterruptedException, TimeoutException {
-        return stateMonitor.awaitContainerStateChangeReport(timeout, timeUnit);
+    ContainerStateMonitor.ContainerStateChangeReport awaitContainerStateChangeReport(BlockingTimeout blockingTimeout)
+            throws InterruptedException, StabilityTimeoutException {
+        // Give the ServiceRestartController a chance to do any service restarts
+        if (restartController != null) {
+            restartController.processRestarts(blockingTimeout, serviceRegistry, stateMonitor.getStabilityMonitor());
+        }
+        return stateMonitor.awaitContainerStateChangeReport(blockingTimeout.getLocalBlockingTimeout(), TimeUnit.MILLISECONDS);
     }
 
     /** Notification from an operation that MSC could not stabilize before operation completion. */
@@ -1011,7 +1029,9 @@ class ModelControllerImpl implements ModelController {
 
     /**
      * Wait up to 5 seconds for MSC stability. Workaround for issues where removing a service
-     * and then immediately re-adding it causes MSC problems.
+     * and then immediately re-adding it causes MSC problems. This differs from
+     * {@link #awaitContainerStability(BlockingTimeout, boolean, boolean)} in that no TimeoutException is
+     * thrown if stability is not obtained. It's just a best effort to avoid a problem.
      */
     void pauseForStability() throws InterruptedException {
         stateMonitor.getStabilityMonitor().awaitStability(5, TimeUnit.SECONDS);

@@ -25,6 +25,7 @@ package org.jboss.as.server.deployment;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.jboss.as.controller.ServiceRestartController;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -91,6 +92,7 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         final DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(deploymentUnit, firstPhase);
         final ServiceBuilder<?> phaseServiceBuilder = target.addService(serviceName, phaseService);
         phaseServiceBuilder.addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector());
+        phaseServiceBuilder.addDependency(org.jboss.as.server.Services.JBOSS_SERVICE_RESTART_CONTROLLER, ServiceRestartController.class, phaseService.getRestartControllerInjector());
         phaseServiceBuilder.install();
     }
 
