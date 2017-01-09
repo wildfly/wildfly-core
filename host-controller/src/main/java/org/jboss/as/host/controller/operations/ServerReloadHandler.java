@@ -38,13 +38,15 @@ import org.jboss.dmr.ModelNode;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.host.controller.operations.ServerStartHandler.getOperationDefinition;
 
+import java.util.Locale;
+
 /**
  * @author Emanuel Muckenhuber
  */
 public class ServerReloadHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = "reload";
-    public static final OperationDefinition DEFINITION = getOperationDefinition(OPERATION_NAME, ServerStartHandler.SUSPEND);
+    public static final OperationDefinition DEFINITION = getOperationDefinition(OPERATION_NAME, ServerStartHandler.START_MODE);
 
     private final ServerInventory serverInventory;
     public ServerReloadHandler(ServerInventory serverInventory) {
@@ -61,8 +63,7 @@ public class ServerReloadHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
-        final boolean blocking = operation.get(ModelDescriptionConstants.BLOCKING).asBoolean(false);
-        final boolean suspend = operation.get(ModelDescriptionConstants.SUSPEND).asBoolean(false);
+        final boolean blocking = operation.get(ModelDescriptionConstants.BLOCKING).asBoolean(false);    final boolean suspend = ServerStartHandler.START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(ServerStartHandler.StartMode.SUSPEND.toString());
 
         context.addStep(new OperationStepHandler() {
             @Override

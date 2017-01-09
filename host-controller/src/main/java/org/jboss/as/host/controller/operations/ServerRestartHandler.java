@@ -21,6 +21,8 @@ package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
+import java.util.Locale;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -43,7 +45,7 @@ import org.jboss.dmr.ModelNode;
 public class ServerRestartHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = "restart";
-    public static final OperationDefinition DEFINITION = ServerStartHandler.getOperationDefinition(OPERATION_NAME, ServerStartHandler.SUSPEND);
+    public static final OperationDefinition DEFINITION = ServerStartHandler.getOperationDefinition(OPERATION_NAME, ServerStartHandler.START_MODE);
 
     private final ServerInventory serverInventory;
 
@@ -68,7 +70,7 @@ public class ServerRestartHandler implements OperationStepHandler {
         final PathElement element = address.getLastElement();
         final String serverName = element.getValue();
         final boolean blocking = operation.get(ModelDescriptionConstants.BLOCKING).asBoolean(false);
-        final boolean suspend = operation.get(ModelDescriptionConstants.SUSPEND).asBoolean(false);
+        final boolean suspend = ServerStartHandler.START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(ServerStartHandler.StartMode.SUSPEND.toString());
 
         final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
         context.addStep(new OperationStepHandler() {
