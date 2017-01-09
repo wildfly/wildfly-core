@@ -128,7 +128,7 @@ public class ModuleInfoTestCase extends ContainerResourceMgmtTestBase {
         ModelNode result = validateResponse(response);
 
         // compare module name
-        Assert.assertEquals("Unexpected name", TARGET_MODULE_NAME + ":main", result.get(NAME).asString());
+        Assert.assertEquals("Unexpected name", TARGET_MODULE_NAME , result.get(NAME).asString());
 
         // compare dependencies
         List<ModelNode> dependencies = result.get("dependencies").asList();
@@ -137,7 +137,7 @@ public class ModuleInfoTestCase extends ContainerResourceMgmtTestBase {
         for (DependencySpec d : xmlDependencies) {
             if (d instanceof ModuleDependencySpec) {
                 ModuleDependencySpec mds = (ModuleDependencySpec) d;
-                moduleDependencies.put(mds.getIdentifier().getName() + ":" + mds.getIdentifier().getSlot(), mds);
+                moduleDependencies.put(mds.getIdentifier().getName(), mds);
             }
         }
         int foundDependencies = 0;
