@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ControlledProcessState.State;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
@@ -48,6 +49,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.core.management.client.Process;
+import org.wildfly.extension.core.management.client.Process.RunningState;
 import org.wildfly.extension.core.management.client.RuntimeConfigurationStateChangeEvent;
 import org.wildfly.extension.core.management.client.RunningStateChangeEvent;
 import org.wildfly.extension.core.management.logging.CoreManagementLogger;
@@ -72,14 +74,14 @@ public class ProcessStateListenerService implements Service<Void> {
     private final PropertyChangeListener propertyChangeListener;
     private final OperationListener operationListener;
     private final ProcessStateListener listener;
-    private final ProcessStateListenerInitParameters parameters;
+    private ProcessStateListenerInitParameters parameters;
     private final String name;
     private final int timeout;
     private final ProcessType processType;
 
     private volatile Process.RunningState runningState = null;
 
-    public ProcessStateListenerService(ProcessType processType, RunningMode runningMode, String name, ProcessStateListener listener, Map<String, String> properties, int timeout) {
+    private ProcessStateListenerService(ProcessType processType, RunningMode runningMode, String name, ProcessStateListener listener, Map<String, String> properties, int timeout) {
         this.listener = listener;
         this.name = name;
         this.timeout = timeout;
@@ -110,9 +112,8 @@ public class ProcessStateListenerService implements Service<Void> {
 
                 @Override
                 public void cancelled() {
-                    if(runningState == null) {//gracefull startup
+                    if(runningState == null || runningState == Process.RunningState.STARTING) {//gracefull startup
                          suspendTransition(Process.RunningState.STARTING, Process.RunningState.SUSPENDED);
-                        return;
                     }
                     switch (runningMode) {
                         case ADMIN_ONLY:
@@ -137,33 +138,6 @@ public class ProcessStateListenerService implements Service<Void> {
         if(oldState == newState) {
             return;
         }
-        if (runningState == null) {
-            switch (oldState) {
-                case RUNNING:
-                    if (processType.isServer()) {
-                        runningState = Process.RunningState.SUSPENDED;
-                    } else {
-                        if (parameters.getRunningMode() == Process.RunningMode.NORMAL) {
-                            runningState = Process.RunningState.NORMAL;
-                        } else {
-                            runningState = Process.RunningState.ADMIN_ONLY;
-                        }
-                    }
-                    break;
-                case STARTING:
-                    runningState = Process.RunningState.STARTING;
-                    break;
-                case STOPPING:
-                    runningState = Process.RunningState.STOPPING;
-                    break;
-                case STOPPED:
-                    runningState = Process.RunningState.STOPPED;
-                    break;
-                case RELOAD_REQUIRED:
-                case RESTART_REQUIRED:
-                default:
-            }
-        }
         Future<?> controlledProcessStateTransition = executorServiceValue.getValue().submit(() -> {
             listener.runtimeConfigurationStateChanged(new RuntimeConfigurationStateChangeEvent(oldState, newState));
         });
@@ -179,11 +153,15 @@ public class ProcessStateListenerService implements Service<Void> {
         }
         switch(newState) {
             case RUNNING:
-                if (Process.RunningState.NORMAL != runningState && Process.RunningState.ADMIN_ONLY != runningState) {
-                    if (parameters.getRunningMode()  == Process.RunningMode.NORMAL) {
-                        suspendTransition(runningState, Process.RunningState.NORMAL);
-                    } else {
-                        suspendTransition(runningState, Process.RunningState.ADMIN_ONLY);
+                if (RunningState.NORMAL != runningState && RunningState.ADMIN_ONLY != runningState) {
+                    if (!processType.isServer()) {
+                        if (parameters.getRunningMode() == Process.RunningMode.NORMAL) {
+                            suspendTransition(runningState, Process.RunningState.NORMAL);
+                        } else {
+                            suspendTransition(runningState, Process.RunningState.ADMIN_ONLY);
+                        }
+                    } else if (runningState == RunningState.STARTING) {
+                        suspendTransition(runningState, Process.RunningState.SUSPENDED);
                     }
                 }
                 break;
@@ -264,13 +242,27 @@ public class ProcessStateListenerService implements Service<Void> {
                             }
                             break;
                         case SUSPENDED:
-                            this.runningState = Process.RunningState.SUSPENDED;
+                            if (controlledProcessStateService.getValue().getCurrentState() == State.STARTING) {
+                                this.runningState = Process.RunningState.STARTING;
+                            } else {
+                                this.runningState = Process.RunningState.SUSPENDED;
+                            }
                             break;
                         case SUSPENDING:
                             this.runningState = Process.RunningState.SUSPENDING;
                             break;
                     }
                     controller.addListener(operationListener);
+                } else {
+                    if (controlledProcessStateService.getValue().getCurrentState() == State.STARTING) {
+                        this.runningState = Process.RunningState.STARTING;
+                    } else {
+                        if (parameters.getRunningMode() == Process.RunningMode.NORMAL) {
+                            this.runningState = Process.RunningState.NORMAL;
+                        } else {
+                            this.runningState = Process.RunningState.ADMIN_ONLY;
+                        }
+                    }
                 }
                 controlledProcessStateService.getValue().addPropertyChangeListener(propertyChangeListener);
                 context.complete();
