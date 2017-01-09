@@ -161,6 +161,7 @@ public class ProcessStateListenerTestCase {
             expectedRunningLines.add(processType + " normal normal stopping");
             // state changed after server is reloading
             if (processType == ProcessType.DOMAIN_SERVER) {
+                expectedRunningLines.add(processType + " normal starting suspended");
                 expectedRunningLines.add(processType + " normal suspended normal");
                 expectedRutimeConfigLines.add(processType + " normal starting ok");
             } else {

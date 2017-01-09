@@ -107,11 +107,15 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
         sendNotification(notification);
         switch(newState) {
             case RUNNING:
-                if (RunningState.NORMAL != runningState && RunningState.ADMIN_ONLY != runningState && !isServer) {
-                    if (getRunningMode() == RunningMode.NORMAL) {
-                        setRunningState(runningState, RunningState.NORMAL);
-                    } else {
-                        setRunningState(runningState, RunningState.ADMIN_ONLY);
+                if (RunningState.NORMAL != runningState && RunningState.ADMIN_ONLY != runningState) {
+                    if (!isServer) {
+                        if (getRunningMode() == RunningMode.NORMAL) {
+                            setRunningState(runningState, RunningState.NORMAL);
+                        } else {
+                            setRunningState(runningState, RunningState.ADMIN_ONLY);
+                        }
+                    } else if (runningState == RunningState.STARTING) {
+                        setRunningState(runningState, RunningState.SUSPENDED);
                     }
                 }
                 break;
