@@ -49,16 +49,27 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
     public static final String DEFAULT_SYS_PROP_NAME = "test.deployment.trivial.prop";
     public static final String DEFAULT_SYS_PROP_VALUE = "default-value";
 
-    @Override
-    public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
-        serviceActivatorContext.getServiceTarget().addService(SERVICE_NAME, this).install();
+    private final Properties properties = new Properties();
+    private final ServiceName serviceName;
+    private final String propertiesResource;
+
+    public ServiceActivatorDeployment() {
+        this(SERVICE_NAME, PROPERTIES_RESOURCE);
     }
 
-    private final Properties properties = new Properties();
+    public ServiceActivatorDeployment(ServiceName serviceName, String propertiesResource) {
+        this.serviceName = serviceName;
+        this.propertiesResource = propertiesResource;
+    }
+
+    @Override
+    public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
+        serviceActivatorContext.getServiceTarget().addService(serviceName, this).install();
+    }
 
     @Override
     public synchronized void start(StartContext context) throws StartException {
-        InputStream is = getClass().getResourceAsStream("/" + PROPERTIES_RESOURCE);
+        InputStream is = getClass().getResourceAsStream("/" + propertiesResource);
         if (is != null) {
             try {
                 System.out.println("Properties found");
