@@ -1400,4 +1400,10 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 205, value = "An error occurred setting the -Dlogging.configuration property for server %s. Configuration path %s")
     void failedToSetLoggingConfiguration(@Cause Throwable cause, String serverName, File path);
 
+    @Message(id = 206, value = "File %s already exists, you must use --remove-existing-domain-config to overwrite existing files.")
+    IllegalStateException cannotOverwriteDomainXmlWithEmpty(String filename);
+
+    @Message(id = 207, value = "File %s already exists, you must use --remove-existing-host-config to overwrite existing files.")
+    IllegalStateException cannotOverwritHostXmlWithEmpty(String filename);
+
 }
