@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 
 import java.io.File;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -112,8 +113,7 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
                         runningModeControl.isUseCurrentDomainConfig(),
                         runningModeControl.getAndClearNewDomainBootFileName());
             }
-
-            domainPersister = ConfigurationPersisterFactory.createDomainXmlConfigurationPersister(domainConfigurationFile, executorService, extensionRegistry);
+            domainPersister = ConfigurationPersisterFactory.createDomainXmlConfigurationPersister(domainConfigurationFile, executorService, extensionRegistry, environment);
         }
         // Store this back to environment so mgmt api that exposes it can still work
         environment.setDomainConfigurationFile(domainConfigurationFile);
@@ -186,11 +186,27 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
 
     @Override
     public List<ModelNode> load() throws ConfigurationPersistenceException {
+        final ConfigurationFile configurationFile = environment.getHostConfigurationFile();
+        final File bootFile = configurationFile.getBootFile();
+        final ConfigurationFile.InteractionPolicy policy = configurationFile.getInteractionPolicy();
+        final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
+
+        if (policy == ConfigurationFile.InteractionPolicy.NEW && (bootFile.exists() && bootFile.length() != 0)) {
+            throw HostControllerLogger.ROOT_LOGGER.cannotOverwriteDomainXmlWithEmpty(bootFile.getName());
+        }
+
+        // if we started with new / discard but now we're reloading, ignore it. Otherwise on a reload, we have no way to drop the --empty-host-config
+        if (!runningModeControl.isReloaded() && (policy == ConfigurationFile.InteractionPolicy.NEW || policy == ConfigurationFile.InteractionPolicy.DISCARD)) {
+            return new ArrayList<>();
+        }
         return hostPersister.load();
     }
 
     @Override
     public void successfulBoot() throws ConfigurationPersistenceException {
+        final ConfigurationFile configurationFile = environment.getHostConfigurationFile();
+        ConfigurationFile.InteractionPolicy policy = configurationFile.getInteractionPolicy();
+
         hostPersister.successfulBoot();
         if (domainPersister != null) {
             domainPersister.successfulBoot();
@@ -231,7 +247,7 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
         final String defaultDomainConfig = WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_DEFAULT_CONFIG, "domain.xml");
         final String initialDomainConfig = environment.getInitialDomainConfig();
         return new ConfigurationFile(environment.getDomainConfigurationDir(), defaultDomainConfig,
-                initialDomainConfig == null ? environment.getDomainConfig() : initialDomainConfig, initialDomainConfig == null);
+                initialDomainConfig == null ? environment.getDomainConfig() : initialDomainConfig, environment.getDomainConfigurationFileInteactionPolicy());
     }
 
     private ConfigurationFile getBackupDomainConfigurationFile() {
