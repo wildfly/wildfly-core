@@ -124,6 +124,7 @@ import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
@@ -640,11 +641,53 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
             // handler for domain server auth.
             DomainManagedServerCallbackHandler.install(serviceTarget);
+
             // Parse the host.xml and invoke all the ops. The ops should rollback on any Stage.RUNTIME failure
             List<ModelNode> hostBootOps = hostControllerConfigurationPersister.load();
 
+            ConfigurationFile.InteractionPolicy configPolicy = environment.getHostConfigurationFile().getInteractionPolicy();
+            if (!environment.getRunningModeControl().isReloaded() && (configPolicy == ConfigurationFile.InteractionPolicy.NEW || configPolicy == ConfigurationFile.InteractionPolicy.DISCARD)) {
+
+                // minimum needed to boot an embedded HC from an empty host.xml
+                ModelNode baseOp;
+
+                baseOp = new ModelNode();
+                baseOp.get("operation").set("register-host-model");
+                baseOp.get("name").set("master");
+                baseOp.get("address").addEmptyList();
+                hostBootOps.add(baseOp);
+
+                baseOp = new ModelNode();
+                baseOp.get("operation").set("write-attribute");
+                baseOp.get("name").set("name");
+                baseOp.get("value").set("master");
+                baseOp.get("address").set(PathAddress.pathAddress("host", "master").toModelNode());
+                hostBootOps.add(baseOp);
+
+                // mgmt extension
+                baseOp = new ModelNode();
+                baseOp.get("operation").set("add");
+                baseOp.get("extension").set("name");
+                baseOp.get("address").set(PathAddress.pathAddress("host", "master").append(
+                        PathAddress.pathAddress("extension", "org.wildfly.extension.core-management")).toModelNode());
+                hostBootOps.add(baseOp);
+
+                // mgmt subsystem
+                baseOp = new ModelNode();
+                baseOp.get("operation").set("add");
+                baseOp.get("address").set(PathAddress.pathAddress("host", "master").
+                        append(PathAddress.pathAddress("subsystem", "core-management")).toModelNode());
+                hostBootOps.add(baseOp);
+
+                // flag as DC initially - without this, the CLI seems to hang in waiting for a "connection"
+                baseOp = new ModelNode();
+                baseOp.get("operation").set("write-local-domain-controller");
+                baseOp.get("address").set(PathAddress.pathAddress("host", "master").toModelNode());
+                hostBootOps.add(baseOp);
+            }
+
             // We run the first op ("add-host") separately to let it set up the host ManagementResourceRegistration
-            ModelNode addHostOp = hostBootOps.remove(0);
+            final ModelNode addHostOp = hostBootOps.remove(0);
             HostControllerLogger.ROOT_LOGGER.debug("Invoking the initial add-host op");
             //Disable model validation here since it will will fail
             ok = boot(Collections.singletonList(addHostOp), true, true);

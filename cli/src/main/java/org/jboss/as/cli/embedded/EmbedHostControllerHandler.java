@@ -39,6 +39,7 @@ import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
 import org.jboss.as.cli.impl.ArgumentWithValue;
+import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -64,6 +65,10 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private static final String DISCARD_STDOUT = "discard";
     private static final String DOMAIN_CONFIG = "--domain-config";
     private static final String HOST_CONFIG = "--host-config";
+    private static final String EMPTY_HOST_CONFIG = "--empty-host-config";
+    private static final String REMOVE_EXISTING_HOST_CONFIG = "--remove-existing-host-config";
+    private static final String EMPTY_DOMAIN_CONFIG = "--empty-domain-config";
+    private static final String REMOVE_EXISTING_DOMAIN_CONFIG = "--remove-existing-domain-config";
 
     private static final String JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
     private static final String JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
@@ -86,6 +91,10 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private ArgumentWithValue hostConfig;
     private ArgumentWithValue dashC;
     private ArgumentWithValue timeout;
+    private ArgumentWithoutValue emptyDomainConfig;
+    private ArgumentWithoutValue removeExistingDomainConfig;
+    private ArgumentWithoutValue emptyHostConfig;
+    private ArgumentWithoutValue removeExistingHostConfig;
 
     static EmbedHostControllerHandler create(final AtomicReference<EmbeddedProcessLaunch> hostControllerReference, final CommandContext ctx, final boolean modular) {
         EmbedHostControllerHandler result = new EmbedHostControllerHandler(hostControllerReference);
@@ -100,7 +109,10 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         result.dashC.addCantAppearAfter(result.domainConfig);
         result.domainConfig.addCantAppearAfter(result.dashC);
         result.timeout = new ArgumentWithValue(result, "--timeout");
-
+        result.emptyDomainConfig = new ArgumentWithoutValue(result, EMPTY_DOMAIN_CONFIG);
+        result.removeExistingDomainConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_DOMAIN_CONFIG);
+        result.emptyHostConfig = new ArgumentWithoutValue(result, EMPTY_HOST_CONFIG);
+        result.removeExistingHostConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_HOST_CONFIG);
         return result;
     }
 
@@ -205,6 +217,34 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             if (hostXml != null && hostXml.trim().length() > 0) {
                 cmdsList.add(HOST_CONFIG);
                 cmdsList.add(hostXml.trim());
+            }
+
+            boolean emptyDomain = emptyDomainConfig.isPresent(parsedCmd);
+            boolean removeDomain = removeExistingDomainConfig.isPresent(parsedCmd);
+            if (emptyDomain) {
+                cmdsList.add(EMPTY_DOMAIN_CONFIG);
+            }
+            if (removeDomain) {
+                cmdsList.add(REMOVE_EXISTING_DOMAIN_CONFIG);
+            }
+
+            File domainXmlCfgFile = new File(controllerCfgDir + File.separator + (domainConfig.isPresent(parsedCmd) ? domainXml : "domain.xml"));
+            if (emptyDomain && !removeDomain && domainXmlCfgFile.exists() && domainXmlCfgFile.length() != 0) {
+                throw new CommandFormatException("The specified domain configuration file already exists and has size > 0 and may not be overwritten unless --remove-existing-domain-config is also specified.");
+            }
+
+            boolean emptyHost = emptyHostConfig.isPresent(parsedCmd);
+            boolean removeHost = removeExistingHostConfig.isPresent(parsedCmd);
+            if (emptyHost) {
+                cmdsList.add(EMPTY_HOST_CONFIG);
+            }
+            if (removeHost) {
+                cmdsList.add(REMOVE_EXISTING_HOST_CONFIG);
+            }
+
+            File hostXmlCfgFile = new File(controllerCfgDir + File.separator + (hostConfig.isPresent(parsedCmd) ? hostXml : "host.xml"));
+            if (emptyHost && !removeHost && hostXmlCfgFile.exists() && hostXmlCfgFile.length() != 0) {
+                throw new CommandFormatException("The specified host configuration file already exists and has size > 0 and may not be overwritten unless --remove-existing-host-config is also specified.");
             }
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);

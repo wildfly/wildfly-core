@@ -144,6 +144,8 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         } finally {
             StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(initialStdioContext));
         }
+        CLIEmbedUtil.delConfigFile(ROOT, "domain", "host-empty-cli.xml");
+        CLIEmbedUtil.delConfigFile(ROOT, "domain", "domain-empty-cli.xml");
     }
 
     /** Tests logging behavior with no --std-out param */
@@ -470,6 +472,104 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
                 }
             }
         }
+    }
+
+    @Test
+    public void testEmptyHostConfigDefaultExists() throws Exception {
+        String line = "embed-host-controller --std-out=echo --host-config=host-cli.xml --domain-config=domain-cli.xml --empty-host-config" + JBOSS_HOME;
+        cli.sendLine(line, true);
+        String result = cli.readOutput();
+        // should fail, host-cli.xml exists
+        assertTrue(result.contains("The specified host configuration file already exists"));
+    }
+
+    @Test
+    public void testEmptyDomainConfigDefaultExists() throws Exception {
+        String line = "embed-host-controller --std-out=echo --host-config=host-cli.xml --domain-config=domain-cli.xml --empty-domain-config" + JBOSS_HOME;
+        cli.sendLine(line, true);
+        String result = cli.readOutput();
+        // should fail, domain-cli.xml exists
+        assertTrue(result.contains("The specified domain configuration file already exists"));
+    }
+
+    @Test
+    public void testEmptyHostConfig() throws Exception {
+        String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --domain-config=domain-cli.xml --empty-host-config" + JBOSS_HOME;
+        cli.sendLine(line);
+        assertTrue(cli.isConnected());
+    }
+
+    @Test
+    public void testEmptyDomainConfig() throws Exception {
+        String line = "embed-host-controller --std-out=echo --host-config=host-cli.xml --domain-config=domain-empty-cli.xml --empty-domain-config" + JBOSS_HOME;
+        cli.sendLine(line);
+        assertTrue(cli.isConnected());
+    }
+
+    @Test
+    public void testEmptyHostConfigConfigureWithReload() throws Exception {
+        final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --domain-config=domain-cli.xml --empty-host-config --remove-existing-host-config" + JBOSS_HOME;
+        cli.sendLine(line);
+        assertTrue(cli.isConnected());
+        cli.sendLine("/host=master/core-service=management/security-realm=test-realm:add()");
+        cli.sendLine("/host=master/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
+        cli.sendLine("/host=master/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
+        cli.sendLine("/host=master/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+        cli.sendLine("reload --host=master --admin-only=true");
+        assertTrue(cli.isConnected());
+        cli.sendLine("ls /host=master/core-service=management/security-realm=test-realm");
+        cli.sendLine("ls /host=master/interface=test-mgmt-interface");
+        cli.sendLine("ls /host=master/core-service=management/management-interface=http-interface");
+    }
+
+    @Test
+    public void testEmptyDomainConfigConfigureWithReload() throws Exception {
+        final String line = "embed-host-controller --std-out=echo --domain-config=domain-empty-cli.xml --empty-domain-config --remove-existing-domain-config" + JBOSS_HOME;
+        cli.sendLine(line);
+        assertTrue(cli.isConnected());
+        cli.sendLine("/interface=test-interface:add(any-address)");
+        cli.sendLine("/socket-binding-group=test-sbg:add(default-interface=test-interface)");
+        cli.sendLine("/profile=test-profile:add()");
+        cli.sendLine("/server-group=test-server-group:add(profile=test-profile, socket-binding-group=test-sbg)");
+
+        cli.sendLine("ls /server-group=test-server-group");
+        cli.sendLine("reload --host=master --admin-only=true");
+        assertTrue(cli.isConnected());
+        cli.sendLine("ls /interface=test-interface");
+        cli.sendLine("ls /socket-binding-group=test-sbg");
+        cli.sendLine("ls /profile=test-profile");
+        cli.sendLine("ls /server-group=test-server-group");
+    }
+
+    @Test
+    public void testEmptyDomainConfigAndHostConfigConfigureWithReload() throws Exception {
+        final String line = "embed-host-controller --std-out=echo --domain-config=domain-empty-cli.xml --empty-domain-config --remove-existing-domain-config --host-config=host-empty-cli.xml --empty-host-config --remove-existing-host-config " + JBOSS_HOME;
+        cli.sendLine(line);
+        assertTrue(cli.isConnected());
+
+        // domain-empty-cli.xml
+        cli.sendLine("/interface=test-interface:add(any-address)");
+        cli.sendLine("/socket-binding-group=test-sbg:add(default-interface=test-interface)");
+        cli.sendLine("/profile=test-profile:add()");
+        cli.sendLine("/server-group=test-server-group:add(profile=test-profile, socket-binding-group=test-sbg)");
+
+        // host-empty-cli.xml
+        assertTrue(cli.isConnected());
+        cli.sendLine("/host=master/core-service=management/security-realm=test-realm:add()");
+        cli.sendLine("/host=master/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
+        cli.sendLine("/host=master/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
+        cli.sendLine("/host=master/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+
+        // check things are still there after reload:
+        cli.sendLine("reload --host=master --admin-only=true");
+        assertTrue(cli.isConnected());
+        cli.sendLine("ls /interface=test-interface");
+        cli.sendLine("ls /socket-binding-group=test-sbg");
+        cli.sendLine("ls /profile=test-profile");
+        cli.sendLine("ls /server-group=test-server-group");
+        cli.sendLine("ls /host=master/core-service=management/security-realm=test-realm");
+        cli.sendLine("ls /host=master/interface=test-mgmt-interface");
+        cli.sendLine("ls /host=master/core-service=management/management-interface=http-interface");
     }
 
     private void assertProperty(final String propertyName, final String expected, final boolean notPresent) throws IOException, InterruptedException {

@@ -61,7 +61,6 @@ public class ConfigurationPersisterFactory {
 
     static final String CACHED_DOMAIN_XML = "domain.cached-remote.xml";
     static final String CACHED_DOMAIN_XML_BOOTFILE = "domain.cached-remote.xml.boot";
-
     // host.xml
     public static ExtensibleConfigurationPersister createHostXmlConfigurationPersister(final ConfigurationFile file, final HostControllerEnvironment environment,
             ExecutorService executorService, ExtensionRegistry hostExtensionRegistry) {
@@ -74,13 +73,27 @@ public class ConfigurationPersisterFactory {
             }
         }
         hostExtensionRegistry.setWriterRegistry(persister);
+
         return persister;
     }
 
     // domain.xml
-    public static ExtensibleConfigurationPersister createDomainXmlConfigurationPersister(final ConfigurationFile file, ExecutorService executorService, ExtensionRegistry extensionRegistry) {
+    public static ExtensibleConfigurationPersister createDomainXmlConfigurationPersister(final ConfigurationFile file, ExecutorService executorService, ExtensionRegistry extensionRegistry, final HostControllerEnvironment environment) {
         DomainXml domainXml = new DomainXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
-        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, new QName(Namespace.CURRENT.getUriString(), "domain"), domainXml, domainXml);
+
+        boolean suppressLoad = false;
+        ConfigurationFile.InteractionPolicy policy = file.getInteractionPolicy();
+        final boolean isReloaded = environment.getRunningModeControl().isReloaded();
+
+        if (!isReloaded && (policy == ConfigurationFile.InteractionPolicy.NEW && (file.getBootFile().exists() && file.getBootFile().length() != 0))) {
+            throw HostControllerLogger.ROOT_LOGGER.cannotOverwriteDomainXmlWithEmpty(file.getBootFile().getName());
+        }
+
+        if (!isReloaded && (policy == ConfigurationFile.InteractionPolicy.NEW || policy == ConfigurationFile.InteractionPolicy.DISCARD)) {
+            suppressLoad = true;
+        }
+
+        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, new QName(Namespace.CURRENT.getUriString(), "domain"), domainXml, domainXml, suppressLoad);
         for (Namespace namespace : Namespace.domainValues()) {
             if (!namespace.equals(Namespace.CURRENT)) {
                 persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "domain"), domainXml);
