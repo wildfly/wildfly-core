@@ -55,16 +55,24 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
     }
 
     protected AbstractModelResource(boolean runtimeOnly) {
-        this(runtimeOnly, (Set<String>)null);
+        this(runtimeOnly, Collections.emptySet(), true);
     }
 
     protected AbstractModelResource(boolean runtimeOnly, String...orderedChildTypes) {
-        this(runtimeOnly, arrayToSet(orderedChildTypes));
+        this(runtimeOnly, arrayToSet(orderedChildTypes), true);
     }
 
     protected AbstractModelResource(boolean runtimeOnly, Set<String> orderedChildTypes) {
+        this(runtimeOnly, orderedChildTypes, false);
+    }
+
+    AbstractModelResource(boolean runtimeOnly, Set<String> orderedChildTypes, boolean safe) {
         this.runtimeOnly = runtimeOnly;
-        this.orderedChildTypes = orderedChildTypes == null || orderedChildTypes.size() == 0 ? Collections.<String>emptySet() : orderedChildTypes;
+        this.orderedChildTypes = safe && orderedChildTypes != null
+                ? orderedChildTypes
+                : (orderedChildTypes == null || orderedChildTypes.size() == 0)
+                    ? Collections.<String>emptySet()
+                    : Collections.unmodifiableSet(new HashSet<>(orderedChildTypes));
     }
 
     private static Set<String> arrayToSet(String[] array) {
@@ -76,6 +84,7 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
             for (String type : array) {
                 set.add(type);
             }
+            set = Collections.unmodifiableSet(set);
         }
         return set;
     }
@@ -208,7 +217,7 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
 
     @Override
     public Set<String> getOrderedChildTypes() {
-        return orderedChildTypes.size() == 0 ? orderedChildTypes : Collections.unmodifiableSet(orderedChildTypes);
+        return orderedChildTypes;
     }
 
     protected void registerResourceProvider(final String type, final ResourceProvider provider) {
