@@ -277,9 +277,8 @@ public class ReloadHandler extends BaseOperationCommand {
         }
 
         getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-
         // this is left for compatibility with older hosts, it could use runtime-configuration-state on newer hosts.
-        if(ctx.isDomainMode()){
+        if(ctx.isDomainMode()) {
             getStateOp.get(ClientConstants.NAME).set("host-state");
         }else {
             getStateOp.get(ClientConstants.NAME).set("server-state");

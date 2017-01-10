@@ -34,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_DEFAULTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INHERITED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IS_DOMAIN_CONTROLLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION;
@@ -94,6 +95,7 @@ import org.jboss.as.core.model.bridge.impl.LegacyControllerKernelServicesProxy;
 import org.jboss.as.core.model.bridge.local.ScopedKernelServicesBootstrap;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.RestartMode;
+import org.jboss.as.host.controller.operations.HostAddHandler;
 import org.jboss.as.host.controller.operations.LocalDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.model.test.ChildFirstClassLoaderBuilder;
@@ -587,6 +589,12 @@ public class CoreModelTestDelegate {
                         dcInBootOps = true;
                         break;
                     }
+                }
+                // host=foo:add(), always has IS_DOMAIN_CONTROLLER defined.
+                if(HostAddHandler.OPERATION_NAME.equals(opName) && op.has(IS_DOMAIN_CONTROLLER)
+                        && !op.get(IS_DOMAIN_CONTROLLER).equals(new ModelNode().setEmptyObject())) {
+                    dcInBootOps = true;
+                    break;
                 }
             }
             if (!dcInBootOps) {

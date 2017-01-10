@@ -106,7 +106,7 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
     /** {@inheritDoc} */
     @Override
     public List<ModelNode> load() throws ConfigurationPersistenceException {
-        if (suppressLoad) {
+        if (suppressLoad || fileName.length() == 0) {
             return new ArrayList<>();
         }
 

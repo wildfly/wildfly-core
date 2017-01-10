@@ -21,11 +21,7 @@
 */
 package org.jboss.as.core.model.test;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMESPACES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SCHEMA_LOCATIONS;
 
 import java.io.File;
@@ -35,7 +31,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executors;
@@ -61,7 +56,6 @@ import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -84,10 +78,8 @@ import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.DomainHostExcludeRegistry;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
-import org.jboss.as.host.controller.operations.HostModelRegistrationHandler;
 import org.jboss.as.host.controller.operations.LocalDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
-import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter;
 import org.jboss.as.model.test.StringConfigurationPersister;
@@ -148,7 +140,6 @@ class TestModelControllerService extends ModelTestModelControllerService {
         if (type == TestModelType.STANDALONE) {
             initializer = new ServerInitializer();
         } else if (type == TestModelType.HOST) {
-            addWriteLocalDomainControllerBootOpIfNeeded(persister);
             initializer = new HostInitializer();
         } else if (type == TestModelType.DOMAIN) {
             initializer = new DomainInitializer();
@@ -274,45 +265,6 @@ class TestModelControllerService extends ModelTestModelControllerService {
         }
     }
 
-    private static void addWriteLocalDomainControllerBootOpIfNeeded(StringConfigurationPersister persister) {
-        boolean missingDomainController = true;
-        for (Iterator<ModelNode> it = persister.getBootOperations().iterator() ; it.hasNext() ; ) {
-            ModelNode op = it.next();
-            String opName = op.get(OP).asString();
-            if (opName.equals(LocalDomainControllerAddHandler.OPERATION_NAME)) {
-                missingDomainController = false;
-                break;
-            } else if (opName.equals(RemoteDomainControllerAddHandler.OPERATION_NAME)) {
-                missingDomainController = false;
-                break;
-            }
-        }
-
-        if (persister.getBootOperations().size() == 0) {
-            //The test is a bit unconventional. There is no add operation for the host resource, so don't add what is needed to validate the model
-            return;
-        }
-        //The first operation should be the :register-host-model(name=<host-name>) operation so use that to get the address of the host resource
-        ModelNode registerHostModel = persister.getBootOperations().get(0);
-        if (!registerHostModel.require(OP).asString().equals(HostModelRegistrationHandler.OPERATION_NAME)){
-            //The test is a bit unconventional. There is no add operation for the host resource, so don't add what is needed to validate the model
-            return;
-        }
-        PathAddress hostAddr = PathAddress.pathAddress(HOST, registerHostModel.get(NAME).asString());
-        if (missingDomainController) {
-
-            //Now create the write-local-domain-controller operation
-            ModelNode local = new ModelNode();
-            local.get(LOCAL).setEmptyObject();
-            ModelNode writeLocalDomainController = Util.createOperation(LocalDomainControllerAddHandler.DEFINITION, hostAddr);
-
-            //Insert the write-local-domain-controller step after the :register-host-model(name=<host-name>) call
-            persister.getBootOperations().add(1, writeLocalDomainController);
-        }
-
-        persister.getBootOperations().add(1, Util.createEmptyOperation(AddMissingHostNamespacesAttributeForValidationHandler.NAME, hostAddr));
-        persister.getBootOperations().add(1, Util.createEmptyOperation(AddMissingHostSchemaLocationsAttributeForValidationHandler.NAME, hostAddr));
-    }
     private LocalHostControllerInfoImpl createLocalHostControllerInfo(HostControllerEnvironment env) {
         return new LocalHostControllerInfoImpl(null, env);
     }
@@ -535,7 +487,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                         @Override
                         public void registerHostModel(String hostName, ManagementResourceRegistration rootRegistration) {
                         }
-                    },ProcessType.HOST_CONTROLLER, authorizer, modelControllerResource);
+                    },ProcessType.HOST_CONTROLLER, authorizer, modelControllerResource, info);
 
             ManagementResourceRegistration hostReg = HostModelUtil.createHostRegistry(
                     hostName,
@@ -622,7 +574,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                         @Override
                         public void registerHostModel(String hostName, ManagementResourceRegistration root) {
                         }
-                    },processType, authorizer, modelControllerResource);
+                    },processType, authorizer, modelControllerResource, info);
 
             CoreManagementResourceDefinition.registerDomainResource(rootResource, null);
 

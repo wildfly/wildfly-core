@@ -251,6 +251,7 @@ public class ModelDescriptionConstants {
     public static final String INITIAL_SERVER_GROUPS = "initial-server-groups";
     public static final String INPUT_STREAM_INDEX = "input-stream-index";
     public static final String INTERFACE = "interface";
+    public static final String IS_DOMAIN_CONTROLLER = "is-domain-controller";
     public static final String ITERATIVE = "iterative";
     public static final String JSON_FORMATTER = "json-formatter";
     public static final String JVM = "jvm";
@@ -344,6 +345,7 @@ public class ModelDescriptionConstants {
     public static final String PATHS = "paths";
     public static final String PERIODIC_ROTATING_FILE_HANDLER = "periodic-rotating-file-handler";
     public static final String PERMISSION_COMBINATION_POLICY = "permission-combination-policy";
+    public static final String PERSIST_NAME = "persist-name";
     public static final String PATTERN = "pattern";
     public static final String PERSISTENT = "persistent";
     public static final String PLAIN_TEXT = "plain-text";
