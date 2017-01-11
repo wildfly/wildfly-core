@@ -1072,7 +1072,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
             final String descr = Util.getFailureDescription(response);
             if(descr != null && descr.contains("WFLYCTL0216")) {
                 // resource doesn't exist
-                return Collections.emptyList();
+                throw new CommandLineException(descr);
             }
             throw new CommandLineException("Failed to load the list of deployments for overlay " + overlay + ": " + response);
         }
