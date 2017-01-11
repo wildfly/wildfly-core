@@ -55,7 +55,12 @@ import org.xnio.IoFuture;
 import org.xnio.OptionMap;
 
 import com.sun.tools.jconsole.JConsoleContext;
+import com.sun.tools.jconsole.JConsoleContext.ConnectionState;
 import com.sun.tools.jconsole.JConsolePlugin;
+import java.beans.PropertyChangeEvent;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -74,6 +79,7 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
     CliGuiContext cliGuiCtx;
     private JPanel jconsolePanel;
     private boolean initComplete = false;
+    private ModelControllerClient connectedClient;
     private boolean isConnected = false;
 
     private ComponentListener doConnectListener;
@@ -119,9 +125,39 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
         MBeanServerConnection mbeanServerConn = jcCtx.getMBeanServerConnection();
 
         if (mbeanServerConn instanceof RemotingMBeanServerConnection) {
-            final CommandContext cmdCtx = CommandContextFactory.getInstance().newCommandContext();
-            if(connectUsingRemoting(cmdCtx, (RemotingMBeanServerConnection)mbeanServerConn)) {
-                 init(cmdCtx);
+            final CommandContext cmdCtx
+                    = CommandContextFactory.getInstance().newCommandContext();
+            if (connectUsingRemoting(cmdCtx,
+                    (RemotingMBeanServerConnection) mbeanServerConn)) {
+                // Set a listener for connection state change.
+                jcCtx.addPropertyChangeListener((PropertyChangeEvent evt) -> {
+                    Logger.getLogger("org.foo").log(Level.FINER,
+                            "Received property change {0} value {1}",
+                            new Object[]{evt.getPropertyName(), evt.getNewValue()});
+                    if (JConsoleContext.CONNECTION_STATE_PROPERTY.equals(evt.getPropertyName())) {
+                        ConnectionState state = (ConnectionState) evt.getNewValue();
+                        if (state == ConnectionState.CONNECTED) {
+                            try {
+                                // Rebuild the ModelControllerClient
+                                RemotingMBeanServerConnection rmbsc
+                                        = (RemotingMBeanServerConnection) getContext().getMBeanServerConnection();
+                                connectUsingRemoting(cmdCtx, rmbsc);
+                                connectedClient = cmdCtx.getModelControllerClient();
+                                isConnected = true;
+                            } catch (Exception ex) {
+                                Logger.getLogger(JConsoleCLIPlugin.class.getName()).
+                                        log(Level.SEVERE, null, ex);
+                            }
+                        } else {
+                            isConnected = false;
+                        }
+                    }
+                });
+                connectedClient = cmdCtx.getModelControllerClient();
+                Supplier<ModelControllerClient> client = () -> {
+                    return connectedClient;
+                };
+                init(cmdCtx, client);
             } else {
                  JOptionPane.showInternalMessageDialog(jconsolePanel, MSG_CANNOT_ESTABLISH_CONNECTION);
             }
@@ -170,21 +206,24 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
         return null;
     }
 
+    public void init(CommandContext cmdCtx) {
+        init(cmdCtx, null);
+    }
 
     /**
      * @param cmdCtx
      */
-    public void init(CommandContext cmdCtx) {
+    private void init(CommandContext cmdCtx, Supplier<ModelControllerClient> client) {
         //TODO: add checks
-      cliGuiCtx = GuiMain.startEmbedded(cmdCtx);
-      final JPanel cliGuiPanel = cliGuiCtx.getMainPanel();
-      jconsolePanel.setVisible(false);
-      dialog.stop();
-      jconsolePanel.add(GuiMain.makeMenuBar(cliGuiCtx), BorderLayout.NORTH);
-      jconsolePanel.add(cliGuiPanel, BorderLayout.CENTER);
-      jconsolePanel.setVisible(true);
-      jconsolePanel.repaint();
-      isConnected = true;
+        cliGuiCtx = GuiMain.startEmbedded(cmdCtx, client);
+        final JPanel cliGuiPanel = cliGuiCtx.getMainPanel();
+        jconsolePanel.setVisible(false);
+        dialog.stop();
+        jconsolePanel.add(GuiMain.makeMenuBar(cliGuiCtx), BorderLayout.NORTH);
+        jconsolePanel.add(cliGuiPanel, BorderLayout.CENTER);
+        jconsolePanel.setVisible(true);
+        jconsolePanel.repaint();
+        isConnected = true;
     }
 
     private void configureMyJInternalFrame() {
