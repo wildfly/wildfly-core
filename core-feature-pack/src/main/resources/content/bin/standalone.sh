@@ -7,6 +7,7 @@
 # By default debug mode is disable.
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
+GC_LOG="$GC_LOG"
 SERVER_OPTS=""
 while [ "$#" -gt 0 ]
 do
@@ -253,17 +254,19 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
         fi
     fi
 
-    # Enable rotating GC logs if the JVM supports it and GC logs are not already enabled
-    NO_GC_LOG_ROTATE=`echo $JAVA_OPTS | $GREP "\-verbose:gc"`
-    if [ "x$NO_GC_LOG_ROTATE" = "x" ]; then
-        # backup prior gc logs
-        mv "$JBOSS_LOG_DIR/gc.log.0" "$JBOSS_LOG_DIR/backupgc.log.0" >/dev/null 2>&1
-        mv "$JBOSS_LOG_DIR/gc.log.1" "$JBOSS_LOG_DIR/backupgc.log.1" >/dev/null 2>&1
-        mv "$JBOSS_LOG_DIR/gc.log.2" "$JBOSS_LOG_DIR/backupgc.log.2" >/dev/null 2>&1
-        mv "$JBOSS_LOG_DIR/gc.log.3" "$JBOSS_LOG_DIR/backupgc.log.3" >/dev/null 2>&1
-        mv "$JBOSS_LOG_DIR/gc.log.4" "$JBOSS_LOG_DIR/backupgc.log.4" >/dev/null 2>&1
-        mv "$JBOSS_LOG_DIR/gc.log.*.current" "$JBOSS_LOG_DIR/backupgc.log.current" >/dev/null 2>&1
-        "$JAVA" $JVM_OPTVERSION -verbose:gc -Xloggc:"$JBOSS_LOG_DIR/gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading -version >/dev/null 2>&1 && mkdir -p $JBOSS_LOG_DIR && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -verbose:gc -Xloggc:\"$JBOSS_LOG_DIR/gc.log\" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
+    if [ "$GC_LOG" = "true" ]; then
+        # Enable rotating GC logs if the JVM supports it and GC logs are not already enabled
+        NO_GC_LOG_ROTATE=`echo $JAVA_OPTS | $GREP "\-verbose:gc"`
+        if [ "x$NO_GC_LOG_ROTATE" = "x" ]; then
+            # backup prior gc logs
+            mv "$JBOSS_LOG_DIR/gc.log.0" "$JBOSS_LOG_DIR/backupgc.log.0" >/dev/null 2>&1
+            mv "$JBOSS_LOG_DIR/gc.log.1" "$JBOSS_LOG_DIR/backupgc.log.1" >/dev/null 2>&1
+            mv "$JBOSS_LOG_DIR/gc.log.2" "$JBOSS_LOG_DIR/backupgc.log.2" >/dev/null 2>&1
+            mv "$JBOSS_LOG_DIR/gc.log.3" "$JBOSS_LOG_DIR/backupgc.log.3" >/dev/null 2>&1
+            mv "$JBOSS_LOG_DIR/gc.log.4" "$JBOSS_LOG_DIR/backupgc.log.4" >/dev/null 2>&1
+            mv "$JBOSS_LOG_DIR/gc.log.*.current" "$JBOSS_LOG_DIR/backupgc.log.current" >/dev/null 2>&1
+            "$JAVA" $JVM_OPTVERSION -verbose:gc -Xloggc:"$JBOSS_LOG_DIR/gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading -version >/dev/null 2>&1 && mkdir -p $JBOSS_LOG_DIR && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -verbose:gc -Xloggc:\"$JBOSS_LOG_DIR/gc.log\" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
+        fi
     fi
 
     JAVA_OPTS="$PREPEND_JAVA_OPTS $JAVA_OPTS"

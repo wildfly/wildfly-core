@@ -67,4 +67,7 @@ rem set "JAVA_OPTS=%JAVA_OPTS% -Djboss.modules.lockless=true"
 rem # Uncomment this to run with a security manager enabled
 rem set "SECMGR=true"
 
+rem # Uncomment this out to control garbage collection logging
+rem set "GC_LOG=true"
+
 :JAVA_OPTS_SET
