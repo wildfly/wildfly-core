@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -96,11 +97,16 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             STACK_SIZE
     };
 
-    private static final AttributeDefinition SHUTDOWN_REQUESTED = new SimpleAttributeDefinitionBuilder("shutdown-requested", ModelType.BOOLEAN).setStorageRuntime().build();
-    private static final AttributeDefinition CORE_WORKER_POOL_SIZE = new SimpleAttributeDefinitionBuilder("core-pool-size", ModelType.INT).setStorageRuntime().build();
-    private static final AttributeDefinition MAX_WORKER_POOL_SIZE = new SimpleAttributeDefinitionBuilder("max-pool-size", ModelType.INT).setStorageRuntime().build();
-    private static final AttributeDefinition IO_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("io-thread-count", ModelType.INT).setStorageRuntime().build();
-    private static final AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinitionBuilder("queue-size", ModelType.INT).setStorageRuntime().build();
+    private static final AttributeDefinition SHUTDOWN_REQUESTED = new SimpleAttributeDefinitionBuilder("shutdown-requested", ModelType.BOOLEAN).setStorageRuntime()
+            .setUndefinedMetricValue(new ModelNode(false)).build();
+    private static final AttributeDefinition CORE_WORKER_POOL_SIZE = new SimpleAttributeDefinitionBuilder("core-pool-size", ModelType.INT).setStorageRuntime()
+            .setUndefinedMetricValue(new ModelNode(0)).build();
+    private static final AttributeDefinition MAX_WORKER_POOL_SIZE = new SimpleAttributeDefinitionBuilder("max-pool-size", ModelType.INT).setStorageRuntime()
+            .setUndefinedMetricValue(new ModelNode(0)).build();
+    private static final AttributeDefinition IO_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("io-thread-count", ModelType.INT).setStorageRuntime()
+            .setUndefinedMetricValue(new ModelNode(0)).build();
+    private static final AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinitionBuilder("queue-size", ModelType.INT).setStorageRuntime()
+            .setUndefinedMetricValue(new ModelNode(0)).build();
 
 
     static final Map<String, OptionAttributeDefinition> ATTRIBUTES_BY_XMLNAME;
@@ -138,9 +144,40 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        for (OptionAttributeDefinition attr:  ATTRIBUTES){
-            resourceRegistration.registerReadOnlyAttribute(attr, new WorkerReadAttributeHandler(attr.getOption()));
-        }
+        resourceRegistration.registerReadWriteAttribute(WORKER_TASK_MAX_THREADS,
+                new WorkerReadAttributeHandler(WORKER_TASK_MAX_THREADS.getOption()),
+                new WorkerWriteAttributeHandler() {
+                    @Override
+                    boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
+                        return worker.setOption(Options.WORKER_TASK_MAX_THREADS, value.asInt()) == null;
+                    }
+                });
+        resourceRegistration.registerReadWriteAttribute(WORKER_TASK_KEEPALIVE,
+                new WorkerReadAttributeHandler(WORKER_TASK_KEEPALIVE.getOption()),
+                new WorkerWriteAttributeHandler() {
+                    @Override
+                    boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
+                        return worker.setOption(Options.WORKER_TASK_KEEPALIVE, value.asInt()) == null;
+                    }
+                });
+
+        resourceRegistration.registerReadWriteAttribute(STACK_SIZE,
+                new WorkerReadAttributeHandler(STACK_SIZE.getOption()),
+                new WorkerWriteAttributeHandler() {
+                    @Override
+                    boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
+                        return worker.setOption(Options.STACK_SIZE, value.asLong()) == null;
+                    }
+                });
+
+        resourceRegistration.registerReadWriteAttribute(WORKER_IO_THREADS,
+                new WorkerReadAttributeHandler(STACK_SIZE.getOption()),
+                new WorkerWriteAttributeHandler() {
+                    @Override
+                    boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
+                        return worker.setOption(Options.WORKER_IO_THREADS, value.asInt()) == null;
+                    }
+                });
 
         WorkerMetricsHandler metricsHandler = new WorkerMetricsHandler();
         resourceRegistration.registerMetric(SHUTDOWN_REQUESTED, metricsHandler);
@@ -157,18 +194,58 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     }
 
     private abstract static class AbstractWorkerAttributeHandler implements OperationStepHandler {
+        private static void populateValueFromModel(OperationContext context, ModelNode operation) {
+            final ModelNode subModel = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+            ModelNode result = subModel.get(operation.require(ModelDescriptionConstants.NAME).asString());
+            context.getResult().set(result);
+        }
 
         public void execute(OperationContext outContext, ModelNode operation) throws OperationFailedException {
-             outContext.addStep((context, op) -> {
-                 XnioWorker worker = getXnioWorker(context);
-                 if (worker == null || worker.getMXBean() == null) {
-                     context.getResult().set(IOExtension.NO_METRICS);
-                     return;
-                 }
-                 executeWithWorker(context, op, worker);
-             }, OperationContext.Stage.RUNTIME);
-         }
+            populateValueFromModel(outContext, operation);
+            outContext.addStep((context, op) -> {
+                XnioWorker worker = getXnioWorker(context);
+                if (worker != null) {
+                    executeWithWorker(context, op, worker);
+                }
+            }, OperationContext.Stage.RUNTIME);
+        }
          abstract void executeWithWorker(OperationContext context, ModelNode operation, XnioWorker worker) throws OperationFailedException;
+    }
+
+    private abstract static class WorkerWriteAttributeHandler extends AbstractWriteAttributeHandler {
+
+        @Override
+        protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode value, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
+            XnioWorker worker = getXnioWorker(context);
+            if (worker == null) { //worker can be null if it is not started yet, it can happen when there are no dependencies to it.
+                return true;
+            }
+            try {
+                return setValue(worker, value);
+            } catch (IOException e) {
+                throw new OperationFailedException(e);
+            }
+        }
+
+        @Override
+        protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
+            XnioWorker worker = getXnioWorker(context);
+            if (worker == null) { //worker can be null if it is not started yet, it can happen when there are no dependencies to it.
+                return;
+            }
+            try {
+                setValue(worker, valueToRestore);
+            } catch (IOException e) {
+                throw new OperationFailedException(e);
+            }
+        }
+
+        /**
+         *
+         * @return returns true if it requires reload
+         */
+        abstract boolean setValue(XnioWorker worker, ModelNode value) throws IOException;
+
     }
 
     private static class WorkerReadAttributeHandler extends AbstractWorkerAttributeHandler {
