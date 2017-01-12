@@ -173,6 +173,7 @@ public class ProcessStateListenerService implements Service<Void> {
             Thread.currentThread().interrupt();
             CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(ex, name);
         } catch (TimeoutException ex) {
+            controlledProcessStateTransition.cancel(true);
             CoreManagementLogger.ROOT_LOGGER.processStateTimeoutError(ex, name);
         } catch (ExecutionException | RuntimeException t) {
             CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(t, name);
@@ -226,6 +227,7 @@ public class ProcessStateListenerService implements Service<Void> {
             Thread.currentThread().interrupt();
             CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(ex, name);
         } catch (TimeoutException ex) {
+            suspendStateTransition.cancel(true);
             CoreManagementLogger.ROOT_LOGGER.processStateTimeoutError(ex, name);
         } catch (ExecutionException | RuntimeException t) {
             CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(t, name);
