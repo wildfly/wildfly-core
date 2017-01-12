@@ -54,8 +54,14 @@ public class PrincipalToGroupResourceDefinition extends BaseLdapGroupSearchResou
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
+    public static final SimpleAttributeDefinition PARSE_ROLES_FROM_DN =
+            new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PARSE_ROLES_FROM_DN, ModelType.BOOLEAN, true)
+                    .setDefaultValue(new ModelNode(false))
+                    .setAllowExpression(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
 
-    private static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {GROUP_NAME, ITERATIVE, GROUP_DN_ATTRIBUTE, GROUP_NAME_ATTRIBUTE, GROUP_ATTRIBUTE, PREFER_ORIGINAL_CONNECTION, SKIP_MISSING_GROUPS};
+    private static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {GROUP_NAME, ITERATIVE, GROUP_DN_ATTRIBUTE, GROUP_NAME_ATTRIBUTE, GROUP_ATTRIBUTE, PREFER_ORIGINAL_CONNECTION, SKIP_MISSING_GROUPS, PARSE_ROLES_FROM_DN};
 
     public static final ResourceDefinition INSTANCE = new PrincipalToGroupResourceDefinition();
 

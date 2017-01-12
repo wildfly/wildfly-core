@@ -1249,6 +1249,9 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 139, value = "No SubjectIdentity found for %s/%s.")
     GeneralSecurityException noSubjectIdentityForProtocolAndHost(final String protocol, final String host);
 
+    @Message(id = 140, value = "You shouldn't use the system property \"%s\" as it is deprecated. Use the management model configuration instead.")
+    StartException usingDeprecatedSystemProperty(String propertyName);
+
     /**
      * Information message saying the username and password must be different.
      *

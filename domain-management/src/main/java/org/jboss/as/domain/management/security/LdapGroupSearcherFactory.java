@@ -55,6 +55,7 @@ public class LdapGroupSearcherFactory {
 
     private static final int searchTimeLimit = 10000;
 
+    @Deprecated
     private static final String PARSE_ROLES_FROM_DN = "org.jboss.as.domain.management.security.parseGroupNameFromLdapDN";
 
     static LdapSearcher<LdapEntry[], LdapEntry> createForGroupToPrincipal(final String baseDn, final String groupDnAttribute,
@@ -64,8 +65,9 @@ public class LdapGroupSearcherFactory {
     }
 
     static LdapSearcher<LdapEntry[], LdapEntry> createForPrincipalToGroup(final String groupAttribute, final String groupNameAttribute,
-                                                                          final boolean preferOriginalConnection, final boolean skipMissingGroups, final boolean usingSimpleNames) {
-        return new PrincipalToGroupSearcher(groupAttribute, groupNameAttribute, preferOriginalConnection, skipMissingGroups, usingSimpleNames);
+                                                                          final boolean preferOriginalConnection, final boolean skipMissingGroups, final boolean usingSimpleNames,
+                                                                          final boolean shouldParseGroupFromDN) {
+        return new PrincipalToGroupSearcher(groupAttribute, groupNameAttribute, preferOriginalConnection, skipMissingGroups, usingSimpleNames, shouldParseGroupFromDN);
     }
 
     private static SearchControls createSearchControl(final boolean recursive, final String[] attributes) {
@@ -219,14 +221,26 @@ public class LdapGroupSearcherFactory {
         private final boolean preferOriginalConnection; // After a referral should we still prefer the original connection?
         private final boolean skipMissingGroups;
         private final boolean usingSimpleNames; // If set to true the groups are going to be mapped using a simple name so essential all entries have one.
+        private final boolean shouldParseGroupFromDN;
 
         private PrincipalToGroupSearcher(final String groupAttribute, final String groupNameAttribute, final boolean preferOriginalConnection,
-                                         final boolean skipMissingGroups, final boolean usingSimpleName) {
+                                         final boolean skipMissingGroups, final boolean usingSimpleName, final boolean shouldParseGroupFromDN) {
             this.groupAttribute = groupAttribute;
             this.groupNameAttribute = groupNameAttribute;
             this.preferOriginalConnection = preferOriginalConnection;
             this.skipMissingGroups = skipMissingGroups;
             this.usingSimpleNames = usingSimpleName;
+            if (!shouldParseGroupFromDN) {
+                String propertyValue = SecurityActions.getSystemProperty(PARSE_ROLES_FROM_DN, null);
+                if (propertyValue != null) {
+                    this.shouldParseGroupFromDN = Boolean.valueOf(propertyValue);
+                    SECURITY_LOGGER.usingDeprecatedSystemProperty(PARSE_ROLES_FROM_DN);
+                } else {
+                    this.shouldParseGroupFromDN = shouldParseGroupFromDN;
+                }
+            } else {
+                this.shouldParseGroupFromDN = shouldParseGroupFromDN;
+            }
 
             if (SECURITY_LOGGER.isTraceEnabled()) {
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher groupAttribute=%s", groupAttribute);
@@ -234,6 +248,7 @@ public class LdapGroupSearcherFactory {
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher preferOriginalConnection=%b", preferOriginalConnection);
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher skipMissingGroups=%b", skipMissingGroups);
                 SECURITY_LOGGER.tracef("PrincipalToGroupSearcher usingSimpleNames=%b", usingSimpleNames);
+                SECURITY_LOGGER.tracef("PrincipalToGroupSearcher shouldParseGroupFromDN=%b", this.shouldParseGroupFromDN);
             }
         }
 
@@ -264,9 +279,6 @@ public class LdapGroupSearcherFactory {
                 connectionHandler = originalConnectionHandler;
                 originalReferralAddress = null;
             }
-
-            boolean shouldParseGroupFromDN = Boolean.valueOf(SecurityActions.getSystemProperty(PARSE_ROLES_FROM_DN, null));
-
             if (groupRef != null && groupRef.size() > 0) {
                 NamingEnumeration<String> groupRefValues = (NamingEnumeration<String>) groupRef.getAll();
                 while (groupRefValues.hasMore()) {
@@ -280,7 +292,7 @@ public class LdapGroupSearcherFactory {
                         // skip extra ldap search and instead parse group from DN.  similar to parseRoleNameFromDN in LdapExtLoginModule
                         LdapEntry parsedGroup = parseRole(distingushedName, groupNameAttribute, groupReferralAddress);
                         if (parsedGroup != null) {
-                            SECURITY_LOGGER.tracef("Parsed group %s for group with distringuishedName=%s", parsedGroup.getSimpleName(), parsedGroup.getDistinguishedName());
+                            SECURITY_LOGGER.tracef("Parsed group %s for group with distinguishedName=%s", parsedGroup.getSimpleName(), parsedGroup.getDistinguishedName());
                             foundEntries.add(parsedGroup);
                         } else {
                             SECURITY_LOGGER.tracef("Failed to parse %s from distinguishedName=%s", groupNameAttribute, distingushedName);

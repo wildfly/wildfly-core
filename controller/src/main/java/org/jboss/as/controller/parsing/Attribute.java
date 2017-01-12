@@ -136,6 +136,7 @@ public enum Attribute {
     NAME("name"),
     NATIVE("native"),
     ORGANIZATION("organization"),
+    PARSE_ROLES_FROM_DN("parse-group-name-from-dn"),
     PASSWORD("password"),
     PATH("path"),
     PATTERN("pattern"),
