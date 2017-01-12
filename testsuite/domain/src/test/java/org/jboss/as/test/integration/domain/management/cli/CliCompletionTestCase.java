@@ -788,6 +788,33 @@ public class CliCompletionTestCase {
             }
 
             {
+                String cmd = "set toto=l";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "set toto=`";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                assertTrue(candidates.toString(), candidates.contains(":"));
+                assertTrue(candidates.toString(), candidates.contains("ls"));
+            }
+
+            {
+                String cmd = "set toto=`l";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                assertTrue(candidates.toString(), candidates.contains("ls"));
+            }
+
+            {
                 String cmd = "unset toto ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
