@@ -24,12 +24,14 @@ package org.wildfly.extension.core.management.logging;
 
 import static org.jboss.logging.Logger.Level.ERROR;
 
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.modules.ModuleIdentifier;
 
 /**
  *
@@ -60,4 +62,13 @@ public interface CoreManagementLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 5, value = "Error cleaning up for the process state listener %s")
     void processStateCleanupError(@Cause Throwable t, final String name);
+
+    @Message(id = 6, value = "Error to load module %s")
+    OperationFailedException errorToLoadModule(ModuleIdentifier moduleID);
+
+    @Message(id = 7, value = "Error to load class %s from module %s")
+    OperationFailedException errorToLoadModuleClass(String className, ModuleIdentifier moduleID);
+
+    @Message(id = 8, value = "Error to instantiate instance of class %s from module %s")
+    OperationFailedException errorToInstantiateClassInstanceFromModule(String className, ModuleIdentifier moduleID);
 }
