@@ -27,7 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.AbstractServiceListener;
@@ -60,12 +59,6 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
     private final Phase phase;
     private final AttachmentKey<T> valueKey;
     private final List<AttachedDependency> injectedAttachedDependencies = new ArrayList<AttachedDependency>();
-    /**
-     * boolean value that tracks if this phase has already been run.
-     *
-     * If anything attempts to restart the phase a complete deployment restart is performed instead.
-     */
-    private final AtomicBoolean runOnce = new AtomicBoolean();
 
     private DeploymentUnitPhaseService(final DeploymentUnit deploymentUnit, final Phase phase, final AttachmentKey<T> valueKey) {
         this.deploymentUnit = deploymentUnit;
@@ -83,36 +76,6 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
 
     @SuppressWarnings("unchecked")
     public synchronized void start(final StartContext context) throws StartException {
-        boolean allowRestart = restartAllowed();
-        if(runOnce.get() && !allowRestart) {
-            ServerLogger.DEPLOYMENT_LOGGER.deploymentRestartDetected(deploymentUnit.getName());
-            //this only happens on deployment restart, which we don't support at the moment.
-            //instead we are going to restart the complete deployment.
-
-            //we get the deployment unit service name
-            //add a listener to perform a restart when the service goes down
-            //then stop the deployment unit service
-            final ServiceName serviceName;
-            if(deploymentUnit.getParent() == null) {
-                serviceName = deploymentUnit.getServiceName();
-            } else {
-                serviceName = deploymentUnit.getParent().getServiceName();
-            }
-            ServiceController<?> controller = context.getController().getServiceContainer().getRequiredService(serviceName);
-            controller.addListener(new AbstractServiceListener<Object>() {
-
-                @Override
-                public void transition(final ServiceController<?> controller, final ServiceController.Transition transition) {
-                    if(transition.getAfter().equals(ServiceController.Substate.DOWN)) {
-                        controller.setMode(Mode.ACTIVE);
-                        controller.removeListener(this);
-                    }
-                }
-            });
-            controller.setMode(Mode.NEVER);
-            return;
-        }
-        runOnce.set(true);
         final DeployerChains chains = deployerChainsInjector.getValue();
         final DeploymentUnit deploymentUnit = this.deploymentUnit;
         final List<RegisteredDeploymentUnitProcessor> list = chains.getChain(phase);
@@ -208,19 +171,39 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
             phaseServiceBuilder.install();
         }
     }
-
-    private Boolean restartAllowed() {
-        final DeploymentUnit parent;
-        if (deploymentUnit.getParent() == null) {
-            parent = deploymentUnit;
-        } else {
-            parent = deploymentUnit.getParent();
-        }
-        Boolean allowed = parent.getAttachment(Attachments.ALLOW_PHASE_RESTART);
-        return allowed != null && allowed;
-    }
-
     public synchronized void stop(final StopContext context) {
+        ServiceName top = deploymentUnit.getParent() != null ? deploymentUnit.getParent().getServiceName() : deploymentUnit.getServiceName();
+        ServiceController<?> topController = context.getController().getServiceContainer().getService(top);
+        Mode mode = topController.getMode();
+        if (mode != Mode.REMOVE && mode != Mode.NEVER && !context.getController().getServiceContainer().isShutdown()) {
+            //the deployment is going down, but it has not been explicitly stopped or removed
+            //so it must be because of a missing dependency. Unfortunately these phase services cannot fully restart
+            //as the data they require no longer exists, so instead we trigger a complete redeployment
+            //the redeployment will likely not fully complete, but will be waiting on whatever missing dependency
+            //caused this stop
+
+
+            //add a listener to perform a restart when the service goes down
+            //then stop the deployment unit service
+            AbstractServiceListener<Object> serviceListener = new AbstractServiceListener<Object>() {
+
+                @Override
+                public void transition(final ServiceController<?> controller, final ServiceController.Transition transition) {
+                    if (transition.getAfter().equals(ServiceController.Substate.DOWN)) {
+                        //its possible an undeploy happened in the meantime
+                        //so we use compareAndSetMode to make sure the mode is still NEVER and not REMOVE
+                        controller.compareAndSetMode(Mode.NEVER, Mode.ACTIVE);
+                        controller.removeListener(this);
+                    }
+                }
+            };
+            topController.addListener(serviceListener);
+            if (topController.compareAndSetMode(mode, Mode.NEVER)) {
+                ServerLogger.DEPLOYMENT_LOGGER.deploymentRestartDetected(deploymentUnit.getName());
+            } else {
+                topController.removeListener(serviceListener);
+            }
+        }
         final DeploymentUnit deploymentUnitContext = deploymentUnit;
         final DeployerChains chains = deployerChainsInjector.getValue();
         final List<RegisteredDeploymentUnitProcessor> list = chains.getChain(phase);
