@@ -81,18 +81,15 @@ public class RuntimeVaultReader extends AbstractVaultReader {
             });
         } catch (PrivilegedActionException e) {
             Throwable t = e.getCause();
-            if (t instanceof SecurityVaultException) {
-                throw ServerLogger.ROOT_LOGGER.vaultReaderException(t);
+            if (!(t instanceof Error)) {
+                throw ServerLogger.ROOT_LOGGER.cannotCreateVault(t, t);
             }
-            if (t instanceof RuntimeException) {
-                throw ServerLogger.ROOT_LOGGER.runtimeException(t);
-            }
-            throw ServerLogger.ROOT_LOGGER.runtimeException(t);
+            throw (Error) t;
         }
         try {
             vault.init(vaultOptions);
         } catch (SecurityVaultException e) {
-            throw ServerLogger.ROOT_LOGGER.vaultReaderException(e);
+            throw ServerLogger.ROOT_LOGGER.cannotCreateVault(e, e);
         }
         this.vault = vault;
     }
