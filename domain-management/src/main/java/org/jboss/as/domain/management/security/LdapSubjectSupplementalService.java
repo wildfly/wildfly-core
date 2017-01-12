@@ -257,7 +257,7 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
         @Override
         public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
 
-            return new RealmIdentityImpl(principal.getName(), SecurityRealmService.SharedStateSecurityRealm.getSharedState());
+            return new RealmIdentityImpl(principal, SecurityRealmService.SharedStateSecurityRealm.getSharedState());
         }
 
         @Override
@@ -275,12 +275,17 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
         private class RealmIdentityImpl implements RealmIdentity {
 
             private final LdapGroupSearcher ldapGroupSearcher;
-            private final String name;
+            private final Principal principal;
             private Set<String> groups;
 
-            public RealmIdentityImpl(final String name, final Map<String, Object> sharedState) {
+            public RealmIdentityImpl(final Principal principal, final Map<String, Object> sharedState) {
                 ldapGroupSearcher = new LdapGroupSearcher(sharedState != null ? sharedState : new HashMap<>());
-                this.name = name;
+                this.principal = principal;
+            }
+
+            @Override
+            public Principal getRealmIdentityPrincipal() {
+                return principal;
             }
 
             @Override
@@ -318,7 +323,7 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
 
                     return AuthorizationIdentity.basicIdentity(new MapAttributes(Collections.unmodifiableMap(groupsAttributeMap)));
                 } else {
-                    SECURITY_LOGGER.tracef("No groups found for identity '%s' in LDAP file.", name);
+                    SECURITY_LOGGER.tracef("No groups found for identity '%s' in LDAP file.", principal.getName());
                     return AuthorizationIdentity.EMPTY;
                 }
             }
@@ -326,7 +331,7 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
             private synchronized Set<String> getGroups() throws RealmUnavailableException {
                 if (groups == null) {
                     try {
-                        groups = ldapGroupSearcher.loadGroups(Collections.singleton(name));
+                        groups = ldapGroupSearcher.loadGroups(Collections.singleton(principal.getName()));
                     } catch (IOException e) {
                         throw new RealmUnavailableException(e);
                     }

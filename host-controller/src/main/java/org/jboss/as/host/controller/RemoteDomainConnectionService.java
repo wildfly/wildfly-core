@@ -110,6 +110,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -120,6 +121,7 @@ import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.RemotingOptions;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
+import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
 import org.xnio.Options;
@@ -181,6 +183,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
 
     private final FutureClient futureClient = new FutureClient();
     private final InjectedValue<Endpoint> endpointInjector = new InjectedValue<Endpoint>();
+    private final InjectedValue<AuthenticationContext> authenticationContextInjector = new InjectedValue<>();
     private final InjectedValue<SecurityRealm> securityRealmInjector = new InjectedValue<SecurityRealm>();
     private final InjectedValue<ServerInventory> serverInventoryInjector = new InjectedValue<ServerInventory>();
     private final InjectedValue<ScheduledExecutorService> scheduledExecutorInjector = new InjectedValue<>();
@@ -226,6 +229,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                                                         final ModelController controller,
                                                         final ExtensionRegistry extensionRegistry,
                                                         final LocalHostControllerInfo localHostControllerInfo,
+                                                        final ServiceName authenticationContext,
                                                         final String securityRealm,
                                                         final RemoteFileRepository remoteFileRepository,
                                                         final ContentRepository contentRepository,
@@ -247,6 +251,9 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                 .addDependency(HostControllerService.HC_SCHEDULED_EXECUTOR_SERVICE_NAME, ScheduledExecutorService.class, service.scheduledExecutorInjector)
                 .setInitialMode(ServiceController.Mode.ACTIVE);
 
+        if (authenticationContext != null) {
+            builder.addDependency(authenticationContext, AuthenticationContext.class, service.authenticationContextInjector);
+        }
         if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.securityRealmInjector, securityRealm, false);
         }
@@ -501,9 +508,10 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
             // or reconnecting to the remote DC.
             final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpointInjector.getValue(), options);
 
+            final AuthenticationContext authenticationContext = authenticationContextInjector.getOptionalValue();
             final SecurityRealm realm = securityRealmInjector.getOptionalValue();
             // Create the remote domain channel strategy
-            connection = new RemoteDomainConnection(localHostInfo.getLocalHostName(), configuration, realm,
+            connection = new RemoteDomainConnection(localHostInfo.getLocalHostName(), configuration, authenticationContext, realm,
                     localHostInfo.getRemoteDomainControllerUsername(),
                     localHostInfo.getRemoteDomainControllerDiscoveryOptions(), executor, scheduledExecutorService,
                     new RemoteDomainConnection.HostRegistrationCallback() {
