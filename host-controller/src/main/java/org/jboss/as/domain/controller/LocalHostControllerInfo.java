@@ -112,7 +112,9 @@ public interface LocalHostControllerInfo {
      * remote domain controller.
      *
      * @return the user name.
+     * @deprecated Client side security configuration should be obtained from an AuthenticationContext.
      */
+    @Deprecated
     String getRemoteDomainControllerUsername();
 
     /**

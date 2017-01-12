@@ -120,7 +120,7 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
         public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
             String name = principal.getName();
             if (allowAll || allowedUsersSet.contains(name)) {
-                return new LocalRealmIdentity(name);
+                return new LocalRealmIdentity(principal);
             }
 
             return RealmIdentity.NON_EXISTENT;
@@ -141,10 +141,15 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
 
         private class LocalRealmIdentity implements RealmIdentity {
 
-            private final String name;
+            private final Principal principal;
 
-            LocalRealmIdentity(final String name) {
-                this.name = name;
+            LocalRealmIdentity(final Principal principal) {
+                this.principal = principal;
+            }
+
+            @Override
+            public Principal getRealmIdentityPrincipal() {
+                return principal;
             }
 
             @Override

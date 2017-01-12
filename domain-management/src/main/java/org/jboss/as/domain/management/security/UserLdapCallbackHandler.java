@@ -313,7 +313,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
             try {
                 SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(ldapConnectionHandler, name);
 
-                return new RealmIdentityImpl(name, ldapConnectionHandler, searchResult, SecurityRealmService.SharedStateSecurityRealm.getSharedState());
+                return new RealmIdentityImpl(principal, ldapConnectionHandler, searchResult, SecurityRealmService.SharedStateSecurityRealm.getSharedState());
             } catch (IllegalStateException e) {
                 safeClose(ldapConnectionHandler);
                 return RealmIdentity.NON_EXISTENT;
@@ -336,16 +336,21 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
 
         private class RealmIdentityImpl implements RealmIdentity {
 
-            private final String username;
+            private final Principal principal;
             private final LdapConnectionHandler ldapConnectionHandler;
             private final SearchResult<LdapEntry> searchResult;
             private final Map<String, Object> sharedState;
 
-            private RealmIdentityImpl(final String username, final LdapConnectionHandler ldapConnectionHandler, final SearchResult<LdapEntry> searchResult, final Map<String, Object> sharedState) {
-                this.username = username;
+            private RealmIdentityImpl(final Principal principal, final LdapConnectionHandler ldapConnectionHandler, final SearchResult<LdapEntry> searchResult, final Map<String, Object> sharedState) {
+                this.principal = principal;
                 this.ldapConnectionHandler = ldapConnectionHandler;
                 this.searchResult = searchResult;
                 this.sharedState = sharedState != null ? sharedState : new HashMap<>();
+            }
+
+            @Override
+            public Principal getRealmIdentityPrincipal() {
+                return principal;
             }
 
             @Override
@@ -374,7 +379,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                         return false;
                     }
 
-                    boolean result = verifyPassword(ldapConnectionHandler, searchResult, username, new String(guess), sharedState);
+                    boolean result = verifyPassword(ldapConnectionHandler, searchResult, principal.getName(), new String(guess), sharedState);
                     if (shareConnection && result) {
                         sharedState.put(LdapConnectionHandler.class.getName(), ldapConnectionHandler);
                     }

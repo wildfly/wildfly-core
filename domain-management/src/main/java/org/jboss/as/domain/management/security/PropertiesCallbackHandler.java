@@ -302,7 +302,7 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                 Properties users = getProperties();
 
                 String name = principal.getName();
-                return new RealmIdentityImpl(name, users.getProperty(name));
+                return new RealmIdentityImpl(principal, users.getProperty(name));
             } catch (IOException e) {
                 throw new RealmUnavailableException(e);
             }
@@ -323,19 +323,23 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
 
         private class RealmIdentityImpl implements RealmIdentity {
 
-            private final String userName;
+            private final Principal principal;
             private final String password;
 
-            private RealmIdentityImpl(final String userName, final String password) {
-                this.userName = userName;
+            private RealmIdentityImpl(final Principal principal, final String password) {
+                this.principal = principal;
                 this.password = password;
+            }
+
+            @Override
+            public Principal getRealmIdentityPrincipal() {
+                return principal;
             }
 
             @Override
             public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
                 return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName);
             }
-
 
             @Override
             public <C extends Credential> C getCredential(Class<C> credentialType) throws RealmUnavailableException {
@@ -368,11 +372,11 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                 } else {
                     passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
                     if (plainText) {
-                        AlgorithmParameterSpec algorithmParameterSpec = new DigestPasswordAlgorithmSpec(userName, realm);
+                        AlgorithmParameterSpec algorithmParameterSpec = new DigestPasswordAlgorithmSpec(principal.getName(), realm);
                         passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), algorithmParameterSpec);
                     } else {
                         byte[] hashed = ByteIterator.ofBytes(password.getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
-                        passwordSpec = new DigestPasswordSpec(userName, realm, hashed);
+                        passwordSpec = new DigestPasswordSpec(principal.getName(), realm, hashed);
                     }
                 }
 
@@ -405,7 +409,7 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                     passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
 
                     byte[] hashed = ByteIterator.ofBytes(password.getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
-                    passwordSpec = new DigestPasswordSpec(userName, realm, hashed);
+                    passwordSpec = new DigestPasswordSpec(principal.getName(), realm, hashed);
                 }
                 try {
                     actualPassword = passwordFactory.generatePassword(passwordSpec);

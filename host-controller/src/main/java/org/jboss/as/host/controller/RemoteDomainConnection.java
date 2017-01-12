@@ -26,6 +26,8 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -66,6 +68,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
 import org.jboss.threads.AsyncFuture;
+import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -99,6 +102,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
         }
     }
     private final String localHostName;
+    private final AuthenticationContext authenticationContext;
     private final String username;
     private final SecurityRealm realm;
 
@@ -113,7 +117,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
     private final RunningMode runningMode;
     private URI uri;
 
-    RemoteDomainConnection(final String localHostName, final ProtocolConnectionConfiguration configuration,
+    RemoteDomainConnection(final String localHostName, final ProtocolConnectionConfiguration configuration, final AuthenticationContext authenticationContext,
                            final SecurityRealm realm,  final String username, final List<DiscoveryOption> discoveryOptions,
                            final ExecutorService executorService,
                            final ScheduledExecutorService scheduledExecutorService,
@@ -122,6 +126,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
         this.callback = callback;
         this.localHostName = localHostName;
         this.configuration = configuration;
+        this.authenticationContext = authenticationContext;
         this.username = username;
         this.realm = realm;
         this.discoveryOptions = discoveryOptions;
@@ -210,8 +215,18 @@ class RemoteDomainConnection extends FutureManagementChannel {
         config.setCallbackHandler(callbackHandler);
         config.setSslContext(sslContext);
         config.setUri(uri);
+
+        AuthenticationContext authenticationContext = this.authenticationContext != null ? this.authenticationContext : AuthenticationContext.captureCurrent();
+
         // Connect
-        return ProtocolConnectionUtils.connectSync(config);
+        try {
+            return authenticationContext.run((PrivilegedExceptionAction<Connection>) () -> ProtocolConnectionUtils.connectSync(config));
+        } catch (PrivilegedActionException e) {
+            if (e.getCause() instanceof IOException) {
+                throw (IOException) e.getCause();
+            }
+            throw new IOException(e);
+        }
     }
 
     @Override
