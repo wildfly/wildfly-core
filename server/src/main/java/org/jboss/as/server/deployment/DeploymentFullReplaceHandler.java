@@ -105,6 +105,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         context.readResourceForUpdate(PathAddress.pathAddress(deploymentPath));
         // WFCORE-495 remove and call context.addResource() as below to add new resource with updated PERSISTENT value
         final ModelNode deploymentModel = context.removeResource(PathAddress.pathAddress(deploymentPath)).getModel();
+        final ModelNode originalDeployment = deploymentModel.clone();
 
         // Keep track of runtime name of deployment we are replacing for use in Stage.RUNTIME
         final String replacedRuntimeName = RUNTIME_NAME.resolveModelAttribute(context, deploymentModel).asString();
@@ -167,7 +168,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         context.addResource(PathAddress.pathAddress(deploymentPath), resource);
 
         if (ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean()) {
-            DeploymentHandlerUtil.replace(context, deploymentModel, runtimeName, name, replacedRuntimeName, vaultReader, contentItem);
+            DeploymentHandlerUtil.replace(context, originalDeployment, runtimeName, name, replacedRuntimeName, vaultReader, contentItem);
         } else if (wasDeployed) {
             DeploymentHandlerUtil.undeploy(context, operation, name, runtimeName, vaultReader);
         }
