@@ -164,7 +164,6 @@
         <dependency>
             <groupId>org.jboss.logmanager</groupId>
             <artifactId>jboss-logmanager</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <dependency>
