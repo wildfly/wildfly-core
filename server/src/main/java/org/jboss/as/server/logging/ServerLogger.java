@@ -614,7 +614,7 @@ public interface ServerLogger extends BasicLogger {
      * @return a RuntimeException wrapper
      */
     @Message(id = 76, value = "Error initializing vault --  %s")
-    RuntimeException cannotCreateVault(@Param VaultReaderException cause, VaultReaderException msg);
+    VaultReaderException cannotCreateVault(@Param Throwable cause, Throwable msg);
 
     /**
      * Creates an error message indicating that connecting to the HC failed.
