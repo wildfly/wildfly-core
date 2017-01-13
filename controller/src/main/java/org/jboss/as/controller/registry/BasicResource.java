@@ -56,6 +56,10 @@ class BasicResource extends AbstractModelResource implements Resource {
         super(runtimeOnly, orderedChildTypes);
     }
 
+    private BasicResource(boolean runtimeOnly, Set<String> orderedChildTypes, boolean safe) {
+        super(runtimeOnly, orderedChildTypes, safe);
+    }
+
     @Override
     public ModelNode getModel() {
         return model;
@@ -73,7 +77,7 @@ class BasicResource extends AbstractModelResource implements Resource {
     @SuppressWarnings({"CloneDoesntCallSuperClone"})
     @Override
     public Resource clone() {
-        final BasicResource clone = new BasicResource(isRuntime(), getOrderedChildTypes());
+        final BasicResource clone = new BasicResource(isRuntime(), getOrderedChildTypes(), true);
         for (;;) {
             try {
                 clone.writeModel(model);
