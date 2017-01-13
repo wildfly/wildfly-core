@@ -49,7 +49,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
     public static final OperationRequestCompleter INSTANCE = new OperationRequestCompleter();
 
     public static final CommandLineCompleter ARG_VALUE_COMPLETER = new CommandLineCompleter(){
-        final DefaultCallbackHandler parsedOp = new DefaultCallbackHandler();
+        final DefaultCallbackHandler parsedOp = new DefaultCallbackHandler(false);
         @Override
         public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
             try {
