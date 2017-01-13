@@ -35,6 +35,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
 import org.jboss.as.cli.impl.AttributeNamePathCompleter;
+import org.jboss.as.cli.impl.BytesCompleter;
 import org.jboss.as.cli.impl.DeploymentItemCompleter;
 import org.jboss.as.cli.impl.ValueTypeCompleter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -342,6 +343,9 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         final ModelNode typeNode = attrDescr.get(Util.TYPE);
         if (typeNode.isDefined() && ModelType.BOOLEAN.equals(typeNode.asType())) {
             return SimpleTabCompleter.BOOLEAN;
+        }
+        if (typeNode.isDefined() && ModelType.BYTES.equals(typeNode.asType())) {
+            return BytesCompleter.INSTANCE;
         }
         if (attrDescr.has(Util.VALUE_TYPE)) {
             final ModelNode valueTypeNode = attrDescr.get(Util.VALUE_TYPE);

@@ -45,6 +45,7 @@ import org.jboss.as.cli.parsing.ParsingContext;
 import org.jboss.as.cli.parsing.ParsingStateCallbackHandler;
 import org.jboss.as.cli.parsing.StateParser;
 import org.jboss.as.cli.parsing.WordCharacterHandler;
+import org.jboss.as.cli.parsing.arguments.ArgumentValueState;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -135,9 +136,13 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             return properties.get(properties.size() - 1);
         }
 
-        public void endProperty(String content) {
+        public void endProperty(String content, boolean isBytes) {
             if (current.value == null) {
-                current.value = new SimpleInstance(this, content);
+                if (isBytes) {
+                    current.value = new BytesInstance(this, content);
+                } else {
+                    current.value = new SimpleInstance(this, content);
+                }
             }
         }
 
@@ -216,13 +221,13 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         }
 
         @Override
-        public void endProperty(String content) {
+        public void endProperty(String content, boolean isBytes) {
             // Last property name is null then this is a name.
             if (current.name == null) {
                 current.name = content;
                 return;
             }
-            super.endProperty(content);
+            super.endProperty(content, isBytes);
         }
 
         @Override
@@ -269,6 +274,36 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         @Override
         boolean isTerminalChar(char c) {
             return false;
+        }
+
+        @Override
+        ModelNode retrieveType() {
+            return null;
+        }
+    }
+
+    private static class BytesInstance extends Instance {
+
+        private final String value;
+
+        public BytesInstance(Instance parent, String value) {
+            super(parent);
+            this.value = value;
+        }
+
+        @Override
+        public String asString() {
+            return value;
+        }
+
+        @Override
+        boolean isCompliantType(ModelNode t) {
+            return t.getType() == ModelType.BYTES;
+        }
+
+        @Override
+        boolean isTerminalChar(char c) {
+            return c == '}';
         }
 
         @Override
@@ -686,6 +721,13 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             if (!propType.has(Util.ALLOWED)) {
                 if (isBoolean(propType)) {
                     allowed = BOOLEAN_LIST;
+                } else if (isBytes(propType)) {
+                    if(radical.endsWith("}")) {
+                        return true;
+                    } else {
+                        BytesCompleter.INSTANCE.complete(ctx, radical, 0, candidates);
+                        return false;
+                    }
                 } else {
                     List<String> c = getCandidatesFromMetadata(propType,
                             radical);
@@ -786,6 +828,13 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             return false;
         }
 
+        protected boolean isBytes(ModelNode propType) {
+            if (propType.has(Util.TYPE)) {
+                return typeEquals(propType.get(Util.TYPE), ModelType.BYTES);
+            }
+            return false;
+        }
+
         @Override
         public void enteredState(ParsingContext ctx) throws CommandFormatException {
             lastEnteredState = ctx.getState().getId();
@@ -853,8 +902,18 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 case PropertyState.ID: {
                     // Store the last chunk of value here.
                     if (propBuf.length() > 0) {
-                        currentInstance.endProperty(propBuf.toString());
+                        currentInstance.endProperty(propBuf.toString(), false);
                         propBuf.setLength(0);
+                        }
+                    break;
+                }
+                case BytesState.ID: {
+                    currentInstance.endProperty(propBuf.toString(), true);
+                    if (!ctx.isEndOfContent()) {// close and skip the '{'
+                        currentInstance.current.value.setComplete(ctx.getCharacter());
+                        if (ctx.getCharacter() == '}') {
+                            ctx.advanceLocation(1);
+                        }
                     }
                     break;
                 }
@@ -891,7 +950,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 if(ch != '"' && !Character.isWhitespace(ch)) {
                     propBuf.append(ch);
                 }
-            } else if(id.equals(TextState.ID)) {
+            } else if(id.equals(TextState.ID) || id.equals(BytesState.ID)) {
                 propBuf.append(ctx.getCharacter());
             } else if (id.equals(EscapeCharacterState.ID)) {
                 propBuf.append(ctx.getCharacter());
@@ -1204,14 +1263,38 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             setDefaultHandler(new CharacterHandler() {
                 @Override
                 public void handle(ParsingContext ctx) throws CommandFormatException {
-                    ctx.enterState(TextState.INSTANCE);
-                }});
+                    if (ctx.getCharacter() == 'b') {
+                        int tokenLength = ArgumentValueState.getBytesToken(ctx);
+                        if (tokenLength > 0) {
+                            ctx.enterState(BytesState.INSTANCE);
+                        } else {
+                            ctx.enterState(TextState.INSTANCE);
+                        }
+                    } else {
+                        ctx.enterState(TextState.INSTANCE);
+                    }
+                }
+            });
             putHandler('>', GlobalCharacterHandlers.NOOP_CHARACTER_HANDLER);
             enterState('{', StartObjectState.INSTANCE);
             enterState('[', StartListState.INSTANCE);
             addCandidate("{");
             addCandidate("[");
             setReturnHandler(GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
+        }
+    }
+
+    public static class BytesState extends DefaultParsingState {
+
+        public static final String ID = "BYTES_VALUE";
+
+        public static final BytesState INSTANCE = new BytesState();
+
+        public BytesState() {
+            super(ID);
+            setHandleEntrance(true);
+            leaveState('}');
+            setDefaultHandler(WordCharacterHandler.IGNORE_LB_ESCAPE_ON);
         }
     }
 

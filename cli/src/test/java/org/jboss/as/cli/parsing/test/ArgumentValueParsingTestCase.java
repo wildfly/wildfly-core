@@ -490,6 +490,27 @@ public class ArgumentValueParsingTestCase {
         assertEquals("hex", list.get(5).get("hashEncoding").asString());
     }
 
+    @Test
+    public void testBytesValue() throws Exception {
+        checkBytes(parse("{a=bytes{31,0x32,-99}}"));
+        checkBytes(parse("{a=  bytes   {   31 ,  0x32  , -99 }}"));
+        checkBytes(parse("{a=bytes{+31,0x32,-99}}"));
+        checkBytes(parse("{a=  bytes   { +31 ,  0x32 , -99  }}"));
+        ModelNode mn = parse("{a=bytes{}}");
+        assertEquals(ModelType.BYTES, mn.get("a").getType());
+        byte[] bytes = mn.get("a").asBytes();
+        assertEquals(0, bytes.length);
+    }
+
+    private void checkBytes(ModelNode value) {
+        ModelNode a = value.get("a");
+        assertEquals(ModelType.BYTES, a.getType());
+        byte[] bytes = a.asBytes();
+        assertEquals(31, bytes[0]);
+        assertEquals(50, bytes[1]);
+        assertEquals(-99, bytes[2]);
+    }
+
     protected ModelNode parse(String str) throws CommandFormatException {
         final ArgumentValueCallbackHandler handler = new ArgumentValueCallbackHandler();
         StateParser.parse(str, handler, ArgumentValueInitialState.INSTANCE);
