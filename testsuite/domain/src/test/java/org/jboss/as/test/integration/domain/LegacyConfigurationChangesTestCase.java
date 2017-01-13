@@ -148,6 +148,16 @@ public class LegacyConfigurationChangesTestCase extends AbstractConfigurationCha
         assertThat(response.get(FAILURE_DESCRIPTION).asString(), containsString("WFLYDC0032"));
     }
 
+    @Test
+    public void testNotSpecifiedHost() throws Exception {
+        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(getAddress()));
+        add.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
+        ModelNode response = client.execute(add);
+        assertThat(response.asString(), response.get(OUTCOME).asString(), is(SUCCESS));
+        assertThat(response.get(RESULT).asString(), containsString("WFLYDM0135"));
+    }
+
     private void checkRootConfigurationChangeWarning(DomainClient client) throws IOException {
         PathAddress address = getAddress();
         ModelNode addConfigurationChanges = Util.createAddOperation(address);
