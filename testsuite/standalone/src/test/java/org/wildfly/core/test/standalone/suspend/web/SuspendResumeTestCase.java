@@ -22,6 +22,7 @@
 package org.wildfly.core.test.standalone.suspend.web;
 
 import java.net.HttpURLConnection;
+import java.net.SocketPermission;
 import java.net.URL;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -31,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.test.integration.common.HttpRequest;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
@@ -50,7 +52,7 @@ import org.wildfly.test.suspendresumeendpoint.TestUndertowService;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
 
-    /**
+/**
  * Tests for suspend/resume functionality
  */
 @RunWith(WildflyTestRunner.class)
@@ -68,6 +70,11 @@ public class SuspendResumeTestCase {
         war.addPackage(SuspendResumeHandler.class.getPackage());
         war.addAsServiceProvider(ServiceActivator.class, TestSuspendServiceActivator.class);
         war.addAsResource(new StringAsset("Dependencies: org.jboss.dmr, org.jboss.as.controller, io.undertow.core, org.jboss.as.server,org.wildfly.extension.request-controller, org.jboss.as.network\n"), "META-INF/MANIFEST.MF");
+        war.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+            new RuntimePermission("createXnioWorker"),
+            new SocketPermission(TestSuiteEnvironment.getServerAddress() + ":8080", "listen,resolve"),
+            new SocketPermission("*", "accept,resolve")
+        ), "permissions.xml");
         //helper.deploy(WEB_SUSPEND_JAR, war.as(ZipExporter.class).exportAsInputStream());
         serverController.deploy(war, WEB_SUSPEND_JAR);
 

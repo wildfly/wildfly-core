@@ -30,7 +30,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_STATE;
 
+import java.lang.reflect.ReflectPermission;
 import java.net.HttpURLConnection;
+import java.net.SocketPermission;
 import java.net.URL;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +50,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -233,6 +236,12 @@ public class DomainGracefulShutdownTestCase {
         jar.addPackage(SuspendResumeHandler.class.getPackage());
         jar.addAsServiceProvider(ServiceActivator.class, TestSuspendServiceActivator.class);
         jar.addAsResource(new StringAsset("Dependencies: org.jboss.dmr, org.jboss.as.controller, io.undertow.core, org.jboss.as.server,org.wildfly.extension.request-controller, org.jboss.as.network\n"), "META-INF/MANIFEST.MF");
+        jar.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new ReflectPermission("suppressAccessChecks"),
+                new RuntimePermission("createXnioWorker"),
+                new SocketPermission(TestSuiteEnvironment.getServerAddress() + ":8080", "listen,resolve"),
+                new SocketPermission("*", "accept,resolve")
+        ), "permissions.xml");
         return jar;
     }
 }
