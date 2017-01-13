@@ -21,12 +21,20 @@
  */
 package org.wildfly.core.test.standalone.mgmt.api;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.jboss.as.controller.PathAddress.pathAddress;
 import static org.jboss.as.controller.PathElement.pathElement;
+import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ARCHIVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPTH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -39,9 +47,13 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -50,6 +62,10 @@ import java.util.concurrent.TimeoutException;
 import javax.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
@@ -61,7 +77,9 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.exporter.ExplodedExporter;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -94,8 +112,18 @@ public class DeploymentTestCase {
         properties.clear();
         properties.put("service", "is new");
 
-        properties.clear();
-        properties.put("service", "is replaced");
+        properties2.clear();
+        properties2.put("service", "is replaced");
+    }
+
+    @Before
+    public void before() {
+        cleanUp();
+    }
+
+    @After
+    public void after() {
+        cleanUp();
     }
 
     @Test
@@ -143,6 +171,16 @@ public class DeploymentTestCase {
             }
 
             @Override
+            public void readContent(String path, String expectedValue) throws IOException {
+                readContentManaged(path, expectedValue, client);
+            }
+
+            @Override
+            public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
+                browseContentManaged(path, expectedContents, depth, archive, client);
+            }
+
+            @Override
             public void undeploy() {
                 Future<?> future = manager.execute(manager.newDeploymentPlan().undeploy("test-deployment.jar")
                         .remove("test-deployment.jar").build());
@@ -174,6 +212,16 @@ public class DeploymentTestCase {
                 public void fullReplace() throws IOException {
                     Future<?> future = manager.execute(manager.newDeploymentPlan().replace("test-deployment.jar", exportArchive(archive2)).build());
                     awaitDeploymentExecution(future);
+                }
+
+                @Override
+                public void readContent(String path, String expectedValue) throws IOException {
+                    readContentManaged(path, expectedValue, client);
+                }
+
+                @Override
+                public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
+                    browseContentManaged(path, expectedContents, depth, archive, client);
                 }
 
                 @Override
@@ -250,6 +298,7 @@ public class DeploymentTestCase {
     @Test
     public void testFilesystemDeployment_Marker() throws Exception {
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
+        final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
         final File dir = new File("target/archives");
         dir.mkdirs();
         final File file = new File(dir, "test-deployment.jar");
@@ -280,10 +329,13 @@ public class DeploymentTestCase {
                     }
                     // Create the .dodeploy file
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
-                    Files.write(dodeploy.toPath(), "test-deployment.jar".getBytes(StandardCharsets.UTF_8));
+                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
+                    try (final OutputStream out = new BufferedOutputStream(new FileOutputStream(dodeploy))){
+                        out.write("test-deployment.jar".getBytes());
+                    }
                     Assert.assertTrue(dodeploy.exists());
                     for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
-                        if (deployed.exists()) {
+                        if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
                         }
                         try {
@@ -299,34 +351,38 @@ public class DeploymentTestCase {
 
                 @Override
                 public void fullReplace() throws IOException {
-                    // The test is going to call this as soon as the deployment
-                    // sends a notification
-                    // but often before the scanner has completed the process
-                    // and deleted the
-                    // .dodpeloy put down by initialDeploy(). So pause a bit to
-                    // let that complete
-                    // so we don't end up having our own file deleted
+                    // Copy same deployment with changed property to deploy directory
+                    final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
+                    File target = new File(deployDir, "test-deployment.jar");
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
                     final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
+                    archive2.as(ZipExporter.class).exportTo(target, true);
+                    dodeploy.createNewFile();
+                    Assert.assertTrue(dodeploy.exists());
                     for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
-                        if (!dodeploy.exists() && !isdeploying.exists()) {
+                        if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
                         }
-                        // Wait for the last action to complete :(
                         try {
                             Thread.sleep(BACKOFF);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
-                            break;
+                            throw new RuntimeException(e);
                         }
                     }
 
-                    if (dodeploy.exists()) {
-                        Assert.fail("initialDeploy step did not complete in a reasonably timely fashion");
-                    }
+                    Assert.assertFalse("fullReplace step did not complete in a reasonably timely fashion", dodeploy.exists());
+                    Assert.assertTrue(deployed.exists());
+                }
 
-                    // Copy file to deploy directory again
-                    initialDeploy();
+                @Override
+                public void readContent(String path, String expectedValue) throws IOException {
+                    readContentManaged(path, expectedValue, client);
+                }
+
+                @Override
+                public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
+                    browseContentManaged(path, expectedContents, depth, archive, client);
                 }
 
                 @Override
@@ -398,6 +454,7 @@ public class DeploymentTestCase {
                 @Override
                 public void initialDeploy() throws IOException {
                     // Copy file to deploy directory
+                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
                     final InputStream in = new BufferedInputStream(new FileInputStream(file));
                     try {
                         final OutputStream out = new BufferedOutputStream(new FileOutputStream(target));
@@ -416,7 +473,30 @@ public class DeploymentTestCase {
 
                     Assert.assertTrue(file.exists());
                     for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
-                        if (deployed.exists()) {
+                        if (!isdeploying.exists() && deployed.exists()) {
+                            break;
+                        }
+                        try {
+                            Thread.sleep(BACKOFF);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    Assert.assertTrue(deployed.exists());
+                }
+
+                @Override
+                public void fullReplace() throws IOException {
+                    // Copy same deployment with changed property to deploy directory
+                    final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
+                    File target = new File(deployDir, "test-deployment.jar");
+                    archive2.as(ZipExporter.class).exportTo(target, true);
+                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
+
+                    // Wait until filesystem action gets picked up by scanner
+                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                        if (isdeploying.exists()) {
                             break;
                         }
                         try {
@@ -427,38 +507,30 @@ public class DeploymentTestCase {
                         }
                     }
 
-                    Assert.assertTrue(deployed.exists());
-                }
-
-                @Override
-                public void fullReplace() throws IOException {
-                    // The test is going to call this as soon as the deployment
-                    // sends a notification
-                    // but often before the scanner has completed the process
-                    // and deleted the
-                    // .isdeploying put down by deployment scanner. So pause a bit to
-                    // let that complete
-                    // so we don't end up having our own file deleted
-                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
+                    // Wait for redeploy to finish
                     for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
-                        if (!isdeploying.exists()) {
+                        if (!isdeploying.exists() && deployed.exists()) {
                             break;
                         }
-                        // Wait for the last action to complete :(
                         try {
                             Thread.sleep(BACKOFF);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
-                            break;
+                            throw new RuntimeException(e);
                         }
                     }
+                    Assert.assertFalse("fullReplace step did not complete in a reasonably timely fashion", isdeploying.exists());
+                    Assert.assertTrue(deployed.exists());
+                }
 
-                    if (isdeploying.exists()) {
-                        Assert.fail("initialDeploy step did not complete in a reasonably timely fashion");
-                    }
+                @Override
+                public void readContent(String path, String expectedValue) throws IOException {
+                    readContentManaged(path, expectedValue, client);
+                }
 
-                    // Copy file to deploy directory again
-                    initialDeploy();
+                @Override
+                public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
+                    browseContentManaged(path, expectedContents, depth, archive, client);
                 }
 
                 @Override
@@ -550,7 +622,6 @@ public class DeploymentTestCase {
 
     @Test
     public void testExplodedFilesystemDeployment() throws Exception {
-
         final File deployDir = createDeploymentDir("exploded-deployments");
         final File dir = new File("target/archives");
         ModelControllerClient client = managementClient.getControllerClient();
@@ -570,10 +641,11 @@ public class DeploymentTestCase {
 
                     // Create the .dodeploy file
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
+                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
                     Files.write(dodeploy.toPath(), "test-deployment.jar".getBytes(StandardCharsets.UTF_8));
                     Assert.assertTrue(dodeploy.exists());
                     for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
-                        if (deployed.exists()) {
+                        if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
                         }
                         try {
@@ -589,34 +661,87 @@ public class DeploymentTestCase {
 
                 @Override
                 public void fullReplace() throws IOException {
-                    // The test is going to call this as soon as the deployment
-                    // sends a notification
-                    // but often before the scanner has completed the process
-                    // and deleted the
-                    // .dodpeloy put down by initialDeploy(). So pause a bit to
-                    // let that complete
-                    // so we don't end up having our own file deleted
+                    // full replace with single property changed
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
                     final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
+                    File testDeployment = new File(deployDir, "test-deployment.jar");
+                    File propertiesFile = new File(testDeployment, "service-activator-deployment.properties");
+                    try (FileOutputStream os = new FileOutputStream(propertiesFile.getAbsolutePath())) {
+                        Properties replacementProps = new Properties();
+                        replacementProps.putAll(properties2);
+                        replacementProps.store(os, null);
+                    }
+                    dodeploy.createNewFile();
+                    Assert.assertTrue(dodeploy.exists());
                     for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
-                        if (!dodeploy.exists() && !isdeploying.exists()) {
+                        if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
                         }
-                        // Wait for the last action to complete :(
                         try {
                             Thread.sleep(BACKOFF);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
-                            break;
+                            throw new RuntimeException(e);
                         }
                     }
 
-                    if (dodeploy.exists()) {
-                        Assert.fail("initialDeploy step did not complete in a reasonably timely fashion");
-                    }
+                    Assert.assertFalse("fullReplace step did not complete in a reasonably timely fashion", dodeploy.exists());
+                    Assert.assertTrue(deployed.exists());
+                }
 
-                    // Copy file to deploy directory again
-                    initialDeploy();
+                @Override
+                public void readContent(String path, String expectedValue) throws IOException {
+                    ModelNode op = new ModelNode();
+                    op.get(ClientConstants.OP).set(ClientConstants.READ_CONTENT_OPERATION);
+                    op.get(ClientConstants.OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
+                    op.get(ClientConstants.PATH).set(path);
+                    Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
+                    try {
+                        ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                        Assert.assertFalse("Operation browse-content should not be successful with unmanaged deployments.",
+                                Operations.isSuccessfulOutcome(response));
+                        String failureDescription = Operations.getFailureDescription(response).toString();
+                        Assert.assertTrue("Operation browse-content should fail with WFLYSRV0255, but failed with " + failureDescription,
+                                failureDescription.contains("WFLYSRV0255"));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e.getCause());
+                    } catch (TimeoutException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        if (!future.isDone()) {
+                            future.cancel(true);
+                        }
+                    }
+                }
+
+                @Override
+                public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
+                    ModelNode op = new ModelNode();
+                    op.get(ClientConstants.OP).set(ClientConstants.DEPLOYMENT_BROWSE_CONTENT_OPERATION);
+                    op.get(ClientConstants.OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
+                    Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
+                    try {
+                        ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                        Assert.assertFalse("Operation browse-content should not be successful with unmanaged deployments.",
+                                Operations.isSuccessfulOutcome(response));
+                        String failureDescription = Operations.getFailureDescription(response).toString();
+                        Assert.assertTrue("Operation browse-content should fail with WFLYSRV0255, but failed with " + failureDescription,
+                                failureDescription.contains("WFLYSRV0255"));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e.getCause());
+                    } catch (TimeoutException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        if (!future.isDone()) {
+                            future.cancel(true);
+                        }
+                    }
                 }
 
                 @Override
@@ -729,12 +854,23 @@ public class DeploymentTestCase {
             initialDeploymentHash = currentHashes.iterator().next();
         }
 
+        deploymentExecutor.readContent("service-activator-deployment.properties", "is new");
+        deploymentExecutor.browseContent("", new ArrayList<>(Arrays.asList("META-INF/", "META-INF/MANIFEST.MF",
+                "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
+                "org/","org/jboss/","org/jboss/as/", "org/jboss/as/test/", "org/jboss/as/test/deployment/",
+                "org/jboss/as/test/deployment/trivial/", "service-activator-deployment.properties",
+                "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class")), -1, false);
+        deploymentExecutor.browseContent("", new ArrayList<>(Arrays.asList("META-INF/", "org/",
+                "service-activator-deployment.properties")), 1, false);
+        deploymentExecutor.browseContent("", new ArrayList<>(), -1, true);
+
         // Full replace
         // listener.reset(2);
         deploymentExecutor.fullReplace();
 
         // listener.await();
         ServiceActivatorDeploymentUtil.validateProperties(managementClient.getControllerClient(), properties2);
+        deploymentExecutor.readContent("service-activator-deployment.properties", "is replaced");
 
         if (!fromFile) {
             currentHashes = getAllDeploymentHashesFromContentDir(false);
@@ -788,8 +924,11 @@ public class DeploymentTestCase {
             throw new RuntimeException(e.getCause());
         } catch (TimeoutException e) {
             throw new RuntimeException(e);
+        } finally {
+            if (!future.isDone()) {
+                future.cancel(true);
+            }
         }
-
     }
 
     private static void cleanFile(File toClean) {
@@ -801,11 +940,170 @@ public class DeploymentTestCase {
         toClean.delete();
     }
 
+    private void waitUntilFileExists(File expected) {
+        for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+            if (expected.exists()) {
+                break;
+            }
+            try {
+                Thread.sleep(BACKOFF);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private void waitUntilFileDeleted(File unwanted) {
+        for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+            if (!unwanted.exists()) {
+                break;
+            }
+            try {
+                Thread.sleep(BACKOFF);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private void readContentManaged(String path, String expectedValue, ModelControllerClient client) throws IOException {
+        ModelNode op = new ModelNode();
+        op.get(ClientConstants.OP).set(ClientConstants.READ_CONTENT_OPERATION);
+        op.get(ClientConstants.OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
+        if (!path.isEmpty()) {
+            op.get(PATH).set(path);
+        }
+        Future<OperationResponse> future = client.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
+
+        try {
+            OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            if (path.isEmpty()) {
+                Assert.assertFalse("Operation read-content should not be successful without defined path parameter on exploded deployments",
+                        Operations.isSuccessfulOutcome(response.getResponseNode()));
+                String failureDescription = Operations.getFailureDescription(response.getResponseNode()).toString();
+                Assert.assertTrue("Operation read-content should fail with WFLYDR0020, but failed with " + failureDescription,
+                        failureDescription.contains("WFLYDR0020"));
+            } else {
+                Assert.assertTrue(Operations.isSuccessfulOutcome(response.getResponseNode()));
+                Assert.assertTrue(Operations.readResult(response.getResponseNode()).hasDefined(UUID));
+                List<OperationResponse.StreamEntry> streams = response.getInputStreams();
+                Assert.assertThat(streams, is(notNullValue()));
+                Assert.assertThat(streams.size(), is(1));
+                try (InputStream in = streams.get(0).getStream()) {
+                    Properties content = new Properties();
+                    content.load(in);
+                    Assert.assertThat(content.getProperty("service"), is(expectedValue));
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (!future.isDone()) {
+                future.cancel(true);
+            }
+        }
+    }
+
+    private void browseContentManaged(String path, List<String> expectedContents, int depth, boolean archive, ModelControllerClient client) throws IOException {
+        ModelNode op = new ModelNode();
+        op.get(ClientConstants.OP).set(ClientConstants.DEPLOYMENT_BROWSE_CONTENT_OPERATION);
+        op.get(ClientConstants.OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
+        if (path != null && !path.isEmpty()) {
+            op.get(PATH).set(path);
+        }
+        if (depth > 0) {
+            op.get(DEPTH).set(depth);
+        }
+        if (archive) {
+            op.get(ARCHIVE).set(archive);
+        }
+        Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
+        try {
+            ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            if (!Operations.isSuccessfulOutcome(response)) {
+                Assert.fail("Operation browse content should be successful, but failed: " +
+                        Operations.getFailureDescription(response).toString());
+            }
+            List<String> unexpectedContents = new ArrayList<>();
+            if (expectedContents.isEmpty()) {
+                Assert.assertEquals("Unexpected non-empty result with browse-content operation",
+                        new ModelNode(), Operations.readResult(response));
+            } else {
+                List<ModelNode> contents = Operations.readResult(response).asList();
+                for (ModelNode content : contents) {
+                    Assert.assertTrue(content.hasDefined("path"));
+                    String contentPath = content.get("path").asString();
+                    Assert.assertTrue(content.hasDefined("directory"));
+                    if (!content.get("directory").asBoolean()) {
+                        Assert.assertTrue(content.hasDefined("file-size"));
+                    }
+                    if (!expectedContents.contains(contentPath)) {
+                        unexpectedContents.add(contentPath);
+                    }
+                    expectedContents.remove(contentPath);
+                }
+            }
+            Assert.assertTrue("Unexpected files listed by /deployment=test-deployment.jar:browse-content(depth="
+                    + depth + ", archive=" + archive + ") : " + unexpectedContents.toString(),
+                    unexpectedContents.isEmpty());
+            Assert.assertTrue("Expected files not listed by /deployment=test-deployment.jar:browse-content(depth="
+                    + depth + ", archive=" + archive + ") : " + expectedContents.toString(),
+                    expectedContents.isEmpty());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void cleanUp() {
+        ModelNode op = new ModelNode();
+        op.get(OP).set(READ_RESOURCE_OPERATION);
+        op.get(OP_ADDR).set(ModelDescriptionConstants.DEPLOYMENT, "test-deployment.jar");
+        ModelControllerClient client = managementClient.getControllerClient();
+        ModelNode result;
+        try {
+            result = client.execute(op);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        if (result != null && Operations.isSuccessfulOutcome(result)) {
+            ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(client);
+            Future<?> future = manager.execute(manager.newDeploymentPlan()
+                    .undeploy("test-deployment.jar")
+                    .remove("test-deployment.jar")
+                    .build());
+
+            awaitDeploymentExecution(future);
+        }
+
+        String jbossBaseDir = System.getProperty("jboss.home");
+        Assert.assertNotNull(jbossBaseDir);
+        Path dataDir = new File(jbossBaseDir).toPath().resolve("standalone").resolve("data");
+        if (Files.exists(dataDir)) { cleanFile(dataDir.resolve("managed-exploded").toFile()); }
+        File archivesDir = new File("target", "archives");
+        if (Files.exists(archivesDir.toPath())) { cleanFile(archivesDir); }
+    }
+
     private interface DeploymentExecutor {
 
         void initialDeploy() throws IOException;
 
         void fullReplace() throws IOException;
+
+        void readContent(String path, String expectedValue) throws IOException;
+
+        void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException;
 
         void undeploy() throws IOException;
     }
