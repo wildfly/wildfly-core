@@ -21,11 +21,19 @@
 */
 package org.jboss.as.controller;
 
+import java.util.regex.Pattern;
+
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public interface VaultReader {
+
+    /**
+     * Pattern that describes the standard "vaulted data" format.
+     */
+    Pattern STANDARD_VAULT_PATTERN = Pattern.compile("VAULT::.*::.*::.*");
+
     boolean isVaultFormat(String encrypted);
 
     /**
