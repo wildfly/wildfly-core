@@ -30,7 +30,6 @@ import org.jboss.dmr.ValueExpression;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
@@ -59,7 +58,6 @@ public class RuntimeExpressionResolverUnitTestCase {
     }
 
     @Test
-    @Ignore("WFCORE-2199")
     public void testANoVaultReader() {
         RuntimeExpressionResolver testee = new RuntimeExpressionResolver(null);
         ModelNode value = getVaultedData();
