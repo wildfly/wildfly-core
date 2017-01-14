@@ -30,7 +30,6 @@ import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.regex.Pattern;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.Module;
@@ -49,8 +48,6 @@ import org.wildfly.security.manager.action.GetModuleClassLoaderAction;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class RuntimeVaultReader extends AbstractVaultReader {
-
-    private static final Pattern VAULT_PATTERN = Pattern.compile("VAULT::.*::.*::.*");
 
     private volatile SecurityVault vault;
 
@@ -132,7 +129,7 @@ public class RuntimeVaultReader extends AbstractVaultReader {
 
     @Override
     public boolean isVaultFormat(String str) {
-        return str != null && VAULT_PATTERN.matcher(str).matches();
+        return str != null && STANDARD_VAULT_PATTERN.matcher(str).matches();
     }
 
     private char[] getValue(String vaultString) throws SecurityVaultException {

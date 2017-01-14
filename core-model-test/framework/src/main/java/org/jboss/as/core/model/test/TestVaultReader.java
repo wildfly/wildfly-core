@@ -24,7 +24,6 @@ package org.jboss.as.core.model.test;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.server.services.security.VaultReaderException;
@@ -35,8 +34,6 @@ import org.jboss.as.server.services.security.VaultReaderException;
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
 public class TestVaultReader extends AbstractVaultReader {
-
-    private static final Pattern VAULT_PATTERN = Pattern.compile("VAULT::.*::.*::.*");
 
     private volatile String fqn;
     private final Map<String, Object> options = new HashMap<String, Object>();
@@ -63,7 +60,7 @@ public class TestVaultReader extends AbstractVaultReader {
 
     @Override
     public boolean isVaultFormat(String encrypted) {
-        return encrypted != null && VAULT_PATTERN.matcher(encrypted).matches();
+        return encrypted != null && STANDARD_VAULT_PATTERN.matcher(encrypted).matches();
     }
 
     @Override
