@@ -22,7 +22,9 @@
 package org.jboss.as.server;
 
 import org.jboss.as.controller.ExpressionResolverImpl;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.VaultReader;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -37,12 +39,16 @@ public class RuntimeExpressionResolver extends ExpressionResolverImpl {
     }
 
     @Override
-    protected void resolvePluggableExpression(ModelNode node) {
+    protected void resolvePluggableExpression(ModelNode node) throws OperationFailedException {
         String expression = node.asString();
         if (expression.length() > 3) {
-            expression = expression.substring(2, expression.length() -1);
-            if (vaultReader != null && vaultReader.isVaultFormat(expression)) {
-                node.set(vaultReader.retrieveFromVault(expression));
+            String vaultedData = expression.substring(2, expression.length() -1);
+            if (vaultReader != null && vaultReader.isVaultFormat(vaultedData)) {
+                try {
+                    node.set(vaultReader.retrieveFromVault(vaultedData));
+                } catch (VaultReader.NoSuchItemException nsie) {
+                    throw ControllerLogger.ROOT_LOGGER.cannotResolveExpression(expression);
+                }
             }
         }
     }

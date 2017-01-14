@@ -30,6 +30,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.Module;
@@ -50,7 +51,7 @@ import org.wildfly.security.manager.action.GetModuleClassLoaderAction;
 public class RuntimeVaultReader extends AbstractVaultReader {
 
     private volatile SecurityVault vault;
-
+    private final AtomicBoolean missingVaultLogged = new AtomicBoolean();
 
     /**
      * This constructor should remain protected to keep the vault as invisible
@@ -97,31 +98,46 @@ public class RuntimeVaultReader extends AbstractVaultReader {
     protected void destroyVault() {
         //TODO - there are no cleanup methods in the vault itself
         vault = null;
+        missingVaultLogged.set(false);
     }
 
-    public String retrieveFromVault(final String password) throws SecurityException {
-        if (isVaultFormat(password)) {
+    @Override
+    public String retrieveFromVault(final String vaultedData) throws VaultReaderException {
+        if (isVaultFormat(vaultedData)) {
+            SecurityVault theVault = vault;
+            if (theVault != null) {
+                try {
+                    char[] val = getValue(theVault, vaultedData);
+                    if (val != null) {
+                        return new String(val);
+                    }
+                } catch (SecurityVaultException e) {
+                    // We assume that SVE represents some sort of error with the vault
+                    // or some sort of security violation like a vault impl that uses the
+                    // shared key (PicketBoxSecurityVault doesn't) and the provided key is incorrect.
+                    // We don't treat these as lookup failures. In theory an incorrect shared key
+                    // could be regarded as such, but we choose not to, partly because a
+                    // wrong key is more serious, and partly because there is no way to
+                    // discriminate between different types of SecurityVaultException.
 
-            if (vault == null) {
-                throw ServerLogger.ROOT_LOGGER.vaultNotInitializedException();
+                    // Wrap in the appropriate runtime exception and rethrow
+                    throw ServerLogger.ROOT_LOGGER.vaultReaderException(e);
+                }
+            } else {
+                // No vault is the same as a lookup miss.
+
+                // One time only log an ERROR, since using vaulted data without a vault configured
+                // is likely a mistake and the logging will help the user understand the reasons for
+                // the NoSuchItemException exception we will throw below
+                if (missingVaultLogged.compareAndSet(false, true)) {
+                    ServerLogger.ROOT_LOGGER.vaultNotInitializedException();
+                }
             }
 
-            try {
-                return getValueAsString(password);
-            } catch (SecurityVaultException e) {
-                throw ServerLogger.ROOT_LOGGER.securityException(e);
-            }
-
+            // If we get here some sort of lookup miss occurred
+            throw new NoSuchItemException();
         }
-        return password;
-    }
-
-    private String getValueAsString(String vaultString) throws SecurityVaultException {
-        char[] val = getValue(vaultString);
-        if (val != null) {
-            return new String(val);
-        }
-        return null;
+        return vaultedData;
     }
 
     @Override
@@ -129,7 +145,7 @@ public class RuntimeVaultReader extends AbstractVaultReader {
         return str != null && STANDARD_VAULT_PATTERN.matcher(str).matches();
     }
 
-    private char[] getValue(String vaultString) throws SecurityVaultException {
+    private static char[] getValue(SecurityVault vault, String vaultString) throws SecurityVaultException {
         String[] tokens = tokens(vaultString);
         byte[] sharedKey = null;
         if (tokens.length > 3) {
@@ -137,10 +153,11 @@ public class RuntimeVaultReader extends AbstractVaultReader {
             sharedKey = tokens[3].getBytes(StandardCharsets.UTF_8);
         }
 
-        return vault.retrieve(tokens[1], tokens[2], sharedKey);
+        // Check for existence before retrieving as retrieving nonexistent data throws SecurityVaultException
+        return vault.exists(tokens[1], tokens[2]) ? vault.retrieve(tokens[1], tokens[2], sharedKey) : null;
     }
 
-    private String[] tokens(String vaultString) {
+    private static String[] tokens(String vaultString) {
         StringTokenizer tokenizer = new StringTokenizer(vaultString, "::");
         int length = tokenizer.countTokens();
         String[] tokens = new String[length];

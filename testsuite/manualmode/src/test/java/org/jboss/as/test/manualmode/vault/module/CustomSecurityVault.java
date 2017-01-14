@@ -64,8 +64,7 @@ public class CustomSecurityVault implements SecurityVault {
     @Override
     public boolean exists(String vaultBlock, String attributeName)
             throws SecurityVaultException {
-        //Not relevant for this test
-        return false;
+        return options.containsKey(vaultBlock);
     }
 
     @Override

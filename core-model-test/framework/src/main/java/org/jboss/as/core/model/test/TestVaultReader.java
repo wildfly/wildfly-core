@@ -67,20 +67,19 @@ public class TestVaultReader extends AbstractVaultReader {
     public String retrieveFromVault(String encrypted) {
         if (isVaultFormat(encrypted)) {
 
-            if (fqn == null) {
-                throw new SecurityException("Vault not initialized");
+            String vault = fqn;
+            if (vault != null) {
+                String[] split = encrypted.split("::");
+                if (split[1].equals(vault)) {
+                    Object value = options.get(split[2]);
+                    if (value == null) {
+                        value = split[3];
+                    }
+                    return value.toString();
+                }
             }
 
-            String[] split = encrypted.split("::");
-            if (split[1].equals(fqn)) {
-                Object value = options.get(split[2]);
-                if (value == null) {
-                    value = split[3];
-                }
-                return value.toString();
-            } else {
-                throw new SecurityException("Unknown vault " + split[1]);
-            }
+            throw new NoSuchItemException();
         }
         return encrypted;
     }
