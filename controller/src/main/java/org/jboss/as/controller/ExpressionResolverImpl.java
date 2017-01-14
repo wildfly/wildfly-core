@@ -237,7 +237,11 @@ public class ExpressionResolverImpl implements ExpressionResolver {
                                 continue;
                             }
                             String toResolve = getStringToResolve(initialValue, stack, i);
-                            final String resolved = resolveExpressionString(toResolve);
+                            final String resolved = resolveExpressionString(toResolve); // TODO we could catch OFE here
+                                                                                        // and if lenient respond with
+                                                                                        // the initial value, else rethrow
+                                                                                        // But for now it's a corner case
+                                                                                        // so follow KISS and just throw
                             // We only successfully resolved if toResolve != resolved
                             if (!toResolve.equals(resolved)) {
                                 if (EXPRESSION_PATTERN.matcher(resolved).matches()) {
