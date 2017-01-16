@@ -931,21 +931,19 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         // Filter the streams of capabilities to extract matching ones
         return getCapabilities().stream().
                 // Keep capability that matches at least one of the registration point
-                filter((registration) -> {
-                    return registration.getRegistrationPoints().stream().
-                            map((rp) -> Paths.get(rp.getAddress().toPathStyleString())).
-                            filter((path) -> matchers.stream().anyMatch((matcher) -> matcher.matches(path))).
-                            count() > 0;
-                }).
+                filter((registration) -> registration.getRegistrationPoints().stream().
+                        map((rp) -> Paths.get(rp.getAddress().toPathStyleString())).
+                        filter((path) -> matchers.stream().anyMatch((matcher) -> matcher.matches(path))).
+                        count() > 0).
                 // Keep capability that can be reached from the provided scope
                 filter((registration) -> hasCapability(registration.getCapabilityName(), dependentScope)).
                 // Remove static name
                 filter((registration) -> !registration.getCapabilityName().equals(referencedCapability)).
+                // remove aliases
+                filter((registration) -> registration.getCapabilityName().startsWith(referencedCapability)).
                 // Finally convert remaining capabilities onto capability dynamic name.
-                map((registration) -> {
-                    return registration.getCapabilityName().
-                            substring(referencedCapability.length() + 1);
-                }).
+                map((registration) -> registration.getCapabilityName().
+                        substring(referencedCapability.length() + 1)).
                 collect(Collectors.toSet());
     }
 
