@@ -22,7 +22,9 @@
 
 package org.jboss.as.server.deploymentoverlay;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
@@ -65,6 +67,8 @@ public class DeploymentOverlayContentDefinition extends SimpleResourceDefinition
             new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.CONTENT,
                     new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT, true)
                             .setValidator(new StringLengthValidator(0, true))
+                            .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
+                            .addArbitraryDescriptor(ATTACHED_STREAMS, new ModelNode(true))
                             .build(),
                     new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HASH, ModelType.BYTES, true)
                             .setValidator(new HashValidator(true))

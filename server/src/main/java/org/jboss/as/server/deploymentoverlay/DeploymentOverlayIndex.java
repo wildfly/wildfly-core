@@ -114,7 +114,7 @@ public class DeploymentOverlayIndex {
         return name.contains("*") || name.contains("?");
     }
 
-    private static Pattern getPattern(String name) {
+    static Pattern getPattern(String name) {
         return Pattern.compile(wildcardToJavaRegexp(name));
     }
 

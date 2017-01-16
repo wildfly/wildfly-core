@@ -19,32 +19,33 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.server.deploymentoverlay;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
+import static org.jboss.as.server.deploymentoverlay.DeploymentOverlayModel.DEPLOYMENT_OVERRIDE_DEPLOYMENT_PATH;
+
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 /**
  * Links a deployment overlay to a deployment
+ *
  * @author Stuart Douglas
  */
 public class DeploymentOverlayDeploymentDefinition extends SimpleResourceDefinition {
 
-    private static final AttributeDefinition[] ATTRIBUTES = {  };
+    private static final AttributeDefinition[] ATTRIBUTES = {};
 
     public static AttributeDefinition[] attributes() {
         return ATTRIBUTES.clone();
     }
 
     public DeploymentOverlayDeploymentDefinition() {
-        super(DeploymentOverlayModel.DEPLOYMENT_OVERRIDE_DEPLOYMENT_PATH,
-                ControllerResolver.getResolver(ModelDescriptionConstants.DEPLOYMENT_OVERLAY + "." + ModelDescriptionConstants.DEPLOYMENT),
-                new DeploymentOverlayDeploymentAdd(), ModelOnlyRemoveStepHandler.INSTANCE);
+        super(new Parameters(DEPLOYMENT_OVERRIDE_DEPLOYMENT_PATH, ControllerResolver.getResolver(DEPLOYMENT_OVERLAY + '.' + DEPLOYMENT))
+                .setAddHandler(new DeploymentOverlayDeploymentAdd()));
     }
 
     @Override
@@ -52,5 +53,11 @@ public class DeploymentOverlayDeploymentDefinition extends SimpleResourceDefinit
         for (AttributeDefinition attr : ATTRIBUTES) {
             resourceRegistration.registerReadOnlyAttribute(attr, null);
         }
+    }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration);
+        resourceRegistration.registerOperationHandler(DeploymentOverlayDeploymentRemoveHandler.REMOVE_DEFINITION, DeploymentOverlayDeploymentRemoveHandler.INSTANCE);
     }
 }

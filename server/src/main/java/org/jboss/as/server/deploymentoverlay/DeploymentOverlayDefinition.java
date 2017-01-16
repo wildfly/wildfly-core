@@ -23,8 +23,15 @@
 package org.jboss.as.server.deploymentoverlay;
 
 
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
+import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -47,6 +54,7 @@ public class DeploymentOverlayDefinition extends SimpleResourceDefinition {
     private final ContentRepository contentRepo;
     private final DeploymentFileRepository fileRepository;
     private final boolean domainLevel;
+    private final Map<OperationDefinition, OperationStepHandler> operations = new HashMap<>();
 
 
     public DeploymentOverlayDefinition(boolean domainLevel,ContentRepository contentRepo, DeploymentFileRepository fileRepository) {
@@ -58,6 +66,19 @@ public class DeploymentOverlayDefinition extends SimpleResourceDefinition {
         this.contentRepo = contentRepo;
         this.fileRepository = fileRepository;
         this.domainLevel = domainLevel;
+        addOperation(DeploymentOverlayRedeployLinksHandler.REDEPLOY_LINKS_DEFINITION, new DeploymentOverlayRedeployLinksHandler());
+    }
+
+    public final void addOperation(OperationDefinition definition, OperationStepHandler handler) {
+        Iterator<Entry<OperationDefinition, OperationStepHandler>> iter = operations.entrySet().iterator();
+        while(iter.hasNext()) {
+            Entry<OperationDefinition, OperationStepHandler> operation = iter.next();
+            if(operation.getKey().getName().equals(definition.getName())) {
+                iter.remove();
+                break;
+            }
+        }
+        operations.put(definition, handler);
     }
 
     @Override
@@ -75,5 +96,13 @@ public class DeploymentOverlayDefinition extends SimpleResourceDefinition {
         if (!domainLevel) {
             resourceRegistration.registerSubModel(new DeploymentOverlayDeploymentDefinition());
         }
+    }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration);
+        operations.entrySet().forEach((operation) -> {
+            resourceRegistration.registerOperationHandler(operation.getKey(), operation.getValue());
+        });
     }
 }

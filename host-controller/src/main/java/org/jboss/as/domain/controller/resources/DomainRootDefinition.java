@@ -105,7 +105,6 @@ import org.jboss.as.server.controller.descriptions.ServerDescriptionConstants;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition.Location;
-import org.jboss.as.server.deploymentoverlay.DeploymentOverlayDefinition;
 import org.jboss.as.server.operations.ServerVersionOperations.DefaultEmptyListAttributeHandler;
 import org.jboss.as.server.operations.WriteConfigHandler;
 import org.jboss.as.server.services.net.InterfaceAddHandler;
@@ -329,7 +328,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
                 ? DomainDeploymentResourceDefinition.createForDomainMaster(contentRepo)
                 : DomainDeploymentResourceDefinition.createForDomainSlave(environment.isBackupDomainFiles(), fileRepository, contentRepo);
         resourceRegistration.registerSubModel(domainDeploymentDefinition);
-        resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(true, contentRepo, fileRepository));
+        resourceRegistration.registerSubModel(new DomainDeploymentOverlayDefinition(true, contentRepo, fileRepository));
 
         if(isMaster || environment.isBackupDomainFiles()) {
             resourceRegistration.registerSubModel(new ServerGroupResourceDefinition(isMaster, hostControllerInfo, fileRepository));
