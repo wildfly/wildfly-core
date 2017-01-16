@@ -46,32 +46,92 @@
         </xs:choice>
     </xs:complexType>
     <xs:complexType name="workerType">
-        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="name" use="required" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        Name of worker
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="io-threads" type="xs:int">
             <xs:annotation>
                 <xs:documentation>
                     <![CDATA[
-                        Default value for io threads is cpu count * 2
+                        Specify the number of I/O threads to create for the worker.
+                        If not specified, a default will be chosen, which is calculated by cpuCount * 2
                     ]]>
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="task-keepalive" type="xs:int" default="60"/>
+        <xs:attribute name="task-keepalive" type="xs:int" default="60000">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                       Specify the number of milliseconds to keep non-core task threads alive.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="task-max-threads" type="xs:int">
             <xs:annotation>
                 <xs:documentation>
                     <![CDATA[
-                        Default value for io threads is cpu count * 16
+                        Specify the maximum number of threads for the worker task thread pool.
+                        If not set, default value used which is calculated by formula cpuCount * 16,
+                        as long as MaxFileDescriptorCount jmx property allows that number,
+                        otherwise calculation takes max into account to adjust it accordingly.
                     ]]>
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="stack-size" type="xs:long" default="0"/>
+        <xs:attribute name="stack-size" type="xs:long" default="0">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        The stack size (in bytes) to attempt to use for worker threads.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="bufferPoolType">
-        <xs:attribute name="name" use="required" type="xs:string"/>
-        <xs:attribute name="buffer-size" use="optional" type="xs:int" />
-        <xs:attribute name="buffers-per-slice" use="optional" type="xs:int" />
-        <xs:attribute name="direct-buffers" use="optional" type="xs:boolean" />
+        <xs:attribute name="name" use="required" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        Name of buffer pool
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="buffer-size" use="optional" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        The size of each buffer slice in bytes, if not set optimal value is calculated based on available RAM resources in your system.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="buffers-per-slice" use="optional" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        How many buffers per slice, if not set optimal value is calculated based on available RAM resources in your system.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="direct-buffers" use="optional" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        Does the buffer pool use direct buffers, some platforms don't support direct buffers
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>

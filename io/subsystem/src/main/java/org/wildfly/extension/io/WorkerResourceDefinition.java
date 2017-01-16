@@ -77,7 +77,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             .build();
     static final OptionAttributeDefinition WORKER_TASK_KEEPALIVE = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_KEEPALIVE, Options.WORKER_TASK_KEEPALIVE)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-            .setDefaultValue(new ModelNode(60))
+            .setDefaultValue(new ModelNode(60_000))
             .setAllowExpression(true)
             .build();
     static final OptionAttributeDefinition STACK_SIZE = new OptionAttributeDefinition.Builder(Constants.STACK_SIZE, Options.STACK_SIZE)
