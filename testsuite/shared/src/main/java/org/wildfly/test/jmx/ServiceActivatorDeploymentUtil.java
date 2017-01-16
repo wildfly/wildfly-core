@@ -77,6 +77,13 @@ public class ServiceActivatorDeploymentUtil {
         archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.logging,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
         archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
         archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                // This is an ugly hack due to domain mode classpath and the test's classpath
+                // being different and requiring access to the domain deployment path
+                // which is outside of the tests scope
+                new FilePermission(destination.getAbsolutePath()
+                        .replace("archives", "wildfly-core")
+                        .replace(destination.getName(), ""), "read"),
+                new FilePermission("target", "read, write"),
                 new FilePermission("target/notifications", "read, write"),
                 new FilePermission("target/notifications/-", "read, write"),
                 new MBeanPermission("org.jboss.as.server.jmx.RunningStateJmx#*[" + targetName + "]", "addNotificationListener"),
