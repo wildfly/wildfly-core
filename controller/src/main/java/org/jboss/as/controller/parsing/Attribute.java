@@ -51,6 +51,7 @@ public enum Attribute {
     ARCHIVE("archive"),
     ASSIGN_GROUPS("assign-groups"),
     ATTRIBUTE("attribute"),
+    AUTHENTICATION_CONTEXT("authentication-context"),
     AUTO_START("auto-start"),
     BASE_DN("base-dn"),
     BASE_ROLE("base-role"),

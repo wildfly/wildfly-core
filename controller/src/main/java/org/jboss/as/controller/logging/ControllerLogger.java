@@ -79,7 +79,6 @@ import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleNotFoundException;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
-import org.wildfly.security.credential.store.UnsupportedCredentialTypeException;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -3449,8 +3448,8 @@ public interface ControllerLogger extends BasicLogger {
 
     // ---- Credential Store related messages -----------
 
-    @Message(id = 423, value = "Credential store \"%s\" doesn't support credential type \"%s\" ")
-    UnsupportedCredentialTypeException unsupportedCredentialType(String credentialStore, String credentialType);
+    @Message(id = 423, value = "Name of the credential store has to be specified in this credential-reference")
+    IllegalStateException nameOfCredentialStoreHasToBeSpecified();
 
     @Message(id = 424, value = "Supposed Credential Store URI has no scheme or different from '" + CredentialStoreURIParser.CR_STORE_SCHEME + "://' ('%s')")
     IllegalArgumentException credentialStoreURIWrongScheme(String uri);

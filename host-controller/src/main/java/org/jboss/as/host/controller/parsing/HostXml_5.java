@@ -821,6 +821,10 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
                         DomainControllerWriteAttributeHandler.PROTOCOL.parseAndSetParameter(value, updateDc, reader);
                         break;
                     }
+                    case AUTHENTICATION_CONTEXT: {
+                        DomainControllerWriteAttributeHandler.AUTHENTICATION_CONTEXT.parseAndSetParameter(value, updateDc, reader);
+                        break;
+                    }
                     case SECURITY_REALM: {
                         DomainControllerWriteAttributeHandler.SECURITY_REALM.parseAndSetParameter(value, updateDc, reader);
                         break;
@@ -1478,6 +1482,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
             RemoteDomainControllerAddHandler.PROTOCOL.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.HOST.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.PORT.marshallAsAttribute(remote, writer);
+            RemoteDomainControllerAddHandler.AUTHENTICATION_CONTEXT.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.SECURITY_REALM.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.USERNAME.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.IGNORE_UNUSED_CONFIG.marshallAsAttribute(remote, writer);

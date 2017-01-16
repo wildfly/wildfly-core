@@ -40,6 +40,11 @@ public class HostModelTestCase extends AbstractCoreModelTest {
     }
 
     @Test
+    public void testRemoteWithAuthenticationContext() throws Exception {
+        doRemoteHostXml("host-http-remoting-domain-manager-ac.xml");
+    }
+
+    @Test
     public void testWFLY75HttpRemoting() throws Exception {
         doRemoteHostXml("host-http-remoting-domain-manager.xml");
     }

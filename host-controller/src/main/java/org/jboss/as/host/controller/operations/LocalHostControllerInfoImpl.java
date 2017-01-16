@@ -29,6 +29,7 @@ import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * Default implementation of {@link LocalHostControllerInfo}.
@@ -47,6 +48,7 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
 
     private volatile String remoteDCUser;
     private volatile String remoteSecurityRealm;
+    private volatile ServiceName authenticationContext;
     private volatile List<DiscoveryOption> remoteDiscoveryOptions = new ArrayList<DiscoveryOption>();
     private volatile boolean remoteIgnoreUnaffectedConfiguration;
     private volatile String httpManagementInterface;
@@ -81,6 +83,10 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     @Override
     public boolean isMasterDomainController() {
         return master;
+    }
+
+    public ServiceName getAuthenticationContext() {
+        return authenticationContext;
     }
 
     @Override
@@ -118,6 +124,10 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
         return remoteDCUser;
     }
 
+    /**
+     * @deprecated Client side security configuration should be obtained from an AuthenticationContext.
+     */
+    @Deprecated
     public String getRemoteDomainControllerSecurityRealm() {
         return remoteSecurityRealm;
     }
@@ -153,6 +163,10 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
 
     void setAdminOnlyDomainConfigPolicy(AdminOnlyDomainConfigPolicy adminOnlyDomainConfigPolicy) {
         this.adminOnlyDomainConfigPolicy = adminOnlyDomainConfigPolicy;
+    }
+
+    void setAuthenticationContext(ServiceName authenticationContext) {
+        this.authenticationContext = authenticationContext;
     }
 
     void setMasterDomainController(boolean master) {

@@ -888,6 +888,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 getValue(),
                 extensionRegistry,
                 hostControllerInfo,
+                hostControllerInfo.getAuthenticationContext(),
                 hostControllerInfo.getRemoteDomainControllerSecurityRealm(),
                 remoteFileRepository,
                 contentRepository,

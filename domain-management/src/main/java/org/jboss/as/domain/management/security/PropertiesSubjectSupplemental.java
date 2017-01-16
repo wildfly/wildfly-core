@@ -145,7 +145,7 @@ public class PropertiesSubjectSupplemental extends PropertiesFileLoader implemen
                 Properties groups = getProperties();
 
                 String name = principal.getName();
-                return new RealmIdentityImpl(name, groups.getProperty(name, "").trim());
+                return new RealmIdentityImpl(principal, groups.getProperty(name, "").trim());
             } catch (IOException e) {
                 throw new RealmUnavailableException(e);
             }
@@ -165,12 +165,17 @@ public class PropertiesSubjectSupplemental extends PropertiesFileLoader implemen
 
         private class RealmIdentityImpl implements RealmIdentity {
 
-            private final String name;
+            private final Principal principal;
             private final String groups;
 
-            private RealmIdentityImpl(final String name, final String groups) {
-                this.name = name;
+            private RealmIdentityImpl(final Principal principal, final String groups) {
+                this.principal = principal;
                 this.groups = groups;
+            }
+
+            @Override
+            public Principal getRealmIdentityPrincipal() {
+                return principal;
             }
 
             @Override
@@ -210,7 +215,7 @@ public class PropertiesSubjectSupplemental extends PropertiesFileLoader implemen
                     for (String current : temp) {
                         String cleaned = current.trim();
                         if (cleaned.length() > 0) {
-                            SECURITY_LOGGER.tracef("Adding group '%s' for identity '%s'.", cleaned, name);
+                            SECURITY_LOGGER.tracef("Adding group '%s' for identity '%s'.", cleaned, principal.getName());
                             groups.add(cleaned);
                         }
                     }
@@ -220,7 +225,7 @@ public class PropertiesSubjectSupplemental extends PropertiesFileLoader implemen
 
                     return AuthorizationIdentity.basicIdentity(new MapAttributes(Collections.unmodifiableMap(groupsAttributeMap)));
                 } else {
-                    SECURITY_LOGGER.tracef("No groups found for identity '%s' in properties file.", name);
+                    SECURITY_LOGGER.tracef("No groups found for identity '%s' in properties file.", principal.getName());
                     return AuthorizationIdentity.EMPTY;
                 }
             }
