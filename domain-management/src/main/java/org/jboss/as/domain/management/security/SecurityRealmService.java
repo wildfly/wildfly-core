@@ -79,6 +79,7 @@ import org.wildfly.security.auth.realm.AggregateSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismConfiguration.Builder;
+import org.wildfly.security.auth.server.MechanismConfigurationSelector;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
@@ -182,6 +183,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 // If additional configuration is added it needs to be added to the duplication for Kerberos authentication for both HTTP and SASL below.
                 configurationMap.put(mechanism,
                         MechanismConfiguration.builder()
+                            .setPreRealmRewriter(currentService.getPrincipalMapper())
                             .setRealmMapper((p, e) -> mechanism.toString())
                             .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName(name).build())
                             .build());
@@ -202,6 +204,24 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
         SecurityDomain securityDomain = domainBuilder.build();
 
+        MechanismConfigurationSelector mcs = (mi) -> {
+            AuthMechanism mechanism = toAuthMechanism(mi.getMechanismType(), mi.getMechanismName());
+            if (mechanism != null) {
+                final MechanismConfiguration resolved = configurationMap.get(mechanism);
+                if (AuthMechanism.KERBEROS.equals(mechanism)) {
+                    Builder builder = MechanismConfiguration.builder()
+                                          .setPreRealmRewriter(resolved.getPreRealmRewriter())
+                                          .setRealmMapper(resolved.getRealmMapper());
+                    resolved.getMechanismRealmNames().forEach(s -> builder.addMechanismRealm(resolved.getMechanismRealmConfiguration(s)));
+                    builder.setServerCredential((SecurityFactory<Credential>) () -> getGSSKerberosCredential(mi.getProtocol(), mi.getHostName()));
+
+                    return builder.build();
+                }
+                return resolved;
+            }
+            return null;
+        };
+
         HttpAuthenticationFactory.Builder httpBuilder = HttpAuthenticationFactory.builder();
         httpBuilder.setSecurityDomain(securityDomain);
 
@@ -215,22 +235,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         httpServerFactory = new SortedServerMechanismFactory(httpServerFactory, SecurityRealmService::compare);
 
         httpBuilder.setFactory(httpServerFactory);
-        httpBuilder.setMechanismConfigurationSelector((mi) -> {
-            AuthMechanism mechanism = toAuthMechanism(mi.getMechanismType(), mi.getMechanismName());
-            if (mechanism != null) {
-                final MechanismConfiguration resolved = configurationMap.get(mechanism);
-                if (AuthMechanism.KERBEROS.equals(mechanism)) {
-                    Builder builder = MechanismConfiguration.builder()
-                                          .setRealmMapper(resolved.getRealmMapper());
-                    resolved.getMechanismRealmNames().forEach(s -> builder.addMechanismRealm(resolved.getMechanismRealmConfiguration(s)));
-                    builder.setServerCredential((SecurityFactory<Credential>) () -> getGSSKerberosCredential(mi.getProtocol(), mi.getHostName()));
-
-                    return builder.build();
-                }
-                return resolved;
-            }
-            return null;
-        });
+        httpBuilder.setMechanismConfigurationSelector(mcs);
         httpAuthenticationFactory = httpBuilder.build();
 
         SaslAuthenticationFactory.Builder saslBuilder = SaslAuthenticationFactory.builder();
@@ -245,13 +250,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         saslServerFactory = new SortedMechanismSaslServerFactory(saslServerFactory, SecurityRealmService::compare);
 
         saslBuilder.setFactory(saslServerFactory);
-        saslBuilder.setMechanismConfigurationSelector((mi) -> {
-            AuthMechanism mechanism = toAuthMechanism(mi.getMechanismType(), mi.getMechanismName());
-            if (mechanism != null) {
-                return configurationMap.get(mechanism);
-            }
-            return null;
-        });
+        saslBuilder.setMechanismConfigurationSelector(mcs);
         saslAuthenticationFactory = saslBuilder.build();
     }
 

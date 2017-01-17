@@ -30,6 +30,7 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -44,6 +45,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.security.auth.SupportLevel;
+import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.credential.Credential;
@@ -137,6 +139,20 @@ public class KerberosCallbackHandler implements Service<CallbackHandlerService>,
     @Override
     public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
         return new KerberosSecurityRealm();
+    }
+
+    @Override
+    public Function<Principal, Principal> getPrincipalMapper() {
+        if (removeRealm) {
+            return p -> {
+                int atIndex = p.getName().indexOf('@');
+                if (atIndex > 0) {
+                    return new NamePrincipal(p.getName().substring(0, atIndex));
+                }
+                return p;
+            };
+        }
+        return CallbackHandlerService.super.getPrincipalMapper();
     }
 
     private class KerberosSecurityRealm implements org.wildfly.security.auth.server.SecurityRealm {
