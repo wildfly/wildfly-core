@@ -28,7 +28,10 @@ import static org.jboss.as.domain.management.RealmConfigurationConstants.SUBJECT
 
 import java.io.File;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.Principal;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,6 +49,10 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.SaslServerFactory;
 
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.Oid;
 import org.jboss.as.core.security.RealmGroup;
 import org.jboss.as.core.security.RealmRole;
 import org.jboss.as.core.security.RealmSubjectUserInfo;
@@ -64,12 +71,14 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedSetValue;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.SecurityFactory;
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.realm.AggregateSecurityRealm;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.MechanismConfiguration.Builder;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
@@ -77,11 +86,13 @@ import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.credential.Credential;
+import org.wildfly.security.credential.GSSKerberosCredential;
 import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.util.FilterServerMechanismFactory;
 import org.wildfly.security.http.util.SecurityProviderServerMechanismFactory;
 import org.wildfly.security.http.util.SetMechanismInformationMechanismFactory;
+import org.wildfly.security.http.util.SortedServerMechanismFactory;
 import org.wildfly.security.sasl.localuser.LocalUserServer;
 import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
 import org.wildfly.security.sasl.util.PropertiesSaslServerFactory;
@@ -99,6 +110,18 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
     public static final String LOADED_USERNAME_KEY = SecurityRealmService.class.getName() + ".LOADED_USERNAME";
     public static final String SKIP_GROUP_LOADING_KEY = SecurityRealmService.class.getName() + ".SKIP_GROUP_LOADING";
 
+    public static final Oid KERBEROS_V5;
+    public static final Oid SPNEGO;
+
+    static {
+        try {
+            KERBEROS_V5 = new Oid("1.2.840.113554.1.2.2");
+            SPNEGO = new Oid("1.3.6.1.5.5.2");
+        } catch (GSSException e) {
+            throw new RuntimeException("Unable to initialise Oid", e);
+        }
+    }
+
     private final InjectedValue<SubjectSupplementalService> subjectSupplemental = new InjectedValue<SubjectSupplementalService>();
     private final InjectedValue<SSLContext> sslContext = new InjectedValue<SSLContext>();
 
@@ -113,6 +136,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
     private final Map<AuthMechanism, CallbackHandlerService> registeredServices = new HashMap<AuthMechanism, CallbackHandlerService>();
     private SaslAuthenticationFactory saslAuthenticationFactory = null;
     private HttpAuthenticationFactory httpAuthenticationFactory = null;
+
 
     public SecurityRealmService(String name, boolean mapGroupsToRoles) {
         this.name = name;
@@ -155,6 +179,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                         currentService.allowGroupLoading() ? new SharedStateSecurityRealm(new AggregateSecurityRealm(elytronRealm, authorizationRealm)) : elytronRealm)
                         .setRoleDecoder(RoleDecoder.simple("GROUPS"))
                         .build();
+                // If additional configuration is added it needs to be added to the duplication for Kerberos authentication for both HTTP and SASL below.
                 configurationMap.put(mechanism,
                         MechanismConfiguration.builder()
                             .setRealmMapper((p, e) -> mechanism.toString())
@@ -187,12 +212,22 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
             AuthMechanism mechanism = toAuthMechanism("HTTP", s);
             return mechanism != null && configurationMap.containsKey(mechanism);
         });
+        httpServerFactory = new SortedServerMechanismFactory(httpServerFactory, SecurityRealmService::compare);
 
         httpBuilder.setFactory(httpServerFactory);
         httpBuilder.setMechanismConfigurationSelector((mi) -> {
             AuthMechanism mechanism = toAuthMechanism(mi.getMechanismType(), mi.getMechanismName());
             if (mechanism != null) {
-                return configurationMap.get(mechanism);
+                final MechanismConfiguration resolved = configurationMap.get(mechanism);
+                if (AuthMechanism.KERBEROS.equals(mechanism)) {
+                    Builder builder = MechanismConfiguration.builder()
+                                          .setRealmMapper(resolved.getRealmMapper());
+                    resolved.getMechanismRealmNames().forEach(s -> builder.addMechanismRealm(resolved.getMechanismRealmConfiguration(s)));
+                    builder.setServerCredential((SecurityFactory<Credential>) () -> getGSSKerberosCredential(mi.getProtocol(), mi.getHostName()));
+
+                    return builder.build();
+                }
+                return resolved;
             }
             return null;
         });
@@ -230,6 +265,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                         return AuthMechanism.CLIENT_CERT;
                     case "JBOSS-LOCAL-USER":
                         return AuthMechanism.LOCAL;
+                    case "GSSAPI":
+                        return AuthMechanism.KERBEROS;
                     case "PLAIN":
                         return AuthMechanism.PLAIN;
                 }
@@ -240,6 +277,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                         return AuthMechanism.CLIENT_CERT;
                     case "DIGEST":
                         return AuthMechanism.DIGEST;
+                    case "SPNEGO":
+                        return AuthMechanism.KERBEROS;
                     case "BASIC":
                         return AuthMechanism.PLAIN;
                 }
@@ -257,6 +296,9 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         switch (name) {
             case "JBOSS-LOCAL-USER":
                 return 10;
+            case "GSSAPI":
+            case "SPNEGO":
+                return 5;
             default:
                 return 0;
         }
@@ -493,6 +535,25 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
     public CallbackHandlerFactory getSecretCallbackHandlerFactory() {
         return secretCallbackFactory.getOptionalValue();
+    }
+
+    private GSSKerberosCredential getGSSKerberosCredential(final String protocol, final String forHost)
+            throws GeneralSecurityException {
+        SubjectIdentity subjectIdentity = getSubjectIdentity(protocol, forHost);
+        if (subjectIdentity == null) {
+            throw ROOT_LOGGER.noSubjectIdentityForProtocolAndHost(protocol, forHost);
+        }
+
+        final GSSManager manager = GSSManager.getInstance();
+        try {
+            GSSCredential gssCredential = Subject.doAs(subjectIdentity.getSubject(),
+                    (PrivilegedExceptionAction<GSSCredential>) () -> manager.createCredential(null,
+                            GSSCredential.DEFAULT_LIFETIME, new Oid[] { KERBEROS_V5, SPNEGO }, GSSCredential.ACCEPT_ONLY));
+
+            return new GSSKerberosCredential(gssCredential);
+        } catch (PrivilegedActionException e) {
+            throw new GeneralSecurityException(e.getCause());
+        }
     }
 
     static class SharedStateSecurityRealm implements org.wildfly.security.auth.server.SecurityRealm {
