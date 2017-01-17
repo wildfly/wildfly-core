@@ -71,6 +71,15 @@
             <artifactId>wildfly-core-build</artifactId>
             <type>zip</type>
         </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-vault-test-feature-pack</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-jmx</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
