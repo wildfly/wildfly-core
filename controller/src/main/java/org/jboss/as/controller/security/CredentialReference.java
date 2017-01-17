@@ -17,7 +17,6 @@
  */
 package org.jboss.as.controller.security;
 
-import javax.security.auth.Destroyable;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -60,7 +59,7 @@ import java.util.StringTokenizer;
  *
  * @author <a href="mailto:pskopek@redhat.com">Peter Skopek</a>
  */
-public final class CredentialReference implements Destroyable {
+public final class CredentialReference {
 
     /**
      * Required capability by credential-reference
