@@ -17,10 +17,10 @@
  */
 package org.jboss.as.controller.security;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
+import java.io.IOException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.StringTokenizer;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -35,7 +35,6 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.credential.Credential;
@@ -45,10 +44,6 @@ import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.credential.source.CredentialStoreCredentialSource;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.password.interfaces.ClearPassword;
-
-import java.io.IOException;
-import java.security.spec.AlgorithmParameterSpec;
-import java.util.StringTokenizer;
 
 /**
  * Utility class holding attribute definitions for credential-reference attribute in the model.
@@ -134,8 +129,8 @@ public final class CredentialReference {
     public static ObjectTypeAttributeDefinition.Builder getAttributeBuilder(String name, String xmlName, boolean allowNull) {
         return new ObjectTypeAttributeDefinition.Builder(name, credentialStoreAttribute, credentialAliasAttribute, credentialTypeAttribute, clearTextAttribute)
                 .setXmlName(xmlName)
-                .setAttributeMarshaller(credentialReferenceAttributeMarshaller())
-                .setAttributeParser(credentialReferenceAttributeParser())
+                .setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT)
+                .setAttributeParser(AttributeParser.OBJECT_PARSER)
                 .setAllowNull(allowNull);
     }
 
@@ -161,43 +156,6 @@ public final class CredentialReference {
             return null;
         }
         return null;
-    }
-
-    private static AttributeMarshaller credentialReferenceAttributeMarshaller() {
-        return new AttributeMarshaller() {
-            @Override
-            public void marshallAsElement(AttributeDefinition attribute, ModelNode credentialReferenceModelNode, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-                writer.writeStartElement(attribute.getXmlName());
-                if (credentialReferenceModelNode.hasDefined(clearTextAttribute.getName())) {
-                    clearTextAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
-                } else {
-                    credentialStoreAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
-                    credentialAliasAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
-                    credentialTypeAttribute.marshallAsAttribute(credentialReferenceModelNode, writer);
-                }
-                writer.writeEndElement();
-            }
-
-            @Override
-            public boolean isMarshallableAsElement() {
-                return true;
-            }
-
-        };
-    }
-
-    private static AttributeParser credentialReferenceAttributeParser() {
-        return new AttributeParser() {
-            @Override
-            public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
-                AttributeParser.OBJECT_PARSER.parseElement(attribute, reader, operation);
-            }
-
-            @Override
-            public boolean isParseAsElement() {
-                return true;
-            }
-        };
     }
 
     /**
