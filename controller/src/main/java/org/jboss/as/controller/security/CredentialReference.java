@@ -274,18 +274,22 @@ public final class CredentialReference implements Destroyable {
                     }
                     throw ControllerLogger.ROOT_LOGGER.nameOfCredentialStoreHasToBeSpecified();
                 } else {
-                    // clear text password
-                    return new CredentialSource() {
-                        @Override
-                        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
-                            return credentialType == PasswordCredential.class ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
-                        }
+                    if (secret != null) {
+                        // clear text password
+                        return new CredentialSource() {
+                            @Override
+                            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
+                                return credentialType == PasswordCredential.class ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+                            }
 
-                        @Override
-                        public <C extends Credential> C getCredential(Class<C> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
-                            return credentialType.cast(new PasswordCredential(ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR, secret.toCharArray())));
-                        }
-                    };
+                            @Override
+                            public <C extends Credential> C getCredential(Class<C> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
+                                return credentialType.cast(new PasswordCredential(ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR, secret.toCharArray())));
+                            }
+                        };
+                    } else {
+                        return null;  // this indicates use of original method to get password from configuration
+                    }
                 }
             }
         };
