@@ -69,6 +69,7 @@
         <module>shared</module>
         <module>test-runner</module>
         <module>standalone</module>
+        <module>vault-test-feature-pack</module>
     </modules>
 
 

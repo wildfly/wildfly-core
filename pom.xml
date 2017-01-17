@@ -901,6 +901,19 @@
 
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-vault-test-feature-pack</artifactId>
+                <type>pom</type>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-vault-test-feature-pack</artifactId>
+                <type>zip</type>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-version</artifactId>
                 <version>${project.version}</version>
             </dependency>

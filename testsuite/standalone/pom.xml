@@ -4,7 +4,7 @@
   Set these VM properties in your IDE debugger
 
   -Djava.util.logging.manager=org.jboss.logmanager.LogManager
-  -Djboss.home=${workspace_loc:wildfly-build}/target/wildfly-3.0.0.Alpha20-SNAPSHOT 
+  -Djboss.home=${workspace_loc:wildfly-build}/target/wildfly-3.0.0.Alpha20-SNAPSHOT
   -DallowConnectingToRunningServer=true
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -69,6 +69,11 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-core-build</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-vault-test-feature-pack</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>
