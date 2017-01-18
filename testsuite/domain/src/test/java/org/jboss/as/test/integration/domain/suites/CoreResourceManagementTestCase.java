@@ -138,6 +138,8 @@ public class CoreResourceManagementTestCase {
 
     private static final String fileSeparator = System.getProperty("file.separator");
 
+    private static int workerName = 1;
+
     static {
         ROOT_PROP_ADDRESS.add(SYSTEM_PROPERTY, TEST);
         ROOT_PROP_ADDRESS.protect();
@@ -675,15 +677,15 @@ public class CoreResourceManagementTestCase {
     public void testCannotInvokeManagedServerOperations() throws Exception {
         final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
 
-        ModelNode serverAddTf = getAddThreadFactoryOperation(
-                new ModelNode().add("host", "master").add("server", "main-one").add("subsystem", "io").add("worker", "default"));
+        ModelNode serverAddTf = getAddWorkerOperation(
+                new ModelNode().add("host", "master").add("server", "main-one").add("subsystem", "io").add("worker", ("cannot-" + workerName++)));
 
         ModelNode desc = validateFailedResponse(masterClient.execute(serverAddTf));
         String errorCode = getNotAuthorizedErrorCode();
         Assert.assertTrue(desc.toString() + " does not contain " + errorCode, desc.toString().contains(errorCode));
 
-        ModelNode slaveThreeAddress = new ModelNode().add("host", "slave").add("server", "main-three").add("subsystem", "io").add("worker", "default");
-        serverAddTf = getAddThreadFactoryOperation(slaveThreeAddress);
+        ModelNode slaveThreeAddress = new ModelNode().add("host", "slave").add("server", "main-three").add("subsystem", "io").add("worker", ("cannot-" + workerName++));
+        serverAddTf = getAddWorkerOperation(slaveThreeAddress);
 
         desc = validateFailedResponse(masterClient.execute(serverAddTf));
         Assert.assertTrue(desc.toString() + " does not contain " + errorCode, desc.toString().contains(errorCode));
@@ -953,7 +955,7 @@ public class CoreResourceManagementTestCase {
         goodServerOp.get(OP).set(READ_RESOURCE_OPERATION);
         goodServerOp.get(OP_ADDR).set(stepAddress);
         composite.get(STEPS).add(goodServerOp);
-        composite.get(STEPS).add(getAddThreadFactoryOperation(stepAddress.clone().add("worker", "default")));
+        composite.get(STEPS).add(getAddWorkerOperation(stepAddress.clone().add("worker", ("cannot-" + workerName++))));
 
         ModelNode result = masterClient.execute(composite);
 
@@ -996,7 +998,7 @@ public class CoreResourceManagementTestCase {
         goodServerOp.get(OP).set(READ_RESOURCE_OPERATION);
         goodServerOp.get(OP_ADDR).set(stepAddress);
         composite.get(STEPS).add(goodServerOp);
-        composite.get(STEPS).add(getAddThreadFactoryOperation(stepAddress.clone().add("worker", "default")));
+        composite.get(STEPS).add(getAddWorkerOperation(stepAddress.clone().add("worker", ("cannot-" + workerName++))));
 
         ModelNode result = masterClient.execute(composite);
 
@@ -1026,16 +1028,11 @@ public class CoreResourceManagementTestCase {
         }
     }
 
-    private ModelNode getAddThreadFactoryOperation(ModelNode address) {
-
+    private ModelNode getAddWorkerOperation(ModelNode address) {
 
         ModelNode serverTf = new ModelNode();
         serverTf.get(OP).set("add");
         serverTf.get(OP_ADDR).set(address);
-        serverTf.get("group-name").set("AAA");
-        serverTf.get("name").set("BBB");
-        serverTf.get("priority").set(6);
-        serverTf.get("thread-name-pattern").set("Test-ThreadA");
 
         return serverTf;
     }
