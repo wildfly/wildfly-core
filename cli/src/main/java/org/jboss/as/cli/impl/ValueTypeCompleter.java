@@ -48,6 +48,8 @@ import org.jboss.as.cli.parsing.WordCharacterHandler;
 import org.jboss.as.cli.parsing.arguments.ArgumentValueState;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
 
 /**
  * @author Alexey Loubyansky
@@ -320,6 +322,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         CapabilityReferenceCompleter newCompleter(OperationRequestAddress address, String staticPart);
     }
 
+    private static final Logger LOG = Logger.getLogger(ValueTypeCompleter.class);
+
     private static final List<ModelNode> BOOLEAN_LIST = new ArrayList<ModelNode>(2);
     static {
         BOOLEAN_LIST.add(new ModelNode(Boolean.FALSE));
@@ -375,15 +379,24 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         try {
             handler = parse(buffer);
         } catch (CommandFormatException e) {
-            // TODO add logging here
+            if (LOG.isEnabled(Level.WARN)) {
+                LOG.log(Level.WARN, e.getLocalizedMessage(), e);
+            }
             return -1;
         }
-        final Collection<String> foundCandidates = handler.getCandidates(propDescr);
-        if(foundCandidates.isEmpty()) {
+        try {
+            final Collection<String> foundCandidates = handler.getCandidates(propDescr);
+            if (foundCandidates.isEmpty()) {
+                return -1;
+            }
+            candidates.addAll(foundCandidates);
+            return handler.getCompletionIndex();
+        } catch (RuntimeException ex) {
+            if (LOG.isEnabled(Level.WARN)) {
+                LOG.log(Level.WARN, ex.getLocalizedMessage(), ex);
+            }
             return -1;
         }
-        candidates.addAll(foundCandidates);
-        return handler.getCompletionIndex();
     }
 
     protected ValueTypeCallbackHandler parse(String line) throws CommandFormatException {
@@ -554,6 +567,11 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                     return Collections.emptyList();
                 }
 
+                // Wrong syntax, for example: add(providers=[{class-names=[com.example.Class]},>>> class-names=...
+                if (currentInstance instanceof ListInstance) {
+                    return Collections.emptyList();
+                }
+
                 ModelNode pType = propType.get(last.name);
                 if (pType.has(Util.TYPE)) {
                     final ModelNode mt = pType.get(Util.TYPE);
@@ -598,6 +616,12 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                     // The completion index is already at the end of the stream.
                     if ((currentInstance instanceof ListInstance)
                             && !currentInstance.isComplete()) {
+
+                        // Wrong syntax: [{class-names=vvv},cccc
+                        if (last.value instanceof SimpleInstance && isObject(propType)) {
+                            // We have a mismatch there, simple value for a complex type...
+                            return Collections.emptyList();
+                        }
                         // A list of capability references
                         // We can do better by analysing its content.
                         if (currentInstance.type.has(Util.CAPABILITY_REFERENCE)) {
