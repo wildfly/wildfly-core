@@ -22,7 +22,9 @@
 package org.jboss.as.cli.parsing.arguments;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.parsing.EscapeCharacterState;
@@ -87,6 +89,8 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
             flag ^= QUOTES;
         } else if(EscapeCharacterState.ID.equals(stateId)) {
             flag ^= ESCAPE;
+        } else if (BytesValueState.ID.equals(stateId)) {
+            currentState = new BytesState();
         }
     }
 
@@ -167,6 +171,84 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
         void enteredValue();
     }
 
+    class BytesState implements ValueState {
+        private final List<Byte> bytes = new ArrayList<>();
+        private StringBuilder buf;
+        private boolean sep;
+
+        @Override
+        public void addChild(ValueState child) {
+        }
+
+        @Override
+        public String getName() {
+            return null;
+        }
+
+        @Override
+        public void nameSeparator(ParsingContext ctx) throws CommandFormatException {
+        }
+
+        @Override
+        public void itemSeparator() throws CommandFormatException {
+        }
+
+        @Override
+        public void character(char ch) {
+            if (ch == ',' || ch == '}') {
+                bytes.add(buildByte());
+                sep = true;
+            } else {
+                sep = false;
+                if (buf == null) {
+                    buf = new StringBuilder();
+                }
+                buf.append(ch);
+            }
+        }
+
+        private Byte buildByte() {
+            String b = buf.toString().trim();
+            Byte val;
+            if (b.startsWith("0x")) {
+                val = Byte.parseByte(b.substring(2), 16);
+            } else {
+                val = Byte.parseByte(b);
+            }
+            buf.setLength(0);
+            return val;
+        }
+
+        @Override
+        public ModelNode getValue() {
+            if (buf != null && buf.length() > 0) {
+                bytes.add(buildByte());
+            }
+            final ModelNode value = new ModelNode();
+            byte[] arr = new byte[this.bytes.size()];
+            for (int i = 0; i < this.bytes.size(); i++) {
+                arr[i] = this.bytes.get(i);
+            }
+            value.set(arr);
+            return value;
+        }
+
+        @Override
+        public boolean isComposite() {
+            return false;
+        }
+
+        @Override
+        public boolean isOnSeparator() {
+            return sep;
+        }
+
+        @Override
+        public void enteredValue() {
+        }
+
+    }
+
     class DefaultValueState implements ValueState {
 
         protected String name;
@@ -232,10 +314,10 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
                     buf.append(ch);
                 }
             } else if(!Character.isWhitespace(ch)) {
-                buf.append(ch);
+                        buf.append(ch);
                 if(trimToSize >= 0) {
-                    trimToSize = -1;
-                }
+                        trimToSize = -1;
+                    }
             } else if(buf.length() > 0) {
                 if(trimToSize < 0) {
                     trimToSize = buf.length();

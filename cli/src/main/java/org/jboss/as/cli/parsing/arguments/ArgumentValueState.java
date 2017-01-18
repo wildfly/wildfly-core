@@ -39,6 +39,9 @@ public class ArgumentValueState extends DefaultParsingState {
 
     public static final ArgumentValueState INSTANCE = new ArgumentValueState();
 
+    public static final String BYTES_TOKEN = "bytes{";
+    private static final char[] BYTES_TOKEN_CHARS = BYTES_TOKEN.toCharArray();
+
     public ArgumentValueState() {
         super(ID);
         setEnterHandler(new CharacterHandler(){
@@ -55,10 +58,22 @@ public class ArgumentValueState extends DefaultParsingState {
                     case '`':
                         ctx.enterState(BackQuotesState.QUOTES_INCLUDED);
                         break;
-                    default:
-                        ctx.getCallbackHandler().character(ctx);
+                    default: {
+                        if (ch == 'b') {
+                            int tokenLength = getBytesToken(ctx);
+                            if (tokenLength > 0) {
+                                ctx.advanceLocation(tokenLength);
+                                ctx.enterState(BytesValueState.INSTANCE);
+                            } else {
+                                ctx.getCallbackHandler().character(ctx);
+                            }
+                        } else {
+                            ctx.getCallbackHandler().character(ctx);
+                        }
+                    }
                 }
-            }});
+            }
+        });
         setDefaultHandler(new CharacterHandler(){
             @Override
             public void handle(ParsingContext ctx) throws CommandFormatException {
@@ -90,5 +105,29 @@ public class ArgumentValueState extends DefaultParsingState {
                     ctx.leaveState();
                 }
             }});
+    }
+
+    // handle white spaces.
+    public static int getBytesToken(ParsingContext ctx) {
+        String input = ctx.getInput().substring(ctx.getLocation());
+        int tokenOffset = 0;
+        int i = 0;
+        char[] inputChars = input.toCharArray();
+        for (; i < input.length(); i += 1) {
+            char c = inputChars[i];
+            if (c == ' ') {
+                continue;
+            }
+            if (c != BYTES_TOKEN_CHARS[tokenOffset]) {
+                return -1;
+            } else {
+                tokenOffset += 1;
+                if (tokenOffset == BYTES_TOKEN_CHARS.length) {
+                    // Found the token.
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 }
