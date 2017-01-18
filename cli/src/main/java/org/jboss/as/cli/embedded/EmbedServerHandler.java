@@ -23,8 +23,6 @@
 package org.jboss.as.cli.embedded;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,10 +46,8 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
 import org.jboss.stdio.StdioContext;
@@ -69,6 +65,10 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
     private static final String ECHO = "echo";
     private static final String DISCARD_STDOUT = "discard";
+
+    private static final String JBOSS_SERVER_BASE_DIR = "jboss.server.base.dir";
+    private static final String JBOSS_SERVER_CONFIG_DIR = "jboss.server.config.dir";
+    private static final String JBOSS_SERVER_LOG_DIR = "jboss.server.log.dir";
 
     private final AtomicReference<EmbeddedProcessLaunch> serverReference;
     private ArgumentWithValue jbossHome;
@@ -116,6 +116,9 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
         final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
         final File jbossHome = getJBossHome(parsedCmd);
+
+        // set up the expected properties
+        final String baseDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_SERVER_BASE_DIR, jbossHome + File.separator + "standalone");
         String xml = serverConfig.getValue(parsedCmd);
         if (xml == null) {
             xml = dashC.getValue(parsedCmd);
@@ -169,10 +172,14 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                 discardStdoutContext = StdioContext.create(currentContext.getIn(), nullStream, currentContext.getErr());
             }
 
-            // Create our own LogContext
-            final LogContext embeddedLogContext = LogContext.create();
-            // Set up logging from standalone/configuration/logging.properties
-            configureLogContext(embeddedLogContext, jbossHome, ctx);
+            // Configure and get the log context, default to baseDir
+            String serverLogDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_SERVER_LOG_DIR, null);
+            if (serverLogDir == null) {
+                serverLogDir = baseDir + File.separator + "log";
+                WildFlySecurityManager.setPropertyPrivileged(JBOSS_SERVER_LOG_DIR, serverLogDir);
+            }
+            final String serverCfgDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_SERVER_CONFIG_DIR, baseDir + File.separator + "configuration");
+            final LogContext embeddedLogContext = EmbeddedLogContext.configureLogContext(new File(serverLogDir), new File(serverCfgDir), "server.log", ctx);
 
             Contexts localContexts = new Contexts(embeddedLogContext, discardStdoutContext);
             contextSelector = new ThreadLocalContextSelector(localContexts, defaultContexts);
@@ -201,7 +208,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             // if --empty-config is present but the config file already exists we error unless --remove-config has also been used
             if (startEmpty && !removeConfig) {
                 String configFileName = xml == null ? "standalone.xml" : xml;
-                File configFile = new File(jbossHome + File.separator + "standalone/configuration" + File.separator + configFileName);
+                File configFile = new File(serverCfgDir + File.separator + configFileName);
                 if (configFile.exists()) {
                     throw new CommandFormatException("The configuration file " + configFileName + " already exists, please use --remove-existing if you wish to overwrite.");
                 }
@@ -291,28 +298,6 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                 restorer.restoreEnvironment();
             } else if (contextSelector != null) {
                 contextSelector.restore(null);
-            }
-        }
-    }
-
-    private void configureLogContext(LogContext embeddedLogContext, File jbossHome, CommandContext ctx) {
-        File standaloneDir =  new File(jbossHome, "standalone");
-        File configDir =  new File(standaloneDir, "configuration");
-        File logDir =  new File(standaloneDir, "log");
-        File bootLog = new File(logDir, "server.log");
-        File loggingProperties = new File(configDir, "logging.properties");
-        if (loggingProperties.exists()) {
-
-            WildFlySecurityManager.setPropertyPrivileged("org.jboss.boot.log.file", bootLog.getAbsolutePath());
-
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream(loggingProperties);
-                new PropertyConfigurator(embeddedLogContext).configure(fis);
-            } catch (IOException e) {
-                ctx.printLine("Unable to configure embedded server logging from " + loggingProperties);
-            } finally {
-                StreamUtils.safeClose(fis);
             }
         }
     }

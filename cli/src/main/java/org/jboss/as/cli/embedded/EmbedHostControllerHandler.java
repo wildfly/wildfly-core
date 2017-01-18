@@ -23,8 +23,6 @@
 package org.jboss.as.cli.embedded;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,10 +45,8 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
 import org.jboss.stdio.StdioContext;
@@ -70,6 +66,15 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private static final String DISCARD_STDOUT = "discard";
     private static final String DOMAIN_CONFIG = "--domain-config";
     private static final String HOST_CONFIG = "--host-config";
+
+    public static final String JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
+    public static final String JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
+    public static final String JBOSS_DOMAIN_CONTENT_DIR = "jboss.domain.content.dir";
+    public static final String JBOSS_DOMAIN_DEPLOYMENT_DIR = "jboss.domain.deployment.dir";
+    public static final String JBOSS_DOMAIN_TEMP_DIR = "jboss.domain.temp.dir";
+    public static final String JBOSS_DOMAIN_LOG_DIR = "jboss.domain.log.dir";
+    public static final String JBOSS_DOMAIN_DATA_DIR = "jboss.domain.data.dir";
+    public static final String JBOSS_CONTROLLER_TEMP_DIR = "jboss.controller.temp.dir";
 
     private final AtomicReference<EmbeddedProcessLaunch> hostControllerReference;
     private ArgumentWithValue jbossHome;
@@ -112,6 +117,10 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
         final ParsedCommandLine parsedCmd = ctx.getParsedCommandLine();
         final File jbossHome = getJBossHome(parsedCmd);
+
+        // set up the expected properties, default to JBOSS_HOME/standalone
+        final String baseDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_DOMAIN_BASE_DIR, jbossHome + File.separator + "domain");
+
         String domainXml = domainConfig.getValue(parsedCmd);
         if (domainXml == null) {
             domainXml = dashC.getValue(parsedCmd);
@@ -167,10 +176,15 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                 discardStdoutContext = StdioContext.create(currentContext.getIn(), nullStream, currentContext.getErr());
             }
 
-            // Create our own LogContext
-            final LogContext embeddedLogContext = LogContext.create();
-            // Set up logging from standalone/configuration/logging.properties
-            configureLogContext(embeddedLogContext, jbossHome, ctx);
+            // Configure and get the log context
+            String controllerLogDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_DOMAIN_LOG_DIR, null);
+            if (controllerLogDir == null) {
+                controllerLogDir = baseDir + File.separator + "log";
+                WildFlySecurityManager.setPropertyPrivileged(JBOSS_DOMAIN_LOG_DIR, controllerLogDir);
+            }
+            final String controllerCfgDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_DOMAIN_CONFIG_DIR, baseDir + File.separator + "configuration");
+
+            final LogContext embeddedLogContext = EmbeddedLogContext.configureLogContext(new File(controllerLogDir), new File(controllerCfgDir), "host-controller.log", ctx);
 
             Contexts localContexts = new Contexts(embeddedLogContext, discardStdoutContext);
             contextSelector = new ThreadLocalContextSelector(localContexts, defaultContexts);
@@ -275,28 +289,6 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                 restorer.restoreEnvironment();
             } else if (contextSelector != null) {
                 contextSelector.restore(null);
-            }
-        }
-    }
-
-    private void configureLogContext(LogContext embeddedLogContext, File jbossHome, CommandContext ctx) {
-        File standaloneDir =  new File(jbossHome, "domain");
-        File configDir =  new File(standaloneDir, "configuration");
-        File logDir =  new File(standaloneDir, "log");
-        File bootLog = new File(logDir, "server.log");
-        File loggingProperties = new File(configDir, "logging.properties");
-        if (loggingProperties.exists()) {
-
-            WildFlySecurityManager.setPropertyPrivileged("org.jboss.boot.log.file", bootLog.getAbsolutePath());
-
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream(loggingProperties);
-                new PropertyConfigurator(embeddedLogContext).configure(fis);
-            } catch (IOException e) {
-                ctx.printLine("Unable to configure embedded host controller logging from " + loggingProperties);
-            } finally {
-                StreamUtils.safeClose(fis);
             }
         }
     }
