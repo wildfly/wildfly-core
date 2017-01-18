@@ -19,6 +19,7 @@
 package org.jboss.as.test.manualmode.vault;
 
 import java.io.File;
+
 import javax.inject.Inject;
 
 import org.jboss.as.controller.Extension;
@@ -28,10 +29,8 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.server.controller.resources.VaultResourceDefinition;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.test.integration.security.PicketBoxModuleUtil;
 import org.jboss.as.test.manualmode.vault.module.CustomSecurityVault;
-import org.jboss.as.test.manualmode.vault.module.RuntimeVaultReader;
 import org.jboss.as.test.manualmode.vault.module.TestVaultExtension;
 import org.jboss.as.test.manualmode.vault.module.TestVaultParser;
 import org.jboss.as.test.manualmode.vault.module.TestVaultRemoveHandler;
@@ -60,7 +59,6 @@ import org.xnio.IoUtils;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-//@Ignore("this can only work in core, unless we provide AbstractVaultReader which is currently only present in security subsystem")
 public class CustomVaultInModuleTestCase {
     private static final String MODULE_NAME = "test.custom.vault.in.module";
 
@@ -69,7 +67,6 @@ public class CustomVaultInModuleTestCase {
 
     private static TestModule testModule;
     private static TestModule picketLink;
-    private static TestModule securityModule;
 
     @Test
     public void testCustomVault() throws Exception {
@@ -109,7 +106,6 @@ public class CustomVaultInModuleTestCase {
             containerController.stop();
             testModule.remove();
             picketLink.remove();
-            securityModule.remove();
             IoUtils.safeClose(client);
         }
         containerController.stop();
@@ -132,14 +128,6 @@ public class CustomVaultInModuleTestCase {
         path = ArchivePaths.create(path, Extension.class.getName());
         archive.addAsManifestResource(CustomSecurityVault.class.getPackage(), Extension.class.getName(), path);
         testModule.create(true);
-
-        //create fake security subsystem module to have vault reader registered
-        moduleXml = new File(CustomSecurityVault.class.getResource("security-module.xml").toURI());
-        securityModule = new TestModule("org.jboss.as.security", moduleXml);
-        archive = securityModule.addResource("custom-vault-reader.jar")
-                .addClass(RuntimeVaultReader.class);
-        archive.addAsServiceProvider(AbstractVaultReader.class, RuntimeVaultReader.class);
-        securityModule.create(true);
 
         picketLink = PicketBoxModuleUtil.createTestModule();
     }

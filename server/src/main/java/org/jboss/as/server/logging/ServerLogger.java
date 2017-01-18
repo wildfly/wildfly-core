@@ -622,7 +622,7 @@ public interface ServerLogger extends BasicLogger {
      * @return a RuntimeException wrapper
      */
     @Message(id = 76, value = "Error initializing vault --  %s")
-    RuntimeException cannotCreateVault(@Param VaultReaderException cause, VaultReaderException msg);
+    VaultReaderException cannotCreateVault(@Param Throwable cause, Throwable msg);
 
     /**
      * Creates an error message indicating that connecting to the HC failed.
@@ -1134,31 +1134,24 @@ public interface ServerLogger extends BasicLogger {
      * @param t underlying exception
      * @return {@link org.jboss.as.server.services.security.VaultReaderException}
      */
-    @Message(id = 227, value = "Vault Reader Exception:")
-    VaultReaderException vaultReaderException(@Cause Throwable t);
+    @Message(id = 227, value = "Security exception accessing the vault")
+    VaultReaderException vaultReaderException(@Cause Exception e);
+
+    // No longer used
+//    @Message(id = 228, value = "Security Exception")
+//    SecurityException securityException(@Cause Throwable t);
+
+    // No longer used
+//    @Message(id = 229, value = "Security Exception: %s")
+//    SecurityException securityException(String msg);
 
     /**
-     * Create a {@link SecurityException}
-     * @param t underlying exception
-     * @return {@link SecurityException}
+     * Log an error to indicate that the vault is not initialized. This previously was used
+     * to create an exception but has been converted to a log message meant to be logged once.
      */
-    @Message(id = 228, value = "Security Exception")
-    SecurityException securityException(@Cause Throwable t);
-
-    /**
-     * Create a {@link SecurityException}
-     * @param msg message that is passed in creating the exception
-     * @return {@link SecurityException}
-     */
-    @Message(id = 229, value = "Security Exception: %s")
-    SecurityException securityException(String msg);
-
-    /**
-     * Create a {@link SecurityException} to indicate that the vault is not initialized
-     * @return {@link SecurityException}
-     */
-    @Message(id = 230, value = "Vault is not initialized")
-    SecurityException vaultNotInitializedException();
+    @LogMessage(level = ERROR)
+    @Message(id = 230, value = "Vault is not initialized; resolution of vault expressions is not possible")
+    void vaultNotInitializedException();
 
     @Message(id = 231, value = "Could not read or create the server UUID in file: %s")
     IllegalStateException couldNotObtainServerUuidFile(@Cause Throwable cause, Path file);
