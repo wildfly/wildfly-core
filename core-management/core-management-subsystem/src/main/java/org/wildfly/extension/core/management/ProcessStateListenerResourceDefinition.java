@@ -46,7 +46,9 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
 import org.wildfly.extension.core.management.client.ProcessStateListener;
+import org.wildfly.extension.core.management.logging.CoreManagementLogger;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2016 Red Hat inc.
@@ -132,8 +134,12 @@ public class ProcessStateListenerResourceDefinition extends PersistentResourceDe
                 Class<?> clazz = module.getClassLoader().loadClass(className);
                 Object instance = clazz.newInstance();
                 return ProcessStateListener.class.cast(instance);
-            } catch (Exception e) {
-                throw new OperationFailedException(e.getMessage(), e);
+            } catch (ModuleLoadException e) {
+                throw CoreManagementLogger.ROOT_LOGGER.errorToLoadModule(moduleID);
+            } catch (ClassNotFoundException e) {
+                throw CoreManagementLogger.ROOT_LOGGER.errorToLoadModuleClass(className, moduleID);
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw CoreManagementLogger.ROOT_LOGGER.errorToInstantiateClassInstanceFromModule(className, moduleID);
             }
         }
     }
