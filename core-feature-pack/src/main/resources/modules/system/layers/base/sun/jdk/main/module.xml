@@ -89,6 +89,8 @@
                 <path name="sun/font"/>
                 <path name="sun/misc"/>
                 <path name="sun/io"/>
+                <path name="sun/net/spi/nameservice"/>
+                <path name="sun/net/spi/nameservice/dns"/>
                 <path name="sun/nio"/>
                 <path name="sun/nio/ch"/>
                 <path name="sun/nio/cs"/>
