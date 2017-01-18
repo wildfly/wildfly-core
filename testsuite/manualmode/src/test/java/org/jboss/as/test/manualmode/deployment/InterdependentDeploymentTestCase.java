@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.wildfly.core.test.standalone.mgmt;
+package org.jboss.as.test.manualmode.deployment;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,24 +40,66 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.core.testrunner.ServerControl;
+import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
  * Test of deployment ops for deployments that depend on other deployments.
- * Smoke test for issues like MSC-155/MSC-156.
+ * Smoke test for issues like MSC-155/MSC-156/WFCORE-2192.
  *
  * @author Brian Stansberry
  */
 @RunWith(WildflyTestRunner.class)
+@ServerControl(manual = true)
 public class InterdependentDeploymentTestCase {
 
+    private static final String EXECUTOR_PROP = "-Dorg.jboss.msc.directionalExecutor=true";
+
+    @SuppressWarnings("unused")
     @Inject
+    private ServerController container;
+
     private ManagementClient managementClient;
+
+    @Before
+    public void before() throws Exception {
+
+        // ServerController/Server uses prop jvm.args to control what args are passed
+        // to the server process VM. So, add the special EXECUTOR_PROP that turns on
+        // the MSC-159/WFCORE-2192 behavior
+        String existingJvmArgs = System.getProperty("jvm.args");
+        try {
+            if (existingJvmArgs == null) {
+                System.setProperty("jvm.args", EXECUTOR_PROP);
+            } else {
+                System.setProperty("jvm.args", existingJvmArgs + " " + EXECUTOR_PROP);
+            }
+
+            container.start();
+            managementClient = container.getClient();
+        } finally {
+            if (existingJvmArgs == null) {
+                System.clearProperty("jvm.args");
+            } else {
+                System.setProperty("jvm.args", existingJvmArgs);
+            }
+        }
+    }
+
+    @After
+    public void after() {
+        if (container != null) {
+            container.stop();
+        }
+    }
 
     @Test
     public void test() throws Exception {
@@ -107,7 +149,7 @@ public class InterdependentDeploymentTestCase {
         }
 
         // USE A SYSTEM PROPERTY TO EXECUTE full-replace-deployment repeatedly
-        int loops = Integer.parseInt(System.getProperty("InterdependentDeploymentTestCase.count", "1"));
+        int loops = Integer.parseInt(System.getProperty("InterdependentDeploymentTestCase.count", "100"));
         int blockingTime = TimeoutUtil.adjust(30); // set this to fail faster if it fails
         for (int i = 0; i < loops; i++) {
 
