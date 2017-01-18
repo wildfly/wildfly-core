@@ -33,6 +33,7 @@ public interface DomainControllerProtocol extends ModelControllerProtocol {
     byte REGISTER_HOST_CONTROLLER_REQUEST = 0x51;
     byte UNREGISTER_HOST_CONTROLLER_REQUEST = 0x53;
     byte GET_FILE_REQUEST = 0x55;
+    byte SERVER_INSTABILITY_REQUEST = 0x56;
     byte FETCH_DOMAIN_CONFIGURATION_REQUEST = 0x57;
     byte COMPLETE_HOST_CONTROLLER_REGISTRATION = 0x58;
     byte REQUEST_SUBSYSTEM_VERSIONS = 0x59;
@@ -49,4 +50,6 @@ public interface DomainControllerProtocol extends ModelControllerProtocol {
     byte FILE_START = 0x30;
     byte PARAM_FILE_SIZE = 0x31;
     byte FILE_END = 0x32;
+    byte PARAM_SERVER_ID = 0x33;
+
 }

@@ -142,7 +142,8 @@ public class HostControllerConnectionService implements Service<HostControllerCl
                     }
                 }
             });
-            this.client = new HostControllerClient(serverName, connection.getChannelHandler(), connection, managementSubsystemEndpoint);
+            this.client = new HostControllerClient(serverName, connection.getChannelHandler(), connection,
+                    managementSubsystemEndpoint, executorInjector.getValue());
         } catch (Exception e) {
             throw new StartException(e);
         }

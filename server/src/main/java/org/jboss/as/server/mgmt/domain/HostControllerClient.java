@@ -28,7 +28,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.ExecutorService;
 
+import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -48,21 +50,38 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Emanuel Muckenhuber
  */
-public class HostControllerClient implements Closeable {
+public class HostControllerClient implements AbstractControllerService.ControllerInstabilityListener, Closeable {
 
     private final String serverName;
     private final HostControllerConnection connection;
     private final ManagementChannelHandler channelHandler;
-    private final RemoteFileRepositoryExecutorImpl executor;
+    private final RemoteFileRepositoryExecutorImpl repositoryExecutor;
     private volatile ModelController controller;
     private final boolean managementSubsystemEndpoint;
+    private final ExecutorService executorService;
+    private final Runnable unstableNotificationRunnable;
 
-    HostControllerClient(final String serverName, final ManagementChannelHandler channelHandler, final HostControllerConnection connection, final boolean managementSubsystemEndpoint) {
+    HostControllerClient(final String serverName, final ManagementChannelHandler channelHandler, final HostControllerConnection connection,
+                         final boolean managementSubsystemEndpoint, final ExecutorService executorService) {
         this.serverName = serverName;
         this.connection = connection;
         this.channelHandler = channelHandler;
-        this.executor = new RemoteFileRepositoryExecutorImpl();
+        this.repositoryExecutor = new RemoteFileRepositoryExecutorImpl();
         this.managementSubsystemEndpoint = managementSubsystemEndpoint;
+        this.executorService = executorService;
+        // Create and cache the objects that will send any controller instability requests
+        // in order to increase the potential that it will execute in low memory situations
+        final ControllerInstabilityNotificationRequest request = new ControllerInstabilityNotificationRequest();
+        this.unstableNotificationRunnable = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    channelHandler.executeRequest(request, null);
+                } catch (Throwable t) {
+                    // not much we can do. Likely an OOME
+                }
+            }
+        };
     }
 
     /**
@@ -110,13 +129,27 @@ public class HostControllerClient implements Closeable {
      * @return the remote file repository
      */
     RemoteFileRepositoryExecutor getRemoteFileRepository() {
-        return executor;
+        return repositoryExecutor;
     }
 
     @Override
     public void close() throws IOException {
         if(connection != null) {
             connection.close();
+        }
+    }
+
+    /**
+     * Sends the instability notification on to the managing HostController.
+     * {@inheritDoc}
+     */
+    @Override
+    public void controllerUnstable() {
+        try {
+            executorService.submit(unstableNotificationRunnable);
+        } catch (Throwable t) {
+            // See if we can run it directly
+            unstableNotificationRunnable.run();
         }
     }
 
@@ -162,6 +195,27 @@ public class HostControllerClient implements Closeable {
             } catch (Exception e) {
                 throw ServerLogger.ROOT_LOGGER.failedToGetFileFromRemoteRepository(e);
             }
+        }
+    }
+
+    private static class ControllerInstabilityNotificationRequest extends AbstractManagementRequest<Void, Void> {
+
+        private ControllerInstabilityNotificationRequest() {
+        }
+
+        @Override
+        public byte getOperationType() {
+            return DomainServerProtocol.SERVER_INSTABILITY_REQUEST;
+        }
+
+        @Override
+        protected void sendRequest(ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context, FlushableDataOutput output) throws IOException {
+            // nothing to add
+        }
+
+        @Override
+        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context) throws IOException {
+            resultHandler.done(null);
         }
     }
 

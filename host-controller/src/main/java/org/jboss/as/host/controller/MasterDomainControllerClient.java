@@ -78,4 +78,12 @@ public interface MasterDomainControllerClient extends ModelControllerClient {
      * @throws OperationFailedException
      */
     void fetchAndSyncMissingConfiguration(OperationContext context, Resource original) throws OperationFailedException;
+
+    /**
+     * Report to the domain controller that a server has been reported as unstable.
+     * @param serverName  the name of the server
+     */
+    default void reportServerInstability(String serverName) {
+        // default no-op because I'm tired of writing no-op impls in testsuite classes
+    }
 }

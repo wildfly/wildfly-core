@@ -237,6 +237,11 @@ public abstract class ServerTaskExecutor {
             return getServerIdentity().getServerGroupName();
         }
 
+        /** Gets whether the response represents a timeout */
+        public boolean isTimedOut() {
+            return preparedOperation.isTimedOut();
+        }
+
         /**
          * Finalize the transaction. This will return {@code false} in case the local operation failed,
          * but the overall state of the operation is commit=true.

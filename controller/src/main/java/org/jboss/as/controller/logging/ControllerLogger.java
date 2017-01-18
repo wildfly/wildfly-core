@@ -413,9 +413,9 @@ public interface ControllerLogger extends BasicLogger {
     /**
      * Logs a warning message indicating that an operation was interrupted before service stability was reached
      */
-    @LogMessage(level = Level.WARN)
-    @Message(id = 27, value = "Operation was interrupted before stability could be reached")
-    void interruptedWaitingStability();
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 27, value = "Operation was interrupted before service container stability could be reached. Process should be restarted. Step that first updated the service container was '%s' at address '%s'")
+    void interruptedWaitingStability(String operation, PathAddress address);
 
     @LogMessage(level = Level.INFO)
     @Message(id = 28, value = "Attribute '%s' in the resource at address '%s' is deprecated, and may be removed in " +

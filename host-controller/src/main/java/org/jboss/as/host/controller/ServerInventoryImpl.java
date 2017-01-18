@@ -580,6 +580,20 @@ public class ServerInventoryImpl implements ServerInventory {
     }
 
     @Override
+    public void serverUnstable(final String serverProcessName) {
+        final String serverName = ManagedServer.getServerName(serverProcessName);
+        final ManagedServer server = servers.get(serverName);
+        boolean change = true;
+        if (server != null) {
+            change = server.processUnstable();
+        }
+        if (change) {
+            // Pass the news on to the DC
+            domainController.reportServerInstability(serverName);
+        }
+    }
+
+    @Override
     public void serverProcessRemoved(final String serverProcessName) {
         final String serverName = ManagedServer.getServerName(serverProcessName);
         final ManagedServer server = servers.remove(serverName);

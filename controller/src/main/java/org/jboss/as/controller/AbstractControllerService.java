@@ -120,6 +120,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final ControlledProcessState processState;
     private final OperationStepHandler prepareStep;
     private final InjectedValue<ExecutorService> injectedExecutorService = new InjectedValue<ExecutorService>();
+    private final InjectedValue<ControllerInstabilityListener> injectedInstabilityListener = new InjectedValue<ControllerInstabilityListener>();
     private final ExpressionResolver expressionResolver;
     private volatile ModelControllerImpl controller;
     private ConfigurationPersister configurationPersister;
@@ -285,7 +286,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 new ContainerStateMonitor(container),
                 configurationPersister, processType, runningModeControl, prepareStep,
                 processState, executorService, expressionResolver, authorizer, auditLogger, notificationSupport,
-                bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry);
+                bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry,
+                injectedInstabilityListener.getOptionalValue());
 
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
@@ -525,6 +527,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return injectedExecutorService;
     }
 
+    protected InjectedValue<ControllerInstabilityListener> getContainerInstabilityInjector() {
+        return injectedInstabilityListener;
+    }
+
     protected void setConfigurationPersister(final ConfigurationPersister persister) {
         this.configurationPersister = persister;
     }
@@ -637,6 +643,19 @@ public abstract class AbstractControllerService implements Service<ModelControll
          * @return the host name
          */
         protected abstract String getHostName();
+    }
+
+    /**
+     * Listener for notifications that the {@link ModelController} is unstable and a
+     * process restart is necessary.
+     */
+    public interface ControllerInstabilityListener {
+        /**
+         * Notification that the {@link ModelController} should be considered to be unstable,
+         * e.g. due to the service container managed by the {@code ModelController}
+         * not being able to reach stability or due to some unhandled error.
+         */
+        void controllerUnstable();
     }
 
 }
