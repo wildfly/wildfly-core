@@ -21,8 +21,12 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.util.List;
@@ -44,6 +48,9 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 public class LsTestCase extends AbstractCliTestBase {
+
+    private static final String MSG_SHOULD_FAIL = " command should fail.";
+    private static final String MSG_SHOULD_CONTAINS_CORRECT_ERROR = " command should contains correct error message.";
 
     private CommandContext ctx;
 
@@ -112,5 +119,33 @@ public class LsTestCase extends AbstractCliTestBase {
             assertFalse(out.contains("Unrecognized arguments:"));
             assertFalse(out.contains("STORAGE"));
         }
+    }
+
+    /**
+     * Regression test for WFCORE-2021. Ls should return proper error message if wildcard is used.
+     * Subsystem path is used.
+     */
+    @Test
+    public void testWildCardPathInSubsystem() throws Exception {
+        testWildCardCommand("ls /subsystem=*");
+    }
+
+    /**
+     * Regression test for WFCORE-2021. Ls should return proper error message if wildcard is used.
+     * Socket-binding-group path is used.
+     */
+    @Test
+    public void testWildCardPathInSocketBindingGroup() throws Exception {
+        testWildCardCommand("ls /socket-binding-group=*");
+    }
+
+    private void testWildCardCommand(String command) {
+        boolean success = cli.sendLine(command, true);
+        assertThat(String.format("%s%s", command, MSG_SHOULD_FAIL), success, is(false));
+        String out = cli.readOutput();
+        String assertErrMsg = String.format("%s%s", command, MSG_SHOULD_CONTAINS_CORRECT_ERROR);
+        assertThat(assertErrMsg, out, not(containsString("IllegalArgumentException")));
+        assertThat(assertErrMsg, out, not(containsString("Composite operation failed and was rolled back.")));
+        assertThat(assertErrMsg, out, containsString("* is not supported"));
     }
 }

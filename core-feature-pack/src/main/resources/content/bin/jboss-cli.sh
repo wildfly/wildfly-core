@@ -1,5 +1,13 @@
 #!/bin/sh
 
+clean_tty()
+{
+    # Bourne shell, 128 + n, so 137 for Kill -9
+    if [ $1 = 137 ]; then
+      stty sane
+    fi
+}
+
 CLI_OPTS=""
 while [ "$#" -gt 0 ]
 do
@@ -85,7 +93,9 @@ fi
 LOG_CONF=`echo $JAVA_OPTS | grep "logging.configuration"`
 if [ "x$LOG_CONF" = "x" ]; then
     eval \"$JAVA\" $JAVA_OPTS \"-Dlogging.configuration=file:"$JBOSS_HOME"/bin/jboss-cli-logging.properties\" -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.jboss.as.cli "$CLI_OPTS"
+    clean_tty $?
 else
     echo "logging.configuration already set in JAVA_OPTS"
     eval \"$JAVA\" $JAVA_OPTS -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.jboss.as.cli "$CLI_OPTS"
+    clean_tty $?
 fi

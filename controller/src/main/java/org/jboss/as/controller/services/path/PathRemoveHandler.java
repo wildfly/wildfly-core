@@ -31,7 +31,6 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager.Event;
 import org.jboss.as.controller.services.path.PathManagerService.PathEventContextImpl;
 import org.jboss.dmr.ModelNode;
@@ -90,7 +89,7 @@ public class PathRemoveHandler implements OperationStepHandler { // TODO make th
 
         final String name = context.getCurrentAddressValue();
 
-        final ModelNode model = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
+        final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
 
         if (model.get(READ_ONLY.getName()).asBoolean(false)) {
             throw ControllerLogger.ROOT_LOGGER.cannotRemoveReadOnlyPath(name);

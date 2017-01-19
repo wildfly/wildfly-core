@@ -21,6 +21,7 @@ package org.jboss.as.cli.gui;
 import java.awt.Cursor;
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Supplier;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -42,13 +43,13 @@ import org.jboss.dmr.Property;
 public class CommandExecutor {
 
     private final CliGuiContext cliGuiCtx;
-    private final ModelControllerClient client;
+    private final Supplier<ModelControllerClient> client;
     private final CommandContext cmdCtx;
 
-    public CommandExecutor(CliGuiContext cliGuiCtx) {
+    public CommandExecutor(CliGuiContext cliGuiCtx, Supplier<ModelControllerClient> client) {
         this.cliGuiCtx = cliGuiCtx;
         this.cmdCtx = cliGuiCtx.getCommmandContext();
-        this.client = cmdCtx.getModelControllerClient();
+        this.client = client == null ? () -> cliGuiCtx.getCommmandContext().getModelControllerClient() : client;
         Runtime.getRuntime().addShutdownHook(new Thread(new ClientCloserShutdownHook()));
     }
 
@@ -56,7 +57,7 @@ public class CommandExecutor {
         @Override
         public void run() {
             try {
-                CommandExecutor.this.client.close();
+                CommandExecutor.this.client.get().close();
             } catch (IOException ioe) {
                 // Do nothing.  The close() method has given its best shot.
             }
@@ -133,7 +134,7 @@ public class CommandExecutor {
             if (useWaitCursor) {
                 cliGuiCtx.getMainWindow().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             }
-            return client.executeOperation(OperationBuilder.create(request).build(), OperationMessageHandler.DISCARD);
+            return client.get().executeOperation(OperationBuilder.create(request).build(), OperationMessageHandler.DISCARD);
         } finally {
             if (useWaitCursor) {
                 cliGuiCtx.getMainWindow().setCursor(Cursor.getDefaultCursor());

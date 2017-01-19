@@ -22,9 +22,12 @@
 package org.jboss.as.server.services.security;
 
 /**
+ * Exception thrown when access to the vault fails. Not to be used for simple lookup misses
+ * (i.e. the vault is accessible but does not contain the requested data.)
+ *
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-public class VaultReaderException extends Exception {
+public class VaultReaderException extends RuntimeException {
     public VaultReaderException(Throwable cause) {
         super(cause);
     }

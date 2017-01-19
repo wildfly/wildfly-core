@@ -166,9 +166,11 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
     }
 
     private static void reportImmediateDependants(List<String> problemList, ModelNode failureDescription) {
-        ModelNode problemListNode = failureDescription.get(ControllerLogger.ROOT_LOGGER.servicesMissingDependencies());
-        for (String problem: problemList) {
-            problemListNode.add(problem);
+        if (!problemList.isEmpty()) {
+            ModelNode problemListNode = failureDescription.get(ControllerLogger.ROOT_LOGGER.servicesMissingDependencies());
+            for (String problem : problemList) {
+                problemListNode.add(problem);
+            }
         }
     }
 

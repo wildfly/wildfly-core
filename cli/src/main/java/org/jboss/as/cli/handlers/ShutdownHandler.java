@@ -35,7 +35,7 @@ import org.jboss.as.cli.accesscontrol.AccessRequirementBuilder;
 import org.jboss.as.cli.accesscontrol.PerNodeOperationAccess;
 import org.jboss.as.cli.embedded.EmbeddedProcessLaunch;
 import org.jboss.as.cli.impl.ArgumentWithValue;
-import org.jboss.as.cli.impl.AwaiterModelControllerClient;
+import org.jboss.as.cli.AwaiterModelControllerClient;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;

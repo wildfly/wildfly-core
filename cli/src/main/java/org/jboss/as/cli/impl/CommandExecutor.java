@@ -21,6 +21,7 @@
  */
 package org.jboss.as.cli.impl;
 
+import org.jboss.as.cli.AwaiterModelControllerClient;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;

@@ -70,6 +70,9 @@ public class DefaultOperationCandidatesProviderTestCase {
             + "                ]"
             + "            }";
 
+    private static final String bytes_content = "{\n"
+            + "            \"type\" => BYTES}";
+
     @Test
     public void testAttributeValueCompleter() throws Exception {
         CommandContext ctx = CommandContextFactory.getInstance().newCommandContext();
@@ -118,6 +121,22 @@ public class DefaultOperationCandidatesProviderTestCase {
             Property prop = new Property("arg", ModelNode.fromString(string_content));
             CommandLineCompleter completer = DefaultOperationCandidatesProvider.getCompleter(prop, ctx, address);
             assertEquals(null, completer);
+        }
+
+        {
+            Property prop = new Property("arg", ModelNode.fromString(bytes_content));
+            CommandLineCompleter completer = DefaultOperationCandidatesProvider.getCompleter(prop, ctx, address);
+            List<String> candidates = new ArrayList<>();
+            completer.complete(ctx, "", 0, candidates);
+            assertEquals(Arrays.asList("bytes{"), candidates);
+        }
+
+        {
+            Property prop = new Property("arg", ModelNode.fromString(bytes_content));
+            CommandLineCompleter completer = DefaultOperationCandidatesProvider.getCompleter(prop, ctx, address);
+            List<String> candidates = new ArrayList<>();
+            completer.complete(ctx, "bytes", 0, candidates);
+            assertEquals(Arrays.asList("bytes{"), candidates);
         }
     }
 }
