@@ -138,22 +138,17 @@ public final class CredentialReference {
      * Utility method to return part of {@link ObjectTypeAttributeDefinition} for credential reference attribute.
      *
      * {@see CredentialReference#getAttributeDefinition}
-     * @param context operational context
-     * @param attributeDefinition attribute definition
-     * @param model model
+     * @param credentialReferenceValue value of credential reference attribute
      * @param name name of part to return (supported names: {@link #STORE} {@link #ALIAS} {@link #TYPE}
      *    {@link #CLEAR_TEXT}
      * @return value of part as {@link String}
      * @throws OperationFailedException when something goes wrong
      */
-    public static String credentialReferencePartAsStringIfDefined(OperationContext context, ObjectTypeAttributeDefinition attributeDefinition, ModelNode model, String name) throws OperationFailedException {
-        ModelNode value = attributeDefinition.resolveModelAttribute(context, model);
-        if (value.isDefined()) {
-            ModelNode namedNode = value.get(name);
-            if (namedNode != null && namedNode.isDefined()) {
-                return namedNode.asString();
-            }
-            return null;
+    public static String credentialReferencePartAsStringIfDefined(ModelNode credentialReferenceValue, String name) throws OperationFailedException {
+        assert !credentialReferenceValue.isDefined() : credentialReferenceValue;
+        ModelNode result = credentialReferenceValue.get(name);
+        if (result.isDefined()) {
+            return result.asString();
         }
         return null;
     }
@@ -171,10 +166,12 @@ public final class CredentialReference {
      */
     public static ExceptionSupplier<CredentialSource, Exception> getCredentialSourceSupplier(OperationContext context, ObjectTypeAttributeDefinition credentialReferenceAttributeDefinition, ModelNode model, ServiceBuilder<?> serviceBuilder) throws OperationFailedException {
 
-        final String credentialStoreName = credentialReferencePartAsStringIfDefined(context, credentialReferenceAttributeDefinition, model, CredentialReference.STORE);
-        final String credentialAlias = credentialReferencePartAsStringIfDefined(context, credentialReferenceAttributeDefinition, model, CredentialReference.ALIAS);
-        final String credentialType = credentialReferencePartAsStringIfDefined(context, credentialReferenceAttributeDefinition, model, CredentialReference.TYPE);
-        final String secret = credentialReferencePartAsStringIfDefined(context, credentialReferenceAttributeDefinition, model, CredentialReference.CLEAR_TEXT);
+        ModelNode value = credentialReferenceAttributeDefinition.resolveModelAttribute(context, model);
+
+        final String credentialStoreName = credentialReferencePartAsStringIfDefined(value, CredentialReference.STORE);
+        final String credentialAlias = credentialReferencePartAsStringIfDefined(value, CredentialReference.ALIAS);
+        final String credentialType = credentialReferencePartAsStringIfDefined(value, CredentialReference.TYPE);
+        final String secret = credentialReferencePartAsStringIfDefined(value, CredentialReference.CLEAR_TEXT);
 
         final InjectedValue<CredentialStore> credentialStoreInjectedValue = new InjectedValue<>();
         if (credentialAlias != null) {
