@@ -222,7 +222,7 @@
 
         <dependency>
             <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-linux-i686</artifactId>
+            <artifactId>wildfly-openssl-linux-i386</artifactId>
         </dependency>
 
         <dependency>
@@ -232,7 +232,7 @@
 
         <dependency>
             <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-windows-i686</artifactId>
+            <artifactId>wildfly-openssl-windows-i386</artifactId>
         </dependency>
 
         <dependency>
