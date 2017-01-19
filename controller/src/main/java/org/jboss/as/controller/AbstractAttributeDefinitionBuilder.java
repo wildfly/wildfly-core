@@ -734,6 +734,30 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * <p>
      * This method is a convenience method equivalent to calling
      * {@link #setCapabilityReference(CapabilityReferenceRecorder)}
+     * passing in a {@link CapabilityReferenceRecorder.CompositeAttributeDependencyRecorder}
+     * constructed using the parameters passed to this method.
+     * <p>
+     * <strong>NOTE:</strong> This method of recording capability references is only suitable for use in attributes
+     * only used in resources that themselves expose a single capability. When the capability requirement
+     * is registered, the dependent capability will be that capability.
+     *
+     * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
+     *                             represented by the attribute's value
+     * @return the builder
+     * @see SimpleAttributeDefinition#addCapabilityRequirements(OperationContext, ModelNode)
+     * @see SimpleAttributeDefinition#removeCapabilityRequirements(OperationContext, ModelNode)
+     */
+    public BUILDER setCapabilityReference(String referencedCapability, SimpleAttributeDefinition ... dependantAttributes) {
+        referenceRecorder = new CapabilityReferenceRecorder.CompositeAttributeDependencyRecorder(referencedCapability, dependantAttributes);
+        return (BUILDER) this;
+    }
+
+    /**
+     * Records that this attribute's value represents a reference to an instance of a
+     * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability}.
+     * <p>
+     * This method is a convenience method equivalent to calling
+     * {@link #setCapabilityReference(CapabilityReferenceRecorder)}
      * passing in a {@link org.jboss.as.controller.CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder}
      * constructed using the parameters passed to this method.
      *

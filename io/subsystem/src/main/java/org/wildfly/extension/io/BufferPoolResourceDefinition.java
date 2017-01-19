@@ -52,7 +52,7 @@ import org.xnio.Pool;
 class BufferPoolResourceDefinition extends PersistentResourceDefinition {
 
     static final RuntimeCapability<Void> IO_POOL_RUNTIME_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.io.buffer-pool", true, Pool.class).build();
+            RuntimeCapability.Builder.of(IOServices.BUFFER_POOL_CAPABILITY_NAME, true, Pool.class).build();
 
     private static final int defaultBufferSize;
     private static final int defaultBuffersPerRegion;

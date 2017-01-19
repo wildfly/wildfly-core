@@ -22,11 +22,6 @@
 
 package org.jboss.as.server.services.net;
 
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
-
 /**
  * TODO remove this once we can get the superclass out of the controller module to a place
  * where the NetworkInterface class is visible.
@@ -41,12 +36,6 @@ public class InterfaceRemoveHandler extends org.jboss.as.controller.operations.c
      * Create the InterfaceRemoveHandler
      */
     protected InterfaceRemoveHandler() {
-    }
-
-    @Override
-    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        super.recordCapabilitiesAndRequirements(context, operation, resource);
-        context.deregisterCapability(InterfaceResourceDefinition.INTERFACE_CAPABILITY.getDynamicName(context.getCurrentAddressValue()));
     }
 
 

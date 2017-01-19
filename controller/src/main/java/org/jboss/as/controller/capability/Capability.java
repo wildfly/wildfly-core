@@ -20,6 +20,8 @@ package org.jboss.as.controller.capability;
 
 import java.util.Set;
 
+import org.jboss.as.controller.PathAddress;
+
 /**
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
@@ -39,4 +41,6 @@ public interface Capability {
     boolean isDynamicallyNamed();
 
     String getDynamicName(String dynamicNameElement);
+
+    String getDynamicName(PathAddress address);
 }

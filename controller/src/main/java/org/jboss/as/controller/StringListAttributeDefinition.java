@@ -59,35 +59,6 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
         return result;
     }
 
-    @Override
-    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
-        handleCapabilityRequirements(context, attributeValue, false);
-    }
-
-    @Override
-    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
-        handleCapabilityRequirements(context, attributeValue, true);
-    }
-
-    private void handleCapabilityRequirements(OperationContext context, ModelNode attributeValue, boolean remove) {
-        if (referenceRecorder != null && attributeValue.isDefined()) {
-            List<ModelNode> valueList = attributeValue.asList();
-            String[] attributeValues = new String[valueList.size()];
-            int position = 0;
-            for (ModelNode current : valueList) {
-                if (current.isDefined() == false || current.getType().equals(ModelType.EXPRESSION)) {
-                    return;
-                }
-                attributeValues[position++] = current.asString();
-            }
-            if (remove) {
-                referenceRecorder.removeCapabilityRequirements(context, getName(), attributeValues);
-            } else {
-                referenceRecorder.addCapabilityRequirements(context, getName(), attributeValues);
-            }
-        }
-    }
-
     public static class Builder extends ListAttributeDefinition.Builder<Builder, StringListAttributeDefinition> {
 
         public Builder(final String name) {

@@ -31,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.InputStream;
 import java.util.Set;
 
+import org.jboss.as.controller.CapabilitiesServiceTarget;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -55,7 +56,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.ServiceTarget;
 import org.junit.Test;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
@@ -322,7 +322,7 @@ public class AuthorizedAddressTest {
         }
 
         @Override
-        public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
+        public CapabilitiesServiceTarget getServiceTarget() throws UnsupportedOperationException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 

@@ -55,6 +55,7 @@ import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BlockingTimeout;
+import org.jboss.as.controller.CapabilitiesServiceTarget;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.NoopOperationStepHandler;
 import org.jboss.as.controller.NotificationDefinition;
@@ -99,7 +100,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -468,8 +468,7 @@ public abstract class AbstractOperationTestCase {
         public void removeService(ServiceController<?> controller) throws UnsupportedOperationException {
         }
 
-        @Override
-        public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
+        public CapabilitiesServiceTarget getServiceTarget() throws UnsupportedOperationException {
             return null;
         }
 

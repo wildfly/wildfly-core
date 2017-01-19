@@ -52,6 +52,6 @@ public class SocketBindingGroupAddHandler extends AbstractSocketBindingGroupAddH
     @Override
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         super.recordCapabilitiesAndRequirements(context, operation, resource);
-        INCLUDES.addCapabilityRequirements(context, resource.getModel().get(INCLUDES.getName()));
+        INCLUDES.addCapabilityRequirements(context, resource, resource.getModel().get(INCLUDES.getName()));
     }
 }
