@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
+import javax.security.auth.Subject;
 
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
