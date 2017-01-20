@@ -31,6 +31,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
+import org.jboss.as.protocol.ProtocolConnectionUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelReceiver;
 import org.jboss.as.protocol.mgmt.ManagementMessageHandler;
 import org.jboss.remoting3.Channel;
@@ -112,9 +113,11 @@ public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
 
         ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(channelServer.getEndpoint(),
                 new URI("" + URI_SCHEME + "://127.0.0.1:" + PORT + ""),
-                OptionMap.create(Options.SASL_POLICY_NOANONYMOUS, Boolean.FALSE));
+                OptionMap.create(Options.SASL_POLICY_NOANONYMOUS, Boolean.FALSE, Options.SSL_ENABLED, Boolean.FALSE));
+        configuration.setClientBindAddress("127.0.0.1"); // we set this to exercise this code path in ProtocolConnectionUtils.connectSync
+                                                         // The path with no client bind address gets used all the time
 
-        connection = configuration.getEndpoint().connect(configuration.getUri(), OptionMap.create(Options.SSL_ENABLED, false)).get();
+        connection = ProtocolConnectionUtils.connectSync(configuration);
         clientChannel = connection.openChannel(TEST_CHANNEL, OptionMap.EMPTY).get();
         try {
             clientConnectedLatch.await();
