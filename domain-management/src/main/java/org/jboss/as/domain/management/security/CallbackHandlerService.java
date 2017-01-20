@@ -22,8 +22,10 @@
 
 package org.jboss.as.domain.management.security;
 
+import java.security.Principal;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.security.auth.callback.CallbackHandler;
 
@@ -84,6 +86,15 @@ public interface CallbackHandlerService {
      * @return an Elytron {@link SecurityRealm} that is backed by this callback handler.
      */
     SecurityRealm getElytronSecurityRealm();
+
+    /**
+     * Get a principal mapper to be used before the realm is selected.
+     *
+     * @return a principal mapper to be used before the realm is selected.
+     */
+    default Function<Principal, Principal> getPrincipalMapper() {
+        return Function.identity();
+    }
 
     /**
      * Where the Elytron {@link SecurityRealm} is used should group loading also be enabled?
