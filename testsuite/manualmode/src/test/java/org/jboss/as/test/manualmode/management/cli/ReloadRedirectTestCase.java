@@ -21,16 +21,29 @@
  */
 package org.jboss.as.test.manualmode.management.cli;
 
-import javax.inject.Inject;
-import org.jboss.as.test.integration.management.cli.CliProcessWrapper;
-import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.junit.AfterClass;
+import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertTrue;
+
+import java.net.UnknownHostException;
+
+import javax.inject.Inject;
+
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.test.integration.management.cli.CliProcessWrapper;
+import org.jboss.as.test.integration.security.common.CoreUtils;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.dmr.ModelNode;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
+import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -41,17 +54,135 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @ServerControl(manual = true)
 public class ReloadRedirectTestCase {
 
+    public static final int MANAGEMENT_NATIVE_PORT = 9999;
+
     @Inject
     private static ServerController container;
 
     @BeforeClass
     public static void initServer() throws Exception {
         container.start();
+
+        ModelControllerClient client = container.getClient().getControllerClient();
+
+        // Set up native management so we can use it to do cleanup without dealing with https
+
+        // add native socket binding
+        ModelNode operation = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-native", ModelDescriptionConstants.ADD);
+        operation.get("port").set(MANAGEMENT_NATIVE_PORT);
+        operation.get("interface").set("management");
+        CoreUtils.applyUpdate(operation, client);
+
+        // add a temp realm socket binding
+        operation = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
+        operation.get("steps").add(createOpNode("core-service=management/security-realm=native-realm", ModelDescriptionConstants.ADD));
+        ModelNode localAuth = createOpNode("core-service=management/security-realm=native-realm/authentication=local", ModelDescriptionConstants.ADD);
+        localAuth.get("default-user").set("$local");
+        operation.get("steps").add(localAuth);
+        CoreUtils.applyUpdate(operation, client);
+
+        // create native interface
+        operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.ADD);
+        operation.get("security-realm").set("native-realm");
+        operation.get("socket-binding").set("management-native");
+        CoreUtils.applyUpdate(operation, client);
     }
 
     @AfterClass
-    public static void closeServer() throws Exception {
-        container.stop();
+    public static void afterClass() throws Exception {
+        try {
+            // Even though we don't reuse this server, the next test uses the config so we
+            // need to revert the config changes the test made
+            ManagementClient client = getCleanupClient();
+            cleanConfig(client);
+        } finally {
+            container.stop();
+        }
+    }
+
+    private static void cleanConfig(ManagementClient client) throws Exception {
+        Exception e = null;
+        try {
+            removeHttpsMgmt(client);
+        } catch (Exception ex) {
+            e = ex;
+        } finally {
+            try {
+                removeSsl(client);
+            } catch (Exception ex) {
+                if (e == null) e = ex;
+            } finally {
+                try {
+                    removeNativeMgmt(client);
+                } catch (Exception ex) {
+                    if (e == null) e = ex;
+                } finally {
+                    try {
+                        removeNativeRealm(client);
+                    } catch (Exception ex) {
+                        if (e == null) e = ex;
+                    } finally {
+                        try {
+                            remoteNativeMgmtPort(client);
+                        } catch (Exception ex) {
+                            if (e == null) e = ex;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (e != null) {
+            throw e;
+        }
+    }
+
+    private static void removeHttpsMgmt(ManagementClient client) throws UnsuccessfulOperationException {
+        ModelNode undefine = createOpNode("core-service=management/management-interface=http-interface",
+                "undefine-attribute");
+        undefine.get("name").set("secure-socket-binding");
+        client.executeForResult(undefine);
+    }
+
+    private static void removeSsl(ManagementClient client) {
+        String addr = "core-service=management/security-realm=ManagementRealm/server-identity=ssl";
+        try {
+            ModelNode remove = createOpNode(addr,"remove");
+            client.executeForResult(remove);
+        } catch (UnsuccessfulOperationException uoe) {
+            // It's ok if the resource doesn't exist due to failure in the test to create it
+            try {
+                client.executeForResult(createOpNode(addr,"read-resource"));
+                // success means it wasn't a missing resource
+                throw uoe;
+            } catch (UnsuccessfulOperationException ignored) {
+                // assume it's due to no such resource
+            }
+        }
+    }
+
+    private static void removeNativeMgmt(ManagementClient client) throws UnsuccessfulOperationException {
+        ModelNode remove = createOpNode("core-service=management/management-interface=native-interface",
+                "remove");
+        client.executeForResult(remove);
+    }
+
+    private static void removeNativeRealm(ManagementClient client) throws UnsuccessfulOperationException {
+        ModelNode remove = createOpNode("core-service=management/security-realm=native-realm",
+                "remove");
+        client.executeForResult(remove);
+    }
+
+    private static void remoteNativeMgmtPort(ManagementClient client) throws UnsuccessfulOperationException {
+        ModelNode remove = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-native",
+                "remove");
+        client.executeForResult(remove);
+    }
+
+    private static ManagementClient getCleanupClient() throws UnknownHostException {
+        // Use a client that connects to 9999
+        ModelControllerClient mcc = ModelControllerClient.Factory.create("remote", TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT);
+        return new ManagementClient(mcc, TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT, "remote");
     }
 
     /**
