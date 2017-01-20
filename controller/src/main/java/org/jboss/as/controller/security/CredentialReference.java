@@ -145,7 +145,7 @@ public final class CredentialReference {
      * @throws OperationFailedException when something goes wrong
      */
     public static String credentialReferencePartAsStringIfDefined(ModelNode credentialReferenceValue, String name) throws OperationFailedException {
-        assert !credentialReferenceValue.isDefined() : credentialReferenceValue;
+        assert credentialReferenceValue.isDefined() : credentialReferenceValue;
         ModelNode result = credentialReferenceValue.get(name);
         if (result.isDefined()) {
             return result.asString();

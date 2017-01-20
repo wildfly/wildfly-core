@@ -167,7 +167,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         final Map<AuthMechanism, MechanismConfiguration> configurationMap = new HashMap<>();
 
         SubjectSupplementalService subjectSupplementalService = this.subjectSupplemental.getOptionalValue();
-        org.wildfly.security.auth.server.SecurityRealm authorizationRealm = subjectSupplementalService != null ? subjectSupplementalService.getElytronSecurityRealm() : org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM;
+        org.wildfly.security.auth.server.SecurityRealm authorizationRealm = subjectSupplementalService != null ? subjectSupplementalService.getElytronSecurityRealm() : null;
 
         SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
         for (Entry<AuthMechanism, CallbackHandlerService> currentRegistration : registeredServices.entrySet()) {
@@ -177,7 +177,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 final AuthMechanism mechanism = currentRegistration.getKey();
 
                 domainBuilder.addRealm(mechanism.toString(),
-                        currentService.allowGroupLoading() ? new SharedStateSecurityRealm(new AggregateSecurityRealm(elytronRealm, authorizationRealm)) : elytronRealm)
+                        currentService.allowGroupLoading() && authorizationRealm != null ? new SharedStateSecurityRealm(new AggregateSecurityRealm(elytronRealm, authorizationRealm)) : elytronRealm)
                         .setRoleDecoder(RoleDecoder.simple("GROUPS"))
                         .build();
                 // If additional configuration is added it needs to be added to the duplication for Kerberos authentication for both HTTP and SASL below.
