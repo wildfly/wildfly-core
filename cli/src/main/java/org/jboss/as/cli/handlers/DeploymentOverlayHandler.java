@@ -526,7 +526,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         assertNotPresent(deployments, args);
         assertNotPresent(redeployAffected, args);
 
-        final String overlay = name.getValue(args, true);
+        final String overlay = getName(ctx, false);
         final ModelControllerClient client = ctx.getModelControllerClient();
 
         final ModelNode redeployOp = new ModelNode();
@@ -557,6 +557,25 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
 */
     }
 
+    /**
+     * Validate that the overlay exists. If it doesn't exist, throws an
+     * exception if not in batch mode or if failInBatch is true. In batch mode,
+     * we could be in the case that the overlay doesn't exist yet.
+     */
+    private String getName(CommandContext ctx, boolean failInBatch) throws CommandLineException {
+        final ParsedCommandLine args = ctx.getParsedCommandLine();
+        final String name = this.name.getValue(args, true);
+        if (name == null) {
+            throw new CommandFormatException(this.name + " is missing value.");
+        }
+        if (!ctx.isBatchMode() || failInBatch) {
+            if (!Util.isValidPath(ctx.getModelControllerClient(), Util.DEPLOYMENT_OVERLAY, name)) {
+                throw new CommandFormatException("Deployment overlay " + name + " does not exist.");
+            }
+        }
+        return name;
+    }
+
     protected void listLinks(CommandContext ctx) throws CommandLineException {
 
         final ModelControllerClient client = ctx.getModelControllerClient();
@@ -566,10 +585,8 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         assertNotPresent(deployments, args);
         assertNotPresent(redeployAffected, args);
 
-        final String name = this.name.getValue(args, true);
-        if(name == null) {
-            throw new CommandFormatException(this.name + " is missing value.");
-        }
+        final String name = getName(ctx, true);
+
         final String sg = serverGroups.getValue(ctx.getParsedCommandLine());
         if(ctx.isDomainMode()) {
             final List<String> groups;
@@ -613,10 +630,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         assertNotPresent(content, args);
         assertNotPresent(redeployAffected, args);
 
-        final String name = this.name.getValue(args, true);
-        if(name == null) {
-            throw new CommandFormatException(this.name.getFullName() + " is missing value.");
-        }
+        final String name = getName(ctx, true);
         final List<String> content = loadContentFor(client, name);
         if(l.isPresent(args)) {
             for(String contentPath : content) {
@@ -634,10 +648,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         final ParsedCommandLine args = ctx.getParsedCommandLine();
         assertNotPresent(allServerGroups, args);
 
-        final String name = this.name.getValue(args, true);
-        if(name == null) {
-            throw new CommandFormatException(this.name + " is missing value.");
-        }
+        final String name = getName(ctx, false);
         final String contentStr = content.getValue(args);
         String deploymentStr = deployments.getValue(args);
         final String sgStr = serverGroups.getValue(args);
@@ -894,7 +905,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         final ParsedCommandLine args = ctx.getParsedCommandLine();
         assertNotPresent(allRelevantServerGroups, args);
 
-        final String name = this.name.getValue(args, true);
+        final String name = getName(ctx, false);
         final String[] deployments = getLinks(this.deployments, args);
         if(deployments == null) {
             throw new CommandFormatException(this.deployments.getFullName() + " is required.");
@@ -937,10 +948,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
 
         final ParsedCommandLine args = ctx.getParsedCommandLine();
 
-        final String name = this.name.getValue(args, true);
-        if(!Util.isValidPath(ctx.getModelControllerClient(), Util.DEPLOYMENT_OVERLAY, name)) {
-            throw new CommandLineException("Deployment overlay " + name + " does not exist.");
-        }
+        final String name = getName(ctx, false);
         final String contentStr = content.getValue(args, true);
 
         final String[] contentPairs = contentStr.split(",+");

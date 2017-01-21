@@ -80,11 +80,8 @@ public class VaultAddHandler extends AbstractAddStepHandler {
                     vaultOptions.put(vaultOption.getKey(), vaultOption.getValue());
                 }
             }
-            try {
-                vaultReader.createVault(vaultClass, module, vaultOptions);
-            } catch (VaultReaderException e) {
-                throw ServerLogger.ROOT_LOGGER.cannotCreateVault(e, e);
-            }
+
+            vaultReader.createVault(vaultClass, module, vaultOptions);
 
             // WFLY-1904 if any system properties were not resolved due to needing vault resolution,
             // resolve them now

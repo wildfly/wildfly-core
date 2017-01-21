@@ -1246,6 +1246,9 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 138, value = "Unable to create auth dir %s.")
     StartException unableToCreateAuthDir(String dir);
 
+    @Message(id = 139, value = "No SubjectIdentity found for %s/%s.")
+    GeneralSecurityException noSubjectIdentityForProtocolAndHost(final String protocol, final String host);
+
     /**
      * Information message saying the username and password must be different.
      *

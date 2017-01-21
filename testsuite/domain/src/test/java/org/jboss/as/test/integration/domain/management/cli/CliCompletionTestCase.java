@@ -289,6 +289,15 @@ public class CliCompletionTestCase {
             }
 
             {
+                String cmd = "cd /deployment-";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("deployment-overlay="));
+            }
+
+            {
                 String cmd = "clear";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
@@ -699,6 +708,15 @@ public class CliCompletionTestCase {
             }
 
             {
+                String cmd = "read-attribute --node=/deployment-";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("deployment-overlay="));
+            }
+
+            {
                 String cmd = "read-attribute --verbose";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
@@ -753,6 +771,15 @@ public class CliCompletionTestCase {
             }
 
             {
+                String cmd = "read-operation --node=/deployment-";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() >= 1);
+                assertTrue(candidates.toString(), candidates.contains("deployment-overlay="));
+            }
+
+            {
                 String cmd = "reload ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
@@ -785,6 +812,33 @@ public class CliCompletionTestCase {
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
                 assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "set toto=l";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "set toto=`";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                assertTrue(candidates.toString(), candidates.contains(":"));
+                assertTrue(candidates.toString(), candidates.contains("ls"));
+            }
+
+            {
+                String cmd = "set toto=`l";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                assertTrue(candidates.toString(), candidates.contains("ls"));
             }
 
             {
@@ -1100,6 +1154,15 @@ public class CliCompletionTestCase {
             assertTrue(candidates.toString(), candidates.contains("--min"));
             assertTrue(candidates.toString(), candidates.contains("--description"));
             assertTrue(candidates.toString(), candidates.contains("--nillable"));
+        }
+
+        {
+            String cmd = "ls /deployment-";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertTrue(candidates.toString(), candidates.size() == 1);
+            assertTrue(candidates.toString(), candidates.contains("deployment-overlay="));
         }
     }
 

@@ -48,6 +48,18 @@ import org.junit.Test;
  */
 public class ValueTypeCompletionTestCase {
 
+    private static final String bytes_prop = "{\n"
+            + "            \"type\" => OBJECT,\n"
+            + "            \"value-type\" => {\n"
+            + "                \"prop1\" => {\n"
+            + "                      \"type\" => BYTES\n"
+            + "                },\n"
+            + "                \"prop2\" => {\n"
+            + "                      \"type\" => BOOLEAN\n"
+            + "                }\n"
+            + "            }\n"
+            + "        }";
+
     private static final String role_mapper = "{\n"
             + "            \"type\" => LIST,\n"
             + "            \"description\" => \"The referenced role mappers to aggregate.\",\n"
@@ -1544,5 +1556,85 @@ public class ValueTypeCompletionTestCase {
         assertEquals(Arrays.asList("]"), candidates);
         assertEquals(i, 33);
 
+    }
+
+    @Test
+    public void testBytes() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(bytes_prop);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<>();
+
+        int i;
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=", 0, candidates);
+        assertEquals(Arrays.asList("bytes{"), candidates);
+        assertEquals(7, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=b", 0, candidates);
+        assertEquals(Arrays.asList("bytes{"), candidates);
+        assertEquals(7, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes", 0, candidates);
+        assertEquals(Arrays.asList("bytes{"), candidates);
+        assertEquals(7, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{", 0, candidates);
+        assertEquals(Collections.emptyList(), candidates);
+        assertEquals(-1, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{0x", 0, candidates);
+        assertEquals(Collections.emptyList(), candidates);
+        assertEquals(-1, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{0x31", 0, candidates);
+        assertEquals(Arrays.asList("bytes{0x31,"), candidates);
+        assertEquals(7, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{+127", 0, candidates);
+        assertEquals(Arrays.asList("bytes{+127,"), candidates);
+        assertEquals(7, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{127", 0, candidates);
+        assertEquals(Arrays.asList("bytes{127,"), candidates);
+        assertEquals(7, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{12", 0, candidates);
+        assertEquals(Collections.emptyList(), candidates);
+        assertEquals(-1, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{0x31,", 0, candidates);
+        assertEquals(Collections.emptyList(), candidates);
+        assertEquals(-1, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{0x31,0x32}", 0, candidates);
+        assertEquals(Arrays.asList(","), candidates);
+        assertEquals(23, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{}", 0, candidates);
+        assertEquals(Arrays.asList(","), candidates);
+        assertEquals(14, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{0x31,0x32},", 0, candidates);
+        assertEquals(Arrays.asList("prop2"), candidates);
+        assertEquals(24, i);
+        candidates.clear();
+
+        i = new ValueTypeCompleter(propDescr).complete(null, "{prop1=bytes{0x31,0x32}, prop2=", 0, candidates);
+        assertEquals(Arrays.asList("false","true"), candidates);
+        assertEquals(31, i);
+        candidates.clear();
     }
 }

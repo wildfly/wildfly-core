@@ -29,6 +29,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.net.URL;
+import java.util.function.Supplier;
 import java.util.prefs.Preferences;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -52,6 +53,7 @@ import org.jboss.as.cli.gui.component.TabsMenu;
 import org.jboss.as.cli.gui.metacommand.DeployAction;
 import org.jboss.as.cli.gui.metacommand.OnlineHelpAction;
 import org.jboss.as.cli.gui.metacommand.UndeployAction;
+import org.jboss.as.controller.client.ModelControllerClient;
 
 /**
  * Static main class for the GUI.
@@ -72,19 +74,19 @@ public class GuiMain {
     private GuiMain() {} // don't allow an instance
 
     public static void start(CommandContext cmdCtx) {
-        initJFrame(makeGuiContext(cmdCtx));
+        initJFrame(makeGuiContext(cmdCtx, null));
     }
 
-    public static CliGuiContext startEmbedded(CommandContext cmdCtx) {
-        return makeGuiContext(cmdCtx);
+    public static CliGuiContext startEmbedded(CommandContext cmdCtx, Supplier<ModelControllerClient> client) {
+        return makeGuiContext(cmdCtx, client);
     }
 
-    private static CliGuiContext makeGuiContext(CommandContext cmdCtx) {
+    private static CliGuiContext makeGuiContext(CommandContext cmdCtx, Supplier<ModelControllerClient> client) {
         CliGuiContext cliGuiCtx = new CliGuiContext();
 
         cliGuiCtx.setCommandContext(cmdCtx);
 
-        CommandExecutor executor = new CommandExecutor(cliGuiCtx);
+        CommandExecutor executor = new CommandExecutor(cliGuiCtx, client);
         cliGuiCtx.setExecutor(executor);
 
         CLIOutput output = new CLIOutput();

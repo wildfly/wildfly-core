@@ -30,7 +30,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.0.Alpha18-SNAPSHOT</version>
+        <version>3.0.0.Alpha20-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-feature-pack</artifactId>
@@ -222,7 +222,7 @@
 
         <dependency>
             <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-linux-i686</artifactId>
+            <artifactId>wildfly-openssl-linux-i386</artifactId>
         </dependency>
 
         <dependency>
@@ -232,7 +232,7 @@
 
         <dependency>
             <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-windows-i686</artifactId>
+            <artifactId>wildfly-openssl-windows-i386</artifactId>
         </dependency>
 
         <dependency>

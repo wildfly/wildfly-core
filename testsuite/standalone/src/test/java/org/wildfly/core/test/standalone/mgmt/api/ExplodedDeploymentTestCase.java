@@ -25,6 +25,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ARCHIVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPTH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 import static org.jboss.as.repository.PathUtil.deleteRecursively;
@@ -178,19 +180,30 @@ public class ExplodedDeploymentTestCase {
                 ModelNode op = new ModelNode();
                 op.get(OP).set(ClientConstants.READ_CONTENT_OPERATION);
                 op.get(OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
-                op.get(PATH).set(path);
+                if (!path.isEmpty()) {
+                    op.get(PATH).set(path);
+                }
                 Future<OperationResponse> future = client.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
+
                 try {
                     OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
-                    Assert.assertTrue(Operations.isSuccessfulOutcome(response.getResponseNode()));
-                    Assert.assertTrue(Operations.readResult(response.getResponseNode()).hasDefined(UUID));
-                    List<OperationResponse.StreamEntry> streams = response.getInputStreams();
-                    Assert.assertThat(streams, is(notNullValue()));
-                    Assert.assertThat(streams.size(), is(1));
-                    try (InputStream in = streams.get(0).getStream()) {
-                        Properties content = new Properties();
-                        content.load(in);
-                        Assert.assertThat(content.getProperty("service"), is(expectedValue));
+                    if (path.isEmpty()) {
+                        Assert.assertFalse("Operation read-content should not be successful without defined path parameter on exploded deployments",
+                                Operations.isSuccessfulOutcome(response.getResponseNode()));
+                        String failureDescription = Operations.getFailureDescription(response.getResponseNode()).toString();
+                        Assert.assertTrue("Operation read-content should fail with WFLYDR0020, but failed with " + failureDescription,
+                                failureDescription.contains("WFLYDR0020"));
+                    } else {
+                        Assert.assertTrue(Operations.isSuccessfulOutcome(response.getResponseNode()));
+                        Assert.assertTrue(Operations.readResult(response.getResponseNode()).hasDefined(UUID));
+                        List<OperationResponse.StreamEntry> streams = response.getInputStreams();
+                        Assert.assertThat(streams, is(notNullValue()));
+                        Assert.assertThat(streams.size(), is(1));
+                        try (InputStream in = streams.get(0).getStream()) {
+                            Properties content = new Properties();
+                            content.load(in);
+                            Assert.assertThat(content.getProperty("service"), is(expectedValue));
+                        }
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -199,6 +212,10 @@ public class ExplodedDeploymentTestCase {
                     throw new RuntimeException(e.getCause());
                 } catch (TimeoutException e) {
                     throw new RuntimeException(e);
+                } finally {
+                    if (!future.isDone()) {
+                        future.cancel(true);
+                    }
                 }
             }
 
@@ -226,33 +243,59 @@ public class ExplodedDeploymentTestCase {
                     throw new RuntimeException(e.getCause());
                 } catch (TimeoutException e) {
                     throw new RuntimeException(e);
+                } finally {
+                    if (!future.isDone()) {
+                        future.cancel(true);
+                    }
                 }
             }
 
             @Override
-            public void browseContent(String path, List<String> expectedContents) throws IOException {
+            public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
                 ModelNode op = new ModelNode();
                 op.get(OP).set(ClientConstants.DEPLOYMENT_BROWSE_CONTENT_OPERATION);
                 op.get(OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
                 if (path != null && !path.isEmpty()) {
                     op.get(PATH).set(path);
                 }
+                if (depth > 0) {
+                    op.get(DEPTH).set(depth);
+                }
+                if (archive) {
+                    op.get(ARCHIVE).set(archive);
+                }
                 Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
                 try {
                     ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
-                    Assert.assertTrue(Operations.isSuccessfulOutcome(response));
-                    List<ModelNode> contents = Operations.readResult(response).asList();
-                    for (ModelNode content : contents) {
-                        Assert.assertTrue(content.hasDefined("path"));
-                        String contentPath = content.get("path").asString();
-                        Assert.assertTrue(content.asString() + " isn't expected", expectedContents.contains(contentPath));
-                        Assert.assertTrue(content.hasDefined("directory"));
-                        if (!content.get("directory").asBoolean()) {
-                            Assert.assertTrue(content.hasDefined("file-size"));
-                        }
-                        expectedContents.remove(contentPath);
+                    if (!Operations.isSuccessfulOutcome(response)) {
+                        Assert.fail("Operation browse content should be successful, but failed: " +
+                                Operations.getFailureDescription(response).toString());
                     }
-                    Assert.assertTrue(expectedContents.isEmpty());
+                    List<String> unexpectedContents = new ArrayList<String>();
+                    if (expectedContents.isEmpty()) {
+                        Assert.assertEquals("Unexpected non-empty result with browse-content operation",
+                                new ModelNode(), Operations.readResult(response));
+                    } else {
+                        List<ModelNode> contents = Operations.readResult(response).asList();
+                        for (ModelNode content : contents) {
+                            Assert.assertTrue(content.hasDefined("path"));
+                            String contentPath = content.get("path").asString();
+                            Assert.assertTrue(content.hasDefined("directory"));
+                            if (!content.get("directory").asBoolean()) {
+                                Assert.assertTrue(content.hasDefined("file-size"));
+                            }
+                            if (!expectedContents.contains(contentPath)) {
+                                unexpectedContents.add(contentPath);
+                            }
+                            expectedContents.remove(contentPath);
+                        }
+                    }
+                    Assert.assertTrue("Unexpected files listed by /deployment=test-deployment.jar:browse-content(depth="
+                                    + depth + ", archive=" + archive + ") : " + unexpectedContents.toString(),
+                            unexpectedContents.isEmpty());
+                    Assert.assertTrue("Expected files not listed by /deployment=test-deployment.jar:browse-content(depth="
+                                    + depth + ", archive=" + archive + ") : " + expectedContents.toString(),
+                            expectedContents.isEmpty());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
@@ -260,6 +303,10 @@ public class ExplodedDeploymentTestCase {
                     throw new RuntimeException(e.getCause());
                 } catch (TimeoutException e) {
                     throw new RuntimeException(e);
+                } finally {
+                    if (!future.isDone()) {
+                        future.cancel(true);
+                    }
                 }
             }
 
@@ -335,19 +382,30 @@ public class ExplodedDeploymentTestCase {
                 ModelNode op = new ModelNode();
                 op.get(OP).set(ClientConstants.READ_CONTENT_OPERATION);
                 op.get(OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
-                op.get(PATH).set(path);
+                if (!path.isEmpty()) {
+                    op.get(PATH).set(path);
+                }
                 Future<OperationResponse> future = client.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
+
                 try {
                     OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
-                    Assert.assertTrue(Operations.isSuccessfulOutcome(response.getResponseNode()));
-                    Assert.assertTrue(Operations.readResult(response.getResponseNode()).hasDefined(UUID));
-                    List<OperationResponse.StreamEntry> streams = response.getInputStreams();
-                    Assert.assertThat(streams, is(notNullValue()));
-                    Assert.assertThat(streams.size(), is(1));
-                    try (InputStream in = streams.get(0).getStream()) {
-                        Properties content = new Properties();
-                        content.load(in);
-                        Assert.assertThat(content.getProperty("service"), is(expectedValue));
+                    if (path.isEmpty()) {
+                        Assert.assertFalse("Operation read-content should not be successful without defined path parameter on exploded deployments",
+                                Operations.isSuccessfulOutcome(response.getResponseNode()));
+                        String failureDescription = Operations.getFailureDescription(response.getResponseNode()).toString();
+                        Assert.assertTrue("Operation read-content should fail with WFLYDR0020, but failed with " + failureDescription,
+                                failureDescription.contains("WFLYDR0020"));
+                    } else {
+                        Assert.assertTrue(Operations.isSuccessfulOutcome(response.getResponseNode()));
+                        Assert.assertTrue(Operations.readResult(response.getResponseNode()).hasDefined(UUID));
+                        List<OperationResponse.StreamEntry> streams = response.getInputStreams();
+                        Assert.assertThat(streams, is(notNullValue()));
+                        Assert.assertThat(streams.size(), is(1));
+                        try (InputStream in = streams.get(0).getStream()) {
+                            Properties content = new Properties();
+                            content.load(in);
+                            Assert.assertThat(content.getProperty("service"), is(expectedValue));
+                        }
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -356,6 +414,10 @@ public class ExplodedDeploymentTestCase {
                     throw new RuntimeException(e.getCause());
                 } catch (TimeoutException e) {
                     throw new RuntimeException(e);
+                } finally {
+                    if (!future.isDone()) {
+                        future.cancel(true);
+                    }
                 }
             }
 
@@ -385,33 +447,56 @@ public class ExplodedDeploymentTestCase {
                     throw new RuntimeException(e.getCause());
                 } catch (TimeoutException e) {
                     throw new RuntimeException(e);
+                } finally {
+                    if (!future.isDone()) {
+                        future.cancel(true);
+                    }
                 }
             }
 
             @Override
-            public void browseContent(String path, List<String> expectedContents) throws IOException {
+            public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
                 ModelNode op = new ModelNode();
                 op.get(OP).set(ClientConstants.DEPLOYMENT_BROWSE_CONTENT_OPERATION);
                 op.get(OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
                 if (path != null && !path.isEmpty()) {
                     op.get(PATH).set(path);
                 }
+                if (depth > 0) {
+                    op.get(DEPTH).set(depth);
+                }
+                if (archive) {
+                    op.get(ARCHIVE).set(archive);
+                }
                 Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
                 try {
                     ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
                     Assert.assertTrue(Operations.isSuccessfulOutcome(response));
-                    List<ModelNode> contents = Operations.readResult(response).asList();
-                    for (ModelNode content : contents) {
-                        Assert.assertTrue(content.hasDefined("path"));
-                        String contentPath = content.get("path").asString();
-                        Assert.assertTrue(content.asString() + " isn't expected", expectedContents.contains(contentPath));
-                        Assert.assertTrue(content.hasDefined("directory"));
-                        if (!content.get("directory").asBoolean()) {
-                            Assert.assertTrue(content.hasDefined("file-size"));
+                    List<String> unexpectedContents = new ArrayList<String>();
+                    if (expectedContents.isEmpty()) {
+                        Assert.assertEquals("Unexpected non-empty result with browse-content operation",
+                                new ModelNode(), Operations.readResult(response));
+                    } else {
+                        List<ModelNode> contents = Operations.readResult(response).asList();
+                        for (ModelNode content : contents) {
+                            Assert.assertTrue(content.hasDefined("path"));
+                            String contentPath = content.get("path").asString();
+                            Assert.assertTrue(content.hasDefined("directory"));
+                            if (!content.get("directory").asBoolean()) {
+                                Assert.assertTrue(content.hasDefined("file-size"));
+                            }
+                            if (!expectedContents.contains(contentPath)) {
+                                unexpectedContents.add(contentPath);
+                            }
+                            expectedContents.remove(contentPath);
                         }
-                        expectedContents.remove(contentPath);
                     }
-                    Assert.assertTrue(expectedContents.isEmpty());
+                    Assert.assertTrue("Unexpected files listed by /deployment=test-deployment.jar:browse-content(depth="
+                                    + depth + ", archive=" + archive + ") : " + unexpectedContents.toString(),
+                            unexpectedContents.isEmpty());
+                    Assert.assertTrue("Expected files not listed by /deployment=test-deployment.jar:browse-content(depth="
+                                    + depth + ", archive=" + archive + ") : " + expectedContents.toString(),
+                            expectedContents.isEmpty());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
@@ -419,6 +504,10 @@ public class ExplodedDeploymentTestCase {
                     throw new RuntimeException(e.getCause());
                 } catch (TimeoutException e) {
                     throw new RuntimeException(e);
+                } finally {
+                    if (!future.isDone()) {
+                        future.cancel(true);
+                    }
                 }
             }
         });
@@ -434,6 +523,8 @@ public class ExplodedDeploymentTestCase {
 
         //listener.await();
         ServiceActivatorDeploymentUtil.validateProperties(managementClient.getControllerClient(), properties);
+
+        deploymentExecutor.readContent("", "");
 
         String initialDeploymentHash = null;
         if (!fromFile) {
@@ -451,7 +542,11 @@ public class ExplodedDeploymentTestCase {
                 "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
                 "org/","org/jboss/","org/jboss/as/", "org/jboss/as/test/", "org/jboss/as/test/deployment/",
                 "org/jboss/as/test/deployment/trivial/", "service-activator-deployment.properties",
-                "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class",  "SimpleTest.properties")));
+                "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class",  "SimpleTest.properties")),
+                -1, false);
+        deploymentExecutor.browseContent("", new ArrayList<>(Arrays.asList("META-INF/", "org/",
+                "service-activator-deployment.properties", "SimpleTest.properties")), 1, false);
+        deploymentExecutor.browseContent("", new ArrayList<>(), -1, true);
         if (!fromFile) {
             Set<String> currentHashes = getAllDeploymentHashesFromContentDir(false);
             Assert.assertFalse(currentHashes.contains(initialDeploymentHash)); //Should have been deleted when added
@@ -520,8 +615,11 @@ public class ExplodedDeploymentTestCase {
             throw new RuntimeException(e.getCause());
         } catch (TimeoutException e) {
             throw new RuntimeException(e);
+        } finally {
+            if (!future.isDone()) {
+                future.cancel(true);
+            }
         }
-
     }
 
     private interface ExplodedDeploymentExecutor {
@@ -536,7 +634,7 @@ public class ExplodedDeploymentTestCase {
 
         void readContent(String path, String expectedValue) throws IOException;
 
-        void browseContent(String path, List<String> expectedContents) throws IOException;
+        void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException;
 
         void checkNoContent(String path) throws IOException;
 

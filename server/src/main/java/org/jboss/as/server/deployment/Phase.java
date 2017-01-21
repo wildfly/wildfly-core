@@ -356,6 +356,10 @@ public enum Phase {
     public static final int PARSE_JSF_MANAGED_BEANS                     = 0x4900;
     public static final int PARSE_JSF_METADATA                          = 0x4A00;
     public static final int PARSE_SINGLETON_DEPLOYMENT                  = 0x4B00;
+    public static final int PARSE_NEO4J_DRIVER                          = 0x4C00;
+    public static final int PARSE_ORIENT_DRIVER                         = 0x4C01;
+    public static final int PARSE_CASSANDRA_DRIVER                      = 0x4C02;
+    public static final int PARSE_MONGO_DRIVER                          = 0x4C03;
 
     // REGISTER
     public static final int REGISTER_BUNDLE_INSTALL                     = 0x0100;
@@ -401,6 +405,10 @@ public enum Phase {
     public static final int DEPENDENCIES_LOGGING                        = 0x1D00;
     public static final int DEPENDENCIES_MAIL                           = 0x1E00;
     public static final int DEPENDENCIES_JSR77                          = 0x1F00;
+    public static final int DEPENDENCIES_NEO4J_DRIVER                   = 0x1F10;
+    public static final int DEPENDENCIES_ORIENT_DRIVER                  = 0x1F11;
+    public static final int DEPENDENCIES_CASSANDRA_DRIVER               = 0x1F12;
+    public static final int DEPENDENCIES_MONGO_DRIVER                   = 0x1F13;
     //these must be last, and in this specific order
     public static final int DEPENDENCIES_APPLICATION_CLIENT             = 0x2000;
     public static final int DEPENDENCIES_VISIBLE_MODULES                = 0x2100;

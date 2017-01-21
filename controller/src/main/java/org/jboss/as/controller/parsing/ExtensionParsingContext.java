@@ -58,12 +58,14 @@ public interface ExtensionParsingContext {
      * populated.
      *
      * @param subsystemName the name of the subsystem. Cannot be {@code null}
-     * @param namespaceUri the URI of the sussystem's XML namespace, in string form. Cannot be {@code null}
+     * @param namespaceUri the URI of the subsystem's XML namespace, in string form. Cannot be {@code null}
      * @param reader the element reader. Cannot be {@code null}
      *
      * @throws IllegalStateException if another {@link org.jboss.as.controller.Extension} has already registered a subsystem with the given
      *                               {@code subsystemName}
+     * @deprecated Use {@link ExtensionParsingContext#setSubsystemXmlMapping(java.lang.String, java.lang.String, java.util.function.Supplier)} instead.
      */
+    @Deprecated
     void setSubsystemXmlMapping(String subsystemName, String namespaceUri, XMLElementReader<List<ModelNode>> reader);
 
     /**

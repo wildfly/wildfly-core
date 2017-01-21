@@ -21,6 +21,7 @@
  */
 package org.jboss.as.cli.impl;
 
+import org.jboss.as.cli.AwaiterModelControllerClient;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.IOException;
