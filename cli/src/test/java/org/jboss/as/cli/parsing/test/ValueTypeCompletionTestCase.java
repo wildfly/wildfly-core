@@ -60,6 +60,89 @@ public class ValueTypeCompletionTestCase {
             + "            }\n"
             + "        }";
 
+    private static final String elytron_provider = "{\n"
+            + "                \"type\" => LIST,\n"
+            + "                \"description\" => \"The providers to be loaded by this resource.\",\n"
+            + "                \"expressions-allowed\" => false,\n"
+            + "                \"required\" => false,\n"
+            + "                \"nillable\" => true,\n"
+            + "                \"value-type\" => {\n"
+            + "                    \"module\" => {\n"
+            + "                        \"type\" => STRING,\n"
+            + "                        \"description\" => \"The name of the module to load the provider from.\",\n"
+            + "                        \"expressions-allowed\" => true,\n"
+            + "                        \"required\" => false,\n"
+            + "                        \"nillable\" => true,\n"
+            + "                        \"min-length\" => 1L,\n"
+            + "                        \"max-length\" => 2147483647L\n"
+            + "                    },\n"
+            + "                    \"load-services\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"description\" => \"Should service loader discovery be used to load the providers.\",\n"
+            + "                        \"expressions-allowed\" => true,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"nillable\" => false,\n"
+            + "                        \"default\" => false\n"
+            + "                    },\n"
+            + "                    \"class-names\" => {\n"
+            + "                        \"type\" => LIST,\n"
+            + "                        \"description\" => \"The fully qualified class names of the providers to load, these are loaded after the service-loader discovered providers and duplicates will be skipped.\",\n"
+            + "                        \"expressions-allowed\" => true,\n"
+            + "                        \"required\" => false,\n"
+            + "                        \"nillable\" => true,\n"
+            + "                        \"value-type\" => STRING\n"
+            + "                    },\n"
+            + "                    \"path\" => {\n"
+            + "                        \"type\" => STRING,\n"
+            + "                        \"description\" => \"The path of the file to use to initialise the providers.\",\n"
+            + "                        \"expressions-allowed\" => true,\n"
+            + "                        \"required\" => false,\n"
+            + "                        \"nillable\" => true,\n"
+            + "                        \"alternatives\" => [\"property-list\"],\n"
+            + "                        \"min-length\" => 1L,\n"
+            + "                        \"max-length\" => 2147483647L\n"
+            + "                    },\n"
+            + "                    \"relative-to\" => {\n"
+            + "                        \"type\" => STRING,\n"
+            + "                        \"description\" => \"The base path of the configuration file.\",\n"
+            + "                        \"expressions-allowed\" => false,\n"
+            + "                        \"required\" => false,\n"
+            + "                        \"nillable\" => true,\n"
+            + "                        \"requires\" => [\"path\"],\n"
+            + "                        \"min-length\" => 1L,\n"
+            + "                        \"max-length\" => 2147483647L\n"
+            + "                    },\n"
+            + "                    \"property-list\" => {\n"
+            + "                        \"type\" => LIST,\n"
+            + "                        \"description\" => \"Configuration properties to be applied to the loaded provider. (Can not be set at the same time as path)\",\n"
+            + "                        \"expressions-allowed\" => false,\n"
+            + "                        \"required\" => false,\n"
+            + "                        \"nillable\" => true,\n"
+            + "                        \"alternatives\" => [\"path\"],\n"
+            + "                        \"value-type\" => {\n"
+            + "                            \"name\" => {\n"
+            + "                                \"type\" => STRING,\n"
+            + "                                \"description\" => \"The key for the property to be set.\",\n"
+            + "                                \"expressions-allowed\" => true,\n"
+            + "                                \"required\" => true,\n"
+            + "                                \"nillable\" => false,\n"
+            + "                                \"min-length\" => 1L,\n"
+            + "                                \"max-length\" => 2147483647L\n"
+            + "                            },\n"
+            + "                            \"value\" => {\n"
+            + "                                \"type\" => STRING,\n"
+            + "                                \"description\" => \"The value of the property to be set.\",\n"
+            + "                                \"expressions-allowed\" => true,\n"
+            + "                                \"required\" => true,\n"
+            + "                                \"nillable\" => false,\n"
+            + "                                \"min-length\" => 1L,\n"
+            + "                                \"max-length\" => 2147483647L\n"
+            + "                            }\n"
+            + "                        }\n"
+            + "                    }\n"
+            + "                }\n"
+            + "            }";
+
     private static final String role_mapper = "{\n"
             + "            \"type\" => LIST,\n"
             + "            \"description\" => \"The referenced role mappers to aggregate.\",\n"
@@ -1636,5 +1719,18 @@ public class ValueTypeCompletionTestCase {
         assertEquals(Arrays.asList("false","true"), candidates);
         assertEquals(31, i);
         candidates.clear();
+    }
+
+    public void testInvalidSyntax() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(elytron_provider);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<>();
+        int i;
+        i = new ValueTypeCompleter(propDescr).complete(null,
+                "[{class-names=[com.example.Class]},class-names=[{com.example.AnotherClass}",
+                0, candidates);
+        assertTrue(candidates.isEmpty());
+        assertEquals(i, -1);
     }
 }
