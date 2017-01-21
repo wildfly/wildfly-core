@@ -22,8 +22,8 @@
 
 package org.jboss.as.domain.management.security;
 
-import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.VERIFY_PASSWORD_CALLBACK_SUPPORTED;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.io.IOException;
@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.naming.NamingException;
 import javax.security.auth.callback.Callback;
@@ -43,9 +44,9 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 
 import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManager;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.security.LdapSearcherCache.AttachmentKey;
 import org.jboss.as.domain.management.security.LdapSearcherCache.SearchResult;
 import org.jboss.msc.inject.Injector;
@@ -57,6 +58,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.credential.Credential;
@@ -123,6 +125,24 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
     /*
      *  Service Methods
      */
+
+    @Override
+    public Function<Principal, Principal> getPrincipalMapper() {
+        return p -> {
+            LdapConnectionHandler ldapConnectionHandler = createLdapConnectionHandler();
+            try {
+                try {
+                    SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(ldapConnectionHandler, p.getName());
+
+                    return new MappedPrincipal(searchResult.getResult().getSimpleName(), p.getName());
+                } catch (IllegalStateException | IOException | NamingException e) {
+                    return p;
+                }
+            } finally {
+                safeClose(ldapConnectionHandler);
+            }
+        };
+    }
 
     public void start(StartContext context) throws StartException {
     }
@@ -303,7 +323,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
 
         @Override
         public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
-            final String name = principal.getName();
+            final String name = principal instanceof MappedPrincipal ? ((MappedPrincipal)principal).getOriginalName() : principal.getName();
             if (name.length() == 0) {
                 return RealmIdentity.NON_EXISTENT;
             }
@@ -313,7 +333,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
             try {
                 SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(ldapConnectionHandler, name);
 
-                return new RealmIdentityImpl(principal, ldapConnectionHandler, searchResult, SecurityRealmService.SharedStateSecurityRealm.getSharedState());
+                return new RealmIdentityImpl(new NamePrincipal(name), ldapConnectionHandler, searchResult, SecurityRealmService.SharedStateSecurityRealm.getSharedState());
             } catch (IllegalStateException e) {
                 safeClose(ldapConnectionHandler);
                 return RealmIdentity.NON_EXISTENT;
@@ -399,6 +419,40 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
             }
 
         }
+    }
+
+    static class MappedPrincipal implements Principal {
+
+        private final String name;
+        private final String originalName;
+
+        MappedPrincipal(final String name, final String originalName) {
+            this.name = checkNotNullParam("name", name);
+            this.originalName = checkNotNullParam("originalName", originalName);
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        public String getOriginalName() {
+            return originalName;
+        }
+
+        public boolean equals(final Object obj) {
+            return obj instanceof MappedPrincipal && equals((MappedPrincipal) obj);
+        }
+
+        public boolean equals(final MappedPrincipal obj) {
+            return obj != null && name.equals(obj.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode();
+        }
+
     }
 
     public static final class ServiceUtil {

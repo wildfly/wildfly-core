@@ -26,9 +26,11 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECU
 import static org.jboss.as.domain.management.security.SecurityRealmService.LOADED_USERNAME_KEY;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -42,6 +44,12 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.security.auth.SupportLevel;
+import org.wildfly.security.auth.principal.NamePrincipal;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.evidence.Evidence;
 
 /**
  * A CallbackHandler for Kerberos authentication. Currently no Callbacks are supported but later this may be expanded for
@@ -130,8 +138,84 @@ public class KerberosCallbackHandler implements Service<CallbackHandlerService>,
 
     @Override
     public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
-        // TODO Elytron Add legacy Kerberos support.
-        return null;
+        return new KerberosSecurityRealm();
+    }
+
+    @Override
+    public Function<Principal, Principal> getPrincipalMapper() {
+        if (removeRealm) {
+            return p -> {
+                int atIndex = p.getName().indexOf('@');
+                if (atIndex > 0) {
+                    return new NamePrincipal(p.getName().substring(0, atIndex));
+                }
+                return p;
+            };
+        }
+        return CallbackHandlerService.super.getPrincipalMapper();
+    }
+
+    private class KerberosSecurityRealm implements org.wildfly.security.auth.server.SecurityRealm {
+
+        @Override
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
+            return new KerberosRealmIdentity(principal);
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        @Override
+        public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        private class KerberosRealmIdentity implements RealmIdentity {
+
+            private final Principal principal;
+
+            KerberosRealmIdentity(final Principal principal) {
+                this.principal = principal;
+            }
+
+            @Override
+            public Principal getRealmIdentityPrincipal() {
+                return principal;
+            }
+
+            @Override
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                    throws RealmUnavailableException {
+                return KerberosSecurityRealm.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            @Override
+            public <C extends Credential> C getCredential(Class<C> credentialType) throws RealmUnavailableException {
+                return null;
+            }
+
+            @Override
+            public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                    throws RealmUnavailableException {
+                return KerberosSecurityRealm.this.getEvidenceVerifySupport(evidenceType, algorithmName);
+            }
+
+            @Override
+            public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
+                return false;
+            }
+
+            @Override
+            public boolean exists() throws RealmUnavailableException {
+                return true;
+            }
+
+        }
+
     }
 
     public static final class ServiceUtil {
