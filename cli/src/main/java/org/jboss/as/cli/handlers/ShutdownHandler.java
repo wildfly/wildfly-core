@@ -41,6 +41,7 @@ import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
+import org.xnio.http.RedirectException;
 
 /**
  * @author Alexey Loubyansky
@@ -152,6 +153,18 @@ public class ShutdownHandler extends BaseOperationCommand {
             } catch(CommandLineException e) {
                 ctx.disconnectController();
                 throw e;
+            } catch (IOException ex) {
+                if (ex instanceof RedirectException) {
+                    try {
+                        ctx.connectController();
+                    } catch (CommandLineException ce) {
+                        // Can't reconnect, disconnect it.
+                        ctx.disconnectController();
+                        throw ce;
+                    }
+                } else {
+                    throw new CommandLineException(ex);
+                }
             }
         }
     }
