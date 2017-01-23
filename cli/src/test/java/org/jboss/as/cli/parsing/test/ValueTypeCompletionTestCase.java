@@ -1721,6 +1721,7 @@ public class ValueTypeCompletionTestCase {
         candidates.clear();
     }
 
+    @Test
     public void testInvalidSyntax() throws Exception {
         final ModelNode propDescr = ModelNode.fromString(elytron_provider);
         assertTrue(propDescr.isDefined());
