@@ -24,16 +24,19 @@ package org.jboss.as.test.manualmode.management.cli;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.net.UnknownHostException;
 
 import javax.inject.Inject;
 
+import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.cli.CliProcessWrapper;
 import org.jboss.as.test.integration.security.common.CoreUtils;
+import org.jboss.as.test.integration.security.common.SecurityTestConstants;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
@@ -54,13 +57,22 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @ServerControl(manual = true)
 public class ReloadRedirectTestCase {
 
-    public static final int MANAGEMENT_NATIVE_PORT = 9999;
+    private static final int MANAGEMENT_NATIVE_PORT = 9999;
+
+    private static final File WORK_DIR = new File("mgmt-if-workdir");
+    private static final File SERVER_KEYSTORE_FILE = new File(WORK_DIR, SecurityTestConstants.SERVER_KEYSTORE);
 
     @Inject
     private static ServerController container;
 
     @BeforeClass
     public static void initServer() throws Exception {
+
+        // create a key store for the server (this creates more than that but this test needs the key store)
+        FileUtils.deleteDirectory(WORK_DIR);
+        WORK_DIR.mkdirs();
+        CoreUtils.createKeyMaterial(WORK_DIR);
+
         container.start();
 
         ModelControllerClient client = container.getClient().getControllerClient();
@@ -86,6 +98,13 @@ public class ReloadRedirectTestCase {
         operation.get("security-realm").set("native-realm");
         operation.get("socket-binding").set("management-native");
         CoreUtils.applyUpdate(operation, client);
+
+        // TODO in master we use the CLI to set this up, but since it's proving to be a hassle on Windows
+        // and isn't really fundamental to what we are testing here, here we do it in the setup work
+        ModelNode addSSL = createOpNode("core-service=management/security-realm=ManagementRealm/server-identity=ssl","add");
+        addSSL.get("keystore-path").set(SERVER_KEYSTORE_FILE.getAbsolutePath());
+        addSSL.get("keystore-password").set(SecurityTestConstants.KEYSTORE_PASSWORD);
+        CoreUtils.applyUpdate(addSSL, client);
     }
 
     @AfterClass
@@ -96,7 +115,11 @@ public class ReloadRedirectTestCase {
             ManagementClient client = getCleanupClient();
             cleanConfig(client);
         } finally {
-            container.stop();
+            try {
+                container.stop();
+            } finally {
+                FileUtils.deleteDirectory(WORK_DIR);
+            }
         }
     }
 
@@ -201,16 +224,18 @@ public class ReloadRedirectTestCase {
         try {
             cliProc.executeInteractive();
             cliProc.clearOutput();
-            boolean promptFound = cliProc.
-                    pushLineAndWaitForResults("/core-service=management/"
-                            + "security-realm=ManagementRealm/"
-                            + "server-identity=ssl:add(keystore-path=management.keystore,"
-                            + "keystore-relative-to=jboss.server.config.dir,"
-                            + "keystore-password=password,alias=server,key-password=password,"
-                            + "generate-self-signed-certificate-host=localhost)", null);
-            assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
-            cliProc.clearOutput();
-            promptFound = cliProc.pushLineAndWaitForResults("/core-service=management/"
+            // TODO getting this right on windows proved to be a hassle and the point of this test
+            // is the change to the http-interface not to the realm, so to get this done in
+            // time for 7.0.5 we just use the native interface to add the ssl stuff
+//            boolean promptFound = cliProc.
+//                    pushLineAndWaitForResults("/core-service=management/"
+//                            + "security-realm=ManagementRealm/"
+//                            + "server-identity=ssl:add(keystore-path=\"" + SERVER_KEYSTORE_FILE.getAbsolutePath() + "\","
+//                            //+ "keystore-relative-to=jboss.server.config.dir,"
+//                            + "keystore-password=" + SecurityTestConstants.KEYSTORE_PASSWORD+ ")", null);
+//            assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
+//            cliProc.clearOutput();
+            boolean promptFound = cliProc.pushLineAndWaitForResults("/core-service=management/"
                     + "management-interface=http-interface:"
                     + "write-attribute(name=secure-socket-binding,value=management-https)", null);
             assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
