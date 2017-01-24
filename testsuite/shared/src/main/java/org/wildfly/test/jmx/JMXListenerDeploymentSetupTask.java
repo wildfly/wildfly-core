@@ -45,7 +45,8 @@ import org.wildfly.core.testrunner.ServerSetupTask;
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
  */
 public class JMXListenerDeploymentSetupTask implements ServerSetupTask {
-    public static final String TARGET_OBJECT_NAME = "jboss.root:type=process-state";
+    public static final String TARGET_OBJECT_NAME = "jboss.root:type=state";
+    private static final String DEPLOYMENT = "test-jmx-notifications-deployment.jar";
     private File file;
 
     @Override
@@ -55,8 +56,8 @@ public class JMXListenerDeploymentSetupTask implements ServerSetupTask {
             cleanFile(dir);
         }
         dir.mkdirs();
-        file = new File(dir, "test-jmx-deployment.jar");
-        ServiceActivatorDeploymentUtil.createServiceActivatorListenerDeployment(file, TARGET_OBJECT_NAME, ProcessStateNotificationListener.class);
+        file = new File(dir, DEPLOYMENT);
+        ServiceActivatorDeploymentUtil.createServiceActivatorListenerDeployment(file, TARGET_OBJECT_NAME, ControlledStateNotificationListener.class);
         deploy(managementClient.getControllerClient(), file);
     }
 
@@ -66,8 +67,8 @@ public class JMXListenerDeploymentSetupTask implements ServerSetupTask {
             cleanFile(dir);
         }
         dir.mkdirs();
-        file = new File(dir, "test-jmx-deployment.jar");
-        ServiceActivatorDeploymentUtil.createServiceActivatorListenerDeployment(file, TARGET_OBJECT_NAME, ProcessStateNotificationListener.class);
+        file = new File(dir, DEPLOYMENT);
+        ServiceActivatorDeploymentUtil.createServiceActivatorListenerDeployment(file, TARGET_OBJECT_NAME, ControlledStateNotificationListener.class);
         deploy(client, file);
         ModelNode op = createOpNode("server-group=" + serverGroupName + "/deployment=" + file.getName(), ADD);
         op.get(ENABLED).set(true);
@@ -96,7 +97,7 @@ public class JMXListenerDeploymentSetupTask implements ServerSetupTask {
     }
 
     protected static void removeDeployment(ModelControllerClient client, File file) throws IOException {
-        ModelNode op = createOpNode("deployment=" + file.getName(),  REMOVE);
+        ModelNode op = createOpNode("deployment=" + file.getName(), REMOVE);
         RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
     }
 

@@ -36,6 +36,9 @@ import org.wildfly.extension.core.management.client.ProcessStateListenerInitPara
  */
 public class TestListener implements ProcessStateListener {
 
+    public static final String RUNTIME_CONFIGURATION_STATE_CHANGE_FILENAME = "runtimeConfigurationState.txt";
+    public static final String RUNNING_STATE_CHANGE_FILENAME = "runningState.txt";
+
     private File fileRuntime;
     private File fileRunning;
     private FileWriter fileRuntimeWriter;
@@ -45,8 +48,8 @@ public class TestListener implements ProcessStateListener {
     @Override
     public void init(ProcessStateListenerInitParameters parameters) {
         this.parameters = parameters;
-        fileRuntime = new File(parameters.getInitProperties().get("file") + File.separatorChar + "runtimeConfigurationState.txt");
-        fileRunning = new File(parameters.getInitProperties().get("file") + File.separatorChar + "runningState.txt");
+        fileRuntime = new File(parameters.getInitProperties().get("file") + File.separatorChar + RUNTIME_CONFIGURATION_STATE_CHANGE_FILENAME);
+        fileRunning = new File(parameters.getInitProperties().get("file") + File.separatorChar + RUNNING_STATE_CHANGE_FILENAME);
         try {
             fileRuntimeWriter = new FileWriter(fileRuntime, true);
             fileRunningWriter = new FileWriter(fileRunning, true);

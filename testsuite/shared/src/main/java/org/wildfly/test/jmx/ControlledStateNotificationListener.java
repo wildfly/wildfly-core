@@ -15,15 +15,26 @@
  */
 package org.wildfly.test.jmx;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import javax.management.AttributeChangeNotification;
+import javax.management.Notification;
+import javax.management.NotificationListener;
+import org.jboss.logging.Logger;
 
 /**
  *
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
-public class ControlledStateNotificationListener extends AbstractStateNotificationListener {
+public class ControlledStateNotificationListener implements NotificationListener {
 
+    public static final String RUNTIME_CONFIGURATION_FILENAME = "runtime-configuration-notifications.txt";
+    public static final String RUNNING_FILENAME = "running-notifications.txt";
     public static final String JMX_FACADE_FILE = "jmx-facade";
     private final Path targetFile;
 
@@ -32,8 +43,48 @@ public class ControlledStateNotificationListener extends AbstractStateNotificati
         init(targetFile);
     }
 
-    @Override
-    protected Path getTargetFile() {
-       return this.targetFile;
+    protected Path getRuntimeConfigurationTargetFile() {
+        return this.targetFile.resolve(RUNTIME_CONFIGURATION_FILENAME);
     }
+
+    protected Path getRunningConfigurationTargetFile() {
+        return this.targetFile.resolve(RUNNING_FILENAME);
+    }
+
+    protected final void init(Path targetFile) {
+        try {
+            if (!Files.exists(targetFile)) {
+                Files.createDirectories(targetFile);
+            }
+            if (!Files.exists(targetFile.resolve(RUNTIME_CONFIGURATION_FILENAME))) {
+                Files.createFile(targetFile.resolve(RUNTIME_CONFIGURATION_FILENAME));
+            }
+            if (!Files.exists(targetFile.resolve(RUNNING_FILENAME))) {
+                Files.createFile(targetFile.resolve(RUNNING_FILENAME));
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(ControlledStateNotificationListener.class).error("Problem handling JMX Notification", ex);
+        }
+    }
+
+    @Override
+    public void handleNotification(Notification notification, Object handback) {
+        AttributeChangeNotification attributeChangeNotification = (AttributeChangeNotification) notification;
+        if ("RuntimeConfigurationState".equals(attributeChangeNotification.getAttributeName())) {
+            writeNotification(attributeChangeNotification, getRuntimeConfigurationTargetFile());
+        } else {
+            writeNotification(attributeChangeNotification, getRunningConfigurationTargetFile());
+        }
+    }
+
+    private void writeNotification(AttributeChangeNotification notification, Path path) {
+        try (BufferedWriter in = Files.newBufferedWriter(path, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+            in.write(String.format("%s %s %s %s", notification.getType(), notification.getSequenceNumber(), notification.getSource().toString(), notification.getMessage()));
+            in.newLine();
+            in.flush();
+        } catch (IOException ex) {
+            Logger.getLogger(ControlledStateNotificationListener.class).error("Problem handling JMX Notification", ex);
+        }
+    }
+
 }
