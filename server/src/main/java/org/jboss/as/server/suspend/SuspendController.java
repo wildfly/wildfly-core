@@ -71,6 +71,9 @@ public class SuspendController implements Service<SuspendController> {
     }
 
     public synchronized void suspend(long timeoutMillis) {
+        if(state == State.SUSPENDED) {
+            return;
+        }
         if (timeoutMillis > 0) {
             ServerLogger.ROOT_LOGGER.suspendingServer(timeoutMillis);
         } else {
