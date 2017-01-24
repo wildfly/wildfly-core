@@ -60,7 +60,6 @@ public class ServiceActivatorDeploymentUtil {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
         archive.addClass(ServiceActivatorDeployment.class);
         archive.addClass(listenerClass);
-        archive.addClass(AbstractStateNotificationListener.class);
         archive.addAsServiceProvider(ServiceActivator.class, ServiceActivatorDeployment.class);
         StringBuilder sb = new StringBuilder();
         sb.append(ServiceActivatorDeployment.LISTENER_CLASS_NAME);
