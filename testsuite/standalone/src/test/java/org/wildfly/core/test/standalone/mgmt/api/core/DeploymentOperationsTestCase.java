@@ -505,7 +505,7 @@ public class DeploymentOperationsTestCase {
         expected = new ArrayList<>(Arrays.asList("inner-lib.jar"));
         assertBrowseContentReturnsExpectedResult(expected, TEST_DEPLOYMENT_NAME, "web.war/lib/", true, -1);
         expected = new ArrayList<>(Arrays.asList("META-INF/", "META-INF/MANIFEST.MF",
-                "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
+                "META-INF/permissions.xml", "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
                 "org/","org/jboss/","org/jboss/as/", "org/jboss/as/test/", "org/jboss/as/test/deployment/",
                 "org/jboss/as/test/deployment/trivial/", "service-activator-deployment.properties",
                 "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class"));
@@ -517,7 +517,7 @@ public class DeploymentOperationsTestCase {
         expected = new ArrayList<>();
         assertBrowseContentReturnsExpectedResult(expected, TEST_DEPLOYMENT_NAME, "web.war/lib/inner-lib.jar/", true, 1);
         expected = new ArrayList<>(Arrays.asList("META-INF/", "META-INF/MANIFEST.MF",
-                "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
+                "META-INF/permissions.xml", "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
                 "org/","org/jboss/","org/jboss/as/", "org/jboss/as/test/", "org/jboss/as/test/deployment/",
                 "org/jboss/as/test/deployment/trivial/", "service-activator-deployment.properties",
                 "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class", "inner-lib.jar"));
@@ -529,7 +529,7 @@ public class DeploymentOperationsTestCase {
         expected = new ArrayList<>(Arrays.asList("inner-lib.jar"));
         assertBrowseContentReturnsExpectedResult(expected, TEST_DEPLOYMENT_NAME, "lib/lib.jar/", true, 1);
         expected = new ArrayList<>(Arrays.asList("META-INF/", "META-INF/MANIFEST.MF",
-                "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
+                "META-INF/permissions.xml","META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
                 "org/","org/jboss/","org/jboss/as/", "org/jboss/as/test/", "org/jboss/as/test/deployment/",
                 "org/jboss/as/test/deployment/trivial/", "service-activator-deployment.properties",
                 "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class"));

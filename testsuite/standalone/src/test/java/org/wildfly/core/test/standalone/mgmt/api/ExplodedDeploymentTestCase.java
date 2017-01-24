@@ -48,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.PropertyPermission;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -62,6 +63,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -329,6 +331,9 @@ public class ExplodedDeploymentTestCase {
                 contents.put("META-INF/services/org.jboss.msc.service.ServiceActivator", new ByteArrayInputStream("org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment\n".getBytes(StandardCharsets.UTF_8)));
                 contents.put("org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class", ServiceActivatorDeployment.class.getResourceAsStream("ServiceActivatorDeployment.class"));
                 contents.put("service-activator-deployment.properties", new ByteArrayInputStream(out.toByteArray()));
+                contents.put("META-INF/permissions.xml", new ByteArrayInputStream(PermissionUtils.createPermissionsXml(
+                        new PropertyPermission("test.deployment.trivial.prop", "write"),
+                        new PropertyPermission("service", "write"))));
                 Future<?> future = manager.execute(manager.newDeploymentPlan()
                         .add("test-deployment.jar", (InputStream) null)
                         .addContentToDeployment("test-deployment.jar", contents)
@@ -539,7 +544,7 @@ public class ExplodedDeploymentTestCase {
         deploymentExecutor.addContent();
         deploymentExecutor.readContent("SimpleTest.properties", "is added");
         deploymentExecutor.browseContent("", new ArrayList<>(Arrays.asList("META-INF/", "META-INF/MANIFEST.MF",
-                "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
+                "META-INF/permissions.xml", "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
                 "org/","org/jboss/","org/jboss/as/", "org/jboss/as/test/", "org/jboss/as/test/deployment/",
                 "org/jboss/as/test/deployment/trivial/", "service-activator-deployment.properties",
                 "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class",  "SimpleTest.properties")),
