@@ -1,21 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!--  See src/resources/configuration/ReadMe.txt for how the configuration assembly works -->
-<config default-supplement="default">
+<config>
    <extension-module>org.jboss.as.remoting</extension-module>
    <subsystem xmlns="urn:jboss:domain:remoting:4.0">
        <endpoint/>
-       <?CONNECTOR?>
+       <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>
    </subsystem>
-
-   <supplement name="default">
-       <replacement placeholder="CONNECTOR">
-           <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>
-       </replacement>
-   </supplement>
-
-   <supplement name="elytron">
-       <replacement placeholder="CONNECTOR">
-           <http-connector name="http-remoting-connector" connector-ref="default" sasl-authentication-factory="application-sasl-authentication"/>
-       </replacement>
-   </supplement>
 </config>
