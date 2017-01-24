@@ -352,8 +352,6 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         File tmp = getFileFromProperty(MODULES_DIR);
         if (tmp == null) {
             tmp = new File(this.homeDir, "modules");
-        } else if (!tmp.exists() || !tmp.isDirectory()) {
-            throw HostControllerLogger.ROOT_LOGGER.modulesDirectoryDoesNotExist(tmp);
         }
         this.modulesDir = tmp;
         @SuppressWarnings("deprecation")

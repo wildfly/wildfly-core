@@ -770,8 +770,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 117, value = "Unable to initialise a basic SSLContext '%s'")
     IllegalStateException unableToInitialiseSSLContext(String message);
 
-    @Message(id = 118, value = "Determined modules directory does not exist: %s")
-    IllegalStateException modulesDirectoryDoesNotExist(File f);
+    // WFCORE-2223 no longer used
+//    @Message(id = 118, value = "Determined modules directory does not exist: %s")
+//    IllegalStateException modulesDirectoryDoesNotExist(File f);
 
     @Message(id = 119, value = "Home directory does not exist: %s")
     IllegalStateException homeDirectoryDoesNotExist(File f);
