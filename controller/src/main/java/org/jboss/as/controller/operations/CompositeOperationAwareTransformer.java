@@ -59,7 +59,7 @@ public class CompositeOperationAwareTransformer implements DomainOperationTransf
             return ret;
         } else {
             if (matches(operation, newOperation)) {
-                return newOperation;
+                return newOperation.clone();
             } else {
                 return operation;
             }
