@@ -332,6 +332,7 @@ public class ModelDescriptionConstants {
     public static final String OUTCOME = "outcome";
     public static final String OVERWRITE = "overwrite";
     public static final String OWNER = "owner";
+    public static final String PARSE_ROLES_FROM_DN = "parse-group-name-from-dn";
     public static final String PASSWORD = "password";
     public static final String PATH = "path";
     public static final String PATHS = "paths";

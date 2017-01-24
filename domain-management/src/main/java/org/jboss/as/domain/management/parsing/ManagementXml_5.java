@@ -1716,6 +1716,10 @@ class ManagementXml_5 extends ManagementXml {
                         PrincipalToGroupResourceDefinition.SKIP_MISSING_GROUPS.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
+                    case PARSE_ROLES_FROM_DN: {
+                        PrincipalToGroupResourceDefinition.PARSE_ROLES_FROM_DN.parseAndSetParameter(value, addOp, reader);
+                        break;
+                    }
                     default: {
                         throw unexpectedAttribute(reader, i);
                     }
@@ -2284,6 +2288,7 @@ class ManagementXml_5 extends ManagementXml {
                     PrincipalToGroupResourceDefinition.GROUP_ATTRIBUTE.marshallAsAttribute(principalToGroup, writer);
                     PrincipalToGroupResourceDefinition.PREFER_ORIGINAL_CONNECTION.marshallAsAttribute(principalToGroup, writer);
                     PrincipalToGroupResourceDefinition.SKIP_MISSING_GROUPS.marshallAsAttribute(principalToGroup, writer);
+                    PrincipalToGroupResourceDefinition.PARSE_ROLES_FROM_DN.marshallAsAttribute(principalToGroup, writer);
                     writer.writeEndElement();
                 }
                 writer.writeEndElement();
