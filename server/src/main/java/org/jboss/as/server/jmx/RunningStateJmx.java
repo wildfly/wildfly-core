@@ -21,12 +21,16 @@ import static org.wildfly.extension.core.management.client.Process.Type.EMBEDDED
 import static org.wildfly.extension.core.management.client.Process.Type.STANDALONE_SERVER;
 
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.management.AttributeChangeNotification;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.InstanceNotFoundException;
 import javax.management.MBeanNotificationInfo;
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 import org.jboss.as.controller.ControlledProcessState;
@@ -45,6 +49,7 @@ import org.wildfly.extension.core.management.client.Process.Type;
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
 public class RunningStateJmx extends NotificationBroadcasterSupport implements RunningStateJmxMBean {
+
     private final ObjectName objectName;
     private final AtomicLong sequence = new AtomicLong(0);
     private volatile RuntimeConfigurationState state = RuntimeConfigurationState.STOPPED;
@@ -79,10 +84,10 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
     @Override
     public MBeanNotificationInfo[] getNotificationInfo() {
         return new MBeanNotificationInfo[]{
-                new MBeanNotificationInfo(
-                        new String[]{AttributeChangeNotification.ATTRIBUTE_CHANGE},
-                        AttributeChangeNotification.class.getName(),
-                        ServerLogger.ROOT_LOGGER.processStateChangeNotificationDescription())};
+            new MBeanNotificationInfo(
+            new String[]{AttributeChangeNotification.ATTRIBUTE_CHANGE},
+            AttributeChangeNotification.class.getName(),
+            ServerLogger.ROOT_LOGGER.processStateChangeNotificationDescription())};
     }
 
     @Override
@@ -105,13 +110,17 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
                 ServerLogger.ROOT_LOGGER.jmxAttributeChange(RUNTIME_CONFIGURATION_STATE, oldStateString, stateString),
                 RUNTIME_CONFIGURATION_STATE, String.class.getName(), oldStateString, stateString);
         sendNotification(notification);
-        switch(newState) {
+        switch (newState) {
             case RUNNING:
-                if (RunningState.NORMAL != runningState && RunningState.ADMIN_ONLY != runningState && !isServer) {
-                    if (getRunningMode() == RunningMode.NORMAL) {
-                        setRunningState(runningState, RunningState.NORMAL);
-                    } else {
-                        setRunningState(runningState, RunningState.ADMIN_ONLY);
+                if (RunningState.NORMAL != runningState && RunningState.ADMIN_ONLY != runningState) {
+                    if (runningState == RunningState.STARTING) {
+                        setRunningState(runningState, RunningState.SUSPENDED);
+                    } else if (!isServer){
+                        if (getRunningMode() == RunningMode.NORMAL) {
+                            setRunningState(runningState, RunningState.NORMAL);
+                        } else {
+                            setRunningState(runningState, RunningState.ADMIN_ONLY);
+                        }
                     }
                 }
                 break;
@@ -173,7 +182,7 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
 
                     @Override
                     public void cancelled() {
-                        if(mbean.getRunningState() == null || mbean.getRunningState() == RunningState.STARTING) {
+                        if(mbean.getRunningState() == RunningState.STARTING) {
                             mbean.setRunningState(RunningState.STARTING, RunningState.SUSPENDED);
                         }
                         if (mbean.getRunningMode() == RunningMode.NORMAL) {
@@ -190,21 +199,18 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
             } else {
                 mbean.setRunningState(null, RunningState.STARTING);
             }
-        } catch (Exception e) {
+        } catch (InstanceAlreadyExistsException | InstanceNotFoundException | MBeanRegistrationException | MalformedObjectNameException | NotCompliantMBeanException e) {
             throw new RuntimeException(e);
         }
     }
 
     private static void registerStateListener(RunningStateJmxMBean mbean, ControlledProcessStateService processStateService) {
-        processStateService.addPropertyChangeListener(new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if ("currentState".equals(evt.getPropertyName())) {
-                        ControlledProcessState.State oldState = (ControlledProcessState.State) evt.getOldValue();
-                        ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
-                        mbean.setProcessState(oldState, newState);
-                    }
-                }
-            });
+        processStateService.addPropertyChangeListener((PropertyChangeEvent evt) -> {
+            if ("currentState".equals(evt.getPropertyName())) {
+                ControlledProcessState.State oldState = (ControlledProcessState.State) evt.getOldValue();
+                ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
+                mbean.setProcessState(oldState, newState);
+            }
+        });
     }
 }
