@@ -126,4 +126,7 @@ public interface RemotingLogger extends BasicLogger {
 
     @Message(id = 25, value = "Can't remove %s as JMX uses it as a remoting endpoint")
     OperationFailedException couldNotRemoveResource(PathAddress address);
+
+    @Message(id = 26, value = "Change of worker to '%s' in remoting might require the same change in resources depending on remoting.")
+    String warningOnWorkerChange(String worker);
 }

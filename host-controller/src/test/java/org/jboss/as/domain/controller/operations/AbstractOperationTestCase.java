@@ -52,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BlockingTimeout;
@@ -768,6 +769,16 @@ public abstract class AbstractOperationTestCase {
         @Override
         public boolean isDefaultRequiresRuntime() {
             return false;
+        }
+
+        @Override
+        public void addResponseWarning(Level level, String warning) {
+            // TODO Auto-generated method stub
+        }
+
+        @Override
+        public void addResponseWarning(Level level, ModelNode warning) {
+            // TODO Auto-generated method stub
         }
     }
 

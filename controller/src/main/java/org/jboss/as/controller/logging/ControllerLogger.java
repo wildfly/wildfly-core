@@ -3488,10 +3488,13 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 435, value = "Attribute %s of resource %s was not marked as reload required, either set the RESTART_ALL_SERVICES flag, or register a custom write handler.")
     RuntimeException attributeWasNotMarkedAsReloadRequired(String name, PathAddress pathAddress);
 
+    @Message(id = 436, value = "Couldn't convert '%s' into proper warning level, threshold falling back to 'ALL'. Possible values: SEVERE,WARNING,INFO,CONFIG,FINE,FINER,FINEST,ALL,OFF")
+    String couldntConvertWarningLevel(String level);
+
     @Message(id = NONE, value = "Couldn't convert %s to %s")
     String typeConversionError(ModelNode value, Collection<ModelType> validTypes);
 
-    @Message(id = 436, value = "Cannot register capability '%s' at location '%s' as it is already registered in " +
+    @Message(id = 437, value = "Cannot register capability '%s' at location '%s' as it is already registered in " +
             "context '%s' at location(s) '%s'")
     OperationFailedRuntimeException capabilityAlreadyRegisteredInContext(String capability, RegistrationPoint newPoint,
                                                                          String context,Set<RegistrationPoint> oldPoints);

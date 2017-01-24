@@ -33,11 +33,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNINGS;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -113,7 +115,14 @@ class DomainFinalResultHandler implements OperationStepHandler {
                     }
 
                     contextResult.set(getDomainResults(operation, localDomainFormatted));
-
+                    //check if there are warnings from controller. Copy over, since we discard warnings
+                    //from slaves in #populateServerGroupResults
+                    if(localDomainFormatted.hasDefined(RESPONSE_HEADERS)){
+                        final ModelNode responseHeaders = localDomainFormatted.get(RESPONSE_HEADERS);
+                        if(responseHeaders.hasDefined(WARNINGS)){
+                            contextResult.get(RESPONSE_HEADERS).get(WARNINGS).set(responseHeaders.get(WARNINGS));
+                        }
+                    }
                     // If we have server results we know all was ok on the slaves
                     Map<ServerIdentity, ModelNode> serverResults = multiphaseContext.getServerResults();
                     if (serverResults.size() > 0) {
@@ -318,7 +327,11 @@ class DomainFinalResultHandler implements OperationStepHandler {
 
         return result;
     }
-
+    /**
+     * Populate server group results. Also strip any warning from slave execution. Main controller will emit the same warnings
+     * @param context
+     * @param serverResults
+     */
     private void populateServerGroupResults(final OperationContext context, final Map<ServerIdentity, ModelNode> serverResults) {
 
         final Set<String> groupNames = new TreeSet<String>();
@@ -346,11 +359,21 @@ class DomainFinalResultHandler implements OperationStepHandler {
                 serverGroupSuccess = true;
             }
             for (HostServer hostServer : groupToServerMap.get(groupName)) {
-                groupNode.get(HOST, hostServer.hostName, hostServer.serverName, RESPONSE).set(hostServer.result);
-                if (groupFailure && hostServer.result.hasDefined(OUTCOME)
-                        && FAILED.equals(hostServer.result.get(OUTCOME).asString())
-                        && hostServer.result.hasDefined(FAILURE_DESCRIPTION)) {
-                    ModelNode failDesc = hostServer.result.get(FAILURE_DESCRIPTION);
+                final ModelNode hostResult = hostServer.result.clone();
+                if(hostResult.hasDefined(RESPONSE_HEADERS)){
+                    final ModelNode responseHeaders = hostResult.get(RESPONSE_HEADERS);
+                    if(responseHeaders.hasDefined(WARNINGS)){
+                        responseHeaders.remove(WARNINGS);
+                    }
+                    if(responseHeaders.keys().size() == 0){
+                        hostResult.remove(RESPONSE_HEADERS);
+                    }
+                }
+                groupNode.get(HOST, hostServer.hostName, hostServer.serverName, RESPONSE).set(hostResult);
+                if (groupFailure && hostResult.hasDefined(OUTCOME)
+                        && FAILED.equals(hostResult.get(OUTCOME).asString())
+                        && hostResult.hasDefined(FAILURE_DESCRIPTION)) {
+                    ModelNode failDesc = hostResult.get(FAILURE_DESCRIPTION);
                     if (!CompositeOperationHandler.getUnexplainedFailureMessage().equals(failDesc.asString())) {
                         failureReport.get(SERVER_GROUP, groupName, HOST, hostServer.hostName, hostServer.serverName).set(failDesc);
                     } // else the server just reported an unexplained composite failure.
