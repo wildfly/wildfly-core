@@ -74,7 +74,7 @@ public class ProcessStateListenerService implements Service<Void> {
     private final PropertyChangeListener propertyChangeListener;
     private final OperationListener operationListener;
     private final ProcessStateListener listener;
-    private final ProcessStateListenerInitParameters parameters;
+    private ProcessStateListenerInitParameters parameters;
     private final String name;
     private final int timeout;
     private final ProcessType processType;
