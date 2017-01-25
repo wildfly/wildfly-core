@@ -412,7 +412,7 @@ class ManagedServer {
     synchronized TransactionalProtocolClient channelRegistered(final ManagementChannelHandler channelAssociation) {
         final InternalState current = this.internalState;
         // Create the remote controller client
-        channelAssociation.getAttachments().attach(TransactionalProtocolClient.SEND_SUBJECT, Boolean.TRUE);
+        channelAssociation.getAttachments().attach(TransactionalProtocolClient.SEND_IDENTITY, Boolean.TRUE);
         final TransactionalProtocolClient remoteClient = TransactionalProtocolHandlers.createClient(channelAssociation);
         if      (current == InternalState.RELOADING) {
             internalSetState(new TransitionTask() {

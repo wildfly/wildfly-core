@@ -22,15 +22,15 @@
 
 package org.jboss.as.domain.controller.plan;
 
+import java.net.InetAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.security.auth.Subject;
-
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.jboss.as.domain.controller.ServerIdentity;
 
 /**
@@ -39,8 +39,8 @@ import org.jboss.as.domain.controller.ServerIdentity;
 class RollingServerGroupUpdateTask extends AbstractServerGroupRolloutTask implements Runnable {
 
     public RollingServerGroupUpdateTask(List<ServerUpdateTask> tasks, ServerUpdatePolicy updatePolicy,
-                                        ServerTaskExecutor executor, Subject subject, BlockingTimeout blockingTimeout) {
-        super(tasks, updatePolicy, executor, subject, blockingTimeout);
+                                        ServerTaskExecutor executor, SecurityIdentity securityIdentity, InetAddress sourceAddress, BlockingTimeout blockingTimeout) {
+        super(tasks, updatePolicy, executor, securityIdentity, sourceAddress, blockingTimeout);
     }
 
     @Override

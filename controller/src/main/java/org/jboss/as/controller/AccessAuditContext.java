@@ -23,7 +23,9 @@
 package org.jboss.as.controller;
 
 import java.net.InetAddress;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 
 import org.jboss.as.controller.security.ControllerPermission;
 import org.jboss.as.core.security.AccessMechanism;
@@ -40,21 +42,32 @@ public class AccessAuditContext {
 
     private static ThreadLocal<AccessAuditContext> contextThreadLocal = new ThreadLocal<AccessAuditContext>();
 
+    private final boolean inflowed;
     private final SecurityIdentity securityIdentity;
     private final InetAddress remoteAddress;
     private String domainUuid;
     private AccessMechanism accessMechanism;
     private boolean domainRollout;
 
-    private AccessAuditContext(final SecurityIdentity securityIdentity, final InetAddress remoteAddress, final AccessAuditContext previous) {
+    private AccessAuditContext(final boolean inflowed, final SecurityIdentity securityIdentity, final InetAddress remoteAddress, final AccessAuditContext previous) {
         // This can only be instantiated as part of the doAs call.
         this.securityIdentity = securityIdentity;
         // The address would be set on the first context in the stack so use it.
-        this.remoteAddress = previous != null ? previous.remoteAddress : remoteAddress;
         if (previous != null) {
             domainUuid = previous.domainUuid;
             accessMechanism = previous.accessMechanism;
             domainRollout = previous.domainRollout;
+            this.remoteAddress = previous.remoteAddress;
+            this.inflowed = previous.inflowed;
+        } else {
+            this.inflowed = inflowed;
+            this.remoteAddress = remoteAddress;
+        }
+
+        // This is checked here so code can not obtain a reference to an AccessAuditContext with an inflowed identity and then
+        // use it swap in any arbitrary identity.
+        if (this.inflowed && WildFlySecurityManager.isChecking()) {
+            System.getSecurityManager().checkPermission(ControllerPermission.INFLOW_SECURITY_IDENTITY);
         }
     }
 
@@ -67,6 +80,17 @@ public class AccessAuditContext {
      */
     public SecurityIdentity getSecurityIdentity() {
         return securityIdentity;
+    }
+
+    /**
+     * Get if the current {@link SecurityIdentity} was inflowed from another process.
+     *
+     * This is a special case where we want to use it without attempting to inflow into a configured security domain.
+     *
+     * @return {@code true} if the identity was inflowed, {@code false} otherwise.
+     */
+    public boolean isInflowed() {
+        return inflowed;
     }
 
     /**
@@ -147,10 +171,30 @@ public class AccessAuditContext {
      * @exception SecurityException if the caller does not have permission
      *                  to invoke this method.
      */
-    public static <T> T doAs(final SecurityIdentity securityIdentity, final InetAddress remoteAddress, final java.security.PrivilegedAction<T> action) {
+    public static <T> T doAs(final SecurityIdentity securityIdentity, final InetAddress remoteAddress, final PrivilegedAction<T> action) {
+        return doAs(false, securityIdentity, remoteAddress, action);
+    }
+
+    /**
+     * Perform work with a new {@code AccessAuditContext} as a particular {@code SecurityIdentity}
+     * @param inflowed was the identity inflowed from a remote process?
+     * @param securityIdentity the {@code SecurityIdentity} that the specified {@code action} will run as. May be {@code null}
+     * @param remoteAddress the remote address of the caller.
+     * @param action the work to perform. Cannot be {@code null}
+     * @param <T> the type of teh return value
+     * @return the value returned by the PrivilegedAction's <code>run</code> method
+     *
+     * @exception NullPointerException if the specified
+     *                  <code>PrivilegedExceptionAction</code> is
+     *                  <code>null</code>.
+     *
+     * @exception SecurityException if the caller does not have permission
+     *                  to invoke this method.
+     */
+    public static <T> T doAs(final boolean inflowed, final SecurityIdentity securityIdentity, final InetAddress remoteAddress, final PrivilegedAction<T> action) {
         final AccessAuditContext previous = contextThreadLocal.get();
         try {
-            contextThreadLocal.set(new AccessAuditContext(securityIdentity, remoteAddress, previous));
+            contextThreadLocal.set(new AccessAuditContext(inflowed, securityIdentity, remoteAddress, previous));
             return securityIdentity != null ? securityIdentity.runAs(action) : action.run();
         } finally {
             contextThreadLocal.set(previous);
@@ -176,11 +220,36 @@ public class AccessAuditContext {
      * @exception SecurityException if the caller does not have permission
      *                  to invoke this method.
      */
-    public static <T> T doAs(SecurityIdentity securityIdentity, InetAddress remoteAddress, java.security.PrivilegedExceptionAction<T> action)
+    public static <T> T doAs(SecurityIdentity securityIdentity, InetAddress remoteAddress, PrivilegedExceptionAction<T> action)
+            throws java.security.PrivilegedActionException {
+        return doAs(false, securityIdentity, remoteAddress, action);
+    }
+
+    /**
+     * Perform work with a new {@code AccessAuditContext} as a particular {@code SecurityIdentity}
+     * @param inflowed was the identity inflowed from a remote process?
+     * @param securityIdentity the {@code SecurityIdentity} that the specified {@code action} will run as. May be {@code null}
+     * @param remoteAddress the remote address of the caller.
+     * @param action the work to perform. Cannot be {@code null}
+     * @param <T> the type of teh return value
+     * @return the value returned by the PrivilegedAction's <code>run</code> method
+     *
+     * @exception java.security.PrivilegedActionException if the
+     *                  <code>PrivilegedExceptionAction.run</code>
+     *                  method throws a checked exception.
+     *
+     * @exception NullPointerException if the specified
+     *                  <code>PrivilegedExceptionAction</code> is
+     *                  <code>null</code>.
+     *
+     * @exception SecurityException if the caller does not have permission
+     *                  to invoke this method.
+     */
+    public static <T> T doAs(boolean inflowed, SecurityIdentity securityIdentity, InetAddress remoteAddress, PrivilegedExceptionAction<T> action)
             throws java.security.PrivilegedActionException {
         final AccessAuditContext previous = contextThreadLocal.get();
         try {
-            contextThreadLocal.set(new AccessAuditContext(securityIdentity, remoteAddress, previous));
+            contextThreadLocal.set(new AccessAuditContext(inflowed, securityIdentity, remoteAddress, previous));
             if (securityIdentity != null) {
                 return securityIdentity.runAs(action);
             } else try {
