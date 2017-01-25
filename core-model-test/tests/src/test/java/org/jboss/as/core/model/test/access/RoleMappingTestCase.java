@@ -43,11 +43,13 @@ import static org.jboss.as.domain.management.ModelDescriptionConstants.IS_CALLER
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.access.rbac.StandardRole;
@@ -58,12 +60,15 @@ import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.core.security.AccountPrincipal;
 import org.jboss.as.core.security.GroupPrincipal;
 import org.jboss.as.core.security.RealmPrincipal;
+import org.jboss.as.core.security.RealmUser;
 import org.jboss.dmr.ModelNode;
 import org.junit.Before;
 import org.junit.Test;
 import org.wildfly.security.auth.permission.LoginPermission;
+import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
 import org.wildfly.security.auth.realm.SimpleRealmEntry;
+import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
@@ -483,18 +488,27 @@ public class RoleMappingTestCase extends AbstractCoreModelTest {
     private void assertIsCallerInRole(final String roleName, final boolean expectedOutcome, final String userName,
             final String realm, final String runAsRole, final String... groups)  {
         MapAttributes testAttributes = new MapAttributes();
-        testAttributes.addFirst("realm", realm);
         testAttributes.addAll("groups", Arrays.asList(groups));
 
         Map<String, SimpleRealmEntry> entries = new HashMap<>(StandardRole.values().length);
         entries.put(userName, new SimpleRealmEntry(Collections.emptyList(), testAttributes));
 
-        SimpleMapBackedSecurityRealm securityRealm = new SimpleMapBackedSecurityRealm();
+        SimpleMapBackedSecurityRealm securityRealm = new SimpleMapBackedSecurityRealm() {
+
+            @Override
+            public RealmIdentity getRealmIdentity(Principal principal) {
+                return super.getRealmIdentity(new NamePrincipal(principal.getName()));
+            }
+
+        };
         securityRealm.setPasswordMap(entries);
 
         SecurityDomain testDomain = SecurityDomain.builder()
                 .setDefaultRealmName("Default")
-                .addRealm("Default", securityRealm).setRoleDecoder(RoleDecoder.simple("groups")).build()
+                .setPreRealmRewriter((Function<Principal, Principal>) p -> new RealmUser(realm, p.getName()))
+                .addRealm("Default", securityRealm)
+                    .setRoleDecoder(RoleDecoder.simple("groups"))
+                    .build()
                 .setPermissionMapper((p,r) -> new LoginPermission())
                 .build();
 

@@ -25,10 +25,12 @@ package org.jboss.as.domain.management.security;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.IDENTITY;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.MAPPED_ROLES;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.REALM;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.ROLES;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.USERNAME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.WHOAMI;
 
+import java.security.Principal;
 import java.util.Set;
 
 import org.jboss.as.controller.OperationContext;
@@ -41,6 +43,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Authorizer;
 import org.jboss.as.controller.access.rbac.RunAsRoleMapper;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.core.security.api.RealmPrincipal;
 import org.jboss.as.domain.management.ModelDescriptionConstants;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
@@ -93,12 +96,14 @@ public class WhoAmIOperation implements OperationStepHandler {
 
         ModelNode result = context.getResult();
         ModelNode identity = result.get(IDENTITY);
-        identity.get(USERNAME).set(securityIdentity.getPrincipal().getName());
-        // TODO Elytron - We don't currently expose the equivalent of a realm.
-        //String realm = caller.getRealm();
-        //if (realm != null) {
-        //    identity.get(REALM).set(realm);
-        //}
+        Principal principal = securityIdentity.getPrincipal();
+        identity.get(USERNAME).set(principal.getName());
+        if (principal instanceof RealmPrincipal) {
+            String realm = ((RealmPrincipal)principal).getRealm();
+            if (realm != null) {
+                identity.get(REALM).set(realm);
+            }
+        }
 
         if (verbose) {
             Roles roles = securityIdentity.getRoles();

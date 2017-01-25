@@ -23,6 +23,7 @@
 package org.jboss.as.controller.access;
 
 import java.security.Permission;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,6 +32,7 @@ import java.util.stream.StreamSupport;
 import javax.security.auth.Subject;
 
 import org.jboss.as.controller.security.ControllerPermission;
+import org.jboss.as.core.security.api.RealmPrincipal;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -83,11 +85,17 @@ public final class Caller {
      * @return The name of the realm used for authentication.
      */
     public String getRealm() {
-        if (UNDEFINED.equals(realm) && securityIdentity!= null && securityIdentity.getAttributes().size("realm") > 0) {
-            realm = securityIdentity.getAttributes().get("realm", 0);
+        if (UNDEFINED.equals(realm)) {
+            Principal principal = securityIdentity.getPrincipal();
+            String realm = null;
+            if (principal instanceof RealmPrincipal) {
+                realm = ((RealmPrincipal)principal).getRealm();
+            }
+            this.realm = realm;
+
         }
 
-        return realm;
+        return this.realm;
     }
 
     /**
