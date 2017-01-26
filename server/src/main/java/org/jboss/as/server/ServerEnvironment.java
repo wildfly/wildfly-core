@@ -406,8 +406,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             File tmp = getFileFromProperty(MODULES_DIR, props);
             if (tmp == null) {
                 tmp = new File(homeDir, "modules");
-            } else if (!tmp.exists() || !tmp.isDirectory()) {
-                throw ServerLogger.ROOT_LOGGER.modulesDirectoryDoesNotExist(tmp);
             }
             modulesDir = tmp;
 
