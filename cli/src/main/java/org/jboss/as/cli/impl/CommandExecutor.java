@@ -150,7 +150,7 @@ public class CommandExecutor {
             }
 
             @Override
-            public void ensureConnected(long timeoutMillis) throws CommandLineException, IOException {
+            public void ensureConnected(long timeoutMillis) throws CommandLineException {
                 if (!(wrapped instanceof AwaiterModelControllerClient)) {
                     throw new CommandLineException("Unsupported ModelControllerClient implementation " + wrapped.getClass().getName());
                 }
