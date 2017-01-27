@@ -38,5 +38,5 @@ public interface AwaiterModelControllerClient {
 
     boolean isConnected();
 
-    void ensureConnected(long timeoutMillis) throws CommandLineException;
+    void ensureConnected(long timeoutMillis) throws CommandLineException, IOException;
 }

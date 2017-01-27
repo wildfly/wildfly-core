@@ -1147,7 +1147,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             } catch (RedirectException re) {
                 try {
                     URI location = new URI(re.getLocation());
-                    if (("remote+http".equals(address.getProtocol()) || "http-remoting".equals(address.getProtocol())) && "https".equals(location.getScheme())) {
+                    if (Util.isHttpsRedirect(re, address.getProtocol())) {
                         int port = location.getPort();
                         if (port < 0) {
                             port = 443;
@@ -1201,6 +1201,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             client = newClient;
             this.currentAddress = address;
             this.connInfoBean = conInfo;
+            if (connInfoBean != null) {
+                this.connInfoBean.setControllerAddress(address);
+            }
 
             List<String> nodeTypes = Util.getNodeTypes(newClient, new DefaultOperationRequestAddress());
             domainMode = nodeTypes.contains(Util.SERVER_GROUP);
