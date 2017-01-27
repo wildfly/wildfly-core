@@ -83,6 +83,7 @@ public class ErrorExtension implements Extension {
 
     public static final String REGISTERED_MESSAGE = "Registered error-test operations";
     public static final String ERROR_MESSAGE = "Deliberate failure to test java.lang.Error handling";
+    public static final String FAIL_REMOVAL = "org.wildfly.extension.error-test.failure";
 
     private static final EmptySubsystemParser PARSER = new EmptySubsystemParser("urn:wildfly:extension:error-test:1.0");
     private static final Logger log = Logger.getLogger(ErrorExtension.class.getCanonicalName());
@@ -106,8 +107,7 @@ public class ErrorExtension implements Extension {
         private final boolean forHost;
         private BlockerSubsystemResourceDefinition(boolean forHost) {
             super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver(),
-                    new AbstractAddStepHandler(),
-                    ReloadRequiredRemoveStepHandler.INSTANCE);
+                    new AbstractAddStepHandler(), ErrorRemovingBlockingSubsystemStepHandler.REMOVE_SUBSYSTEM_INSTANCE);
             this.forHost = forHost;
         }
 
@@ -325,6 +325,17 @@ public class ErrorExtension implements Extension {
         @Override
         public ErroringService getValue() throws IllegalStateException, IllegalArgumentException {
             return this;
+        }
+    }
+
+    private static class ErrorRemovingBlockingSubsystemStepHandler extends ReloadRequiredRemoveStepHandler {
+        private static final ErrorRemovingBlockingSubsystemStepHandler REMOVE_SUBSYSTEM_INSTANCE = new ErrorRemovingBlockingSubsystemStepHandler();
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            if(Boolean.getBoolean(FAIL_REMOVAL)) {
+                throw new OperationFailedException(ERROR_MESSAGE);
+            }
+            super.execute(context, operation);
         }
     }
 }

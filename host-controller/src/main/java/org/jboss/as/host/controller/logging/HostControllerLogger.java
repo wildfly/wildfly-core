@@ -1368,4 +1368,7 @@ public interface HostControllerLogger extends BasicLogger {
     @LogMessage(level = Level.ERROR)
     @Message(id = 200, value = "Reporting instability of server '%s' to Domain Controller failed.")
     void failedReportingServerInstabilityToMaster(@Cause Exception e, String serverName);
+
+    @Message(id = 201, value = "Error synchronizing the host model with the domain controller model with failure : %s.")
+    String hostDomainSynchronizationError(String failureDescription);
 }

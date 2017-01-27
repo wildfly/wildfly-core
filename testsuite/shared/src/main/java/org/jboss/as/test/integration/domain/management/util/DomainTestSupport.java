@@ -74,8 +74,17 @@ public class DomainTestSupport {
      */
     public static DomainTestSupport createAndStartDefaultSupport(final String testName) {
         try {
-            final Configuration configuration = DomainTestSupport.Configuration.create(testName,
+            final Configuration configuration;
+            if(Boolean.getBoolean("wildfly.master.debug")) {
+                 configuration = DomainTestSupport.Configuration.createDebugMaster(testName,
                     "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
+            } else if (Boolean.getBoolean("wildfly.slave.debug")) {
+                configuration = DomainTestSupport.Configuration.createDebugSlave(testName,
+                    "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
+            } else {
+                configuration = DomainTestSupport.Configuration.create(testName,
+                    "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
+            }
             final DomainTestSupport testSupport = DomainTestSupport.create(configuration);
             // Start!
             testSupport.start();
@@ -441,6 +450,15 @@ public class DomainTestSupport {
         public static Configuration create(final String testName, final String domainConfig, final String masterConfig, final String slaveConfig) {
             return create(testName, domainConfig, masterConfig, slaveConfig, false, false, false);
         }
+
+        public static Configuration createDebugMaster(final String testName, final String domainConfig, final String masterConfig, final String slaveConfig) {
+            return create(testName, domainConfig, masterConfig, slaveConfig, false, false, true, false, false);
+        }
+
+        public static Configuration createDebugSlave(final String testName, final String domainConfig, final String masterConfig, final String slaveConfig) {
+            return create(testName, domainConfig, masterConfig, slaveConfig, false, false, false, false, true);
+        }
+
         public static Configuration create(final String testName, final String domainConfig, final String masterConfig,
                                            final String slaveConfig, boolean readOnlyMasterDomain, boolean readOnlyMasterHost, boolean readOnlySlaveHost) {
             return create(testName, domainConfig, masterConfig, slaveConfig, readOnlyMasterDomain, readOnlyMasterHost, false, readOnlySlaveHost, false);
