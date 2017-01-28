@@ -28,7 +28,7 @@
     </properties>
 
     <dependencies>
-        <module name="org.wildfly.security.elytron" export="true">
+        <module name="org.wildfly.security.elytron-private" export="true">
             <exports>
                 <include-set>
                     <path name="org/wildfly/security/manager"/>
