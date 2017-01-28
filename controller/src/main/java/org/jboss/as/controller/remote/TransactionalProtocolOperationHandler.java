@@ -28,9 +28,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
+import static org.jboss.as.controller.remote.IdentityAddressProtocolUtil.read;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
@@ -43,6 +45,7 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.remote.IdentityAddressProtocolUtil.PropagatedIdentity;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
@@ -129,6 +132,9 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             ControllerLogger.MGMT_OP_LOGGER.tracef("Handling transactional ExecuteRequest for %d", context.getOperationId());
 
             final ExecutableRequest executableRequest = ExecutableRequest.parse(input, channelAssociation);
+            PropagatedIdentity propagatedIdentity = executableRequest.propagatedIdentity;
+            final SecurityIdentity securityIdentity = propagatedIdentity != null ? propagatedIdentity.securityIdentity : null;
+            final InetAddress remoteAddress = propagatedIdentity != null ? propagatedIdentity.inetAddress : null;
 
             final PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
 
@@ -153,8 +159,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
 
                         @Override
                         public Void run() {
-                            // TODO Elytron - Inflow the remote address.
-                            AccessAuditContext.doAs(executableRequest.securityIdentity, null, action);
+                            AccessAuditContext.doAs(securityIdentity != null , securityIdentity, remoteAddress, action);
                             return null;
                         }
                     });
@@ -208,12 +213,12 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
     private static class ExecutableRequest {
         private final ModelNode operation;
         private final int attachmentsLength;
-        private final SecurityIdentity securityIdentity;
+        private final PropagatedIdentity propagatedIdentity;
 
-        private ExecutableRequest(ModelNode operation, int attachmentsLength, SecurityIdentity securityIdentity) {
+        private ExecutableRequest(ModelNode operation, int attachmentsLength, PropagatedIdentity propagatedIdentity) {
             this.operation = operation;
             this.attachmentsLength = attachmentsLength;
-            this.securityIdentity = securityIdentity;
+            this.propagatedIdentity = propagatedIdentity;
         }
 
         static ExecutableRequest parse(DataInput input, ManagementChannelAssociation channelAssociation) throws IOException {
@@ -223,8 +228,11 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             ProtocolUtils.expectHeader(input, ModelControllerProtocol.PARAM_INPUTSTREAMS_LENGTH);
             final int attachmentsLength = input.readInt();
 
-            // TODO Elytron At this point we should be inflowing the identity of the user that has triggered this operation.
-            return new ExecutableRequest(operation, attachmentsLength, channelAssociation.getChannel().getConnection().getLocalIdentity());
+            final PropagatedIdentity propagatedIdentity;
+            final Boolean readIdentity = channelAssociation.getAttachments().getAttachment(TransactionalProtocolClient.SEND_IDENTITY);
+            propagatedIdentity = (readIdentity != null && readIdentity) ? read(input) : null;
+
+            return new ExecutableRequest(operation, attachmentsLength, propagatedIdentity);
         }
     }
 

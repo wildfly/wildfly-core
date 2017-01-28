@@ -25,6 +25,7 @@
  */
 package org.jboss.as.domain.controller.plan;
 
+import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONCURRENT_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GRACEFUL_SHUTDOWN_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_SERIES;
@@ -35,6 +36,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 
+import java.net.InetAddress;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,13 +46,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import javax.security.auth.Subject;
-
+import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.operations.coordination.MultiphaseOverallContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Coordinates rolling out a series of operations to the servers specified in a rollout plan.
@@ -89,7 +93,9 @@ public class RolloutPlanController {
         if (rolloutPlan.hasDefined(IN_SERIES)) {
 
             ConcurrentGroupServerUpdatePolicy predecessor = null;
-            Subject subject = SecurityActions.getCurrentSubject();
+            AccessAuditContext accessAuditContext = WildFlySecurityManager.isChecking()
+                    ? doPrivileged((PrivilegedAction<AccessAuditContext>) AccessAuditContext::currentAccessAuditContext)
+                    : AccessAuditContext.currentAccessAuditContext();
             for (ModelNode series : rolloutPlan.get(IN_SERIES).asList()) {
 
                 final List<Runnable> seriesTasks = new ArrayList<Runnable>();
@@ -133,8 +139,10 @@ public class RolloutPlanController {
                     }
                     ServerUpdatePolicy policy = new ServerUpdatePolicy(parent, serverGroupName, servers, maxFailures);
 
-                    seriesTasks.add(rollingGroup ? new RollingServerGroupUpdateTask(groupTasks, policy, taskExecutor, subject, blockingTimeout)
-                        : new ConcurrentServerGroupUpdateTask(groupTasks, policy, taskExecutor, subject, blockingTimeout));
+                    SecurityIdentity securityIdentity = accessAuditContext != null ?  accessAuditContext.getSecurityIdentity() : null;
+                    InetAddress sourceAddress = accessAuditContext != null ?  accessAuditContext.getRemoteAddress() : null;
+                    seriesTasks.add(rollingGroup ? new RollingServerGroupUpdateTask(groupTasks, policy, taskExecutor, securityIdentity, sourceAddress, blockingTimeout)
+                        : new ConcurrentServerGroupUpdateTask(groupTasks, policy, taskExecutor, securityIdentity, sourceAddress, blockingTimeout));
 
                     updatePolicies.put(serverGroupName, policy);
 

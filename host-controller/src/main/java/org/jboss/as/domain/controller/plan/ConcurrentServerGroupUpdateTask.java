@@ -22,17 +22,17 @@
 
 package org.jboss.as.domain.controller.plan;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.security.auth.Subject;
-
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * @author Emanuel Muckenhuber
@@ -40,8 +40,8 @@ import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 class ConcurrentServerGroupUpdateTask extends AbstractServerGroupRolloutTask implements Runnable {
 
     public ConcurrentServerGroupUpdateTask(List<ServerUpdateTask> tasks, ServerUpdatePolicy updatePolicy,
-                                           ServerTaskExecutor executor, Subject subject, BlockingTimeout blockingTimeout) {
-        super(tasks, updatePolicy, executor, subject, blockingTimeout);
+                                           ServerTaskExecutor executor, SecurityIdentity securityIdentity, InetAddress sourceAddress, BlockingTimeout blockingTimeout) {
+        super(tasks, updatePolicy, executor, securityIdentity, sourceAddress, blockingTimeout);
     }
 
     @Override
