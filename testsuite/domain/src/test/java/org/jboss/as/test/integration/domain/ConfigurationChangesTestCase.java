@@ -187,6 +187,37 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
     }
 
     @Test
+    public void testExcludeByLegacy() throws Exception{
+        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        try {
+            final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(PathAddress.pathAddress()
+                    .append(HOST_SLAVE)
+                    .append(CORE_SERVICE, MANAGEMENT)
+                    .append(SERVICE, CONFIGURATION_CHANGES)));
+            add.get("max-history").set(MAX_HISTORY_SIZE);
+            executeForResult(client, add);
+
+            final ModelNode addToProfile = Util.createAddOperation(PathAddress.pathAddress().append(OTHER_PROFILE).append(getAddress()));
+            add.get("max-history").set(1);
+            ModelNode response = client.execute(addToProfile);
+            Assert.assertFalse(response.toString(), Operations.isSuccessfulOutcome(response));
+            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
+
+            final ModelNode addToSlave = Util.createAddOperation(PathAddress.pathAddress().append(HOST_SLAVE).append(getAddress()));
+            add.get("max-history").set(1);
+            response = client.execute(addToSlave);
+            Assert.assertFalse(response.toString(), Operations.isSuccessfulOutcome(response));
+            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
+
+        } finally {
+            client.execute(Util.createRemoveOperation(PathAddress.pathAddress(PathAddress.pathAddress()
+                    .append(HOST_SLAVE)
+                    .append(CORE_SERVICE, MANAGEMENT)
+                    .append(SERVICE, CONFIGURATION_CHANGES))));
+        }
+    }
+
+    @Test
     public void testEnablingConfigurationChangesOnHC() throws Exception {
         DomainClient client = domainMasterLifecycleUtil.getDomainClient();
         try {

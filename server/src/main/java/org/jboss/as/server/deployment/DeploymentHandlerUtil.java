@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_BOOTING;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
 
@@ -306,6 +307,20 @@ public class DeploymentHandlerUtil {
                     context.removeService(replacedDeploymentUnitServiceName);
 
                     doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
+                    if (originalDeployment.hasDefined(PERSISTENT.getName()) && !PERSISTENT.resolveModelAttribute(context, originalDeployment).asBoolean() && PERSISTENT.resolveModelAttribute(context, operation).asBoolean()) {
+                        ModelNode notificationData = new ModelNode();
+                        notificationData.get(NAME).set(managementName);
+                        notificationData.get(SERVER_BOOTING).set(context.isBooting());
+                        if (operation.hasDefined(OWNER.getName())) {
+                            try {
+                                notificationData.get(OWNER.getName()).set(OWNER.resolveModelAttribute(context, operation));
+                            } catch (OperationFailedException ex) {//No resolvable owner we won't set one
+                            }
+                        }
+                        notificationData.get(DEPLOYMENT).set(deploymentUnitName);
+                        PathAddress pathAddress = context.getCurrentAddress().size() == 0 ? PathAddress.pathAddress(DEPLOYMENT, managementName) : context.getCurrentAddress();
+                        context.emit(new Notification(DEPLOYMENT_UNDEPLOYED_NOTIFICATION, pathAddress, ServerLogger.ROOT_LOGGER.deploymentUndeployedNotification(managementName, deploymentUnitName), notificationData));
+                    }
 
                     context.completeStep(new OperationContext.ResultHandler() {
                         @Override

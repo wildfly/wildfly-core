@@ -1241,6 +1241,13 @@
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:attribute>
+                        <xs:attribute name="parse-group-name-from-dn" type="xs:boolean" default="false">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Extract the groupe name from the distinguished name instead of requesting it.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
                     </xs:complexType>
                 </xs:element>
             </xs:choice>

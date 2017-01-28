@@ -22,13 +22,17 @@
 package org.wildfly.test.jmx;
 
 import java.io.File;
+import java.io.FilePermission;
 import java.io.IOException;
-
+import java.util.PropertyPermission;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+
+import javax.management.MBeanPermission;
 
 /**
  * Utilities for using {@link org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment}.
@@ -60,7 +64,6 @@ public class ServiceActivatorDeploymentUtil {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
         archive.addClass(ServiceActivatorDeployment.class);
         archive.addClass(listenerClass);
-        archive.addClass(AbstractStateNotificationListener.class);
         archive.addAsServiceProvider(ServiceActivator.class, ServiceActivatorDeployment.class);
         StringBuilder sb = new StringBuilder();
         sb.append(ServiceActivatorDeployment.LISTENER_CLASS_NAME);
@@ -71,8 +74,15 @@ public class ServiceActivatorDeploymentUtil {
         sb.append('=');
         sb.append(targetName);
         sb.append("\n");
-        archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
+        archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.logging,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
         archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new FilePermission("target/notifications", "read, write"),
+                new FilePermission("target/notifications/-", "read, write"),
+                new MBeanPermission("org.jboss.as.server.jmx.RunningStateJmx#*[" + targetName + "]", "addNotificationListener"),
+                new MBeanPermission("org.jboss.as.server.jmx.RunningStateJmx#*[" + targetName + "]", "removeNotificationListener"),
+                new PropertyPermission("user.dir", "read")
+        ), "permissions.xml");
         archive.as(ZipExporter.class).exportTo(destination);
     }
 

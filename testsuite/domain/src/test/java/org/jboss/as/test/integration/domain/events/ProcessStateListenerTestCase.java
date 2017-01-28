@@ -161,6 +161,7 @@ public class ProcessStateListenerTestCase {
             expectedRunningLines.add(processType + " normal normal stopping");
             // state changed after server is reloading
             if (processType == ProcessType.DOMAIN_SERVER) {
+                expectedRunningLines.add(processType + " normal starting suspended");
                 expectedRunningLines.add(processType + " normal suspended normal");
                 expectedRutimeConfigLines.add(processType + " normal starting ok");
             } else {
@@ -182,9 +183,11 @@ public class ProcessStateListenerTestCase {
             checkLines(runningStatePath.toFile(),expectedRunningLines.toArray(new String[expectedRunningLines.size()]));
         } finally {
             try {
+                testSupport = DomainTestSupport.create(DomainTestSupport.Configuration.create(ProcessStateListenerTestCase.class.getSimpleName(),
+                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
                 testSupport.start();
                 testSupport.getDomainMasterLifecycleUtil().getDomainClient().execute(Util.createRemoveOperation(address));
-            } catch (Exception ex) {
+            } catch (IOException ex) {
             } finally {
                 testSupport.stop();
             }

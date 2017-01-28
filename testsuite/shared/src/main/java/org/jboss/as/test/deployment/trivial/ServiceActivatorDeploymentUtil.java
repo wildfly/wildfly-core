@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
+import java.util.PropertyPermission;
 import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
@@ -36,6 +37,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.ManagementOperations;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -71,6 +73,10 @@ public class ServiceActivatorDeploymentUtil {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, name);
         archive.addClass(ServiceActivatorDeployment.class);
         archive.addAsServiceProvider(ServiceActivator.class, ServiceActivatorDeployment.class);
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new PropertyPermission("test.deployment.trivial.prop", "write"),
+                new PropertyPermission("service", "write")
+        ), "permissions.xml");
         if (properties != null && properties.size() > 0) {
             StringBuilder sb = new StringBuilder();
             for (Map.Entry<String, String> prop : properties.entrySet()) {
@@ -89,6 +95,10 @@ public class ServiceActivatorDeploymentUtil {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, name);
         archive.addClass(ServiceActivatorDeployment.class);
         archive.addAsServiceProvider(ServiceActivator.class, ServiceActivatorDeployment.class);
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new PropertyPermission("test.deployment.trivial.prop", "write"),
+                new PropertyPermission("service", "write")
+        ), "permissions.xml");
         if (properties != null && properties.size() > 0) {
             StringBuilder sb = new StringBuilder();
             for (Map.Entry<Object, Object> prop : properties.entrySet()) {

@@ -856,7 +856,7 @@ public class DeploymentTestCase {
 
         deploymentExecutor.readContent("service-activator-deployment.properties", "is new");
         deploymentExecutor.browseContent("", new ArrayList<>(Arrays.asList("META-INF/", "META-INF/MANIFEST.MF",
-                "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
+                "META-INF/permissions.xml", "META-INF/services/", "META-INF/services/org.jboss.msc.service.ServiceActivator",
                 "org/","org/jboss/","org/jboss/as/", "org/jboss/as/test/", "org/jboss/as/test/deployment/",
                 "org/jboss/as/test/deployment/trivial/", "service-activator-deployment.properties",
                 "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class")), -1, false);

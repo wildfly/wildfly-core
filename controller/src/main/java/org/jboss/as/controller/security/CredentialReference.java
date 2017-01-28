@@ -168,10 +168,22 @@ public final class CredentialReference {
 
         ModelNode value = credentialReferenceAttributeDefinition.resolveModelAttribute(context, model);
 
-        final String credentialStoreName = credentialReferencePartAsStringIfDefined(value, CredentialReference.STORE);
-        final String credentialAlias = credentialReferencePartAsStringIfDefined(value, CredentialReference.ALIAS);
-        final String credentialType = credentialReferencePartAsStringIfDefined(value, CredentialReference.TYPE);
-        final String secret = credentialReferencePartAsStringIfDefined(value, CredentialReference.CLEAR_TEXT);
+        final String credentialStoreName;
+        final String credentialAlias;
+        final String credentialType;
+        final String secret;
+
+        if (value.isDefined()) {
+            credentialStoreName = credentialReferencePartAsStringIfDefined(value, CredentialReference.STORE);
+            credentialAlias = credentialReferencePartAsStringIfDefined(value, CredentialReference.ALIAS);
+            credentialType = credentialReferencePartAsStringIfDefined(value, CredentialReference.TYPE);
+            secret = credentialReferencePartAsStringIfDefined(value, CredentialReference.CLEAR_TEXT);
+        } else {
+            credentialStoreName = null;
+            credentialAlias = null;
+            credentialType = null;
+            secret = null;
+        }
 
         final InjectedValue<CredentialStore> credentialStoreInjectedValue = new InjectedValue<>();
         if (credentialAlias != null) {

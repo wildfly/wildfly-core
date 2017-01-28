@@ -38,9 +38,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
@@ -74,6 +76,20 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 public class ManagedServerBootCmdFactory implements ManagedServerBootConfiguration {
 
     private static final String HOST_CONTROLLER_PROCESS_NAME_PROP = "[" + ProcessControllerClient.HOST_CONTROLLER_PROCESS_NAME + "]";
+    private static final Set<String> SERVER_CONFIGURATION_PROPERTIES = new HashSet<>(Arrays.asList(
+            "jboss.server.log.dir",
+            "jboss.server.config.dir",
+            "jboss.server.base.dir",
+            "jboss.server.config.user.dir",
+            "jboss.server.config.group.dir",
+            "jboss.server.temp.dir",
+            "jboss.server.content.dir",
+            "jboss.server.data.dir",
+            "jboss.server.deploy.dir",
+            "jboss.server.controller.base.dir",
+            "jboss.server.default.config",
+            "jboss.server.management.uuid",
+            "jboss.server.persist.config"));
 
     private static final ModelNode EMPTY = new ModelNode();
     static {
@@ -247,7 +263,8 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         Map<String, String> bootTimeProperties = getAllSystemProperties(true);
         // Add in properties passed in to the ProcessController command line
         for (Map.Entry<String, String> hostProp : environment.getHostSystemProperties().entrySet()) {
-            if (!bootTimeProperties.containsKey(hostProp.getKey())) {
+            if (!bootTimeProperties.containsKey(hostProp.getKey())
+                    && ! SERVER_CONFIGURATION_PROPERTIES.contains(hostProp.getKey())) {
                 bootTimeProperties.put(hostProp.getKey(), hostProp.getValue());
             }
         }

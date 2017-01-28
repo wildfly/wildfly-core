@@ -91,7 +91,7 @@ public class ServerReload {
 
     public static void executeReloadAndWaitForCompletion(ModelControllerClient client, ModelNode reloadOp, int timeout, String serverAddress, int serverPort) {
         executeReload(client, reloadOp);
-        waitForLiveServerToReload(timeout,
+        waitForLiveServerToReload(timeout, "remote+http",
                 serverAddress != null ? serverAddress : TestSuiteEnvironment.getServerAddress(),
                 serverPort != -1 ? serverPort : TestSuiteEnvironment.getServerPort());
     }
@@ -110,7 +110,14 @@ public class ServerReload {
      */
     public static void executeReloadAndWaitForCompletion(ModelControllerClient client, int timeout, boolean adminOnly, String serverAddress, int serverPort) {
         executeReload(client, adminOnly);
-        waitForLiveServerToReload(timeout,
+        waitForLiveServerToReload(timeout, "remote+http",
+                serverAddress != null ? serverAddress : TestSuiteEnvironment.getServerAddress(),
+                serverPort != -1 ? serverPort : TestSuiteEnvironment.getServerPort());
+    }
+
+    public static void executeReloadAndWaitForCompletion(ModelControllerClient client, int timeout, boolean adminOnly, String protocol, String serverAddress, int serverPort) {
+        executeReload(client, adminOnly);
+        waitForLiveServerToReload(timeout, protocol,
                 serverAddress != null ? serverAddress : TestSuiteEnvironment.getServerAddress(),
                 serverPort != -1 ? serverPort : TestSuiteEnvironment.getServerPort());
     }
@@ -136,7 +143,7 @@ public class ServerReload {
         }
     }
 
-    private static void waitForLiveServerToReload(int timeout, String serverAddress, int serverPort) {
+    private static void waitForLiveServerToReload(int timeout, String protocol, String serverAddress, int serverPort) {
         long start = System.currentTimeMillis();
         ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).setEmptyList();
@@ -144,7 +151,7 @@ public class ServerReload {
         operation.get(NAME).set("server-state");
         while (System.currentTimeMillis() - start < timeout) {
             try {
-                ModelControllerClient liveClient = ModelControllerClient.Factory.create(
+                ModelControllerClient liveClient = ModelControllerClient.Factory.create(protocol,
                         serverAddress, serverPort);
                 try {
                     ModelNode result = liveClient.execute(operation);
