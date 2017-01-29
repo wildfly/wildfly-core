@@ -67,6 +67,6 @@
     -->
 
     <dependencies>
-        <module name="org.wildfly.security.elytron-private" export="true"/>
+        <module name="org.wildfly.security.elytron-private" services="export" export="true"/>
     </dependencies>
 </module>
