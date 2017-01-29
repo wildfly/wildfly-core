@@ -59,7 +59,7 @@
         <module name="org.jboss.as.protocol"/>
         <module name="org.jboss.as.remoting"/>
         <module name="org.wildfly.common"/>
-        <module name="org.wildfly.security.elytron" services="import"/>
+        <module name="org.wildfly.security.elytron-private" services="import"/>
         <module name="org.jboss.as.server" services="import"/>
         <module name="org.jboss.as.version"/>
         <module name="org.jboss.logging"/>

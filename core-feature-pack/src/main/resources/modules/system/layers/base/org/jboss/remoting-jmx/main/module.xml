@@ -31,7 +31,7 @@
         <module name="javax.api"/>
         <module name="org.jboss.remoting"/>
         <module name="org.jboss.logging"/>
-        <module name="org.wildfly.security.elytron" services="import"/>
+        <module name="org.wildfly.security.elytron-private" services="import"/>
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.client.config"/>
     </dependencies>

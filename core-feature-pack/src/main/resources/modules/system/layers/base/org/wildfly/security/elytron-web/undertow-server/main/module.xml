@@ -23,13 +23,16 @@
   -->
 
 <module xmlns="urn:jboss:module:1.5" name="org.wildfly.security.elytron-web.undertow-server">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
 
     <resources>
         <artifact name="${org.wildfly.security.elytron-web:undertow-server}"/>
     </resources>
 
     <dependencies>
-        <module name="org.wildfly.security.elytron"/>
+        <module name="org.wildfly.security.elytron-private"/>
         <module name="io.undertow.core"/>
         <module name="org.wildfly.common" />
     </dependencies>
