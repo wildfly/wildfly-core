@@ -22,46 +22,32 @@
 
 package org.jboss.as.remoting;
 
-import static org.xnio.Options.SSL_ENABLED;
-import static org.xnio.Options.SSL_STARTTLS;
-
-import java.io.IOException;
+import java.net.URI;
 
 import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
-import org.xnio.IoFuture;
-import org.xnio.OptionMap;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
 
 /**
  * @author Jaikiran Pai
  */
-public abstract class AbstractOutboundConnectionService<T extends AbstractOutboundConnectionService> implements Service<T> {
+public abstract class AbstractOutboundConnectionService {
 
     public static final ServiceName OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("outbound-connection");
 
     protected final InjectedValue<Endpoint> endpointInjectedValue = new InjectedValue<Endpoint>();
 
-    protected volatile OptionMap connectionCreationOptions;
-
-    protected final String connectionName;
-
-    protected AbstractOutboundConnectionService(final String connectionName, final OptionMap connectionCreationOptions) {
-        this.connectionName = connectionName;
-        this.connectionCreationOptions = connectionCreationOptions == null ? OptionMap.EMPTY : connectionCreationOptions;
+    protected AbstractOutboundConnectionService() {
     }
 
-    @Override
     public void start(StartContext context) throws StartException {
     }
 
-    @Override
     public void stop(StopContext context) {
     }
 
@@ -69,20 +55,18 @@ public abstract class AbstractOutboundConnectionService<T extends AbstractOutbou
         return this.endpointInjectedValue;
     }
 
-    void setConnectionCreationOptions(final OptionMap connectionCreationOptions) {
-        this.connectionCreationOptions = connectionCreationOptions == null ? getDefaultOptionMap() : connectionCreationOptions;
-    }
+    /**
+     * Get the destination URI for the connection.
+     *
+     * @return the destination URI
+     */
+    public abstract URI getDestinationUri();
 
-    private OptionMap getDefaultOptionMap() {
-        return OptionMap.create(SSL_ENABLED, true, SSL_STARTTLS, true);
-    }
-
-    public String getConnectionName() {
-        return this.connectionName;
-    }
-
-    public abstract IoFuture<Connection> connect() throws IOException;
-
-    public abstract String getProtocol();
-
+    /**
+     * Get the connection authentication configuration.  This is derived either from the authentication information
+     * defined on the resource, or the linked authentication configuration named on the resource.
+     *
+     * @return the authentication configuration
+     */
+    public abstract AuthenticationConfiguration getAuthenticationConfiguration();
 }

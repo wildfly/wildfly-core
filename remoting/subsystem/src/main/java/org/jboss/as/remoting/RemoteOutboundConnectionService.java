@@ -22,42 +22,34 @@
 
 package org.jboss.as.remoting;
 
-import java.io.IOException;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import javax.net.ssl.SSLContext;
-import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.domain.management.CallbackHandlerFactory;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.network.OutboundSocketBinding;
-import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.msc.inject.Injector;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.remoting3.Connection;
-import org.jboss.remoting3.Endpoint;
+import org.jboss.remoting3.RemotingOptions;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
-import org.wildfly.security.auth.client.MatchRule;
-import org.xnio.IoFuture;
 import org.xnio.OptionMap;
-import org.xnio.Options;
-import org.xnio.Sequence;
 
 import static java.security.AccessController.doPrivileged;
-import static org.xnio.Options.*;
 
 /**
  * A {@link RemoteOutboundConnectionService} manages a remoting connection created out of a remote:// URI scheme.
  *
  * @author Jaikiran Pai
  */
-public class RemoteOutboundConnectionService extends AbstractOutboundConnectionService<RemoteOutboundConnectionService> {
+public class RemoteOutboundConnectionService extends AbstractOutboundConnectionService implements Service<RemoteOutboundConnectionService> {
 
     public static final ServiceName REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("remote-outbound-connection");
 
@@ -69,90 +61,18 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
     private final InjectedValue<SecurityRealm> securityRealmInjectedValue = new InjectedValue<SecurityRealm>();
     private final InjectedValue<AuthenticationContext> authenticationContext = new InjectedValue<>();
 
+    private final OptionMap connectionCreationOptions;
     private final String username;
     private final String protocol;
 
-    public RemoteOutboundConnectionService(final String connectionName, final OptionMap connectionCreationOptions, final String username, final String protocol) {
-        super(connectionName, connectionCreationOptions);
+    private AuthenticationConfiguration configuration;
+    private URI destination;
+
+    public RemoteOutboundConnectionService(final OptionMap connectionCreationOptions, final String username, final String protocol) {
+        super();
+        this.connectionCreationOptions = connectionCreationOptions;
         this.username = username;
         this.protocol = protocol;
-    }
-
-    @Override
-    public IoFuture<Connection> connect() throws IOException {
-        final URI uri;
-        try {
-            // we lazily generate the URI on first request to connect() instead of on start() of the service
-            // in order to delay resolving the destination address. No point trying to resolve that address
-            // if nothing really wants to create a connection out of it.
-            uri = this.getConnectionURI();
-        } catch (URISyntaxException e) {
-            throw RemotingLogger.ROOT_LOGGER.couldNotConnect(e);
-        }
-        final Endpoint endpoint = this.endpointInjectedValue.getValue();
-
-        AuthenticationContext authenticationContext = this.authenticationContext.getOptionalValue();
-        final OptionMap.Builder builder = OptionMap.builder();
-
-        if (authenticationContext == null) {
-            AuthenticationContext captured = AuthenticationContext.captureCurrent();
-            AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri,
-                    captured);
-
-            final CallbackHandler callbackHandler;
-            final CallbackHandlerFactory cbhFactory;
-            SSLContext sslContext = null;
-            SecurityRealm realm = securityRealmInjectedValue.getOptionalValue();
-            if (realm != null && (cbhFactory = realm.getSecretCallbackHandlerFactory()) != null && username != null) {
-                callbackHandler = cbhFactory.getCallbackHandler(username);
-            } else {
-                callbackHandler = null;
-            }
-
-            if (realm != null) {
-                sslContext = realm.getSSLContext();
-            }
-
-            if (callbackHandler != null)
-                mergedConfiguration = mergedConfiguration.useCallbackHandler(callbackHandler);
-
-            // first set the defaults
-            builder.set(SASL_POLICY_NOANONYMOUS, Boolean.FALSE);
-            builder.set(SASL_POLICY_NOPLAINTEXT, Boolean.FALSE);
-            builder.set(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
-            Protocol protocol = Protocol.forName(uri.getScheme());
-            switch (protocol) {
-                case HTTP_REMOTING:
-                case REMOTE_HTTP:
-                    builder.set(SSL_ENABLED, false);
-                    break;
-                case HTTPS_REMOTING:
-                case REMOTE_HTTPS:
-                    builder.set(SSL_ENABLED, true);
-                    builder.set(SSL_STARTTLS, false);
-                    break;
-                default:
-                    builder.set(Options.SSL_ENABLED, true);
-                    builder.set(Options.SSL_STARTTLS, true);
-                    break;
-            }
-
-            authenticationContext = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
-            if (sslContext != null) {
-                final SSLContext theSslConect = sslContext;
-                authenticationContext = authenticationContext.withSsl(MatchRule.ALL, () -> theSslConect);
-            }
-        }
-
-        // now override with user specified options
-        builder.addAll(this.connectionCreationOptions);
-
-        return endpoint.connect(uri, builder.getMap(), authenticationContext);
-    }
-
-    @Override
-    public String getProtocol() {
-        return protocol;
     }
 
     Injector<OutboundSocketBinding> getDestinationOutboundSocketBindingInjector() {
@@ -167,22 +87,52 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         return authenticationContext;
     }
 
-    /**
-     * Generates and returns the URI that corresponds to the remote outbound connection.
-     * If the URI has already been generated in a previous request, then it returns that back.
-     * Else the URI is constructed out of the outbound socket binding's destination address and destination port.
-     *
-     * @return
-     * @throws IOException
-     * @throws URISyntaxException
-     */
-    private synchronized URI getConnectionURI() throws IOException, URISyntaxException {
-        /* WFCORE-851 - do not cache connectionURI else reconnect will fail if DNS changes */
-        final OutboundSocketBinding destinationOutboundSocket = this.destinationOutboundSocketBindingInjectedValue.getValue();
-        final InetAddress destinationAddress = destinationOutboundSocket.getResolvedDestinationAddress();
-        final int port = destinationOutboundSocket.getDestinationPort();
+    public void start(final StartContext context) throws StartException {
+        AuthenticationConfiguration configuration;
+        final OutboundSocketBinding binding = destinationOutboundSocketBindingInjectedValue.getValue();
+        final String hostName = NetworkUtils.formatPossibleIpv6Address(binding.getUnresolvedDestinationAddress());
+        final int port = binding.getDestinationPort();
+        final URI uri;
+        final String username = this.username;
+        try {
+            uri = new URI(protocol, username, hostName, port, null, null, null);
+        } catch (URISyntaxException e) {
+            throw new StartException(e);
+        }
+        final AuthenticationContext injectedContext = this.authenticationContext.getOptionalValue();
+        if (injectedContext != null) {
+            configuration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, injectedContext, -1, null, null, "connect");
+        } else {
+            final SecurityRealm securityRealm = securityRealmInjectedValue.getOptionalValue();
+            if (securityRealm != null) {
+                final CallbackHandlerFactory callbackHandlerFactory = securityRealm.getSecretCallbackHandlerFactory();
+                configuration = AuthenticationConfiguration.EMPTY
+                    .useName(username)
+                    .useCallbackHandler(callbackHandlerFactory.getCallbackHandler(username))
+                    // todo
+                    .forbidSaslMechanisms(JBOSS_LOCAL_USER);
+            } else {
+                configuration = AuthenticationConfiguration.EMPTY.useName(username);
+            }
+        }
+        final OptionMap optionMap = this.connectionCreationOptions;
+        if (optionMap != null) {
+            configuration = RemotingOptions.mergeOptionsIntoAuthenticationConfiguration(optionMap, configuration);
+        }
+        this.configuration = configuration;
+        this.destination = uri;
+    }
 
-        return new URI(protocol + "://" + NetworkUtils.formatPossibleIpv6Address(destinationAddress.getHostAddress()) + ":" + port);
+    public void stop(final StopContext context) {
+        this.configuration = null;
+    }
+
+    public AuthenticationConfiguration getAuthenticationConfiguration() {
+        return configuration;
+    }
+
+    public URI getDestinationUri() {
+        return destination;
     }
 
     @Override
