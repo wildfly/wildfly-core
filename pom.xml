@@ -112,7 +112,7 @@
         <version.org.jboss.metadata.jboss-metadata-common>10.0.0.Final</version.org.jboss.metadata.jboss-metadata-common>
         <version.org.jboss.modules.jboss-modules>1.6.0.Beta4</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.2.7.SP1</version.org.jboss.msc.jboss-msc>
-        <version.org.jboss.remoting>5.0.0.Beta14</version.org.jboss.remoting>
+        <version.org.jboss.remoting>5.0.0.Beta15</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>3.0.0.Beta2</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
         <version.org.jboss.slf4j.slf4j-jboss-logmanager>1.0.3.GA</version.org.jboss.slf4j.slf4j-jboss-logmanager>
@@ -133,7 +133,7 @@
         <version.org.wildfly.build-tools>1.1.8.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
         <version.org.wildfly.client.config>1.0.0.Beta1</version.org.wildfly.client.config>
-        <version.org.wildfly.common>1.2.0.Beta4</version.org.wildfly.common>
+        <version.org.wildfly.common>1.2.0.Beta5</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.0.0.Beta6</version.org.wildfly.discovery>
         <version.org.wildfly.openssl>1.0.0.Beta4</version.org.wildfly.openssl>
         <version.org.wildfly.legacy.test>2.0.2.Final</version.org.wildfly.legacy.test>
