@@ -20,14 +20,11 @@ package org.jboss.as.domain.management.access;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IDENTITY;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -42,7 +39,6 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -55,10 +51,10 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.server.SecurityDomain;
 
@@ -83,13 +79,7 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, MANAGEMENT_IDENTITY_CAPABILITY, false)
             .build();
 
-    public static final StringListAttributeDefinition INFLOW_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.INFLOW_SECURITY_DOMAINS)
-            .setAllowNull(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, MANAGEMENT_IDENTITY_CAPABILITY, false)
-            .build();
-
-    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {SECURITY_DOMAIN, INFLOW_SECURITY_DOMAINS};
+    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {SECURITY_DOMAIN};
 
     private AccessIdentityResourceDefinition(AbstractAddStepHandler add) {
         super(new Parameters(PATH_ELEMENT, DomainManagementResolver.getResolver("core.identity"))
@@ -123,12 +113,8 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-            // TODO Ekytron, this is probably way more complex than is really needed.
-
             String securityDomain = SECURITY_DOMAIN.resolveModelAttribute(context, model).asString();
             final InjectedValue<SecurityDomain> securityDomainInjected = new InjectedValue<>();
-
-            final List<FutureTask<SecurityDomain>> inflowSecurityDomainFutures;
 
             IdentityService service = new IdentityService();
 
@@ -137,37 +123,11 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
             serviceBuilder.addDependency(context.getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(SECURITY_DOMAIN_CAPABILITY, securityDomain), SecurityDomain.class), SecurityDomain.class, securityDomainInjected);
 
-            ModelNode inflowDomainsModel = INFLOW_SECURITY_DOMAINS.resolveModelAttribute(context, model);
-            if (inflowDomainsModel.isDefined()) {
-                List<ModelNode> inflowDomainList = inflowDomainsModel.asList();
-                inflowSecurityDomainFutures = new ArrayList<>(inflowDomainList.size());
-                for (ModelNode current : inflowDomainList) {
-                    InjectedValue<SecurityDomain> inflowInjected = new InjectedValue<>();
-                    serviceBuilder.addDependency(
-                            context.getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(
-                                    SECURITY_DOMAIN_CAPABILITY, current.asString()), SecurityDomain.class),
-                            SecurityDomain.class, inflowInjected);
-                    inflowSecurityDomainFutures.add(toFutureTask(inflowInjected));
-                }
-
-            } else {
-                inflowSecurityDomainFutures = Collections.emptyList();
-            }
-
-            List<FutureTask<SecurityDomain>> futureTasks = new ArrayList<>(inflowSecurityDomainFutures.size() + 1);
-            final FutureTask<SecurityDomain> configuredSecurityDomainFuture = toFutureTask(securityDomainInjected);
-            futureTasks.add(configuredSecurityDomainFuture);
-            futureTasks.addAll(inflowSecurityDomainFutures);
-
-            service.setGetSecurityDomainFutures(futureTasks);
+            FutureTask<SecurityDomain> configuredSecurityDomainFuture = toFutureTask(securityDomainInjected);
+            service.setGetSecurityDomainFutures(Collections.singletonList(configuredSecurityDomainFuture));
             serviceBuilder.install();
 
             securityIdentitySupplier.setConfiguredSecurityDomainSupplier(() -> toSecurityDomain(configuredSecurityDomainFuture));
-
-            if (inflowSecurityDomainFutures.size() > 0) {
-                securityIdentitySupplier.setInflowSecurityDomainSuppliers(inflowSecurityDomainFutures.stream()
-                        .map(f -> (Supplier<SecurityDomain>) (() -> toSecurityDomain(f))).collect(Collectors.toList()));
-            }
         }
 
         @Override

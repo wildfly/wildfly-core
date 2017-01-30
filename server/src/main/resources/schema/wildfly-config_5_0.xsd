@@ -4313,13 +4313,6 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="inflow-security-domaint" type="stringListType">
-            <xs:annotation>
-                <xs:documentation>
-                    List of security domain references to attempt to inflow any current identity from.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="role-mappingType">

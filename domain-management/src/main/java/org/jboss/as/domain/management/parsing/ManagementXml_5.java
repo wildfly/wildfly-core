@@ -276,12 +276,6 @@ class ManagementXml_5 extends ManagementXml {
                         AccessIdentityResourceDefinition.SECURITY_DOMAIN.parseAndSetParameter(value, add, reader);
                         break;
                     }
-                    case INFLOW_SECURITY_DOMAINS: {
-                        for (String inflowDomain : reader.getListAttributeValue(i)) {
-                            AccessIdentityResourceDefinition.INFLOW_SECURITY_DOMAINS.parseAndAddParameterElement(inflowDomain, add, reader);
-                        }
-                        break;
-                    }
                     default: {
                         throw unexpectedAttribute(reader, i);
                     }
@@ -1974,7 +1968,6 @@ class ManagementXml_5 extends ManagementXml {
     private void writeIdentity(XMLExtendedStreamWriter writer, ModelNode identity) throws XMLStreamException {
         writer.writeStartElement(Element.IDENTITY.getLocalName());
         AccessIdentityResourceDefinition.SECURITY_DOMAIN.marshallAsAttribute(identity, writer);
-        AccessIdentityResourceDefinition.INFLOW_SECURITY_DOMAINS.getAttributeMarshaller().marshallAsAttribute(AccessIdentityResourceDefinition.INFLOW_SECURITY_DOMAINS, identity, false, writer);
         writer.writeEndElement();
     }
 
