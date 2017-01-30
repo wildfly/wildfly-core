@@ -47,10 +47,14 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
 import java.io.IOException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.URI;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -160,11 +164,34 @@ public class ProtocolConnectionUtils {
         if (sslContext != null) context = context.withSsl(MatchRule.ALL, () -> sslContext);
 
         if (clientBindAddress == null) {
-            return endpoint.connect(uri, options, context);
+            try {
+                return AccessController.doPrivileged((PrivilegedExceptionAction<IoFuture<Connection>>) () ->
+                        endpoint.connect(uri, options, context));
+            } catch (PrivilegedActionException pae) {
+                try {
+                    throw pae.getCause();
+                } catch (IOException | RuntimeException | Error e) {
+                    throw e;
+                } catch (Throwable t) {
+                    throw new UndeclaredThrowableException(t);
+                }
+            }
         } else {
-            InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
-            // TODO: bind address via connection builder
-            return endpoint.connect(configuration.getUri(), options, context);
+            try {
+                return AccessController.doPrivileged((PrivilegedExceptionAction<IoFuture<Connection>>) () -> {
+                    InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
+                    // TODO: bind address via connection builder
+                    return endpoint.connect(configuration.getUri(), options, context);
+                });
+            } catch (PrivilegedActionException pae) {
+                try {
+                    throw pae.getCause();
+                } catch (IOException | RuntimeException | Error e) {
+                    throw e;
+                } catch (Throwable t) {
+                    throw new UndeclaredThrowableException(t);
+                }
+            }
         }
     }
 
