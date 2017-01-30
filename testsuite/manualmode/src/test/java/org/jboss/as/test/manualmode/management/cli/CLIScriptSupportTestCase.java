@@ -106,6 +106,13 @@ public class CLIScriptSupportTestCase {
     }
 
     @Test
+    public void testTerminate() {
+        CLI cli = CLI.newInstance();
+        // Terminate offline CommandContext.
+        cli.terminate();
+    }
+
+    @Test
     public void testBatch() {
         serverController.start();
         try {
