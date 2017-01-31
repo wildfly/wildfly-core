@@ -39,6 +39,7 @@ import org.jboss.dmr.ModelType;
 * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
 */
 public class ObjectTypeValidator extends ModelTypeValidator implements AllowedValuesValidator {
+
     private final Map<String, AttributeDefinition> allowedValues;
     private final List<ModelNode> nodeValues;
 
@@ -57,15 +58,26 @@ public class ObjectTypeValidator extends ModelTypeValidator implements AllowedVa
         super.validateParameter(parameterName, value);
         if (value.isDefined()) {
             for (String key : value.keys()) {
-                if (allowedValues.containsKey(key)) {
-                    allowedValues.get(key).getValidator().validateParameter(key, value.get(key));
-                } else {
+                if (!allowedValues.containsKey(key)) {
+                    // TODO see description of WFCORE-2249. Rejecting extra data is
+                    // not the standard behavior across WildFly management, but since
+                    // we've been doing it here for a long time we'll continue for now
                     throw ROOT_LOGGER.invalidKeyForObjectType(key, parameterName);
                 }
+            }
+            for (AttributeDefinition ad : allowedValues.values()) {
+                String key = ad.getName();
+                // Don't modify the value by calls to get(), because that's best in general.
+                // Plus modifying it results in an irrelevant test failure in full where the test
+                // isn't expecting the modification and complains.
+                // Changing the test is too much trouble.
+                ModelNode toTest = value.has(key) ? value.get(key) : new ModelNode();
+                ad.getValidator().validateParameter(key, toTest);
             }
         }
     }
 
+    /** TODO WFCORE-2251 This is an incorrect impl and this class should not implement AllowedValuesValidator */
     @Override
     public List<ModelNode> getAllowedValues() {
         return nodeValues;
