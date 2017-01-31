@@ -111,6 +111,7 @@ public class ManagementHttpServer {
         String remapPath(String originalPath);
     }
 
+    private static final String DEFAULT_SECURITY_REALM = "ManagementRealm";
     private static final Map<Pattern, Charset> USER_AGENT_CHARSET_MAP = generateCharsetMap();
 
     private static final Set<String> RESERVED_CONTEXTS;
@@ -290,9 +291,8 @@ public class ManagementHttpServer {
     }
 
     private static void addLogoutHandler(PathHandler pathHandler, Builder builder) {
-        if (builder.securityRealm != null) {
-            pathHandler.addPrefixPath(LogoutHandler.PATH, wrapXFrameOptions(new LogoutHandler(builder.securityRealm.getName())));
-        }
+        pathHandler.addPrefixPath(LogoutHandler.PATH, wrapXFrameOptions(
+                new LogoutHandler(builder.securityRealm != null ? builder.securityRealm.getName() : DEFAULT_SECURITY_REALM)));
     }
 
     private static class ExtensionHandlers {
