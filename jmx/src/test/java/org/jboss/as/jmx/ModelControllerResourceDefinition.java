@@ -207,6 +207,7 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
                 .setAllowExpression(allowExpressions)
                 .build();
         final SimpleAttributeDefinition param4 = new SimpleAttributeDefinitionBuilder("param4", ModelType.INT)
+                .setRequired(false)
                 .setDefaultValue(new ModelNode(6))
                         //.setValidator(new IntRangeValidator(5,10,true,false)) //todo expressions & min/max dont match well WFLY-3500
                 .setAllowExpression(allowExpressions)

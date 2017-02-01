@@ -35,6 +35,7 @@ import org.junit.Test;
  */
 public class StringListAttributeDefinitionUnitTestCase {
     static final StringListAttributeDefinition LIST_DEFINITION = new StringListAttributeDefinition.Builder("test")
+            .setRequired(false)
             .setAllowExpression(true)
             .setElementValidator(new StringLengthValidator(1, false, true))
             .setDefaultValue(new ModelNode().add("element1").add("element2"))
