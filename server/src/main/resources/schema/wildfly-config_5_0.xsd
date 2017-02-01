@@ -4302,21 +4302,13 @@
     <xs:complexType name="identityType">
         <xs:annotation>
             <xs:documentation>
-                Definition of the security domain to use to obtain the current identity and the optional security domains
-                to attempt to inflow the identity from.
+                Definition of the security domain to use to obtain the current identity from.
             </xs:documentation>
         </xs:annotation>
         <xs:attribute name="security-domain" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
                     Reference to the security domain to use to obtain the current identity.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="inflow-security-domaint" type="stringListType">
-            <xs:annotation>
-                <xs:documentation>
-                    List of security domain references to attempt to inflow any current identity from.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

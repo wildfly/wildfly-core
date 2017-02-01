@@ -20,12 +20,6 @@ package org.jboss.as.domain.management.access;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IDENTITY;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -39,7 +33,6 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -48,7 +41,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.management.ModelDescriptionConstants;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.Service;
@@ -84,13 +76,7 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, MANAGEMENT_IDENTITY_CAPABILITY, false)
             .build();
 
-    public static final StringListAttributeDefinition INFLOW_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.INFLOW_SECURITY_DOMAINS)
-            .setAllowNull(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, MANAGEMENT_IDENTITY_CAPABILITY, false)
-            .build();
-
-    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {SECURITY_DOMAIN, INFLOW_SECURITY_DOMAINS};
+    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {SECURITY_DOMAIN};
 
     private AccessIdentityResourceDefinition(AbstractAddStepHandler add) {
         super(new Parameters(PATH_ELEMENT, DomainManagementResolver.getResolver("core.identity"))
@@ -129,8 +115,6 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
             String securityDomain = SECURITY_DOMAIN.resolveModelAttribute(context, model).asString();
             final InjectedValue<SecurityDomain> securityDomainInjected = new InjectedValue<>();
 
-            final List<InjectedValue<SecurityDomain>> inflowSecurityDomains;
-
             final IdentityService service = new IdentityService(securityIdentitySupplier);
 
             ServiceBuilder<Void> serviceBuilder = context.getServiceTarget().addService(MANAGEMENT_IDENTITY_RUNTIME_CAPABILITY.getCapabilityServiceName(), service)
@@ -138,22 +122,7 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
             serviceBuilder.addDependency(context.getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(SECURITY_DOMAIN_CAPABILITY, securityDomain), SecurityDomain.class), SecurityDomain.class, securityDomainInjected);
 
-            ModelNode inflowDomainsModel = INFLOW_SECURITY_DOMAINS.resolveModelAttribute(context, model);
-            if (inflowDomainsModel.isDefined()) {
-                inflowSecurityDomains = new ArrayList<>();
-                inflowDomainsModel.asList().forEach((current) -> {
-                    InjectedValue<SecurityDomain> inflowInjected = new InjectedValue<>();
-                    serviceBuilder.addDependency(context.getCapabilityServiceName(
-                            RuntimeCapability.buildDynamicCapabilityName(
-                                    SECURITY_DOMAIN_CAPABILITY,
-                                    current.asString()), SecurityDomain.class), SecurityDomain.class, inflowInjected);
-                    inflowSecurityDomains.add(inflowInjected);
-                });
-            } else {
-                inflowSecurityDomains = Collections.emptyList();
-            }
             service.setConfiguredSecurityDomain(securityDomainInjected);
-            service.setInflowSecurityDomains(inflowSecurityDomains);
             serviceBuilder.install();
             //Let's verify that the IdentityService is correctly started.
             context.addStep((OperationContext context1, ModelNode operation1) -> {
@@ -178,7 +147,6 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
     static class IdentityService implements Service<Void> {
 
-        private List<InjectedValue<SecurityDomain>> inflowSecurityDomains = Collections.emptyList();
         private InjectedValue<SecurityDomain> configuredSecurityDomain = null;
         private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
 
@@ -189,22 +157,10 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
         @Override
         public void start(StartContext context) throws StartException {
              securityIdentitySupplier.setConfiguredSecurityDomainSupplier(configuredSecurityDomain::getValue);
-            if (inflowSecurityDomains != null && !inflowSecurityDomains.isEmpty()) {
-                try {
-                    securityIdentitySupplier.setInflowSecurityDomainSuppliers(
-                            inflowSecurityDomains.stream().map(f -> (Supplier<SecurityDomain>) (f::getValue)).collect(Collectors.toList()));
-                } catch (IllegalStateException t) {
-                    throw DomainManagementLogger.SECURITY_LOGGER.unableToConfigureManagementSecurityDomain(t);
-                }
-            }
         }
 
         @Override
         public void stop(StopContext context) {
-        }
-
-        void setInflowSecurityDomains(List<InjectedValue<SecurityDomain>> getSecurityDomainFutures) {
-            this.inflowSecurityDomains = getSecurityDomainFutures;
         }
 
         void setConfiguredSecurityDomain(InjectedValue<SecurityDomain> configuredSecurityDomain) {
