@@ -129,7 +129,7 @@ class HostControllerConnection extends FutureManagementChannel {
         try {
             channelHandler.executeRequest(new ServerRegisterRequest(), null, callback);
             // HC is the same version, so it will support sending the subject
-            channelHandler.getAttachments().attach(TransactionalProtocolClient.SEND_SUBJECT, Boolean.TRUE);
+            channelHandler.getAttachments().attach(TransactionalProtocolClient.SEND_IDENTITY, Boolean.TRUE);
             channelHandler.addHandlerFactory(new TransactionalProtocolOperationHandler(controller, channelHandler, responseAttachmentSupport));
             ok = true;
         } finally {

@@ -131,7 +131,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
     public ManagementRequestHandler<?, ?> resolveHandler(final RequestHandlerChain handlers, final ManagementRequestHeader header) {
         if (header.getVersion() != 1) {
             // Send subject
-            handler.getAttachments().attach(TransactionalProtocolClient.SEND_SUBJECT, Boolean.TRUE);
+            handler.getAttachments().attach(TransactionalProtocolClient.SEND_IDENTITY, Boolean.TRUE);
         }
         final byte operationId = header.getOperationId();
         switch (operationId) {

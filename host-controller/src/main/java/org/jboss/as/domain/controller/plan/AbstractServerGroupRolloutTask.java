@@ -27,10 +27,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 
+import java.net.InetAddress;
 import java.security.PrivilegedAction;
 import java.util.List;
-
-import javax.security.auth.Subject;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.BlockingTimeout;
@@ -41,6 +40,7 @@ import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Task responsible for updating a single server-group.
@@ -53,22 +53,23 @@ abstract class AbstractServerGroupRolloutTask implements Runnable {
     protected final List<ServerUpdateTask> tasks;
     protected final ServerUpdatePolicy updatePolicy;
     protected final ServerTaskExecutor executor;
-    protected final Subject subject;
+    protected final SecurityIdentity securityIdentity;
+    protected final InetAddress sourceAddress;
     protected final BlockingTimeout blockingTimeout;
 
-    public AbstractServerGroupRolloutTask(List<ServerUpdateTask> tasks, ServerUpdatePolicy updatePolicy, ServerTaskExecutor executor, Subject subject, BlockingTimeout blockingTimeout) {
+    public AbstractServerGroupRolloutTask(List<ServerUpdateTask> tasks, ServerUpdatePolicy updatePolicy, ServerTaskExecutor executor, SecurityIdentity securityIdentity, InetAddress sourceAddress, BlockingTimeout blockingTimeout) {
         this.tasks = tasks;
         this.updatePolicy = updatePolicy;
         this.executor = executor;
-        this.subject = subject;
+        this.securityIdentity = securityIdentity;
+        this.sourceAddress = sourceAddress;
         this.blockingTimeout = blockingTimeout;
     }
 
     @Override
     public void run() {
         try {
-            // TODO Elytron Revisit and use the Elytron SecurityIdentity instead.
-            AccessAuditContext.doAs(null, null, new PrivilegedAction<Void>() {
+            AccessAuditContext.doAs(securityIdentity, sourceAddress, new PrivilegedAction<Void>() {
 
                 @Override
                 public Void run() {

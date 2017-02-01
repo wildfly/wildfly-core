@@ -22,12 +22,14 @@
 
 package org.jboss.as.controller.remote;
 
+import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
+import static org.jboss.as.controller.remote.IdentityAddressProtocolUtil.write;
 import static org.jboss.as.protocol.mgmt.ProtocolUtils.expectHeader;
 
 import java.io.DataInput;
@@ -36,15 +38,13 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
-import java.security.Principal;
+import java.net.InetAddress;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.security.auth.Subject;
-
+import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
@@ -68,6 +68,7 @@ import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
 import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
 import org.jboss.dmr.ModelNode;
 import org.jboss.threads.AsyncFuture;
+import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -114,8 +115,12 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
 
     @Override
     public <T extends Operation> AsyncFuture<OperationResponse> execute(TransactionalOperationListener<T> listener, T operation) throws IOException {
-        final Subject subject = SecurityActions.getSubject();
-        final ExecuteRequestContext context = new ExecuteRequestContext(new OperationWrapper<T>(listener, operation), subject, tempDir);
+        AccessAuditContext accessAuditContext = WildFlySecurityManager.isChecking()
+                ? doPrivileged((PrivilegedAction<AccessAuditContext>) AccessAuditContext::currentAccessAuditContext)
+                : AccessAuditContext.currentAccessAuditContext();
+        final ExecuteRequestContext context = new ExecuteRequestContext(new OperationWrapper<T>(listener, operation),
+                accessAuditContext != null ? accessAuditContext.getSecurityIdentity() : null,
+                accessAuditContext != null ? accessAuditContext.getRemoteAddress() : null, tempDir);
         final ActiveOperation<OperationResponse, ExecuteRequestContext> op = channelAssociation.initializeOperation(context, context);
         final AtomicBoolean cancelSent = new AtomicBoolean();
         final AsyncFuture<OperationResponse> result = new AbstractDelegatingAsyncFuture<OperationResponse>(op.getResult()) {
@@ -187,10 +192,10 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
             output.write(ModelControllerProtocol.PARAM_INPUTSTREAMS_LENGTH);
             output.writeInt(inputStreamLength);
 
-            final Boolean sendSubject = channelAssociation.getAttachments().getAttachment(SEND_SUBJECT);
-            if (sendSubject != null && sendSubject) {
-                final Subject subject = context.getAttachment().getSerializableSubject();
-                writeSubject(output, subject);
+            final Boolean sendIdentity = channelAssociation.getAttachments().getAttachment(SEND_IDENTITY);
+            if (sendIdentity != null && sendIdentity) {
+                ExecuteRequestContext attachment = context.getAttachment();
+                write(output, attachment.getSecurityIdentity(), attachment.getRemoteAddress());
             }
         }
 
@@ -388,12 +393,14 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
     static class ExecuteRequestContext implements ActiveOperation.CompletedCallback<OperationResponse> {
         final OperationWrapper<?> wrapper;
         final AtomicBoolean completed = new AtomicBoolean(false);
-        final Subject subject;
+        final SecurityIdentity securityIdentity;
+        final InetAddress remoteAddress;
         final File tempDir;
 
-        ExecuteRequestContext(OperationWrapper<?> operationWrapper, Subject subject, File tempDir) {
+        ExecuteRequestContext(OperationWrapper<?> operationWrapper, SecurityIdentity securityIdentity, InetAddress remoteAddress, File tempDir) {
             this.wrapper = operationWrapper;
-            this.subject = subject;
+            this.securityIdentity = securityIdentity;
+            this.remoteAddress = remoteAddress;
             this.tempDir = tempDir;
         }
 
@@ -421,19 +428,12 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
             return attachments.getInputStreams();
         }
 
-        Subject getSerializableSubject() {
-            if (subject != null) {
-                Subject toSend = new Subject();
-                Set<Principal> principals = toSend.getPrincipals();
-                for (Principal current : subject.getPrincipals()) {
-                    if (current instanceof Serializable) {
-                        principals.add(current);
-                    }
-                }
-                toSend.setReadOnly();
-                return toSend;
-            }
-            return null;
+        SecurityIdentity getSecurityIdentity() {
+            return securityIdentity;
+        }
+
+        InetAddress getRemoteAddress() {
+            return remoteAddress;
         }
 
         @Override
@@ -582,10 +582,6 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
 
     static ModelNode getResponse(final String outcome) {
         return getFailureResponse(outcome, null);
-    }
-
-    static void writeSubject(final FlushableDataOutput output, final Subject subject) throws IOException {
-        SubjectProtocolUtil.write(output, subject);
     }
 
 }

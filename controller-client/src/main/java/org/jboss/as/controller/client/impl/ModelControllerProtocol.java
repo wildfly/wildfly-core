@@ -58,7 +58,7 @@ public interface ModelControllerProtocol {
     byte PARAM_OPERATION_FAILED = 0x49;
     byte PARAM_OPERATION_COMPLETED = 0x4A;
     byte PARAM_OPERATION_PREPARED = 0x4B;
-    // The Subject params
-    byte PARAM_SUBJECT_LENGTH = 0x50;
+    // The propagated identity params
+    byte PARAM_IDENTITY_LENGTH = 0x50;
 
 }

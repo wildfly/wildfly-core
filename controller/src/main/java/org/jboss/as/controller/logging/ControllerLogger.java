@@ -3115,11 +3115,11 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 336, value = "The following attributes are nillable in the current model but must be defined in the target model version: %s")
     String attributesMustBeDefined(Set<String> keySet);
 
-    @Message(id = 337, value = "Unsupported Principal type '%X' received.")
-    IOException unsupportedPrincipalType(byte type);
+    @Message(id = 337, value = "Unsupported Identity type '%X' received.")
+    IOException unsupportedIdentityType(byte type);
 
-    @Message(id = 338, value = "Unsupported Principal parameter '%X' received parsing principal type '%X'.")
-    IOException unsupportedPrincipalParameter(byte parameterType, byte principalType);
+    @Message(id = 338, value = "Unsupported Identity parameter '%X' received parsing identity type '%X'.")
+    IOException unsupportedIdentityParameter(byte parameterType, byte principalType);
 
     @Message(id = 339, value = "The following attributes must be defined as %s in the current model: %s")
     String attributesMustBeDefinedAs(ModelNode value, Set<String> names);
