@@ -1252,6 +1252,10 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 140, value = "You shouldn't use the system property \"%s\" as it is deprecated. Use the management model configuration instead.")
     StartException usingDeprecatedSystemProperty(String propertyName);
 
+
+    @Message(id = 141, value = "Unable to configure the management security domain.")
+    StartException unableToConfigureManagementSecurityDomain(@Cause Exception ex);
+
     /**
      * Information message saying the username and password must be different.
      *
