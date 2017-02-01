@@ -20,12 +20,6 @@ package org.jboss.as.domain.management.access;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IDENTITY;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -51,7 +45,10 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
+import org.jboss.msc.service.ServiceController.State;
+import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -116,18 +113,26 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
             String securityDomain = SECURITY_DOMAIN.resolveModelAttribute(context, model).asString();
             final InjectedValue<SecurityDomain> securityDomainInjected = new InjectedValue<>();
 
-            IdentityService service = new IdentityService();
+            final IdentityService service = new IdentityService(securityIdentitySupplier);
 
             ServiceBuilder<Void> serviceBuilder = context.getServiceTarget().addService(MANAGEMENT_IDENTITY_RUNTIME_CAPABILITY.getCapabilityServiceName(), service)
                     .setInitialMode(Mode.ACTIVE);
 
             serviceBuilder.addDependency(context.getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(SECURITY_DOMAIN_CAPABILITY, securityDomain), SecurityDomain.class), SecurityDomain.class, securityDomainInjected);
 
-            FutureTask<SecurityDomain> configuredSecurityDomainFuture = toFutureTask(securityDomainInjected);
-            service.setGetSecurityDomainFutures(Collections.singletonList(configuredSecurityDomainFuture));
+            service.setConfiguredSecurityDomain(securityDomainInjected);
             serviceBuilder.install();
-
-            securityIdentitySupplier.setConfiguredSecurityDomainSupplier(() -> toSecurityDomain(configuredSecurityDomainFuture));
+            //Let's verify that the IdentityService is correctly started.
+            context.addStep((OperationContext context1, ModelNode operation1) -> {
+                try {
+                    ServiceController<?> controller = context1.getServiceRegistry(false).getRequiredService(MANAGEMENT_IDENTITY_RUNTIME_CAPABILITY.getCapabilityServiceName());
+                    if (controller == null || State.UP != controller.getState()) {
+                        context.setRollbackOnly();
+                    }
+                } catch (ServiceNotFoundException ex) {
+                    context.setRollbackOnly();
+                }
+            }, OperationContext.Stage.VERIFY);
         }
 
         @Override
@@ -138,35 +143,26 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static FutureTask<SecurityDomain> toFutureTask(InjectedValue<SecurityDomain> injectedValue) {
-        return new FutureTask<>((Callable<SecurityDomain>)  (() -> injectedValue.getValue()));
-    }
-
-    private static SecurityDomain toSecurityDomain(final FutureTask<SecurityDomain> futureTask) {
-        try {
-            return futureTask.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
     static class IdentityService implements Service<Void> {
 
-        private List<FutureTask<SecurityDomain>> getSecurityDomainFutures = Collections.emptyList();
+        private InjectedValue<SecurityDomain> configuredSecurityDomain = null;
+        private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
+
+        public IdentityService(ManagementSecurityIdentitySupplier securityIdentitySupplier) {
+            this.securityIdentitySupplier = securityIdentitySupplier;
+        }
 
         @Override
         public void start(StartContext context) throws StartException {
-            if (getSecurityDomainFutures != null) {
-                getSecurityDomainFutures.forEach(FutureTask::run);
-            }
+             securityIdentitySupplier.setConfiguredSecurityDomainSupplier(configuredSecurityDomain::getValue);
         }
 
         @Override
         public void stop(StopContext context) {
         }
 
-        void setGetSecurityDomainFutures(List<FutureTask<SecurityDomain>> getSecurityDomainFutures) {
-            this.getSecurityDomainFutures = getSecurityDomainFutures;
+        void setConfiguredSecurityDomain(InjectedValue<SecurityDomain> configuredSecurityDomain) {
+            this.configuredSecurityDomain = configuredSecurityDomain;
         }
 
         @Override
