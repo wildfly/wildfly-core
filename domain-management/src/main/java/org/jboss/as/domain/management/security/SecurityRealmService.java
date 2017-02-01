@@ -183,7 +183,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 // If additional configuration is added it needs to be added to the duplication for Kerberos authentication for both HTTP and SASL below.
                 configurationMap.put(mechanism,
                         MechanismConfiguration.builder()
-                            .setPreRealmRewriter(currentService.getPrincipalMapper())
+                            .setPreRealmRewriter(currentService.getPrincipalMapper().andThen(p -> new RealmUser(this.name, p.getName())))
                             .setRealmMapper((p, e) -> mechanism.toString())
                             .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName(name).build())
                             .build());
