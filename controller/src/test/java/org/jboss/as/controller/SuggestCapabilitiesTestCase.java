@@ -114,12 +114,13 @@ public class SuggestCapabilitiesTestCase {
     private CapabilityRegistry reg = new CapabilityRegistry(false);
 
     private void registerPossible(CapabilityRegistry reg, String cap, PathAddress address) {
-        RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(cap).build();
+        RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(cap, true).build();
         reg.registerPossibleCapability(capability, address);
     }
 
-    private void registerCapability(CapabilityRegistry reg, String cap, PathAddress address) {
-        RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(cap).build();
+    private void registerCapability(CapabilityRegistry reg, String baseName, String dynamicPart, PathAddress address) {
+        RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(baseName, true).build();
+        capability = capability.fromBaseCapability(dynamicPart);
         CapabilityScope scope = CapabilityScope.Factory.create(ProcessType.HOST_CONTROLLER, address);
         RegistrationPoint rp = new RegistrationPoint(address, null);
         reg.registerCapability(new RuntimeCapabilityRegistration(capability, scope, rp));
@@ -169,7 +170,7 @@ public class SuggestCapabilitiesTestCase {
         Set<String> set = new HashSet<>();
         for (int i = 0; i < 3; i++) {
             String name = "cap-" + i;
-            registerCapability(reg, cap + "." + name, address.apply(i));
+            registerCapability(reg, cap, name, address.apply(i));
             set.add(name);
         }
         return set;
