@@ -196,14 +196,14 @@ public class CLI {
     }
 
     /**
-     * Disconnect from the server.
+     * Disconnect from the server. The current CommandContext is terminated.
      */
     public void disconnect() {
         try {
             if (!isConnected()) {
                 throw new IllegalStateException("Not connected to server.");
             }
-            ctx.terminateSession();
+            terminate();
         } finally {
             // Back to offline context
             initOfflineContext();
@@ -244,6 +244,15 @@ public class CLI {
         }
     }
 
+    /**
+     * Terminate the current CommandContext.
+     */
+    public void terminate() {
+        if (!ctx.isTerminated()) {
+            ctx.terminateSession();
+        }
+    }
+
     private String constructUri(final String protocol, final String host,
             final int port) {
         try {
@@ -272,6 +281,7 @@ public class CLI {
         if (isConnected()) {
             throw new IllegalStateException("Already connected to server.");
         }
+        terminate();
         CommandContext newContext = null;
         try {
             newContext = callable.call();
