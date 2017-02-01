@@ -62,7 +62,7 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
         ModelType type = node.get(ModelDescriptionConstants.TYPE).asType();
         boolean nillable = node.get(ModelDescriptionConstants.NILLABLE).asBoolean(true);
         boolean expressionAllowed = node.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).asBoolean(false);
-        ModelNode defaultValue = node.get(ModelDescriptionConstants.DEFAULT);
+        ModelNode defaultValue = nillable ? node.get(ModelDescriptionConstants.DEFAULT) : new ModelNode();
         return SimpleAttributeDefinitionBuilder.create(name, type, nillable)
                 .setDefaultValue(defaultValue)
                 .setAllowExpression(expressionAllowed);

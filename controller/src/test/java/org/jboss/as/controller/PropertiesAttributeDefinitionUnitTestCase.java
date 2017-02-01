@@ -39,7 +39,7 @@ public class PropertiesAttributeDefinitionUnitTestCase {
         ModelNode defaultValue = new ModelNode();
         defaultValue.add("key","value");
         defaultValue.add("key2","value");
-        PropertiesAttributeDefinition ld = new PropertiesAttributeDefinition.Builder("test", false)
+        PropertiesAttributeDefinition ld = new PropertiesAttributeDefinition.Builder("test", true)
                 .setAllowExpression(true)
                 .setDefaultValue(defaultValue)
                 .build();
