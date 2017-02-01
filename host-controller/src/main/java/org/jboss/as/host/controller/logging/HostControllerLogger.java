@@ -923,8 +923,9 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 95, value = "Home directory does not exist: %s")
     IllegalStateException homeDirectoryDoesNotExist(File f);
 
-    @Message(id = 96, value = "Determined modules directory does not exist: %s")
-    IllegalStateException modulesDirectoryDoesNotExist(File f);
+    // WFCORE-2223 no longer used
+//    @Message(id = 96, value = "Determined modules directory does not exist: %s")
+//    IllegalStateException modulesDirectoryDoesNotExist(File f);
 
     @Message(id = 97, value = "Domain base directory does not exist: %s")
     IllegalStateException domainBaseDirectoryDoesNotExist(File f);
