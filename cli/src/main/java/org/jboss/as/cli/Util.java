@@ -24,6 +24,8 @@ package org.jboss.as.cli;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,7 +54,9 @@ import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.jboss.logging.Logger;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.xnio.http.RedirectException;
 
 /**
  *
@@ -199,6 +203,8 @@ public class Util {
     public static final String DESCRIPTION_RESPONSE = "DESCRIPTION_RESPONSE";
 
     public static final String NOT_OPERATOR = "!";
+
+    private static Logger LOG = Logger.getLogger(Util.class);
 
     public static boolean isWindows() {
         return WildFlySecurityManager.getPropertyPrivileged("os.name", null).toLowerCase(Locale.ENGLISH).indexOf("windows") >= 0;
@@ -1290,6 +1296,41 @@ public class Util {
             }
         }
         return outcome;
+    }
+
+    /**
+     * Reconnect the context if the RedirectException is valid.
+     */
+    public static boolean reconnectContext(RedirectException re, CommandContext ctx) {
+        boolean reconnected = false;
+        try {
+            ConnectionInfo info = ctx.getConnectionInfo();
+            ControllerAddress address = null;
+            if (info != null) {
+                address = info.getControllerAddress();
+            }
+            if (address != null && isHttpsRedirect(re, address.getProtocol())) {
+                LOG.debug("Trying to reconnect an http to http upgrade");
+                try {
+                    ctx.connectController();
+                    reconnected = true;
+                } catch (Exception ex) {
+                    LOG.warn("Exception reconnecting", ex);
+                    // Proper https redirect but error.
+                    // Ignoring it.
+                }
+            }
+        } catch (URISyntaxException ex) {
+            LOG.warn("Invalid URI: ", ex);
+            // OK, invalid redirect.
+        }
+        return reconnected;
+    }
+
+    public static boolean isHttpsRedirect(RedirectException re, String scheme) throws URISyntaxException {
+        URI location = new URI(re.getLocation());
+        return ("remote+http".equals(scheme)
+                || "http-remoting".equals(scheme)) && "https".equals(location.getScheme());
     }
 
     // For any request params that are of type BYTES, replace the file path with the bytes from the file

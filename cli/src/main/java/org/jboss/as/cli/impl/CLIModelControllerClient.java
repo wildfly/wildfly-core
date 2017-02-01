@@ -58,6 +58,7 @@ import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.threads.JBossThreadFactory;
 import org.xnio.OptionMap;
+import org.xnio.http.RedirectException;
 
 /**
  * @author Alexey Loubyansky
@@ -271,10 +272,13 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
     }
 
     @Override
-    public void ensureConnected(long timeoutMillis) throws CommandLineException {
+    public void ensureConnected(long timeoutMillis) throws CommandLineException,
+            IOException {
         boolean doTry = true;
         final long start = System.currentTimeMillis();
         IOException ioe = null;
+
+        boolean timeoutOccured = false;
         while (doTry) {
             try {
                 // Can't be called locked, could create dead lock if close occured.
@@ -297,8 +301,31 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
                 }
 
                 if (System.currentTimeMillis() - start > timeoutMillis) {
-                    throw new CommandLineException("Failed to establish connection in " + (System.currentTimeMillis() - start)
-                            + "ms", ioe);
+                    if (timeoutOccured) {
+                        throw new CommandLineException("Failed to establish connection in " + (System.currentTimeMillis() - start)
+                                + "ms", ioe);
+                    } else {
+                        timeoutOccured = true;
+                    }
+                }
+                // Only propagate RedirectException at the end of timeout.
+                if (timeoutOccured) {
+                    Throwable ex = ioe;
+                    while (ex != null) {
+                        if (ex instanceof RedirectException) {
+                            // Transient RedirectException are not propagated,
+                            // only http to https redirect.
+                            try {
+                                if (Util.isHttpsRedirect((RedirectException) ex,
+                                        channelConfig.getUri().getScheme())) {
+                                    throw (RedirectException) ex;
+                                }
+                            } catch (URISyntaxException uriex) {
+                                // XXX OK, would fail later.
+                            }
+                        }
+                        ex = ex.getCause();
+                    }
                 }
                 ioe = null;
                 try {
