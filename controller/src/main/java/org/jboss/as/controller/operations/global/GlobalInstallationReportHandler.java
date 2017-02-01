@@ -113,8 +113,7 @@ public class GlobalInstallationReportHandler extends GlobalOperationHandlers.Abs
             SimpleAttributeDefinitionBuilder.create(HOSTNAME, ModelType.STRING, true).build(),
             SimpleAttributeDefinitionBuilder.create(INSTANCE_ID, ModelType.STRING, true).build(),
             SimpleAttributeDefinitionBuilder.create(PRODUCT_NAME, ModelType.STRING, true).build(),
-            SimpleAttributeDefinitionBuilder.create(PRODUCT_COMMUNITY_IDENTIFIER, ModelType.STRING, false)
-                    .setDefaultValue(new ModelNode(PROJECT_TYPE))
+            SimpleAttributeDefinitionBuilder.create(PRODUCT_COMMUNITY_IDENTIFIER, ModelType.STRING)
                     .setAllowedValues(PRODUCT_TYPE, PROJECT_TYPE).build(),
             SimpleAttributeDefinitionBuilder.create(PRODUCT_VERSION, ModelType.STRING, true).build(),
             SimpleAttributeDefinitionBuilder.create(PRODUCT_HOME, ModelType.STRING, true).build(),

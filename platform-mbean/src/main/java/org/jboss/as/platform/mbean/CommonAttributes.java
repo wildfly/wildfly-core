@@ -60,17 +60,20 @@ class CommonAttributes {
             .setAllowNull(false)
             .build();
 
-    static final SimpleAttributeDefinition MAX_DEPTH = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.MAX_DEPTH, ModelType.INT, false)
+    static final SimpleAttributeDefinition MAX_DEPTH = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.MAX_DEPTH, ModelType.INT)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(0))
             .setMinSize(1)
             .build();
 
 
-    static final SimpleAttributeDefinition LOCKED_MONITORS_FLAG = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.LOCKED_MONITORS, ModelType.BOOLEAN, false)
+    static final SimpleAttributeDefinition LOCKED_MONITORS_FLAG = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.LOCKED_MONITORS, ModelType.BOOLEAN)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 
-    static final SimpleAttributeDefinition LOCKED_SYNCHRONIZERS_FLAG = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.LOCKED_SYNCHRONIZERS, ModelType.BOOLEAN, false)
+    static final SimpleAttributeDefinition LOCKED_SYNCHRONIZERS_FLAG = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.LOCKED_SYNCHRONIZERS, ModelType.BOOLEAN)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 

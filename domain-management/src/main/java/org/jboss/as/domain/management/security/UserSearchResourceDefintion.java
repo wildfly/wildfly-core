@@ -43,7 +43,8 @@ import org.jboss.dmr.ModelType;
  */
 public class UserSearchResourceDefintion extends BaseLdapUserSearchResource {
 
-    public static final SimpleAttributeDefinition ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ATTRIBUTE, ModelType.STRING, false)
+    public static final SimpleAttributeDefinition ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ATTRIBUTE, ModelType.STRING)
+            .setRequired(false)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, false))
             .setDefaultValue(new ModelNode("uid"))
             .setAllowExpression(true)
