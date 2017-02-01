@@ -55,7 +55,6 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
                     .setXmlName(Attribute.NAME.getLocalName())
                     .setAllowExpression(false)
                     .setValidator(new StringLengthValidator(1))
-                    .setDefaultValue(new ModelNode().set(DeploymentScannerExtension.DEFAULT_SCANNER_NAME))
                     .build();
 
     protected static final SimpleAttributeDefinition PATH =
