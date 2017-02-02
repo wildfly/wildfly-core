@@ -83,7 +83,11 @@
         <module name="org.jboss.as.patching" optional="true" services="import"/>
         <module name="org.jboss.as.platform-mbean"/>
         <module name="org.jboss.as.process-controller"/>
-        <module name="org.jboss.as.protocol"/>
+        <module name="org.jboss.as.protocol">
+            <imports>
+                <include path="**" />
+            </imports> 
+        </module>
         <module name="org.jboss.as.remoting"/>
         <module name="org.jboss.as.self-contained" optional="true"/>
         <module name="org.wildfly.security.elytron" services="import"/>
