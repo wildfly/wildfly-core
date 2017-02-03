@@ -22,14 +22,12 @@
 
 package org.jboss.as.remoting;
 
-import java.io.IOException;
 import java.net.URI;
 
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.remoting3.Connection;
-import org.jboss.remoting3.Endpoint;
 import org.wildfly.common.Assert;
-import org.xnio.IoFuture;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.xnio.OptionMap;
 
 /**
@@ -40,7 +38,7 @@ import org.xnio.OptionMap;
  *
  * @author Jaikiran Pai
  */
-public class GenericOutboundConnectionService extends AbstractOutboundConnectionService<GenericOutboundConnectionService> {
+public class GenericOutboundConnectionService extends AbstractOutboundConnectionService implements Service<GenericOutboundConnectionService> {
 
     public static final ServiceName GENERIC_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("generic-outbound-connection");
 
@@ -48,21 +46,10 @@ public class GenericOutboundConnectionService extends AbstractOutboundConnection
 
     public GenericOutboundConnectionService(final String connectionName, final URI destination, final OptionMap connectionCreationOptions) {
 
-        super(connectionName, connectionCreationOptions);
+        super();
 
         Assert.checkNotNullParam("destination", destination);
         this.destination = destination;
-    }
-
-    @Override
-    public IoFuture<Connection> connect() throws IOException {
-        final Endpoint endpoint = this.endpointInjectedValue.getValue();
-        return endpoint.connect(this.destination, null);
-    }
-
-    @Override
-    public String getProtocol() {
-        return destination.getScheme();
     }
 
     @Override
@@ -72,5 +59,13 @@ public class GenericOutboundConnectionService extends AbstractOutboundConnection
 
     void setDestination(final URI uri) {
         this.destination = uri;
+    }
+
+    public URI getDestinationUri() {
+        return destination;
+    }
+
+    public AuthenticationConfiguration getAuthenticationConfiguration() {
+        return AuthenticationConfiguration.EMPTY;
     }
 }
