@@ -69,9 +69,15 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         return base.fromBaseCapability(dynamicElement);
     }
 
+    // Default value for allowMultipleRegistrations.
+    // I use this constant because I intend to shortly change the
+    // default and don't want to risk mistake by changing many places
+    private static final boolean ALLOW_MULTIPLE = true;
+
     private final Class<?> serviceValueType;
     private final ServiceName serviceName;
     private final T runtimeAPI;
+    private final boolean allowMultipleRegistrations;
 
     /**
      * Creates a new capability
@@ -88,6 +94,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = null;
         this.serviceName = null;
+        this.allowMultipleRegistrations = ALLOW_MULTIPLE;
     }
 
     /**
@@ -118,6 +125,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = null;
         this.serviceName = null;
+        this.allowMultipleRegistrations = ALLOW_MULTIPLE;
     }
 
     /**
@@ -129,6 +137,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
         this.serviceName = ServiceName.parse(builder.baseName);
+        this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
     }
 
     /**
@@ -137,12 +146,14 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     private RuntimeCapability(String baseName, String dynamicElement, Class<?> serviceValueType, T runtimeAPI,
                               Set<String> requirements, Set<String> optionalRequirements,
                               Set<String> runtimeOnlyRequirements, Set<String> dynamicRequirements,
-                              Set<String> dynamicOptionalRequirements) {
+                              Set<String> dynamicOptionalRequirements,
+                              boolean allowMultipleRegistrations) {
         super(buildDynamicCapabilityName(baseName, dynamicElement), false, requirements,
                 optionalRequirements, runtimeOnlyRequirements, dynamicRequirements, dynamicOptionalRequirements);
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = serviceValueType;
         this.serviceName = dynamicElement == null ? ServiceName.parse(baseName) : ServiceName.parse(baseName).append(dynamicElement);
+        this.allowMultipleRegistrations = allowMultipleRegistrations;
     }
 
     /**
@@ -230,6 +241,17 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     }
 
     /**
+     * Gets whether this capability can be registered at more than one point within the same
+     * overall scope.
+     *
+     * @return {@code true} if the capability can legally be registered in more than one location in the same scope;
+     *         {@code false} if an attempt to do this should result in an exception
+     */
+    public boolean isAllowMultipleRegistrations() {
+        return allowMultipleRegistrations;
+    }
+
+    /**
      * Creates a fully named capability from a {@link #isDynamicallyNamed() dynamically named} base
      * capability. Capability providers should use this method to generate fully named capabilities in logic
      * that handles dynamically named resources.
@@ -245,7 +267,8 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         assert dynamicElement.length() > 0;
         return new RuntimeCapability<T>(getName(), dynamicElement, serviceValueType, runtimeAPI,
                 getRequirements(), getOptionalRequirements(),
-                getRuntimeOnlyRequirements(), getDynamicRequirements(), getDynamicOptionalRequirements());
+                getRuntimeOnlyRequirements(), getDynamicRequirements(), getDynamicOptionalRequirements(),
+                allowMultipleRegistrations);
 
     }
 
@@ -264,6 +287,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         private Set<String> runtimeOnlyRequirements;
         private Set<String> dynamicRequirements;
         private Set<String> dynamicOptionalRequirements;
+        private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
 
         /**
          * Create a builder for a non-dynamic capability with no custom runtime API.
@@ -436,6 +460,19 @@ public class RuntimeCapability<T> extends AbstractCapability  {
                 this.dynamicOptionalRequirements = new HashSet<>(requirements.length);
             }
             Collections.addAll(this.dynamicOptionalRequirements, requirements);
+            return this;
+        }
+
+        /**
+         * Sets whether this capability can be registered at more than one point within the same
+         * overall scope.
+         * @param allowMultipleRegistrations {@code true} if the capability can legally be registered in more than
+         *                                               one location in the same scope; {@code false} if an attempt
+         *                                               to do this should result in an exception
+         * @return the builder
+         */
+        public Builder<T> setAllowMultipleRegistrations(boolean allowMultipleRegistrations) {
+            this.allowMultipleRegistrations = allowMultipleRegistrations;
             return this;
         }
 

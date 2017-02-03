@@ -151,12 +151,13 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             RegistrationPoint rp = capabilityRegistration.getOldestRegistrationPoint();
             RuntimeCapabilityRegistration currentRegistration = capabilities.get(capabilityId);
             if (currentRegistration != null) {
-                // The actual capability must be the same, and we must not already have a registration
-                // from this resource
+                // The actual capability must be the same, the capability must allow multiple registrations
+                // and we must not already have a registration from this same resource
                 if (!Objects.equals(capabilityRegistration.getCapability(), currentRegistration.getCapability())
+                        || !currentRegistration.getCapability().isAllowMultipleRegistrations()
                         || !currentRegistration.addRegistrationPoint(rp)) {
                     throw ControllerLogger.MGMT_OP_LOGGER.capabilityAlreadyRegisteredInContext(capabilityId.getName(),
-                            capabilityId.getScope().getName());
+                                rp, capabilityId.getScope().getName(), currentRegistration.getRegistrationPoints());
                 }
                 // else it was ok, and we just recorded the additional registration point
             } else {
