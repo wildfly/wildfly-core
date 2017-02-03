@@ -22,19 +22,14 @@
 
 package org.jboss.as.remoting;
 
-import java.io.IOException;
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.jboss.as.network.OutboundSocketBinding;
-import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.msc.inject.Injector;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.remoting3.Connection;
-import org.jboss.remoting3.Endpoint;
-import org.xnio.IoFuture;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.xnio.OptionMap;
 
 /**
@@ -42,68 +37,30 @@ import org.xnio.OptionMap;
  *
  * @author Jaikiran Pai
  */
-public class LocalOutboundConnectionService extends AbstractOutboundConnectionService<LocalOutboundConnectionService> {
+public class LocalOutboundConnectionService extends AbstractOutboundConnectionService implements Service<LocalOutboundConnectionService> {
 
     public static final ServiceName LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("local-outbound-connection");
 
-    private static final String LOCAL_URI_SCHEME = "local://";
-
     private final InjectedValue<OutboundSocketBinding> destinationOutboundSocketBindingInjectedValue = new InjectedValue<OutboundSocketBinding>();
 
-    private URI connectionURI;
-
     public LocalOutboundConnectionService(final String connectionName, final OptionMap connectionCreationOptions) {
-        super(connectionName, connectionCreationOptions);
-    }
-
-
-    @Override
-    public IoFuture<Connection> connect() throws IOException {
-        final URI uri;
-        try {
-            // we lazily generate the URI on first request to connect() instead of on start() of the service
-            // in order to delay resolving the destination address. No point trying to resolve that address
-            // if nothing really wants to create a connection out of it.
-            uri = this.getConnectionURI();
-        } catch (URISyntaxException e) {
-            throw RemotingLogger.ROOT_LOGGER.couldNotConnect(e);
-        }
-        final Endpoint endpoint = this.endpointInjectedValue.getValue();
-        return endpoint.connect(uri, null);
-    }
-
-    @Override
-    public String getProtocol() {
-        return "local";
+        super();
     }
 
     Injector<OutboundSocketBinding> getDestinationOutboundSocketBindingInjector() {
         return this.destinationOutboundSocketBindingInjectedValue;
     }
 
-    /**
-     * Generates and returns the URI that corresponds to the local outbound connection.
-     * If the URI has already been generated in a previous request, then it returns that back.
-     * Else the URI is constructed out of the outbound socket binding's destination address and destination port.
-     *
-     * @return
-     * @throws IOException
-     * @throws URISyntaxException
-     */
-    private synchronized URI getConnectionURI() throws IOException, URISyntaxException {
-        if (this.connectionURI != null) {
-            return this.connectionURI;
-        }
-        final OutboundSocketBinding destinationOutboundSocket = this.destinationOutboundSocketBindingInjectedValue.getValue();
-        final InetAddress destinationAddress = destinationOutboundSocket.getResolvedDestinationAddress();
-        final int port = destinationOutboundSocket.getDestinationPort();
-
-        this.connectionURI = new URI(LOCAL_URI_SCHEME + destinationAddress.getHostAddress() + ":" + port);
-        return this.connectionURI;
-    }
-
     @Override
     public LocalOutboundConnectionService getValue() throws IllegalStateException, IllegalArgumentException {
         return this;
+    }
+
+    public URI getDestinationUri() {
+        return URI.create("local:-");
+    }
+
+    public AuthenticationConfiguration getAuthenticationConfiguration() {
+        return AuthenticationConfiguration.EMPTY;
     }
 }

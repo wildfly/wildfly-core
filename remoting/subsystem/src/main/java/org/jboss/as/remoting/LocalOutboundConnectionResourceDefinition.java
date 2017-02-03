@@ -22,7 +22,10 @@
 
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME;
+
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ServiceRemoveStepHandler;
@@ -49,11 +52,12 @@ class LocalOutboundConnectionResourceDefinition extends AbstractOutboundConnecti
 
     static final LocalOutboundConnectionResourceDefinition INSTANCE = new LocalOutboundConnectionResourceDefinition();
 
-
     private LocalOutboundConnectionResourceDefinition() {
-        super(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.LOCAL_OUTBOUND_CONNECTION),
-                LocalOutboundConnectionAdd.INSTANCE,
-                new ServiceRemoveStepHandler(AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME, LocalOutboundConnectionAdd.INSTANCE));
+        super(new Parameters(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.LOCAL_OUTBOUND_CONNECTION))
+                .setAddHandler(LocalOutboundConnectionAdd.INSTANCE)
+                .setRemoveHandler(new ServiceRemoveStepHandler(OUTBOUND_CONNECTION_BASE_SERVICE_NAME, LocalOutboundConnectionAdd.INSTANCE))
+                .setDeprecatedSince(ModelVersion.create(4))
+        );
     }
 
     @Override
