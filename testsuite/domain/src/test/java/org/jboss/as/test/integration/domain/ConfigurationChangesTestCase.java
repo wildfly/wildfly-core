@@ -151,6 +151,13 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
             add.get("max-history").set(MAX_HISTORY_SIZE);
             ModelNode response = client.execute(add);
             Assert.assertFalse(response.toString(), Operations.isSuccessfulOutcome(response));
+            // Here we don't expect the failure message to reflect duplicate capability registration
+            // because we've registered the cap in 3 different scopes
+            // 1) the /profile=other-profile stuff is in ProfileChildCapabilityScope
+            // 2) the /host=slave/subsysytem=core-management stuff is in HostCapabilityScope
+            // 3) the /host=slave/core-service=management stuff is in CapabilityScope.GLOBAL
+            // That means there is no conflict on the HC. No conflict on the server the HC failure means
+            // it never reaches the server.
             assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
         } finally {
             clearProfileConfigurationChange(OTHER_PROFILE);
@@ -176,7 +183,7 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
             add.get("max-history").set(MAX_HISTORY_SIZE);
             ModelNode response = client.execute(add);
             Assert.assertFalse(response.toString(), Operations.isSuccessfulOutcome(response));
-            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
+            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0436"));
         } finally {
             clearProfileConfigurationChange(OTHER_PROFILE);
             client.execute(Util.createRemoveOperation(PathAddress.pathAddress(PathAddress.pathAddress()
@@ -201,12 +208,17 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
             add.get("max-history").set(1);
             ModelNode response = client.execute(addToProfile);
             Assert.assertFalse(response.toString(), Operations.isSuccessfulOutcome(response));
-            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
+            // This fails with a duplicate capability message on the server
+            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0436"));
 
             final ModelNode addToSlave = Util.createAddOperation(PathAddress.pathAddress().append(HOST_SLAVE).append(getAddress()));
             add.get("max-history").set(1);
             response = client.execute(addToSlave);
             Assert.assertFalse(response.toString(), Operations.isSuccessfulOutcome(response));
+            // Here we don't expect the failure message to reflect duplicate capability registration
+            // because we've registered the cap in 2 different scopes
+            // 1) the /host=slave/core-service=management stuff is in CapabilityScope.GLOBAL
+            // 2) the /host=slave/subsysytem=core-management stuff is in HostCapabilityScope
             assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
 
         } finally {

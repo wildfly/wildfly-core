@@ -179,6 +179,6 @@ public class ConfigurationChangesHistoryTestCase extends AbstractConfigurationCh
         add.get("max-history").set(MAX_HISTORY_SIZE);
         ModelNode response = client.execute(add);
         Assert.assertFalse(Operations.isSuccessfulOutcome(response));
-        assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
+        assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0436"));
     }
 }

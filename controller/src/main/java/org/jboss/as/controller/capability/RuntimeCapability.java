@@ -70,9 +70,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     }
 
     // Default value for allowMultipleRegistrations.
-    // I use this constant because I intend to shortly change the
-    // default and don't want to risk mistake by changing many places
-    private static final boolean ALLOW_MULTIPLE = true;
+    private static final boolean ALLOW_MULTIPLE = false;
 
     private final Class<?> serviceValueType;
     private final ServiceName serviceName;
