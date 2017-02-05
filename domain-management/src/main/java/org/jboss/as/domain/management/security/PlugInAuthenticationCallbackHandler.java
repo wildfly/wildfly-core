@@ -31,6 +31,7 @@ import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,8 +60,13 @@ import org.jboss.as.domain.management.plugin.PlugInConfigurationSupport;
 import org.jboss.as.domain.management.plugin.ValidatePasswordCredential;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.common.Assert;
+import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
@@ -305,8 +311,158 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
 
     @Override
     public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
-        // TODO Elytron Add support for legacy plug-in
-        return null;
+        return new SecurityRealmImpl();
+    }
+
+    private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
+
+        @Override
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
+               return new RealmIdentityImpl(principal);
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends org.wildfly.security.credential.Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+            Assert.checkNotNullParam("credentialType", credentialType);
+            return SupportLevel.POSSIBLY_SUPPORTED;
+        }
+
+        @Override
+        public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                throws RealmUnavailableException {
+            return PasswordGuessEvidence.class.isAssignableFrom(evidenceType) ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+        }
+
+        private class RealmIdentityImpl implements RealmIdentity {
+
+            private final String name;
+            private final AuthenticationPlugIn<Credential> ap;;
+            private final Principal principal;
+            private final Credential credential;
+
+            private RealmIdentityImpl(final Principal principal) throws RealmUnavailableException {
+                name = getPlugInName();
+                ap = getPlugInLoader().loadAuthenticationPlugIn(name);
+                if (ap instanceof PlugInConfigurationSupport) {
+                    PlugInConfigurationSupport pcf = (PlugInConfigurationSupport) ap;
+                    try {
+                        pcf.init(getConfiguration(), SecurityRealmService.SharedStateSecurityRealm.getSharedState());
+                    } catch (IOException e) {
+                        throw DomainManagementLogger.ROOT_LOGGER.unableToInitialisePlugIn(name, e.getMessage());
+                    }
+                }
+
+                this.principal = principal;
+
+                try {
+                    Identity identity = ap.loadIdentity(principal.getName(), getRealmName());
+                    credential = identity != null ? identity.getCredential() : null;
+                } catch (IOException e) {
+                    throw new RealmUnavailableException(e);
+                }
+            }
+
+            @Override
+            public Principal getRealmIdentityPrincipal() {
+                return principal;
+            }
+
+            @Override
+            public SupportLevel getCredentialAcquireSupport(Class<? extends org.wildfly.security.credential.Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+                return getCredential(credentialType, algorithmName) != null ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+            }
+
+            @Override
+            public <C extends org.wildfly.security.credential.Credential> C getCredential(Class<C> credentialType) throws RealmUnavailableException {
+                return getCredential(credentialType, null);
+            }
+
+            @Override
+            public <C extends org.wildfly.security.credential.Credential> C getCredential(Class<C> credentialType, final String algorithmName) throws RealmUnavailableException {
+                if (credential == null || (PasswordCredential.class.isAssignableFrom(credentialType) == false)) {
+                    return null;
+                }
+
+                final PasswordFactory passwordFactory;
+                final PasswordSpec passwordSpec;
+                if (credential instanceof DigestCredential && (algorithmName == null || ALGORITHM_DIGEST_MD5.equals(algorithmName))) {
+                    passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
+                    byte[] hashed = ByteIterator.ofBytes(((DigestCredential) credential).getHash().getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                    passwordSpec = new DigestPasswordSpec(principal.getName(), getRealmName(), hashed);
+                } else if (credential instanceof PasswordCredential) {
+                    if (algorithmName == null || ALGORITHM_CLEAR.equals(algorithmName)) {
+                        passwordFactory = getPasswordFactory(ALGORITHM_CLEAR);
+                        passwordSpec = new ClearPasswordSpec(((PasswordCredential) credential).getPassword());
+                    } else if (ALGORITHM_DIGEST_MD5.equals(algorithmName)) {
+                        passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
+                        UsernamePasswordHashUtil hashUtil = getHashUtil();
+                        synchronized (hashUtil) {
+                            byte[] hashed = hashUtil
+                                    .generateHashedHexURP(principal.getName(), getRealmName(),
+                                            ((PasswordCredential) credential).getPassword()).getBytes(StandardCharsets.UTF_8);
+                            passwordSpec = new DigestPasswordSpec(principal.getName(), getRealmName(), hashed);
+                        }
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+
+                try {
+                    return credentialType.cast(new org.wildfly.security.credential.PasswordCredential(passwordFactory.generatePassword(passwordSpec)));
+                } catch (InvalidKeySpecException e) {
+                    throw new RealmUnavailableException(e);
+                }
+            }
+
+            @Override
+            public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getEvidenceVerifySupport(evidenceType, algorithmName);
+            }
+
+            @Override
+            public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
+                if (credential == null || evidence instanceof PasswordGuessEvidence == false) {
+                    return false;
+                }
+                final char[] guess = ((PasswordGuessEvidence) evidence).getGuess();
+
+                if (credential instanceof PasswordCredential) {
+                    boolean verified = Arrays.equals(((PasswordCredential) credential).getPassword(), guess);
+                    if (verified == false) {
+                        SECURITY_LOGGER.tracef("Password verification failed for user '%s'", principal.getName());
+                    }
+                    return verified;
+                } else if (credential instanceof DigestCredential) {
+                    UsernamePasswordHashUtil hashUtil = getHashUtil();
+                    String hash;
+                    synchronized (hashUtil) {
+                        hash = hashUtil.generateHashedHexURP(principal.getName(), getRealmName(), guess);
+                    }
+                    String expected = ((DigestCredential) credential).getHash();
+                    boolean verified = expected.equals(hash);
+                    if (verified == false) {
+                        SECURITY_LOGGER.tracef("Digest verification failed for user '%s'", principal.getName());
+                    }
+                    return verified;
+                } else if (credential instanceof ValidatePasswordCredential) {
+                    boolean verified = ((ValidatePasswordCredential) credential).validatePassword(guess);
+                    if (verified == false) {
+                        SECURITY_LOGGER.tracef("Delegated verification failed for user '%s'", principal.getName());
+                    }
+                    return verified;
+                }
+
+                return false;
+            }
+
+            @Override
+            public boolean exists() throws RealmUnavailableException {
+                return credential != null;
+            }
+
+        }
     }
 
     private static PasswordFactory getPasswordFactory(final String algorithm) {
