@@ -488,6 +488,7 @@ public enum Phase {
     public static final int POST_MODULE_EJB_IMPLICIT_NO_INTERFACE_VIEW  = 0x1000;
     public static final int POST_MODULE_EJB_JNDI_BINDINGS               = 0x1100;
     public static final int POST_MODULE_EJB_CLIENT_METADATA             = 0x1102;
+    public static final int POST_MODULE_EJB_DISCOVERY                   = 0x1108;
     public static final int POST_MODULE_EJB_APPLICATION_EXCEPTIONS      = 0x1200;
     public static final int POST_INITIALIZE_IN_ORDER                    = 0x1300;
     public static final int POST_MODULE_ENV_ENTRY                       = 0x1400;

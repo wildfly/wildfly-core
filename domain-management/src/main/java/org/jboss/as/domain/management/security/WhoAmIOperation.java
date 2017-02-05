@@ -121,7 +121,6 @@ public class WhoAmIOperation implements OperationStepHandler {
                 });
             }
 
-            // TODO Elytron Complete RBAC integration.
             Set<String> mappedRoles = authorizer == null ? null : authorizer.getCallerRoles(context.getCaller(), context.getCallEnvironment(), RunAsRoleMapper.getOperationHeaderRoles(operation));
             if (mappedRoles != null) {
                 ModelNode rolesModel = result.get(MAPPED_ROLES);

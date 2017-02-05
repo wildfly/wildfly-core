@@ -24,49 +24,37 @@
 
 <module xmlns="urn:jboss:module:1.5" name="org.wildfly.security.elytron">
 
-    <!--
-    <exports>
-        <exclude path="org/wildfly/security/asn1"/>
-        <exclude path="org/wildfly/security/auth/realm"/>
-        <exclude path="org/wildfly/security/auth/realm/jdbc"/>
-        <exclude path="org/wildfly/security/auth/realm/jdbc/mapper"/>
-        <exclude path="org/wildfly/security/auth/realm/ldap"/>
-        <exclude path="org/wildfly/security/auth/realm/token"/>
-        <exclude path="org/wildfly/security/auth/realm/token/validator"/>
-        <exclude path="org/wildfly/security/authz/jacc"/>
-        <exclude path="org/wildfly/security/cache"/>
-        <exclude path="org/wildfly/security/credential/store/impl"/>
-        <exclude path="org/wildfly/security/digest"/>
-        <exclude path="org/wildfly/security/http/impl"/>
-        <exclude path="org/wildfly/security/http/util/sso"/>
-        <exclude path="org/wildfly/security/keystore"/>
-        <exclude path="org/wildfly/security/mechanism/digest"/>
-        <exclude path="org/wildfly/security/mechanism/oauth2"/>
-        <exclude path="org/wildfly/security/mechanism/scram"/>
-        <exclude path="org/wildfly/security/password/impl"/>
-        <exclude path="org/wildfly/security/password/util"/>
-        <exclude path="org/wildfly/security/pem"/>
-        <exclude path="org/wildfly/security/sasl"/>
-        <exclude path="org/wildfly/security/sasl/anonymous"/>
-        <exclude path="org/wildfly/security/sasl/digest"/>
-        <exclude path="org/wildfly/security/sasl/digest_private"/>
-        <exclude path="org/wildfly/security/sasl/entity"/>
-        <exclude path="org/wildfly/security/sasl/external"/>
-        <exclude path="org/wildfly/security/sasl/gs2"/>
-        <exclude path="org/wildfly/security/sasl/gssapi"/>
-        <exclude path="org/wildfly/security/sasl/localuser"/>
-        <exclude path="org/wildfly/security/sasl/oauth2"/>
-        <exclude path="org/wildfly/security/sasl/otp"/>
-        <exclude path="org/wildfly/security/sasl/plain"/>
-        <exclude path="org/wildfly/security/sasl/scram"/>
-        <exclude path="org/wildfly/security/util"/>
-        <exclude path="org/wildfly/security/util_private"/>
-        <exclude path="org/wildfly/security/x500"/>
-        <exclude path="org/wildfly/security/x500/cert"/>
-    </exports>
-    -->
-
     <dependencies>
-        <module name="org.wildfly.security.elytron-private" services="export" export="true"/>
+        <module name="org.wildfly.security.elytron-private" services="export" export="true">
+            <exports>
+                <include-set>
+                    <path name="org/wildfly/security"/>
+                    <path name="org/wildfly/security/auth"/>
+                    <path name="org/wildfly/security/auth/callback"/>
+                    <path name="org/wildfly/security/auth/client"/>
+                    <path name="org/wildfly/security/auth/permission"/>
+                    <path name="org/wildfly/security/auth/principal"/>
+                    <path name="org/wildfly/security/auth/server"/>
+                    <path name="org/wildfly/security/auth/server/event"/>
+                    <path name="org/wildfly/security/auth/util"/>
+                    <path name="org/wildfly/security/authz"/>
+                    <path name="org/wildfly/security/credential"/>
+                    <path name="org/wildfly/security/credential/source"/>
+                    <path name="org/wildfly/security/credential/store"/>
+                    <path name="org/wildfly/security/evidence"/>
+                    <path name="org/wildfly/security/http"/>
+                    <path name="org/wildfly/security/key"/>
+                    <path name="org/wildfly/security/manager"/>
+                    <path name="org/wildfly/security/manager/action"/>
+                    <path name="org/wildfly/security/mechanism"/>
+                    <path name="org/wildfly/security/password"/>
+                    <path name="org/wildfly/security/password/interfaces"/>
+                    <path name="org/wildfly/security/password/spec"/>
+                    <path name="org/wildfly/security/permission"/>
+                    <path name="org/wildfly/security/sasl/util"/>
+                    <path name="org/wildfly/security/ssl"/>
+                </include-set>
+            </exports>
+        </module>
     </dependencies>
 </module>

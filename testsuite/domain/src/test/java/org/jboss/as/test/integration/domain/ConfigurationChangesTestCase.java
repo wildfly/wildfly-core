@@ -23,6 +23,7 @@ package org.jboss.as.test.integration.domain;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.USER_ID;
+import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.REMOTE_ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOWED_ORIGINS;
@@ -236,8 +237,7 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
             assertThat(change.hasDefined(DOMAIN_UUID), is(true));
             assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
             assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
-            // TODO Elytron - Restore capturing the Remote address.
-            //assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
+            assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
             assertThat(change.get(OPERATIONS).asList().size(), is(1));
         }
         validateChanges(changes);
@@ -251,8 +251,7 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
             assertThat(change.hasDefined(DOMAIN_UUID), is(true));
             assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
             assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
-            // TODO Elytron - Restore capturing the Remote address.
-            //assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
+            assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
             assertThat(change.get(OPERATIONS).asList().size(), is(1));
         }
         ModelNode currentChange = changes.get(0);
@@ -271,8 +270,7 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
             assertThat(change.hasDefined(DOMAIN_UUID), is(true));
             assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
             assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
-            // TODO Elytron - Restore capturing the Remote address.
-            //assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
+            assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
             assertThat(change.get(OPERATIONS).asList().size(), is(1));
         }
         ModelNode currentChange = changes.get(0);

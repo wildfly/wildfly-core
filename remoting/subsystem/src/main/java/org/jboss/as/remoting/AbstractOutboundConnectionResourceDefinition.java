@@ -24,10 +24,8 @@ package org.jboss.as.remoting;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 /**
@@ -41,15 +39,10 @@ abstract class AbstractOutboundConnectionResourceDefinition extends SimpleResour
             RuntimeCapability.Builder.of(OUTBOUND_CONNECTION_CAPABILITY_NAME, true, AbstractOutboundConnectionService.class)
                     .build();
 
-    protected AbstractOutboundConnectionResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                                           final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
-        super(new Parameters(pathElement, descriptionResolver)
-                .setAddHandler(addHandler)
-                .setRemoveHandler(removeHandler)
-                .setCapabilities(OUTBOUND_CONNECTION_CAPABILITY));
+
+    protected AbstractOutboundConnectionResourceDefinition(final Parameters parameters) {
+        super(parameters.addCapabilities(OUTBOUND_CONNECTION_CAPABILITY));
     }
-
-
 
     public abstract void registerChildren(ManagementResourceRegistration resourceRegistration);
 
