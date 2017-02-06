@@ -6,6 +6,8 @@ clean_tty()
     if [ $1 = 137 ]; then
       stty sane
     fi
+    # set the exit status to be the one that has been passed
+    return $1
 }
 
 CLI_OPTS=""
