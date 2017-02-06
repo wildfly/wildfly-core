@@ -30,6 +30,7 @@ import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import org.junit.Test;
 
 /**
@@ -37,6 +38,37 @@ import org.junit.Test;
  * @author jdenise@redhat.com
  */
 public class DefaultOperationCandidatesProviderTestCase {
+
+    private static final String nested_content = "{\n" +
+"            \"http-upgrade\" => {\n" +
+"                \"type\" => OBJECT,\n" +
+"                \"description\" => \"HTTP Upgrade specific configuration\",\n" +
+"                \"expressions-allowed\" => false,\n" +
+"                \"required\" => false,\n" +
+"                \"nillable\" => true,\n" +
+"                \"value-type\" => {\n" +
+"                    \"enabled\" => {\n" +
+"                        \"type\" => BOOLEAN,\n" +
+"                        \"expressions-allowed\" => false,\n" +
+"                        \"required\" => false,\n" +
+"                        \"nillable\" => true,\n" +
+"                        \"default\" => false\n" +
+"                    },\n" +
+"                    \"sasl-authentication-factory\" => {\n" +
+"                        \"type\" => STRING,\n" +
+"                        \"expressions-allowed\" => false,\n" +
+"                        \"required\" => false,\n" +
+"                        \"nillable\" => true,\n" +
+"                        \"capability-reference\" => \"org.wildfly.security.sasl-authentication-factory\",\n" +
+"                        \"min-length\" => 1L,\n" +
+"                        \"max-length\" => 2147483647L\n" +
+"                    }\n" +
+"                },\n" +
+"                \"access-type\" => \"read-write\",\n" +
+"                \"storage\" => \"configuration\",\n" +
+"                \"restart-required\" => \"no-services\"\n" +
+"            },\n" +
+"        }";
 
     private static final String list_content = "{\n"
             + "            \"type\" => LIST,\n"
@@ -137,6 +169,50 @@ public class DefaultOperationCandidatesProviderTestCase {
             List<String> candidates = new ArrayList<>();
             completer.complete(ctx, "bytes", 0, candidates);
             assertEquals(Arrays.asList("bytes{"), candidates);
+        }
+    }
+
+    @Test
+    public void testAttributeNamePath() throws Exception {
+
+        {
+            Property p
+                    = DefaultOperationCandidatesProvider.
+                    getProperty("http-upgrade",
+                            ModelNode.fromString(nested_content));
+            assertFalse("Invalid property " + p, p == null);
+        }
+
+        {
+            Property p
+                    = DefaultOperationCandidatesProvider.
+                    getProperty("http-upgrade.sasl-authentication-factory",
+                            ModelNode.fromString(nested_content));
+            assertFalse("Invalid property " + p, p == null);
+        }
+
+        {
+            Property p
+                    = DefaultOperationCandidatesProvider.
+                    getProperty("http-upgrade[190].sasl-authentication-factory",
+                            ModelNode.fromString(nested_content));
+            assertFalse("Invalid property " + p, p == null);
+        }
+
+        {
+            Property p
+                    = DefaultOperationCandidatesProvider.
+                    getProperty("http-downgrade",
+                            ModelNode.fromString(nested_content));
+            assertEquals("Invalid property " + p, p, null);
+        }
+
+        {
+            Property p
+                    = DefaultOperationCandidatesProvider.
+                    getProperty("http-upgrade.sasl-authentication-f",
+                            ModelNode.fromString(nested_content));
+            assertEquals("Invalid property " + p, p, null);
         }
     }
 }
