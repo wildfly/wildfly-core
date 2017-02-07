@@ -26,7 +26,11 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECU
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,12 +38,19 @@ import javax.security.auth.Subject;
 
 import org.jboss.as.core.security.RealmGroup;
 import org.jboss.as.core.security.RealmUser;
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.plugin.AuthorizationPlugIn;
 import org.jboss.as.domain.management.plugin.PlugInConfigurationSupport;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.security.auth.SupportLevel;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.authz.AuthorizationIdentity;
+import org.wildfly.security.authz.MapAttributes;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.evidence.Evidence;
 
 /**
  * The {@link SubjectSupplementalService} for Plug-Ins
@@ -64,6 +75,11 @@ public class PlugInSubjectSupplemental extends AbstractPlugInService implements 
     @Override
     public SubjectSupplementalService getValue() throws IllegalStateException, IllegalArgumentException {
         return this;
+    }
+
+    @Override
+    public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
+        return new SecurityRealmImpl();
     }
 
     public SubjectSupplemental getSubjectSupplemental(Map<String, Object> sharedState) {
@@ -103,6 +119,100 @@ public class PlugInSubjectSupplemental extends AbstractPlugInService implements 
             }
 
         };
+
+    }
+
+    private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
+
+        @Override
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
+            try {
+                final String name = getPlugInName();
+                final AuthorizationPlugIn ap = getPlugInLoader().loadAuthorizationPlugIn(name);
+                if (ap instanceof PlugInConfigurationSupport) {
+                    PlugInConfigurationSupport pcf = (PlugInConfigurationSupport) ap;
+                    try {
+                        pcf.init(getConfiguration(), SecurityRealmService.SharedStateSecurityRealm.getSharedState());
+                    } catch (IOException e) {
+                        throw DomainManagementLogger.ROOT_LOGGER.unableToInitialisePlugIn(name, e.getMessage());
+                    }
+                }
+
+                String[] groups = ap.loadRoles(principal.getName(), getRealmName());
+                if (SECURITY_LOGGER.isTraceEnabled()) {
+                    for (String group : groups) {
+                        SECURITY_LOGGER.tracef("Adding group '%s' for identity '%s'.", group, principal.getName());
+                    }
+                }
+                return new RealmIdentityImpl(principal, groups);
+            } catch (IOException e) {
+                throw new RealmUnavailableException(e);
+            }
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        @Override
+        public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        private class RealmIdentityImpl implements RealmIdentity {
+
+            private final Principal principal;
+            private final String[] groups;
+
+            private RealmIdentityImpl(final Principal principal, final String[] groups) {
+                this.principal = principal;
+                this.groups = groups;
+            }
+
+            @Override
+            public Principal getRealmIdentityPrincipal() {
+                return principal;
+            }
+
+            @Override
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                    throws RealmUnavailableException {
+                return SupportLevel.UNSUPPORTED;
+            }
+
+            @Override
+            public <C extends Credential> C getCredential(Class<C> credentialType) throws RealmUnavailableException {
+                return null;
+            }
+
+            @Override
+            public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                    throws RealmUnavailableException {
+                return SupportLevel.UNSUPPORTED;
+            }
+
+            @Override
+            public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
+                return false;
+            }
+
+            @Override
+            public boolean exists() throws RealmUnavailableException {
+                return true;
+            }
+
+            @Override
+            public AuthorizationIdentity getAuthorizationIdentity() throws RealmUnavailableException {
+                Map<String, List<String>> groupsAttributeMap = new HashMap<String, List<String>>();
+                groupsAttributeMap.put("GROUPS", Arrays.asList(groups));
+
+                return AuthorizationIdentity.basicIdentity(new MapAttributes(Collections.unmodifiableMap(groupsAttributeMap)));
+            }
+
+        }
 
     }
 
