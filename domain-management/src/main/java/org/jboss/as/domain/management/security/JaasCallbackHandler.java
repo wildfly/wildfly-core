@@ -22,9 +22,9 @@
 
 package org.jboss.as.domain.management.security;
 
-import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.SUBJECT_CALLBACK_SUPPORTED;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.VERIFY_PASSWORD_CALLBACK_SUPPORTED;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -33,6 +33,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -48,8 +50,8 @@ import javax.security.sasl.RealmCallback;
 import org.jboss.as.core.security.RealmGroup;
 import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -57,7 +59,16 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.security.SimpleGroup;
+import org.wildfly.common.Assert;
+import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
+import org.wildfly.security.authz.Attributes;
+import org.wildfly.security.authz.AuthorizationIdentity;
+import org.wildfly.security.authz.MapAttributes;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 
 /**
@@ -112,8 +123,7 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
 
     @Override
     public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
-        // TODO Elytron Add support for calling out to JAAS
-        return null;
+        return new SecurityRealmImpl();
     }
 
     @Override
@@ -182,14 +192,17 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
 
         Subject subject = subjectCallback != null && subjectCallback.getSubject() != null ? subjectCallback.getSubject()
                 : new Subject();
+        evidenceVerifyCallback.setVerified(verify(userName, password, subject, subjectCallback != null ? subjectCallback::setSubject : null));
+    }
+
+    private boolean verify(String userName, char[] password, Subject subject, Consumer<Subject> subjectConsumer) {
         ServerSecurityManager securityManager;
         if ((securityManager = securityManagerValue.getOptionalValue()) != null) {
             try {
                 securityManager.push(name, userName, password, subject);
                 securityManager.authenticate();
-                evidenceVerifyCallback.setVerified(true);
                 subject = securityManager.getSubject();
-                subject.getPrivateCredentials().add(new PasswordCredential(userName, password));
+                subject.getPrivateCredentials().add(new org.jboss.as.domain.management.security.PasswordCredential(userName, password));
                 if (assignGroups) {
                     Set<Principal> prinicpals = subject.getPrincipals();
                     Set<SimpleGroup> groups = subject.getPrincipals(SimpleGroup.class);
@@ -202,13 +215,14 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
                         }
                     }
                 }
-                if (subjectCallback != null) {
+                if (subjectConsumer != null) {
                     // Only want to deliberately pass it back if authentication completed.
-                    subjectCallback.setSubject(subject);
+                    subjectConsumer.accept(subject);
                 }
+                return true;
             } catch (SecurityException e) {
                 SECURITY_LOGGER.debug("Failed to verify password in JAAS callbackhandler " + this.name, e);
-                evidenceVerifyCallback.setVerified(false);
+                return false;
             } finally {
                 securityManager.pop();
             }
@@ -232,8 +246,7 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
                     }
                 });
                 ctx.login();
-                evidenceVerifyCallback.setVerified(true);
-                subject.getPrivateCredentials().add(new PasswordCredential(userName, password));
+                subject.getPrivateCredentials().add(new org.jboss.as.domain.management.security.PasswordCredential(userName, password));
                 if (assignGroups) {
                     Set<Principal> prinicpals = subject.getPrincipals();
                     Set<SimpleGroup> groups = subject.getPrincipals(SimpleGroup.class);
@@ -246,13 +259,14 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
                         }
                     }
                 }
-                if (subjectCallback != null) {
+                if (subjectConsumer != null) {
                     // Only want to deliberately pass it back if authentication completed.
-                    subjectCallback.setSubject(subject);
+                    subjectConsumer.accept(subject);
                 }
+                return true;
             } catch (LoginException e) {
                 SECURITY_LOGGER.debug("Login failed in JAAS callbackhandler " + this.name, e);
-                evidenceVerifyCallback.setVerified(false);
+                return false;
             }
         }
     }
@@ -273,6 +287,79 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
 
     public CallbackHandlerService getValue() throws IllegalStateException, IllegalArgumentException {
         return this;
+    }
+
+    private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
+
+        @Override
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
+            return new RealmIdentityImpl(principal);
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+            Assert.checkNotNullParam("credentialType", credentialType);
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        @Override
+        public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName)
+                throws RealmUnavailableException {
+            return PasswordGuessEvidence.class.isAssignableFrom(evidenceType) ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+        }
+
+        private class RealmIdentityImpl implements RealmIdentity {
+
+            private final Principal principal;
+            private volatile Subject subject = new Subject();
+
+            private RealmIdentityImpl(final Principal principal) {
+                this.principal = principal;
+            }
+
+            @Override
+            public Principal getRealmIdentityPrincipal() {
+                return principal;
+            }
+
+            @Override
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            @Override
+            public <C extends Credential> C getCredential(Class<C> credentialType) throws RealmUnavailableException {
+                return null;
+            }
+
+            @Override
+            public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getEvidenceVerifySupport(evidenceType, algorithmName);
+            }
+
+            @Override
+            public boolean verifyEvidence(Evidence evidence) throws RealmUnavailableException {
+                if (evidence instanceof PasswordGuessEvidence == false) {
+                    return false;
+                }
+                final char[] guess = ((PasswordGuessEvidence) evidence).getGuess();
+
+                return verify(principal.getName(), guess, subject, s -> subject = s);
+            }
+
+            @Override
+            public boolean exists()  {
+                return true;
+            }
+
+            @Override
+            public AuthorizationIdentity getAuthorizationIdentity() throws RealmUnavailableException {
+                Attributes attributes = new MapAttributes(Collections.singletonMap("GROUPS",
+                        subject.getPrincipals(RealmGroup.class).stream().map(Principal::getName).collect(Collectors.toList())));
+                return AuthorizationIdentity.basicIdentity(attributes);
+            }
+
+        }
     }
 
     public static final class ServiceUtil {
