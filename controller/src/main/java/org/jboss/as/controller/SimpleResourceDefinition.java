@@ -108,8 +108,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @throws IllegalArgumentException if any parameter is {@code null}.
      */
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver) {
-        this(pathElement, descriptionResolver, null, null, OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null);
+        this(pathElement, descriptionResolver, null, null, null, null, null);
     }
 
     /**
@@ -126,8 +125,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     @SuppressWarnings("deprecation")
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver, boolean isRuntime) {
         //Can be removed when we get to 3.0.0
-        this(pathElement, descriptionResolver, null, null, OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime);
+        this(pathElement, descriptionResolver, null, null, null, null, null, isRuntime);
     }
 
     /**
@@ -144,8 +142,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      */
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
-        this(pathElement, descriptionResolver, addHandler, removeHandler, OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null);
+        this(pathElement, descriptionResolver, addHandler, removeHandler, null, null, null);
     }
 
     /**
@@ -167,8 +164,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler, boolean isRuntime) {
         //Can be removed when we get to 3.0.0
-        this(pathElement, descriptionResolver, addHandler, removeHandler, OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, null, isRuntime);
+        this(pathElement, descriptionResolver, addHandler, removeHandler, null, null, null, isRuntime);
     }
 
     /**
@@ -191,8 +187,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
                                     final DeprecationData deprecationData) {
         //Can be removed when we get to 3.0.0
-        this(pathElement, descriptionResolver, addHandler, removeHandler, OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, deprecationData);
+        this(pathElement, descriptionResolver, addHandler, removeHandler, null, null, deprecationData);
     }
 
 
@@ -270,24 +265,13 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         //Use the Parameters variety
 
         //Can be removed when we get to 3.0.0
-        Assert.checkNotNullParam("descriptionResolver", descriptionResolver);
-        this.pathElement = pathElement;
-        this.descriptionResolver = descriptionResolver;
-        this.descriptionProvider = null;
-        this.addHandler = addHandler;
-        this.removeHandler = removeHandler;
-        this.addRestartLevel = addRestartLevel == null ? OperationEntry.Flag.RESTART_NONE : validateRestartLevel("addRestartLevel", addRestartLevel);
-        this.removeRestartLevel = removeRestartLevel == null
-                ? OperationEntry.Flag.RESTART_ALL_SERVICES
-                : validateRestartLevel("removeRestartLevel", removeRestartLevel);
-        this.deprecationData = deprecationData;
-        this.runtime = runtime;
-        this.orderedChild = false;
-        this.capabilities = NO_CAPABILITIES;
-        this.incorporatingCapabilities = null;
-        this.accessConstraints = Collections.emptyList();
-        this.minOccurs = 0;
-        this.maxOccurs = Integer.MAX_VALUE;
+        this(new Parameters(pathElement, descriptionResolver)
+                .setAddHandler(addHandler)
+                .setAddRestartLevel(addRestartLevel == null ? restartLevelForAdd(addHandler) : addRestartLevel)
+                .setRemoveHandler(removeHandler)
+                .setRemoveRestartLevel(removeRestartLevel == null ? restartLevelForRemove(removeHandler) : removeRestartLevel)
+                .setDeprecationData(deprecationData)
+                .setRuntime(runtime));
     }
 
     /**
@@ -307,7 +291,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.runtime = parameters.runtime;
         this.orderedChild = parameters.orderedChildResource;
         this.descriptionProvider = null;
-        this.capabilities = parameters.capabilities;
+        this.capabilities = parameters.capabilities != null ? parameters.capabilities : NO_CAPABILITIES ;
         this.incorporatingCapabilities = parameters.incorporatingCapabilities;
         if (parameters.accessConstraints != null) {
             this.accessConstraints = Arrays.asList(parameters.accessConstraints);
@@ -316,6 +300,16 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         }
         this.minOccurs = parameters.minOccurs;
         this.maxOccurs = parameters.maxOccurs;
+    }
+
+    private static OperationEntry.Flag restartLevelForAdd(OperationStepHandler addHandler) {
+        return addHandler instanceof AbstractBoottimeAddStepHandler
+                ? OperationEntry.Flag.RESTART_ALL_SERVICES : OperationEntry.Flag.RESTART_NONE;
+    }
+
+    private static OperationEntry.Flag restartLevelForRemove(OperationStepHandler removeHandler) {
+        return removeHandler instanceof ReloadRequiredRemoveStepHandler
+                ? OperationEntry.Flag.RESTART_ALL_SERVICES : OperationEntry.Flag.RESTART_RESOURCE_SERVICES;
     }
 
 
@@ -544,7 +538,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         /**
          * Creates a Parameters object
          * @param pathElement the path element of the created ResourceDefinition. Cannot be {@code null}
-         * @param descriptionResolver the description provider. Cannot be {@code null}
+         * @param descriptionResolver the description resolver. Cannot be {@code null}
          */
         public Parameters(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
             Assert.checkNotNullParam("descriptionResolver", descriptionResolver);
@@ -555,10 +549,11 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         /**
          * Sets the description resolver to use
          *
-         * @param descriptionResolver
+         * @param descriptionResolver the description resolver. Cannot be {@code null}
          * @return this Parameters object
          */
         public Parameters setDescriptionResolver(ResourceDescriptionResolver descriptionResolver) {
+            Assert.checkNotNullParam("descriptionResolver", descriptionResolver);
             this.descriptionResolver = descriptionResolver;
             return this;
         }
@@ -572,6 +567,9 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          */
         public Parameters setAddHandler(OperationStepHandler addHandler) {
             this.addHandler = addHandler;
+            if (this.addRestartLevel == null) {
+                this.addRestartLevel = restartLevelForAdd(addHandler);
+            }
             return this;
         }
 
@@ -584,6 +582,9 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          */
         public Parameters setRemoveHandler(OperationStepHandler removeHandler) {
             this.removeHandler = removeHandler;
+            if (this.removeRestartLevel == null) {
+                this.removeRestartLevel = restartLevelForRemove(removeHandler);
+            }
             return this;
         }
 
@@ -592,11 +593,11 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          *
          * @param addRestartLevel the restart level
          * @return this Parameters object
-         * @throws IllegalStateException if a null {@code addRestartLevel} is used
+         * @throws IllegalArgumentException if {@code addRestartLevel} is {@code null} or a flag that does not pertain to restarts
          */
         public Parameters setAddRestartLevel(OperationEntry.Flag addRestartLevel) {
             Assert.checkNotNullParam("addRestartLevel", addRestartLevel);
-            this.addRestartLevel = addRestartLevel;
+            this.addRestartLevel = validateRestartLevel("addRestartLevel", addRestartLevel);
             return this;
         }
 
@@ -604,11 +605,11 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * Sets the remove restart level. The default is {@link OperationEntry.Flag#RESTART_ALL_SERVICES}
          * @param removeRestartLevel the restart level
          * @return this Parameters object
-         * @throws IllegalStateException if a null {@code addRestartLevel} is used
+         * @throws IllegalArgumentException if {@code addRestartLevel} is {@code null} or a flag that does not pertain to restarts
          */
         public Parameters setRemoveRestartLevel(OperationEntry.Flag removeRestartLevel) {
             Assert.checkNotNullParam("removeRestartLevel", removeRestartLevel);
-            this.removeRestartLevel = removeRestartLevel;
+            this.removeRestartLevel = validateRestartLevel("removeRestartLevel", removeRestartLevel);
             return this;
         }
 
