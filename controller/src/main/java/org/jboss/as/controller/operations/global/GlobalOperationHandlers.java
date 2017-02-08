@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
@@ -1004,62 +1005,49 @@ public class GlobalOperationHandlers {
      */
     static Map<String, Set<String>> getChildAddresses(final OperationContext context, final PathAddress addr, final ImmutableManagementResourceRegistration registry, Resource resource, final String validChildType) {
 
-        Map<String, Set<String>> result = new HashMap<String, Set<String>>();
-        Set<PathElement> elements = registry.getChildAddresses(PathAddress.EMPTY_ADDRESS);
-        for (PathElement element : elements) {
-            String childType = element.getKey();
-            if (validChildType != null && !validChildType.equals(childType)) {
-                continue;
-            }
-            final ImmutableManagementResourceRegistration childRegistration = registry.getSubModel(PathAddress.pathAddress(element));
-            if (childRegistration == null) {
-                continue;
-            }
-            final AliasEntry aliasEntry = childRegistration.getAliasEntry();
+        Map<String, Set<String>> result = new HashMap<>();
+        Predicate<String> validChildTypeFilter = childType -> (validChildType == null) || validChildType.equals(childType);
 
-            Set<String> set = result.get(childType);
-            if (set == null) {
-                set = new LinkedHashSet<String>();
-                result.put(childType, set);
-            }
-
-            if (aliasEntry == null) {
-                if (resource != null && resource.hasChildren(childType)) {
-                    Set<String> childNames = resource.getChildrenNames(childType);
-                    if (element.isWildcard()) {
-                        set.addAll(childNames);
-                    } else if (childNames.contains(element.getValue())) {
-                        set.add(element.getValue());
-                    }
-                }
-            } else {
-                PathAddress childAddr = addr.append(element);
-                PathAddress target = aliasEntry.convertToTargetAddress(childAddr, AliasContext.create(childAddr, context));
-                assert !childAddr.equals(target) : "Alias was not translated";
-                PathAddress targetParent = target.subAddress(0, target.size() - 1);
-                Resource parentResource = context.readResourceFromRoot(targetParent, false);
-                if (parentResource != null) {
-                    PathElement targetElement = target.getLastElement();
-                    if (targetElement.isWildcard()) {
-                        set.addAll(parentResource.getChildrenNames(targetElement.getKey()));
-                    } else if (parentResource.hasChild(targetElement)) {
-                        set.add(element.getValue());
-                    }
-                }
-            }
-            if (!element.isWildcard()) {
-                ImmutableManagementResourceRegistration childReg = registry.getSubModel(PathAddress.pathAddress(element));
-                if (childReg != null && childReg.isRemote()) {
-                    set.add(element.getValue());
-                }
-            }
+        if (resource != null) {
+            registry.getChildNames(PathAddress.EMPTY_ADDRESS).stream()
+                    .filter(validChildTypeFilter)
+                    .forEach(childType -> result.put(childType, new LinkedHashSet<>(resource.getChildrenNames(childType).stream()
+                            .filter(child -> registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(childType, child))) != null)
+                            .collect(Collectors.toList()))));
         }
 
-        // WFLY-3306 Ensure we have an entry for any valid child type
-        for (String type : registry.getChildNames(PathAddress.EMPTY_ADDRESS)) {
-            if ((validChildType == null || validChildType.equals(type))
-                && !result.containsKey(type)) {
-                result.put(type, Collections.<String>emptySet());
+        Set<PathElement> paths = registry.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        for (PathElement path : paths) {
+            String childType = path.getKey();
+            if (validChildTypeFilter.test(childType)) {
+                Set<String> children = result.get(childType);
+                if (children == null) {
+                    // WFLY-3306 Ensure we have an entry for any valid child type
+                    children = new LinkedHashSet<>();
+                    result.put(childType, children);
+                }
+                ImmutableManagementResourceRegistration childRegistration = registry.getSubModel(PathAddress.pathAddress(path));
+                if (childRegistration != null) {
+                    AliasEntry aliasEntry = childRegistration.getAliasEntry();
+                    if (aliasEntry != null) {
+                        PathAddress childAddr = addr.append(path);
+                        PathAddress target = aliasEntry.convertToTargetAddress(childAddr, AliasContext.create(childAddr, context));
+                        assert !childAddr.equals(target) : "Alias was not translated";
+                        PathAddress targetParent = target.getParent();
+                        Resource parentResource = context.readResourceFromRoot(targetParent, false);
+                        if (parentResource != null) {
+                            PathElement targetElement = target.getLastElement();
+                            if (targetElement.isWildcard()) {
+                                children.addAll(parentResource.getChildrenNames(targetElement.getKey()));
+                            } else if (parentResource.hasChild(targetElement)) {
+                                children.add(path.getValue());
+                            }
+                        }
+                    }
+                    if (!path.isWildcard() && childRegistration.isRemote()) {
+                        children.add(path.getValue());
+                    }
+                }
             }
         }
 
