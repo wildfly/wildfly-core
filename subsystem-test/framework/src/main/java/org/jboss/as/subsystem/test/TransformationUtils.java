@@ -110,7 +110,8 @@ class TransformationUtils {
         }
         res.writeModel(value);
 
-        for (PathElement path : reg.getChildAddresses(PathAddress.EMPTY_ADDRESS)) {
+        Set<PathElement> childAddresses = reg.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        for (PathElement path : childAddresses) {
 
             ImmutableManagementResourceRegistration sub = reg.getSubModel(PathAddress.pathAddress(path));
             if (path.isWildcard()) {
@@ -122,7 +123,7 @@ class TransformationUtils {
                         }
                     }
                 }
-            } else {
+            } else if (!childAddresses.contains(PathElement.pathElement(path.getKey()))) {
                 ModelNode subModel = model.get(path.getKeyValuePair());
                 if (subModel.isDefined()) {
                     res.registerChild(path, modelToResource(startAddress,sub, subModel, includeUndefined, fullPath.append(path)));
