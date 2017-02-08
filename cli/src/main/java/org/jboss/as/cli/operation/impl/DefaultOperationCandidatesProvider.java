@@ -459,12 +459,10 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
                 if(!attrs.isDefined()) {
                     return NO_CANDIDATES_COMPLETER;
                 }
-                final ModelNode attrDescr = attrs.get(propName);
-                if(!attrDescr.isDefined()) {
+                Property prop = getProperty(propName, attrs);
+                if (prop == null) {
                     return NO_CANDIDATES_COMPLETER;
                 }
-
-                Property prop = new Property(propName, attrDescr);
                 return getCompleter(prop, ctx, address);
             }});
         addGlobalOpPropCompleter(Util.READ_OPERATION_DESCRIPTION, Util.NAME, new CommandLineCompleterFactory(){
@@ -525,5 +523,34 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
     }
     interface CommandLineCompleterFactory {
         CommandLineCompleter createCompleter(CommandContext ctx, OperationRequestAddress address);
+    }
+
+    // package for testing purpose
+    static Property getProperty(String propName, ModelNode attrs) {
+        String[] arr = propName.split("\\.");
+        ModelNode attrDescr = attrs;
+        for (String item : arr) {
+            // Remove list part.
+            if (item.endsWith("]")) {
+                int i = item.indexOf("[");
+                if (i < 0) {
+                    return null;
+                }
+                item = item.substring(0, i);
+            }
+            ModelNode descr = attrDescr.get(item);
+            if (!descr.isDefined()) {
+                if (attrDescr.has(Util.VALUE_TYPE)) {
+                    ModelNode vt = attrDescr.get(Util.VALUE_TYPE);
+                    if (vt.has(item)) {
+                        attrDescr = vt.get(item);
+                        continue;
+                    }
+                }
+                return null;
+            }
+            attrDescr = descr;
+        }
+        return new Property(propName, attrDescr);
     }
 }
