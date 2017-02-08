@@ -208,6 +208,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
         for (Map.Entry<String, ParallelBootTransactionControl> entry : transactionControls.entrySet()) {
             ParallelBootTransactionControl txControl = entry.getValue();
             if (txControl.transaction == null) {
+                // This means a set of subsystem steps didn't complete and rolled back
                 String failureDesc;
                 if (txControl.response.getResponseNode().hasDefined(ModelDescriptionConstants.FAILURE_DESCRIPTION)) {
                     failureDesc = txControl.response.getResponseNode().get(ModelDescriptionConstants.FAILURE_DESCRIPTION).toString();
@@ -218,6 +219,9 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                 if (!failureRecorded) {
                     context.getFailureDescription().set(failureDesc);
                     failureRecorded = true;
+                    // If this had been a normal non-parallel op, everything would have
+                    // rolled back, so we need to ensure that happens
+                    context.setRollbackOnly();
                 }
             } else {
                 MGMT_OP_LOGGER.debugf("Stage %s boot ops for subsystem %s succeeded", stage, entry.getKey());
