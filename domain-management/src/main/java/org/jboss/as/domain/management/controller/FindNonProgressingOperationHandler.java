@@ -64,7 +64,8 @@ import org.jboss.dmr.ModelType;
  */
 public class FindNonProgressingOperationHandler implements OperationStepHandler {
 
-    private static final AttributeDefinition STABILITY_TIMEOUT = SimpleAttributeDefinitionBuilder.create("timeout", ModelType.INT, false)
+    private static final AttributeDefinition STABILITY_TIMEOUT = SimpleAttributeDefinitionBuilder.create("timeout", ModelType.INT)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(15))
             .setValidator(new IntRangeValidator(0, true))
             .setMeasurementUnit(MeasurementUnit.SECONDS)

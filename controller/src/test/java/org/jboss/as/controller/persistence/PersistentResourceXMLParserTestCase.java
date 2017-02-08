@@ -1266,7 +1266,8 @@ public class PersistentResourceXMLParserTestCase {
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 
-            static final SimpleAttributeDefinition USE_RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder("use-recursive-search", ModelType.BOOLEAN, false)
+            static final SimpleAttributeDefinition USE_RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder("use-recursive-search", ModelType.BOOLEAN)
+                    .setRequired(false)
                     .setDefaultValue(new ModelNode(false))
                     .setAllowExpression(true)
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)

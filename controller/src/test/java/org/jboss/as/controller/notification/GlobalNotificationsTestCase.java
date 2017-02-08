@@ -70,18 +70,22 @@ import org.junit.Test;
  */
 public class GlobalNotificationsTestCase extends AbstractControllerTestBase {
 
-    public static final SimpleAttributeDefinition MY_ATTRIBUTE = create("my-attribute", LONG, true)
+    public static final SimpleAttributeDefinition MY_ATTRIBUTE = create("my-attribute", LONG)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(12345))
             .build();
     public static final SimpleAttributeDefinition MY_RUNTIME_ATTRIBUTE = create("my-runtime-attribute", LONG)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(6789))
             .setAllowNull(true)
             .setStorageRuntime()
             .build();
     public static final SimpleAttributeDefinition FAIL_ADD_OPERATION = create("fail-add-operation", BOOLEAN)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
     public static final SimpleAttributeDefinition FAIL_REMOVE_OPERATION = create("fail-remove-operation", BOOLEAN)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 
