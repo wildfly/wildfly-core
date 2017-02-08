@@ -206,7 +206,12 @@ public class ArgumentWithoutValue implements CommandArgument {
                 if(index == -1) {
                     return false;
                 }
-                return !(index == 0 && values.size() == 1);
+                if(index == 0 && values.size() == 1) {
+                    // isValueComplete check is used by overriding classes (like ArgumentWithValue)
+                    return !isValueComplete(args);
+                } else {
+                    return true;
+                }
             }
 
             if(propertyNames.size() != 1) {
@@ -230,8 +235,8 @@ public class ArgumentWithoutValue implements CommandArgument {
             return fullName.startsWith(args.getLastParsedPropertyName()) || (shortName != null && shortName.startsWith(args.getLastParsedPropertyName()));
         }
 
-        if (isPresent(args)) {
-            // An argument without value has no value
+        if (isPresent(args) && isValueComplete(args)) {
+            // isValueComplete check is used by overriding classes (like ArgumentWithValue)
             return false;
         }
 

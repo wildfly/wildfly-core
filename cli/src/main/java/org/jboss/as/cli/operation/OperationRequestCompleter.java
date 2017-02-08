@@ -189,10 +189,12 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                     boolean needNeg = false;
                     for (CommandArgument arg : allArgs) {
                         if (arg.canAppearNext(ctx)) {
-                            if (arg.getIndex() >= 0) {
-                                final CommandLineCompleter valCompl = arg.getValueCompleter();
-                                if (valCompl != null) {
-                                    valCompl.complete(ctx, "", 0, candidates);
+                            if (arg.getIndex() >= 0 ) {
+                                if (arg.getIndex() == parsedCmd.getOtherProperties().size() || arg.getIndex() == Integer.MAX_VALUE) {
+                                    final CommandLineCompleter valCompl = arg.getValueCompleter();
+                                    if (valCompl != null) {
+                                        valCompl.complete(ctx, "", 0, candidates);
+                                    }
                                 }
                             } else {
                                 String argName = arg.getFullName();
@@ -226,11 +228,18 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                         ++result;// it enters on '='
                     }
                     chunk = argValue;
-                    if (argName != null) {
-                        valueCompleter = getValueCompleter(ctx, allArgs, argName);
-                    } else {
-                        valueCompleter = getValueCompleter(ctx, allArgs, parsedCmd.getOtherProperties().size() - 1);
+
+                    try {
+                        if (argName != null) {
+                            valueCompleter = getValueCompleter(ctx, allArgs, argName);
+                        } else {
+                                valueCompleter = getValueCompleter(ctx, allArgs, parsedCmd.getOtherProperties().size() - 1);
+                        }
+                    } catch (CommandFormatException e) {
+                        e.printStackTrace();
+                        return -1;
                     }
+
                     if (valueCompleter == null) {
                         if (parsedCmd.endsOnSeparator()) {
                             return -1;
@@ -310,7 +319,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             // e.g.: recursive and recursive-depth
             for (CommandArgument arg : allArgs) {
                 try {
-                    if (arg.canAppearNext(ctx)) {
+                    if (arg.canAppearNext(ctx) && !arg.getFullName().equals(chunk)) {
                         allPropertiesPresent = false;
                     } else {
                         String argFullName = arg.getFullName();
@@ -328,15 +337,20 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 try {
                     if (arg.canAppearNext(ctx)) {
                         if (arg.getIndex() >= 0) {
-                            CommandLineCompleter valCompl = arg.getValueCompleter();
-                            if (valCompl != null) {
-                                final String value = chunk == null ? "" : chunk;
-                                valCompl.complete(ctx, value, value.length(), candidates);
+                            if (arg.getIndex() == ctx.getParsedCommandLine().getOtherProperties().size()
+                                    || arg.getIndex() == Integer.MAX_VALUE) {
+                                CommandLineCompleter valCompl = arg.getValueCompleter();
+                                if (valCompl != null) {
+                                    final String value = chunk == null ? "" : chunk;
+                                    valCompl.complete(ctx, value, value.length(), candidates);
+                                }
                             }
                         } else {
                             String argFullName = arg.getFullName();
+                            // lastArg is treated in special way - see below
+                            final boolean isLastArgument = lastArg != null &&argFullName.equals(lastArg.getFullName());
                             if (chunk == null
-                                    || argFullName.startsWith(chunk)) {
+                                    || (argFullName.startsWith(chunk) && !isLastArgument)) {
                                 /* The following complexity is due to cases like:
                                  recursive and recursive-depth. Both start with the same name
                                  but are of different types. Completion can't propose
@@ -597,10 +611,10 @@ public class OperationRequestCompleter implements CommandLineCompleter {
         return result;
     }
 
-    protected CommandLineCompleter getValueCompleter(CommandContext ctx, Iterable<CommandArgument> allArgs, int index) {
+    protected CommandLineCompleter getValueCompleter(CommandContext ctx, Iterable<CommandArgument> allArgs, int index) throws CommandFormatException {
         CommandLineCompleter maxIndex = null;
         for (CommandArgument arg : allArgs) {
-            if (arg.getIndex() == index) {
+            if (arg.getIndex() == index && arg.canAppearNext(ctx)) {
                 return arg.getValueCompleter();
             } else if(arg.getIndex() == Integer.MAX_VALUE) {
                 maxIndex = arg.getValueCompleter();

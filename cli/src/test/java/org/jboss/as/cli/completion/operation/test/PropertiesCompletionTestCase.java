@@ -94,7 +94,7 @@ public class PropertiesCompletionTestCase {
     public void testTwoCandidates() {
 
         List<String> candidates = fetchCandidates(":operation-properties-one-two-three(two");
-        assertEquals(Arrays.asList("two"), candidates);
+        assertEquals(Arrays.asList("two="), candidates);
     }
 
     @Test
