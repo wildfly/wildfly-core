@@ -85,7 +85,7 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
             .setAllowNull(true)
             .build();
     private static final AttributeDefinition ATTR_2 = create("attr2", ModelType.BOOLEAN)
-            .setAllowNull(false)
+            .setAllowNull(true)
             .build();
     private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE = ObjectTypeAttributeDefinition.Builder.of("complex-attribute", ATTR_1, ATTR_2, MAP_ATTRIBUTE, RUNTIME_MAP_ATTRIBUTE).build();
     private static final ObjectListAttributeDefinition OBJECT_LIST = ObjectListAttributeDefinition.Builder.of("object-list", COMPLEX_ATTRIBUTE).setAllowNull(true).build();

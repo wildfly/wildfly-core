@@ -76,4 +76,31 @@ public class ObjectTypeAttributeDefinitionUnitTestCase {
             //
         }
     }
+
+    /** WFCORE-2249 */
+    @Test
+    public void testMissingFields() throws OperationFailedException {
+        AttributeDefinition a = SimpleAttributeDefinitionBuilder.create("a", ModelType.INT).setRequired(true).build();
+        AttributeDefinition b = SimpleAttributeDefinitionBuilder.create("b", ModelType.BOOLEAN).setRequired(false).build();
+
+        ObjectTypeAttributeDefinition ld = new ObjectTypeAttributeDefinition.Builder("test", a, b)
+                .setAllowExpression(true)
+                .build();
+
+        ModelNode op = new ModelNode();
+        op.get("test", "b").set(true);
+
+        try {
+            ld.validateOperation(op);
+            org.junit.Assert.fail("Did not reject " + op);
+        } catch (OperationFailedException good) {
+            //
+        }
+
+        op = new ModelNode();
+        op.get("test", "a").set(1);
+
+        ModelNode validated = ld.validateOperation(op);
+        org.junit.Assert.assertEquals(validated.toString(), 1, validated.get("a").asInt());
+    }
 }
