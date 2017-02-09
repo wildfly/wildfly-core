@@ -23,8 +23,8 @@
 package org.jboss.as.domain.management.security;
 
 import static org.jboss.as.domain.management.RealmConfigurationConstants.LOCAL_DEFAULT_USER;
-import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.SUBJECT_CALLBACK_SUPPORTED;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,9 +61,9 @@ import org.jboss.as.core.security.SubjectUserInfo;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.AuthorizingCallbackHandler;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.SubjectIdentity;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
@@ -89,6 +89,7 @@ import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.GSSKerberosCredential;
 import org.wildfly.security.evidence.Evidence;
+import org.wildfly.security.http.HttpConstants;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.util.FilterServerMechanismFactory;
 import org.wildfly.security.http.util.SecurityProviderServerMechanismFactory;
@@ -272,13 +273,13 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 break;
             case "HTTP":
                 switch (mechanismName) {
-                    case "CLIENT-CERT":
+                    case HttpConstants.CLIENT_CERT_NAME:
                         return AuthMechanism.CLIENT_CERT;
-                    case "DIGEST":
+                    case HttpConstants.DIGEST_NAME:
                         return AuthMechanism.DIGEST;
-                    case "SPNEGO":
+                    case HttpConstants.SPNEGO_NAME:
                         return AuthMechanism.KERBEROS;
-                    case "BASIC":
+                    case HttpConstants.BASIC_NAME:
                         return AuthMechanism.PLAIN;
                 }
                 break;
