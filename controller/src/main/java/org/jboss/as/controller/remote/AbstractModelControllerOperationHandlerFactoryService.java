@@ -96,7 +96,7 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
             }
         });
         ThreadPoolExecutor executor = new ThreadPoolExecutor(POOL_CORE_SIZE, POOL_MAX_SIZE,
-                60L, TimeUnit.SECONDS, workQueue,
+                600L, TimeUnit.SECONDS, workQueue,
                 threadFactory);
         // Allow the core threads to time out as well
         executor.allowCoreThreadTimeOut(true);

@@ -1267,6 +1267,10 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 264, value = "Cannot specify both admin-only and start-mode")
     OperationFailedException cannotSpecifyBothAdminOnlyAndStartMode();
 
+    @LogMessage(level = WARN)
+    @Message(id = 265, value = "Invalid value '%s' for system property '%s' -- value must be a non-negative integer")
+    void invalidPoolCoreSize(String val, String configSysProp);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

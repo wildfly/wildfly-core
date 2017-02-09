@@ -226,7 +226,8 @@ public final class ServerService extends AbstractControllerService {
         // TODO determine why QueuelessThreadPoolService makes boot take > 35 secs
 //        final QueuelessThreadPoolService serverExecutorService = new QueuelessThreadPoolService(Integer.MAX_VALUE, false, new TimeSpec(TimeUnit.SECONDS, 5));
 //        serverExecutorService.getThreadFactoryInjector().inject(threadFactory);
-        final ServerExecutorService serverExecutorService = new ServerExecutorService(threadFactory);
+        final boolean forDomain = ProcessType.DOMAIN_SERVER == getProcessType(configuration.getServerEnvironment());
+        final ServerExecutorService serverExecutorService = new ServerExecutorService(threadFactory, forDomain);
         serviceTarget.addService(Services.JBOSS_SERVER_EXECUTOR, serverExecutorService)
                 .addAliases(ManagementRemotingServices.SHUTDOWN_EXECUTOR_NAME) // Use this executor for mgmt shutdown for now
                 .install();
@@ -456,16 +457,22 @@ public final class ServerService extends AbstractControllerService {
     /** Temporary replacement for QueuelessThreadPoolService */
     private static class ServerExecutorService implements Service<ExecutorService> {
 
+        private static final int DEFAULT_CORE_POOL_SIZE = 1;
+        private static final int DEFAULT_DOMAIN_CORE_POOL_SIZE = 3; // keep more threads in a domain server as the intra-process comms use more tasks
+        private static final String CONFIG_SYS_PROP = "org.jboss.as.server-service.core.threads";
+
         private final ThreadFactory threadFactory;
+        private final boolean forDomain;
         private ExecutorService executorService;
 
-        private ServerExecutorService(ThreadFactory threadFactory) {
+        private ServerExecutorService(ThreadFactory threadFactory, boolean forDomain) {
             this.threadFactory = threadFactory;
+            this.forDomain = forDomain;
         }
 
         @Override
         public synchronized void start(StartContext context) throws StartException {
-            executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 20L, TimeUnit.SECONDS,
+            executorService = new ThreadPoolExecutor(getCorePoolSize(forDomain), Integer.MAX_VALUE, 20L, TimeUnit.SECONDS,
                     new SynchronousQueue<Runnable>(), threadFactory);
         }
 
@@ -492,6 +499,24 @@ public final class ServerService extends AbstractControllerService {
         @Override
         public synchronized ExecutorService getValue() throws IllegalStateException, IllegalArgumentException {
             return executorService;
+        }
+
+        private static int getCorePoolSize(boolean forDomain) {
+            String val = WildFlySecurityManager.getPropertyPrivileged(CONFIG_SYS_PROP, null);
+            if (val != null) {
+                try {
+                    int result = Integer.parseInt(val);
+                    if (result >= 0) {
+                        return result;
+                    } else {
+                        ServerLogger.ROOT_LOGGER.invalidPoolCoreSize(val, CONFIG_SYS_PROP);
+                    }
+                } catch (NumberFormatException nfe) {
+                    ServerLogger.ROOT_LOGGER.invalidPoolCoreSize(val, CONFIG_SYS_PROP);
+                }
+
+            }
+            return forDomain ? DEFAULT_DOMAIN_CORE_POOL_SIZE : DEFAULT_CORE_POOL_SIZE;
         }
     }
 
