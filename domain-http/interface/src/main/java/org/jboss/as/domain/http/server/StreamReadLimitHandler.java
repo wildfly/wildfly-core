@@ -25,6 +25,9 @@ import io.undertow.util.Methods;
 
 /**
  * Limits the number of concurrent GET requests that are reading management API stream responses.
+ * This is based on Undertow's {@code RequestLimitHandler} class but is adapted to only limit GET
+ * requests that use HTTP headers or URL query parameters that indicate a management stream's content
+ * is wanted as the response entity.
  *
  * @author Brian Stansberry
  */
@@ -33,7 +36,7 @@ class StreamReadLimitHandler implements HttpHandler {
     // WFCORE-1777 Maximum number of worker threads that can be sending stream responses
     private static final int MAX_STREAM_SENDERS = 2;
     // WFCORE-1777 Maximum number of stream responses we are willing to queue up waiting for the sender
-    private static final int MAX_STREAM_RESPONSES = 512; // same # as the size of the management req executor's queue
+    private static final int MAX_STREAM_RESPONSES = 128;
 
     private final RequestLimit requestLimit;
     private final HttpHandler next;
@@ -52,7 +55,7 @@ class StreamReadLimitHandler implements HttpHandler {
         }
     }
 
-    private boolean isStreamRead(HttpServerExchange exchange) {
+    private static boolean isStreamRead(HttpServerExchange exchange) {
         return Methods.GET.equals(exchange.getRequestMethod())
                 && getStreamIndex(exchange, exchange.getRequestHeaders()) > -1;
     }
