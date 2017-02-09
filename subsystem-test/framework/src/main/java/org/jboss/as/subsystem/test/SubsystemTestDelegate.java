@@ -469,8 +469,7 @@ final class SubsystemTestDelegate {
         File dmrFile = getDmrFile(kernelServices, modelVersion);
         try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(dmrFile.toPath(), StandardCharsets.UTF_8))){
             desc.writeString(pw, false);
-            //Leave this println - it only gets executed when people generate the legacy dmr files, and is useful to know where it has been written.
-            System.out.println("Legacy resource definition dmr written to: " + dmrFile.getAbsolutePath());
+            //System.out.println("Legacy resource definition dmr written to: " + dmrFile.getAbsolutePath());
             return dmrFile;
         }
     }
@@ -540,7 +539,7 @@ final class SubsystemTestDelegate {
             if (!file.exists()) {
                 generateLegacySubsystemResourceRegistrationDmr(kernelServices, modelVersion);
             }
-            System.out.println("Using legacy resource definition dmr: " + file);
+            //System.out.println("Using legacy resource definition dmr: " + file);
             rd = TransformationUtils.loadSubsystemDefinitionFromFile(kernelServices.getTestClass(), mainSubsystemName, modelVersion);
         }
         return rd;
