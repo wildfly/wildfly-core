@@ -54,6 +54,7 @@ import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller._private.OperationCancellationException;
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.as.controller.access.rbac.UnknowRoleException;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.interfaces.InterfaceCriteria;
 import org.jboss.as.controller.notification.Notification;
@@ -3417,9 +3418,9 @@ public interface ControllerLogger extends BasicLogger {
      * A message indicating the {@code value} parameter is invalid and must have a maximum bytes length, represented by the
      * {@code length} parameter.
      *
-     * @param value the invalid value.
-     * @param name the name of the parameter.
-     * @param length the maximum length.
+     * @param str the invalid value.
+     * @param parameterName the name of the parameter.
+     * @param max the maximum length.
      *
      * @return the message.
      */
@@ -3489,4 +3490,9 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = NONE, value = "Couldn't convert %s to %s")
     String typeConversionError(ModelNode value, Collection<ModelType> validTypes);
+
+    @Message(id = 436, value = "Cannot register capability '%s' at location '%s' as it is already registered in " +
+            "context '%s' at location(s) '%s'")
+    OperationFailedRuntimeException capabilityAlreadyRegisteredInContext(String capability, RegistrationPoint newPoint,
+                                                                         String context,Set<RegistrationPoint> oldPoints);
 }
