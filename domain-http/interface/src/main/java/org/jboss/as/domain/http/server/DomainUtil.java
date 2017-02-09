@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Deque;
+import java.util.Map;
 
 import io.undertow.io.IoCallback;
 import io.undertow.io.Sender;
@@ -37,9 +39,11 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.HeaderValues;
 import io.undertow.util.Headers;
+import io.undertow.util.HttpString;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
 import org.xnio.IoUtils;
+
 
 /**
  * Utility methods used for HTTP based domain management.
@@ -47,6 +51,9 @@ import org.xnio.IoUtils;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class DomainUtil {
+
+    private static final String USE_STREAM_AS_RESPONSE = "useStreamAsResponse";
+    private static final HttpString USE_STREAM_AS_RESPONSE_HEADER = new HttpString("org.wildfly.useStreamAsResponse");
 
     public static void writeResponse(final HttpServerExchange exchange, final int status, ModelNode response,
             OperationParameter operationParameter) {
@@ -73,20 +80,21 @@ public class DomainUtil {
         }
     }
 
-    static void writeResponse(final HttpServerExchange exchange,
-                                     final int status,
-                                     final OperationResponse operationResponse,
-                                     final int streamIndex,
-                                     OperationParameter operationParameter) {
+    static void writeStreamResponse(final HttpServerExchange exchange,
+                                            final OperationResponse operationResponse,
+                                            final int streamIndex,
+                                            final OperationParameter operationParameter) {
 
-        exchange.setResponseCode(status);
+        assert !exchange.isInIoThread(); // The WFCORE-1777 solution assumes we are not. And we shouldn't be
+
+        exchange.setStatusCode(200);
 
         final HeaderMap responseHeaders = exchange.getResponseHeaders();
         final OperationResponse.StreamEntry entry = operationResponse.getInputStreams().get(streamIndex);
         final String mimeType = determineMimeType(entry, exchange);
         responseHeaders.put(Headers.CONTENT_TYPE, mimeType + "; charset=" + Common.UTF_8);
 
-        writeCacheHeaders(exchange, status, operationParameter);
+        writeCacheHeaders(exchange, 200, operationParameter);
 
         final Sender sender = exchange.getResponseSender();
         class ServeTask implements IoCallback, Runnable {
@@ -97,7 +105,7 @@ public class DomainUtil {
                     final InputStream inputStream = entry.getStream();
                     int res = inputStream.read(buffer);
                     if (res == -1) {
-                        //we are done, just return
+                        //we are done, clean up and return
                         IoUtils.safeClose(operationResponse);
                         return;
                     }
@@ -107,29 +115,23 @@ public class DomainUtil {
                 }
 
             }
+
             @Override
             public void onComplete(HttpServerExchange exchange, Sender sender) {
-                if (exchange.isInIoThread()) {
-                    exchange.dispatch(this);
-                } else {
-                    run();
-                }
+                assert !exchange.isInIoThread(); // The WFCORE-1777 solution assumes we are not
+                run();
             }
 
             @Override
             public void onException(HttpServerExchange exchange, Sender sender, IOException exception) {
                 IoUtils.safeClose(operationResponse);
                 if (!exchange.isResponseStarted()) {
-                    exchange.setResponseCode(500);
+                    exchange.setStatusCode(500);
                 }
             }
         }
-        ServeTask serveTask = new ServeTask();
-        if (exchange.isInIoThread()) {
-            exchange.dispatch(serveTask);
-        } else {
-            serveTask.run();
-        }
+
+        new ServeTask().run();
     }
 
     private static String determineMimeType(OperationResponse.StreamEntry entry, HttpServerExchange exchange) {
@@ -168,7 +170,7 @@ public class DomainUtil {
         }
     }
 
-    public static void writeCacheHeaders(final HttpServerExchange exchange, final int status, final OperationParameter operationParameter) {
+    static void writeCacheHeaders(final HttpServerExchange exchange, final int status, final OperationParameter operationParameter) {
         final HeaderMap responseHeaders = exchange.getResponseHeaders();
 
         // No need to send this in a 304
@@ -194,5 +196,30 @@ public class DomainUtil {
         String protocol = exchange.getConnection().getSslSessionInfo() != null ? "https" : "http";
 
         return protocol + "://" + host + path;
+    }
+
+    static int getStreamIndex(final HttpServerExchange exchange, final HeaderMap requestHeaders) {
+        // First check for an HTTP header
+        int result = getStreamIndex(requestHeaders.get(USE_STREAM_AS_RESPONSE_HEADER));
+        if (result == -1) {
+            // Nope. Now check for a URL query parameter
+            Map<String, Deque<String>> queryParams = exchange.getQueryParameters();
+            result = getStreamIndex(queryParams.get(USE_STREAM_AS_RESPONSE));
+        }
+        return result;
+    }
+
+    private static int getStreamIndex(Deque<String> holder) {
+        int result;
+        if (holder != null) {
+            if (holder.size() > 0 && holder.getFirst().length() > 0) {
+                result = Integer.parseInt(holder.getFirst());
+            } else {
+                result = 0;
+            }
+        } else {
+            result = -1;
+        }
+        return result;
     }
 }
