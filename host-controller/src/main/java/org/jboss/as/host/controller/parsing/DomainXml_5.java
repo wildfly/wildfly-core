@@ -336,7 +336,7 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
                         list.add(op);
                         break;
                     }
-                    case  ORGANIZATION: {
+                    case  DOMAIN_ORGANIZATION: {
                         ModelNode op = new ModelNode();
                         op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
                         op.get(NAME).set(DOMAIN_ORGANIZATION);
