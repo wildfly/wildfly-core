@@ -58,4 +58,13 @@ public class RegistrationPoint {
     public String getAttribute() {
         return attribute;
     }
+
+    @Override
+    public String toString() {
+        if (attribute == null) {
+            return address.toString();
+        } else {
+            return "address=" + address.toString() +";attribute=" + attribute;
+        }
+    }
 }
