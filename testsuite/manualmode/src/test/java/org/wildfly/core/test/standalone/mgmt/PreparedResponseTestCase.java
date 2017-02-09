@@ -21,7 +21,6 @@
 package org.wildfly.core.test.standalone.mgmt;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
@@ -34,6 +33,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
 import org.jboss.as.test.integration.management.extension.ExtensionUtils;
 import org.jboss.as.test.integration.management.extension.blocker.BlockerExtension;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
@@ -41,7 +41,6 @@ import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -56,7 +55,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-@Ignore
 public class PreparedResponseTestCase {
 
     public static Logger LOGGER = Logger.getLogger(PreparedResponseTestCase.class);
@@ -98,7 +96,7 @@ public class PreparedResponseTestCase {
         try (ManagementClient managementClient = getManagementClient()) {
             block(managementClient);
             long timeout = SHUTDOWN_WAITING_TIME + System.currentTimeMillis();
-            managementClient.executeForResult(Operations.createOperation(RELOAD, new ModelNode().setEmptyList()));
+            ServerReload.executeReload(managementClient.getControllerClient(), false);
             while (System.currentTimeMillis() < timeout) {
                 Thread.sleep(FREQUENCY);
                 try {

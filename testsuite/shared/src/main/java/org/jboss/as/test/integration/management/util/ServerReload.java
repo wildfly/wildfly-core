@@ -122,7 +122,7 @@ public class ServerReload {
                 serverPort != -1 ? serverPort : TestSuiteEnvironment.getServerPort());
     }
 
-    private static void executeReload(ModelControllerClient client, boolean adminOnly) {
+    public static void executeReload(ModelControllerClient client, boolean adminOnly) {
         ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).setEmptyList();
         operation.get(OP).set("reload");
@@ -131,7 +131,7 @@ public class ServerReload {
         executeReload(client, operation);
     }
 
-    private static void executeReload(ModelControllerClient client, ModelNode reloadOp) {
+    public static void executeReload(ModelControllerClient client, ModelNode reloadOp) {
         try {
             ModelNode result = client.execute(reloadOp);
             Assert.assertEquals("success", result.get(ClientConstants.OUTCOME).asString());
