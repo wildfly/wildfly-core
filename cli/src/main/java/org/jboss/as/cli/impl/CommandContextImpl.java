@@ -893,10 +893,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         } catch (IOException ex) {
             throw new CommandLineException("IO exception for " + msg, ex);
         } catch (TimeoutException ex) {
-            throw new CommandLineException("Timeout exception for " + msg, ex);
+            throw new CommandLineException("Timeout exception for " + msg);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new CommandLineException("Interrupt exception for " + msg, ex);
+            throw new CommandLineException("Interrupt exception for " + msg);
         } catch (ExecutionException ex) {
             Throwable cause = ex.getCause() == null ? ex : ex.getCause();
             if (cause instanceof CommandLineException) {
