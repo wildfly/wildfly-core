@@ -75,6 +75,7 @@ public enum Attribute {
     DESTINATION_ADDRESS("destination-address"),
     DIRECTORY_GROUPING("directory-grouping"),
     DESTINATION_PORT("destination-port"),
+    DOMAIN_ORGANIZATION("domain-organization"),
     ENABLED("enabled"),
     ENABLED_CIPHER_SUITES("enabled-cipher-suites"),
     ENABLED_PROTOCOLS("enabled-protocols"),

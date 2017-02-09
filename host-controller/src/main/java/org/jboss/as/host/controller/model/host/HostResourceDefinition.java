@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller.model.host;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_ORGANIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 
 import org.jboss.as.controller.BootErrorCollector;
@@ -29,6 +30,8 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
@@ -60,6 +63,7 @@ import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler
 import org.jboss.as.controller.operations.common.ValidateOperationHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
+import org.jboss.as.controller.operations.global.ReadAttributeHandler;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -300,7 +304,15 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
         });
         hostRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, new ModelOnlyWriteAttributeHandler(ORGANIZATION_IDENTIFIER));
-        hostRegistration.registerReadOnlyAttribute(DOMAIN_ORGANIZATION_IDENTIFIER, null);
+        // provide the domain-organization, this was defined here, but never had any handlers or storage defined.
+        hostRegistration.registerReadOnlyAttribute(DOMAIN_ORGANIZATION_IDENTIFIER, new ReadAttributeHandler() {
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        ModelNode rootModel = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS,false).getModel();
+                        context.getResult().set(rootModel.get(DOMAIN_ORGANIZATION));
+                    }
+                }
+        );
         hostRegistration.registerReadOnlyAttribute(PRODUCT_NAME, null);
         hostRegistration.registerReadOnlyAttribute(UUID, new InstanceUuidReadHandler(environment));
         hostRegistration.registerReadOnlyAttribute(SERVER_STATE, null);
