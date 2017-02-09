@@ -18,6 +18,7 @@
 package org.jboss.as.controller.security;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.StringTokenizer;
 
@@ -44,6 +45,8 @@ import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.credential.source.CredentialStoreCredentialSource;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.password.interfaces.ClearPassword;
+import org.wildfly.security.util.Alphabet;
+import org.wildfly.security.util.PasswordBasedEncryptionUtil;
 
 /**
  * Utility class holding attribute definitions for credential-reference attribute in the model.
@@ -235,10 +238,44 @@ public final class CredentialReference {
                     }
                     return command.build();
                 } else if (secret != null && secret.startsWith("MASK-")) {
-                    if (credentialStoreName != null) {
-                        return new CredentialStoreCredentialSource(credentialStoreInjectedValue.getValue(), secret.substring("MASK-".length()));
-                    }
-                    throw ControllerLogger.ROOT_LOGGER.nameOfCredentialStoreHasToBeSpecified();
+                    // simple MASK- string with PicketBox compatibility and fixed algorithm and initial key material
+                    return new CredentialSource() {
+                        @Override
+                        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
+                            return credentialType == PasswordCredential.class ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+                        }
+
+                        @Override
+                        public <C extends Credential> C getCredential(Class<C> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
+                            final String DEFAULT_ALGORITHM = "PBEWithMD5AndDES";
+                            final String DEFAULT_PICKETBOX_INITIAL_KEY_MATERIAL = "somearbitrarycrazystringthatdoesnotmatter";
+                            String[] part = secret.substring(5).split(";");  // strip "MASK-" and split by ';'
+                            if (part.length != 3) {
+                                throw ControllerLogger.ROOT_LOGGER.wrongMaskedPasswordFormat();
+                            }
+                            String salt = part[1];
+                            final int iterationCount;
+                            try {
+                                iterationCount = Integer.parseInt(part[2]);
+                            } catch (NumberFormatException e) {
+                                throw ControllerLogger.ROOT_LOGGER.wrongMaskedPasswordFormat();
+                            }
+                            try {
+                                PasswordBasedEncryptionUtil decryptUtil = new PasswordBasedEncryptionUtil.Builder()
+                                        .alphabet(Alphabet.Base64Alphabet.PICKETBOX_COMPATIBILITY)
+                                        .keyAlgorithm(DEFAULT_ALGORITHM)
+                                        .password(DEFAULT_PICKETBOX_INITIAL_KEY_MATERIAL)
+                                        .salt(salt)
+                                        .iteration(iterationCount)
+                                        .decryptMode()
+                                        .build();
+                                return credentialType.cast(new PasswordCredential(ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR,
+                                        decryptUtil.decodeAndDecrypt(part[0]))));
+                            } catch (GeneralSecurityException e) {
+                                throw new IOException(e);
+                            }
+                        }
+                    };
                 } else {
                     if (secret != null) {
                         // clear text password
