@@ -3449,7 +3449,7 @@ public interface ControllerLogger extends BasicLogger {
 
     // ---- Credential Store related messages -----------
 
-    @Message(id = 423, value = "Masked password command has the wrong format.\nUsage: MASK-<encoded secret>;<salt>;<iteration count> where <salt>=UTF-8 characters, <iteration count>=reasonable sized positive integer")
+    @Message(id = 423, value = "Masked password command has the wrong format.%nUsage: MASK-<encoded secret>;<salt>;<iteration count> where <salt>=UTF-8 characters, <iteration count>=reasonable sized positive integer")
     IOException wrongMaskedPasswordFormat();
 
     @Message(id = 424, value = "Supposed Credential Store URI has no scheme or different from '" + CredentialStoreURIParser.CR_STORE_SCHEME + "://' ('%s')")
