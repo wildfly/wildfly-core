@@ -21,9 +21,9 @@
 */
 package org.jboss.as.core.model.test.paths;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.core.model.test.ModelInitializer;
 import org.jboss.as.core.model.test.TestModelType;
@@ -46,7 +46,7 @@ public class HostSpecifiedPathsTestCase extends AbstractSpecifiedPathsTestCase {
 
     @Override
     protected PathAddress getPathsParent() {
-        return PathAddress.EMPTY_ADDRESS;
+        return PathAddress.pathAddress(HOST, "master");
     }
 
     @Override
@@ -59,9 +59,8 @@ public class HostSpecifiedPathsTestCase extends AbstractSpecifiedPathsTestCase {
         return new ModelInitializer() {
             @Override
             public void populateModel(Resource rootResource) {
-                PathElement pe = PathElement.pathElement("host", "test");
-                Resource res = new PlaceholderResource.PlaceholderResourceEntry(pe);
-                rootResource.registerChild(pe, res);
+                //Register the host resource that will be the parent of the path
+                rootResource.registerChild(getPathsParent().getLastElement(), Resource.Factory.create());
             }
         };
     }

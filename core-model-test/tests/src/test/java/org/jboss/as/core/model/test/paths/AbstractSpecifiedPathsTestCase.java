@@ -118,7 +118,7 @@ public abstract class AbstractSpecifiedPathsTestCase extends AbstractCoreModelTe
     ModelNode getPathsParentModel(ModelNode modelNode) {
         ModelNode result = modelNode;
         for (PathElement element : getPathsParent()) {
-            result = modelNode.get(element.getKey(), element.getValue());
+            result = result.get(element.getKey(), element.getValue());
         }
         return result;
     }

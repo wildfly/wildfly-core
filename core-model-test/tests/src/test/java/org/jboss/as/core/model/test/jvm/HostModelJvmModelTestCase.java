@@ -70,7 +70,7 @@ public class HostModelJvmModelTestCase extends GlobalJvmModelTestCase {
         return new ModelInitializer() {
             @Override
             public void populateModel(Resource rootResource) {
-                //Register the server group resource that will be the parent of the domain
+                //Register the host resource that will be the parent of the jvm
                 rootResource.registerChild(PARENT, Resource.Factory.create());
             }
         };
