@@ -69,6 +69,10 @@ public final class Services {
     public static final ServiceName JBOSS_MODULE_INDEX_SERVICE = JBOSS_AS.append("module-index-service");
 
     public static final ServiceName JBOSS_PRODUCT_CONFIG_SERVICE = JBOSS_AS.append("product-config");
+    /**
+     * The service name of the service restart controller service.
+     */
+    public static final ServiceName JBOSS_SERVICE_RESTART_CONTROLLER = JBOSS_AS.append("service-restart-controller");
 
     public static <T> ServiceBuilder<T> addServerExecutorDependency(ServiceBuilder<T> builder, Injector<ExecutorService> injector, boolean optional) {
         ServiceBuilder.DependencyType type = optional ? ServiceBuilder.DependencyType.OPTIONAL : ServiceBuilder.DependencyType.REQUIRED;

@@ -56,6 +56,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.ServiceRestartController;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -132,6 +133,8 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.jboss.msc.service.ValueService;
+import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -234,6 +237,10 @@ public final class ServerService extends AbstractControllerService {
         serviceTarget.addService(JBOSS_SERVER_SCHEDULED_EXECUTOR, serverScheduledExecutorService)
                 .addDependency(Services.JBOSS_SERVER_EXECUTOR, ExecutorService.class, serverScheduledExecutorService.executorInjector)
                 .install();
+        // Provide a ServiceRestartController in the server
+        serviceTarget.addService(Services.JBOSS_SERVICE_RESTART_CONTROLLER,
+                new ValueService<>(new ImmediateValue<>(new ServiceRestartController())))
+                .install();
         ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, Services.JBOSS_SERVER_EXECUTOR);
         final CapabilityRegistry capabilityRegistry = configuration.getCapabilityRegistry();
         ServerService service = new ServerService(configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(),
@@ -245,6 +252,7 @@ public final class ServerService extends AbstractControllerService {
         serviceBuilder.addDependency(Services.JBOSS_EXTERNAL_MODULE_SERVICE, ExternalModuleService.class,
                 service.injectedExternalModuleService);
         serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.injectedPathManagerService);
+        serviceBuilder.addDependency(Services.JBOSS_SERVICE_RESTART_CONTROLLER, ServiceRestartController.class, service.getServiceRestartControllerInjector());
         if (configuration.getServerEnvironment().isAllowModelControllerExecutor()) {
             serviceBuilder.addDependency(Services.JBOSS_SERVER_EXECUTOR, ExecutorService.class, service.getExecutorServiceInjector());
         }
@@ -254,6 +262,7 @@ public final class ServerService extends AbstractControllerService {
         }
 
         serviceBuilder.install();
+
     }
 
     public synchronized void start(final StartContext context) throws StartException {

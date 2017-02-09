@@ -461,7 +461,6 @@ final class OperationContextImpl extends AbstractOperationContext {
     void awaitServiceContainerStability() throws InterruptedException, TimeoutException {
         if (affectsRuntime) {
             MGMT_OP_LOGGER.debugf("Entered VERIFY stage; waiting for service container to settle");
-            long timeout = getBlockingTimeout().getLocalBlockingTimeout();
             ExecutionStatus originalExecutionStatus = executionStatus;
             try {
                 // First wait until any removals we've initiated have begun processing, otherwise
@@ -469,17 +468,17 @@ final class OperationContextImpl extends AbstractOperationContext {
                 executionStatus = ExecutionStatus.AWAITING_STABILITY;
                 waitForRemovals();
                 ContainerStateMonitor.ContainerStateChangeReport changeReport =
-                        modelController.awaitContainerStateChangeReport(timeout, TimeUnit.MILLISECONDS);
+                        modelController.awaitContainerStateChangeReport(blockingTimeout);
                 // If any services are missing, add a verification handler to see if we caused it
                 if (changeReport != null && !changeReport.getMissingServices().isEmpty()) {
                     ServiceRemovalVerificationHandler removalVerificationHandler = new ServiceRemovalVerificationHandler(changeReport);
                     addStep(new ModelNode(), new ModelNode(), PathAddress.EMPTY_ADDRESS, removalVerificationHandler, Stage.VERIFY);
                 }
-            } catch (TimeoutException te) {
+            } catch (StabilityTimeoutException te) {
                 getBlockingTimeout().timeoutDetected();
                 // Deliberate log and throw; we want to log this but the caller method passes a slightly different
                 // message to the user as part of the operation response
-                MGMT_OP_LOGGER.timeoutExecutingOperation(timeout / 1000, containerMonitorStep.operationId.name, containerMonitorStep.address);
+                MGMT_OP_LOGGER.timeoutExecutingOperation(te.getTimeoutPeriod() / 1000, containerMonitorStep.operationId.name, containerMonitorStep.address);
                 throw te;
             } finally {
                 executionStatus = originalExecutionStatus;
@@ -807,11 +806,10 @@ final class OperationContextImpl extends AbstractOperationContext {
                     throw ControllerLogger.ROOT_LOGGER.invalidModificationAfterCompletedStep();
                 }
                 containerMonitorStep = activeStep;
-                int timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 ExecutionStatus origStatus = executionStatus;
                 try {
                     executionStatus = ExecutionStatus.AWAITING_STABILITY;
-                    modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, respectInterruption);
+                    modelController.awaitContainerStability(getBlockingTimeout(), respectInterruption, true);
                     notifyModificationBegun();
                 } catch (InterruptedException e) {
                     if (resultAction != ResultAction.ROLLBACK) {
@@ -820,7 +818,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     }
                     Thread.currentThread().interrupt();
                     throw ControllerLogger.ROOT_LOGGER.operationCancelledAsynchronously();
-                } catch (TimeoutException te) {
+                } catch (StabilityTimeoutException te) {
 
                     getBlockingTimeout().timeoutDetected();
                     // This is the first step trying to await stability for this op, so if it's
@@ -833,7 +831,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     // Deliberate log and throw; we want this logged, we need to notify user, and I want slightly
                     // different messages for both so just throwing a RuntimeException to get the automatic handling
                     // in AbstractOperationContext.executeStep is not what I wanted
-                    ControllerLogger.MGMT_OP_LOGGER.timeoutAwaitingInitialStability(timeout / 1000, activeStep.operationId.name, activeStep.operationId.address);
+                    ControllerLogger.MGMT_OP_LOGGER.timeoutAwaitingInitialStability(te.getTimeoutPeriod() / 1000, activeStep.operationId.name, activeStep.operationId.address);
                     setRollbackOnly();
                     throw new OperationFailedRuntimeException(ControllerLogger.ROOT_LOGGER.timeoutAwaitingInitialStability());
                 } finally {
@@ -1176,9 +1174,8 @@ final class OperationContextImpl extends AbstractOperationContext {
                 // will not be cancellable. I (BES 2012/01/24) chose the former as the lesser evil.
                 // Any subsequent step that calls getServiceRegistry/getServiceTarget/removeService
                 // is going to have to await the monitor uninterruptibly anyway before proceeding.
-                long timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 try {
-                    modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, true);
+                    modelController.awaitContainerStability(getBlockingTimeout(), true, false);
                 }  catch (InterruptedException e) {
                     // Cancelled in some way
                     interrupted = true;
@@ -1187,7 +1184,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     // we need to start from a fresh service container. Notify the controller of this.
                     modelController.containerCannotStabilize();
                     MGMT_OP_LOGGER.interruptedWaitingStability(activeStep.operationId.name, activeStep.operationId.address);
-                } catch (TimeoutException te) {
+                } catch (StabilityTimeoutException te) {
                     // If we can't attain stability on the way out after rollback ops have run,
                     // we can no longer have any sense of MSC state or how the model relates to the runtime and
                     // we need to start from a fresh service container. Notify the controller of this.
@@ -1195,7 +1192,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     // Just log; this doesn't change the result of the op. And if we're not stable here
                     // it's almost certain we never stabilized during execution or we are rolling back and destabilized there.
                     // Either one means there is already a failure message associated with this op.
-                    MGMT_OP_LOGGER.timeoutCompletingOperation(timeout / 1000, activeStep.operationId.name, activeStep.operationId.address);
+                    MGMT_OP_LOGGER.timeoutCompletingOperation(te.getTimeoutPeriod() / 1000, activeStep.operationId.name, activeStep.operationId.address);
                 }
             }
 
@@ -1974,26 +1971,40 @@ final class OperationContextImpl extends AbstractOperationContext {
             boolean intr = false;
             try {
                 boolean containsKey = realRemovingControllers.containsKey(name);
-                long timeout = getBlockingTimeout().getLocalBlockingTimeout();
-                long waitTime = timeout;
-                long end = System.currentTimeMillis() + waitTime;
-                while (containsKey && waitTime > 0) {
+                if (containsKey) {
+                    long timeout = getBlockingTimeout().getLocalBlockingTimeout();
+                    long waitTime = timeout;
+                    long end = System.currentTimeMillis() + waitTime;
+                    while (containsKey && waitTime > 0) {
+                        try {
+                            realRemovingControllers.wait(waitTime);
+                        } catch (InterruptedException e) {
+                            intr = true;
+                            if (respectInterruption) {
+                                cancelled = true;
+                                throw ControllerLogger.ROOT_LOGGER.serviceInstallCancelled();
+                            } // else keep waiting and mark the thread interrupted at the end
+                        }
+                        containsKey = realRemovingControllers.containsKey(name);
+                        waitTime = end - System.currentTimeMillis();
+                    }
+
+                    if (containsKey) {
+                        // We timed out
+                        throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, name);
+                    }
+
+                    // Before we reinstall the service, work around potential MSC issues by
+                    // giving MSC a chance to stabilize
                     try {
-                        realRemovingControllers.wait(waitTime);
+                        modelController.pauseForStability();
                     } catch (InterruptedException e) {
                         intr = true;
                         if (respectInterruption) {
                             cancelled = true;
                             throw ControllerLogger.ROOT_LOGGER.serviceInstallCancelled();
-                        } // else keep waiting and mark the thread interrupted at the end
+                        }
                     }
-                    containsKey = realRemovingControllers.containsKey(name);
-                    waitTime = end - System.currentTimeMillis();
-                }
-
-                if (containsKey) {
-                    // We timed out
-                    throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, name);
                 }
 
                 // If a step removed this ServiceName before, it's no longer responsible

@@ -123,6 +123,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final OperationStepHandler prepareStep;
     private final InjectedValue<ExecutorService> injectedExecutorService = new InjectedValue<ExecutorService>();
     private final InjectedValue<ControllerInstabilityListener> injectedInstabilityListener = new InjectedValue<ControllerInstabilityListener>();
+    private final InjectedValue<ServiceRestartController> injectedRestartController = new InjectedValue<ServiceRestartController>();
     private final ExpressionResolver expressionResolver;
     private volatile ModelControllerImpl controller;
     private ConfigurationPersister configurationPersister;
@@ -295,6 +296,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         final ModelControllerImpl controller = new ModelControllerImpl(container, target,
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),
+                injectedRestartController.getOptionalValue(),
                 configurationPersister, processType, runningModeControl, prepareStep,
                 processState, executorService, expressionResolver, authorizer, securityIdentitySupplier, auditLogger, notificationSupport,
                 bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry, getPartialModelIndicator(),
@@ -554,6 +556,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     protected InjectedValue<ControllerInstabilityListener> getContainerInstabilityInjector() {
         return injectedInstabilityListener;
+    }
+
+    protected InjectedValue<ServiceRestartController> getServiceRestartControllerInjector() {
+        return injectedRestartController;
     }
 
     protected void setConfigurationPersister(final ConfigurationPersister persister) {
