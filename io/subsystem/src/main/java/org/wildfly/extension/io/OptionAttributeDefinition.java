@@ -55,6 +55,10 @@ public class OptionAttributeDefinition extends SimpleAttributeDefinition {
         return option;
     }
 
+    public Class<?> getOptionType() {
+        return optionType;
+    }
+
     @SuppressWarnings("unchecked")
     public OptionMap.Builder resolveOption(final ExpressionResolver context, final ModelNode model, OptionMap.Builder builder) throws OperationFailedException {
         ModelNode value = resolveModelAttribute(context, model);
@@ -72,7 +76,7 @@ public class OptionAttributeDefinition extends SimpleAttributeDefinition {
             } else if (getType() == ModelType.STRING) {
                 builder.set(option, value.asString());
             } else {
-                throw new OperationFailedException("Dont know how to handle: " + option + " with value: " + value);
+                throw new OperationFailedException("Don't know how to handle: " + option + " with value: " + value);
             }
         }
         return builder;

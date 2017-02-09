@@ -54,7 +54,6 @@ public class WorkerService implements Service<XnioWorker> {
         } catch (IOException e) {
             throw new StartException(e);
         }
-
     }
 
     @Override
