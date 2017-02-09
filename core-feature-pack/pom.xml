@@ -403,6 +403,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-tool</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.wildfly.security.elytron-web</groupId>
             <artifactId>undertow-server</artifactId>
         </dependency>
