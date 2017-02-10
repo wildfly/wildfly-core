@@ -27,6 +27,7 @@ import static java.security.AccessController.doPrivileged;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -57,6 +58,9 @@ import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.threads.JBossThreadFactory;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
+import org.wildfly.security.auth.client.MatchRule;
 import org.xnio.OptionMap;
 import org.xnio.http.RedirectException;
 
@@ -67,6 +71,7 @@ import org.xnio.http.RedirectException;
 public class CLIModelControllerClient extends AbstractModelControllerClient
         implements AwaiterModelControllerClient {
 
+    private static final AuthenticationContextConfigurationClient AUTH_CONFIGURATION_CLIENT = doPrivileged(AuthenticationContextConfigurationClient.ACTION);
     private static final OptionMap DEFAULT_OPTIONS = OptionMap.EMPTY;
 
     private static final ThreadPoolExecutor executorService;
@@ -123,9 +128,8 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
 
     CLIModelControllerClient(final ControllerAddress address, CallbackHandler handler, int connectionTimeout,
             final ConnectionCloseHandler closeHandler, Map<String, String> saslOptions, SSLContext sslContext,
-            ProtocolTimeoutHandler timeoutHandler, String clientBindAddress) throws IOException {
+            boolean fallbackSslContext, ProtocolTimeoutHandler timeoutHandler, String clientBindAddress) throws IOException {
         this.handler = handler;
-        this.sslContext = sslContext;
         this.closeHandler = closeHandler;
 
         this.channelAssociation = new ManagementChannelHandler(new ManagementClientChannelStrategy() {
@@ -144,6 +148,23 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
             connURI = new URI(address.getProtocol(), null, address.getHost(), address.getPort(), null, null, null);
         } catch (URISyntaxException e) {
             throw new IOException("Failed to create URI" , e);
+        }
+
+        if (sslContext != null && fallbackSslContext == false) {
+            // If the SSLContext was defined in the CLI configuration it should take priority.
+            this.sslContext = sslContext;
+        } else {
+            AuthenticationContext authenticationContext = AuthenticationContext.captureCurrent();
+            if (sslContext != null) {
+                // If not we add the default SSLContext created by the CLI to the end of the list.
+                // This will match if a suitable match is not already available on the AC.
+                authenticationContext = authenticationContext.withSsl(MatchRule.ALL, () -> sslContext);
+            }
+            try {
+                this.sslContext = AUTH_CONFIGURATION_CLIENT.getSSLContext(connURI, authenticationContext);
+            } catch (GeneralSecurityException e) {
+                throw new IOException("Failed to obtain SSLContext" , e);
+            }
         }
 
         channelConfig = ProtocolConnectionConfiguration.create(endpoint, connURI, DEFAULT_OPTIONS);

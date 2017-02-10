@@ -306,7 +306,7 @@ public interface ProtocolLogger extends BasicLogger {
      * @return a {@link ConnectException} for the error.
      */
     @Message(id = 53, value = "Could not connect to %s. The connection failed")
-    ConnectException failedToConnect(URI uri, @Cause IOException cause);
+    ConnectException failedToConnect(URI uri, @Cause Exception cause);
 
     /**
      * Creates an exception indicating that the channel is closed.

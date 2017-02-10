@@ -22,39 +22,31 @@
 
 package org.jboss.as.protocol;
 
-import org.jboss.as.protocol.logging.ProtocolLogger;
-import org.jboss.remoting3.Connection;
-import org.jboss.remoting3.Endpoint;
-import org.jboss.remoting3.RemotingOptions;
-import org.wildfly.security.auth.client.AuthenticationConfiguration;
-import org.wildfly.security.auth.client.AuthenticationContext;
-import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
-import org.wildfly.security.auth.client.MatchRule;
-import org.xnio.IoFuture;
-import org.xnio.OptionMap;
-import org.xnio.Options;
-
 import static java.security.AccessController.doPrivileged;
-import static org.xnio.Options.SASL_POLICY_NOANONYMOUS;
-import static org.xnio.Options.SASL_POLICY_NOPLAINTEXT;
-
-import org.xnio.Property;
-import org.xnio.Sequence;
-
-import javax.net.ssl.SSLContext;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.UnsupportedCallbackException;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.URI;
-import java.util.ArrayList;
+import java.security.GeneralSecurityException;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Map;
+
+import javax.net.ssl.SSLContext;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.UnsupportedCallbackException;
+
+import org.jboss.as.protocol.logging.ProtocolLogger;
+import org.jboss.remoting3.Connection;
+import org.jboss.remoting3.Endpoint;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
+import org.wildfly.security.auth.client.MatchRule;
+import org.xnio.IoFuture;
+import org.xnio.Options;
 
 /**
  * Protocol Connection utils.
@@ -146,50 +138,38 @@ public class ProtocolConnectionUtils {
     private static IoFuture<Connection> connect(final CallbackHandler handler, final ProtocolConnectionConfiguration configuration) throws IOException {
         configuration.validate();
         final Endpoint endpoint = configuration.getEndpoint();
-        final OptionMap options = getOptions(configuration);
-        final SSLContext sslContext = configuration.getSslContext();
         final URI uri = configuration.getUri();
         String clientBindAddress = configuration.getClientBindAddress();
 
         AuthenticationContext captured = AuthenticationContext.captureCurrent();
         AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, captured);
         if (handler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(handler);
+        mergedConfiguration = configureSaslMechnisms(configuration.getSaslOptions(), isLocal(uri), mergedConfiguration);
 
-        // We don't know the original index or the match rule so create a context with a single match all rule.
-        AuthenticationContext context = AuthenticationContext.empty().with(MatchRule.ALL, mergedConfiguration);
-        if (sslContext != null) context = context.withSsl(MatchRule.ALL, () -> sslContext);
+        SSLContext sslContext = configuration.getSslContext();
+        if (sslContext == null) {
+            try {
+                sslContext = AUTH_CONFIGURATION_CLIENT.getSSLContext(uri, captured);
+            } catch (GeneralSecurityException e) {
+                throw ProtocolLogger.ROOT_LOGGER.failedToConnect(uri, e);
+            }
+        }
+
+        AuthenticationContext authenticationContext = AuthenticationContext.empty();
+        authenticationContext = authenticationContext.with(MatchRule.ALL, mergedConfiguration);
+        final SSLContext finalSslContext = sslContext;
+        authenticationContext = authenticationContext.withSsl(MatchRule.ALL, () -> finalSslContext);
 
         if (clientBindAddress == null) {
-            return endpoint.connect(uri, options, context);
+            return endpoint.connect(uri, configuration.getOptionMap(), authenticationContext);
         } else {
             InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
             // TODO: bind address via connection builder
-            return endpoint.connect(configuration.getUri(), options, context);
+            return endpoint.connect(uri, configuration.getOptionMap(), authenticationContext);
         }
     }
 
-    private static OptionMap getOptions(final ProtocolConnectionConfiguration configuration) {
-        final Map<String, String> saslOptions = configuration.getSaslOptions();
-        final OptionMap.Builder builder = OptionMap.builder();
-        builder.set(SASL_POLICY_NOANONYMOUS, Boolean.FALSE);
-        builder.set(SASL_POLICY_NOPLAINTEXT, Boolean.FALSE);
-        builder.addAll(configuration.getOptionMap());
-        configureSaslMechnisms(saslOptions, isLocal(configuration.getUri()), builder);
-        List<Property> tempProperties = new ArrayList<Property>(saslOptions != null ? saslOptions.size() : 1);
-        tempProperties.add(Property.of("jboss.sasl.local-user.quiet-auth", "true"));
-        if (saslOptions != null) {
-            for (String currentKey : saslOptions.keySet()) {
-                tempProperties.add(Property.of(currentKey, saslOptions.get(currentKey)));
-            }
-        }
-        builder.set(Options.SASL_PROPERTIES, Sequence.of(tempProperties));
-        builder.set(Options.SSL_ENABLED, configuration.isSslEnabled());
-        builder.set(Options.SSL_STARTTLS, configuration.isUseStartTLS());
-        builder.set(RemotingOptions.SASL_PROTOCOL, "remote");
-        return builder.getMap();
-    }
-
-    private static void configureSaslMechnisms(Map<String, String> saslOptions, boolean isLocal, OptionMap.Builder builder) {
+    private static AuthenticationConfiguration configureSaslMechnisms(Map<String, String> saslOptions, boolean isLocal, AuthenticationConfiguration authenticationConfiguration) {
         String[] mechanisms = null;
         String listed;
         if (saslOptions != null && (listed = saslOptions.get(Options.SASL_DISALLOWED_MECHANISMS.getName())) != null) {
@@ -206,17 +186,7 @@ public class ProtocolConnectionUtils {
             mechanisms = new String[]{ JBOSS_LOCAL_USER };
         }
 
-        if (mechanisms != null) {
-            builder.set(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(mechanisms));
-        }
-
-        if (saslOptions != null && (listed = saslOptions.get(Options.SASL_MECHANISMS.getName())) != null) {
-            // SASL mechanisms were passed via the saslOptions map; need to convert to an XNIO option
-            String[] split = listed.split(" ");
-            if (split.length > 0) {
-                builder.set(Options.SASL_MECHANISMS, Sequence.of(split));
-            }
-        }
+        return (mechanisms != null && mechanisms.length > 0) ? authenticationConfiguration.forbidSaslMechanisms(mechanisms) : authenticationConfiguration;
     }
 
     private static boolean isLocal(final URI uri) {
