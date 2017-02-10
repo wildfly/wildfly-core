@@ -43,10 +43,10 @@ public class ProtocolConnectionConfiguration {
 
     private URI uri;
     private Endpoint endpoint;
-    private OptionMap optionMap = OptionMap.EMPTY;
     private long connectionTimeout = DEFAULT_CONNECT_TIMEOUT;
     private CallbackHandler callbackHandler;
     private Map<String, String> saslOptions = Collections.emptyMap();
+    private boolean overrideSslContext;
     private SSLContext sslContext;
     private String clientBindAddress;
     private ProtocolTimeoutHandler timeoutHandler;
@@ -69,7 +69,6 @@ public class ProtocolConnectionConfiguration {
      */
     protected void validate() {
         Assert.checkNotNullParam("endpoint", endpoint);
-        Assert.checkNotNullParam("optionMap", optionMap);
         Assert.checkNotNullParam("uri", uri);
     }
 
@@ -103,12 +102,13 @@ public class ProtocolConnectionConfiguration {
         this.endpoint = endpoint;
     }
 
+    @Deprecated
     public OptionMap getOptionMap() {
-        return optionMap;
+        return OptionMap.EMPTY;
     }
 
+    @Deprecated
     public void setOptionMap(OptionMap optionMap) {
-        this.optionMap = optionMap;
     }
 
     public long getConnectionTimeout() {
@@ -133,6 +133,14 @@ public class ProtocolConnectionConfiguration {
 
     public void setSaslOptions(Map<String, String> saslOptions) {
         this.saslOptions = saslOptions;
+    }
+
+    public boolean isOverrideSslContext() {
+        return overrideSslContext;
+    }
+
+    public void setOverrideSslContext(boolean overrideSslContext) {
+        this.overrideSslContext = overrideSslContext;
     }
 
     public SSLContext getSslContext() {
@@ -197,10 +205,10 @@ public class ProtocolConnectionConfiguration {
                                                 final ProtocolConnectionConfiguration target) {
         target.uri = old.uri;
         target.endpoint = old.endpoint;
-        target.optionMap = old.optionMap;
         target.connectionTimeout = old.connectionTimeout;
         target.callbackHandler = old.callbackHandler;
         target.saslOptions = old.saslOptions;
+        target.overrideSslContext = old.overrideSslContext;
         target.sslContext = old.sslContext;
         target.clientBindAddress = old.clientBindAddress;
         target.timeoutHandler = old.timeoutHandler;
