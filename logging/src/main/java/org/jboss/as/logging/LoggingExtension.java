@@ -370,7 +370,10 @@ public class LoggingExtension implements Extension {
             final String key1 = o1.getKey();
             final String key2 = o2.getKey();
             int result = key1.compareTo(key2);
-            if (result != EQUAL) {
+            if (key1.equals(key2)) {
+                // put the one already present first to preserve original order
+                result = GREATER;
+            } else {
                 if (ModelDescriptionConstants.SUBSYSTEM.equals(key1)) {
                     result = LESS;
                 } else if (ModelDescriptionConstants.SUBSYSTEM.equals(key2)) {
