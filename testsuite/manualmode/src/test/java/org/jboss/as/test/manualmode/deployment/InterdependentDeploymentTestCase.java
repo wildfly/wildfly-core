@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PropertyPermission;
 
 import javax.inject.Inject;
 
@@ -32,6 +33,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
@@ -157,6 +159,15 @@ public class InterdependentDeploymentTestCase {
                 String newVal = "a" + i;
                 final JavaArchive replA = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("interrelated-a.jar",
                         Collections.singletonMap("interrelated-a.jar", newVal));
+
+                deplA.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                        new PropertyPermission("interrelated-a.jar", "write"),
+                        new PropertyPermission("interrelated-b.jar", "write"),
+                        new PropertyPermission("interrelated-c.jar", "write"),
+                        new PropertyPermission("interrelated-d.jar", "write"),
+                        new PropertyPermission("interrelated-e.jar", "write"),
+                        new PropertyPermission("interrelated-f.jar", "write")
+                ), "permissions.xml");
 
                 ModelNode frd = Util.createEmptyOperation("full-replace-deployment", PathAddress.EMPTY_ADDRESS);
                 frd.get("name").set("interrelated-a.jar");
