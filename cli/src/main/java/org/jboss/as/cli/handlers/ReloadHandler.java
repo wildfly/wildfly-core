@@ -247,7 +247,7 @@ public class ReloadHandler extends BaseOperationCommand {
             // WFCORE-938
             // for embedded-hc, we require --admin-only=true to be passed until the EHC supports --admin-only=false
             if (!isAdminOnly(ctx)) {
-                throw new CommandLineException("Reload into running mode is not supported, --start-mode=admin-only must be specified.");
+                throw new CommandLineException("Reload into running mode is not supported, --admin-only must be specified.");
             }
         }
 
