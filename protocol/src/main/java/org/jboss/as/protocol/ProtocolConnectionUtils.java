@@ -46,7 +46,6 @@ import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
 import org.wildfly.security.auth.client.MatchRule;
 import org.xnio.IoFuture;
-import org.xnio.OptionMap;
 import org.xnio.Options;
 
 /**
@@ -162,11 +161,11 @@ public class ProtocolConnectionUtils {
         authenticationContext = authenticationContext.withSsl(MatchRule.ALL, () -> finalSslContext);
 
         if (clientBindAddress == null) {
-            return endpoint.connect(uri, OptionMap.EMPTY, authenticationContext);
+            return endpoint.connect(uri, configuration.getOptionMap(), authenticationContext);
         } else {
             InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
             // TODO: bind address via connection builder
-            return endpoint.connect(uri, OptionMap.EMPTY, authenticationContext);
+            return endpoint.connect(uri, configuration.getOptionMap(), authenticationContext);
         }
     }
 
