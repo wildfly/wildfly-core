@@ -159,6 +159,7 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
         @Override
         public void stop(StopContext context) {
+            securityIdentitySupplier.setConfiguredSecurityDomainSupplier(null);
         }
 
         void setConfiguredSecurityDomain(InjectedValue<SecurityDomain> configuredSecurityDomain) {

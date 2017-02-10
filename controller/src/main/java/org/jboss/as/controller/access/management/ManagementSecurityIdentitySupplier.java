@@ -56,7 +56,8 @@ public class ManagementSecurityIdentitySupplier implements Supplier<SecurityIden
             return accessAuditContext.getSecurityIdentity();
         }
 
-        SecurityDomain configuredSecurityDomain = configuredSecurityDomainSupplier != null ? configuredSecurityDomainSupplier.get() : null;
+        Supplier<SecurityDomain> configuredSupplier = configuredSecurityDomainSupplier;
+        SecurityDomain configuredSecurityDomain = configuredSupplier != null ? configuredSupplier.get() : null;
 
         if (configuredSecurityDomain != null) {
             securityIdentity = configuredSecurityDomain.getCurrentSecurityIdentity();
@@ -87,8 +88,9 @@ public class ManagementSecurityIdentitySupplier implements Supplier<SecurityIden
             }
         }
 
-        if (inflowSecurityDomainSuppliers != null && configuredSecurityDomain != null) {
-            for (Supplier<SecurityDomain> inflowSupplier : inflowSecurityDomainSuppliers) {
+        List<Supplier<SecurityDomain>> inflowSuppliers = inflowSecurityDomainSuppliers;
+        if (inflowSuppliers != null && configuredSecurityDomain != null) {
+            for (Supplier<SecurityDomain> inflowSupplier : inflowSuppliers) {
                 SecurityDomain current = inflowSupplier.get();
                 if (current != null) {
                     securityIdentity = current.getCurrentSecurityIdentity();
