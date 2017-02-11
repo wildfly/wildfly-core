@@ -267,7 +267,7 @@ public class ServerInventoryImpl implements ServerInventory {
             return ServerStatus.STOPPED;
         }
         Integer currentOperationID = CurrentOperationIdHolder.getCurrentOperationID();
-        server.stop(currentOperationID == null ? -1 : currentOperationID, gracefulTimeout);
+        server.stop(currentOperationID == null ? null : gracefulTimeout);
         if(blocking) {
             server.awaitState(ManagedServer.InternalState.STOPPED);
         }
@@ -350,7 +350,7 @@ public class ServerInventoryImpl implements ServerInventory {
     public void stopServers(final int gracefulTimeout, final boolean blockUntilStopped) {
         for(final ManagedServer server : servers.values()) {
             Integer currentOperationID = CurrentOperationIdHolder.getCurrentOperationID();
-            server.stop(currentOperationID == null ? -1 : currentOperationID, gracefulTimeout);
+            server.stop(currentOperationID == null ? null : gracefulTimeout);
         }
         if(blockUntilStopped) {
             synchronized (shutdownCondition) {

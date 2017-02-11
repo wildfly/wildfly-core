@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESUME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_MODE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIMEOUT;
@@ -40,6 +41,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.jboss.as.controller.CurrentOperationIdHolder;
 import org.jboss.as.controller.PathAddress;
@@ -267,14 +269,14 @@ class ManagedServer {
     /**
      * Stop a managed server.
      */
-    synchronized void stop(int operationID, int timeout) {
+    synchronized void stop(Integer timeout) {
         final InternalState required = this.requiredState;
         if(required != InternalState.STOPPED) {
             this.requiredState = InternalState.STOPPED;
             ROOT_LOGGER.stoppingServer(serverName);
             // Only send the stop operation if the server is started
             if (internalState == InternalState.SERVER_STARTED) {
-                internalSetState(new ServerStopTask(operationID, timeout), internalState, InternalState.PROCESS_STOPPING);
+                internalSetState(new ServerStopTask(timeout), internalState, InternalState.PROCESS_STOPPING);
             } else {
                 transition(false);
             }
@@ -293,7 +295,7 @@ class ManagedServer {
             }
         } else {
             // Do the normal stop stuff first
-            stop(-1, 0);
+            stop(null);
             required = this.requiredState;
             if (required == InternalState.STOPPED) {
                 // Now proceed to destroy, assuming that there was a reason the user
@@ -316,7 +318,7 @@ class ManagedServer {
             }
         } else {
             // Do the normal stop stuff first
-            stop(-1, 0);
+            stop(null);
             required = this.requiredState;
             if (required == InternalState.STOPPED) {
                 // Now proceed to kill, assuming that there was a reason the user
@@ -634,7 +636,7 @@ class ManagedServer {
             } case SERVER_STARTED: {
                 return new ServerStartedTask();
             } case PROCESS_STOPPING: {
-                return new ServerStopTask(-1, 0);
+                return new ServerStopTask(null);
             } case PROCESS_REMOVING: {
                 return new ProcessRemoveTask();
             } default: {
@@ -735,6 +737,15 @@ class ManagedServer {
     AsyncFuture<OperationResponse> suspend(int timeoutInSeconds, final BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener) throws IOException {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(SUSPEND);
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(TIMEOUT).set(timeoutInSeconds);
+
+        return protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
+    }
+
+    private AsyncFuture<OperationResponse> shutdown(int timeoutInSeconds, final BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener) throws IOException {
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(SHUTDOWN);
         operation.get(OP_ADDR).setEmptyList();
         operation.get(TIMEOUT).set(timeoutInSeconds);
 
@@ -855,40 +866,50 @@ class ManagedServer {
     }
 
     private class ServerStopTask implements TransitionTask {
+        private final Integer gracefulTimeout;
 
-        private final int permit;
-        private final int timeout;
-
-        private ServerStopTask(int permit, int timeout) {
-            this.permit = permit;
-            this.timeout = timeout;
+        private ServerStopTask(Integer gracefulTimeout) {
+            this.gracefulTimeout = gracefulTimeout;
         }
 
         @Override
         public boolean execute(ManagedServer server) throws Exception {
             assert Thread.holdsLock(ManagedServer.this); // Call under lock
-            // Stop process
 
             try {
                 //graceful shutdown
                 //this just suspends the server, it does not actually shut it down
-                if (permit != -1) {
+                //All catch use the suspend error log traces because the operation at the end is a suspend
+                if ( gracefulTimeout != null ){
+                    BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener = new BlockingQueueOperationListener<>();
+                    AsyncFuture<OperationResponse> future = null;
 
-                    final ModelNode operation = new ModelNode();
-                    operation.get(OP).set("shutdown");
-                    operation.get(OP_ADDR).setEmptyList();
-                    operation.get("operation-id").set(permit);
-                    operation.get("timeout").set(timeout);
+                    try {
+                        future = shutdown(gracefulTimeout, listener);
+                        final TransactionalProtocolClient.PreparedOperation<?> prepared = listener.retrievePreparedOperation();
 
-                    final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
-                    if (prepared.isFailed()) {
-                        return true;
+                        if (prepared.isFailed()) {
+                            return false;
+                        }
+
+                        //we stop the server via an operation
+                        prepared.commit();
+                        prepared.getFinalResult().get();
+
+                    } catch (IOException e) {
+                        HostControllerLogger.ROOT_LOGGER.suspendExecutionFailed(e, serverName);
+                        return false;
+                    } catch (InterruptedException e) {
+                        HostControllerLogger.ROOT_LOGGER.interruptedAwaitingSuspendResponse(e, serverName);
+                        future.asyncCancel(true);
+                        Thread.currentThread().interrupt();
+                        return false;
+                    } catch (ExecutionException e) {
+                        HostControllerLogger.ROOT_LOGGER.suspendListenerFailed(e, serverName);
+                        future.asyncCancel(true);
+                        return false;
                     }
-                    //we stop the server via an operation
-                    prepared.commit();
-                    prepared.getFinalResult().get();
                 }
-            } catch (Exception ignore) {
             } finally {
                 try {
                     processControllerClient.stopProcess(serverProcessName);

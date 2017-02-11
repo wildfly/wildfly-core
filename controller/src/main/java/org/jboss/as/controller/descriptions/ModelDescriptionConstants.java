@@ -326,6 +326,7 @@ public class ModelDescriptionConstants {
     public static final String ORGANIZATION = "organization";
     public static final String OPERATION_DATE = "operation-date";
     public static final String OPERATION_HEADERS = "operation-headers";
+    public static final String OPERATION_ID = "operation-id";
     public static final String OPERATION_NAME = "operation-name";
     public static final String OPERATIONS = "operations";
     public static final String OPTIONS = "options";

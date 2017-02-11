@@ -327,7 +327,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final ServerResumeHandler resumeHandler = new ServerResumeHandler();
             resourceRegistration.registerOperationHandler(ServerResumeHandler.DOMAIN_DEFINITION, resumeHandler, false);
 
-            resourceRegistration.registerOperationHandler(ServerDomainProcessShutdownHandler.DOMAIN_DEFINITION, new ServerDomainProcessShutdownHandler(operationIDUpdater), false);
+            resourceRegistration.registerOperationHandler(ServerDomainProcessShutdownHandler.DOMAIN_DEFINITION, new ServerDomainProcessShutdownHandler(), false);
 
 
 //            // Trick the resource-description for domain servers to be included in the server-resource
