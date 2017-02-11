@@ -914,9 +914,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
                 if (orderedChildTypes.size() == 1) {
                     orderedChildTypes = new HashSet<>(orderedChildTypes);
                 }
-                if (!orderedChildTypes.add(type)) {
-                    throw alreadyRegistered("Ordered child", type);
-                }
+                orderedChildTypes.add(type);
             }
         } finally {
             writeLock.unlock();
