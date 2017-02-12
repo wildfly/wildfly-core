@@ -252,7 +252,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private final char[] password;
     /** flag to disable the local authentication mechanism */
     private final boolean disableLocalAuth;
-    /** Flag to indicate that the SSLContext was the defailt context and not configured */
+    /** Flag to indicate that the SSLContext was the default context and not configured */
     private boolean defaultSslContext;
     /** The SSLContext when managed by the CLI */
     private SSLContext sslContext;
