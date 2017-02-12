@@ -46,6 +46,11 @@ public interface ParameterValidator {
      * @param value the parameter value. Cannot be {@code null}
      *
      * @throws OperationFailedException if the value is not valid
+     *
+     * @deprecated Callers should resolve the value themselves with an {@link org.jboss.as.controller.ExpressionResolver}
+     *             and then use {@link #validateParameter(String, ModelNode)} since {@link ModelNode#resolve()} is not
+     *             an adequate expression resolution approach
      */
+    @Deprecated
     void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException;
 }

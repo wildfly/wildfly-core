@@ -200,7 +200,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
             }
         }
         // Validate the entire object
-        getValidator().validateResolvedParameter(getName(), result);
+        getValidator().validateParameter(getName(), result);
         return result;
     }
 

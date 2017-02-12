@@ -29,8 +29,14 @@ import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
 
 /**
+ * Repurposes {@link ParametersValidator} from validating an operation model node to
+ * validating a complex attribute.
+ *
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
+ *
+ * @deprecated use {@link ObjectTypeValidator} and {@link org.jboss.as.controller.ObjectTypeAttributeDefinition}
  */
+@Deprecated
 public class ParametersOfValidator implements ParameterValidator, MinMaxValidator, AllowedValuesValidator {
     private final ParametersValidator delegate;
 
@@ -50,6 +56,7 @@ public class ParametersOfValidator implements ParameterValidator, MinMaxValidato
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
         try {
