@@ -23,7 +23,7 @@
 package org.jboss.as.remoting;
 
 import static org.jboss.as.remoting.AbstractOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME;
-import static org.jboss.as.remoting.RemoteOutboundConnectionResourceDefinition.AUTHENTICATION_CONTEXT_CAPABILITY;
+import static org.jboss.as.remoting.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;

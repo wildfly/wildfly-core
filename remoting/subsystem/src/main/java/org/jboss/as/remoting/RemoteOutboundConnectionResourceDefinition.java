@@ -23,6 +23,7 @@
 package org.jboss.as.remoting;
 
 import static org.jboss.as.remoting.AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME;
+import static org.jboss.as.remoting.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
@@ -43,8 +44,6 @@ import org.jboss.dmr.ModelType;
  * @author Jaikiran Pai
  */
 class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnectionResourceDefinition {
-
-    static final String AUTHENTICATION_CONTEXT_CAPABILITY = "org.wildfly.security.authentication-context";
 
     static final PathElement ADDRESS = PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION);
 
@@ -85,6 +84,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
     public static final SimpleAttributeDefinition AUTHENTICATION_CONTEXT = new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTHENTICATION_CONTEXT, ModelType.STRING, true)
             .setCapabilityReference(AUTHENTICATION_CONTEXT_CAPABILITY, OUTBOUND_CONNECTION_CAPABILITY_NAME, true)
             .setAlternatives(CommonAttributes.USERNAME, CommonAttributes.SECURITY_REALM, CommonAttributes.PROTOCOL)
+            .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.AUTHENTICATION_CLIENT_REF)
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {
