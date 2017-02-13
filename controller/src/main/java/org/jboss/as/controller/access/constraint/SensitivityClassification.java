@@ -32,6 +32,8 @@ package org.jboss.as.controller.access.constraint;
 public class SensitivityClassification extends AbstractSensitivity {
 
     public static final SensitivityClassification ACCESS_CONTROL = new SensitivityClassification("access-control", true, true, true);
+    public static final SensitivityClassification AUTHENTICATION_CLIENT_REF = new SensitivityClassification("authentication-client-ref", true, true, true);
+    public static final SensitivityClassification AUTHENTICATION_FACTORY_REF = new SensitivityClassification("authentication-factory-ref", true, true, true);
     public static final SensitivityClassification CREDENTIAL = new SensitivityClassification("credential", false, true, true);
     public static final SensitivityClassification DOMAIN_CONTROLLER = new SensitivityClassification("domain-controller", false, false, true);
     public static final SensitivityClassification DOMAIN_NAMES = new SensitivityClassification("domain-names", false, false, true);
@@ -51,6 +53,7 @@ public class SensitivityClassification extends AbstractSensitivity {
     public static final SensitivityClassification SOCKET_BINDING_REF = new SensitivityClassification("socket-binding-ref", false, false, false);
     public static final SensitivityClassification SOCKET_CONFIG = new SensitivityClassification("socket-config", false, false, true);
     public static final SensitivityClassification SNAPSHOTS = new SensitivityClassification("snapshots", false, false, false);
+    public static final SensitivityClassification SSL_REF = new SensitivityClassification("ssl-ref", true, true, true);
     public static final SensitivityClassification SYSTEM_PROPERTY = new SensitivityClassification("system-property", false, false, true);
 
     private final boolean core;

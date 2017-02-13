@@ -40,6 +40,8 @@ import org.jboss.dmr.ModelNode;
 public class SensitiveTargetAccessConstraintDefinition implements AccessConstraintDefinition {
 
     public static final SensitiveTargetAccessConstraintDefinition ACCESS_CONTROL = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.ACCESS_CONTROL);
+    public static final SensitiveTargetAccessConstraintDefinition AUTHENTICATION_CLIENT_REF = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.AUTHENTICATION_CLIENT_REF);
+    public static final SensitiveTargetAccessConstraintDefinition AUTHENTICATION_FACTORY_REF = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.AUTHENTICATION_FACTORY_REF);
     public static final SensitiveTargetAccessConstraintDefinition CREDENTIAL = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.CREDENTIAL);
     public static final SensitiveTargetAccessConstraintDefinition DOMAIN_CONTROLLER = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.DOMAIN_CONTROLLER);
     public static final SensitiveTargetAccessConstraintDefinition DOMAIN_NAMES = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.DOMAIN_NAMES);
@@ -59,6 +61,7 @@ public class SensitiveTargetAccessConstraintDefinition implements AccessConstrai
     public static final SensitiveTargetAccessConstraintDefinition SOCKET_BINDING_REF = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_BINDING_REF);
     public static final SensitiveTargetAccessConstraintDefinition SOCKET_CONFIG = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG);
     public static final SensitiveTargetAccessConstraintDefinition SNAPSHOTS = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SNAPSHOTS);
+    public static final SensitiveTargetAccessConstraintDefinition SSL_REF = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SSL_REF);
     public static final SensitiveTargetAccessConstraintDefinition SYSTEM_PROPERTY = new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SYSTEM_PROPERTY);
 
     private final SensitivityClassification sensitivity;
