@@ -37,6 +37,7 @@ public class SensitivityClassification extends AbstractSensitivity {
     public static final SensitivityClassification CREDENTIAL = new SensitivityClassification("credential", false, true, true);
     public static final SensitivityClassification DOMAIN_CONTROLLER = new SensitivityClassification("domain-controller", false, false, true);
     public static final SensitivityClassification DOMAIN_NAMES = new SensitivityClassification("domain-names", false, false, true);
+    public static final SensitivityClassification ELYTRON_SECURITY_DOMAIN_REF = new SensitivityClassification("elytron-security-domain-ref", true, true, true);
     public static final SensitivityClassification EXTENSIONS = new SensitivityClassification("extensions", false, false, true);
     public static final SensitivityClassification JVM = new SensitivityClassification("jvm", false, false, true);
     public static final SensitivityClassification MANAGEMENT_INTERFACES = new SensitivityClassification("management-interfaces", false, false, true);
