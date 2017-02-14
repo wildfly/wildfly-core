@@ -74,6 +74,7 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, MANAGEMENT_IDENTITY_CAPABILITY, false)
+            .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.ELYTRON_SECURITY_DOMAIN_REF)
             .build();
 
     private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {SECURITY_DOMAIN};
@@ -159,6 +160,7 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
         @Override
         public void stop(StopContext context) {
+            securityIdentitySupplier.setConfiguredSecurityDomainSupplier(null);
         }
 
         void setConfiguredSecurityDomain(InjectedValue<SecurityDomain> configuredSecurityDomain) {

@@ -51,12 +51,22 @@ class ManagementTransformers {
         // Configuring rbac details is OK (i.e. discarable), so long as the provider is not enabled
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(CoreManagementResourceDefinition.PATH_ELEMENT, currentVersion);
 
-        ResourceTransformationDescriptionBuilder builderCurrentTo17 = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_7);
-        builderCurrentTo17.addChildResource(AccessAuthorizationResourceDefinition.PATH_ELEMENT)
+        ResourceTransformationDescriptionBuilder builder18To17 = chainedBuilder.createBuilder(DomainTransformers.VERSION_1_8, DomainTransformers.VERSION_1_7);
+        builder18To17.addChildResource(AccessAuthorizationResourceDefinition.PATH_ELEMENT)
                 .addChildResource(AccessConstraintResources.SENSITIVITY_PATH_ELEMENT)
                 .addChildResource(SensitivityClassificationTypeResourceDefinition.PATH_ELEMENT)
                 .discardChildResource(PathElement.pathElement(SensitivityResourceDefinition.PATH_ELEMENT.getKey(), SensitivityClassification.SERVER_SSL.getName()))
                 .build();
+
+        ResourceTransformationDescriptionBuilder builderCurrentTo41 = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_4_1);
+        ResourceTransformationDescriptionBuilder childResource = builderCurrentTo41.addChildResource(AccessAuthorizationResourceDefinition.PATH_ELEMENT)
+                .addChildResource(AccessConstraintResources.SENSITIVITY_PATH_ELEMENT)
+                .addChildResource(SensitivityClassificationTypeResourceDefinition.PATH_ELEMENT);
+
+        childResource.discardChildResource(PathElement.pathElement(SensitivityResourceDefinition.PATH_ELEMENT.getKey(), SensitivityClassification.AUTHENTICATION_CLIENT_REF.getName())).build();
+        childResource.discardChildResource(PathElement.pathElement(SensitivityResourceDefinition.PATH_ELEMENT.getKey(), SensitivityClassification.AUTHENTICATION_FACTORY_REF.getName())).build();
+        childResource.discardChildResource(PathElement.pathElement(SensitivityResourceDefinition.PATH_ELEMENT.getKey(), SensitivityClassification.ELYTRON_SECURITY_DOMAIN_REF.getName())).build();
+        childResource.discardChildResource(PathElement.pathElement(SensitivityResourceDefinition.PATH_ELEMENT.getKey(), SensitivityClassification.SSL_REF.getName())).build();
 
         return chainedBuilder;
     }
