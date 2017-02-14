@@ -99,7 +99,10 @@ public class AccessConstraintUtilizationTestCase extends AbstractRbacTestCase {
             "core-service=management/access=authorization/constraint=%s/type=%s/classification=%s";
     private static final ExpectedDef[] EXPECTED_DEFS = {
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.ACCESS_CONTROL.getKey(), true, true, false),
+        new ExpectedDef(SensitiveTargetAccessConstraintDefinition.AUTHENTICATION_CLIENT_REF.getKey(), false, true, false),
+        new ExpectedDef(SensitiveTargetAccessConstraintDefinition.AUTHENTICATION_FACTORY_REF.getKey(), false, true, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.CREDENTIAL.getKey(), false, true, false),
+        new ExpectedDef(SensitiveTargetAccessConstraintDefinition.ELYTRON_SECURITY_DOMAIN_REF.getKey(), false, true, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.EXTENSIONS.getKey(), true, false, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES.getKey(), true, true, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.MODULE_LOADING.getKey(), true, false, false),
@@ -111,6 +114,7 @@ public class AccessConstraintUtilizationTestCase extends AbstractRbacTestCase {
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF.getKey(), false, true, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.SECURITY_VAULT.getKey(), true, false, false),
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.SERVER_SSL.getKey(), true, false, false),
+        new ExpectedDef(SensitiveTargetAccessConstraintDefinition.SSL_REF.getKey(), false, true, false),
         /* N/A in domain
         new ExpectedDef(SensitiveTargetAccessConstraintDefinition.SERVICE_CONTAINER.getKey(), true, false, false),
         */
