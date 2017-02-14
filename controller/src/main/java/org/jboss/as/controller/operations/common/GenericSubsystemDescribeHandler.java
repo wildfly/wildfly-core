@@ -29,6 +29,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
@@ -83,12 +84,13 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
     /**
      * Creates a new describe handler.
      * <p/>
-     * If the comparator is not {@code null} the {@link ImmutableManagementResourceRegistration#getChildAddresses(org.jboss.as.controller.PathAddress)}
-     * child addresses} from the registration are placed in a sorted collection. This allows the result to order the
-     * add operations for the subsystem resources.
+     * If the comparator is <b>not</b> {@code null} as the handler describes children of a resource the order in which
+     * those children are described is determined using the comparator. This allows the result to order the
+     * add operations for the child resources.
      * <p/>
-     * If the comparator is {@code null} the order for the {@link ImmutableManagementResourceRegistration#getChildAddresses(org.jboss.as.controller.PathAddress)}
-     * child addresses} is not guaranteed.
+     * If the comparator is {@code null} the order for the child resources is not guaranteed, other than that all
+     * children of a given type will be processed in the order of child names returned by {@link Resource#getChildren(String)}
+     * invoked on the parent.
      *
      * @param comparator the comparator used to sort the child addresses
      */
@@ -99,12 +101,13 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
     /**
      * Creates a new describe handler.
      * <p/>
-     * If the comparator is <b>not</b> {@code null} the {@link ImmutableManagementResourceRegistration#getChildAddresses(org.jboss.as.controller.PathAddress)}
-     * child addresses} from the registration are placed in a sorted collection. This allows the result to order the
-     * add operations for the subsystem resources.
+     * If the comparator is <b>not</b> {@code null} as the handler describes children of a resource the order in which
+     * those children are described is determined using the comparator. This allows the result to order the
+     * add operations for the child resources.
      * <p/>
-     * If the comparator is {@code null} the order for the {@link ImmutableManagementResourceRegistration#getChildAddresses(org.jboss.as.controller.PathAddress)}
-     * child addresses} is not guaranteed.
+     * If the comparator is {@code null} the order for the child resources is not guaranteed, other than that all
+     * children of a given type will be processed in the order of child names returned by {@link Resource#getChildren(String)}
+     * invoked on the parent.
      *
      * @param comparator the comparator used to sort the child addresses
      */
@@ -138,26 +141,27 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
         if(resource == null || registration.isRemote() || registration.isRuntimeOnly() || resource.isProxy() || resource.isRuntime() || registration.isAlias()) {
             return;
         }
+
         final Set<PathElement> children;
+        final Set<PathElement> defaultChildren = new LinkedHashSet<>();
+        for (String type : resource.getChildTypes()) {
+            for (String value : resource.getChildrenNames(type)) {
+                defaultChildren.add(PathElement.pathElement(type, value));
+            }
+        }
         if (comparator == null) {
-            children = registration.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+            children = defaultChildren;
         } else {
             children = new TreeSet<PathElement>(comparator);
-            children.addAll(registration.getChildAddresses(PathAddress.EMPTY_ADDRESS));
+            children.addAll(defaultChildren);
         }
         result.add(createAddOperation(orderedChildTypesAttachment, address, resource, children));
         for(final PathElement element : children) {
-            if(element.isMultiTarget()) {
-                final String childType = element.getKey();
-                for(final Resource.ResourceEntry entry : resource.getChildren(childType)) {
-                    final ImmutableManagementResourceRegistration childRegistration = registration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(childType, entry.getName())));
-                    final ModelNode childAddress = address.clone();
-                    childAddress.add(childType, entry.getName());
-                    describe(orderedChildTypesAttachment, entry, childAddress, result, childRegistration);
-                }
+            final Resource child = resource.getChild(element);
+            final ImmutableManagementResourceRegistration childRegistration = registration.getSubModel(PathAddress.pathAddress(element));
+            if (childRegistration == null) {
+                ControllerLogger.ROOT_LOGGER.debugf("No MRR exists for %s", registration.getPathAddress().append(element));
             } else {
-                final Resource child = resource.getChild(element);
-                final ImmutableManagementResourceRegistration childRegistration = registration.getSubModel(PathAddress.pathAddress(element));
                 final ModelNode childAddress = address.clone();
                 childAddress.add(element.getKey(), element.getValue());
                 describe(orderedChildTypesAttachment, child, childAddress, result, childRegistration);
