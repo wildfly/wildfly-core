@@ -34,6 +34,7 @@ import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.test.integration.common.HttpRequest;
 import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -110,7 +111,7 @@ public class SuspendResumeTestCase {
             op.get(NAME).set(SUSPEND_STATE);
             Assert.assertEquals("SUSPENDING", serverController.getClient().executeForResult(op).asString());
 
-            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", 10, TimeUnit.SECONDS);
+            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(30), TimeUnit.SECONDS);
             Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
             Assert.assertEquals("SUSPENDED", serverController.getClient().executeForResult(op).asString());
 
