@@ -134,7 +134,7 @@ public class DomainTransformers {
 
     private static void registerChainedManagementTransformers(TransformerRegistry registry, ModelVersion currentVersion) {
         ChainedTransformationDescriptionBuilder builder = ManagementTransformers.buildTransformerChain(currentVersion);
-        registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7);
+        registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7, VERSION_1_8, VERSION_4_1);
     }
 
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry, ModelVersion currentVersion) {

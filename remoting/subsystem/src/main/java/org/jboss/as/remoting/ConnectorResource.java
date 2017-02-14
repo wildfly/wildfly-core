@@ -76,12 +76,14 @@ public class ConnectorResource extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ConnectorCommon.SASL_AUTHENTICATION_FACTORY)
             .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, CONNECTOR_CAPABILITY)
+            .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.AUTHENTICATION_FACTORY_REF)
             .build();
 
     static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(CommonAttributes.SSL_CONTEXT, ModelType.STRING, true)
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
             .setNullSignificant(true)
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY, CONNECTOR_CAPABILITY)
+            .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SSL_REF)
             .build();
 
     static final ConnectorResource INSTANCE = new ConnectorResource();
