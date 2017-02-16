@@ -25,12 +25,14 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.AclEntry;
 import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileOwnerAttributeView;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -121,7 +123,7 @@ class FilePersistenceUtils {
     }
 
     private static List<FileAttribute<Set<PosixFilePermission>>> getPosixAttributes(Path file) throws IOException {
-        if (Files.exists(file) && Files.getFileStore(file).supportsFileAttributeView(PosixFileAttributeView.class)) {
+        if (Files.exists(file) && supportsFileOwnerAttributeView(file, PosixFileAttributeView.class)) {
             PosixFileAttributeView posixView = Files.getFileAttributeView(file, PosixFileAttributeView.class);
             if (posixView != null) {
                 return Collections.singletonList(PosixFilePermissions.asFileAttribute(posixView.readAttributes().permissions()));
@@ -131,7 +133,7 @@ class FilePersistenceUtils {
     }
 
     private static List<FileAttribute<List<AclEntry>>> getAclAttributes(Path file) throws IOException {
-        if (Files.exists(file) && Files.getFileStore(file).supportsFileAttributeView(AclFileAttributeView.class)) {
+        if (Files.exists(file) && supportsFileOwnerAttributeView(file, AclFileAttributeView.class)) {
             AclFileAttributeView aclView = Files.getFileAttributeView(file, AclFileAttributeView.class);
             if (aclView != null) {
                 final List<AclEntry> entries = aclView.getAcl();
@@ -151,5 +153,15 @@ class FilePersistenceUtils {
             }
         }
         return Collections.emptyList();
+    }
+
+    private static boolean supportsFileOwnerAttributeView(Path path, Class<? extends FileOwnerAttributeView> view) {
+        FileStore store;
+        try {
+            store = Files.getFileStore(path);
+        } catch (IOException e) {
+            return false;
+        }
+        return store.supportsFileAttributeView(view);
     }
 }
