@@ -22,6 +22,8 @@
 
 package org.jboss.as.test.integration.management.cli;
 
+import org.jboss.as.test.shared.TimeoutUtil;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -203,7 +205,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
         }
     }
 
-    private int resultTimeout = 10000;
+    private int resultTimeout = TimeoutUtil.adjust(20000);
     private int resultInterval = 100;
 
     private boolean waitForPrompt(String prompt) {
