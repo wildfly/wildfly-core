@@ -41,6 +41,8 @@ public class ReadResourceNameOperationStepHandler implements OperationStepHandle
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        // Check if the resource exists before return the name
+        context.readResource(PathAddress.EMPTY_ADDRESS, false);
         final String name = context.getCurrentAddressValue();
 
         context.getResult().set(name);
