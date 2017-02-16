@@ -334,10 +334,10 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                 SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(ldapConnectionHandler, name);
 
                 return new RealmIdentityImpl(new NamePrincipal(name), ldapConnectionHandler, searchResult, SecurityRealmService.SharedStateSecurityRealm.getSharedState());
-            } catch (IllegalStateException e) {
+            } catch (IllegalStateException | NamingException e) {
                 safeClose(ldapConnectionHandler);
                 return RealmIdentity.NON_EXISTENT;
-            } catch (IOException | NamingException e) {
+            } catch (IOException e) {
                 safeClose(ldapConnectionHandler);
                 throw new RealmUnavailableException(e);
             }
