@@ -25,19 +25,11 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.AclEntry;
-import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFileAttributeView;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -187,7 +179,7 @@ public class PathUtil {
 
     /**
      * Test if the target path is an archive.
-     * @param path path to the file.
+     * @param in stream that reads the target path
      * @return true if the path points to a zip file - false otherwise.
      * @throws IOException
      */
@@ -289,39 +281,6 @@ public class PathUtil {
             }
         }
         return result;
-    }
-
-    private static List<FileAttribute<Set<PosixFilePermission>>> getPosixAttributes(Path file) throws IOException {
-        if (Files.exists(file) && Files.getFileStore(file).supportsFileAttributeView(PosixFileAttributeView.class)) {
-            PosixFileAttributeView posixView = Files.getFileAttributeView(file, PosixFileAttributeView.class);
-            if (posixView != null) {
-                return Collections.singletonList(PosixFilePermissions.asFileAttribute(posixView.readAttributes().permissions()));
-            }
-        }
-        return Collections.emptyList();
-    }
-
-    private static List<FileAttribute<List<AclEntry>>> getAclAttributes(Path file) throws IOException {
-        if (Files.exists(file) && Files.getFileStore(file).supportsFileAttributeView(AclFileAttributeView.class)) {
-            AclFileAttributeView aclView = Files.getFileAttributeView(file, AclFileAttributeView.class);
-            if (aclView != null) {
-                final List<AclEntry> entries = aclView.getAcl();
-                return Collections.singletonList(new FileAttribute<List<AclEntry>>() {
-
-                    @Override
-                    public List<AclEntry> value() {
-                        return entries;
-                    }
-
-                    @Override
-                    public String name() {
-                        return "acl:acl";
-                    }
-
-                });
-            }
-        }
-        return Collections.emptyList();
     }
 
     /**
