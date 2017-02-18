@@ -235,7 +235,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
 
         @Override
         public synchronized void start(final StartContext context) throws StartException {
-            executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+            executorService = new ThreadPoolExecutor(1, Integer.MAX_VALUE,
                     5L, TimeUnit.SECONDS,
                     new SynchronousQueue<Runnable>(),
                     threadFactory);
