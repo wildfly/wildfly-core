@@ -3495,4 +3495,16 @@ public interface ControllerLogger extends BasicLogger {
             "context '%s' at location(s) '%s'")
     OperationFailedRuntimeException capabilityAlreadyRegisteredInContext(String capability, RegistrationPoint newPoint,
                                                                          String context,Set<RegistrationPoint> oldPoints);
+
+    /**
+     * Creates an exception indicating the parser has found more than one extension element with
+     * the same 'module' attribute value.
+     *
+     * @param elementConstant  the constant 'extension'
+     * @param attrConstant     the constant 'module'
+     * @param module the name of the extension module.
+     * @return a {@link XMLStreamException} for the error.
+     */
+    @Message(id = 437, value = "Duplicate extension: an %s element with %s attribute value '%s' has already been parsed")
+    XMLStreamException duplicateExtensionElement(String elementConstant, String attrConstant, String module, @Param Location location);
 }

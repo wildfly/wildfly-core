@@ -23,12 +23,11 @@
 package org.jboss.as.controller.parsing;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
+import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
@@ -46,9 +45,9 @@ import java.util.concurrent.Future;
 
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -116,7 +115,7 @@ public class ExtensionXml {
 
             if (!found.add(moduleName)) {
                 // duplicate module name
-                throw invalidAttributeValue(reader, 0);
+                throw ControllerLogger.ROOT_LOGGER.duplicateExtensionElement(Element.EXTENSION.getLocalName(), Attribute.MODULE.getLocalName(), moduleName, reader.getLocation());
             }
 
             if (loadFutures != null) {
