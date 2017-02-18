@@ -54,6 +54,9 @@ public class ParametersValidator implements ParameterValidator {
         }
     }
 
+    /** @deprecated use {@link #validate(ModelNode)} */
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public void validateResolved(ModelNode operation) throws OperationFailedException {
         for (Map.Entry<String, ParameterValidator> entry : validators.entrySet()) {
             String paramName = entry.getKey();

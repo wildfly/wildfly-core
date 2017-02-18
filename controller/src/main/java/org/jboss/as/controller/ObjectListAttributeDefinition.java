@@ -143,7 +143,7 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
             result.add(valueType.resolveValue(resolver, element));
         }
         // Validate the entire list
-        getValidator().validateResolvedParameter(getName(), result);
+        getValidator().validateParameter(getName(), result);
         return result;
     }
 
