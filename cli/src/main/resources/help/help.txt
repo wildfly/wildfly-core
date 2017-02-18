@@ -84,9 +84,8 @@ Usage:
                    to demonstrate that it is being executed locally to the server 
                    being managed through an exchange of tokens using the filesystem.
 
- --timeout       - specifies how many milliseconds to wait for a given command
-                   to return. The value provided must be a positive integer.
-                   Defaults to 5000 milliseconds when not provided.
+ --timeout       - specifies the maximum amount of milliseconds the CLI will wait for a 
+                   connection to succeed. Defaults to 5000 milliseconds when not provided.
 
  --bind          - specifies to which address the CLI is going to be bound.
                    If none is provided then the CLI will choose one automatically as needed.
