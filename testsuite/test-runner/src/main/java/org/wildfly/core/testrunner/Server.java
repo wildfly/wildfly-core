@@ -55,6 +55,10 @@ public class Server {
     private final String managementAddress = System.getProperty("management.address", "localhost");
     private final String managementProtocol = System.getProperty("management.protocol", "remote+http");
 
+    // timeouts
+    private final int startupTimeout = Integer.getInteger("server.startup.timeout", 30);
+    private final int stopTimeout = Integer.getInteger("server.stop.timeout", 10);
+
     private final String serverDebug = "wildfly.debug";
     private final int serverDebugPort = Integer.getInteger("wildfly.debug.port", 8787);
     private StartMode startMode = StartMode.NORMAL;
@@ -142,7 +146,6 @@ public class Server {
 
             createClient();
 
-            long startupTimeout = 30;
             long timeout = startupTimeout * 1000;
             boolean serverAvailable = false;
             long sleep = 1000;
@@ -177,7 +180,7 @@ public class Server {
         try {
             if (process != null) {
                 Thread shutdown = new Thread(() -> {
-                    long timeout = System.currentTimeMillis() + 10000;
+                    long timeout = System.currentTimeMillis() + (stopTimeout * 1000);
                     while (process != null && System.currentTimeMillis() < timeout) {
                         try {
                             process.exitValue();

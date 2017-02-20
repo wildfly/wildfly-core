@@ -79,6 +79,7 @@ public class NillableOrExpressionParameterValidator implements ParameterValidato
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
         switch (value.getType()) {
