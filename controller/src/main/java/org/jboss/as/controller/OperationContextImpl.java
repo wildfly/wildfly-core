@@ -143,7 +143,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     private static final Set<Action.ActionEffect> ALL_READ_WRITE = EnumSet.of(Action.ActionEffect.READ_CONFIG, Action.ActionEffect.READ_RUNTIME, Action.ActionEffect.WRITE_CONFIG, Action.ActionEffect.WRITE_RUNTIME);
 
     private final ModelControllerImpl modelController;
-    private final EnumSet<ContextFlag> contextFlags;
+    private final OperationHeaders operationHeaders;
     private final OperationMessageHandler messageHandler;
     private final Map<ServiceName, ServiceController<?>> realRemovingControllers = new HashMap<ServiceName, ServiceController<?>>();
     // protected by "realRemovingControllers"
@@ -157,7 +157,6 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final ContextAttachments contextAttachments = new ContextAttachments();    private final Map<OperationId, AuthorizationResponseImpl> authorizations =
             new ConcurrentHashMap<OperationId, AuthorizationResponseImpl>();
     private final Set<ContextServiceTarget> serviceTargets = new HashSet<>();
-    private final ModelNode blockingTimeoutConfig;
     private volatile BlockingTimeout blockingTimeout;
     private final long startTime = System.nanoTime();
     private volatile long exclusiveStartTime = -1;
@@ -206,12 +205,12 @@ final class OperationContextImpl extends AbstractOperationContext {
     OperationContextImpl(final Integer operationId,
                          final String operationName, final ModelNode operationAddress,
                          final ModelControllerImpl modelController, final ProcessType processType,
-                         final RunningMode runningMode, final EnumSet<ContextFlag> contextFlags,
+                         final RunningMode runningMode,
+                         final OperationHeaders operationHeaders,
                          final OperationMessageHandler messageHandler, final OperationAttachments attachments,
                          final ModelControllerImpl.ManagementModelImpl managementModel, final ModelController.OperationTransactionControl transactionControl,
                          final ControlledProcessState processState, final AuditLogger auditLogger, final boolean booting,
                          final HostServerGroupTracker hostServerGroupTracker,
-                         final ModelNode blockingTimeoutConfig,
                          final AccessAuditContext accessAuditContext,
                          final NotificationSupport notificationSupport,
                          final boolean skipModelValidation,
@@ -230,9 +229,8 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.messageHandler = messageHandler;
         this.attachments = attachments;
         this.affectsModel = booting ? new ConcurrentHashMap<PathAddress, Object>(16 * 16) : new HashMap<PathAddress, Object>(1);
-        this.contextFlags = contextFlags;
+        this.operationHeaders = operationHeaders;
         this.hostServerGroupTracker = hostServerGroupTracker;
-        this.blockingTimeoutConfig = blockingTimeoutConfig != null && blockingTimeoutConfig.isDefined() ? blockingTimeoutConfig : null;
         this.activeOperationResource = new ActiveOperationResource();
         this.accessAuditContext = accessAuditContext;
         this.partialModel = partialModel;
@@ -540,12 +538,12 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public boolean isRollbackOnRuntimeFailure() {
-        return contextFlags.contains(ContextFlag.ROLLBACK_ON_FAIL);
+        return operationHeaders.getContextFlags().contains(ContextFlag.ROLLBACK_ON_FAIL);
     }
 
     @Override
     public boolean isResourceServiceRestartAllowed() {
-        return contextFlags.contains(ContextFlag.ALLOW_RESOURCE_SERVICE_RESTART);
+        return operationHeaders.getContextFlags().contains(ContextFlag.ALLOW_RESOURCE_SERVICE_RESTART);
     }
 
     public ManagementResourceRegistration getResourceRegistrationForUpdate() {
@@ -1894,7 +1892,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (blockingTimeout == null) {
             synchronized (this) {
                 if (blockingTimeout == null) {
-                    blockingTimeout = new BlockingTimeoutImpl(blockingTimeoutConfig);
+                    blockingTimeout = new BlockingTimeoutImpl(operationHeaders.getBlockingTimeout());
                 }
             }
         }

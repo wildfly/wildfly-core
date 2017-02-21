@@ -3132,7 +3132,7 @@ public interface ControllerLogger extends BasicLogger {
     OperationFailedException badUriSyntax(String uri);
 
     @Message(id = 342, value = "Illegal value %d for operation header %s; value must be greater than zero")
-    IllegalStateException invalidBlockingTimeout(long timeout, String headerName);
+    OperationFailedException invalidBlockingTimeout(long timeout, String headerName);
 
     @Message(id = 343, value = "The service container has been destabilized by a previous operation and further runtime updates cannot be processed. Restart is required.")
     String timeoutAwaitingInitialStability();

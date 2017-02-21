@@ -25,6 +25,8 @@
  */
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
@@ -60,12 +62,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationFilter;
 import org.jboss.as.controller.notification.NotificationHandler;
@@ -653,6 +657,75 @@ public class ModelControllerImplUnitTestCase {
         result = controller.execute(getOperation("read-attribute", CHILD_ONE, "attribute1", 1), null, null, null);
         assertEquals(FAILED, result.get(OUTCOME).asString());
         notificationHandler.validate(0);
+    }
+
+    /**
+     * WFCORE-2314 -- test handling of invalid values for common operation headers.
+     *
+     * Note, this test asserts particular failure messages. Those failure messags are not a strict
+     * requirement. The test asserts these to ensure that the failure is what we expect. If we
+     * deliberately change something such that the failures message are different on purpose, it's
+     * ok to change this test to match.
+     */
+    @Test
+    public void testCommonOperationHeaderValidation() {
+        // Extract the desired header
+        String msg = ControllerLogger.ROOT_LOGGER.incorrectType("a", EnumSet.of(ModelType.BOOLEAN), ModelType.STRING).getFailureDescription().asString();
+        String msgCode = msg.substring(0, msg.indexOf(':'));
+
+        ModelNode op = getOperation("good", "attr1", 5);
+
+        op.get(OPERATION_HEADERS, ROLLBACK_ON_RUNTIME_FAILURE).set("true)");
+        ModelNode result = controller.execute(op, null, null, null);
+        assertEquals(result.toString(), FAILED, result.get(OUTCOME).asString());
+        assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().startsWith(msgCode));
+        assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().contains(ROLLBACK_ON_RUNTIME_FAILURE));
+        assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().contains("true)"));
+
+        op.get(OPERATION_HEADERS, ROLLBACK_ON_RUNTIME_FAILURE).set("true");
+        result = controller.execute(op, null, null, null);
+        assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
+
+        op.get(OPERATION_HEADERS, ROLLBACK_ON_RUNTIME_FAILURE).set(true);
+        result = controller.execute(op, null, null, null);
+        assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
+
+        op.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set("true)");
+        result = controller.execute(op, null, null, null);
+        assertEquals(result.toString(), FAILED, result.get(OUTCOME).asString());
+        assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().startsWith(msgCode));
+        assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().contains(ALLOW_RESOURCE_SERVICE_RESTART));
+        assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().contains("true)"));
+
+        op.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set("true");
+        result = controller.execute(op, null, null, null);
+        assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
+
+        op.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set(true);
+        result = controller.execute(op, null, null, null);
+        assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
+
+        op.get(OPERATION_HEADERS, BLOCKING_TIMEOUT).set("true)");
+        result = controller.execute(op, null, null, null);
+        assertEquals(result.toString(), FAILED, result.get(OUTCOME).asString());
+        assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().startsWith(msgCode));
+        assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().contains(BLOCKING_TIMEOUT));
+        assertTrue(result.toString(), result.get(FAILURE_DESCRIPTION).asString().contains("true)"));
+
+        op.get(OPERATION_HEADERS, BLOCKING_TIMEOUT).set("1");
+        result = controller.execute(op, null, null, null);
+        assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
+
+        op.get(OPERATION_HEADERS, BLOCKING_TIMEOUT).set(1);
+        result = controller.execute(op, null, null, null);
+        assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
+
+        msg = ControllerLogger.MGMT_OP_LOGGER.invalidBlockingTimeout(-1L, BLOCKING_TIMEOUT).getMessage();
+
+        op.get(OPERATION_HEADERS, BLOCKING_TIMEOUT).set(-1);
+        result = controller.execute(op, null, null, null);
+        assertEquals(result.toString(), FAILED, result.get(OUTCOME).asString());
+        assertEquals(result.toString(), msg, result.get(FAILURE_DESCRIPTION).asString());
     }
 
     public static ModelNode getOperation(String opName, String attr, int val) {

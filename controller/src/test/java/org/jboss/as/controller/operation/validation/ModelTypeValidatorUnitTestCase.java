@@ -130,7 +130,7 @@ public class ModelTypeValidatorUnitTestCase {
         assertOk(testee, new ModelNode().set("TruE"));
         assertOk(testee, new ModelNode().set("false"));
         assertOk(testee, new ModelNode().set("fAlsE"));
-        assertInvalid(testee, new ModelNode().set("fals"));
+        assertInvalid(testee, new ModelNode().set("fals"), true);
         assertInvalid(testee, new ModelNode().set(0));
 
         testee = new ModelTypeValidator(ModelType.BOOLEAN, false, false, true);

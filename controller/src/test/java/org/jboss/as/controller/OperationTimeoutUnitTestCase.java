@@ -137,7 +137,7 @@ public class OperationTimeoutUnitTestCase {
         ModelNode op = Util.createEmptyOperation("block", null);
         op.get("start").set(true);
         if (header != null) {
-            op.get(OPERATION_HEADERS, BLOCKING_TIMEOUT).set(1);
+            op.get(OPERATION_HEADERS, BLOCKING_TIMEOUT).set(header);
             System.setProperty(BlockingTimeout.SYSTEM_PROPERTY, "300");
         }
 
