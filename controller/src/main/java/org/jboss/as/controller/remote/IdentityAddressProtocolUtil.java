@@ -154,7 +154,7 @@ class IdentityAddressProtocolUtil {
         final int itemCount = input.readInt();
 
         Principal principal = null;
-        Set<String> roles = new HashSet<>(itemCount - 2);
+        Set<String> roles = new HashSet<>(Math.max(itemCount - 2, 0));
         InetAddress sourceAddress = null;
         for (int i = 0; i < itemCount; i++) {
             byte type = input.readByte();
