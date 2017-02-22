@@ -36,10 +36,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,7 +67,6 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.deployment.DeploymentScannerSetupTask;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.shared.TimeoutUtil;
@@ -318,15 +315,7 @@ public class DeploymentTestCase {
                 @Override
                 public void initialDeploy() throws IOException {
                     // Copy file to deploy directory
-                    try (final InputStream in = new BufferedInputStream(new FileInputStream(file))) {
-                        try (final OutputStream out = new BufferedOutputStream(new FileOutputStream(target))){
-                            int i = in.read();
-                            while (i != -1) {
-                                out.write(i);
-                                i = in.read();
-                            }
-                        }
-                    }
+                    Files.copy(file.toPath(), target.toPath());
                     // Create the .dodeploy file
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
                     final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
@@ -334,7 +323,8 @@ public class DeploymentTestCase {
                         out.write("test-deployment.jar".getBytes());
                     }
                     Assert.assertTrue(dodeploy.exists());
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
                         }
@@ -352,14 +342,14 @@ public class DeploymentTestCase {
                 @Override
                 public void fullReplace() throws IOException {
                     // Copy same deployment with changed property to deploy directory
-                    final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
                     File target = new File(deployDir, "test-deployment.jar");
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
                     final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
                     archive2.as(ZipExporter.class).exportTo(target, true);
                     dodeploy.createNewFile();
                     Assert.assertTrue(dodeploy.exists());
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
                         }
@@ -390,7 +380,8 @@ public class DeploymentTestCase {
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
                     final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
                     final File undeployed = new File(deployDir, "test-deployment.jar.undeployed");
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
                         }
@@ -408,7 +399,8 @@ public class DeploymentTestCase {
 
                     // Delete file from deploy directory
                     deployed.delete();
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (undeployed.exists()) {
                             break;
                         }
@@ -448,31 +440,18 @@ public class DeploymentTestCase {
         try {
             final File target = new File(deployDir, "test-deployment.jar");
             final File deployed = new File(deployDir, "test-deployment.jar.deployed");
+            final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
             Assert.assertFalse(target.exists());
 
             testDeployments(true, new DeploymentExecutor() {
                 @Override
                 public void initialDeploy() throws IOException {
                     // Copy file to deploy directory
-                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
-                    final InputStream in = new BufferedInputStream(new FileInputStream(file));
-                    try {
-                        final OutputStream out = new BufferedOutputStream(new FileOutputStream(target));
-                        try {
-                            int i = in.read();
-                            while (i != -1) {
-                                out.write(i);
-                                i = in.read();
-                            }
-                        } finally {
-                            StreamUtils.safeClose(out);
-                        }
-                    } finally {
-                        StreamUtils.safeClose(in);
-                    }
-
+                    Files.copy(file.toPath(), target.toPath());
                     Assert.assertTrue(file.exists());
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (!isdeploying.exists() && deployed.exists()) {
                             break;
                         }
@@ -492,11 +471,14 @@ public class DeploymentTestCase {
                     final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
                     File target = new File(deployDir, "test-deployment.jar");
                     archive2.as(ZipExporter.class).exportTo(target, true);
-                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
-
+                    long deployedlastModified = deployed.lastModified();
+                    Assert.assertTrue(deployed.exists());
                     // Wait until filesystem action gets picked up by scanner
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
-                        if (isdeploying.exists()) {
+                    boolean wasUndeployed = false;
+                    long timeout = System.currentTimeMillis() + TIMEOUT + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
+                        if ((isdeploying.exists() && !deployed.exists()) || deployed.lastModified() > deployedlastModified) {
+                            wasUndeployed = true;
                             break;
                         }
                         try {
@@ -506,9 +488,11 @@ public class DeploymentTestCase {
                             throw new RuntimeException(e);
                         }
                     }
+                    Assert.assertTrue("fullReplace step did not complete in a reasonably timely fashion", wasUndeployed);
 
                     // Wait for redeploy to finish
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (!isdeploying.exists() && deployed.exists()) {
                             break;
                         }
@@ -537,7 +521,8 @@ public class DeploymentTestCase {
                 public void undeploy() {
                     final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
                     final File undeployed = new File(deployDir, "test-deployment.jar.undeployed");
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (!isdeploying.exists() && deployed.exists()) {
                             break;
                         }
@@ -550,12 +535,13 @@ public class DeploymentTestCase {
                         }
                     }
                     if (!deployed.exists()) {
-                        Assert.fail("fullReplace step did not complete in a reasonably timely fashion");
+                        Assert.fail("current step did not complete in a reasonably timely fashion");
                     }
 
                     // Delete file from deploy directory
                     target.delete();
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (undeployed.exists()) {
                             break;
                         }
@@ -598,7 +584,8 @@ public class DeploymentTestCase {
         Assert.assertTrue(Files.exists(target));
         addDeploymentScanner(deployDir.toFile(), client, scannerName, true, -1);
         try {
-            for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+            long timeout = System.currentTimeMillis() + TIMEOUT;
+            while(System.currentTimeMillis() <= timeout) {
                 if (Files.exists(deployed)) {
                     break;
                 }
@@ -644,7 +631,8 @@ public class DeploymentTestCase {
                     final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
                     Files.write(dodeploy.toPath(), "test-deployment.jar".getBytes(StandardCharsets.UTF_8));
                     Assert.assertTrue(dodeploy.exists());
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
                         }
@@ -673,7 +661,8 @@ public class DeploymentTestCase {
                     }
                     dodeploy.createNewFile();
                     Assert.assertTrue(dodeploy.exists());
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
                         }
@@ -749,7 +738,8 @@ public class DeploymentTestCase {
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
                     final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
                     final File undeployed = new File(deployDir, "test-deployment.jar.undeployed");
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
                         }
@@ -767,7 +757,8 @@ public class DeploymentTestCase {
 
                     // Delete file from deploy directory
                     deployed.delete();
-                    for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+                    timeout = System.currentTimeMillis() + TIMEOUT;
+                    while(System.currentTimeMillis() <= timeout) {
                         if (undeployed.exists()) {
                             break;
                         }
@@ -938,34 +929,6 @@ public class DeploymentTestCase {
             }
         }
         toClean.delete();
-    }
-
-    private void waitUntilFileExists(File expected) {
-        for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
-            if (expected.exists()) {
-                break;
-            }
-            try {
-                Thread.sleep(BACKOFF);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private void waitUntilFileDeleted(File unwanted) {
-        for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
-            if (!unwanted.exists()) {
-                break;
-            }
-            try {
-                Thread.sleep(BACKOFF);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     private void readContentManaged(String path, String expectedValue, ModelControllerClient client) throws IOException {
