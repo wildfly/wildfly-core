@@ -49,6 +49,7 @@ import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
+import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -73,7 +74,6 @@ public class DeploymentOverlayTestCase {
     private static final PathAddress OVERLAY_ADDR = PathAddress.pathAddress(ModelDescriptionConstants.DEPLOYMENT_OVERLAY, "overlay");
     private static final ModelNode OVERLAY_CONTENT_ADDR = OVERLAY_ADDR.append(CONTENT, ServiceActivatorDeployment.PROPERTIES_RESOURCE).toModelNode();
     private static final ModelNode OVERLAY_DEPLOYMENT_ADDR = OVERLAY_ADDR.append(ModelDescriptionConstants.DEPLOYMENT, "test-deployment.jar").toModelNode();
-    private static final ModelNode DEPLOYMENT_ADDR = PathAddress.pathAddress(ModelDescriptionConstants.DEPLOYMENT, "test-deployment.jar").toModelNode();
 
     @Inject
     private ManagementClient managementClient;
@@ -108,13 +108,14 @@ public class DeploymentOverlayTestCase {
         testDeployments(new OverlayDeploymentExecutor() {
 
             @Override
-            public void initialDeploy() throws IOException {
+            public void initialDeploy() throws IOException, MgmtOperationException {
                 try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()) {
                     Future<?> future = manager.execute(manager.newDeploymentPlan()
                             .add("test-deployment.jar", is)
                             .deploy("test-deployment.jar")
                             .build());
                     awaitDeploymentExecution(future);
+                    ServiceActivatorDeploymentUtil.validateProperties(client, properties);
                 }
             }
 
@@ -154,6 +155,14 @@ public class DeploymentOverlayTestCase {
             }
 
             @Override
+            public void redeployLinks() throws IOException, MgmtOperationException {
+                ModelNode response = client.execute(Operations.createOperation("redeploy-links", OVERLAY_ADDR.toModelNode()),
+                        OperationMessageHandler.DISCARD);
+                Assert.assertTrue(response.toString(), Operations.isSuccessfulOutcome(response));
+                ServiceActivatorDeploymentUtil.validateProperties(client, properties2);
+            }
+
+            @Override
             public void readOverlayContent(String expectedValue) throws IOException {
                 Future<OperationResponse> future = client.executeOperationAsync(
                         Operation.Factory.create(
@@ -181,14 +190,17 @@ public class DeploymentOverlayTestCase {
             }
 
             @Override
-            public void removeOverlay(boolean check) throws IOException {
+            public void removeOverlay(boolean check) throws IOException, MgmtOperationException {
                 ModelNode response = client.execute(Operations.createRemoveOperation(OVERLAY_CONTENT_ADDR));
                 if(check) {
                     Assert.assertTrue(response.toString(), Operations.isSuccessfulOutcome(response));
                 }
-                response = client.execute(Operations.createRemoveOperation(OVERLAY_DEPLOYMENT_ADDR));
+                ModelNode removeOverlayLink = Operations.createRemoveOperation(OVERLAY_DEPLOYMENT_ADDR);
+                removeOverlayLink.get("redeploy-affected").set(check);
+                response = client.execute(removeOverlayLink);
                 if(check) {
                     Assert.assertTrue(response.toString(), Operations.isSuccessfulOutcome(response));
+                    ServiceActivatorDeploymentUtil.validateProperties(client, properties);
                 }
                 response = client.execute(Operations.createRemoveOperation(OVERLAY_ADDR.toModelNode()));
                 if(check) {
@@ -209,7 +221,7 @@ public class DeploymentOverlayTestCase {
         try {
             // Add overlay
             deploymentExecutor.addOverlay();
-            deploymentExecutor.redeploy();
+            deploymentExecutor.redeployLinks();
             deploymentExecutor.readOverlayContent("is overwritten");
             ServiceActivatorDeploymentUtil.validateProperties(managementClient.getControllerClient(), properties2);
 
@@ -268,17 +280,19 @@ public class DeploymentOverlayTestCase {
 
     private interface OverlayDeploymentExecutor {
 
-        void initialDeploy() throws IOException;
+        void initialDeploy() throws Exception;
 
-        void addOverlay() throws IOException;
+        void addOverlay() throws Exception;
 
-        void readOverlayContent(String expectedValue) throws IOException;
+        void readOverlayContent(String expectedValue) throws Exception;
 
-        void removeOverlay(boolean check) throws IOException;
+        void removeOverlay(boolean check) throws Exception;
 
         void undeploy();
 
         void redeploy();
+
+        void redeployLinks() throws Exception;
     }
 
 }

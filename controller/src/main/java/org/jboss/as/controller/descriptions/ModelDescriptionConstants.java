@@ -130,8 +130,10 @@ public class ModelDescriptionConstants {
     public static final String DEPTH = "depth";
     public static final String DEPLOY = "deploy";
     public static final String DEPLOYMENT = "deployment";
+    public static final String DEPLOYMENTS = "deployments";
     public static final String DEPLOYMENT_DEPLOYED_NOTIFICATION = "deployment-deployed";
     public static final String DEPLOYMENT_OVERLAY = "deployment-overlay";
+    public static final String DEPLOYMENT_OVERLAY_LINK_REMOVAL = "deployment-overlay-link-removal";
     public static final String DEPLOYMENT_UNDEPLOYED_NOTIFICATION = "deployment-undeployed";
     public static final String DEPRECATED = "deprecated";
     public static final String DESCRIBE = "describe";
@@ -384,6 +386,8 @@ public class ModelDescriptionConstants {
     public static final String RECURSIVE_DEPTH = "recursive-depth";
     public static final String RECYCLE = "recycle";
     public static final String REDEPLOY = "redeploy";
+    public static final String REDEPLOY_AFFECTED = "redeploy-affected";
+    public static final String REDEPLOY_LINKS = "redeploy-links";
     public static final String RELATIVE_ADDRESS = "relative-address";
     public static final String RELATIVE_TO = "relative-to";
     public static final String RELEASE_CODENAME = "release-codename";
