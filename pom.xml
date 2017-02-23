@@ -136,7 +136,7 @@
         <version.org.wildfly.client.config>1.0.0.Beta1</version.org.wildfly.client.config>
         <version.org.wildfly.common>1.2.0.Beta5</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.0.0.Beta7</version.org.wildfly.discovery>
-        <version.org.wildfly.openssl>1.0.0.Beta4</version.org.wildfly.openssl>
+        <version.org.wildfly.openssl>1.0.0.Beta6</version.org.wildfly.openssl>
         <version.org.wildfly.legacy.test>2.0.2.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.security.elytron>1.1.0.Beta26</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron.tool>1.0.0.Alpha1</version.org.wildfly.security.elytron.tool>
