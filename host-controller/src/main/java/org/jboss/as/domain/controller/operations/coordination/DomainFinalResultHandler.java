@@ -120,7 +120,7 @@ class DomainFinalResultHandler implements OperationStepHandler {
                     if(localDomainFormatted.hasDefined(RESPONSE_HEADERS)){
                         final ModelNode responseHeaders = localDomainFormatted.get(RESPONSE_HEADERS);
                         if(responseHeaders.hasDefined(WARNINGS)){
-                            contextResult.get(RESPONSE_HEADERS).get(WARNINGS).set(responseHeaders.get(WARNINGS));
+                            context.getResponseHeaders().get(WARNINGS).set(responseHeaders.get(WARNINGS));
                         }
                     }
                     // If we have server results we know all was ok on the slaves
