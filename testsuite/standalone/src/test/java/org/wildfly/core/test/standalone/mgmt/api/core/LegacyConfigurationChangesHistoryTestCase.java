@@ -185,7 +185,7 @@ public class LegacyConfigurationChangesHistoryTestCase extends AbstractConfigura
             add.get("max-history").set(MAX_HISTORY_SIZE);
             ModelNode response = client.execute(add);
             Assert.assertFalse(response.toString(), Operations.isSuccessfulOutcome(response));
-            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0158"));
+            assertThat(Operations.getFailureDescription(response).asString(), containsString("WFLYCTL0436"));
         } finally {
             client.execute(Util.createRemoveOperation(PathAddress.pathAddress(PathAddress.pathAddress()
                     .append(PathElement.pathElement(SUBSYSTEM, "core-management"))

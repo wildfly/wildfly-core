@@ -436,9 +436,19 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         ModelNode addOp4 = createOperation(ADD, TEST_ADDRESS4);
         addOp4.get("test").set("some test value");
         addOp4.get("other").set("other value");
+        executeCheckForFailure(addOp4); // Should rollback due to conflict with TEST_RESOURCE1
+        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size());
+
+        // Remove the conflict
+        executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS1));
+        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+
+        addOp4 = createOperation(ADD, TEST_ADDRESS4);
+        addOp4.get("test").set("some test value");
+        addOp4.get("other").set("other value");
         addOp4.get("fail").set("true");
-        executeCheckForFailure(addOp4); //Rollbacking
-        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size()); //Should remove the new RegistrationPoints
+        executeCheckForFailure(addOp4); // Op designed to roll back
+        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size()); //Should remove the new RegistrationPoints
 
         addOp4 = createOperation(ADD, TEST_ADDRESS4);
         addOp4.get("test").set("some test value");
@@ -447,8 +457,6 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(2, capabilityRegistry.getCapabilities().size());
 
         executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS4));
-        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size());
-        executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS1));
         Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
     }
 
