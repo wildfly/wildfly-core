@@ -47,6 +47,7 @@ import org.jboss.as.repository.PathUtil;
 import org.jboss.as.test.manualmode.logging.AbstractLoggingTestCase;
 import org.jboss.as.test.module.util.TestModule;
 import org.jboss.dmr.ModelNode;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -144,13 +145,15 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
             }
         }
         addListener.get("properties").set(props);
-        if (timeout != null)
+        if (timeout != null) {
             addListener.get("timeout").set(timeout);
+        }
 
         controller.getClient().executeForResult(addListener);
     }
 
     @Before
+    @After
     public void clearNotificationFiles() throws Exception {
         Files.delete(runtimeConfigurationStateChangeFile);
         Files.createFile(runtimeConfigurationStateChangeFile);
