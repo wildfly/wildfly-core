@@ -238,7 +238,12 @@ public class ModelTypeValidator implements ParameterValidator {
                 switch (value.getType()) {
                     case STRING: {
                         String s = value.asString();
-                        return "false".equalsIgnoreCase(s) || "true".equalsIgnoreCase(s);
+                        if ("false".equalsIgnoreCase(s) || "true".equalsIgnoreCase(s)) {
+                            return true;
+                        }
+                        // throw a RuntimeException to trigger the catch block in the caller
+                        // that results in the added typeConversionError message
+                        throw new RuntimeException();
                     }
                     case BOOLEAN:
                         //case INT:

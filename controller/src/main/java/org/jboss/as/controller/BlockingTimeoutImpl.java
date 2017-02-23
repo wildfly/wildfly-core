@@ -16,14 +16,12 @@ limitations under the License.
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.dmr.ModelNode;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -59,13 +57,8 @@ class BlockingTimeoutImpl implements BlockingTimeout {
     private Set<PathAddress> domainTimeouts;
 
 
-    BlockingTimeoutImpl(final ModelNode headerValue) {
-        Integer opHeaderValue;
-        if (headerValue != null && headerValue.isDefined()) {
-            opHeaderValue = headerValue.asInt();
-            if (opHeaderValue < 1) {
-                throw ControllerLogger.MGMT_OP_LOGGER.invalidBlockingTimeout(opHeaderValue.longValue(), BLOCKING_TIMEOUT);
-            }
+    BlockingTimeoutImpl(final Integer opHeaderValue) {
+        if (opHeaderValue != null) {
             blockingTimeout = opHeaderValue * 1000;
         } else {
             blockingTimeout = resolveDefaultTimeout();

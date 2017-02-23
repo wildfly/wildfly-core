@@ -24,9 +24,7 @@ package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
@@ -42,7 +40,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROCESS_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
@@ -53,7 +50,6 @@ import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -340,19 +336,18 @@ class ModelControllerImpl implements ModelController {
             sm.checkPermission(ModelController.ACCESS_PERMISSION);
         }
 
-        final ModelNode headers = operation.has(OPERATION_HEADERS) ? operation.get(OPERATION_HEADERS) : null;
-        final boolean rollbackOnFailure = headers == null || !headers.hasDefined(ROLLBACK_ON_RUNTIME_FAILURE) || headers.get(ROLLBACK_ON_RUNTIME_FAILURE).asBoolean();
-        final EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnFailure ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL) : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
-        final boolean restartResourceServices = headers != null && headers.hasDefined(ALLOW_RESOURCE_SERVICE_RESTART) && headers.get(ALLOW_RESOURCE_SERVICE_RESTART).asBoolean();
-        if (restartResourceServices) {
-            contextFlags.add(AbstractOperationContext.ContextFlag.ALLOW_RESOURCE_SERVICE_RESTART);
-        }
-        final ModelNode blockingTimeoutConfig = headers != null && headers.hasDefined(BLOCKING_TIMEOUT) ? headers.get(BLOCKING_TIMEOUT) : null;
-
         final ModelNode responseNode = validateOperation(operation);
         if(responseNode.hasDefined(FAILURE_DESCRIPTION)) {
             return OperationResponse.Factory.createSimple(responseNode);
         }
+
+        OperationHeaders headers;
+        try {
+            headers = OperationHeaders.fromOperation(operation);
+        } catch (OperationFailedException ofe) {
+            return OperationHeaders.fromFailure(ofe);
+        }
+
         // Report the correct operation response, otherwise the preparedResult would only contain
         // the result of the last active step in a composite operation
         final OperationTransactionControl originalResultTxControl = control == null ? null : new OperationTransactionControl() {
@@ -396,8 +391,8 @@ class ModelControllerImpl implements ModelController {
             final Integer operationID = random.nextInt();
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
-                    contextFlags, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
-                    bootingFlag.get(), hostServerGroupTracker, blockingTimeoutConfig, accessContext, notificationSupport,
+                    headers, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
+                    bootingFlag.get(), hostServerGroupTracker, accessContext, notificationSupport,
                     false, extraValidationStepHandler, partialModel, securityIdentitySupplier);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
@@ -471,15 +466,13 @@ class ModelControllerImpl implements ModelController {
 
         final Integer operationID = random.nextInt();
 
-        EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnRuntimeFailure
-                ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL)
-                : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
+        OperationHeaders headers = OperationHeaders.forBoot(rollbackOnRuntimeFailure);
 
         //For the initial operations the model will not be complete, so defer the validation
         final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
-                contextFlags, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
-                hostServerGroupTracker, null, null, notificationSupport, true, extraValidationStepHandler, true, securityIdentitySupplier);
+                headers, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
+                hostServerGroupTracker, null, notificationSupport, true, extraValidationStepHandler, true, securityIdentitySupplier);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
         // This gets extensions registered before proceeding to other ops that count on these registrations
@@ -496,8 +489,8 @@ class ModelControllerImpl implements ModelController {
             // Success. Now any extension handlers are registered. Continue with remaining ops
             final AbstractOperationContext postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
-                    contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
-                            bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, true,
+                    headers, handler, null, managementModel.get(), control, processState, auditLogger,
+                            bootingFlag.get(), hostServerGroupTracker, null, notificationSupport, true,
                             extraValidationStepHandler, partialModel, securityIdentitySupplier);
 
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {
@@ -526,8 +519,8 @@ class ModelControllerImpl implements ModelController {
 
                 final AbstractOperationContext validateContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                         EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
-                        contextFlags, handler, null, managementModel.get(), control, processState, auditLogger,
-                                bootingFlag.get(), hostServerGroupTracker, null, null, notificationSupport, false,
+                        headers, handler, null, managementModel.get(), control, processState, auditLogger,
+                                bootingFlag.get(), hostServerGroupTracker, null, notificationSupport, false,
                                 extraValidationStepHandler, partialModel, securityIdentitySupplier);
                 validateContext.addModifiedResourcesForModelValidation(validateAddresses);
                 resultAction = validateContext.executeOperation();
