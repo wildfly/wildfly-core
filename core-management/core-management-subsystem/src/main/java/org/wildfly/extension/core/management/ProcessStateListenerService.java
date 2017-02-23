@@ -82,6 +82,7 @@ public class ProcessStateListenerService implements Service<Void> {
     private volatile Process.RunningState runningState = null;
 
     private ProcessStateListenerService(ProcessType processType, RunningMode runningMode, String name, ProcessStateListener listener, Map<String, String> properties, int timeout) {
+        CoreManagementLogger.ROOT_LOGGER.debugf("Initalizing ProcessStateListenerService with a running mode of %s", runningMode);
         this.listener = listener;
         this.name = name;
         this.timeout = timeout;
@@ -147,10 +148,13 @@ public class ProcessStateListenerService implements Service<Void> {
             Thread.currentThread().interrupt();
             CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(ex, name);
         } catch (TimeoutException ex) {
-            controlledProcessStateTransition.cancel(true);
             CoreManagementLogger.ROOT_LOGGER.processStateTimeoutError(ex, name);
         } catch (ExecutionException | RuntimeException t) {
             CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(t, name);
+        } finally {
+            if (!controlledProcessStateTransition.isDone()) {
+                controlledProcessStateTransition.cancel(true);
+            }
         }
         switch(newState) {
             case RUNNING:
@@ -205,10 +209,13 @@ public class ProcessStateListenerService implements Service<Void> {
             Thread.currentThread().interrupt();
             CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(ex, name);
         } catch (TimeoutException ex) {
-            suspendStateTransition.cancel(true);
             CoreManagementLogger.ROOT_LOGGER.processStateTimeoutError(ex, name);
         } catch (ExecutionException | RuntimeException t) {
             CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(t, name);
+        } finally {
+            if (!suspendStateTransition.isDone()) {
+                suspendStateTransition.cancel(true);
+            }
         }
     }
 
@@ -230,8 +237,11 @@ public class ProcessStateListenerService implements Service<Void> {
         Runnable task = () -> {
             try {
                 ProcessStateListenerService.this.listener.init(parameters);
+                controlledProcessStateService.getValue().addPropertyChangeListener(propertyChangeListener);
                 SuspendController controller = ProcessStateListenerService.this.suspendControllerInjectedValue.getOptionalValue();
                 if (controller != null) {
+                    controller.addListener(operationListener);
+                    CoreManagementLogger.ROOT_LOGGER.debugf("Starting ProcessStateListenerService with a SuspendControllerState %s", controller.getState());
                     switch (controller.getState()) {
                         case PRE_SUSPEND:
                             this.runningState = Process.RunningState.PRE_SUSPEND;
@@ -254,8 +264,8 @@ public class ProcessStateListenerService implements Service<Void> {
                             this.runningState = Process.RunningState.SUSPENDING;
                             break;
                     }
-                    controller.addListener(operationListener);
                 } else {
+                    CoreManagementLogger.ROOT_LOGGER.debugf("Starting ProcessStateListenerService with a ControllerProcessState of %s", controlledProcessStateService.getValue().getCurrentState());
                     if (controlledProcessStateService.getValue().getCurrentState() == State.STARTING) {
                         this.runningState = Process.RunningState.STARTING;
                     } else {
@@ -266,7 +276,6 @@ public class ProcessStateListenerService implements Service<Void> {
                         }
                     }
                 }
-                controlledProcessStateService.getValue().addPropertyChangeListener(propertyChangeListener);
                 context.complete();
             } catch (RuntimeException t) {
                 context.failed(new StartException(CoreManagementLogger.ROOT_LOGGER.processStateInitError(t, name)));

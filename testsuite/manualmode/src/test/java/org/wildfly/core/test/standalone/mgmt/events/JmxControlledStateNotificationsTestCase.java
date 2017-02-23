@@ -30,8 +30,10 @@ import java.util.List;
 import java.util.function.Consumer;
 import javax.inject.Inject;
 import org.jboss.as.test.shared.TimeoutUtil;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,16 +63,19 @@ public class JmxControlledStateNotificationsTestCase {
         controller.start();
         task.tearDown(controller.getClient());
         controller.stop();
-        JMX_FACADE_RUNTIME.delete();
-        JMX_FACADE_RUNNING.delete();
     }
 
     @BeforeClass
     public static void setup() throws Exception {
-        JMX_FACADE_RUNTIME.delete();
-        JMX_FACADE_RUNNING.delete();
         controller.start();
         task.setup(controller.getClient());
+    }
+
+    @Before
+    @After
+    public void clearNotificationFiles() throws Exception {
+        JMX_FACADE_RUNTIME.delete();
+        JMX_FACADE_RUNNING.delete();
     }
 
     @Test
