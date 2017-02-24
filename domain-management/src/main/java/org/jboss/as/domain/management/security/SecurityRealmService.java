@@ -95,6 +95,7 @@ import org.wildfly.security.http.util.FilterServerMechanismFactory;
 import org.wildfly.security.http.util.SecurityProviderServerMechanismFactory;
 import org.wildfly.security.http.util.SetMechanismInformationMechanismFactory;
 import org.wildfly.security.http.util.SortedServerMechanismFactory;
+import org.wildfly.security.sasl.WildFlySasl;
 import org.wildfly.security.sasl.localuser.LocalUserServer;
 import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
 import org.wildfly.security.sasl.util.PropertiesSaslServerFactory;
@@ -198,6 +199,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
             }
         }
         mechanismConfiguration.put(LocalUserServer.LEGACY_LOCAL_USER_CHALLENGE_PATH, getAuthDir(tmpDirPath.getValue()));
+        mechanismConfiguration.put(WildFlySasl.ALTERNATIVE_PROTOCOLS, "remoting");
 
         domainBuilder.addRealm("EMPTY", org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM).build();
         domainBuilder.setDefaultRealmName("EMPTY");
