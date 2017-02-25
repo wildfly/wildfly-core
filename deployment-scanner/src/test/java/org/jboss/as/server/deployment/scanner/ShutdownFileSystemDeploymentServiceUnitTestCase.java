@@ -55,7 +55,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -67,9 +69,10 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.jboss.as.controller.LocalModelControllerClient;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
@@ -145,7 +148,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         File deployment = new File(tmpDir, "foo.war");
         final DiscardTaskExecutor myExecutor = new DiscardTaskExecutor();
         MockServerController sc = new MockServerController(myExecutor);
-        final BlockingDeploymentOperations ops = new BlockingDeploymentOperations(sc);
+        final BlockingDeploymentOperations ops = new BlockingDeploymentOperations(sc.create());
         final FileSystemDeploymentService testee = new FileSystemDeploymentService(resourceAddress, null, tmpDir, null, sc, myExecutor, null);
         testee.setAutoDeployZippedContent(true);
         sc.addCompositeSuccessResponse(1);
@@ -179,7 +182,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         lockDone.get(100000, TimeUnit.MILLISECONDS);
     }
 
-    private static class MockServerController implements ModelControllerClient, DeploymentOperations.Factory {
+    private static class MockServerController implements LocalModelControllerClient, ModelControllerClientFactory, DeploymentOperations.Factory {
 
         private final DiscardTaskExecutor executorService;
         private final List<ModelNode> requests = new ArrayList<ModelNode>(1);
@@ -189,33 +192,14 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         private final Set<String> externallyDeployed = new HashSet<String>();
 
         @Override
-        public ModelNode execute(ModelNode operation) throws IOException {
-            requests.add(operation);
-            return processOp(operation);
+        public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) {
+            ModelNode rawOp = operation.getOperation();
+            requests.add(rawOp);
+            return OperationResponse.Factory.createSimple(processOp(rawOp));
         }
 
         @Override
-        public ModelNode execute(Operation operation) throws IOException {
-            return execute(operation.getOperation());
-        }
-
-        @Override
-        public ModelNode execute(ModelNode operation, OperationMessageHandler messageHandler) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ModelNode execute(Operation operation, OperationMessageHandler messageHandler) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture<ModelNode> executeAsync(final ModelNode operation, OperationMessageHandler messageHandler) {
+        public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
             logger.info("Executing deploy command from MockServerController, its executor service should be closed");
             return executorService.submit(new Callable<ModelNode>() {
                 @Override
@@ -226,23 +210,28 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
 
         }
 
         @Override
         public DeploymentOperations create() {
-            return new DefaultDeploymentOperations(this);
+            return new DefaultDeploymentOperations(this, executorService);
+        }
+
+        @Override
+        public LocalModelControllerClient createClient(Executor executor) {
+            return this;
+        }
+
+        @Override
+        public LocalModelControllerClient createSuperUserClient(Executor executor) {
+            return this;
         }
 
         private static class Response {
@@ -450,7 +439,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         @Override
         public ScheduledFuture<?> schedule(final Runnable command, final long delay, final TimeUnit delayUnit) {
             tasks.add(command);
-            return new RunnableScheduledFuture() {
+            return new RunnableScheduledFuture<Object>() {
                 private FutureTask<?> task = new FutureTask<>(command, new Object());
 
                 @Override
@@ -495,7 +484,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
                 }
 
                 @Override
-                public int compareTo(Object o) {
+                public int compareTo(Delayed o) {
                     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
                 }
             };
@@ -633,11 +622,11 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
     private static class BlockingDeploymentOperations implements DeploymentOperations {
 
         private volatile boolean ready = false;
-        private final DefaultDeploymentOperations delegate;
+        private final DeploymentOperations delegate;
         private final Object lock = new Object();
 
-        BlockingDeploymentOperations(final ModelControllerClient controllerClient) {
-            delegate = new DefaultDeploymentOperations(controllerClient);
+        BlockingDeploymentOperations(final DeploymentOperations delegate) {
+            this.delegate = delegate;
         }
 
         @Override

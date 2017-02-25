@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.capability.Capability;
@@ -56,6 +57,17 @@ import org.xnio.XnioWorker;
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
 public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
+
+    // # of capabilities always present
+    private static final int MIN_CAP_COUNT = 1;
+
+    private static int expectedCaps(int overMin) {
+        return MIN_CAP_COUNT + overMin;
+    }
+
+    private static int reloadCaps(int overMin) {
+        return expectedCaps(RELOAD_CAP_COUNT + overMin);
+    }
 
     private static final SimpleAttributeDefinition ad = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING, true)
             .build();
@@ -346,7 +358,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
 
     @Before
     public void createModel() throws OperationFailedException {
-        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
         executeCheckNoFailure(createOperation("create", PathAddress.EMPTY_ADDRESS));
     }
 
@@ -356,8 +368,8 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         //remove model registration
         executeCheckNoFailure(createOperation("clean", PathAddress.EMPTY_ADDRESS));
         //we check that each test cleaned up after itself
-        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
-        Assert.assertEquals(0, capabilityRegistry.getPossibleCapabilities().size());
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getPossibleCapabilities().size());
     }
 
 
@@ -365,45 +377,45 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
     public void testCapabilityRegistration() throws OperationFailedException {
         ManagementResourceRegistration registration = managementModel.getRootResourceRegistration().getSubModel(TEST_ADDRESS1);
         Assert.assertEquals(2, registration.getCapabilities().size());
-        Assert.assertEquals(RELOAD_CAP_COUNT + 3, capabilityRegistry.getPossibleCapabilities().size());  //resource1 has 2 + 1 from resource 2
-        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(reloadCaps(3), capabilityRegistry.getPossibleCapabilities().size());  //resource1 has 2 + 1 from resource 2
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
 
         ModelNode addOp = createOperation(ADD, TEST_ADDRESS1);
         addOp.get("test").set("some test value");
         addOp.get("other").set("other value");
         executeCheckNoFailure(addOp);
-        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(2), capabilityRegistry.getCapabilities().size());
 
         //post boot registration
         executeCheckNoFailure(createOperation("add-cap", TEST_ADDRESS1));
         Assert.assertEquals(3, registration.getCapabilities().size());
-        Assert.assertEquals(RELOAD_CAP_COUNT + 4, capabilityRegistry.getPossibleCapabilities().size());
+        Assert.assertEquals(reloadCaps(4), capabilityRegistry.getPossibleCapabilities().size());
 
 
         executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS1));
-        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
 
         ModelNode add2Op = createOperation(ADD, TEST_ADDRESS2);
         add2Op.get("test").set("some test value");
         executeCheckNoFailure(add2Op);
 
-        Assert.assertEquals(1, capabilityRegistry.getCapabilities().size());
-        Assert.assertEquals(RELOAD_CAP_COUNT + 4, capabilityRegistry.getPossibleCapabilities().size());
+        Assert.assertEquals(expectedCaps(1), capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(reloadCaps(4), capabilityRegistry.getPossibleCapabilities().size());
 
         executeCheckNoFailure(createOperation("add-sub-resource", TEST_ADDRESS2));
 
-        Assert.assertEquals(1, capabilityRegistry.getCapabilities().size());
-        Assert.assertEquals(RELOAD_CAP_COUNT + 5, capabilityRegistry.getPossibleCapabilities().size());
+        Assert.assertEquals(expectedCaps(1), capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(reloadCaps(5), capabilityRegistry.getPossibleCapabilities().size());
 
         executeCheckNoFailure(createOperation("remove-sub-resource", TEST_ADDRESS2));
 
-        Assert.assertEquals(1, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(1), capabilityRegistry.getCapabilities().size());
         //this is now 3 as remove resource also unregisteres sub resource from mgmt tree
-        Assert.assertEquals(RELOAD_CAP_COUNT + 4, capabilityRegistry.getPossibleCapabilities().size());
+        Assert.assertEquals(reloadCaps(4), capabilityRegistry.getPossibleCapabilities().size());
 
         //remove test2 resource so capabilites are moved
         executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS2));
-        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
     }
 
     @Test
@@ -412,7 +424,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         addOp1.get("test").set("some test value");
         addOp1.get("other").set("break"); //this value will throw exception and rollback should happen
         executeCheckForFailure(addOp1);
-        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
 
         ModelNode addOp2 = createOperation(ADD, TEST_ADDRESS2);
         addOp1.get("test").set("some test value");
@@ -422,7 +434,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         composite.get(STEPS).add(addOp2);//adds one capability,
         composite.get(STEPS).add(addOp1); //breaks which causes operation to be rollbacked, so previously added capability shouldn't be represent.
         executeCheckForFailure(composite);
-        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
     }
 
     @Test
@@ -431,33 +443,33 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         addOp1.get("test").set("some test value");
         addOp1.get("other").set("other value");
         executeCheckNoFailure(addOp1);
-        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(2), capabilityRegistry.getCapabilities().size());
 
         ModelNode addOp4 = createOperation(ADD, TEST_ADDRESS4);
         addOp4.get("test").set("some test value");
         addOp4.get("other").set("other value");
         executeCheckForFailure(addOp4); // Should rollback due to conflict with TEST_RESOURCE1
-        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(2), capabilityRegistry.getCapabilities().size());
 
         // Remove the conflict
         executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS1));
-        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
 
         addOp4 = createOperation(ADD, TEST_ADDRESS4);
         addOp4.get("test").set("some test value");
         addOp4.get("other").set("other value");
         addOp4.get("fail").set("true");
         executeCheckForFailure(addOp4); // Op designed to roll back
-        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size()); //Should remove the new RegistrationPoints
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size()); //Should remove the new RegistrationPoints
 
         addOp4 = createOperation(ADD, TEST_ADDRESS4);
         addOp4.get("test").set("some test value");
         addOp4.get("other").set("other value");
         executeCheckNoFailure(addOp4); //Will fail if rollback didn't work as epxected
-        Assert.assertEquals(2, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(2), capabilityRegistry.getCapabilities().size());
 
         executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS4));
-        Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
     }
 
     // Check that subsystem=reload requiring reload prevents runtime execution of
@@ -705,6 +717,8 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             // Do a mock reload
             CountDownLatch latch = new CountDownLatch(1);
             ServiceController<?> svc = container.getRequiredService(ServiceName.of("ModelController"));
+            final AtomicInteger downCaps = new AtomicInteger();
+            final AtomicInteger downPossibleCaps = new AtomicInteger();
             svc.addListener(new AbstractServiceListener<Object>(){
 
                 @Override
@@ -715,6 +729,8 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
                 @Override
                 public void transition(ServiceController<?> controller, ServiceController.Transition transition) {
                     if (transition == ServiceController.Transition.STOPPING_to_DOWN) {
+                        downCaps.set(capabilityRegistry.getCapabilities().size());
+                        downPossibleCaps.set(capabilityRegistry.getPossibleCapabilities().size());
                         controller.setMode(ServiceController.Mode.ACTIVE);
                     } else if (transition == ServiceController.Transition.STARTING_to_UP) {
                         controller.removeListener(this);
@@ -724,8 +740,10 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             });
             Assert.assertTrue("Failed to reload", latch.await(30, TimeUnit.SECONDS));
 
-            Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
-            Assert.assertEquals(0, capabilityRegistry.getPossibleCapabilities().size());
+            Assert.assertEquals(0, downCaps.get());
+            Assert.assertEquals(0, downPossibleCaps.get());
+            Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
+            Assert.assertEquals(expectedCaps(0), capabilityRegistry.getPossibleCapabilities().size());
             runtimeCheck(true, RELOAD_ELEMENT);
             runtimeOnlyCheck(true, RELOAD_ELEMENT);
         } finally {
@@ -750,7 +768,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             Assert.assertNotNull(failLatch);
 
             // add op's registry change should not be visible
-            Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+            Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
 
             // Execute a concurrent read
             executeCheckNoFailure(Util.createEmptyOperation("read", TEST_ADDRESS5));
@@ -759,7 +777,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             Assert.assertTrue(t.isAlive());
 
             // add op's registry change should not be visible
-            Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+            Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
 
             // Let the add op release and fail
             failLatch.countDown();
@@ -767,7 +785,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             // Wait for add op to finish and then check the registry
             t.join(30000);
             Assert.assertFalse(t.isAlive());
-            Assert.assertEquals(0, capabilityRegistry.getCapabilities().size());
+            Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
 
         } finally {
             if (t.isAlive()) {

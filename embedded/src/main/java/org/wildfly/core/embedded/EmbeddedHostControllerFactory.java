@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
-import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
@@ -240,7 +240,7 @@ public class EmbeddedHostControllerFactory {
                 public void propertyChange(PropertyChangeEvent evt) {
                     if ("currentState".equals(evt.getPropertyName())) {
                         ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
-                        establishModelControllerClient(newState);
+                        establishModelControllerClient(newState, true);
                     }
                 }
             };
@@ -281,7 +281,7 @@ public class EmbeddedHostControllerFactory {
                 final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
                 controlledProcessStateService = processStateServiceValue.getValue();
                 controlledProcessStateService.addPropertyChangeListener(processStateListener);
-                establishModelControllerClient(controlledProcessStateService.getCurrentState());
+                establishModelControllerClient(controlledProcessStateService.getCurrentState(), false);
             } catch (RuntimeException rte) {
                 if (hostControllerBootstrap != null) {
                     hostControllerBootstrap.failed();
@@ -305,18 +305,27 @@ public class EmbeddedHostControllerFactory {
             });
         }
 
-        private synchronized void establishModelControllerClient(ControlledProcessState.State state) {
+        private synchronized void establishModelControllerClient(ControlledProcessState.State state, boolean storeState) {
             ModelControllerClient newClient = null;
             if (state != ControlledProcessState.State.STOPPING && state != ControlledProcessState.State.STOPPED && serviceContainer != null) {
-                @SuppressWarnings("unchecked")
-                final ServiceController<ModelController> modelControllerValue = (ServiceController<ModelController>) serviceContainer.getService(DomainModelControllerService.SERVICE_NAME);
-                if (modelControllerValue != null) {
-                    final ModelController controller = modelControllerValue.getValue();
-                    newClient = controller.createClient(executorService);
+                ModelControllerClientFactory  clientFactory;
+                try {
+                    @SuppressWarnings("unchecked")
+                    final ServiceController clientFactorySvc =
+                            serviceContainer.getService(DomainModelControllerService.CLIENT_FACTORY_SERVICE_NAME);
+                    clientFactory = (ModelControllerClientFactory) clientFactorySvc.getValue();
+                } catch (RuntimeException e) {
+                    // Either NPE because clientFactorySvc was not installed, or ISE from getValue because not UP
+                    clientFactory = null;
+                }
+                if (clientFactory != null) {
+                    newClient = clientFactory.createSuperUserClient(executorService);
                 }
             }
             modelControllerClient = newClient;
-            currentProcessState = state;
+            if (storeState || currentProcessState == null) {
+                currentProcessState = state;
+            }
         }
 
         private synchronized ModelControllerClient getActiveModelControllerClient() {
@@ -327,11 +336,12 @@ public class EmbeddedHostControllerFactory {
                 case STOPPED: {
                     throw EmbeddedLogger.ROOT_LOGGER.processIsStopped();
                 }
-                case STARTING: {
+                case STARTING:
+                case RUNNING: {
                     if (modelControllerClient == null) {
                         // Service wasn't available when we got the ControlledProcessState
                         // state change notification; try again
-                        establishModelControllerClient(currentProcessState);
+                        establishModelControllerClient(currentProcessState, false);
                         if (modelControllerClient == null) {
                             throw EmbeddedLogger.ROOT_LOGGER.processIsReloading();
                         }

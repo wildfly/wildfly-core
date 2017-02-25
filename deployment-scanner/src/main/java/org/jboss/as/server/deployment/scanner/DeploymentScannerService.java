@@ -32,8 +32,11 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelControllerClientFactory;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationFilter;
@@ -48,7 +51,6 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -97,6 +99,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
 
     private final InjectedValue<PathManager> pathManagerValue = new InjectedValue<PathManager>();
     private final InjectedValue<ModelController> controllerValue = new InjectedValue<ModelController>();
+    private final InjectedValue<ModelControllerClientFactory> clientFactoryValue = new InjectedValue<ModelControllerClientFactory>();
     private final InjectedValue<ScheduledExecutorService> scheduledExecutorValue = new InjectedValue<ScheduledExecutorService>();
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
     private volatile PathManager.Callback.Handle callbackHandle;
@@ -108,7 +111,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
     /**
      * Add the deployment scanner service to a batch.
      *
-     * @param serviceTarget     the service target
+     * @param context           context for the operation that is adding this service
      * @param resourceAddress   the address of the resource that manages the service
      * @param relativeTo        the relative to
      * @param path              the path
@@ -124,7 +127,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
      * @param scheduledExecutorService executor to use for asynchronous tasks
      * @return the controller for the deployment scanner service
      */
-    public static ServiceController<DeploymentScanner> addService(final ServiceTarget serviceTarget, final PathAddress resourceAddress, final String relativeTo, final String path,
+    public static ServiceController<DeploymentScanner> addService(final OperationContext context, final PathAddress resourceAddress, final String relativeTo, final String path,
                                                                   final int scanInterval, TimeUnit unit, final boolean autoDeployZip,
                                                                   final boolean autoDeployExploded, final boolean autoDeployXml, final boolean scanEnabled, final long deploymentTimeout, boolean rollbackOnRuntimeFailure,
                                                                   final FileSystemDeploymentService bootTimeService, final ScheduledExecutorService scheduledExecutorService) {
@@ -132,9 +135,11 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                 autoDeployExploded, autoDeployXml, scanEnabled, deploymentTimeout, rollbackOnRuntimeFailure, bootTimeService);
         final ServiceName serviceName = getServiceName(resourceAddress.getLastElement().getValue());
 
-        return serviceTarget.addService(serviceName, service)
+        return context.getServiceTarget().addService(serviceName, service)
                 .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.pathManagerValue)
                 .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, service.controllerValue)
+                .addDependency(context.getCapabilityServiceName("org.wildfly.managment.model-controller-client-factory", null),
+                        ModelControllerClientFactory.class, service.clientFactoryValue)
                 .addDependency(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_CHAINS)
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.controlledProcessStateServiceValue)
                 .addInjection(service.scheduledExecutorValue, scheduledExecutorService)
@@ -170,7 +175,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
             final DeploymentOperations.Factory factory = new DeploymentOperations.Factory() {
                 @Override
                 public DeploymentOperations create() {
-                    return new DefaultDeploymentOperations(controllerValue.getValue().createClient(scheduledExecutorValue.getValue()));
+                    return new DefaultDeploymentOperations(clientFactoryValue.getValue(), scheduledExecutorValue.getValue());
                 }
             };
 

@@ -39,18 +39,19 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
-import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
 import org.jboss.as.server.Bootstrap;
 import org.jboss.as.server.Main;
 import org.jboss.as.server.ServerEnvironment;
-import org.jboss.as.server.Services;
+import org.jboss.as.server.ServerService;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.value.Value;
 import org.jboss.stdio.StdioContext;
 import org.wildfly.common.Assert;
@@ -224,7 +225,7 @@ public class EmbeddedStandaloneServerFactory {
                 public void propertyChange(PropertyChangeEvent evt) {
                     if ("currentState".equals(evt.getPropertyName())) {
                         ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
-                        establishModelControllerClient(newState);
+                        establishModelControllerClient(newState, false);
                     }
                 }
             };
@@ -305,7 +306,7 @@ public class EmbeddedStandaloneServerFactory {
                 final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
                 controlledProcessStateService = processStateServiceValue.getValue();
                 controlledProcessStateService.addPropertyChangeListener(processStateListener);
-                establishModelControllerClient(controlledProcessStateService.getCurrentState());
+                establishModelControllerClient(controlledProcessStateService.getCurrentState(), true);
 
             } catch (RuntimeException rte) {
                 if (bootstrap != null) {
@@ -373,18 +374,27 @@ public class EmbeddedStandaloneServerFactory {
             SystemExiter.initialize(SystemExiter.Exiter.DEFAULT);
         }
 
-        private synchronized void establishModelControllerClient(ControlledProcessState.State state) {
+        private synchronized void establishModelControllerClient(ControlledProcessState.State state, boolean storeState) {
             ModelControllerClient newClient = null;
             if (state != ControlledProcessState.State.STOPPING && state != ControlledProcessState.State.STOPPED && serviceContainer != null) {
-                @SuppressWarnings("unchecked")
-                final Value<ModelController> controllerService = (Value<ModelController>) serviceContainer.getService(Services.JBOSS_SERVER_CONTROLLER);
-                if (controllerService != null) {
-                    final ModelController controller = controllerService.getValue();
-                    newClient = controller.createClient(executorService);
-                } // else TODO use some sort of timeout and poll. A non-stopping server should install a ModelController very quickly
+                ModelControllerClientFactory clientFactory;
+                try {
+                    @SuppressWarnings("unchecked")
+                    final ServiceController clientFactorySvc =
+                            serviceContainer.getService(ServerService.JBOSS_SERVER_CLIENT_FACTORY);
+                    clientFactory = (ModelControllerClientFactory) clientFactorySvc.getValue();
+                } catch (RuntimeException e) {
+                    // Either NPE because clientFactorySvc was not installed, or ISE from getValue because not UP
+                    clientFactory = null;
+                }
+                if (clientFactory != null) {
+                    newClient = clientFactory.createSuperUserClient(executorService);
+                }
             }
             modelControllerClient = newClient;
-            currentProcessState = state;
+            if (storeState || currentProcessState == null) {
+                currentProcessState = state;
+            }
         }
 
         private synchronized ModelControllerClient getActiveModelControllerClient() {
@@ -395,11 +405,12 @@ public class EmbeddedStandaloneServerFactory {
                 case STOPPED: {
                     throw EmbeddedLogger.ROOT_LOGGER.processIsStopped();
                 }
-                case STARTING: {
+                case STARTING:
+                case RUNNING: {
                     if (modelControllerClient == null) {
                         // Service wasn't available when we got the ControlledProcessState
                         // state change notification; try again
-                        establishModelControllerClient(currentProcessState);
+                        establishModelControllerClient(currentProcessState, false);
                         if (modelControllerClient == null) {
                             throw EmbeddedLogger.ROOT_LOGGER.processIsReloading();
                         }

@@ -1090,13 +1090,15 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 216, value = "Error cleaning obsolete content %s ")
     void failedToCleanObsoleteContent(String failure);
 
-    @LogMessage(level = ERROR)
-    @Message(id = 217, value = "Error cleaning obsolete content")
-    void failedToCleanObsoleteContent(@Cause Exception e);
+    // No longer used
+//    @LogMessage(level = ERROR)
+//    @Message(id = 217, value = "Error cleaning obsolete content")
+//    void failedToCleanObsoleteContent(@Cause Exception e);
 
-    @LogMessage(level = ERROR)
-    @Message(id = 218, value = "Error stopping content repository cleaner")
-    void failedToStopRepositoryCleaner(@Cause Exception e);
+    // No longer used
+//    @LogMessage(level = ERROR)
+//    @Message(id = 218, value = "Error stopping content repository cleaner")
+//    void failedToStopRepositoryCleaner(@Cause Exception e);
 
     @LogMessage(level = WARN)
     @Message(id = 219, value = "%s deployment has been re-deployed, its content will not be removed. You will need to restart it.")

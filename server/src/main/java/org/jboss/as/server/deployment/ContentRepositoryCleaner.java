@@ -20,6 +20,7 @@
  */
 package org.jboss.as.server.deployment;
 
+import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.client.helpers.ClientConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
@@ -29,18 +30,22 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
-import java.io.IOException;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.controller.LocalModelControllerClient;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.operations.CleanObsoleteContentHandler;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * In charge with checking content references and syncing them with the content repository, removing to left over contents.
@@ -49,7 +54,7 @@ import org.jboss.dmr.ModelNode;
  */
 class ContentRepositoryCleaner {
 
-    private final ModelControllerClient client;
+    private final LocalModelControllerClient client;
     private final ControlledProcessStateService controlledProcessStateService;
     private final ScheduledExecutorService scheduledExecutor;
 
@@ -68,8 +73,8 @@ class ContentRepositoryCleaner {
         }
     }
 
-    public ContentRepositoryCleaner(ModelControllerClient client, ControlledProcessStateService controlledProcessStateService,
-            ScheduledExecutorService scheduledExecutor, long interval, boolean server) {
+    public ContentRepositoryCleaner(LocalModelControllerClient client, ControlledProcessStateService controlledProcessStateService,
+                                    ScheduledExecutorService scheduledExecutor, long interval, boolean server) {
         this.controlledProcessStateService = controlledProcessStateService;
         this.client = client;
         this.scheduledExecutor = scheduledExecutor;
@@ -94,11 +99,7 @@ class ContentRepositoryCleaner {
             cleanTask.cancel(true);
             cleanTask = null;
         }
-        try {
-            client.close();
-        } catch (IOException ex) {
-            ServerLogger.ROOT_LOGGER.failedToStopRepositoryCleaner(ex);
-        }
+        client.close();
     }
 
     synchronized void startScan() {
@@ -117,30 +118,26 @@ class ContentRepositoryCleaner {
 
     void cleanObsoleteContent() {
         if (controlledProcessStateService.getCurrentState() == ControlledProcessState.State.RUNNING) {
-            try {
-                PathAddress address = PathAddress.EMPTY_ADDRESS;
-                if (!server) {
-                    ModelNode response = client.execute(Util.getReadAttributeOperation(PathAddress.EMPTY_ADDRESS, LOCAL_HOST_NAME));
-                    if (SUCCESS.equals(response.get(OUTCOME).asString()) && response.get(RESULT).isDefined()) {
-                        address = address.append(HOST, response.get(RESULT).asString());
-                    } else if (CANCELLED.equals(response.get(OUTCOME).asString())) {
-                        return;
-                    } else if (FAILED.equals(response.get(OUTCOME).asString())) {
-                        error(response);
-                    }
-                }
-                ModelNode response = client.execute(Util.createOperation(CleanObsoleteContentHandler.OPERATION_NAME, address));
-                if (SUCCESS.equals(response.get(OUTCOME).asString())) {
-                    if(response.get(RESULT).isDefined()) {
-                        ServerLogger.ROOT_LOGGER.debug(response.get(RESULT));
-                    }
+            PathAddress address = PathAddress.EMPTY_ADDRESS;
+            if (!server) {
+                ModelNode request = Util.getReadAttributeOperation(PathAddress.EMPTY_ADDRESS, LOCAL_HOST_NAME);
+                ModelNode response = privilegedExecution().execute(client::execute, request);
+                if (SUCCESS.equals(response.get(OUTCOME).asString()) && response.get(RESULT).isDefined()) {
+                    address = address.append(HOST, response.get(RESULT).asString());
                 } else if (CANCELLED.equals(response.get(OUTCOME).asString())) {
                     return;
                 } else if (FAILED.equals(response.get(OUTCOME).asString())) {
                     error(response);
                 }
-            } catch (IOException e) {
-                ServerLogger.ROOT_LOGGER.failedToCleanObsoleteContent(e);
+            }
+            ModelNode request = Util.createOperation(CleanObsoleteContentHandler.OPERATION_NAME, address);
+            ModelNode response = privilegedExecution().execute(client::execute, request);
+            if (SUCCESS.equals(response.get(OUTCOME).asString())) {
+                if(response.get(RESULT).isDefined()) {
+                    ServerLogger.ROOT_LOGGER.debug(response.get(RESULT));
+                }
+            } else if (FAILED.equals(response.get(OUTCOME).asString())) {
+                error(response);
             }
         }
     }
@@ -151,5 +148,42 @@ class ContentRepositoryCleaner {
         } else {
             ServerLogger.ROOT_LOGGER.failedToCleanObsoleteContent(response.asString());
         }
+    }
+
+    /** Provides function execution in a doPrivileged block if a security manager is checking privileges */
+    private static Execution privilegedExecution() {
+        return WildFlySecurityManager.isChecking() ? Execution.PRIVILEGED : Execution.NON_PRIVILEGED;
+    }
+
+    /** Executes a function */
+    private interface Execution {
+        <T, R> R execute(Function<T, R> function, T t);
+
+        Execution NON_PRIVILEGED = new Execution() {
+            @Override
+            public <T, R> R execute(Function<T, R> function, T t) {
+                return function.apply(t);
+            }
+        };
+
+        Execution PRIVILEGED = new Execution() {
+            @Override
+            public <T, R> R execute(Function<T, R> function, T t) {
+                try {
+                    return doPrivileged((PrivilegedExceptionAction<R>) () -> NON_PRIVILEGED.execute(function, t) );
+                } catch (PrivilegedActionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof RuntimeException) {
+                        throw (RuntimeException) cause;
+                    } else if (cause instanceof Error) {
+                        throw (Error) cause;
+                    } else {
+                        // Not possible as Function doesn't throw any checked exception
+                        throw new RuntimeException(cause);
+                    }
+                }
+            }
+        };
+
     }
 }

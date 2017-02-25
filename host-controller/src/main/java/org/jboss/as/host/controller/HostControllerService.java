@@ -50,7 +50,6 @@ import org.jboss.as.server.BootstrapListener;
 import org.jboss.as.server.ExternalManagementRequestExecutor;
 import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.Services;
-import org.jboss.as.server.deployment.ContentCleanerService;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.msc.service.Service;
@@ -194,7 +193,6 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
                 .install();
         DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState,
                 bootstrapListener, hostPathManagerService, capabilityRegistry);
-        ContentCleanerService.addServiceOnHostController(serviceTarget, DomainModelControllerService.SERVICE_NAME, HC_EXECUTOR_SERVICE_NAME, HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
     }
 
     @Override

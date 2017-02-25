@@ -25,7 +25,6 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
@@ -94,8 +93,6 @@ import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.threads.AsyncFuture;
-import org.jboss.threads.AsyncFutureTask;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -146,6 +143,8 @@ class ModelControllerImpl implements ModelController {
 
     private final AbstractControllerService.PartialModelIndicator partialModelIndicator;
     private final AbstractControllerService.ControllerInstabilityListener instabilityListener;
+
+    private volatile ModelControllerClientFactory clientFactory;
 
     private PathAddress modelControllerResourceAddress;
 
@@ -204,6 +203,14 @@ class ModelControllerImpl implements ModelController {
             this.modelControllerResourceAddress = MODEL_CONTROLLER_ADDRESS;
         }
         auditLogger.startBoot();
+    }
+
+    ModelControllerClientFactory getClientFactory() {
+        if (clientFactory == null) {
+            // In a race this could result in > 1 factories being instantiated but that is harmless
+            this.clientFactory = new ModelControllerClientFactoryImpl(this, securityIdentitySupplier);
+        }
+        return clientFactory;
     }
 
     /**
@@ -675,144 +682,9 @@ class ModelControllerImpl implements ModelController {
         return modelControllerResource;
     }
 
+    @Override
     public ModelControllerClient createClient(final Executor executor) {
-
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(ModelController.ACCESS_PERMISSION);
-        }
-
-        return new ModelControllerClient() {
-
-            @Override
-            public void close() throws IOException {
-                // whatever
-            }
-
-            @Override
-            public ModelNode execute(ModelNode operation) throws IOException {
-                return execute(operation, null);
-            }
-
-            @Override
-            public ModelNode execute(Operation operation) throws IOException {
-                return execute(operation, null);
-            }
-
-            @Override
-            public ModelNode execute(final ModelNode operation, final OperationMessageHandler messageHandler) {
-                return ModelControllerImpl.this.execute(operation, messageHandler, OperationTransactionControl.COMMIT, null);
-            }
-
-            @Override
-            public ModelNode execute(Operation operation, OperationMessageHandler messageHandler) throws IOException {
-                return ModelControllerImpl.this.execute(operation.getOperation(), messageHandler, OperationTransactionControl.COMMIT, operation);
-            }
-
-            @Override
-            public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) throws IOException {
-                return ModelControllerImpl.this.execute(operation, messageHandler, OperationTransactionControl.COMMIT);
-            }
-
-            @Override
-            public AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
-                return executeAsync(operation, messageHandler, null, ResponseConverter.TO_MODEL_NODE);
-            }
-
-            @Override
-            public AsyncFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
-                return executeAsync(operation.getOperation(), messageHandler, operation, ResponseConverter.TO_MODEL_NODE);
-            }
-
-            @Override
-            public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
-                return executeAsync(operation.getOperation(), messageHandler, operation, ResponseConverter.TO_OPERATION_RESPONSE);
-            }
-
-            private <T> AsyncFuture<T> executeAsync(final ModelNode operation, final OperationMessageHandler messageHandler,
-                                                    final OperationAttachments attachments,
-                                                    final ResponseConverter<T> responseConverter) {
-                 if (executor == null) {
-                    throw ControllerLogger.ROOT_LOGGER.nullAsynchronousExecutor();
-                }
-                final AtomicReference<Thread> opThread = new AtomicReference<Thread>();
-
-                class OpTask<T> extends AsyncFutureTask<T> {
-                    private final ResponseConverter<T> responseConverter;
-                    OpTask(final ResponseConverter<T> responseConverter) {
-                        super(executor);
-                        this.responseConverter = responseConverter;
-                    }
-
-                    public void asyncCancel(final boolean interruptionDesired) {
-                        Thread thread = opThread.getAndSet(Thread.currentThread());
-                        if (thread == null) {
-                            setCancelled();
-                        } else {
-                            // Interrupt the request execution
-                            thread.interrupt();
-                            // Wait for the cancellation to clear opThread
-                            boolean interrupted = false;
-                            synchronized (opThread) {
-                                while (opThread.get() != null) {
-                                    try {
-                                        opThread.wait();
-                                    } catch (InterruptedException ie) {
-                                        interrupted = true;
-                                    }
-                                }
-                            }
-                            setCancelled();
-                            if (interrupted) {
-                                Thread.currentThread().interrupt();
-                            }
-                        }
-                    }
-
-                    void handleResult(final OperationResponse result) {
-                        ModelNode responseNode = result == null ? null : result.getResponseNode();
-                        if (responseNode != null && responseNode.hasDefined(OUTCOME) && CANCELLED.equals(responseNode.get(OUTCOME).asString())) {
-                            setCancelled();
-                        } else {
-                            setResult(responseConverter.fromOperationResponse(result));
-                        }
-                    }
-                }
-                final OpTask<T> opTask = new OpTask<T>(responseConverter);
-                final SecurityIdentity securityIdentity = securityIdentitySupplier.get();
-                final boolean inVmCall = SecurityActions.isInVmCall();
-
-                executor.execute(new Runnable() {
-                    public void run() {
-                        try {
-                            if (opThread.compareAndSet(null, Thread.currentThread())) {
-                                // We need the AccessAuditContext as that will make any inflowed SecurityIdentity available.
-                                OperationResponse response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
-
-                                    @Override
-                                    public OperationResponse run() {
-                                        Operation op = attachments == null ? Operation.Factory.create(operation) : Operation.Factory.create(operation, attachments.getInputStreams(),
-                                                        attachments.isAutoCloseStreams());
-                                        if (inVmCall) {
-                                            return SecurityActions.runInVm((PrivilegedAction<OperationResponse>) () -> ModelControllerImpl.this.execute(op, messageHandler, OperationTransactionControl.COMMIT));
-                                        } else {
-                                            return ModelControllerImpl.this.execute(op, messageHandler, OperationTransactionControl.COMMIT);
-                                        }
-                                    }
-                                });
-                                opTask.handleResult(response);
-                            }
-                        } finally {
-                            synchronized (opThread) {
-                                opThread.set(null);
-                                opThread.notifyAll();
-                            }
-                        }
-                    }
-                });
-                return opTask;
-            }
-        };
+        return getClientFactory().createSuperUserClient(executor);
     }
 
     ConfigurationPersister.PersistenceResource writeModel(final ManagementModelImpl model, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException {
@@ -1368,31 +1240,5 @@ class ModelControllerImpl implements ModelController {
                 i++;
             }
         }
-    }
-
-    private interface ResponseConverter<T> {
-
-        T fromOperationResponse(OperationResponse or);
-
-        ResponseConverter<ModelNode> TO_MODEL_NODE = new ResponseConverter<ModelNode>() {
-            @Override
-            public ModelNode fromOperationResponse(OperationResponse or) {
-                ModelNode result = or.getResponseNode();
-                try {
-                    or.close();
-                } catch (IOException e) {
-                    ROOT_LOGGER.debugf(e, "Caught exception closing %s whose associated streams, "
-                            + "if any, were not wanted", or);
-                }
-                return result;
-            }
-        };
-
-        ResponseConverter<OperationResponse> TO_OPERATION_RESPONSE = new ResponseConverter<OperationResponse>() {
-            @Override
-            public OperationResponse fromOperationResponse(final OperationResponse or) {
-                return or;
-            }
-        };
     }
 }

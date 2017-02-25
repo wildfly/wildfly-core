@@ -150,7 +150,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         } else {
             RemoteFileRepositoryService.addService(serviceTarget, serverEnvironment.getServerContentDir(), serverEnvironment.getServerTempDir());
         }
-        ContentCleanerService.addService(serviceTarget, ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
+        ContentCleanerService.addService(serviceTarget, ServerService.JBOSS_SERVER_CLIENT_FACTORY, ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
         DeploymentMountProvider.Factory.addService(serviceTarget);
         ServiceModuleLoader.addService(serviceTarget, configuration);
         ExternalModuleService.addService(serviceTarget);
