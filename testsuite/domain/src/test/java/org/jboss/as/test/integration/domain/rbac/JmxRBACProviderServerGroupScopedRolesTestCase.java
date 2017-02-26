@@ -64,7 +64,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
+//import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 import org.wildfly.test.jmx.JMXServiceDeploymentSetupTask;
@@ -74,7 +74,7 @@ import org.wildfly.test.jmx.JMXServiceDeploymentSetupTask;
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
-@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
+//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class JmxRBACProviderServerGroupScopedRolesTestCase extends AbstractServerGroupScopedRolesTestCase {
     private static JMXServiceDeploymentSetupTask jmxTask = new JMXServiceDeploymentSetupTask();
     public static final String  OBJECT_NAME = "jboss.test:service=testdeployments";
