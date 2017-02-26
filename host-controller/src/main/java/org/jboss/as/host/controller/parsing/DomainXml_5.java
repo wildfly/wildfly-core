@@ -306,6 +306,7 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
     }
 
     protected void readDomainElementAttributes(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
+        boolean hasDomainOrg = false;
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
             Namespace ns = Namespace.forUri(reader.getAttributeNamespace(i));
@@ -336,12 +337,18 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
                         list.add(op);
                         break;
                     }
+                    case  ORGANIZATION: { // not in the xsd but let's be forgiving to ease migration
+                        if (hasDomainOrg) {
+                            throw unexpectedAttribute(reader, i);
+                        } // else drop down into the domain-organization handling
+                    }
                     case  DOMAIN_ORGANIZATION: {
                         ModelNode op = new ModelNode();
                         op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
                         op.get(NAME).set(DOMAIN_ORGANIZATION);
                         op.get(VALUE).set(ParseUtils.parsePossibleExpression(reader.getAttributeValue(i)));
                         list.add(op);
+                        hasDomainOrg = true;
                         break;
                     }
                     default:

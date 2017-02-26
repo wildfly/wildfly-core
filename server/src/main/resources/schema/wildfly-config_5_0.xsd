@@ -61,6 +61,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
+            <xs:attribute name="domain-organization" type="xs:string" use="optional">
+                <xs:annotation>
+                    <xs:documentation>
+                        The name of the organization running this domain.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 
@@ -105,7 +112,7 @@
             <xs:attribute name="organization" type="xs:string" use="optional">
                 <xs:annotation>
                     <xs:documentation>
-                        The name of the organization running this server.
+                        The name of the organization running this host.
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
