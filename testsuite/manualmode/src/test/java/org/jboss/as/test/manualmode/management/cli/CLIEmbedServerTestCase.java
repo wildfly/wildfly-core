@@ -662,6 +662,16 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         }
     }
 
+    @Test
+    public void testRBACEnabled() throws IOException, InterruptedException {
+        String line = "embed-server --admin-only=false --server-config=standalone-cli.xml " + JBOSS_HOME;
+        cli.sendLine(line);
+        cli.sendLine("/core-service=management/access=authorization:write-attribute(name=provider,value=rbac");
+        assertState("reload-required", 0);
+        cli.sendLine("reload --admin-only=true");
+        assertState("running", TimeoutUtil.adjust(30000));
+    }
+
     private void assertPath(final String path, final String expected) throws IOException, InterruptedException {
             cli.sendLine("/path=" + path + " :read-attribute(name=path)", true);
             CLIOpResult result = cli.readAllAsOpResult();
