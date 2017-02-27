@@ -164,8 +164,7 @@ public class ProtocolConnectionUtils {
             return endpoint.connect(uri, configuration.getOptionMap(), authenticationContext);
         } else {
             InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
-            // TODO: bind address via connection builder
-            return endpoint.connect(uri, configuration.getOptionMap(), authenticationContext);
+            return endpoint.connect(uri, bindAddr, configuration.getOptionMap(), authenticationContext);
         }
     }
 
