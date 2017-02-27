@@ -29,8 +29,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_REQUIRES_RELOAD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_REQUIRES_RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
@@ -601,6 +604,18 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
 
             final String outcome = result.get(OUTCOME).asString();
             final boolean success = SUCCESS.equals(outcome);
+
+            // check if anything we synced triggered reload-required or restart-required.
+            // if they did we log a warning on the synced slave.
+            if (result.has(RESPONSE_HEADERS)) {
+                final ModelNode headers = result.get(RESPONSE_HEADERS);
+                if (headers.hasDefined(OPERATION_REQUIRES_RELOAD) && headers.get(OPERATION_REQUIRES_RELOAD).asBoolean()) {
+                    HostControllerLogger.ROOT_LOGGER.domainModelAppliedButReloadIsRequired();
+                }
+                if (headers.hasDefined(OPERATION_REQUIRES_RESTART) && headers.get(OPERATION_REQUIRES_RESTART).asBoolean()) {
+                    HostControllerLogger.ROOT_LOGGER.domainModelAppliedButRestartIsRequired();
+                }
+            }
             if (!success) {
                 ModelNode failureDesc = result.hasDefined(FAILURE_DESCRIPTION) ? result.get(FAILURE_DESCRIPTION) : new ModelNode();
                 HostControllerLogger.ROOT_LOGGER.failedToApplyDomainConfig(outcome, failureDesc);
