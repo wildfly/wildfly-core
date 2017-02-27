@@ -36,6 +36,10 @@ import org.jboss.as.controller.access.management.ManagementSecurityIdentitySuppl
 import org.jboss.as.controller.access.management.WritableAuthorizerConfiguration;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -57,6 +61,8 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.jboss.msc.service.ValueService;
+import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -109,6 +115,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
             }
         }
     }
+
+    protected static final RuntimeCapability<Void> CLIENT_FACTORY_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.managment.model-controller-client-factory", ModelControllerClientFactory.class)
+            .build();
 
     private static final OperationDefinition INIT_CONTROLLER_OP = new SimpleOperationDefinitionBuilder("boottime-controller-initializer-step", null)
         .setPrivateEntry()
@@ -302,6 +312,19 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
+
+        // Expose the client factory
+        if (isExposingClientFactoryAllowed()) {
+            ModelControllerClientFactory clientFactory = new ModelControllerClientFactoryImpl(controller, securityIdentitySupplier);
+            capabilityRegistry.registerCapability(
+                    new RuntimeCapabilityRegistration(CLIENT_FACTORY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+            capabilityRegistry.registerPossibleCapability(CLIENT_FACTORY_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+            capabilityRegistry.publish();  // These are visible immediately; no waiting for finishBoot
+            target.addService(CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName(),
+                    new ValueService<ModelControllerClientFactory>(new ImmediateValue<ModelControllerClientFactory>(clientFactory)))
+                    .install();
+        }
+
         this.controller = controller;
 
         this.processState.setStarting();
@@ -333,6 +356,15 @@ public abstract class AbstractControllerService implements Service<ModelControll
             }
         }, "Controller Boot Thread", bootStackSize);
         bootThread.start();
+    }
+
+    /**
+     * Gets whether this controller service should install a {@link ModelControllerClientFactory}
+     * as a service. Default is {@code true}; this method allows test infrastructure subclasses to turn this off.
+     * @return {@code true} if a service should be installed
+     */
+    protected boolean isExposingClientFactoryAllowed() {
+        return true;
     }
 
     /**

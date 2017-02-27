@@ -51,7 +51,9 @@ public interface ModelControllerClient extends Closeable {
      * @return the result of the operation
      * @throws IOException if an I/O error occurs while executing the operation
      */
-    ModelNode execute(ModelNode operation) throws IOException;
+    default ModelNode execute(ModelNode operation) throws IOException{
+        return execute(Operation.Factory.create(operation), OperationMessageHandler.DISCARD);
+    }
 
     /**
      * Execute an operation synchronously.
@@ -63,7 +65,9 @@ public interface ModelControllerClient extends Closeable {
      * @return the result of the operation
      * @throws IOException if an I/O error occurs while executing the operation
      */
-    ModelNode execute(Operation operation) throws IOException;
+    default ModelNode execute(Operation operation) throws IOException{
+        return execute(operation, OperationMessageHandler.DISCARD);
+    }
 
     /**
      * Execute an operation synchronously, optionally receiving progress reports.
@@ -73,7 +77,9 @@ public interface ModelControllerClient extends Closeable {
      * @return the result of the operation
      * @throws IOException if an I/O error occurs while executing the operation
      */
-    ModelNode execute(ModelNode operation, OperationMessageHandler messageHandler) throws IOException;
+    default ModelNode execute(ModelNode operation, OperationMessageHandler messageHandler) throws IOException {
+        return execute(Operation.Factory.create(operation), messageHandler);
+    }
 
     /**
      * Execute an operation synchronously, optionally receiving progress reports.
@@ -86,7 +92,11 @@ public interface ModelControllerClient extends Closeable {
      * @return the result of the operation
      * @throws IOException if an I/O error occurs while executing the operation
      */
-    ModelNode execute(Operation operation, OperationMessageHandler messageHandler) throws IOException;
+    default ModelNode execute(Operation operation, OperationMessageHandler messageHandler) throws IOException {
+        try (OperationResponse or = executeOperation(operation, messageHandler)) {
+            return or.getResponseNode();
+        }
+    }
 
     /**
      * Execute an operation synchronously, optionally receiving progress reports, with the response
@@ -103,13 +113,38 @@ public interface ModelControllerClient extends Closeable {
     OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) throws IOException;
 
     /**
+     * Execute an operation in another thread.
+     *
+     * @param operation the operation to execute
+     * @return the future result of the operation
+     */
+    default AsyncFuture<ModelNode> executeAsync(ModelNode operation) {
+        return executeAsync(Operation.Factory.create(operation), OperationMessageHandler.DISCARD);
+    }
+
+    /**
      * Execute an operation in another thread, optionally receiving progress reports.
      *
      * @param operation the operation to execute
      * @param messageHandler the message handler to use for operation progress reporting, or {@code null} for none
      * @return the future result of the operation
      */
-    AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler);
+    default AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
+        return executeAsync(Operation.Factory.create(operation), messageHandler);
+    }
+
+    /**
+     * Execute an operation in another thread.
+     * <p>
+     * Note that associated input-streams have to be closed by the caller, after the
+     * operation completed {@link OperationAttachments#isAutoCloseStreams()}.
+     *
+     * @param operation the operation to execute
+     * @return the future result of the operation
+     */
+    default AsyncFuture<ModelNode> executeAsync(Operation operation) {
+        return executeAsync(operation, OperationMessageHandler.DISCARD);
+    }
 
     /**
      * Execute an operation in another thread, optionally receiving progress reports.

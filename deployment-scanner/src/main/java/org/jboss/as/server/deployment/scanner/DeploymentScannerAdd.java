@@ -51,8 +51,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.jboss.as.controller.ControlledProcessStateService;
 
+import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -63,7 +63,6 @@ import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceTarget;
 import org.jboss.threads.JBossThreadFactory;
 
 /**
@@ -230,8 +229,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
         final Boolean autoDeployXml = AUTO_DEPLOY_XML.resolveModelAttribute(context, model).asBoolean();
         final Long deploymentTimeout = DEPLOYMENT_TIMEOUT.resolveModelAttribute(context, model).asLong();
         final Boolean rollback = RUNTIME_FAILURE_CAUSES_ROLLBACK.resolveModelAttribute(context, model).asBoolean();
-        final ServiceTarget serviceTarget = context.getServiceTarget();
-        DeploymentScannerService.addService(serviceTarget, address, relativeTo, path, interval, TimeUnit.MILLISECONDS,
+        DeploymentScannerService.addService(context, address, relativeTo, path, interval, TimeUnit.MILLISECONDS,
                 autoDeployZip, autoDeployExp, autoDeployXml, enabled, deploymentTimeout, rollback, bootTimeScanner, executorService);
 
     }

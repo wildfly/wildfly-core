@@ -56,7 +56,6 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,6 +67,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -79,10 +79,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
+import org.jboss.as.controller.LocalModelControllerClient;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
@@ -1745,7 +1746,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
             }
         };
         MockServerController sc = new MockServerController(myWaitingExecutor);
-        final BlockingDeploymentOperations ops = new BlockingDeploymentOperations(sc);
+        final BlockingDeploymentOperations ops = new BlockingDeploymentOperations(sc.create());
         final DiscardTaskExecutor myExecutor = new DiscardTaskExecutor(true);
         final TesteeSet ts = createTestee(sc, myExecutor, ops);
         ts.testee.setAutoDeployZippedContent(true);
@@ -1787,7 +1788,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         ts.controller.addCompositeSuccessResponse(1);
         assertThat(ts.controller.deployed.size(), is(2));
         try {
-            ts.testee.bootTimeScan(new DefaultDeploymentOperations(sc));
+            ts.testee.bootTimeScan(sc.create());
             fail("RuntimeException expected");
         } catch (Exception ex) {
             assertThat(ex.getClass().isAssignableFrom(RuntimeException.class), is(true));
@@ -1956,7 +1957,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
     }
 
     private TesteeSet createTestee(final MockServerController sc, final ScheduledExecutorService executor) throws OperationFailedException {
-        return createTestee(sc, executor, new DefaultDeploymentOperations(sc));
+        return createTestee(sc, executor, sc.create());
     }
 
     private TesteeSet createTestee(final MockServerController sc, final ScheduledExecutorService executor, DeploymentOperations ops) throws OperationFailedException {
@@ -2014,7 +2015,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
     }
 
-    private static class MockServerController implements ModelControllerClient, DeploymentOperations.Factory {
+    private static class MockServerController implements LocalModelControllerClient, ModelControllerClientFactory, DeploymentOperations.Factory {
 
         private final DiscardTaskExecutor executorService;
         private final List<ModelNode> requests = new ArrayList<ModelNode>(1);
@@ -2024,33 +2025,14 @@ public class FileSystemDeploymentServiceUnitTestCase {
         private final Map<String, ExternalDeployment> externallyDeployed = new HashMap<String, ExternalDeployment>();
 
         @Override
-        public ModelNode execute(ModelNode operation) throws IOException {
-            requests.add(operation);
-            return processOp(operation);
+        public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) {
+            ModelNode rawOp = operation.getOperation();
+            requests.add(rawOp);
+            return OperationResponse.Factory.createSimple(processOp(rawOp));
         }
 
         @Override
-        public ModelNode execute(Operation operation) throws IOException {
-            return execute(operation.getOperation());
-        }
-
-        @Override
-        public ModelNode execute(ModelNode operation, OperationMessageHandler messageHandler) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ModelNode execute(Operation operation, OperationMessageHandler messageHandler) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture<ModelNode> executeAsync(final ModelNode operation, OperationMessageHandler messageHandler) {
+        public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
             return executorService.submit(new Callable<ModelNode>() {
                 @Override
                 public ModelNode call() throws Exception {
@@ -2060,23 +2042,28 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             executorService.shutdown();
         }
 
         @Override
         public DeploymentOperations create() {
-            return new DefaultDeploymentOperations(this);
+            return new DefaultDeploymentOperations(this, executorService);
+        }
+
+        @Override
+        public LocalModelControllerClient createClient(Executor executor) {
+            return this;
+        }
+
+        @Override
+        public LocalModelControllerClient createSuperUserClient(Executor executor) {
+            return  this;
         }
 
         private static class Response {
@@ -2438,10 +2425,10 @@ public class FileSystemDeploymentServiceUnitTestCase {
 
     private static class BlockingDeploymentOperations implements DeploymentOperations {
         private volatile boolean ready = false;
-        private final DefaultDeploymentOperations delegate;
+        private final DeploymentOperations delegate;
 
-        BlockingDeploymentOperations(final ModelControllerClient controllerClient) {
-            delegate = new DefaultDeploymentOperations(controllerClient);
+        BlockingDeploymentOperations(final DeploymentOperations delegate) {
+            this.delegate = delegate;
         }
 
         @Override

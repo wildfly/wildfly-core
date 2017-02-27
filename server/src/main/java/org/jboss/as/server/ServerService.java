@@ -144,6 +144,8 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 public final class ServerService extends AbstractControllerService {
 
     /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
+    public static final ServiceName JBOSS_SERVER_CLIENT_FACTORY = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
+    /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
     public static final ServiceName JBOSS_SERVER_SCHEDULED_EXECUTOR = Services.JBOSS_SERVER_EXECUTOR.append("scheduled");
 
     private final InjectedValue<DeploymentMountProvider> injectedDeploymentRepository = new InjectedValue<DeploymentMountProvider>();

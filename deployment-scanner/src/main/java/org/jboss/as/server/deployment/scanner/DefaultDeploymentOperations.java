@@ -35,23 +35,23 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
-import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
-import org.jboss.as.controller.access.InVmAccess;
-import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.LocalModelControllerClient;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.threads.AsyncFuture;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -61,29 +61,23 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 */
 final class DefaultDeploymentOperations implements DeploymentOperations {
 
-    private final ModelControllerClient controllerClient;
+    private final LocalModelControllerClient controllerClient;
 
-    DefaultDeploymentOperations(final ModelControllerClient controllerClient) {
-        this.controllerClient = controllerClient;
+    DefaultDeploymentOperations(final ModelControllerClientFactory clientFactory, final Executor executor) {
+        // We need to run with RBAC SuperUser rights
+        this.controllerClient = clientFactory.createSuperUserClient(executor);
     }
 
     @Override
     public Future<ModelNode> deploy(final ModelNode operation, final ExecutorService executorService) {
-        return executeAsync(operation, OperationMessageHandler.DISCARD);
+        return privilegedExecution().execute(controllerClient::executeAsync, operation);
     }
 
     @Override
     public Map<String, Boolean> getDeploymentsStatus() {
         final ModelNode op = Util.getEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, new ModelNode());
         op.get(CHILD_TYPE).set(DEPLOYMENT);
-        ModelNode response;
-        try {
-            response = execute(op);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        ModelNode response = privilegedExecution().execute(controllerClient::execute, op);
 
         // Ensure the operation succeeded before we use the result
         if(response.get(OUTCOME).isDefined() && !SUCCESS.equals(response.get(OUTCOME).asString()))
@@ -108,14 +102,7 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
     public Set<String> getUnrelatedDeployments(ModelNode owner) {
         final ModelNode op = Util.getEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, new ModelNode());
         op.get(CHILD_TYPE).set(DEPLOYMENT);
-        ModelNode response;
-        try {
-            response = execute(op);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        ModelNode response = privilegedExecution().execute(controllerClient::execute, op);
 
         // Ensure the operation succeeded before we use the result
         if(response.get(OUTCOME).isDefined() && !SUCCESS.equals(response.get(OUTCOME).asString()))
@@ -133,51 +120,40 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
         return deployments;
     }
 
-    private ModelNode execute(ModelNode operation) throws Exception {
-        return controllerClient().execute(controllerClient, operation);
+    /** Provides function execution in a doPrivileged block if a security manager is checking privileges */
+    private static Execution privilegedExecution() {
+        return WildFlySecurityManager.isChecking() ? Execution.PRIVILEGED : Execution.NON_PRIVILEGED;
     }
 
-    private AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
-        return controllerClient().executeAsync(controllerClient, operation, messageHandler);
-    }
+    /** Executes a function */
+    private interface Execution {
+        <T, R> R execute(Function<T, R> function, T t);
 
-    private static ControllerClient controllerClient() {
-        return WildFlySecurityManager.isChecking() ? ControllerClient.PRIVILEGED : ControllerClient.NON_PRIVILEGED;
-    }
-
-    private interface ControllerClient {
-
-        ModelNode execute(ModelControllerClient controllerClient, ModelNode operation) throws Exception;
-
-        AsyncFuture<ModelNode> executeAsync(ModelControllerClient controllerClient, ModelNode operation, OperationMessageHandler messageHandler);
-
-        ControllerClient NON_PRIVILEGED = new ControllerClient() {
-
+        Execution NON_PRIVILEGED = new Execution() {
             @Override
-            public ModelNode execute(ModelControllerClient controllerClient, ModelNode operation) throws Exception {
-                return InVmAccess.runInVm((PrivilegedExceptionAction<ModelNode>) () -> controllerClient.execute(operation) );
-            }
-
-            @Override
-            public AsyncFuture<ModelNode> executeAsync(ModelControllerClient controllerClient, ModelNode operation, OperationMessageHandler messageHandler) {
-                return InVmAccess.runInVm((PrivilegedAction<AsyncFuture<ModelNode>>) () -> controllerClient.executeAsync(operation, messageHandler) );
+            public <T, R> R execute(Function<T, R> function, T t) {
+                return function.apply(t);
             }
         };
 
-
-        ControllerClient PRIVILEGED = new ControllerClient() {
-
+        Execution PRIVILEGED = new Execution() {
             @Override
-            public ModelNode execute(ModelControllerClient controllerClient, ModelNode operation) throws Exception {
-                return doPrivileged((PrivilegedExceptionAction<ModelNode>) () -> NON_PRIVILEGED.execute(controllerClient, operation) );
-            }
-
-            @Override
-            public AsyncFuture<ModelNode> executeAsync(ModelControllerClient controllerClient, ModelNode operation, OperationMessageHandler messageHandler) {
-                return doPrivileged((PrivilegedAction<AsyncFuture<ModelNode>>) () -> NON_PRIVILEGED.executeAsync(controllerClient, operation, messageHandler));
+            public <T, R> R execute(Function<T, R> function, T t) {
+                try {
+                    return doPrivileged((PrivilegedExceptionAction<R>) () -> NON_PRIVILEGED.execute(function, t) );
+                } catch (PrivilegedActionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof RuntimeException) {
+                        throw (RuntimeException) cause;
+                    } else if (cause instanceof Error) {
+                        throw (Error) cause;
+                    } else {
+                        // Not possible as Function doesn't throw any checked exception
+                        throw new RuntimeException(cause);
+                    }
+                }
             }
         };
-
 
     }
 }

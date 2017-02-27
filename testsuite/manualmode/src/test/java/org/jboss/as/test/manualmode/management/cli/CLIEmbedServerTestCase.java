@@ -72,7 +72,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -98,7 +97,6 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     public static final String JBOSS_SERVER_BASE_DIR = "jboss.server.base.dir";
     public static final String JBOSS_SERVER_CONFIG_DIR = "jboss.server.config.dir";
-    public static final String JBOSS_SERVER_CONTENT_DIR = "jboss.server.content.dir";
     public static final String JBOSS_SERVER_DEPLOY_DIR = "jboss.server.deploy.dir";
     public static final String JBOSS_SERVER_TEMP_DIR = "jboss.server.temp.dir";
     public static final String JBOSS_SERVER_LOG_DIR = "jboss.server.log.dir";
@@ -296,7 +294,6 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
     }
 
     @Test
-    @Ignore
     public void testTimeout() throws Exception {
         cli.sendLine("command-timeout set 60");
         String line = "embed-server --server-config=standalone-cli.xml " + JBOSS_HOME;
@@ -424,7 +421,6 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     /**
      * Test not specifying a server config works.
-     * @throws IOException
      */
     @Test
     public void testDefaultServerConfig() throws IOException {
@@ -433,7 +429,6 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     /**
      * Test the -c shorthand for specifying a server config works.
-     * @throws IOException
      */
     @Test
     public void testDashC() throws IOException {
@@ -516,7 +511,6 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     /** Tests that the quit command stops any embedded server */
     @Test
-    @Ignore
     public void testStopServerOnQuit() throws IOException {
         validateServerConnectivity();
         cli.sendLine("quit");
@@ -535,7 +529,6 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     /**
      * Tests the --help param works.
-     * @throws IOException
      */
     @Test
     public void testHelp() throws IOException {
@@ -662,6 +655,16 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         }
     }
 
+    @Test
+    public void testRBACEnabled() throws IOException, InterruptedException {
+        String line = "embed-server --admin-only=false --server-config=standalone-cli.xml " + JBOSS_HOME;
+        cli.sendLine(line);
+        cli.sendLine("/core-service=management/access=authorization:write-attribute(name=provider,value=rbac");
+        assertState("reload-required", 0);
+        cli.sendLine("reload --admin-only=true");
+        assertState("running", TimeoutUtil.adjust(30000));
+    }
+
     private void assertPath(final String path, final String expected) throws IOException, InterruptedException {
             cli.sendLine("/path=" + path + " :read-attribute(name=path)", true);
             CLIOpResult result = cli.readAllAsOpResult();
@@ -676,7 +679,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         ModelNode resp = result.getResponseNode();
         ModelNode stateNode = result.isIsOutcomeSuccess() ? resp.get(RESULT) : resp.get(FAILURE_DESCRIPTION);
         if (notPresent) {
-            assertTrue(stateNode.asString().indexOf("WFLYCTL0216") != -1);
+            assertTrue(stateNode.asString().contains("WFLYCTL0216"));
         } else {
             assertEquals(expected, stateNode.asString());
         }
@@ -797,7 +800,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
                     assertPath(propName, ROOT + File.separator + newStandalone + File.separator + value);
                 } else {
                     // just make sure the unchanged property has the default basedir
-                    //assertTrue(WildFlySecurityManager.getPropertyPrivileged(prop, "").indexOf(currBaseDir) != -1);
+                    assertTrue(WildFlySecurityManager.getPropertyPrivileged(prop, "").indexOf(currBaseDir) != -1);
                 }
             }
         } finally {

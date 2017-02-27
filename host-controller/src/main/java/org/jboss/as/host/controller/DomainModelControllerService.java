@@ -41,11 +41,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.domain.controller.HostConnectionInfo.Events.create;
+import static org.jboss.as.host.controller.HostControllerService.HC_EXECUTOR_SERVICE_NAME;
+import static org.jboss.as.host.controller.HostControllerService.HC_SCHEDULED_EXECUTOR_SERVICE_NAME;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.DOMAIN_LOGGER;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
-import static org.jboss.as.remoting.Protocol.REMOTE_HTTPS;
-import static org.jboss.as.remoting.Protocol.REMOTE_HTTP;
 import static org.jboss.as.remoting.Protocol.REMOTE;
+import static org.jboss.as.remoting.Protocol.REMOTE_HTTP;
+import static org.jboss.as.remoting.Protocol.REMOTE_HTTPS;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -164,6 +166,7 @@ import org.jboss.as.repository.LocalFileRepository;
 import org.jboss.as.server.BootstrapListener;
 import org.jboss.as.server.RuntimeExpressionResolver;
 import org.jboss.as.server.controller.resources.VersionModelInitializer;
+import org.jboss.as.server.deployment.ContentCleanerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
@@ -189,6 +192,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 public class DomainModelControllerService extends AbstractControllerService implements DomainController, HostModelUtil.HostModelRegistrar, HostRegistrations {
 
     public static final ServiceName SERVICE_NAME = HostControllerService.HC_SERVICE_NAME.append("model", "controller");
+    public static final ServiceName CLIENT_FACTORY_SERVICE_NAME = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
 
     private static final int PINGER_POOL_SIZE;
     static {
@@ -277,7 +281,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         HostControllerEnvironmentService.addService(environment, serviceTarget);
 
         return serviceTarget.addService(SERVICE_NAME, service)
-                .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
+                .addDependency(HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
                 .addDependency(PathManagerService.SERVICE_NAME) // ensure this is up
                 .setInitialMode(ServiceController.Mode.ACTIVE)
@@ -515,6 +519,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
         });
         pingScheduler = Executors.newScheduledThreadPool(PINGER_POOL_SIZE, pingerThreadFactory);
 
+        ContentCleanerService.addServiceOnHostController(context.getChildTarget(), DomainModelControllerService.SERVICE_NAME,
+                CLIENT_FACTORY_SERVICE_NAME, HC_EXECUTOR_SERVICE_NAME, HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
+
         super.start(context);
 
         pingScheduler.scheduleAtFixedRate(new Runnable() {
@@ -751,7 +758,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                         ManagementRemotingServices.installManagementChannelServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                                 new MasterDomainControllerOperationHandlerService(this, executor, executor, environment.getDomainTempDir(), this, domainHostExcludeRegistry),
                                 DomainModelControllerService.SERVICE_NAME, ManagementRemotingServices.DOMAIN_CHANNEL,
-                                HostControllerService.HC_EXECUTOR_SERVICE_NAME, HostControllerService.HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
+                                HC_EXECUTOR_SERVICE_NAME, HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
 
                         // Block for the ServerInventory
                         establishServerInventory(inventoryFuture);

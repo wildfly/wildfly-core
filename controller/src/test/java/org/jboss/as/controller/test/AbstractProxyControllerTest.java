@@ -669,6 +669,11 @@ public abstract class AbstractProxyControllerTest {
                     ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build());
         }
 
+        @Override
+        protected boolean isExposingClientFactoryAllowed() {
+            return false; // don't install or it will conflict with the one from MainModelControllerService
+        }
+
         protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
             ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
             GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
