@@ -46,6 +46,8 @@ import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
 import org.wildfly.security.auth.client.MatchRule;
 import org.xnio.IoFuture;
+import org.xnio.Option;
+import org.xnio.OptionMap;
 import org.xnio.Options;
 
 /**
@@ -160,12 +162,21 @@ public class ProtocolConnectionUtils {
         final SSLContext finalSslContext = sslContext;
         authenticationContext = authenticationContext.withSsl(MatchRule.ALL, () -> finalSslContext);
 
+        // WFCORE-2292 allow native & https management to work when configured
+        final OptionMap.Builder builder = OptionMap.builder();
+        OptionMap optionMap = configuration.getOptionMap();
+        for (Option option : optionMap) {
+            builder.set(option, optionMap.get(option));
+        }
+        if (optionMap.get(Options.SSL_ENABLED) == null) builder.set(Options.SSL_ENABLED, configuration.isSslEnabled());
+        if (optionMap.get(Options.SSL_STARTTLS) == null) builder.set(Options.SSL_STARTTLS, configuration.isSslEnabled());
+
         if (clientBindAddress == null) {
-            return endpoint.connect(uri, configuration.getOptionMap(), authenticationContext);
+            return endpoint.connect(uri, builder.getMap(), authenticationContext);
         } else {
             InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
             // TODO: bind address via connection builder
-            return endpoint.connect(uri, configuration.getOptionMap(), authenticationContext);
+            return endpoint.connect(uri, builder.getMap(), authenticationContext);
         }
     }
 
