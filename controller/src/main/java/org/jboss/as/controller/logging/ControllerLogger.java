@@ -3507,4 +3507,7 @@ public interface ControllerLogger extends BasicLogger {
      */
     @Message(id = 437, value = "Duplicate extension: an %s element with %s attribute value '%s' has already been parsed")
     XMLStreamException duplicateExtensionElement(String elementConstant, String attrConstant, String module, @Param Location location);
+
+    @Message(id = 438, value = "Couldn't convert '%s' into proper warning level, threshold falling back to 'ALL'. Possible values: SEVERE,WARNING,INFO,CONFIG,FINE,FINER,FINEST,ALL,OFF")
+    String couldntConvertWarningLevel(String level);
 }

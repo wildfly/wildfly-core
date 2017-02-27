@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 import java.util.Set;
+import java.util.logging.Level;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -581,6 +582,16 @@ public class AuthorizedAddressTest {
         @Override
         public boolean isDefaultRequiresRuntime() {
             return false;
+        }
+
+        @Override
+        public void addResponseWarning(Level level, String warning) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void addResponseWarning(Level level, ModelNode warning) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 

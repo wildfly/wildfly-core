@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LEVEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
@@ -47,6 +48,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNINGS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNING_LEVEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
@@ -71,6 +75,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 
 import org.jboss.as.controller.ConfigurationChangesCollector.ConfigurationChange;
 import org.jboss.as.controller.access.Caller;
@@ -175,6 +180,7 @@ abstract class AbstractOperationContext implements OperationContext {
     // protected by this
     private Map<String, OperationResponse.StreamEntry> responseStreams;
 
+    private final Level WARNING_DEFAULT_LEVEL = Level.WARNING;
     /**
      * Resources modified by this context's operations. May be modified by ParallelBootOperationStepHandler which spawns threads,
      * so guard by itself.
@@ -351,6 +357,58 @@ abstract class AbstractOperationContext implements OperationContext {
         // If the op is controlling other ops (i.e. for parallel boot) then record those for audit logging
         for (ModelNode childOp : parsedBootOp.getChildOperations()) {
             recordControllerOperation(childOp);
+        }
+    }
+
+    @Override
+    public void addResponseWarning(final Level level, final String warning) {
+        final ModelNode modelNodeWarning = new ModelNode(warning);
+        this.addResponseWarning(level, modelNodeWarning);
+    }
+
+    @Override
+    public void addResponseWarning(final Level level,final  ModelNode warning) {
+        if(!isWarningLoggable(level, activeStep.operation.get(OPERATION_HEADERS))){
+            return;
+        }
+        createWarning(level, warning);
+    }
+
+    protected void createWarning(final Level level, final String warning){
+        final ModelNode modelNodeWarning = new ModelNode(warning);
+        createWarning(level,modelNodeWarning);
+    }
+
+    protected void createWarning(final Level level, final ModelNode warning){
+        final ModelNode responseHeaders = getResponseHeaders();
+        final ModelNode warnings = responseHeaders.get(WARNINGS);
+        final ModelNode warningEntry = warnings.add();
+        warningEntry.get(WARNING).set(warning);
+        warningEntry.get(LEVEL).set(level.toString());
+        final ModelNode operation = activeStep.operation;
+        if(operation != null){
+            final ModelNode operationEntry =  warningEntry.get(OP);
+            operationEntry.get(OP_ADDR).set(operation.get(OP_ADDR));
+            operationEntry.get(OP).set(operation.get(OP));
+        }
+    }
+
+    protected boolean isWarningLoggable(final Level level, final ModelNode operationHeaders){
+        Level thresholdLevel = null;
+        if(operationHeaders.has(WARNING_LEVEL)){
+            try{
+                thresholdLevel = Level.parse(operationHeaders.get(WARNING_LEVEL).asString());
+            }catch(Exception e){
+                createWarning(Level.ALL, ControllerLogger.ROOT_LOGGER.couldntConvertWarningLevel(operationHeaders.get(WARNING_LEVEL).asString()));
+                thresholdLevel = Level.ALL;
+            }
+        } else {
+            thresholdLevel = WARNING_DEFAULT_LEVEL;
+        }
+        if(thresholdLevel.intValue() <= level.intValue()){
+            return true;
+        } else {
+            return false;
         }
     }
 

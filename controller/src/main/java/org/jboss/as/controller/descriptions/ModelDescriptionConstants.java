@@ -260,6 +260,7 @@ public class ModelDescriptionConstants {
     public static final String KEYSTORE_PROVIDER = "keystore-provider";
     public static final String KEYSTORE_RELATIVE_TO = "keystore-relative-to";
     public static final String KEYTAB = "keytab";
+    public static final String LEVEL = "level";
     public static final String LDAP = "ldap";
     public static final String LDAP_CONNECTION = "ldap-connection";
     public static final String LOCAL = "local";
@@ -569,6 +570,9 @@ public class ModelDescriptionConstants {
     public static final String VAULT_EXPRESSION = "vault-expression";
     public static final String VAULT_OPTION = "vault-option";
     public static final String VAULT_OPTIONS = "vault-options";
+      public static final String WARNING = "warning";
+    public static final String WARNINGS = "warnings";
+    public static final String WARNING_LEVEL = "warning-level";
     public static final String WEB_URL = "web-url";
     public static final String WHERE = "where";
     public static final String WILDCARD = "wildcard";

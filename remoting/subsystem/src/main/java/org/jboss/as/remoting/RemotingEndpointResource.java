@@ -28,17 +28,24 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.logging.Level;
+
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.remoting3.RemotingOptions;
@@ -105,5 +112,26 @@ public class RemotingEndpointResource extends PersistentResourceDefinition {
         super.registerAddOperation(resourceRegistration, new RemotingEndpointAdd(), OperationEntry.Flag.RESTART_NONE);
         super.registerRemoveOperation(resourceRegistration, ReloadRequiredRemoveStepHandler.INSTANCE, OperationEntry.Flag.RESTART_NONE);
     }
+    @Override
+    public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+        //register as normal
+        super.registerAttributes(resourceRegistration);
+        //override
+        resourceRegistration.unregisterAttribute(WORKER.getName());
+        resourceRegistration.registerReadWriteAttribute(WORKER, null, new WorkerAttributeWriteHandler(WORKER));
+    }
 
+    class WorkerAttributeWriteHandler extends ReloadRequiredWriteAttributeHandler {
+
+        public WorkerAttributeWriteHandler(AttributeDefinition... definitions) {
+            super(definitions);
+        }
+
+        @Override
+        protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,
+                ModelNode oldValue, Resource model) throws OperationFailedException {
+            super.finishModelStage(context, operation, attributeName, newValue, oldValue, model);
+            context.addResponseWarning(Level.WARNING, RemotingLogger.ROOT_LOGGER.warningOnWorkerChange(newValue.asString()));
+        }
+    }
 }

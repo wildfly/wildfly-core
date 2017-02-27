@@ -24,6 +24,7 @@ package org.jboss.as.controller;
 
 import java.io.InputStream;
 import java.util.Set;
+import java.util.logging.Level;
 
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
@@ -157,6 +158,21 @@ public interface OperationContext extends ExpressionResolver {
      * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
      */
     void addModelStep(ModelNode response, ModelNode operation, OperationDefinition stepDefinition, OperationStepHandler stepHandler, boolean addFirst) throws IllegalArgumentException;
+
+    /**
+     * Add a warning to response. This method appends warning message in response headers. Warning should be issued to inform
+     * managing end of non catastrophic occurrence, which require administrative action
+     *
+     * @param level - level of warning. Used to filter warning based on level value, just like
+     * @param warning - i18n formatter message, it should contain ID, just like jboss.Logger output does.
+     */
+    void addResponseWarning(Level level, String warning);
+
+    /**
+     * See {@link #addResponseWarning(Level, String, String)}
+     * @param warning - pre-formatted warning messsage.
+     */
+    void addResponseWarning(Level level, ModelNode warning);
 
     /**
      * Get a stream which is attached to the request.
