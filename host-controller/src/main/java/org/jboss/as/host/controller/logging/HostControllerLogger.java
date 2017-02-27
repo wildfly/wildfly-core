@@ -1371,4 +1371,13 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message(id = 201, value = "Error synchronizing the host model with the domain controller model with failure : %s.")
     String hostDomainSynchronizationError(String failureDescription);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 202, value = "The domain configuration was successfully applied, but reload is required before changes become active.")
+    void domainModelAppliedButReloadIsRequired();
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 203, value = "The domain configuration was successfully applied, but restart is required before changes become active.")
+    void domainModelAppliedButRestartIsRequired();
+
 }
