@@ -83,7 +83,7 @@ public class FullRbacProviderTestSuite {
 
     private static synchronized void start(final String name) {
         try {
-            if (true) return; // [WFCORE-1958] Clean up testsuite Elytron registration.
+            //if (true) return; // [WFCORE-1958] Clean up testsuite Elytron registration.
             support = createAndStartDefaultSupport(name);
         } catch (Exception e) {
             throw new RuntimeException(e);

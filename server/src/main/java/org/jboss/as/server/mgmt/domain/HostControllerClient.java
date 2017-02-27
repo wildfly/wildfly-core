@@ -22,13 +22,18 @@
 
 package org.jboss.as.server.mgmt.domain;
 
+import static java.security.AccessController.doPrivileged;
+
 import java.io.Closeable;
 import java.io.DataInput;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.ModelController;
@@ -44,6 +49,7 @@ import org.jboss.as.repository.RemoteFileRequestAndHandler;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Client used to interact with the local host controller.
@@ -114,15 +120,20 @@ public class HostControllerClient implements AbstractControllerService.Controlle
             @Override
             public void reconnected(boolean inSync) {
                 if (!inSync || mgmtEndpointChanged) {
-                    final ModelNode operation = new ModelNode();
-                    operation.get(ModelDescriptionConstants.OP).set(ServerProcessStateHandler.REQUIRE_RELOAD_OPERATION);
-                    operation.get(ModelDescriptionConstants.OP_ADDR).setEmptyList();
-                    controller.execute(operation, OperationMessageHandler.DISCARD, ModelController.OperationTransactionControl.COMMIT, OperationAttachments.EMPTY);
+                    privilegedExecution().execute(HostControllerClient::executeRequireReload, controller);
                 }
             }
 
         });
     }
+
+    private static ModelNode executeRequireReload(ModelController controller) {
+        final ModelNode operation = new ModelNode();
+        operation.get(ModelDescriptionConstants.OP).set(ServerProcessStateHandler.REQUIRE_RELOAD_OPERATION);
+        operation.get(ModelDescriptionConstants.OP_ADDR).setEmptyList();
+        return controller.execute(operation, OperationMessageHandler.DISCARD, ModelController.OperationTransactionControl.COMMIT, OperationAttachments.EMPTY);
+    }
+
     /**
      * Get the remote file repository.
      *
@@ -217,6 +228,43 @@ public class HostControllerClient implements AbstractControllerService.Controlle
         public void handleRequest(DataInput input, ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context) throws IOException {
             resultHandler.done(null);
         }
+    }
+
+    /** Provides function execution in a doPrivileged block if a security manager is checking privileges */
+    private static Execution privilegedExecution() {
+        return WildFlySecurityManager.isChecking() ? Execution.PRIVILEGED : Execution.NON_PRIVILEGED;
+    }
+
+    /** Executes a function */
+    private interface Execution {
+        <T, R> R execute(Function<T, R> function, T t);
+
+        Execution NON_PRIVILEGED = new Execution() {
+            @Override
+            public <T, R> R execute(Function<T, R> function, T t) {
+                return function.apply(t);
+            }
+        };
+
+        Execution PRIVILEGED = new Execution() {
+            @Override
+            public <T, R> R execute(Function<T, R> function, T t) {
+                try {
+                    return doPrivileged((PrivilegedExceptionAction<R>) () -> NON_PRIVILEGED.execute(function, t) );
+                } catch (PrivilegedActionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof RuntimeException) {
+                        throw (RuntimeException) cause;
+                    } else if (cause instanceof Error) {
+                        throw (Error) cause;
+                    } else {
+                        // Not possible as Function doesn't throw any checked exception
+                        throw new RuntimeException(cause);
+                    }
+                }
+            }
+        };
+
     }
 
 }

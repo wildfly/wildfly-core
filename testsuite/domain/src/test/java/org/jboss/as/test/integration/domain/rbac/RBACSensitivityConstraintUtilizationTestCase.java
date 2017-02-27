@@ -30,7 +30,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-import static org.jboss.as.test.integration.domain.rbac.AbstractRbacTestCase.testSupport;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.MONITOR_USER;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 
@@ -46,7 +45,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
+//import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -54,7 +53,7 @@ import org.junit.Test;
  *
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
-@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
+//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class RBACSensitivityConstraintUtilizationTestCase extends AbstractRbacTestCase {
 
     @BeforeClass

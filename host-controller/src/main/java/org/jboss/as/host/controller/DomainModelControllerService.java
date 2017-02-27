@@ -72,6 +72,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -99,6 +100,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyOperationAddressTranslator;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.TransformingProxyController;
+import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -1344,14 +1346,26 @@ public class DomainModelControllerService extends AbstractControllerService impl
         @Override
         public ModelNode execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control,
                 OperationStepHandler step) {
-            return internalExecute(operation, handler, control, step).getResponseNode();
+            Function<DomainModelControllerService, OperationResponse> function = new Function<DomainModelControllerService, OperationResponse>() {
+                @Override
+                public OperationResponse apply(DomainModelControllerService controllerService) {
+                    return InVmAccess.runInVm((PrivilegedAction<OperationResponse>) () -> controllerService.internalExecute(operation, handler, control, step));
+                }
+            };
+            return SecurityActions.privilegedExecution(function, DomainModelControllerService.this).getResponseNode();
         }
 
         @Override
         public ModelNode installSlaveExtensions(List<ModelNode> extensions) {
             Operation operation = ApplyExtensionsHandler.getOperation(extensions);
             OperationStepHandler stepHandler = modelNodeRegistration.getOperationHandler(PathAddress.EMPTY_ADDRESS, ApplyExtensionsHandler.OPERATION_NAME);
-            return internalExecute(operation, OperationMessageHandler.logging, OperationTransactionControl.COMMIT, stepHandler, false, true).getResponseNode();
+            Function<DomainModelControllerService, OperationResponse> function = new Function<DomainModelControllerService, OperationResponse>() {
+                @Override
+                public OperationResponse apply(DomainModelControllerService controllerService) {
+                    return InVmAccess.runInVm((PrivilegedAction<OperationResponse>) () -> controllerService.internalExecute(operation, OperationMessageHandler.logging, OperationTransactionControl.COMMIT, stepHandler, false, true));
+                }
+            };
+            return SecurityActions.privilegedExecution(function, DomainModelControllerService.this).getResponseNode();
         }
 
         @Override
@@ -1359,23 +1373,48 @@ public class DomainModelControllerService extends AbstractControllerService impl
         public ModelNode joinActiveOperation(ModelNode operation, OperationMessageHandler handler,
                                              OperationTransactionControl control,
                                              OperationStepHandler step, int permit) {
-            return executeReadOnlyOperation(operation, handler, control, step, permit);
+            Function<DomainModelControllerService, ModelNode> function = new Function<DomainModelControllerService, ModelNode>() {
+                @Override
+                public ModelNode apply(DomainModelControllerService controllerService) {
+                    return InVmAccess.runInVm((PrivilegedAction<ModelNode>) () -> controllerService.executeReadOnlyOperation(operation, handler, control, step, permit));
+                }
+            };
+            return SecurityActions.privilegedExecution(function, DomainModelControllerService.this);
         }
 
         @Override
         public OperationResponse executeAndAttemptLock(Operation operation, OperationMessageHandler handler,
                 OperationTransactionControl control, OperationStepHandler step) {
-            return internalExecute(operation, handler, control, step, true);
+            Function<DomainModelControllerService, OperationResponse> function = new Function<DomainModelControllerService, OperationResponse>() {
+                @Override
+                public OperationResponse apply(DomainModelControllerService controllerService) {
+                    return InVmAccess.runInVm((PrivilegedAction<OperationResponse>) () -> controllerService.internalExecute(operation, handler, control, step, true));
+                }
+            };
+            return SecurityActions.privilegedExecution(function, DomainModelControllerService.this);
         }
 
         @Override
         public ModelNode executeReadOnly(ModelNode operation, OperationStepHandler handler, OperationTransactionControl control) {
-            return executeReadOnlyOperation(operation, control, handler);
+
+            Function<DomainModelControllerService, ModelNode> function = new Function<DomainModelControllerService, ModelNode>() {
+                @Override
+                public ModelNode apply(DomainModelControllerService controllerService) {
+                    return InVmAccess.runInVm((PrivilegedAction<ModelNode>) () -> controllerService.executeReadOnlyOperation(operation, control,  handler));
+                }
+            };
+            return SecurityActions.privilegedExecution(function, DomainModelControllerService.this);
         }
 
         @Override
         public ModelNode executeReadOnly(ModelNode operation, Resource model, OperationStepHandler handler, OperationTransactionControl control) {
-            return executeReadOnlyOperation(operation, model, control, handler);
+            Function<DomainModelControllerService, ModelNode> function = new Function<DomainModelControllerService, ModelNode>() {
+                @Override
+                public ModelNode apply(DomainModelControllerService controllerService) {
+                    return InVmAccess.runInVm((PrivilegedAction<ModelNode>) () -> controllerService.executeReadOnlyOperation(operation, model, control, handler));
+                }
+            };
+            return SecurityActions.privilegedExecution(function, DomainModelControllerService.this);
         }
 
         @Override
@@ -1390,7 +1429,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
             Assert.checkNotNullParam("operationID", operationID);
             releaseReadLock(operationID);
         }
-
     }
 
     private static final class DomainHostControllerInfoAccessor implements RuntimeHostControllerInfoAccessor {
