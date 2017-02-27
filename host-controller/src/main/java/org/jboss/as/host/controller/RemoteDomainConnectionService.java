@@ -464,7 +464,8 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                                 remoteFileRepository, contentRepository);
                 final SyncServerGroupOperationHandler handler =
                         new SyncServerGroupOperationHandler(localHostInfo.getLocalHostName(), original, parameters);
-                context.addStep(syncOperation, handler, OperationContext.Stage.MODEL, true);
+                final ModelNode syncResponse = new ModelNode();
+                context.addStep(syncResponse, syncOperation, handler, OperationContext.Stage.MODEL, true);
                 // Complete the remote tx on the master depending on the outcome
                 // This cannot be executed as another step
                 // If this is not called the lock on the master will not be released and result in a deadlock
@@ -474,6 +475,9 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                         if (resultAction == OperationContext.ResultAction.KEEP) {
                             preparedOperation.commit();
                         } else {
+                            if (syncResponse.hasDefined(FAILURE_DESCRIPTION)) {
+                                context.getFailureDescription().set(HostControllerLogger.ROOT_LOGGER.hostDomainSynchronizationError(syncResponse.get(FAILURE_DESCRIPTION).asString()));
+                            }
                             preparedOperation.rollback();
                         }
                     }
