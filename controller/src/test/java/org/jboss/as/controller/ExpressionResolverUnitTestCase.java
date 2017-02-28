@@ -195,7 +195,7 @@ public class ExpressionResolverUnitTestCase {
     public void testSimpleLenientResolver() {
 
         ModelNode input = createModelNode();
-        input.get("defaulted").set(new ValueExpression("${test:default}"));
+        input.get("defaulted").set(new ValueExpression("${test.default:default}"));
         ModelNode node = new ModelNode();
         try {
             node = ExpressionResolver.SIMPLE_LENIENT.resolveExpressions(input);
