@@ -21,6 +21,7 @@
  */
 package org.jboss.as.domain.management.security;
 
+import static org.jboss.as.domain.management.ModelDescriptionConstants.IGNORE;
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
 
 import java.io.IOException;
@@ -30,10 +31,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Set;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.PartialResultException;
+import javax.naming.Context;
 import javax.naming.NameNotFoundException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
@@ -336,6 +340,15 @@ public class LdapGroupSearcherFactory {
                         } catch (NameNotFoundException e) {
                             SECURITY_LOGGER.tracef("Failed to query roleNameAttrName: %s", e.getMessage());
                             if (skipMissingGroups == false) {
+                                throw e;
+                            }
+                        } catch (PartialResultException e) {
+                            Hashtable<?, ?> env = null;
+                            if (dirContext != null && (env = dirContext.getEnvironment()) != null && IGNORE.equals(env.get(Context.REFERRAL))) {
+                                /* We can ignore the PartialResultException if we asked for ignoring the referrals
+                                 * - see WFCORE-2341 */
+                                SECURITY_LOGGER.tracef(e, "Ignoring a failed referral query roleNameAttrName");
+                            } else {
                                 throw e;
                             }
                         } catch (LdapReferralException e) {
