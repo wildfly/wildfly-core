@@ -34,15 +34,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.ControlledProcessStateService;
-import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationFilter;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
-import org.jboss.as.server.Services;
 import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.dmr.ModelNode;
@@ -98,7 +97,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
     private FileSystemDeploymentService scanner;
 
     private final InjectedValue<PathManager> pathManagerValue = new InjectedValue<PathManager>();
-    private final InjectedValue<ModelController> controllerValue = new InjectedValue<ModelController>();
+    private final InjectedValue<NotificationHandlerRegistry> notificationRegistryValue = new InjectedValue<NotificationHandlerRegistry>();
     private final InjectedValue<ModelControllerClientFactory> clientFactoryValue = new InjectedValue<ModelControllerClientFactory>();
     private final InjectedValue<ScheduledExecutorService> scheduledExecutorValue = new InjectedValue<ScheduledExecutorService>();
     private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
@@ -137,7 +136,8 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
 
         return context.getServiceTarget().addService(serviceName, service)
                 .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.pathManagerValue)
-                .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, service.controllerValue)
+                .addDependency(context.getCapabilityServiceName("org.wildfly.managment.notification-handler-registry", null),
+                        NotificationHandlerRegistry.class, service.notificationRegistryValue)
                 .addDependency(context.getCapabilityServiceName("org.wildfly.managment.model-controller-client-factory", null),
                         ModelControllerClientFactory.class, service.clientFactoryValue)
                 .addDependency(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_CHAINS)
@@ -205,7 +205,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                 // The boot-time scanner should use our DeploymentOperations.Factory
                 this.scanner.setDeploymentOperationsFactory(factory);
             }
-            controllerValue.getValue().getNotificationRegistry().registerNotificationHandler(ANY_ADDRESS, scanner, DEPLOYMENT_FILTER);
+            notificationRegistryValue.getValue().registerNotificationHandler(ANY_ADDRESS, scanner, DEPLOYMENT_FILTER);
             if (enabled) {
                 scanner.startScanner();
             }
@@ -220,7 +220,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
     @Override
     public synchronized void stop(StopContext context) {
         final DeploymentScanner scanner = this.scanner;
-        controllerValue.getValue().getNotificationRegistry().unregisterNotificationHandler(ANY_ADDRESS, this.scanner, DEPLOYMENT_FILTER);
+        notificationRegistryValue.getValue().unregisterNotificationHandler(ANY_ADDRESS, this.scanner, DEPLOYMENT_FILTER);
         this.scanner = null;
         scanner.stopScanner();
         scheduledExecutorValue.getValue().shutdown();

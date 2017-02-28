@@ -49,7 +49,6 @@ import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ManagementModel;
-import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -65,6 +64,7 @@ import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.notification.Notification;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.PlaceholderResource;
@@ -148,6 +148,8 @@ public final class ServerService extends AbstractControllerService {
 
     /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
     public static final ServiceName JBOSS_SERVER_CLIENT_FACTORY = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
+    /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
+    public static final ServiceName JBOSS_SERVER_NOTIFICATION_REGISTRY = NOTIFICATION_REGISTRY_CAPABILITY.getCapabilityServiceName();
     /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
     public static final ServiceName JBOSS_SERVER_SCHEDULED_EXECUTOR = Services.JBOSS_SERVER_EXECUTOR.append("scheduled");
 
@@ -302,7 +304,7 @@ public final class ServerService extends AbstractControllerService {
             suspendController.setStartSuspended(suspend);
             runningModeControl.setSuspend(false);
             context.getServiceTarget().addService(SuspendController.SERVICE_NAME, suspendController)
-                    .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, suspendController.getModelControllerInjectedValue())
+                    .addDependency(JBOSS_SERVER_NOTIFICATION_REGISTRY, NotificationHandlerRegistry.class, suspendController.getNotificationHandlerRegistry())
                     .install();
 
             GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();

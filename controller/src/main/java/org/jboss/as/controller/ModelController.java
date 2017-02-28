@@ -103,8 +103,11 @@ public interface ModelController {
      * Returns the {@code NotificationHandlerRegistration} that registers notification handlers for this model controller.
      *
      * @return the notification handler registration
+     *
+     * @deprecated Use {@link org.jboss.as.controller.notification.NotificationHandlerRegistry}. Will be removed in the next major or minor release.
      */
-     NotificationHandlerRegistration getNotificationRegistry();
+    @Deprecated
+    NotificationHandlerRegistration getNotificationRegistry();
 
     /**
      * A callback interface for the operation's completion status.  Implemented in order to control whether a complete

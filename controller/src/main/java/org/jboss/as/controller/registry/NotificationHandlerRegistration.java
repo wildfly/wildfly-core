@@ -24,10 +24,9 @@ package org.jboss.as.controller.registry;
 
 import java.util.Collection;
 
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.notification.Notification;
-import org.jboss.as.controller.notification.NotificationFilter;
 import org.jboss.as.controller.notification.NotificationHandler;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 
 /**
  * The NotificationHandlerRegistration is used to register and unregister notification handlers.
@@ -44,38 +43,7 @@ import org.jboss.as.controller.notification.NotificationHandler;
  *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2014 Red Hat inc.
  */
-public interface NotificationHandlerRegistration {
-
-    /**
-     * Special path address to register a notification handler for <em>any</em> source.
-     *
-     * A handler registered with this address will receive <em>all</em> notifications emitted by <em>any</em> source.
-     * It is advised to use a suitable {@code NotificationFilter} to constrain the received notifications (e.g. by their types).
-     */
-    PathAddress ANY_ADDRESS = PathAddress.EMPTY_ADDRESS;
-
-    /**
-     * Register the given NotificationHandler to receive notifications emitted by the resource at the given source address.
-     * The {@link org.jboss.as.controller.notification.NotificationHandler#handleNotification(org.jboss.as.controller.notification.Notification)} method will only be called on the registered handler if the filter's {@link org.jboss.as.controller.notification.NotificationFilter#isNotificationEnabled(org.jboss.as.controller.notification.Notification)}
-     * returns {@code true} for the given notification.
-     * <br />
-     *
-     * @param source the path address of the resource that emit notifications.
-     * @param handler the notification handler
-     * @param filter the notification filter. Use {@link org.jboss.as.controller.notification.NotificationFilter#ALL} to let the handler always handle notifications
-     */
-    void registerNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter);
-
-    /**
-     * Unregister the given NotificationHandler to stop receiving notifications emitted by the resource at the given source address.
-     *
-     * The source, handler and filter must match the values that were used during registration to be effectively unregistered.
-     *
-     * @param source the path address of the resource that emit notifications.
-     * @param handler the notification handler
-     * @param filter the notification filter
-     */
-    void unregisterNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter);
+public interface NotificationHandlerRegistration extends NotificationHandlerRegistry {
 
     /**
      * Return all the {@code NotificationHandler} that where registered to listen to the notification's source address (either directly

@@ -57,6 +57,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationFilter;
 import org.jboss.as.controller.notification.NotificationHandler;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.as.jmx.BaseMBeanServerPlugin;
@@ -74,17 +75,17 @@ public class ModelControllerMBeanServerPlugin extends BaseMBeanServerPlugin {
     private final ConfiguredDomains configuredDomains;
     private final ModelControllerMBeanHelper legacyHelper;
     private final ModelControllerMBeanHelper exprHelper;
-    private final NotificationHandlerRegistration notificationRegistry;
+    private final NotificationHandlerRegistry notificationRegistry;
     private final AtomicLong notificationSequenceNumber = new AtomicLong(0);
 
     public ModelControllerMBeanServerPlugin(final MBeanServer mbeanServer,
-                                            final ConfiguredDomains configuredDomains, ModelController controller, final MBeanServerDelegate delegate,
+                                            final ConfiguredDomains configuredDomains, ModelController controller, NotificationHandlerRegistry notificationHandlerRegistry, final MBeanServerDelegate delegate,
                                             boolean legacyWithProperPropertyFormat, ProcessType processType,
                                             ManagementModelIntegration.ManagementModelProvider managementModelProvider, boolean isMasterHc) {
         assert configuredDomains != null;
         this.mbeanServer = mbeanServer;
         this.configuredDomains = configuredDomains;
-        this.notificationRegistry = controller.getNotificationRegistry();
+        this.notificationRegistry = notificationHandlerRegistry;
 
         MutabilityChecker mutabilityChecker = MutabilityChecker.create(processType, isMasterHc);
         legacyHelper = configuredDomains.getLegacyDomain() != null ?
