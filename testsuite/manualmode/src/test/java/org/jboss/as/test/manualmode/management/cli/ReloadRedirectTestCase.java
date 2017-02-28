@@ -226,7 +226,7 @@ public class ReloadRedirectTestCase {
             promptFound = cliProc.pushLineAndWaitForResults("reload", "Accept certificate");
             assertTrue("No certificate prompt " + cliProc.getOutput(), promptFound);
         } finally {
-            cliProc.destroyProcess();
+            cliProc.ctrlCAndWaitForClose();
         }
     }
 }
