@@ -46,6 +46,8 @@ import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
 import org.wildfly.security.auth.client.MatchRule;
 import org.xnio.IoFuture;
+import org.xnio.Option;
+import org.xnio.OptionMap;
 import org.xnio.Options;
 
 /**
@@ -155,16 +157,27 @@ public class ProtocolConnectionUtils {
             }
         }
 
+        // WFCORE-2342 check for default SSL / TLS options
+        final OptionMap.Builder builder = OptionMap.builder();
+        OptionMap optionMap = configuration.getOptionMap();
+        for (Option option : optionMap) {
+            builder.set(option, optionMap.get(option));
+        }
+        if (optionMap.get(Options.SSL_ENABLED) == null)
+            builder.set(Options.SSL_ENABLED, configuration.isSslEnabled());
+        if (optionMap.get(Options.SSL_STARTTLS) == null)
+            builder.set(Options.SSL_STARTTLS, configuration.isUseStartTLS());
+
         AuthenticationContext authenticationContext = AuthenticationContext.empty();
         authenticationContext = authenticationContext.with(MatchRule.ALL, mergedConfiguration);
         final SSLContext finalSslContext = sslContext;
         authenticationContext = authenticationContext.withSsl(MatchRule.ALL, () -> finalSslContext);
 
         if (clientBindAddress == null) {
-            return endpoint.connect(uri, configuration.getOptionMap(), authenticationContext);
+            return endpoint.connect(uri, builder.getMap(), authenticationContext);
         } else {
             InetSocketAddress bindAddr = new InetSocketAddress(clientBindAddress, 0);
-            return endpoint.connect(uri, bindAddr, configuration.getOptionMap(), authenticationContext);
+            return endpoint.connect(uri, bindAddr, builder.getMap(), authenticationContext);
         }
     }
 
