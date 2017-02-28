@@ -24,8 +24,13 @@ package org.jboss.as.core.model.test;
 import java.io.File;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelVersion;
@@ -44,9 +49,12 @@ import org.jboss.as.model.test.StringConfigurationPersister;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.ValueService;
+import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.legacy.test.spi.core.TestModelControllerFactory;
 
@@ -107,6 +115,12 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         ServiceBuilder<ModelController> builder = target.addService(Services.JBOSS_SERVER_CONTROLLER, svc);
         builder.addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, testModelControllerFactory.getContentRepositoryInjector(svc));
         builder.install();
+        if (legacyModelVersion == null) {
+            ExecutorService mgmtExecutor = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 20L, TimeUnit.SECONDS,
+                    new SynchronousQueue<Runnable>());
+            Service<ExecutorService> mgmtExecSvc = new ValueService<>(new ImmediateValue<>(mgmtExecutor));
+            target.addService(AbstractControllerService.EXECUTOR_CAPABILITY.getCapabilityServiceName(), mgmtExecSvc).install();
+        }
 
         //sharedState = svc.state;
         svc.waitForSetup();
