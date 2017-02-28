@@ -105,12 +105,13 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         } else {
             final SecurityRealm securityRealm = securityRealmInjectedValue.getOptionalValue();
             if (securityRealm != null) {
-                final CallbackHandlerFactory callbackHandlerFactory = securityRealm.getSecretCallbackHandlerFactory();
                 configuration = AuthenticationConfiguration.EMPTY
                     .useName(username)
-                    .useCallbackHandler(callbackHandlerFactory.getCallbackHandler(username))
-                    // todo
                     .forbidSaslMechanisms(JBOSS_LOCAL_USER);
+                final CallbackHandlerFactory callbackHandlerFactory = securityRealm.getSecretCallbackHandlerFactory();
+                if (callbackHandlerFactory != null) {
+                    configuration = configuration.useCallbackHandler(callbackHandlerFactory.getCallbackHandler(username));
+                }
             } else {
                 configuration = AuthenticationConfiguration.EMPTY.useName(username);
             }
