@@ -25,14 +25,11 @@ package org.jboss.as.host.controller.resources;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
-import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.NativeManagementAddHandler;
@@ -48,14 +45,14 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
 
     public static final SimpleAttributeDefinition INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INTERFACE, ModelType.STRING, false)
             .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setRestartAllServices()
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
             .setCapabilityReference("org.wildfly.network.interface", NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition NATIVE_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT, false)
             .setAllowExpression(true).setValidator(new IntRangeValidator(0, 65535, false, true))
-            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setRestartAllServices()
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
             .build();
 
@@ -64,9 +61,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
     public NativeManagementResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo) {
         super(new Parameters(RESOURCE_PATH, HostModelUtil.getResourceDescriptionResolver("core","management","native-interface"))
             .setAddHandler(new NativeManagementAddHandler(hostControllerInfo))
-            .setRemoveHandler(NativeManagementRemoveHandler.INSTANCE)
-            .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
-            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES));
+            .setRemoveHandler(NativeManagementRemoveHandler.INSTANCE));
     }
 
     @Override

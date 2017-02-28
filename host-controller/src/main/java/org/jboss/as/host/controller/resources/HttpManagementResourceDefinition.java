@@ -62,16 +62,19 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
             .setCapabilityReference("org.wildfly.network.interface", HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+            .setRestartAllServices()
             .build();
 
     public static final SimpleAttributeDefinition HTTP_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT, true)
             .setAllowExpression(true).setValidator(new IntRangeValidator(0, 65535, true, true))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
+            .setRestartAllServices()
             .build();
 
     public static final SimpleAttributeDefinition HTTPS_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURE_PORT, ModelType.INT, true)
             .setAllowExpression(true).setValidator(new IntRangeValidator(0, 65535, true, true))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
+            .setRestartAllServices()
             .build();
 
     public static final SimpleAttributeDefinition SECURE_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURE_INTERFACE, ModelType.STRING, true)
@@ -80,6 +83,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
             .setCapabilityReference("org.wildfly.network.interface", HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+            .setRestartAllServices()
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, INTERFACE, HTTP_PORT, HTTPS_PORT, SECURE_INTERFACE);
