@@ -117,6 +117,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         }
     }
 
+    /** Capability in-vm users of the controller use to create clients */
     protected static final RuntimeCapability<Void> CLIENT_FACTORY_CAPABILITY =
             RuntimeCapability.Builder.of("org.wildfly.managment.model-controller-client-factory", ModelControllerClientFactory.class)
             .build();
@@ -128,6 +129,15 @@ public abstract class AbstractControllerService implements Service<ModelControll
      */
     public static final RuntimeCapability<Void> PATH_MANAGER_CAPABILITY =
             RuntimeCapability.Builder.of("org.wildfly.management.path-manager", PathManager.class)
+                    .build();
+
+    /**
+     * Capability users of the controller use to perform asynchronous management tasks.
+     * This capability isn't necessarily directly related to this class but we declare it
+     * here as it's as good a place as any at this time.
+     */
+    public static final RuntimeCapability<Void> EXECUTOR_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.management.executor", ExecutorService.class)
                     .build();
 
     private static final OperationDefinition INIT_CONTROLLER_OP = new SimpleOperationDefinitionBuilder("boottime-controller-initializer-step", null)
@@ -329,7 +339,6 @@ public abstract class AbstractControllerService implements Service<ModelControll
             capabilityRegistry.registerCapability(
                     new RuntimeCapabilityRegistration(CLIENT_FACTORY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
             capabilityRegistry.registerPossibleCapability(CLIENT_FACTORY_CAPABILITY, PathAddress.EMPTY_ADDRESS);
-            capabilityRegistry.publish();  // These are visible immediately; no waiting for finishBoot
             target.addService(CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName(),
                     new ValueService<ModelControllerClientFactory>(new ImmediateValue<ModelControllerClientFactory>(clientFactory)))
                     .install();

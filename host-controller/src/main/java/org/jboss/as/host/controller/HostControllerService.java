@@ -23,6 +23,7 @@
 package org.jboss.as.host.controller;
 
 import static java.security.AccessController.doPrivileged;
+import static org.jboss.as.controller.AbstractControllerService.EXECUTOR_CAPABILITY;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -75,6 +76,8 @@ import org.jboss.threads.JBossThreadFactory;
 public class HostControllerService implements Service<AsyncFuture<ServiceContainer>> {
 
     public static final ServiceName HC_SERVICE_NAME = ServiceName.JBOSS.append("host", "controller");
+    /** @deprecated Use the org.wildfly.management.executor capability */
+    @Deprecated
     public static final ServiceName HC_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("executor");
     public static final ServiceName HC_SCHEDULED_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("scheduled", "executor");
 
@@ -169,16 +172,16 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
 
         // Executor Services
         final HostControllerExecutorService executorService = new HostControllerExecutorService(threadFactory);
-        serviceTarget.addService(HC_EXECUTOR_SERVICE_NAME, executorService)
-                .addAliases(ManagementRemotingServices.SHUTDOWN_EXECUTOR_NAME) // Use this executor for mgmt shutdown for now
+        serviceTarget.addService(EXECUTOR_CAPABILITY.getCapabilityServiceName(), executorService)
+                .addAliases(HC_EXECUTOR_SERVICE_NAME, ManagementRemotingServices.SHUTDOWN_EXECUTOR_NAME) // Use this executor for mgmt shutdown for now
                 .install();
 
         final HostControllerScheduledExecutorService scheduledExecutorService = new HostControllerScheduledExecutorService(threadFactory);
         serviceTarget.addService(HC_SCHEDULED_EXECUTOR_SERVICE_NAME, scheduledExecutorService)
-                .addDependency(HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, scheduledExecutorService.executorInjector)
+                .addDependency(EXECUTOR_CAPABILITY.getCapabilityServiceName(), ExecutorService.class, scheduledExecutorService.executorInjector)
                 .install();
 
-        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, HC_EXECUTOR_SERVICE_NAME);
+        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, EXECUTOR_CAPABILITY.getCapabilityServiceName());
 
         // Install required path services. (Only install those identified as required)
         HostPathManagerService hostPathManagerService = new HostPathManagerService(capabilityRegistry);
