@@ -176,7 +176,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
      * @return process exit value
      */
     public void destroyProcess() {
-        cliProcess.destroy();
+        cliProcess.destroyForcibly();
     }
 
     /**
@@ -270,7 +270,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
 
             // If the timeout is reached, destroy the process and return false
             if (waitingTime > resultTimeout) {
-                cliProcess.destroy();
+                cliProcess.destroyForcibly();
                 wait = false;
             }
         }
