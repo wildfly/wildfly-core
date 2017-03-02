@@ -682,6 +682,7 @@ public class DeployHandler extends DeploymentHandler {
     protected ModelNode buildDeploymentReplace(final File f, String name, String runtimeName, boolean disabled) throws OperationFormatException {
         final ModelNode request = new ModelNode();
         request.get(Util.OPERATION).set(Util.FULL_REPLACE_DEPLOYMENT);
+        request.get(Util.ADDRESS).setEmptyList();
         request.get(Util.NAME).set(name);
         if(runtimeName != null) {
             request.get(Util.RUNTIME_NAME).set(runtimeName);
