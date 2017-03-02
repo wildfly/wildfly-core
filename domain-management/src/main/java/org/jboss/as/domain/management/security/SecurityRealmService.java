@@ -25,10 +25,12 @@ package org.jboss.as.domain.management.security;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.LOCAL_DEFAULT_USER;
 import static org.jboss.as.domain.management.RealmConfigurationConstants.SUBJECT_CALLBACK_SUPPORTED;
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
+import static org.wildfly.security.permission.PermissionUtil.createPermission;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.Permission;
 import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -95,6 +97,7 @@ import org.wildfly.security.http.util.FilterServerMechanismFactory;
 import org.wildfly.security.http.util.SecurityProviderServerMechanismFactory;
 import org.wildfly.security.http.util.SetMechanismInformationMechanismFactory;
 import org.wildfly.security.http.util.SortedServerMechanismFactory;
+import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.sasl.WildFlySasl;
 import org.wildfly.security.sasl.localuser.LocalUserServer;
 import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
@@ -109,6 +112,8 @@ import org.wildfly.security.sasl.util.SortedMechanismSaslServerFactory;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class SecurityRealmService implements Service<SecurityRealm>, SecurityRealm {
+
+    private static final String[] ADDITIONAL_PERMISSION = new String[] { "org.wildfly.transaction.client.RemoteTransactionPermission", "org.jboss.ejb.client.RemoteEJBPermission" };
 
     public static final String LOADED_USERNAME_KEY = SecurityRealmService.class.getName() + ".LOADED_USERNAME";
     public static final String SKIP_GROUP_LOADING_KEY = SecurityRealmService.class.getName() + ".SKIP_GROUP_LOADING";
@@ -203,7 +208,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
         domainBuilder.addRealm("EMPTY", org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM).build();
         domainBuilder.setDefaultRealmName("EMPTY");
-        domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
+        final PermissionVerifier permissionVerifier = createPermissionVerifier();
+        domainBuilder.setPermissionMapper((permissionMappable, roles) -> permissionVerifier);
 
         SecurityDomain securityDomain = domainBuilder.build();
 
@@ -255,6 +261,20 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         saslBuilder.setFactory(saslServerFactory);
         saslBuilder.setMechanismConfigurationSelector(mcs);
         saslAuthenticationFactory = saslBuilder.build();
+    }
+
+    private static PermissionVerifier createPermissionVerifier() {
+        PermissionVerifier permissionVerifier = LoginPermission.getInstance();
+        for (String permissionName : ADDITIONAL_PERMISSION) {
+            try {
+                Permission permission = createPermission(SecurityRealmService.class.getClassLoader(), permissionName, null, null);
+                permissionVerifier = permissionVerifier.or(PermissionVerifier.from(permission));
+            } catch (Exception e) {
+                ROOT_LOGGER.tracef(e, "Unable to create permission '%s'", permissionName);
+            }
+        }
+
+        return permissionVerifier;
     }
 
     private AuthMechanism toAuthMechanism(String mechanismType, String mechanismName) {
