@@ -329,7 +329,7 @@ public class ServerOperationResolver {
     }
 
     /**
-     * Convert an operation for deployment overalys to be executed on local servers.
+     * Convert an operation for deployment overlays to be executed on local servers.
      * Since this might be called in the case of redeployment of affected deployments, we need to take into account
      * the composite op resulting from such a transformation
      * @see AffectedDeploymentOverlay#redeployLinksAndTransformOperationForDomain
@@ -585,12 +585,19 @@ public class ServerOperationResolver {
                 ModelNode serverOp = operation.clone();
                 String groupName = address.getElement(0).getValue();
                 Set<ServerIdentity> servers = getServersForGroup(groupName, host, localHostName, serverProxies);
-                if (DEPLOYMENT.equals(address.getLastElement().getKey())) {
-                    if (COMPOSITE.equals(operation.get(OP).asString())) { //This should be a redeploy affected transformed operation on removal of an overlay deployment
-                        serverOp = originalOperation.clone();
-                    }
+                if (DEPLOYMENT.equals(address.getLastElement().getKey())) { //So we are on an operation affecting a link betwenn an overlay and a deployment
                     PathAddress serverAddress = address.subAddress(1);
                     serverOp.get(OP_ADDR).set(serverAddress.toModelNode());
+                    if (COMPOSITE.equals(operation.get(OP).asString())) { //This should be a redeploy affected transformed operation on removal of a link
+                        Operations.CompositeOperationBuilder builder = Operations.CompositeOperationBuilder.create();
+                        for (ModelNode step : serverOp.get(STEPS).asList()) {
+                            ModelNode newStep = step.clone();
+                            serverAddress = PathAddress.pathAddress(step.get(OP_ADDR)).subAddress(1);
+                            newStep.get(OP_ADDR).set(serverAddress.toModelNode());
+                            builder.addStep(newStep);
+                        }
+                        serverOp = builder.build().getOperation();
+                    }
                     result = Collections.singletonMap(servers, serverOp);
                 } else if (COMPOSITE.equals(operation.get(OP).asString())) { //This should be a redeploy-links transformed operation
                     Operations.CompositeOperationBuilder builder = Operations.CompositeOperationBuilder.create();
@@ -600,8 +607,7 @@ public class ServerOperationResolver {
                         newStep.get(OP_ADDR).set(serverAddress.toModelNode());
                         builder.addStep(newStep);
                     }
-                    ModelNode resultingOperation = builder.build().getOperation();
-                    result = Collections.singletonMap(servers, resultingOperation);
+                    result = Collections.singletonMap(servers, builder.build().getOperation());
                 } else if (REDEPLOY.equals(operation.get(OP).asString())) {
                     PathAddress serverAddress = address.subAddress(1);
                     serverOp.get(OP_ADDR).set(serverAddress.toModelNode());

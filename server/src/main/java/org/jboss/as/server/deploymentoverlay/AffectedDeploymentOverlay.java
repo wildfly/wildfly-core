@@ -71,7 +71,7 @@ public class AffectedDeploymentOverlay {
      * @return all the deployment runtime names associated with an overlay accross all server groups.
      */
     public static Set<String> listAllLinks(OperationContext context, String overlay) {
-        Set<String> serverGoupNames = listServerGroupsReferencingOverlay(context, overlay);
+        Set<String> serverGoupNames = listServerGroupsReferencingOverlay(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), overlay);
         Set<String> links = new HashSet<>();
         for (String serverGoupName : serverGoupNames) {
             links.addAll(listLinks(context, PathAddress.pathAddress(
@@ -105,7 +105,27 @@ public class AffectedDeploymentOverlay {
      * @throws OperationFailedException
      */
     public static void redeployLinks(OperationContext context, PathAddress deploymentsRootAddress, Set<String> runtimeNames) throws OperationFailedException {
-        Set<String> deploymentNames = listDeploymentNames(context, deploymentsRootAddress, runtimeNames.stream().map(wildcardExpr -> DeploymentOverlayIndex.getPattern(wildcardExpr)).collect(Collectors.toSet()));
+        Set<String> deploymentNames = listDeployments(context.readResourceFromRoot(deploymentsRootAddress), runtimeNames);
+        for (String deploymentName : deploymentNames) {
+            PathAddress address = deploymentsRootAddress.append(DEPLOYMENT, deploymentName);
+            OperationStepHandler handler = context.getRootResourceRegistration().getOperationHandler(address, REDEPLOY);
+            ModelNode operation = addRedeployStep(address);
+            ServerLogger.AS_ROOT_LOGGER.debugf("Redeploying %s at address %s with handler %s", deploymentName, address, handler);
+            assert handler != null;
+            assert operation.isDefined();
+            context.addStep(operation, handler, OperationContext.Stage.MODEL);
+        }
+    }
+
+    /**
+     * We are adding a redeploy operation step for each specified deployment runtime name.
+     *
+     * @param context
+     * @param deploymentsRootAddress
+     * @param deploymentNames
+     * @throws OperationFailedException
+     */
+    public static void redeployDeployments(OperationContext context, PathAddress deploymentsRootAddress, Set<String> deploymentNames) throws OperationFailedException {
         for (String deploymentName : deploymentNames) {
             PathAddress address = deploymentsRootAddress.append(DEPLOYMENT, deploymentName);
             OperationStepHandler handler = context.getRootResourceRegistration().getOperationHandler(address, REDEPLOY);
@@ -122,41 +142,38 @@ public class AffectedDeploymentOverlay {
      * names and then transform the operation so that every server in those server groups will redeploy the affected
      * deployments.
      *
+     * @param removeOperation
      * @see #transformOperation
      * @param context
-     * @param serverGroupNames
      * @param runtimeNames
      * @throws OperationFailedException
      */
     public static void redeployLinksAndTransformOperationForDomain(OperationContext context, Set<String> runtimeNames, ModelNode removeOperation) throws OperationFailedException {
-        Set<String> serverGroupNames = listServerGroupsReferencingOverlay(context, context.getCurrentAddressValue());
+        Set<String> serverGroupNames = listServerGroupsReferencingOverlay(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), context.getCurrentAddressValue());
         Map<String, Set<String>> deploymentPerServerGroup = new HashMap<>();
         for (String serverGoupName : serverGroupNames) {
             deploymentPerServerGroup.put(serverGoupName,
-                    listDeploymentNames(context, PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, serverGoupName)),runtimeNames
-                            .stream()
-                            .map(wildcardExpr -> DeploymentOverlayIndex.getPattern(wildcardExpr))
-                            .collect(Collectors.toSet())));
+                    listDeployments(context.readResourceFromRoot(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, serverGoupName))),runtimeNames));
         }
         if (deploymentPerServerGroup.isEmpty()) {
             runtimeNames.forEach(s -> ServerLogger.ROOT_LOGGER.debugf("We haven't found any server-group for %s", s));
             throw ServerLogger.ROOT_LOGGER.redeployingUnaffactedDeployments(runtimeNames);
         }
-        //Add a deploy step for each affected deployment in its server-group.
         Operations.CompositeOperationBuilder opBuilder = Operations.CompositeOperationBuilder.create();
-        deploymentPerServerGroup.entrySet().stream().filter((entry) -> (!entry.getValue().isEmpty())).forEach((entry) -> {
-            entry.getValue().forEach((deploymentName) -> opBuilder.addStep(addRedeployStep(context.getCurrentAddress().getParent().append(SERVER_GROUP, entry.getKey()).append(DEPLOYMENT, deploymentName))));
-        });
         if(removeOperation != null) {
              opBuilder.addStep(removeOperation);
         }
+        //Add a deploy step for each affected deployment in its server-group.
+        deploymentPerServerGroup.entrySet().stream().filter((entry) -> (!entry.getValue().isEmpty())).forEach((entry) -> {
+            entry.getValue().forEach((deploymentName) -> opBuilder.addStep(addRedeployStep(context.getCurrentAddress().getParent().append(SERVER_GROUP, entry.getKey()).append(DEPLOYMENT, deploymentName))));
+        });
         // Add the domain op transformer
         List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
         if (transformers == null) {
             context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS, transformers = new ArrayList<>());
         }
         final ModelNode slave = opBuilder.build().getOperation();
-        transformers.add(new OverlayOperationTransformer(slave));
+        transformers.add(new OverlayOperationTransformer(slave, context.getCurrentAddress()));
     }
 
     /**
@@ -165,47 +182,49 @@ public class AffectedDeploymentOverlay {
      * affected deployments.
      *
      * @see #transformOperation
+     * @param removeOperation
      * @param context
      * @param deploymentsRootAddress
      * @param runtimeNames
      * @throws OperationFailedException
      */
      public static void redeployLinksAndTransformOperation(OperationContext context, ModelNode removeOperation, PathAddress deploymentsRootAddress, Set<String> runtimeNames) throws OperationFailedException {
-        Set<String> deploymentNames = listDeploymentNames(context, deploymentsRootAddress, runtimeNames
-                .stream()
-                .map(wildcardExpr -> DeploymentOverlayIndex.getPattern(wildcardExpr))
-                .collect(Collectors.toSet()));
+        Set<String> deploymentNames = listDeployments(context.readResourceFromRoot(deploymentsRootAddress), runtimeNames);
         if (deploymentNames.isEmpty()) {
             runtimeNames.forEach(s -> ServerLogger.ROOT_LOGGER.debugf("We haven't found any deployment for %s in server-group %s", s, deploymentsRootAddress.getLastElement().getValue()));
             throw ServerLogger.ROOT_LOGGER.redeployingUnaffactedDeployments(runtimeNames);
         }
         Operations.CompositeOperationBuilder opBuilder = Operations.CompositeOperationBuilder.create();
-
-        for (String deploymentName : deploymentNames) {
-            opBuilder.addStep(addRedeployStep(deploymentsRootAddress.append(DEPLOYMENT, deploymentName)));
-        }
         if(removeOperation != null) {
              opBuilder.addStep(removeOperation);
+        }
+        for (String deploymentName : deploymentNames) {
+            opBuilder.addStep(addRedeployStep(deploymentsRootAddress.append(DEPLOYMENT, deploymentName)));
         }
         List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
         if (transformers == null) {
             context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS, transformers = new ArrayList<>());
         }
         final ModelNode slave = opBuilder.build().getOperation();
-        transformers.add(new OverlayOperationTransformer(slave));
+        transformers.add(new OverlayOperationTransformer(slave, context.getCurrentAddress()));
     }
 
-
     /**
-     * Returns the deployment names with the specified runtime names.
+     * Returns the deployment names with the specified runtime names at the specified deploymentRootAddress.
      *
-     * @param context
+     * @param deploymentRootResource
      * @param runtimeNames
-     * @return
+     * @return the deployment names with the specified runtime names at the specified deploymentRootAddress.
      */
-    private static Set<String> listDeploymentNames(OperationContext context, PathAddress deploymentRootAddress, Set<Pattern> patterns) {
+      public static Set<String> listDeployments(Resource deploymentRootResource, Set<String> runtimeNames) {
+          return listDeploymentNames(deploymentRootResource, runtimeNames
+                .stream()
+                .map(wildcardExpr -> DeploymentOverlayIndex.getPattern(wildcardExpr))
+                .collect(Collectors.toSet()));
+      }
+
+    private static Set<String> listDeploymentNames(Resource deploymentRootResource, Set<Pattern> patterns) {
         Set<String> deploymentNames = new HashSet<>();
-        Resource deploymentRootResource = context.readResourceFromRoot(deploymentRootAddress);
         if (deploymentRootResource.hasChildren(DEPLOYMENT)) {
             for (Resource.ResourceEntry deploymentResource : deploymentRootResource.getChildren(DEPLOYMENT)) {
                 if (isAcceptableDeployment(deploymentResource.getModel(), patterns)) {
@@ -231,8 +250,7 @@ public class AffectedDeploymentOverlay {
         return Operations.createOperation(REDEPLOY, address.toModelNode());
     }
 
-    private static Set<String> listServerGroupsReferencingOverlay(OperationContext context, String overlayName) {
-        final Resource rootResource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
+    private static Set<String> listServerGroupsReferencingOverlay(Resource rootResource, String overlayName) {
         final PathElement overlayPath = PathElement.pathElement(DEPLOYMENT_OVERLAY, overlayName);
         if (rootResource.hasChildren(SERVER_GROUP)) {
             return rootResource.getChildrenNames(SERVER_GROUP).stream().filter(
@@ -254,26 +272,29 @@ public class AffectedDeploymentOverlay {
     private static final class OverlayOperationTransformer implements DomainOperationTransformer {
 
         private final ModelNode newOperation;
+        private final PathAddress overlayAddress;
 
-        public OverlayOperationTransformer(ModelNode newOperation) {
+        public OverlayOperationTransformer(ModelNode newOperation, PathAddress overlayAddress) {
             this.newOperation = newOperation;
+            this.overlayAddress = overlayAddress;
         }
 
         @Override
         public ModelNode transform(final OperationContext context, final ModelNode operation) {
-            if (operation.get(OP).asString().equals(COMPOSITE)) {
+            if (COMPOSITE.equals(operation.get(OP).asString())) {
                 ModelNode ret = operation.clone();
-                final List<ModelNode> list = new ArrayList<ModelNode>();
+                final List<ModelNode> list = new ArrayList<>();
                 ListIterator<ModelNode> it = ret.get(STEPS).asList().listIterator();
                 while (it.hasNext()) {
                     final ModelNode subOperation = it.next();
                     list.add(transform(context, subOperation));
                 }
                 ret.get(STEPS).set(list);
+                ServerLogger.AS_ROOT_LOGGER.debugf("Transforming operation %s into %s", operation.toJSONString(true), ret.toJSONString(true));
                 return ret;
             } else {
                 if (matches(operation)) {
-                    ServerLogger.AS_ROOT_LOGGER.debugf("Transforming operation %s into %s", operation, newOperation);
+                    ServerLogger.AS_ROOT_LOGGER.debugf("Transforming operation %s into %s", operation.toJSONString(true), newOperation.toJSONString(true));
                     return newOperation.clone();
                 } else {
                     return operation;
@@ -284,7 +305,15 @@ public class AffectedDeploymentOverlay {
         protected boolean matches(final ModelNode operation) {
             return (REDEPLOY_LINKS.equals(operation.get(OP).asString()) ||
                     (REMOVE.equals(operation.get(OP).asString()) && operation.hasDefined(REDEPLOY_AFFECTED) && operation.get(REDEPLOY_AFFECTED).asBoolean()))
-                    && operation.get(OP_ADDR).asList().size() >= 1;
+                    && validOverlay(PathAddress.pathAddress(operation.get(OP_ADDR)));
+        }
+
+        private boolean validOverlay(PathAddress operationAddress) {
+            if (operationAddress.size() > 1 && operationAddress.size() >= overlayAddress.size()) {
+                ServerLogger.AS_ROOT_LOGGER.debugf("Comparing address %s with %s", operationAddress.subAddress(0, overlayAddress.size()).toCLIStyleString(), overlayAddress.toCLIStyleString());
+                return operationAddress.subAddress(0, overlayAddress.size()).equals(overlayAddress);
+            }
+            return false;
         }
     }
 }
