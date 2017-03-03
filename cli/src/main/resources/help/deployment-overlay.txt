@@ -29,7 +29,8 @@ ACTION: add
 
   Depending on the arguments the action
   - always creates a new overlay with content;
-  - optionally links it to the specified existing deployments;
+  - optionally links it to the specified deployments. Referenced deployments are
+    not required to exist.
   - also optionally re-deploys the affected (linked) deployments.
 
   deployment-overlay add --name=overlay_name
@@ -81,8 +82,9 @@ ACTION: upload
 
 ACTION: link
 
-  Creates links between an overlay and existing deployments and optionally
-  re-deploys linked deployments.
+  Creates links between an overlay and deployments and optionally
+  re-deploys existing linked deployments. Referenced deployments are not required
+  to exist.
 
   deployment-overlay link --name=overlay_name
       [--server-groups=server_group_name(,server_group_name)* |
