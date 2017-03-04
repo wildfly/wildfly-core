@@ -176,12 +176,6 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-host-controller</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>jboss-logging-annotations</artifactId>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>
         <!-- needed to make JAXP work properly -->
         <dependency>
             <groupId>com.fasterxml.woodstox</groupId>
