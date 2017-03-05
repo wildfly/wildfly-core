@@ -1,0 +1,124 @@
+<subsystem xmlns="urn:wildfly:elytron:1.0">
+    <security-realms>
+        <aggregate-realm name="AggregateOne" authentication-realm="RealmThree" authorization-realm="RealmFour" />
+        <custom-realm name="CustomOne" class-name="org.wildfly.security.ElytronRealm" />
+        <custom-realm name="CustomTwo" module="a.b.c" class-name="org.wildfly.security.ElytronRealm">
+            <configuration>
+                <property name="a" value="b" />
+                <property name="c" value="d" />
+            </configuration>
+        </custom-realm>
+        <custom-modifiable-realm name="CustomModifiable" module="a.b.c" class-name="org.wildfly.security.ElytronRealm">
+            <configuration>
+                <property name="a" value="b" />
+                <property name="c" value="d" />
+            </configuration>
+        </custom-modifiable-realm>
+        <identity-realm name="local" identity="$local" attribute-name="groups" attribute-values="SuperUser" />
+        <jdbc-realm name="JdbcRealmWithMultipleQueries">
+            <principal-query sql="SELECT password FROM USER_CLEAR_PASSWORD WHERE name = ?" data-source="TestDS">
+                <clear-password-mapper password-index="1"/>
+            </principal-query>
+            <principal-query sql="SELECT first_name, last_name, email FROM USER_CLEAR_PASSWORD WHERE name = ?" data-source="TestDS">
+                <attribute-mapping>
+                    <attribute index="1" to="firstName"/>
+                    <attribute index="2" to="lastName"/>
+                    <attribute index="3" to="email"/>
+                </attribute-mapping>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmWithSingleQueryNoAttributes">
+            <principal-query sql="SELECT password FROM USER_CLEAR_PASSWORD WHERE name = ?" data-source="TestDS">
+                <clear-password-mapper password-index="1"/>
+                <bcrypt-mapper password-index="1" salt-index="2" iteration-count-index="3"/>
+                <salted-simple-digest-mapper password-index="1" salt-index="2"/>
+                <simple-digest-mapper password-index="1"/>
+                <scram-mapper password-index="1" salt-index="2" iteration-count-index="3"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmWithSingleQueryWithAttributes">
+            <principal-query sql="SELECT password, first_name, last_name, email FROM USER_CLEAR_PASSWORD WHERE name = ?" data-source="TestDS">
+                <attribute-mapping>
+                    <attribute index="2" to="firstName"/>
+                    <attribute index="3" to="lastName"/>
+                    <attribute index="4" to="email"/>
+                </attribute-mapping>
+                <clear-password-mapper password-index="1"/>
+            </principal-query>
+        </jdbc-realm>
+        <key-store-realm name="RealmThree" key-store="KeyStoreOne"/>
+        <key-store-realm name="RealmFour" key-store="KeyStoreTwo"/>
+        <properties-realm name="RealmFive">
+            <users-properties path="my.properties"/>
+        </properties-realm>
+        <properties-realm name="RealmSix" groups-attribute="roles">
+            <users-properties path="my.properties" relative-to="my.path" plain-text="true"/>
+            <groups-properties path="mygroup.properties" relative-to="mygroup.path"/>
+        </properties-realm>
+        <ldap-realm name="LdapRealmWithAttributeMapping" dir-context="dircontext1">
+            <identity-mapping rdn-identifier="uid" use-recursive-search="true" search-base-dn="dc=elytron,dc=wildfly,dc=org" iterator-filter="(uid=*)" new-identity-parent-dn="dc=elytron,dc=wildfly,dc=org">
+                <attribute-mapping>
+                    <attribute from="CN" to="firstName"/>
+                    <attribute from="SN" to="lastName"/>
+                    <attribute from="CN"/>
+                    <attribute from="CN" to="fullName"/>
+                    <attribute from="SN" to="fullName"/>
+                    <attribute filter="(&amp;(objectClass=groupOfNames)(member={0}))" from="CN" to="role"/>
+                    <attribute filter-base-dn="ou=Finance,dc=elytron,dc=wildfly,dc=org" filter="(&amp;(objectClass=groupOfNames)(member={0}))" from="CN" extract-rdn="OU" to="businessUnit"/>
+                    <attribute filter-base-dn="ou=Sales,dc=elytron,dc=wildfly,dc=org" filter="(&amp;(objectClass=groupOfNames)(member={0}))" from="CN" extract-rdn="OU" to="businessUnit"/>
+                </attribute-mapping>
+                <new-identity-attributes>
+                    <attribute name="objectClass" value="top inetOrgPerson person organizationalPerson"/>
+                    <attribute name="sn" value="BlankSurname"/>
+                    <attribute name="cn" value="BlankCommonName"/>
+                </new-identity-attributes>
+                <user-password-mapper from="userPassword" writable="true" />
+                <otp-credential-mapper algorithm-from="otpAlgorithm" hash-from="otpHash" seed-from="otpSeed" sequence-from="otpSequence"/>
+            </identity-mapping>
+        </ldap-realm>
+        <ldap-realm name="LdapRealmWithoutAttributeMapping" dir-context="dircontext2" direct-verification="true">
+            <identity-mapping rdn-identifier="uid" use-recursive-search="true" search-base-dn="dc=elytron,dc=wildfly,dc=org"/>
+        </ldap-realm>
+        <filesystem-realm name="RealmSeven" levels="3">
+            <file relative-to="jboss.server.config.dir" path="test"/>
+        </filesystem-realm>
+        <filesystem-realm name="RealmEight">
+            <file relative-to="jboss.server.config.dir" path="test"/>
+        </filesystem-realm>
+        <token-realm name="JwtRealmOne" principal-claim="sub">
+            <jwt issuer="some-issuer-a some-issuer-b" audience="some-audience-a some-audience-b some-audience-c" public-key="MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB"/>
+        </token-realm>
+        <token-realm name="JwtRealmTwo">
+            <jwt issuer="issuer-a issuer-b issuer-c" audience="audience-a audience-b audience-c" public-key="MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB"/>
+        </token-realm>
+        <token-realm name="EmptyJwtRealmTwo">
+            <jwt/>
+        </token-realm>
+        <token-realm name="OAuth2Realm" principal-claim="sub">
+            <oauth2-introspection client-id="a" client-secret="b" introspection-url="https://localhost/token/introspect"/>
+        </token-realm>
+        <caching-realm name="CachingRealm" realm="RealmEight" maximum-entries="32" maximum-age="16"/>
+    </security-realms>
+    <!-- Needed by the filesystem-realms -->
+    <mappers>
+        <constant-principal-transformer name="TestRewriter" constant="constant" />
+    </mappers>
+    <tls>
+        <key-stores>
+            <key-store name="KeyStoreOne" type="jks">
+                <file relative-to="jboss.server.config.dir" path="keystore.jks" required="true"/>
+                <credential-reference clear-text="password"/>
+            </key-store>
+            <key-store name="KeyStoreTwo" type="jks">
+                <file relative-to="jboss.server.config.dir" path="keystore.jks" required="true"/>
+                <credential-reference clear-text="password"/>
+            </key-store>
+        </key-stores>
+    </tls>
+    <dir-contexts>
+        <dir-context name="dircontext1" url="ldap://localhost:11390" principal="uid=server,dc=elytron,dc=wildfly,dc=org" enable-connection-pooling="true">
+            <credential-reference clear-text="serverPassword"/>
+        </dir-context>
+        <dir-context name="dircontext2" url="ldap://localhost:11390"/>
+    </dir-contexts>
+</subsystem>

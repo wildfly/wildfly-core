@@ -1,0 +1,70 @@
+<!-- for needs of DomainTestCase -->
+<subsystem xmlns="urn:wildfly:elytron:1.0">
+    <security-domains>
+        <security-domain name="MyDomain" default-realm="FileRealm" realm-mapper="MyRealmMapper" permission-mapper="MyPermissionMapper"
+                         pre-realm-principal-transformer="NameRewriterXY" post-realm-principal-transformer="NameRewriterYU" trusted-security-domains="AnotherDomain">
+            <realm name="FileRealm" role-decoder="MyRoleDecoder" role-mapper="MyRoleMapper"/>
+            <realm name="PropRealm" principal-transformer="NameRewriterRealmRemover"/>
+        </security-domain>
+        <security-domain name="X500Domain" default-realm="FileRealm" principal-decoder="MyX500PrincipalDecoder">
+            <realm name="FileRealm"/>
+        </security-domain>
+        <security-domain name="X500DomainTwo" default-realm="FileRealm" principal-decoder="MyX500PrincipalDecoderTwo">
+            <realm name="FileRealm"/>
+        </security-domain>
+        <security-domain name="X500DomainThree" default-realm="FileRealm" principal-decoder="MyX500PrincipalDecoderThree">
+            <realm name="FileRealm"/>
+        </security-domain>
+        <security-domain name="AnotherDomain" default-realm="PropRealm" permission-mapper="LoginPermissionMapper" trusted-security-domains="MyDomain">
+            <realm name="PropRealm"/>
+        </security-domain>
+    </security-domains>
+    <security-realms>
+        <properties-realm name="PropRealm">
+            <users-properties path="users-hashed.properties" relative-to="jboss.server.config.dir"/>
+        </properties-realm>
+        <properties-realm name="NonDomainRealm">
+            <users-properties path="users-hashed.properties" relative-to="jboss.server.config.dir"/>
+        </properties-realm>
+        <filesystem-realm name="FileRealm" levels="2">
+            <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
+    </security-realms>
+    <mappers>
+        <custom-permission-mapper class-name="org.wildfly.extension.elytron.DomainTestCase$MyPermissionMapper" name="MyPermissionMapper"/>
+        <custom-permission-mapper class-name="org.wildfly.extension.elytron.DomainTestCase$LoginPermissionMapper" name="LoginPermissionMapper"/>
+        <simple-permission-mapper name="SimplePermissionMapperRole">
+            <permission-mapping roles="role2">
+                <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+            </permission-mapping>
+        </simple-permission-mapper>
+        <simple-permission-mapper name="SimplePermissionMapperPrincipal">
+            <permission-mapping principals="firstUser">
+                <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+            </permission-mapping>
+        </simple-permission-mapper>
+        <constant-permission-mapper name="ConstantPermissionMapper">
+            <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+        </constant-permission-mapper>
+        <concatenating-principal-decoder joiner="@" name="MyX500PrincipalDecoderThree">
+            <principal-decoder name="MyCnDecoder"/>
+            <principal-decoder name="MyDcDecoder"/>
+        </concatenating-principal-decoder>
+        <x500-attribute-principal-decoder joiner="," maximum-segments="6" name="MyX500PrincipalDecoder" oid="2.5.4.3"/>
+        <x500-attribute-principal-decoder joiner="," maximum-segments="1" name="MyX500PrincipalDecoderTwo" oid="2.5.4.3" required-oids="2.5.4.3 2.5.4.11" required-attributes="cN" reverse="true"
+                                          start-segment="2"/>
+        <x500-attribute-principal-decoder maximum-segments="1" name="MyCnDecoder" attribute-name="Cn" start-segment="1"/>
+        <x500-attribute-principal-decoder name="MyDcDecoder" oid="0.9.2342.19200300.100.1.25"/>
+        <regex-principal-transformer name="NameRewriterXY" pattern="x(.*)" replacement="y$1"/>
+        <regex-principal-transformer name="NameRewriterYU" pattern="y(.*)" replacement="u$1"/>
+        <regex-principal-transformer name="NameRewriterRealmRemover" pattern="(.*)@.*" replacement="$1"/>
+        <simple-regex-realm-mapper name="MyRealmMapper" pattern=".*@(.*)"/>
+        <simple-role-decoder attribute="roles" name="MyRoleDecoder"/>
+        <add-prefix-role-mapper name="RolePrefixer" prefix="prefix"/>
+        <add-suffix-role-mapper name="RoleSuffixer" suffix="suffix"/>
+        <aggregate-role-mapper name="MyRoleMapper">
+            <role-mapper name="RolePrefixer"/>
+            <role-mapper name="RoleSuffixer"/>
+        </aggregate-role-mapper>
+    </mappers>
+</subsystem>
