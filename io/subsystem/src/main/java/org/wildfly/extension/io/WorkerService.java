@@ -25,12 +25,17 @@
 package org.wildfly.extension.io;
 
 import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.net.CidrAddressTable;
+import org.wildfly.extension.io.logging.IOLogger;
 import org.xnio.OptionMap;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
@@ -39,7 +44,10 @@ import org.xnio.XnioWorker;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
  */
 public class WorkerService implements Service<XnioWorker> {
+
     private final XnioWorker.Builder builder;
+    final InjectedValue<ExecutorService> injectedExecutor = new InjectedValue<>();
+    private final Object stopLock = new Object();
     private XnioWorker worker;
     private volatile StopContext stopContext;
 
@@ -61,18 +69,71 @@ public class WorkerService implements Service<XnioWorker> {
     }
 
     @Override
-    public void stop(StopContext context) {
+    public void stop(final StopContext context) {
         this.stopContext = context;
-        context.asynchronous();
-        worker.shutdown();
-        worker = null;
+        final ExecutorService executorService = injectedExecutor.getValue();
+        Runnable asyncStop = () -> {
+            XnioWorker localWorker = worker;
+            worker = null;
+            localWorker.shutdown();
+            boolean interrupted = false;
+            try {
+                synchronized (stopLock) {
+                    if (stopContext != null) {
+                        // stopDone has not been called by the worker yet
+                        try {
+                            // Hack. Give in progress tasks a chance to complete before we interrupt.
+                            // If we are shutting down gracefully this is redundant as the
+                            // graceful shutdown timeout gives tasks a chance, but if we aren't
+                            // graceful this helps a bit
+                            stopLock.wait(100);
+                        } catch (InterruptedException e) {
+                            interrupted = true;
+                        }
+                    }
+                }
+                if (stopContext != null) {
+                    // Tasks are still running. Interrupt those and submit
+                    // any unstarted ones to the management executor
+                    List<Runnable> tasks = localWorker.shutdownNow();
+                    for (Runnable task : tasks) {
+                        IOLogger.ROOT_LOGGER.debugf("Worker was shut down forcibly. Submitting task %s to the management executor", task);
+                        executorService.submit(task);
+                    }
+                }
+            } finally {
+                // TODO xnio doesn't seem to invoke its terminateTask
+                // following a shutdownNow() so we'll do it to ensure
+                // context.complete() is called
+                stopDone();
+
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        };
+
+        try {
+            try {
+                executorService.execute(asyncStop);
+            } catch (RejectedExecutionException e) {
+                asyncStop.run();
+            }
+        } finally {
+            context.asynchronous();
+        }
     }
 
+    // Callback from the worker when it terminates
     private void stopDone() {
-        final StopContext stopContext = this.stopContext;
-        this.stopContext = null;
-        assert stopContext != null;
-        stopContext.complete();
+        synchronized (stopLock) {
+            final StopContext stopContext = this.stopContext;
+            this.stopContext = null;
+            if (stopContext != null) {
+                stopContext.complete();
+            }
+            stopLock.notifyAll();
+        }
     }
 
     CidrAddressTable<InetSocketAddress> getBindingsTable() {

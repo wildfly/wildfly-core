@@ -526,11 +526,26 @@ public final class ServerService extends AbstractControllerService {
                 Thread executorShutdown = new Thread(new Runnable() {
                     @Override
                     public void run() {
+                        boolean interrupted = false;
                         try {
                             executorService.shutdown();
+                            // Hack. Give in progress tasks a brief period to complete before we
+                            // interrupt threads via shutdownNow
+                            executorService.awaitTermination(100, TimeUnit.MILLISECONDS);
+                        } catch (InterruptedException e) {
+                            interrupted = true;
                         } finally {
-                            executorService = null;
-                            context.complete();
+                            try {
+                                List<Runnable> tasks = executorService.shutdownNow();
+                                executorService = null;
+                                if (!interrupted) {
+                                    for (Runnable task : tasks) {
+                                        ServerLogger.AS_ROOT_LOGGER.debugf("%s -- Discarding unexecuted task %s", getClass().getSimpleName(), task);
+                                    }
+                                }
+                            } finally {
+                                context.complete();
+                            }
                         }
                     }
                 }, "ServerExecutorService Shutdown Thread");
