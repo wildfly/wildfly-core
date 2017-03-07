@@ -24,6 +24,10 @@
 
 <module xmlns="urn:jboss:module:1.5" name="org.wildfly.openssl">
 
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
     <resources>
         <artifact name="${org.wildfly.openssl:wildfly-openssl-java}"/>
     </resources>
