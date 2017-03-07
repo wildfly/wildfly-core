@@ -1,0 +1,58 @@
+<subsystem xmlns="urn:wildfly:elytron:1.0">
+    <providers>
+        <provider-loader name="custom-loader" />
+    </providers>
+    <tls>
+        <key-stores>
+            <key-store name="PKCS_11" type="PKCS#11" provider-name="SunPKCS#11">
+                <credential-reference clear-text="password"/>
+            </key-store>
+            <key-store name="jks_store" type="jks" alias-filter="one,two,three">
+                <file relative-to="jboss.server.config.dir" path="keystore.jks" required="true" />
+                <credential-reference clear-text="password"/>
+            </key-store>
+            <key-store name="jceks_store" type="jceks">
+                <file relative-to="jboss.server.config.dir" path="keystore.jceks" />
+                <credential-reference clear-text="password"/>
+            </key-store>
+            <key-store name="Custom_PKCS_11" type="PKCS#11" provider-name="SunPKCS#11" providers="custom-loader">
+                <credential-reference clear-text="password"/>
+            </key-store>
+            <filtering-key-store name="FilteringKeyStore" key-store="Custom_PKCS_11" alias-filter="NONE:+firefly"/>
+        </key-stores>
+        <key-managers>
+            <key-manager name="serverKey" algorithm="SunX509" key-store="jks_store">
+                <credential-reference clear-text="password"/>
+            </key-manager>
+            <key-manager name="serverKey2" algorithm="SunX509" key-store="jks_store" providers="custom-loader" provider-name="first">
+                <credential-reference store="credstore1" alias="password-alias" type="PasswordCredential"/>
+            </key-manager>
+            <key-manager name="clientKey" algorithm="SunX509" key-store="jks_store">
+                <credential-reference store="credstore1" alias="password-alias" type="PasswordCredential"/>
+            </key-manager>
+        </key-managers>
+        <trust-managers>
+            <trust-manager name="serverTrust" algorithm="SunX509" key-store="jks_store" />
+            <trust-manager name="serverTrust2" algorithm="SunX509" key-store="jks_store" providers="custom-loader" provider-name="first" />
+            <trust-manager name="trust-with-crl" algorithm="SunX509" key-store="jks_store">
+                <certificate-revocation-list path="crl.pem" relative-to="jboss.server.config.dir" maximum-cert-path="2"/>
+            </trust-manager>
+            <trust-manager name="trust-with-crl-dp" algorithm="SunX509" key-store="jks_store">
+                <certificate-revocation-list />
+            </trust-manager>
+        </trust-managers>
+        <server-ssl-contexts>
+            <server-ssl-context name="server" protocols="TLSv1.2" want-client-auth="true" need-client-auth="true" authentication-optional="true" use-cipher-suites-order="false" maximum-session-cache-size="10"
+                session-timeout="120" key-managers="serverKey" trust-managers="serverTrust" providers="custom-loader" provider-name="first" />
+        </server-ssl-contexts>
+        <client-ssl-contexts>
+            <client-ssl-context name="client" protocols="TLSv1.3 TLSv1.2" use-cipher-suites-order="true" key-managers="clientKey" trust-managers="serverTrust" providers="custom-loader" provider-name="first" />
+        </client-ssl-contexts>
+    </tls>
+    <credential-stores>
+        <credential-store name="credstore1">
+            <uri>cr-store://credstore1</uri>
+            <credential-reference store="mystore" alias="the-alias"/>
+        </credential-store>
+    </credential-stores>
+</subsystem>

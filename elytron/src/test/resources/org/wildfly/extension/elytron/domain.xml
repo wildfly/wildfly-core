@@ -1,0 +1,44 @@
+<subsystem xmlns="urn:wildfly:elytron:1.0">
+    <audit-logging>
+        <file-audit-log name="local-file" path="audit.log" relative-to="jboss.home.dir" synchronized="false" format="JSON" />
+    </audit-logging>
+    <security-domains>
+        <security-domain name="MyDomain" default-realm="RealmTwo" pre-realm-principal-transformer="RegexOne" post-realm-principal-transformer="RegexTwo" 
+            principal-decoder="CustomPrincipalDecoder" realm-mapper="RegexMapper" role-mapper="ConstantRoleMapper" permission-mapper="PermissionMapper"
+            trusted-security-domains="OtherDomain" outflow-security-domains="OtherDomain" security-event-listener="local-file">
+            <realm name="RealmTwo" role-mapper="PrefixRoleMapper" />
+            <realm name="RealmOne" principal-transformer="RegexThree" />
+            <realm name="RealmThree" role-decoder="MyRoleDecoder" />
+        </security-domain>
+        <security-domain name="OtherDomain" default-realm="RealmTwo" trusted-security-domains="MyDomain" outflow-anonymous="true" outflow-security-domains="MyDomain">
+            <realm name="RealmTwo" role-mapper="PrefixRoleMapper" />
+        </security-domain>
+    </security-domains>
+    <security-realms>
+        <properties-realm name="RealmOne">
+            <users-properties path="my.properties" />
+        </properties-realm>
+        <properties-realm name="RealmTwo">
+            <users-properties path="my.properties" />
+        </properties-realm>
+        <properties-realm name="RealmThree">
+            <users-properties path="my.properties" />
+        </properties-realm>
+    </security-realms>
+    <mappers>
+        <custom-permission-mapper name="PermissionMapper" class-name="org.wildfly.elytron.PermissionMapper" />
+        <custom-principal-decoder name="CustomPrincipalDecoder" class-name="org.wildfly.elytron.PrincipalDecoder" />
+        <regex-principal-transformer name="RegexOne" pattern="a" replacement="b" />
+        <regex-principal-transformer name="RegexTwo" pattern="c" replacement="d" />
+        <regex-principal-transformer name="RegexThree" pattern="e" replacement="f" />
+        <simple-regex-realm-mapper name="RegexMapper" pattern="(f)" />
+
+        <simple-role-decoder name="MyRoleDecoder" attribute="roles"/>
+
+        <add-prefix-role-mapper name="PrefixRoleMapper" prefix="X" />
+        <constant-role-mapper name="ConstantRoleMapper">
+            <role name="JBoss Admin" />
+            <role name="Manager" />
+        </constant-role-mapper>
+    </mappers>
+</subsystem>

@@ -1,0 +1,51 @@
+<subsystem xmlns="urn:wildfly:elytron:1.0">
+    <providers>
+        <provider-loader name="TestProviderLoader" module="test.module" />
+    </providers>
+    <security-domains>
+        <security-domain name="MyDomain" default-realm="RealmTwo">
+            <realm name="RealmTwo"/>
+        </security-domain>
+    </security-domains>
+    <security-realms>
+        <properties-realm name="RealmTwo">
+            <users-properties path="my.properties" />
+        </properties-realm>
+    </security-realms>
+    <mappers>
+        <constant-principal-transformer name="PreRealmNameRewriter" constant="constant" />
+        <constant-principal-transformer name="PostRealmNameRewriter" constant="constant" />
+        <constant-principal-transformer name="FinalNameRewriter" constant="constant" />
+        <constant-principal-transformer name="PreRealmNameRewriter_II" constant="constant" />
+        <constant-principal-transformer name="PostRealmNameRewriter_II" constant="constant" />
+        <constant-principal-transformer name="FinalNameRewriter_II" constant="constant" />
+        <simple-regex-realm-mapper name="RegexMapper" pattern="(constant)" />
+        <simple-regex-realm-mapper name="RegexMapper_II" pattern="(constant)" />
+    </mappers>
+    <http>
+        <http-authentication-factory name="HttpAuthenticationDefinition" security-domain="MyDomain" http-server-mechanism-factory="ConfigurableHttpServerFactory">
+            <mechanism-configuration>
+                <mechanism mechanism-name="BASIC" pre-realm-principal-transformer="PreRealmNameRewriter"  post-realm-principal-transformer="PostRealmNameRewriter" final-principal-transformer="FinalNameRewriter" realm-mapper="RegexMapper">
+                    <mechanism-realm realm-name="Test Realm" pre-realm-principal-transformer="PreRealmNameRewriter_II"  post-realm-principal-transformer="PostRealmNameRewriter_II" final-principal-transformer="FinalNameRewriter_II" realm-mapper="RegexMapper_II" />
+                </mechanism>
+            </mechanism-configuration>
+        </http-authentication-factory>
+        <aggregate-http-server-mechanism-factory name="AggregateHttpFactory">
+            <http-server-mechanism-factory name="ProviderHttpFactory"/>
+            <http-server-mechanism-factory name="ServiceHttpFactory"/>
+        </aggregate-http-server-mechanism-factory>
+        <configurable-http-server-mechanism-factory name="ConfigurableHttpServerFactory" http-server-mechanism-factory="AggregateHttpFactory">
+            <properties>
+                <property name="a" value="b" />
+                <property name="c" value="d" />
+            </properties>
+            <filters>
+                <filter enabling="false">
+                    <pattern-filter value="x" />
+                </filter>
+            </filters>
+        </configurable-http-server-mechanism-factory>
+        <provider-http-server-mechanism-factory name="ProviderHttpFactory" providers="TestProviderLoader" />
+        <service-loader-http-server-mechanism-factory name="ServiceHttpFactory" module="a.b.c" />
+    </http>
+</subsystem>

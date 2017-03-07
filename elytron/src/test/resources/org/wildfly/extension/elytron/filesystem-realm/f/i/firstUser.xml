@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<identity xmlns="urn:elytron:1.0">
+    <!-- generator: FileSystemSecurityRealmTest.testCreateIdentityWithEverything() -->
+    <credentials>
+        <password algorithm="clear" format="base64">AWNsZWFyUGFzc3dvcmQ=</password><!-- clearPassword -->
+        <password algorithm="bcrypt" format="base64">BQoQel8jHX9NSnrbCXn5X0pVQVa7ssMhXivvDTOpSaWY87i7lzO4cds/</password><!--  secretPassword -->
+        <otp algorithm="otp-sha1" hash="UF2In5AIWEc=" seed="a2UxMjM0" sequence="500"></otp>
+    </credentials>
+    <attributes>
+        <attribute name="firstName" value="John"></attribute>
+        <attribute name="lastName" value="Smith"></attribute>
+        <attribute name="roles" value="Employee"></attribute>
+        <attribute name="roles" value="Manager"></attribute>
+        <attribute name="roles" value="Admin"></attribute>
+    </attributes>
+</identity>

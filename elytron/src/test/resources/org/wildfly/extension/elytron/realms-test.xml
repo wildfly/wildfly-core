@@ -1,0 +1,48 @@
+<!-- for needs of RealmsTestCase -->
+<subsystem xmlns="urn:wildfly:elytron:1.0" initial-providers="elytron">
+    <providers>
+        <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
+    </providers>
+    <security-realms>
+
+        <properties-realm name="HashedPropertyRealm">
+            <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashed.properties" digest-realm-name="Hashed" />
+        </properties-realm>
+
+        <properties-realm name="ClearPropertyRealm" groups-attribute="groupAttr">
+            <users-properties path="users-clear.properties" relative-to="jboss.server.config.dir" plain-text="true" />
+            <groups-properties path="groups.properties" relative-to="jboss.server.config.dir" />
+        </properties-realm>
+
+        <filesystem-realm name="FilesystemRealm" levels="2">
+            <file path="filesystem-realm" relative-to="jboss.server.config.dir" />
+        </filesystem-realm>
+
+        <token-realm name="JwtRealm" principal-claim="sub">
+            <jwt issuer="some-issuer-a some-issuer-b" audience="some-audience-a some-audience-b some-audience-c" public-key="-----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCqGKukO1De7zhZj6+H0qtjTkVxwTCpvKe4eCZ0FPqri0cb2JZfXJ/DgYSF6vUpwmJG8wVQZKjeGcjDOL5UlsuusFncCzWBQ7RKNUSesmQRMSGkVb1/3j+skZ6UtW+5u09lHNsj6tQ51s1SPrCBkedbNf0Tp0GbMJDyR4e9T04ZZwIDAQAB-----END PUBLIC KEY-----"/>
+        </token-realm>
+
+        <token-realm name="EmptyJwtRealm" principal-claim="sub">
+            <jwt/>
+        </token-realm>
+
+        <token-realm name="OAuth2Realm" principal-claim="sub">
+            <oauth2-introspection client-id="a" client-secret="b" introspection-url="https://localhost/token/introspect" client-ssl-context="ClientCaSslContext" host-name-verification-policy="ANY" />
+        </token-realm>
+    </security-realms>
+
+    <tls><!-- required by OAuth2Realm when HTTPS in introspection-url used -->
+        <key-stores>
+            <key-store name="ElytronCaTruststore" type="JKS">
+                <file path="target/test-classes/org/wildfly/extension/elytron/ca.truststore"/>
+                <credential-reference clear-text="Elytron"/>
+            </key-store>
+        </key-stores>
+        <trust-managers>
+            <trust-manager name="CaTrustManager" algorithm="SunX509" key-store="ElytronCaTruststore"/>
+        </trust-managers>
+        <client-ssl-contexts>
+            <client-ssl-context name="ClientCaSslContext" trust-managers="CaTrustManager" />
+        </client-ssl-contexts>
+    </tls>
+</subsystem>
