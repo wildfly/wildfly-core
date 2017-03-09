@@ -369,7 +369,7 @@ class DomainDefinition extends SimpleResourceDefinition {
             @Override
             public SecurityIdentity[] get() {
                 SecurityIdentity[] outflowIdentities = this.outflowIdentities;
-                if (outflowIdentities != null) {
+                if (outflowIdentities == null) {
                     // We could synchronize on the identity but if anything outside
                     // also synchronizes we could get unpredictable locking.
                     synchronized(this) {
