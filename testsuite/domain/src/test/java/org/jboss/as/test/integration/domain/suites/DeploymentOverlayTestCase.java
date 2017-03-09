@@ -167,11 +167,21 @@ public class DeploymentOverlayTestCase {
         ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "slave"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
-        ModelNode failingOp = Operations.createOperation("redeploy-links", PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
-        failingOp.get("deployments").setEmptyList();
-        failingOp.get("deployments").add(OTHER_RUNTIME_NAME);
-        failingOp.get("deployments").add("inexisting.jar");
-        executeAsyncForDomainFailure(masterClient, failingOp, "WFLYDC0098:");
+        ModelNode redeployNothingOperation = Operations.createOperation("redeploy-links", PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
+        redeployNothingOperation.get("deployments").setEmptyList();
+        redeployNothingOperation.get("deployments").add(OTHER_RUNTIME_NAME);//Doesn't exist
+        redeployNothingOperation.get("deployments").add("inexisting.jar");
+        executeAsyncForResult(masterClient, redeployNothingOperation);
+        //Check that nothing happened
+        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+                PathElement.pathElement(HOST, "master"),
+                PathElement.pathElement(SERVER, "main-one")), properties);
+        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(SERVER, "main-three")), properties);
+        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(SERVER, "other-two")), properties);
         executeAsyncForResult(masterClient, Operations.createOperation("redeploy-links", PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode()));
         ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "master"),
@@ -195,15 +205,22 @@ public class DeploymentOverlayTestCase {
         ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "slave"),
                 PathElement.pathElement(SERVER, "other-two")), properties2);
-        failingOp = Operations.createOperation("redeploy-links", PathAddress.pathAddress(DEPLOYMENT_OVERLAY_PATH).toModelNode());
-        failingOp.get("deployments").setEmptyList();
-        failingOp.get("deployments").add(OTHER_RUNTIME_NAME);
-        failingOp.get("deployments").add("inexisting.jar");
-        executeAsyncForDomainFailure(masterClient, failingOp, "WFLYDC0098:");
-        failingOp = Operations.createOperation("redeploy-links", PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
-        failingOp.get("deployments").setEmptyList();
-        failingOp.get("deployments").add(OTHER_RUNTIME_NAME);
-        executeAsyncForFailure(slaveClient, failingOp, "WFLYDC0032: Operation redeploy-links for address " + PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode().toString() + " can only be handled by the master Domain Controller; this host is not the master Domain Controller");
+        redeployNothingOperation = Operations.createOperation("redeploy-links", PathAddress.pathAddress(DEPLOYMENT_OVERLAY_PATH).toModelNode());
+        redeployNothingOperation.get("deployments").setEmptyList();
+        redeployNothingOperation.get("deployments").add(OTHER_RUNTIME_NAME);
+        redeployNothingOperation.get("deployments").add("inexisting.jar");
+        executeAsyncForResult(masterClient, redeployNothingOperation);
+        //Check that nothing happened
+        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(SERVER, "main-three")), properties2);
+        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(SERVER, "other-two")), properties2);
+        ModelNode failingOperation = Operations.createOperation("redeploy-links", PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
+        failingOperation.get("deployments").setEmptyList();
+        failingOperation.get("deployments").add(OTHER_RUNTIME_NAME);
+        executeAsyncForFailure(slaveClient, failingOperation, "WFLYDC0032: Operation redeploy-links for address " + PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode().toString() + " can only be handled by the master Domain Controller; this host is not the master Domain Controller");
         ModelNode removeLinkOp = Operations.createOperation(REMOVE, PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode());
         removeLinkOp.get("redeploy-affected").set(true);
         executeAsyncForResult(masterClient, removeLinkOp);
@@ -221,6 +238,7 @@ public class DeploymentOverlayTestCase {
         ModelNode redeployOp = Operations.createOperation("redeploy-links", PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
         redeployOp.get("deployments").setEmptyList();
         redeployOp.get("deployments").add(MAIN_RUNTIME_NAME);
+        redeployOp.get("deployments").add("inexisting.jar");
         executeAsyncForResult(masterClient, redeployOp);
         ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "slave"),

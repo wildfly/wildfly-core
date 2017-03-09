@@ -157,7 +157,7 @@ public class AffectedDeploymentOverlay {
         }
         if (deploymentPerServerGroup.isEmpty()) {
             runtimeNames.forEach(s -> ServerLogger.ROOT_LOGGER.debugf("We haven't found any server-group for %s", s));
-            throw ServerLogger.ROOT_LOGGER.redeployingUnaffactedDeployments(runtimeNames);
+            return;
         }
         Operations.CompositeOperationBuilder opBuilder = Operations.CompositeOperationBuilder.create();
         if(removeOperation != null) {
@@ -192,7 +192,7 @@ public class AffectedDeploymentOverlay {
         Set<String> deploymentNames = listDeployments(context.readResourceFromRoot(deploymentsRootAddress), runtimeNames);
         if (deploymentNames.isEmpty()) {
             runtimeNames.forEach(s -> ServerLogger.ROOT_LOGGER.debugf("We haven't found any deployment for %s in server-group %s", s, deploymentsRootAddress.getLastElement().getValue()));
-            throw ServerLogger.ROOT_LOGGER.redeployingUnaffactedDeployments(runtimeNames);
+            return;
         }
         Operations.CompositeOperationBuilder opBuilder = Operations.CompositeOperationBuilder.create();
         if(removeOperation != null) {
@@ -242,7 +242,7 @@ public class AffectedDeploymentOverlay {
     }
 
     private static boolean isAcceptableDeployment(ModelNode deploymentNode, Set<Pattern> patterns) {
-        return deploymentNode.get(ENABLED).asBoolean()
+        return deploymentNode.isDefined() && deploymentNode.hasDefined(ENABLED) && deploymentNode.get(ENABLED).asBoolean()
                 && patterns.stream().anyMatch(pattern -> pattern.matcher(deploymentNode.require(RUNTIME_NAME).asString()).matches());
     }
 
@@ -257,16 +257,6 @@ public class AffectedDeploymentOverlay {
                     serverGroupName -> rootResource.getChild(PathElement.pathElement(SERVER_GROUP, serverGroupName)).hasChild(overlayPath)).collect(Collectors.toSet());
         }
         return Collections.emptySet();
-    }
-
-    public static Set<String> checkRequiredNames(Set<String> requiredNames, Set<String> runtimeNames) {
-        return requiredNames.stream()
-                .map(wildcardExpr -> DeploymentOverlayIndex.getPattern(wildcardExpr))
-                .filter(pattern -> {
-                    return !runtimeNames.stream().anyMatch(runtimeName -> pattern.matcher(runtimeName).matches());
-                })
-                .map(Pattern::toString)
-                .collect(Collectors.toSet());
     }
 
     private static final class OverlayOperationTransformer implements DomainOperationTransformer {
