@@ -21,6 +21,7 @@ package org.wildfly.extension.elytron;
 import java.security.KeyStore;
 import java.security.Policy;
 import java.security.Provider;
+import java.util.function.Consumer;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -28,6 +29,7 @@ import javax.net.ssl.TrustManager;
 import javax.security.sasl.SaslServerFactory;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.msc.service.ServiceBuilder;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.DirContextSupplier;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
@@ -81,8 +83,8 @@ class Capabilities {
 
     static final String ELYTRON_CAPABILITY = CAPABILITY_BASE + "elytron";
 
-    static final RuntimeCapability<Void> ELYTRON_RUNTIME_CAPABILITY = RuntimeCapability
-            .Builder.of(ELYTRON_CAPABILITY, false)
+    static final RuntimeCapability<Consumer<ServiceBuilder>> ELYTRON_RUNTIME_CAPABILITY = RuntimeCapability
+            .Builder.of(ELYTRON_CAPABILITY, (Consumer<ServiceBuilder>) ElytronDefinition::commonDependencies)
             .build();
 
     static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = CAPABILITY_BASE + "http-authentication-factory";

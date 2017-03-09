@@ -23,7 +23,6 @@
 package org.jboss.as.domain.management.logging;
 
 import static org.jboss.logging.Logger.Level.ERROR;
-import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
@@ -1234,9 +1233,9 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 135, value = "The resource %s wasn't working properly and has been removed.")
     String removedBrokenResource(final String address);
 
-    @LogMessage(level = INFO)
-    @Message(id = 136, value = "Registered OpenSSL provider")
-    void registeredOpenSSLProvider();
+    //@LogMessage(level = INFO)
+    //@Message(id = 136, value = "Registered OpenSSL provider")
+    //void registeredOpenSSLProvider();
 
     // Was WFLYRMT-13
     @Message(id = 137, value = "Unable to create tmp dir for auth tokens as file already exists.")
