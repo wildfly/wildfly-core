@@ -31,8 +31,8 @@
         </filesystem-realm>
     </security-realms>
     <mappers>
-        <custom-permission-mapper class-name="org.wildfly.extension.elytron.DomainTestCase$MyPermissionMapper" name="MyPermissionMapper"/>
-        <custom-permission-mapper class-name="org.wildfly.extension.elytron.DomainTestCase$LoginPermissionMapper" name="LoginPermissionMapper"/>
+        <custom-permission-mapper class-name="org.wildfly.extension.elytron.DomainTestCase$MyPermissionMapper" name="MyPermissionMapper" module="a.b.c" />
+        <custom-permission-mapper class-name="org.wildfly.extension.elytron.DomainTestCase$LoginPermissionMapper" name="LoginPermissionMapper" module="a.b.c" />
         <simple-permission-mapper name="SimplePermissionMapperRole">
             <permission-mapping roles="role2">
                 <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>

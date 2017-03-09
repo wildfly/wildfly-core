@@ -4560,7 +4560,7 @@
 			<xs:documentation>The attributes required for a custom component.
 			</xs:documentation>
 		</xs:annotation>
-		<xs:attribute name="module" type="xs:string">
+		<xs:attribute name="module" type="xs:string" use="required">
 			<xs:annotation>
 				<xs:documentation>
 					The module to use to load the custom component.
