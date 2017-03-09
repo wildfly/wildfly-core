@@ -216,6 +216,12 @@ class SSLDefinitions {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
+    static final SimpleAttributeDefinition WRAP = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WRAP, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(true))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
     static final SimpleAttributeDefinition KEY_MANAGERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_MANAGERS, ModelType.STRING, true)
             .setMinSize(1)
             .setCapabilityReference(KEY_MANAGERS_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
@@ -668,7 +674,7 @@ class SSLDefinitions {
                 .build();
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { SECURITY_DOMAIN, CIPHER_SUITE_FILTER, PROTOCOLS, WANT_CLIENT_AUTH, NEED_CLIENT_AUTH, AUTHENTICATION_OPTIONAL,
-                USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, KEY_MANAGERS, TRUST_MANAGERS, providersDefinition, PROVIDER_NAME };
+                USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, WRAP, KEY_MANAGERS, TRUST_MANAGERS, providersDefinition, PROVIDER_NAME };
 
         return new SSLContextDefinition(ElytronDescriptionConstants.SERVER_SSL_CONTEXT, true, new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
             @Override
@@ -688,6 +694,7 @@ class SSLDefinitions {
                 final boolean useCipherSuitesOrder = USE_CIPHER_SUITES_ORDER.resolveModelAttribute(context, model).asBoolean();
                 final int maximumSessionCacheSize = MAXIMUM_SESSION_CACHE_SIZE.resolveModelAttribute(context, model).asInt();
                 final int sessionTimeout = SESSION_TIMEOUT.resolveModelAttribute(context, model).asInt();
+                final boolean wrap = WRAP.resolveModelAttribute(context, model).asBoolean();
 
                 return () -> {
                     SecurityDomain securityDomain = securityDomainInjector.getOptionalValue();
@@ -709,16 +716,17 @@ class SSLDefinitions {
                            .setAuthenticationOptional(authenticationOptional)
                            .setUseCipherSuitesOrder(useCipherSuitesOrder)
                            .setSessionCacheSize(maximumSessionCacheSize)
-                           .setSessionTimeout(sessionTimeout);
+                           .setSessionTimeout(sessionTimeout)
+                           .setWrap(wrap);
 
                     if (ROOT_LOGGER.isTraceEnabled()) {
                         ROOT_LOGGER.tracef(
                                 "ServerSSLContext supplying:  securityDomain = %s  keyManager = %s  trustManager = %s  " +
                                 "providers = %s  cipherSuiteFilter = %s  protocols = %s  wantClientAuth = %s  needClientAuth = %s  " +
-                                "authenticationOptional = %s  maximumSessionCacheSize = %s  sessionTimeout = %s",
+                                "authenticationOptional = %s  maximumSessionCacheSize = %s  sessionTimeout = %s wrap = %s",
                                 securityDomain, keyManager, trustManager, Arrays.toString(providers), cipherSuiteFilter,
                                 Arrays.toString(protocols.toArray()), wantClientAuth, needClientAuth, authenticationOptional,
-                                maximumSessionCacheSize, sessionTimeout);
+                                maximumSessionCacheSize, sessionTimeout, wrap);
                     }
 
                     try {

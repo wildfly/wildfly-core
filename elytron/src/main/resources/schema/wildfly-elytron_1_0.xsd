@@ -4005,6 +4005,17 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="wrap" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Should the resulting SSLEngine, SSLSocketFactory, and SSLSocket instances returned by this SSLContext
+                    be wrapped to prevent further configuration changes.
+
+                    Note:  The WildFly HTTP2 support requires raw access to these objects so if HTTP2 is being used this
+                    should be set to false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="key-managers" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
