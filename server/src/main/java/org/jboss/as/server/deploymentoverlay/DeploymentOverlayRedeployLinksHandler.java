@@ -27,7 +27,6 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -52,11 +51,9 @@ public class DeploymentOverlayRedeployLinksHandler implements OperationStepHandl
         Set<String> runtimeNames = AffectedDeploymentOverlay.listLinks(context, context.getCurrentAddress());
         if (operation.hasDefined(RUNTIME_NAMES_DEFINITION.getName())) {
             Set<String> requiredRuntimeNames = new HashSet<>(RUNTIME_NAMES_DEFINITION.unwrap(context, operation));
-            Set<String> unaffectedDeployments = AffectedDeploymentOverlay.checkRequiredNames(requiredRuntimeNames, runtimeNames);
-            if (!unaffectedDeployments.isEmpty()) {
-                throw ServerLogger.ROOT_LOGGER.redeployingUnaffactedDeployments(unaffectedDeployments);
+            if (!requiredRuntimeNames.isEmpty()) {
+                runtimeNames = requiredRuntimeNames;
             }
-            runtimeNames = requiredRuntimeNames;
         }
         // Adding a redeploy operation step for each runtime.
         AffectedDeploymentOverlay.redeployLinks(context, context.getCurrentAddress().getParent(), runtimeNames);
