@@ -1586,6 +1586,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="module" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of module that will be used to load custom context.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="identityMappingType">
