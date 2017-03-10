@@ -452,6 +452,7 @@ interface ElytronDescriptionConstants {
     String VERSION_COMPARISON = "version-comparison";
 
     String WANT_CLIENT_AUTH = "want-client-auth";
+    String WRAP = "wrap";
     String WRITABLE = "writable";
 
     String X500_ATTRIBUTE_PRINCIPAL_DECODER = "x500-attribute-principal-decoder";

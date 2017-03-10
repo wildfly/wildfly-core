@@ -4005,6 +4005,17 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="wrap" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Should the resulting SSLEngine, SSLSocketFactory, and SSLSocket instances returned by this SSLContext
+                    be wrapped to prevent further configuration changes.
+
+                    Note:  The WildFly HTTP2 support requires raw access to these objects so if HTTP2 is being used this
+                    should be set to false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="key-managers" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -4459,18 +4470,16 @@
         <xs:attribute name="type" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The credential store type, e.g. KeyStorePasswordStore.
+                    The credential store type, e.g. KeyStoreCredentialStore.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="provider-name" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The name of the provider to use to
-                    instantiate the CredentialStoreSpi, if the provider is not
-                    specified then the first provider found that can
-                    create an instance of the specified 'type' will be
-                    used.
+                    The name of the provider to use to instantiate the CredentialStoreSpi.
+                    If the provider is not specified then the first provider found that can
+                    create an instance of the specified 'type' will be used.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4487,7 +4496,7 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the providers defined within the subsystem to obtain the Providers
-                    to search for the one that can create the required JCA objects withing credential store.
+                    to search for the one that can create the required JCA objects within credential store.
                     This is valid only for key-store based  CredentialStore.
                     If this is not specified then the global list of Providers is used instead.
                 </xs:documentation>
@@ -4560,7 +4569,7 @@
 			<xs:documentation>The attributes required for a custom component.
 			</xs:documentation>
 		</xs:annotation>
-		<xs:attribute name="module" type="xs:string">
+		<xs:attribute name="module" type="xs:string" use="required">
 			<xs:annotation>
 				<xs:documentation>
 					The module to use to load the custom component.

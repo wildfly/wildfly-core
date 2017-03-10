@@ -19,7 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAME;
-import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
@@ -40,6 +39,8 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -60,6 +61,10 @@ import org.jboss.msc.service.StartException;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class CustomComponentDefinition<T> extends SimpleResourceDefinition {
+
+    static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ClassLoadingAttributeDefinitions.MODULE)
+        .setRequired(true)
+        .build();
 
     static final SimpleMapAttributeDefinition CONFIGURATION = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.CONFIGURATION, ModelType.STRING, true)
         .setAllowExpression(true)
