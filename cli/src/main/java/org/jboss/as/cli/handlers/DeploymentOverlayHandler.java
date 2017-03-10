@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2017, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -29,10 +29,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -71,10 +69,6 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
     private static final String REDEPLOY_AFFECTED = "redeploy-affected";
     private static final String REMOVE = "remove";
     private static final String UPLOAD = "upload";
-
-    private static final byte REDEPLOY_NONE = 0;
-    private static final byte REDEPLOY_ONLY_AFFECTED = 1;
-    private static final byte REDEPLOY_ALL = 2;
 
     private static final String WARN_MSG = "WARNING: redeployment is required on deployment ";
 
@@ -334,7 +328,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                     }
                     return Collections.emptyList();
                 }
-                return Util.getDeployments(client);
+                return Util.getDeploymentRuntimeNames(client);
             }}, "--deployments") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
@@ -370,6 +364,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                 return false;
             }
         };
+        redeployAffected.addRequiredPreceding(name);
         redeployAffected.setAccessRequirement(redeployPermission);
     }
 
@@ -404,8 +399,8 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                 .build();
 
         redeployPermission = AccessRequirementBuilder.Factory.create(ctx).any()
-                .operation(Util.DEPLOYMENT + "=?", Util.REDEPLOY)
-                .serverGroupOperation(Util.DEPLOYMENT + "=?", Util.REDEPLOY + "a")
+                .operation(Util.DEPLOYMENT_OVERLAY + "=?", Util.REDEPLOY_LINKS)
+                .serverGroupOperation(Util.DEPLOYMENT_OVERLAY + "=?", Util.REDEPLOY_LINKS + "a")
                 .build();
 
         listContentPermission = AccessRequirementBuilder.Factory.create(ctx).any()
@@ -534,27 +529,13 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         redeployOp.get(Util.ADDRESS).setEmptyList();
         final ModelNode steps = redeployOp.get(Util.STEPS);
 
-        if(ctx.isDomainMode()) {
-            for(String group : Util.getServerGroupsReferencingOverlay(overlay, client)) {
-                addRemoveRedeployLinksSteps(ctx, client, steps, overlay, group, null, false, REDEPLOY_ALL);
-            }
-        } else {
-            addRemoveRedeployLinksSteps(ctx, client, steps, overlay, null, null, false, REDEPLOY_ALL);
-        }
+        // In domain and standalone, this operation redeploy them all.
+        addRedeployStep(overlay, steps);
 
         if(!steps.isDefined() || steps.asList().isEmpty()) {
             throw new CommandFormatException("None of the deployments affected.");
         }
         return redeployOp;
-/*        try {
-            final ModelNode result = client.execute(redeployOp);
-            if (!Util.isSuccess(result)) {
-                throw new CommandLineException(Util.getFailureDescription(result));
-            }
-        } catch (IOException e) {
-            throw new CommandFormatException("Failed to redeploy affected deployments", e);
-        }
-*/
     }
 
     /**
@@ -671,28 +652,52 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         composite.get(Util.ADDRESS).setEmptyList();
         final ModelNode steps = composite.get(Util.STEPS);
 
-        byte redeploy = this.redeployAffected.isPresent(args) ? REDEPLOY_ONLY_AFFECTED : REDEPLOY_NONE;
+        boolean redeploy = this.redeployAffected.isPresent(args);
 
         if (!redeployAffected.isPresent(args)) {
             printWarning(ctx, client, name, contentStr, deploymentStr);
         }
 
-        // remove the content first and determine whether all the linked deployments
-        // should be redeployed
-        if(contentStr != null || deploymentStr == null && sg == null) {
-
-            if(redeploy == REDEPLOY_ONLY_AFFECTED) {
-                redeploy = REDEPLOY_ALL;
-            }
-
-            final List<String> contentList;
-            if(contentStr == null) {
-                contentList = loadContentFor(client, name);
+        // 1) Remove the overlay fully.
+        // If redeploy, retrieve all links and remove then with redeploy-affected flag
+        // If no serverGroup provided in domainMode, remove also overlay in root.
+        if (contentStr == null && deploymentStr == null) {
+            if (ctx.isDomainMode()) {
+                final List<String> groups = sg == null ? Util.getServerGroupsReferencingOverlay(name, client) : sg;
+                for (String group : groups) {
+                    if (redeploy) {
+                        List<String> links = loadLinks(client, name, group);
+                        for (String link : links) {
+                            addRemoveDeploymentStep(name, group, redeploy, link, steps);
+                        }
+                    }
+                    addRemoveOverlayStep(name, group, steps);
+                }
+                // Remove the root if no sgroup provided
+                if (sg == null) {
+                    addRemoveOverlayStep(name, null, steps);
+                }
             } else {
-                contentList = java.util.Arrays.asList(contentStr.split(",+"));
+                if (redeploy) {
+                    List<String> links = loadLinks(client, name, null);
+                    for (String link : links) {
+                        addRemoveDeploymentStep(name, null, redeploy, link, steps);
+                    }
+                }
+                addRemoveOverlayStep(name, null, steps);
             }
+            return composite;
+        }
 
-            for(String content : contentList) {
+        boolean redeployAll = false;
+        // 2) Remove some content.
+        if (contentStr != null) {
+            // If redeploy required, must redeploy them all.
+            redeployAll = redeploy && true;
+            final List<String> contentList;
+            contentList = java.util.Arrays.asList(contentStr.split(",+"));
+
+            for (String content : contentList) {
                 final ModelNode op = new ModelNode();
                 ModelNode addr = op.get(Util.ADDRESS);
                 addr.add(Util.DEPLOYMENT_OVERLAY, name);
@@ -702,62 +707,87 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
             }
         }
 
-        if(deploymentStr != null || contentStr == null) {
-            // remove the overlay links
-
-            if(ctx.isDomainMode()) {
-                if(deploymentStr == null) {
-                    final List<String> groups = sg == null ? Util.getServerGroupsReferencingOverlay(name, client) : sg;
-                    for(String group : groups) {
-                        addRemoveRedeployLinksSteps(ctx, client, steps, name, group, null, true, redeploy);
-                    }
-                } else {
-                    if(ctx.isDomainMode() && sg == null) {
-                        throw new CommandFormatException(serverGroups.getFullName() + " or " + allRelevantServerGroups.getFullName() + " is required.");
-                    }
-                    final List<String> links = Arrays.asList(deploymentStr.split(",+"));
-                    for(String group : sg) {
-                        addRemoveRedeployLinksSteps(ctx, client, steps, name, group, links, true, redeploy);
+        // 3) Remove some deployments.
+        // If redeploy, then must pass redeploy to each removed deployment
+        // remove operation
+        if (deploymentStr != null) {
+            final List<String> links = Arrays.asList(deploymentStr.split(",+"));
+            if (ctx.isDomainMode()) {
+                if (sg == null) {
+                    throw new CommandFormatException(serverGroups.getFullName() + " or "
+                            + allRelevantServerGroups.getFullName() + " is required.");
+                }
+                for (String group : sg) {
+                    for (String link : links) {
+                        addRemoveDeploymentStep(name, group, redeploy, link, steps);
                     }
                 }
             } else {
-                if(deploymentStr == null) {
-                    // remove all
-                    addRemoveRedeployLinksSteps(ctx, client, steps, name, null, null, true, redeploy);
-                } else {
-                    final List<String> links = Arrays.asList(deploymentStr.split(",+"));
-                    addRemoveRedeployLinksSteps(ctx, client, steps, name, null, links, true, redeploy);
+                for (String link : links) {
+                    addRemoveDeploymentStep(name, null, redeploy, link, steps);
                 }
-            }
-        } else if(redeploy == REDEPLOY_ALL) {
-            if(ctx.isDomainMode()) {
-                for(String group : Util.getServerGroupsReferencingOverlay(name, client)) {
-                    addRemoveRedeployLinksSteps(ctx, client, steps, name, group, null, false, redeploy);
-                }
-            } else {
-                addRemoveRedeployLinksSteps(ctx, client, steps, name, null, null, false, redeploy);
             }
         }
 
-        if(contentStr == null && deploymentStr == null && sg == null) {
-            final ModelNode op = new ModelNode();
-            op.get(Util.ADDRESS).add(Util.DEPLOYMENT_OVERLAY, name);
-            op.get(Util.OPERATION).set(Util.REMOVE);
-            steps.add(op);
+        // Finally redeploy still referenced links.
+        if (redeployAll) {
+            // In domain and standalone, this operation redeploy them all.
+            addRedeployStep(name, steps);
         }
-
         return composite;
-/*        try {
-            final ModelNode result = client.execute(composite);
-            if (!Util.isSuccess(result)) {
-                ctx.printLine("failed request: " + composite.toString());
-                ctx.printLine("failed response: " + result.toString());
-                throw new CommandFormatException(Util.getFailureDescription(result));
-            }
-        } catch (IOException e) {
-            throw new CommandFormatException("Failed to remove overlay", e);
+    }
+
+    private void addRedeployStep(String overlay, ModelNode steps) {
+        addRedeployStep(overlay, (List<String>) null, null, steps);
+    }
+
+    private void addRedeployStep(String overlay, String linkName, String sgName, ModelNode steps) {
+        addRedeployStep(overlay, Arrays.asList(linkName), sgName, steps);
+    }
+
+    private void addRedeployStep(String overlay, List<String> linkNames, String sgName, ModelNode steps) {
+        final ModelNode redeployOp = new ModelNode();
+        final ModelNode addr = redeployOp.get(Util.ADDRESS);
+        if (sgName != null) {
+            addr.add(Util.SERVER_GROUP, sgName);
         }
-*/    }
+        addr.add(Util.DEPLOYMENT_OVERLAY, overlay);
+        redeployOp.get(Util.OPERATION).set(Util.REDEPLOY_LINKS);
+        if (linkNames != null) {
+            ModelNode lst = new ModelNode();
+            for (String str : linkNames) {
+                lst.add(str);
+            }
+            redeployOp.get(Util.DEPLOYMENTS).set(lst);
+        }
+        steps.add(redeployOp);
+    }
+
+    private void addRemoveOverlayStep(String name, String group, ModelNode steps) {
+        final ModelNode op = new ModelNode();
+        final ModelNode addr = op.get(Util.ADDRESS);
+        if (group != null) {
+            addr.add(Util.SERVER_GROUP, group);
+        }
+        addr.add(Util.DEPLOYMENT_OVERLAY, name);
+        op.get(Util.OPERATION).set(Util.REMOVE);
+        steps.add(op);
+    }
+
+    private void addRemoveDeploymentStep(String name, String group, boolean redeploy, String deployment, ModelNode steps) {
+        final ModelNode op = new ModelNode();
+        final ModelNode addr = op.get(Util.ADDRESS);
+        if (group != null) {
+            addr.add(Util.SERVER_GROUP, group);
+        }
+        addr.add(Util.DEPLOYMENT_OVERLAY, name);
+        addr.add(Util.DEPLOYMENT, deployment);
+        op.get(Util.OPERATION).set(Util.REMOVE);
+        if (redeploy) {
+            op.get(Util.REDEPLOY_AFFECTED).set(true);
+        }
+        steps.add(op);
+    }
 
     // WFCORE-2045 print warning on CLI side when argument '--redeploy-affected' is not specified
     private void printWarning(CommandContext ctx, final ModelControllerClient client, final String name, final String content,
@@ -875,7 +905,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                     address.add(Util.DEPLOYMENT_OVERLAY, name);
                     op.get(Util.OPERATION).set(Util.ADD);
                     steps.add(op);
-                        addAddRedeployLinksSteps(ctx, steps, name, group, deployments, false);
+                    addAddRedeployLinksSteps(ctx, steps, name, group, deployments, false);
                 }
             } else {
                 addAddRedeployLinksSteps(ctx, steps, name, null, deployments, false);
@@ -1009,13 +1039,8 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         }
 
         if(redeployAffected.isPresent(args)) {
-            if(ctx.isDomainMode()) {
-                for(String sgName : Util.getServerGroups(client)) {
-                    addRemoveRedeployLinksSteps(ctx, client, steps, name, sgName, null, false, REDEPLOY_ALL);
-                }
-            } else {
-                addRemoveRedeployLinksSteps(ctx, client, steps, name, null, null, false, REDEPLOY_ALL);
-            }
+            // In domain and standalone, this operation redeploy them all.
+            addRedeployStep(name, steps);
         } else {
             printWarning(ctx, client, name, contentStr, null);
         }
@@ -1119,17 +1144,6 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         return result;
     }
 
-    protected void addRedeployStep(final ModelNode steps, final String deployment, String serverGroup) {
-        final ModelNode step = new ModelNode();
-        final ModelNode address = step.get(Util.ADDRESS);
-        if(serverGroup != null) {
-            address.add(Util.SERVER_GROUP, serverGroup);
-        }
-        address.add(Util.DEPLOYMENT, deployment);
-        step.get(Util.OPERATION).set(Util.REDEPLOY);
-        steps.add(step);
-    }
-
     protected String[] getLinks(ArgumentWithValue linksArg, final ParsedCommandLine args) throws CommandFormatException {
         final String deploymentsStr = linksArg.getValue(args);
         final String[] deployments;
@@ -1180,30 +1194,10 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
             address.add(Util.DEPLOYMENT_OVERLAY, overlay);
             address.add(Util.DEPLOYMENT, link);
             op.get(Util.OPERATION).set(Util.ADD);
-                steps.add(op);
+            steps.add(op);
 
             if (redeployAffected.isPresent(ctx.getParsedCommandLine())) {
-                final List<String> matchingDeployments = Util.getMatchingDeployments(ctx.getModelControllerClient(), link, serverGroup, true);
-                if (!matchingDeployments.isEmpty()) {
-                    if (serverGroup == null) {
-                        for (String deployment : matchingDeployments) {
-                            final ModelNode step = new ModelNode();
-                            final ModelNode addr = step.get(Util.ADDRESS);
-                            addr.add(Util.DEPLOYMENT, deployment);
-                            step.get(Util.OPERATION).set(Util.REDEPLOY);
-                            steps.add(step);
-                        }
-                    } else {
-                        for (String deployment : matchingDeployments) {
-                            final ModelNode step = new ModelNode();
-                            final ModelNode addr = step.get(Util.ADDRESS);
-                            addr.add(Util.SERVER_GROUP, serverGroup);
-                            addr.add(Util.DEPLOYMENT, deployment);
-                            step.get(Util.OPERATION).set(Util.REDEPLOY);
-                            steps.add(step);
-                        }
-                    }
-                }
+                addRedeployStep(overlay, link, serverGroup, steps);
             } else {
                 warn = true;
             }
@@ -1213,89 +1207,6 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
                     ? WARN_MSG + Arrays.toString(links)
                     : WARN_MSG + Arrays.toString(links) + " in server group " + serverGroup;
             ctx.printLine(warningMsg);
-        }
-    }
-
-    protected void addRemoveRedeployLinksSteps(CommandContext ctx, ModelControllerClient client, ModelNode steps,
-            String overlay, String sgName, List<String> specifiedLinks, boolean removeLinks, byte redeploy)
-            throws CommandLineException {
-        final ModelNode linkResources = loadLinkResources(client, overlay, sgName);
-        if(linkResources == null) {
-            return;
-        }
-        if(linkResources.keys().isEmpty()) {
-            return;
-        }
-
-        if(removeLinks) {
-            final Iterator<String> linkNames;
-            if(specifiedLinks != null) {
-                linkNames = specifiedLinks.iterator();
-            } else {
-                linkNames = linkResources.keys().iterator();
-            }
-            while(linkNames.hasNext()) {
-                final String linkName = linkNames.next();
-                final ModelNode op = new ModelNode();
-                final ModelNode addr = op.get(Util.ADDRESS);
-                if(sgName != null) {
-                    addr.add(Util.SERVER_GROUP, sgName);
-                }
-                addr.add(Util.DEPLOYMENT_OVERLAY, overlay);
-                addr.add(Util.DEPLOYMENT, linkName);
-                op.get(Util.OPERATION).set(Util.REMOVE);
-                steps.add(op);
-            }
-            if(specifiedLinks == null && sgName != null) {
-                // this is only for the domain mode for the specific server group
-                // TODO specified links may cover all, in which case it wouldn't clean this one
-                final ModelNode op = new ModelNode();
-                final ModelNode addr = op.get(Util.ADDRESS);
-                addr.add(Util.SERVER_GROUP, sgName);
-                addr.add(Util.DEPLOYMENT_OVERLAY, overlay);
-                op.get(Util.OPERATION).set(Util.REMOVE);
-                steps.add(op);
-            }
-        }
-
-        // redeploy
-
-        final Iterator<String> linkNames;
-        if(redeploy == REDEPLOY_ALL) {
-            linkNames = linkResources.keys().iterator();
-        } else if(redeploy == REDEPLOY_ONLY_AFFECTED && specifiedLinks != null) {
-            linkNames = specifiedLinks.iterator();
-        } else {
-            return;
-        }
-
-        final List<String> sgDeployments = Util.getDeployments(client, sgName);
-        while(linkNames.hasNext() && !sgDeployments.isEmpty()) {
-            final String linkName = linkNames.next();
-            final ModelNode link = linkResources.get(linkName);
-            if(!link.isDefined()) {
-                final StringBuilder buf = new StringBuilder();
-                buf.append(linkName);
-                buf.append(" not found among the registered links ");
-                if(sgName != null) {
-                    buf.append("for server group ").append(sgName).append(' ');
-                }
-                buf.append(linkResources.keys());
-                throw new CommandFormatException(buf.toString());
-            }
-            addRedeploySteps(steps, sgName, linkName, link, sgDeployments);
-        }
-    }
-
-    protected void addRedeploySteps(ModelNode steps, String serverGroup, String linkName, ModelNode link, List<String> remainingDeployments) {
-        final Pattern pattern = Pattern.compile(Util.wildcardToJavaRegex(linkName));
-        final Iterator<String> i = remainingDeployments.iterator();
-        while (i.hasNext()) {
-            final String deployment = i.next();
-            if (pattern.matcher(deployment).matches()) {
-                i.remove();
-                addRedeployStep(steps, deployment, serverGroup);
-            }
         }
     }
 
