@@ -205,6 +205,7 @@ interface ElytronDescriptionConstants {
     String JWT = "jwt";
 
     String KERBEROS_SECURITY_FACTORY = "kerberos-security-factory";
+    String KEY = "key";
     String KEY_ATTRIBUTE = "key-attribute";
     String KEY_TYPE = "key-type";
     String KEY_MANAGER = "key-manager";
@@ -284,6 +285,8 @@ interface ElytronDescriptionConstants {
     String OID = "oid";
     String OTHER_PROVIDERS = "other-providers";
     String OTP_CREDENTIAL_MAPPER = "otp-credential-mapper";
+    String OPTION = "option";
+    String OPTIONS = "options";
     String OR = "or";
     String OUTFLOW_ANONYMOUS = "outflow-anonymous";
     String OUTFLOW_SECURITY_DOMAINS = "outflow-security-domains";

@@ -1959,6 +1959,31 @@
     <xs:complexType name="kerberosSecurityFactory">
         <xs:complexContent>
             <xs:extension base="credentialSecurityFactoryType">
+                <xs:sequence>
+                    <xs:element name="option" maxOccurs="unbounded" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The Krb5LoginModule additional option.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:attribute name="key" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The key of the option.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="value" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The value of the option.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
                 <xs:attribute name="principal" type="xs:string" use="required">
                     <xs:annotation>
                         <xs:documentation>
