@@ -667,7 +667,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             final ExtensibleConfigurationPersister configurationPersister = new EmptyConfigurationPersister();
             final boolean isMaster = false;
             final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
-            final PathManagerService pathManager = new HostPathManagerService();
+            final PathManagerService pathManager = new HostPathManagerService(capabilityRegistry);
             final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
             final ManagementSecurityIdentitySupplier securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
             final HostRegistrations hostRegistrations = null;

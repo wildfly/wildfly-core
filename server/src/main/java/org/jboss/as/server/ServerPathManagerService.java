@@ -21,6 +21,13 @@
 */
 package org.jboss.as.server;
 
+import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
+
+import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -63,6 +70,26 @@ public class ServerPathManagerService extends PathManagerService {
         }
 
         return serviceBuilder.install();
+    }
+
+    /** Register path capabilities for server-specific paths in the given registry */
+    public static void registerDomainServerPathCapabilities(CapabilityRegistry capabilityRegistry) {
+
+        registerServerPathCapability(capabilityRegistry, ServerEnvironment.SERVER_BASE_DIR);
+        registerServerPathCapability(capabilityRegistry, ServerEnvironment.SERVER_CONFIG_DIR);
+        registerServerPathCapability(capabilityRegistry, ServerEnvironment.SERVER_DATA_DIR);
+        registerServerPathCapability(capabilityRegistry, ServerEnvironment.SERVER_LOG_DIR);
+        registerServerPathCapability(capabilityRegistry, ServerEnvironment.SERVER_TEMP_DIR);
+    }
+
+    private static void registerServerPathCapability(CapabilityRegistry capabilityRegistry, String path) {
+        capabilityRegistry.registerCapability(
+                new RuntimeCapabilityRegistration(PATH_CAPABILITY.fromBaseCapability(path), CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+
+    }
+
+    public ServerPathManagerService(CapabilityRegistry capabilityRegistry) {
+        super(capabilityRegistry);
     }
 
     private static void addAbsolutePath(ServerPathManagerService service, ServiceTarget serviceTarget, String name, File path) {

@@ -21,7 +21,9 @@
 */
 package org.jboss.as.host.controller;
 
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.services.path.PathManagerService;
+import org.jboss.as.server.ServerPathManagerService;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
@@ -36,6 +38,7 @@ public class HostPathManagerService extends PathManagerService {
     public static ServiceController<?> addService(ServiceTarget serviceTarget, HostPathManagerService service, HostControllerEnvironment hostEnvironment) {
         ServiceBuilder<?> serviceBuilder = serviceTarget.addService(SERVICE_NAME, service);
 
+        // Add resources and capabilities for the always-present paths
         service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.HOME_DIR, hostEnvironment.getHomeDir().getAbsolutePath());
         service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.DOMAIN_CONFIG_DIR, hostEnvironment.getDomainConfigurationDir().getAbsolutePath());
         service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.DOMAIN_DATA_DIR, hostEnvironment.getDomainDataDir().getAbsolutePath());
@@ -43,6 +46,16 @@ public class HostPathManagerService extends PathManagerService {
         service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.DOMAIN_TEMP_DIR, hostEnvironment.getDomainTempDir().getAbsolutePath());
         service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.CONTROLLER_TEMP_DIR, hostEnvironment.getDomainTempDir().getAbsolutePath());
 
+        // Add the standard server path capabilities so server config resources can reference them
+        ServerPathManagerService.registerDomainServerPathCapabilities(service.localCapRegRef);
+
         return serviceBuilder.install();
+    }
+
+    private final CapabilityRegistry localCapRegRef;
+
+    public HostPathManagerService(CapabilityRegistry capabilityRegistry) {
+        super(capabilityRegistry);
+        this.localCapRegRef = capabilityRegistry;
     }
 }

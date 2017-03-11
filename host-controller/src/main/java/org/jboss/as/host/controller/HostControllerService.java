@@ -181,7 +181,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, HC_EXECUTOR_SERVICE_NAME);
 
         // Install required path services. (Only install those identified as required)
-        HostPathManagerService hostPathManagerService = new HostPathManagerService();
+        HostPathManagerService hostPathManagerService = new HostPathManagerService(capabilityRegistry);
         HostPathManagerService.addService(serviceTarget, hostPathManagerService, environment);
 
         HttpListenerRegistryService.install(serviceTarget);
