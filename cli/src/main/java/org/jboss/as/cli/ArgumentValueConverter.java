@@ -100,7 +100,7 @@ public interface ArgumentValueConverter {
     ArgumentValueConverter LIST = new DMRWithFallbackConverter() {
         final DefaultParsingState initialState = new DefaultParsingState("IL"){
             {
-                setDefaultHandler(new EnterStateCharacterHandler(new CompositeState(true, new ArgumentValueState())));
+                setDefaultHandler(new EnterStateCharacterHandler(new CompositeState(true, ArgumentValueState.INSTANCE)));
             }
         };
         @Override
@@ -114,7 +114,7 @@ public interface ArgumentValueConverter {
     ArgumentValueConverter PROPERTIES = new DMRWithFallbackConverter() {
         final DefaultParsingState initialState = new DefaultParsingState("IPL"){
             {
-                setDefaultHandler(new EnterStateCharacterHandler(new CompositeState(true, new ArgumentValueState())));
+                setDefaultHandler(new EnterStateCharacterHandler(new CompositeState(true, ArgumentValueState.INSTANCE)));
             }
         };
         @Override

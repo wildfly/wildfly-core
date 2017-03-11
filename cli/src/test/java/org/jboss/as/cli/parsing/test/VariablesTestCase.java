@@ -22,14 +22,14 @@
 
 package org.jboss.as.cli.parsing.test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
@@ -141,6 +141,20 @@ public class VariablesTestCase {
     }
 
     @Test
+    public void testQuotedOperationValue() throws Exception {
+        final ParsedCommandLine parsed = parse(":write-attribute(name=\"$" + OP_PROP_VAR_NAME + "\")");
+        assertEquals("write-attribute", parsed.getOperationName());
+        assertEquals("\"$" + OP_PROP_VAR_NAME + '\"', parsed.getPropertyValue("name"));
+    }
+
+    @Test
+    public void testOperationComplexValue() throws Exception {
+        final ParsedCommandLine parsed = parse(":write-attribute(name={attr=$" + OP_PROP_VAR_NAME + "})");
+        assertEquals("write-attribute", parsed.getOperationName());
+        assertEquals("{attr=" + OP_PROP_VAR_VALUE + "}", parsed.getPropertyValue("name"));
+    }
+
+    @Test
     public void testUnresolvedCommandName() {
         assertFailedToParse("$" + OP_VAR_NAME + "xxx");
     }
@@ -169,6 +183,41 @@ public class VariablesTestCase {
         assertEquals("command-name", parsed.getOperationName());
         // variables unlike system properties are always resolved
         assertEquals(parsed.getPropertyValue("--" + OP_PROP_VAR_VALUE), OP_PROP_VAR_VALUE);
+    }
+
+    @Test
+    public void testQuotedArgumentValue() throws Exception {
+        final ParsedCommandLine parsed = parse(":op(name=\"$" + OP_PROP_VAR_NAME + "\")");
+        assertEquals("op", parsed.getOperationName());
+        assertEquals("\"$" + OP_PROP_VAR_NAME + "\"", parsed.getPropertyValue("name"));
+    }
+
+    @Test
+    public void testComplexArgumentValue() throws Exception {
+        final ParsedCommandLine parsed = parse(":op(name={attr=$" + OP_PROP_VAR_NAME + "})");
+        assertEquals("op", parsed.getOperationName());
+        assertEquals("{attr=" + OP_PROP_VAR_VALUE + "}", parsed.getPropertyValue("name"));
+    }
+
+    @Test
+    public void testListArgumentValue() throws Exception {
+        final ParsedCommandLine parsed = parse(":op(name=[$" + OP_PROP_VAR_NAME + "])");
+        assertEquals("op", parsed.getOperationName());
+        assertEquals("[" + OP_PROP_VAR_VALUE + "]", parsed.getPropertyValue("name"));
+    }
+
+    @Test
+    public void testArgumentValueInParenthesis() throws Exception {
+        final ParsedCommandLine parsed = parse(":op(name=($" + OP_PROP_VAR_NAME + "))");
+        assertEquals("op", parsed.getOperationName());
+        assertEquals("(" + OP_PROP_VAR_VALUE + ")", parsed.getPropertyValue("name"));
+    }
+
+    @Test
+    public void testDMRArgumentValue() throws Exception {
+        final ParsedCommandLine parsed = parse(":op(name = {\"attr\" => \"$" + OP_PROP_VAR_NAME + "\"})");
+        assertEquals("op", parsed.getOperationName());
+        assertEquals("{\"attr\" => \"$" + OP_PROP_VAR_NAME + "\"}", parsed.getPropertyValue("name"));
     }
 
     @Test

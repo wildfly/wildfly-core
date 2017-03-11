@@ -57,9 +57,27 @@ public class PropertyValueState extends ExpressionBaseState {
         }
         enterState('"', QuotesState.QUOTES_INCLUDED_KEEP_ESCAPES);
         enterState('`', BackQuotesState.QUOTES_INCLUDED_KEEP_ESCAPES);
-        enterState('[', new DefaultStateWithEndCharacter("BRACKETS", ']', true, true, enterStateHandlers));
-        enterState('(', new DefaultStateWithEndCharacter("PARENTHESIS", ')', true, true, enterStateHandlers));
-        enterState('{', new DefaultStateWithEndCharacter("BRACES", '}', true, true, enterStateHandlers));
+        enterState('[', DefaultStateWithEndCharacter.builder("BRACKETS")
+                .setLeaveStateChar(']')
+                .setEndRequired(true)
+                .setEnterLeaveContent(true)
+                .setEnterStateHandlers(enterStateHandlers)
+                .setResolveSystemProperties(false)
+                .build());
+        enterState('(', DefaultStateWithEndCharacter.builder("PARENTHESIS")
+                .setLeaveStateChar(')')
+                .setEndRequired(true)
+                .setEnterLeaveContent(true)
+                .setEnterStateHandlers(enterStateHandlers)
+                .setResolveSystemProperties(false)
+                .build());
+        enterState('{', DefaultStateWithEndCharacter.builder("BRACES")
+                .setLeaveStateChar('}')
+                .setEndRequired(true)
+                .setEnterLeaveContent(true)
+                .setEnterStateHandlers(enterStateHandlers)
+                .setResolveSystemProperties(false)
+                .build());
         setDefaultHandler(WordCharacterHandler.IGNORE_LB_ESCAPE_OFF);
     }
 

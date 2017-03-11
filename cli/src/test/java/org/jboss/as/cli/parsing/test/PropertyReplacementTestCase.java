@@ -208,6 +208,41 @@ public class PropertyReplacementTestCase {
     }
 
     @Test
+    public void testQuotedParameterValue() throws Exception {
+        final ParsedCommandLine parsed = parse(":op(name=\"${" + OP_PROP_PROP_NAME + "}\")");
+        assertEquals("op", parsed.getOperationName());
+        assertEquals("\"${" + OP_PROP_PROP_NAME + "}\"", parsed.getPropertyValue("name"));
+    }
+
+    @Test
+    public void testComplexParameterValue() throws Exception {
+        final ParsedCommandLine parsed = parse(":op(name={attr=${" + OP_PROP_PROP_NAME + "}})");
+        assertEquals("op", parsed.getOperationName());
+        assertEquals("{attr=${" + OP_PROP_PROP_NAME + "}}", parsed.getPropertyValue("name"));
+    }
+
+    @Test
+    public void testListParameterValue() throws Exception {
+        final ParsedCommandLine parsed = parse(":op(name=[${" + OP_PROP_PROP_NAME + "}])");
+        assertEquals("op", parsed.getOperationName());
+        assertEquals("[${" + OP_PROP_PROP_NAME + "}]", parsed.getPropertyValue("name"));
+    }
+
+    @Test
+    public void testParameterValueInParenthesis() throws Exception {
+        final ParsedCommandLine parsed = parse(":op(name=(${" + OP_PROP_PROP_NAME + "}))");
+        assertEquals("op", parsed.getOperationName());
+        assertEquals("(${" + OP_PROP_PROP_NAME + "})", parsed.getPropertyValue("name"));
+    }
+
+    @Test
+    public void testDMRParameterValue() throws Exception {
+        final ParsedCommandLine parsed = parse(":op(name = {\"attr\" => \"${" + OP_PROP_PROP_NAME + "}\"})");
+        assertEquals("op", parsed.getOperationName());
+        assertEquals("{\"attr\" => \"${" + OP_PROP_PROP_NAME + "}\"}", parsed.getPropertyValue("name"));
+    }
+
+    @Test
     public void testUnresolvedCommandName() {
         assertFailedToParse("${" + OP_PROP_NAME + "xxx}");
     }
