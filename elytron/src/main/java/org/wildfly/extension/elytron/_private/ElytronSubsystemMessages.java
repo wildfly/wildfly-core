@@ -275,6 +275,15 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 32, value = "Unable to reload CRL file.")
     RuntimeException unableToReloadCRL(@Cause Exception cause);
 
+    /**
+     * An {@link OperationFailedException} if it is not possible to access an entry from a {@link KeyStore} at RUNTIME.
+     *
+     * @param cause the underlying cause of the failure
+     * @return The {@link OperationFailedException} for the error.
+     */
+    @Message(id = 33, value = "Unable to access entry [%s] from key store [%s].")
+    RuntimeException unableToAccessEntryFromKeyStore(String keyStore, String alias);
+
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
     IllegalArgumentException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);

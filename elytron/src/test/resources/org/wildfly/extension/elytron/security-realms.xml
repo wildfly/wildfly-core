@@ -94,6 +94,9 @@
         <token-realm name="EmptyJwtRealmTwo">
             <jwt/>
         </token-realm>
+        <token-realm name="JwtWithKeyStore">
+            <jwt key-store="some-key-store" certificate="client"/>
+        </token-realm>
         <token-realm name="OAuth2Realm" principal-claim="sub">
             <oauth2-introspection client-id="a" client-secret="b" introspection-url="https://localhost/token/introspect"/>
         </token-realm>

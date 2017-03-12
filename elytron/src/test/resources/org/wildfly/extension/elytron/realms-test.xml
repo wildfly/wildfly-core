@@ -26,6 +26,10 @@
             <jwt/>
         </token-realm>
 
+        <token-realm name="JwtWithKeyStore">
+            <jwt key-store="ElytronCaTruststore" certificate="mykey" />
+        </token-realm>
+
         <token-realm name="OAuth2Realm" principal-claim="sub">
             <oauth2-introspection client-id="a" client-secret="b" introspection-url="https://localhost/token/introspect" client-ssl-context="ClientCaSslContext" host-name-verification-policy="ANY" />
         </token-realm>
