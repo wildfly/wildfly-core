@@ -35,7 +35,7 @@
         <security-realms>
             <security-realm name="ManagementRealm">
                 <server-identities>
-                     <secret value="c2xhdmVfdXNlcl9wYXNzd29yZA==" />
+                     <secret value="c2xhdmVfdXMzcl9wYXNzd29yZA==" />
                 </server-identities>
                 <authentication>
                      <local default-user="$local" skip-group-loading="true" />
