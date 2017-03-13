@@ -240,6 +240,10 @@ public class TestModule {
         return resource;
     }
 
+    public void addJavaArchive(File archive) {
+        resources.add(ShrinkWrap.createFromZipFile(JavaArchive.class, archive));
+    }
+
     private void remove(File file) {
         if (file.exists()) {
             if (file.isDirectory()) {

@@ -21,6 +21,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -30,7 +31,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY_LINK_REMOVAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REDEPLOY_LINKS;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
-import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.server.deploymentoverlay.AffectedDeploymentOverlay;
 import org.jboss.dmr.ModelNode;
 
@@ -58,17 +58,11 @@ public class DomainDeploymentOverlayRedeployLinksHandler implements OperationSte
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        Set<String> runtimeNames = domainRoot ? AffectedDeploymentOverlay.listAllLinks(context, context.getCurrentAddressValue()) : AffectedDeploymentOverlay.listLinks(context, context.getCurrentAddress());
-        if(operation.hasDefined(RUNTIME_NAMES_DEFINITION.getName())) {
-            Set<String> requiredRuntimeNames = new HashSet<>(RUNTIME_NAMES_DEFINITION.unwrap(context, operation));
-            Set<String> unaffectedDeployments = AffectedDeploymentOverlay.checkRequiredNames(requiredRuntimeNames, runtimeNames);
-            if(!unaffectedDeployments.isEmpty() && !isRedeployAfterRemoval(operation)) {
-                throw DomainControllerLogger.ROOT_LOGGER.redeployingUnaffactedDeployments(unaffectedDeployments);
-            }
-            runtimeNames = requiredRuntimeNames;
-        }
+        Set<String> runtimeNames = checkRequiredRuntimeNames(context, operation);
         ModelNode removeOperation = null;
-        if(isRedeployAfterRemoval(operation)) {
+        if (isRedeployAfterRemoval(operation)) {
+            assert !runtimeNames.isEmpty();
+            assert runtimeNames.size() == 1;
             removeOperation = Operations.createRemoveOperation(context.getCurrentAddress().append(DEPLOYMENT, runtimeNames.iterator().next()).toModelNode());
         }
         if (domainRoot) {
@@ -76,9 +70,24 @@ public class DomainDeploymentOverlayRedeployLinksHandler implements OperationSte
         } else {
             AffectedDeploymentOverlay.redeployLinksAndTransformOperation(context, removeOperation, context.getCurrentAddress().getParent(), runtimeNames);
         }
+        if (isRedeployAfterRemoval(operation)) {//Now that the redeploy operations are ready we can remove the resource.
+            context.removeResource(PathAddress.pathAddress(DEPLOYMENT, runtimeNames.iterator().next()));
+        }
+    }
+
+    private Set<String> checkRequiredRuntimeNames(OperationContext context, ModelNode operation) throws OperationFailedException {
+        Set<String> runtimeNames = domainRoot ? AffectedDeploymentOverlay.listAllLinks(context, context.getCurrentAddressValue()) : AffectedDeploymentOverlay.listLinks(context, context.getCurrentAddress());
+        if(operation.hasDefined(RUNTIME_NAMES_DEFINITION.getName())) {
+            Set<String> requiredRuntimeNames = new HashSet<>(RUNTIME_NAMES_DEFINITION.unwrap(context, operation));
+            if(!requiredRuntimeNames.isEmpty()) {
+                runtimeNames = requiredRuntimeNames;
+            }
+        }
+        return runtimeNames;
     }
 
     /**
+     * Check if this is a redeployment triggered after the removal of a link.
      * @param operation the current operation.
      * @return true if this is a redeploy after the removal of a link.
      * @see org.jboss.as.server.deploymentoverlay.DeploymentOverlayDeploymentRemoveHandler

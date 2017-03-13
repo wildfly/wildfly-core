@@ -35,7 +35,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -1273,9 +1272,6 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 265, value = "Invalid value '%s' for system property '%s' -- value must be a non-negative integer")
     void invalidPoolCoreSize(String val, String configSysProp);
-
-    @Message(id = 266, value = "You are trying to redeploy %s which are deployments not affected by the overlay")
-    OperationFailedException redeployingUnaffactedDeployments(Collection<String> deployments);
 
     ////////////////////////////////////////////////
     //Messages without IDs

@@ -26,11 +26,16 @@ import java.io.FilePermission;
 import java.io.IOException;
 import java.util.PropertyPermission;
 import org.jboss.as.test.shared.PermissionUtils;
+
+import org.jboss.as.controller.Extension;
+import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.wildfly.test.jmx.staticmodule.JMXControlledStateNotificationListenerExtension;
+import org.wildfly.test.jmx.staticmodule.JMXNotificationsService;
 
 import javax.management.MBeanPermission;
 
@@ -90,6 +95,27 @@ public class ServiceActivatorDeploymentUtil {
                 new MBeanPermission("org.jboss.as.server.jmx.RunningStateJmx#*[" + targetName + "]", "removeNotificationListener"),
                 new PropertyPermission("user.dir", "read")
         ), "permissions.xml");
+        archive.as(ZipExporter.class).exportTo(destination);
+    }
+
+    public static void createServiceActivatorListenerArchiveForModule(File destination, String targetName, Class listenerClass) throws IOException {
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
+        archive.addClass(JMXNotificationsService.class);
+        archive.addClass(listenerClass);
+        archive.addClass(JMXControlledStateNotificationListenerExtension.class);
+        archive.addClass(EmptySubsystemParser.class);
+        archive.addAsServiceProvider(Extension.class, JMXControlledStateNotificationListenerExtension.class);
+        StringBuilder sb = new StringBuilder();
+        sb.append(ServiceActivatorDeployment.LISTENER_CLASS_NAME);
+        sb.append('=');
+        sb.append(listenerClass.getName());
+        sb.append("\n");
+        sb.append(ServiceActivatorDeployment.LISTENER_OBJECT_NAME);
+        sb.append('=');
+        sb.append(targetName);
+        sb.append("\n");
+        sb.append("keep.after.stop=true\n");
+        archive.addAsResource(new StringAsset(sb.toString()), JMXNotificationsService.PROPERTIES_RESOURCE);
         archive.as(ZipExporter.class).exportTo(destination);
     }
 

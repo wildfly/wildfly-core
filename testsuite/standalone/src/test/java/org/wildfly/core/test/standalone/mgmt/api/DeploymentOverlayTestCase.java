@@ -156,7 +156,14 @@ public class DeploymentOverlayTestCase {
 
             @Override
             public void redeployLinks() throws IOException, MgmtOperationException {
-                ModelNode response = client.execute(Operations.createOperation("redeploy-links", OVERLAY_ADDR.toModelNode()),
+                 ModelNode failingOperation = Operations.createOperation("redeploy-links", OVERLAY_ADDR.toModelNode());
+                failingOperation.get("deployments").setEmptyList();
+                failingOperation.get("deployments").add("*.war");
+                failingOperation.get("deployments").add("test.jar");
+                ModelNode response = client.execute(failingOperation, OperationMessageHandler.DISCARD);
+                Assert.assertTrue(response.toString(), Operations.isSuccessfulOutcome(response));
+                ServiceActivatorDeploymentUtil.validateProperties(client, properties); //Nothing was redeployed
+                response = client.execute(Operations.createOperation("redeploy-links", OVERLAY_ADDR.toModelNode()),
                         OperationMessageHandler.DISCARD);
                 Assert.assertTrue(response.toString(), Operations.isSuccessfulOutcome(response));
                 ServiceActivatorDeploymentUtil.validateProperties(client, properties2);

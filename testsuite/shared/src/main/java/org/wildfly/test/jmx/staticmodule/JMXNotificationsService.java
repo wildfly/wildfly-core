@@ -19,20 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.wildfly.test.jmx;
+package org.wildfly.test.jmx.staticmodule;
 
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import javax.management.MBeanServer;
 import javax.management.NotificationListener;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 
-import org.jboss.as.server.jmx.PluggableMBeanServer;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceActivatorContext;
@@ -41,7 +41,6 @@ import org.jboss.msc.service.ServiceRegistryException;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 
 /**
  * ServiceActivator that installs itself as a service and sets a set of system properties read from a
@@ -50,7 +49,7 @@ import org.jboss.msc.value.InjectedValue;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public class ServiceActivatorDeployment implements ServiceActivator, Service<Void> {
+public class JMXNotificationsService implements ServiceActivator, Service<Void> {
 
     public static final ServiceName MBEAN_SERVER_SERVICE_NAME = ServiceName.JBOSS.append("mbean", "server");
     public static final ServiceName SERVICE_NAME = ServiceName.of("test", "deployment", "jmx");
@@ -60,16 +59,25 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
     public static final String LISTENER_OBJECT_NAME = "listener.object.name";
     public static final String LISTENER_CLASS_NAME = "listener.class.name";
 
-    InjectedValue<PluggableMBeanServer> mbeanServerValue = new InjectedValue<PluggableMBeanServer>();
+    MBeanServer mbeanServerValue = ManagementFactory.getPlatformMBeanServer();
 
     private ObjectName name = null;
     private ObjectName targetName = null;
     private NotificationListener listener = null;
 
+    /**
+     * When testing state notifications for a listener in a static module,
+     * we want to keep the listener active all the way until shutdown of the server
+     * to be able to receive the final stopping->stopped notification.
+     * This flag, when true, means that when this MSC service is removed,
+     * the listener should NOT be unregistered with it.
+     */
+    private boolean keepAtStop = false;
+
     @Override
     public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
         serviceActivatorContext.getServiceTarget().addService(SERVICE_NAME, this)
-                .addDependency(MBEAN_SERVER_SERVICE_NAME, PluggableMBeanServer.class, mbeanServerValue).install();
+                .install();
     }
 
     @Override
@@ -92,13 +100,11 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
             }
         }
         try {
-            //Deploy a JMX MBean
             if (properties.containsKey(MBEAN_OBJECT_NAME) && properties.containsKey(MBEAN_CLASS_NAME)) {
                 name = new ObjectName(properties.getProperty(MBEAN_OBJECT_NAME));
                 Class mbeanClass = Class.forName(properties.getProperty(MBEAN_CLASS_NAME));
                 registerMBean(mbeanClass.newInstance(), name);
             }
-            //Deploy a JMX notification listener
             if (properties.containsKey(LISTENER_OBJECT_NAME) && properties.containsKey(LISTENER_CLASS_NAME)) {
                 Class listenerClass = Class.forName(properties.getProperty(LISTENER_CLASS_NAME));
                 if (NotificationListener.class.isAssignableFrom(listenerClass)) {
@@ -106,6 +112,9 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
                     listener = (NotificationListener) listenerClass.newInstance();
                     addNotificationListener(targetName, listener);
                 }
+            }
+            if(Boolean.valueOf((String)properties.getOrDefault("keep.after.stop", "false"))) {
+                keepAtStop = true;
             }
         } catch (Exception e) {
             throw new StartException(e);
@@ -118,20 +127,16 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
             try {
                 unregisterMBean(name);
             } catch (Exception ex) {
-                Logger.getLogger(ServiceActivatorDeployment.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(JMXNotificationsService.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        if(targetName != null && listener != null) {
+        if(targetName != null && listener != null && !keepAtStop) {
            try {
                 removeNotificationListener(targetName, listener);
             } catch (Exception ex) {
-                Logger.getLogger(ServiceActivatorDeployment.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(JMXNotificationsService.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-    }
-
-    public InjectedValue<PluggableMBeanServer> getMBeanServerInjector() {
-        return mbeanServerValue;
     }
 
     @Override
@@ -140,19 +145,19 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
     }
 
     private ObjectInstance registerMBean(Object mbean, ObjectName name) throws Exception {
-        return mbeanServerValue.getValue().registerMBean(mbean, name);
+        return mbeanServerValue.registerMBean(mbean, name);
     }
 
     private void unregisterMBean(ObjectName name) throws Exception {
-        mbeanServerValue.getValue().unregisterMBean(name);
+        mbeanServerValue.unregisterMBean(name);
     }
 
     private void addNotificationListener(ObjectName name, NotificationListener listener) throws Exception {
-        mbeanServerValue.getValue().addNotificationListener(name, listener, null, null);
+        mbeanServerValue.addNotificationListener(name, listener, null, null);
     }
 
     private void removeNotificationListener(ObjectName name, NotificationListener listener) throws Exception {
-        mbeanServerValue.getValue().removeNotificationListener(name, listener);
+        mbeanServerValue.removeNotificationListener(name, listener);
     }
 
 }
