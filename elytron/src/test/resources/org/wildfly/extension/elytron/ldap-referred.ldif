@@ -1,0 +1,48 @@
+version: 1
+
+# === Second LDAP server for referrals testing ===
+
+dn: dc=elytron,dc=wildfly,dc=org
+objectclass: top
+objectclass: domain
+dc: elytron
+
+dn: dc=users,dc=elytron,dc=wildfly,dc=org
+objectclass: top
+objectclass: domain
+dc: users
+
+dn: uid=server,dc=users,dc=elytron,dc=wildfly,dc=org
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: organizationalPerson
+cn: server
+sn: server
+uid: server
+userPassword:: c2VydmVyUGFzc3dvcmQ=
+# Password serverPassword
+
+dn: dc=referredUsers,dc=elytron,dc=wildfly,dc=org
+objectclass: top
+objectclass: domain
+dc: referredUsers
+
+dn: uid=refUser,dc=referredUsers,dc=elytron,dc=wildfly,dc=org
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: organizationalPerson
+cn: refUserCn
+sn: refUserSn
+uid: refUser
+userPassword:: cGxhaW5QYXNzd29yZA==
+# Password plainPassword
+
+# Referral back to create infinite loop
+dn: ou=refLoop,dc=referredUsers,dc=elytron,dc=wildfly,dc=org
+objectClass: extensibleObject
+objectClass: referral
+objectClass: top
+ou: refLoop
+ref: ldaps://localhost:11391/dc=elytron,dc=wildfly,dc=org
