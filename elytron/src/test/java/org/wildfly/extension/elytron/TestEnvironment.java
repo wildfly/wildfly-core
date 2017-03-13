@@ -62,7 +62,7 @@ class TestEnvironment extends AdditionalInitialization {
         try {
             LdapService.builder()
                     .setWorkingDir(new File("./target/apache-ds/working1"))
-                    .createDirectoryService("Test Service")
+                    .createDirectoryService("TestService1")
                     .addPartition("Elytron", "dc=elytron,dc=wildfly,dc=org", 5, "uid")
                     .importLdif(TestEnvironment.class.getResourceAsStream("ldap-schemas.ldif"))
                     .importLdif(TestEnvironment.class.getResourceAsStream("ldap-data.ldif"))
@@ -70,7 +70,7 @@ class TestEnvironment extends AdditionalInitialization {
                     .start();
             LdapService.builder()
                     .setWorkingDir(new File("./target/apache-ds/working2"))
-                    .createDirectoryService("Test Service")
+                    .createDirectoryService("TestService2")
                     .addPartition("Elytron", "dc=elytron,dc=wildfly,dc=org", 5, "uid")
                     .importLdif(TestEnvironment.class.getResourceAsStream("ldap-schemas.ldif"))
                     .importLdif(TestEnvironment.class.getResourceAsStream("ldap-referred.ldif"))
