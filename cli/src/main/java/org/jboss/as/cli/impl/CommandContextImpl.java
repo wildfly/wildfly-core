@@ -188,6 +188,7 @@ import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.stdio.StdioContext;
 import org.wildfly.security.auth.callback.CredentialCallback;
+import org.wildfly.security.auth.callback.OptionalNameCallback;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.wildfly.security.password.interfaces.ClearPassword;
@@ -1833,9 +1834,25 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     rcb.setText(defaultText); // For now just use the realm suggested.
                 } else if (current instanceof RealmChoiceCallback) {
                     throw new UnsupportedCallbackException(current, "Realm choice not currently supported.");
+                } else if (current instanceof OptionalNameCallback) {
+                    NameCallback ncb = (NameCallback) current;
+                    // set it if we have one
+                    String username = this.username;
+                    if (username != null) {
+                        ncb.setName(username);
+                    } else {
+                        final String defaultName = ncb.getDefaultName();
+                        if (defaultName != null) {
+                            ncb.setName(defaultName);
+                        }
+                    }
                 } else if (current instanceof NameCallback) {
                     NameCallback ncb = (NameCallback) current;
-                    if (username == null) {
+                    final String defaultName = ncb.getDefaultName();
+                    if (defaultName != null) {
+                        // do not prompt
+                        username = defaultName;
+                    } else if (username == null) {
                         showRealm();
                         try {
                             if(console == null) {

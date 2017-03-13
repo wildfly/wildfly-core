@@ -1,0 +1,40 @@
+<!-- for needs of TlsTestCase -->
+<subsystem xmlns="urn:wildfly:elytron:1.0" initial-providers="elytron">
+    <providers>
+        <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
+    </providers>
+    <security-domains>
+        <security-domain name="MyDomain" default-realm="MyRealm" permission-mapper="PermMapper">
+            <realm name="MyRealm"/>
+        </security-domain>
+    </security-domains>
+    <security-realms>
+        <filesystem-realm name="MyRealm" levels="2">
+            <file path="filesystem-realm" relative-to="jboss.server.config.dir" />
+        </filesystem-realm>
+    </security-realms>
+    <mappers>
+        <simple-permission-mapper name="PermMapper">
+            <permission-mapping principals="firstUser" >
+                <permission class-name="org.wildfly.security.auth.permission.LoginPermission" />
+            </permission-mapping>
+        </simple-permission-mapper>
+    </mappers>
+    <sasl>
+        <provider-sasl-server-factory name="MySaslServer"/>
+        <configurable-sasl-server-factory name="ConfigurableSaslServer" sasl-server-factory="MySaslServer" protocol="myProtocol" server-name="TestingServer" />
+        <sasl-authentication-factory name="MySaslAuth" security-domain="MyDomain" sasl-server-factory="ConfigurableSaslServer">
+            <mechanism-configuration>
+                <mechanism mechanism-name="PLAIN">
+                    <mechanism-realm realm-name="PlainRealm"/>
+                </mechanism>
+                <mechanism mechanism-name="SCRAM-SHA-1">
+                    <mechanism-realm realm-name="ScramRealm"/>
+                </mechanism>
+                <mechanism mechanism-name="DIGEST-SHA">
+                    <mechanism-realm realm-name="DigestRealm"/>
+                </mechanism>
+            </mechanism-configuration>
+        </sasl-authentication-factory>
+    </sasl>
+</subsystem>

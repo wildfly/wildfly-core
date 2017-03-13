@@ -1,0 +1,60 @@
+<subsystem xmlns="urn:wildfly:elytron:1.0">
+    <providers>
+         <provider-loader name="TestProviderLoader" module="test.module" />
+     </providers>
+    <security-domains>
+        <security-domain name="MyDomain" default-realm="RealmTwo">
+            <realm name="RealmTwo"/>
+        </security-domain>
+    </security-domains>
+    <security-realms>
+         <properties-realm name="RealmTwo">
+            <users-properties path="my.properties" />
+        </properties-realm>
+    </security-realms>
+    <mappers>
+        <constant-principal-transformer name="PreRealmNameRewriter" constant="constant" />
+        <constant-principal-transformer name="PostRealmNameRewriter" constant="constant" />
+        <constant-principal-transformer name="FinalNameRewriter" constant="constant" />
+        <constant-principal-transformer name="PreRealmNameRewriter_II" constant="constant" />
+        <constant-principal-transformer name="PostRealmNameRewriter_II" constant="constant" />
+        <constant-principal-transformer name="FinalNameRewriter_II" constant="constant" />
+        <simple-regex-realm-mapper name="RegexMapper" pattern="(constant)" />
+        <simple-regex-realm-mapper name="RegexMapper_II" pattern="(constant)" />
+    </mappers>
+    <sasl>
+        <sasl-authentication-factory name="SaslAuthenticationDefinition" security-domain="MyDomain" sasl-server-factory="ConfigurableSaslServerFactory">
+            <mechanism-configuration>
+                <mechanism mechanism-name="PLAIN" pre-realm-principal-transformer="PreRealmNameRewriter"  post-realm-principal-transformer="PostRealmNameRewriter" final-principal-transformer="FinalNameRewriter" realm-mapper="RegexMapper">
+                    <mechanism-realm realm-name="Test Realm" pre-realm-principal-transformer="PreRealmNameRewriter_II"  post-realm-principal-transformer="PostRealmNameRewriter_II" final-principal-transformer="FinalNameRewriter_II" realm-mapper="RegexMapper_II" />
+                </mechanism>
+            </mechanism-configuration>
+        </sasl-authentication-factory>
+        <aggregate-sasl-server-factory name="AggregateSaslFactory">
+            <sasl-server-factory name="ProviderSaslFactory"/>
+            <sasl-server-factory name="ServiceSaslFactory"/>
+        </aggregate-sasl-server-factory>
+        <configurable-sasl-server-factory name="ConfigurableSaslServerFactory" server-name="server" protocol="test-protocol" sasl-server-factory="MechFiltering">
+            <properties>
+                <property name="a" value="b" />
+                <property name="c" value="d" />
+            </properties>
+            <filters>
+                <filter enabling="false">
+                    <predefined-filter value="HASH_MD5" />
+                </filter>
+                <filter>
+                    <pattern-filter value="x" />
+                </filter>
+            </filters>
+        </configurable-sasl-server-factory>
+        <mechanism-provider-filtering-sasl-server-factory name="MechFiltering" sasl-server-factory="AggregateSaslFactory" enabling="false">
+            <filters>
+                <filter mechanism-name="Digest" provider-name="Sun" provider-version="1.5" version-comparison="greater-than" />
+                <filter mechanism-name="Scram" provider-name="Sun" provider-version="1.5" version-comparison="greater-than" />
+            </filters>
+        </mechanism-provider-filtering-sasl-server-factory>
+        <provider-sasl-server-factory name="ProviderSaslFactory" providers="TestProviderLoader" />
+        <service-loader-sasl-server-factory name="ServiceSaslFactory" module="a.b.c" />
+    </sasl>
+</subsystem>

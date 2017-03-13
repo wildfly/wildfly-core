@@ -61,6 +61,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -97,6 +98,8 @@ import org.jboss.msc.value.InjectedValue;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class SecurityRealmAddHandler implements OperationStepHandler {
+
+    private static final String ELYTRON_CAPABILITY = "org.wildfly.security.elytron";
 
     public static final SecurityRealmAddHandler INSTANCE = new SecurityRealmAddHandler();
 
@@ -600,6 +603,11 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         ServiceName fullServiceName = SSLContextService.ServiceUtil.createServiceName(SecurityRealm.ServiceUtil.createServiceName(realmName), false);
         ServiceName trustOnlyServiceName = SSLContextService.ServiceUtil.createServiceName(SecurityRealm.ServiceUtil.createServiceName(realmName), true);
 
+        Consumer<ServiceBuilder> serviceBuilderConsumer = s -> {};
+        try {
+            serviceBuilderConsumer = context.getCapabilityRuntimeAPI(ELYTRON_CAPABILITY, Consumer.class);
+        } catch (IllegalStateException e) {}
+
         if (keyManagerServiceName != null) {
             // An alias will not be set on the trust based SSLContext.
             SSLContextService fullSSLContextService = new SSLContextService(protocol, enabledCipherSuites, enabledProtocols);
@@ -608,6 +616,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             if (trustManagerServiceName != null) {
                 AbstractTrustManagerService.ServiceUtil.addDependency(fullBuilder, fullSSLContextService.getTrustManagerInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName));
             }
+            serviceBuilderConsumer.accept(fullBuilder);
 
             fullBuilder.setInitialMode(ON_DEMAND).install();
         }
@@ -622,6 +631,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         if (trustManagerServiceName != null) {
             AbstractTrustManagerService.ServiceUtil.addDependency(trustBuilder, trustOnlySSLContextService.getTrustManagerInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName));
         }
+        serviceBuilderConsumer.accept(trustBuilder);
         trustBuilder.setInitialMode(ON_DEMAND).install();
 
         SSLContextService.ServiceUtil.addDependency(realmBuilder, injector, SecurityRealm.ServiceUtil.createServiceName(realmName), false);
