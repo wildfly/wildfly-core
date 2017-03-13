@@ -3510,4 +3510,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 438, value = "Couldn't convert '%s' into proper warning level, threshold falling back to 'ALL'. Possible values: SEVERE,WARNING,INFO,CONFIG,FINE,FINER,FINEST,ALL,OFF")
     String couldntConvertWarningLevel(String level);
+
+    @Message(id = 439, value = "Value %s for attribute %s is not a valid subnet format")
+    OperationFailedException invalidSubnetFormat(String value, String name);
 }
