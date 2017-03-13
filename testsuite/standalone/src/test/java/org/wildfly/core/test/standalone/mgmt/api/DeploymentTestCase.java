@@ -45,6 +45,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -468,16 +469,28 @@ public class DeploymentTestCase {
                 @Override
                 public void fullReplace() throws IOException {
                     // Copy same deployment with changed property to deploy directory
+                    FileTime deployedlastModified = Files.getLastModifiedTime(deployed.toPath());
+                    Assert.assertTrue(deployed.exists());
                     final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
                     File target = new File(deployDir, "test-deployment.jar");
+                    FileTime deploymentLastModified = Files.getLastModifiedTime(target.toPath());
                     archive2.as(ZipExporter.class).exportTo(target, true);
-                    long deployedlastModified = deployed.lastModified();
-                    Assert.assertTrue(deployed.exists());
+                    //Some filesystems truncate the lastModified time to seconds instead of millisecond so we sleep 1 second to make sure the file update is detectable.
+                    if(Files.getLastModifiedTime(target.toPath()).toMillis() % 1000 == 0 && deployedlastModified.toMillis() % 1000 == 0) {
+                        try {
+                            Thread.sleep(1000L);
+                            System.out.println("***********************************************************************************************************");
+                        } catch (InterruptedException ex) {
+                        }
+                        archive2.as(ZipExporter.class).exportTo(target, true);
+                    }
+                    Assert.assertTrue("Deployment file has not been updated " + deploymentLastModified.toMillis() + " should be before "
+                            +  Files.getLastModifiedTime(target.toPath()).toMillis() , Files.getLastModifiedTime(target.toPath()).toInstant().isAfter(deploymentLastModified.toInstant()));
                     // Wait until filesystem action gets picked up by scanner
                     boolean wasUndeployed = false;
                     long timeout = System.currentTimeMillis() + TIMEOUT + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
-                        if ((isdeploying.exists() && !deployed.exists()) || deployed.lastModified() > deployedlastModified) {
+                        if ((isdeploying.exists() && !deployed.exists()) || Files.getLastModifiedTime(deployed.toPath()).toMillis() > deployedlastModified.toMillis()) {
                             wasUndeployed = true;
                             break;
                         }
@@ -489,7 +502,6 @@ public class DeploymentTestCase {
                         }
                     }
                     Assert.assertTrue("fullReplace step did not complete in a reasonably timely fashion", wasUndeployed);
-
                     // Wait for redeploy to finish
                     timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
