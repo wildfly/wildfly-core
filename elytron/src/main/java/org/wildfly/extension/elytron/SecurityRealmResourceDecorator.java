@@ -37,6 +37,6 @@ class SecurityRealmResourceDecorator extends DelegatingResourceDefinition {
     }
 
     public void registerChildren(final ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerSubModel(new IdentityResourceDefinition(this.delegate));
+        resourceRegistration.registerSubModel(new IdentityResourceDefinition());
     }
 }

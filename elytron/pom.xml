@@ -28,7 +28,7 @@
 
     <artifactId>wildfly-elytron</artifactId>
 
-    <name>WildFly: Subsystem Artifact</name>
+    <name>WildFly: Elytron Subsystem</name>
 
     <properties>
         <!-- TODO Elytron Remove once parent on M17 -->

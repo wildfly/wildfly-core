@@ -27,12 +27,28 @@
                 </attribute-mapping>
             </principal-query>
         </jdbc-realm>
-        <jdbc-realm name="JdbcRealmWithSingleQueryNoAttributes">
+        <jdbc-realm name="JdbcRealmWithClearPassword">
             <principal-query sql="SELECT password FROM USER_CLEAR_PASSWORD WHERE name = ?" data-source="TestDS">
                 <clear-password-mapper password-index="1"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmWithBCryptPassword">
+            <principal-query sql="SELECT password FROM USER_CLEAR_PASSWORD WHERE name = ?" data-source="TestDS">
                 <bcrypt-mapper password-index="1" salt-index="2" iteration-count-index="3"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmWithSaltedPassword">
+            <principal-query sql="SELECT password FROM USER_CLEAR_PASSWORD WHERE name = ?" data-source="TestDS">
                 <salted-simple-digest-mapper password-index="1" salt-index="2"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmWithSimpleDigestPassword">
+            <principal-query sql="SELECT password FROM USER_CLEAR_PASSWORD WHERE name = ?" data-source="TestDS">
                 <simple-digest-mapper password-index="1"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmWithScramPassword">
+            <principal-query sql="SELECT password FROM USER_CLEAR_PASSWORD WHERE name = ?" data-source="TestDS">
                 <scram-mapper password-index="1" salt-index="2" iteration-count-index="3"/>
             </principal-query>
         </jdbc-realm>
@@ -93,6 +109,9 @@
         </token-realm>
         <token-realm name="EmptyJwtRealmTwo">
             <jwt/>
+        </token-realm>
+        <token-realm name="JwtWithKeyStore">
+            <jwt key-store="some-key-store" certificate="client"/>
         </token-realm>
         <token-realm name="OAuth2Realm" principal-claim="sub">
             <oauth2-introspection client-id="a" client-secret="b" introspection-url="https://localhost/token/introspect"/>

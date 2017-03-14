@@ -52,6 +52,9 @@ import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.jboss.modules.Module;
+import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -133,7 +136,12 @@ class DirContextDefinition extends SimpleResourceDefinition {
     static final SimpleMapAttributeDefinition PROPERTIES = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTIES, ModelType.STRING, true)
             .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {URL, AUTHENTICATION_LEVEL, PRINCIPAL, CREDENTIAL_REFERENCE, ENABLE_CONNECTION_POOLING, REFERRAL_MODE, AUTHENTICATION_CONTEXT, SSL_CONTEXT, CONNECTION_TIMEOUT, READ_TIMEOUT, PROPERTIES};
+    static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODULE, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .build();
+
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {URL, AUTHENTICATION_LEVEL, PRINCIPAL, CREDENTIAL_REFERENCE, ENABLE_CONNECTION_POOLING, REFERRAL_MODE, AUTHENTICATION_CONTEXT, SSL_CONTEXT, CONNECTION_TIMEOUT, READ_TIMEOUT, PROPERTIES,MODULE};
 
     DirContextDefinition() {
         super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(ElytronDescriptionConstants.DIR_CONTEXT), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.DIR_CONTEXT))
@@ -157,6 +165,22 @@ class DirContextDefinition extends SimpleResourceDefinition {
         String url = URL.resolveModelAttribute(context, model).asString();
         String authenticationLevel = AUTHENTICATION_LEVEL.resolveModelAttribute(context, model).asString();
         String principal = asStringIfDefined(context, PRINCIPAL, model);
+        String moduleName = null;
+        if(model.hasDefined(MODULE.getName()))
+            moduleName = MODULE.resolveModelAttribute(context, model).asString();
+
+        Module module = null;
+        if(moduleName != null && !moduleName.equals("")){
+            try {
+                Module cm = Module.getCallerModule();
+                ModuleIdentifier mi = ModuleIdentifier.create(moduleName);
+                //module = Module.getCallerModule().getModule(ModuleIdentifier.create(moduleName));
+                module = cm.getModule(mi);
+            } catch (ModuleLoadException e) {
+                throw new OperationFailedException(e);
+            }
+        }
+        final Module finalModule = module;
 
         Properties connectionProperties = new Properties();
         ModelNode enableConnectionPoolingNode = ENABLE_CONNECTION_POOLING.resolveModelAttribute(context, model);
@@ -172,7 +196,6 @@ class DirContextDefinition extends SimpleResourceDefinition {
         ReferralMode referralMode = ReferralMode.valueOf(REFERRAL_MODE.resolveModelAttribute(context, model).asString().toUpperCase());
 
         return () -> {
-
             SimpleDirContextFactoryBuilder builder = SimpleDirContextFactoryBuilder.builder()
                     .setProviderUrl(url)
                     .setSecurityAuthentication(authenticationLevel)
@@ -197,6 +220,8 @@ class DirContextDefinition extends SimpleResourceDefinition {
 
             if (connectionTimeout.isDefined()) builder.setConnectTimeout(connectionTimeout.asInt());
             if (readTimeout.isDefined()) builder.setReadTimeout(readTimeout.asInt());
+
+            if(finalModule!=null) builder.setModule(finalModule);
 
             DirContextFactory dirContextFactory = builder.build();
             return () -> dirContextFactory.obtainDirContext(referralMode);

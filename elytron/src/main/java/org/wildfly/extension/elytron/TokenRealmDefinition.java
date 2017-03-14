@@ -18,20 +18,28 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
+import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JWT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OAUTH2_INTROSPECTION;
+import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.AUDIENCE;
+import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.CERTIFICATE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.ISSUER;
+import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.KEY_STORE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.PUBLIC_KEY;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -100,14 +108,32 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         static final SimpleAttributeDefinition PUBLIC_KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PUBLIC_KEY, ModelType.STRING, true)
-                                                                    .setAllowExpression(true)
-                                                                    .setMinSize(1)
-                                                                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                    .build();
+                .setAlternatives(ElytronDescriptionConstants.KEY_STORE, ElytronDescriptionConstants.CERTIFICATE)
+                .setAllowExpression(true)
+                .setMinSize(1)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final SimpleAttributeDefinition KEY_STORE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_STORE, ModelType.STRING, true)
+                .setAlternatives(ElytronDescriptionConstants.PUBLIC_KEY)
+                .setRequires(ElytronDescriptionConstants.CERTIFICATE)
+                .setMinSize(1)
+                .setCapabilityReference(KEY_STORE_CAPABILITY, SECURITY_REALM_CAPABILITY, true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .setAllowExpression(false)
+                .build();
+
+        static final SimpleAttributeDefinition CERTIFICATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE, ModelType.STRING, true)
+                .setAlternatives(ElytronDescriptionConstants.PUBLIC_KEY)
+                .setRequires(KEY_STORE.getName())
+                .setAllowExpression(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .setMinSize(1)
+                .build();
 
         static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{ISSUER, AUDIENCE, PUBLIC_KEY};
 
-        static final ObjectTypeAttributeDefinition JWT_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(JWT, ISSUER, AUDIENCE, PUBLIC_KEY)
+        static final ObjectTypeAttributeDefinition JWT_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(JWT, ISSUER, AUDIENCE, PUBLIC_KEY, KEY_STORE, CERTIFICATE)
                                                                            .setAllowNull(true)
                                                                            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                            .build();
@@ -214,6 +240,10 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 String[] issuer = asStringArrayIfDefined(context, ISSUER, jwtValidatorNode);
                 String[] audience = asStringArrayIfDefined(context, AUDIENCE, jwtValidatorNode);
                 String publicKey = ElytronExtension.asStringIfDefined(context, PUBLIC_KEY, jwtValidatorNode);
+                InjectedValue<KeyStore> keyStoreInjector = new InjectedValue<>();
+                String keyStoreName = asStringIfDefined(context, KEY_STORE, jwtValidatorNode);
+                String certificateAlias = asStringIfDefined(context, CERTIFICATE, jwtValidatorNode);
+
                 service = new TrivialService<>(new TrivialService.ValueSupplier<SecurityRealm>() {
                     @Override
                     public SecurityRealm get() throws StartException {
@@ -231,6 +261,22 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                             jwtValidatorBuilder.publicKey(publicKey.getBytes(StandardCharsets.UTF_8));
                         }
 
+                        KeyStore keyStore = keyStoreInjector.getOptionalValue();
+
+                        if (keyStore != null) {
+                            try {
+                                Certificate certificate = keyStore.getCertificate(certificateAlias);
+
+                                if (certificate == null) {
+                                    throw ROOT_LOGGER.unableToAccessEntryFromKeyStore(keyStoreName, certificateAlias);
+                                }
+
+                                jwtValidatorBuilder.publicKey(certificate.getPublicKey());
+                            } catch (KeyStoreException cause) {
+                                throw ROOT_LOGGER.unableToStartService(cause);
+                            }
+                        }
+
                         return TokenSecurityRealm.builder().principalClaimName(principalClaimNode.asString())
                                        .validator(jwtValidatorBuilder.build())
                                        .build();
@@ -241,7 +287,16 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                     }
                 });
 
-                serviceTarget.addService(mainServiceName, service).addAliases(aliasServiceName).install();
+                ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(mainServiceName, service);
+                String keyStore = asStringIfDefined(context, KEY_STORE, jwtValidatorNode);
+
+                if (keyStore != null) {
+                    serviceBuilder.addDependency(context.getCapabilityServiceName(
+                            buildDynamicCapabilityName(KEY_STORE_CAPABILITY, keyStore), KeyStore.class),
+                            KeyStore.class, keyStoreInjector);
+                }
+
+                serviceBuilder.addAliases(aliasServiceName).install();
             } else if (operation.hasDefined(OAUTH2_INTROSPECTION)) {
                 ModelNode oAuth2IntrospectionNode = OAuth2IntrospectionValidatorAttributes.OAUTH2_INTROSPECTION_VALIDATOR.resolveModelAttribute(context, operation);
                 String clientId = ElytronExtension.asStringIfDefined(context, OAuth2IntrospectionValidatorAttributes.CLIENT_ID, oAuth2IntrospectionNode);
