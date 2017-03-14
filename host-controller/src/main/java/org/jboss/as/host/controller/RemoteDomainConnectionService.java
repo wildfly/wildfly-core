@@ -478,7 +478,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                         if (resultAction == OperationContext.ResultAction.KEEP) {
                             preparedOperation.commit();
                         } else {
-                            if (syncResponse.hasDefined(FAILURE_DESCRIPTION)) {
+                            if (syncResponse.hasDefined(FAILURE_DESCRIPTION) && !context.hasFailureDescription()) {
                                 context.getFailureDescription().set(HostControllerLogger.ROOT_LOGGER.hostDomainSynchronizationError(syncResponse.get(FAILURE_DESCRIPTION).asString()));
                             }
                             preparedOperation.rollback();

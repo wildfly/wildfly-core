@@ -13,6 +13,6 @@
         </filesystem-realm>
     </security-realms>
     <mappers>
-        <custom-permission-mapper name="LoginPermissionMapper" class-name="org.wildfly.extension.elytron.IdentityOperationsTestCase$LoginPermissionMapper"/>
+        <custom-permission-mapper name="LoginPermissionMapper" class-name="org.wildfly.extension.elytron.IdentityOperationsTestCase$LoginPermissionMapper" module="a.b.c" />
     </mappers>
 </subsystem>

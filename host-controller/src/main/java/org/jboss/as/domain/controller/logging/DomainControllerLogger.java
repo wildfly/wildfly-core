@@ -802,7 +802,4 @@ public interface DomainControllerLogger extends BasicLogger {
 
     @Message(id = 97, value = "Cannot explode a subdeployment of an unexploded deployment")
     OperationFailedException cannotExplodeSubDeploymentOfUnexplodedDeployment();
-
-    @Message(id = 98, value = "You are trying to redeploy %s which are deployments not affected by the overlay")
-    OperationFailedException redeployingUnaffactedDeployments(Collection<String> deployments);
 }

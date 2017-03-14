@@ -27,22 +27,14 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.launcher.CliCommandBuilder;
-import org.wildfly.core.launcher.Launcher;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -51,9 +43,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 public class FileArgumentTestCase {
-
-    private static final int CLI_PROC_TIMEOUT = 10000;
-    private static final int STATUS_CHECK_INTERVAL = 2000;
 
     private static final String PROP_NAME = "cli-arg-test";
     private static final String SET_PROP_COMMAND = "/system-property=" + PROP_NAME + ":add(value=set)";
@@ -153,93 +142,23 @@ public class FileArgumentTestCase {
     }
 
     protected int execute(File f, boolean logFailure) {
-        final String jbossDist = TestSuiteEnvironment.getSystemProperty("jboss.dist");
-        if(jbossDist == null) {
-            fail("jboss.dist system property is not set");
-        }
-
-        final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist);
-
-        String modulePath = TestSuiteEnvironment.getSystemProperty("module.path");
-        if (modulePath != null) {
-            commandBuilder.setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)));
-        }
-        commandBuilder.addJavaOptions(System.getProperty("cli.jvm.args", "").split("\\s+"));
-
-        final List<String> ipv6Args = new ArrayList<>();
-        TestSuiteEnvironment.getIpv6Args(ipv6Args);
-        if (!ipv6Args.isEmpty()) {
-            commandBuilder.addJavaOptions(ipv6Args);
-        }
-
-        // Set the CLI configuration path
-        final Path path = Paths.get(jbossDist, "bin", "jboss-cli.xml");
-        commandBuilder.addJavaOptions("-Djboss.cli.config=" + path);
-        commandBuilder.setConnection(TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort());
-        commandBuilder.setScriptFile(f.toPath().toAbsolutePath());
-        Process cliProc = null;
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--controller=" + TestSuiteEnvironment.getServerAddress() + ":"
+                        + (TestSuiteEnvironment.getServerPort()))
+                .addCliArgument("--connect")
+                .addCliArgument("--file=" + f.getAbsolutePath());
         try {
-            cliProc = Launcher.of(commandBuilder)
-                    .setRedirectErrorStream(true)
-                    .launch();
-        } catch (IOException e) {
-            fail("Failed to start CLI process: " + e.getLocalizedMessage());
+            cli.executeNonInteractive();
+        } catch (IOException ex) {
+            if (logFailure) {
+                System.out.println("Exception " + ex.getLocalizedMessage());
+            }
+            return 1;
         }
-
-        final InputStream cliStream = cliProc.getInputStream();
-        final StringBuilder cliOutBuf = new StringBuilder();
-        boolean wait = true;
-        int runningTime = 0;
-        int exitCode = 0;
-        do {
-            try {
-                Thread.sleep(STATUS_CHECK_INTERVAL);
-            } catch (InterruptedException e) {
-            }
-            runningTime += STATUS_CHECK_INTERVAL;
-            readStream(cliOutBuf, cliStream);
-            try {
-                exitCode = cliProc.exitValue();
-                wait = false;
-                readStream(cliOutBuf, cliStream);
-            } catch(IllegalThreadStateException e) {
-                // cli still working
-            }
-            if(runningTime >= CLI_PROC_TIMEOUT) {
-                readStream(cliOutBuf, cliStream);
-                cliProc.destroy();
-                wait = false;
-            }
-        } while(wait);
-
+        int exitCode = cli.getProcessExitValue();
         if (logFailure && exitCode != 0) {
-            System.out.println("Command's output: '" + cliOutBuf + "'");
-            try {
-                int bytesTotal = cliProc.getErrorStream().available();
-                if (bytesTotal > 0) {
-                    final byte[] bytes = new byte[bytesTotal];
-                    cliProc.getErrorStream().read(bytes);
-                    System.out.println("Command's error log: '" + new String(bytes, StandardCharsets.UTF_8) + "'");
-                } else {
-                    System.out.println("No output data for the command.");
-                }
-            } catch (IOException e) {
-                fail("Failed to read command's error output: " + e.getLocalizedMessage());
-            }
+            System.out.println("Command's output: '" + cli.getOutput() + "'");
         }
         return exitCode;
-    }
-
-    protected void readStream(final StringBuilder cliOutBuf, InputStream cliStream) {
-        try {
-            int bytesTotal = cliStream.available();
-            if (bytesTotal > 0) {
-                final byte[] bytes = new byte[bytesTotal];
-                cliStream.read(bytes);
-                cliOutBuf.append(new String(bytes, StandardCharsets.UTF_8));
-            }
-        } catch (IOException e) {
-            fail("Failed to read command's output: " + e.getLocalizedMessage());
-        }
     }
 }

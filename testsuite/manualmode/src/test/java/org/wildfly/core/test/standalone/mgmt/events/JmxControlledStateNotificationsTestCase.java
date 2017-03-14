@@ -25,23 +25,34 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.inject.Inject;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.shared.TimeoutUtil;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
+import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.test.jmx.JMXListenerDeploymentSetupTask;
 
+import static org.hamcrest.CoreMatchers.containsString;
+
 /**
- *
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
 @RunWith(WildflyTestRunner.class)
@@ -50,42 +61,142 @@ public class JmxControlledStateNotificationsTestCase {
     static final Path DATA = Paths.get("target/notifications/data");
     static final JMXListenerDeploymentSetupTask task = new JMXListenerDeploymentSetupTask();
 
-    static final File JMX_FACADE_RUNNING = DATA.resolve(JMX_FACADE_FILE).resolve(RUNNING_FILENAME).toAbsolutePath().toFile();
-    static final File JMX_FACADE_RUNTIME = DATA.resolve(JMX_FACADE_FILE).resolve(RUNTIME_CONFIGURATION_FILENAME).toAbsolutePath().toFile();
+    static final File JMX_FACADE_RUNNING = DATA.resolve(JMX_FACADE_FILE).resolve(RUNNING_FILENAME)
+            .toAbsolutePath().toFile();
+    static final File JMX_FACADE_RUNTIME = DATA.resolve(JMX_FACADE_FILE)
+            .resolve(RUNTIME_CONFIGURATION_FILENAME).toAbsolutePath().toFile();
+
+    @Rule
+    public ErrorCollector errorCollector = new ErrorCollector();
 
     @Inject
     protected static ServerController controller;
 
+    @BeforeClass
+    public static void setupClass() throws Exception {
+        controller.start();
+        task.setup(controller.getClient());
+        controller.stop();
+    }
+
     @AfterClass
-    public static void clean() throws Exception {
+    public static void cleanClass() throws Exception {
         controller.start();
         task.tearDown(controller.getClient());
         controller.stop();
-        clearNotificationFiles();
     }
 
-    @BeforeClass
-    public static void setup() throws Exception {
-        clearNotificationFiles();
-        controller.start();
-        task.setup(controller.getClient());
-    }
-
-    private static void clearNotificationFiles() throws Exception {
+    @Before
+    @After
+    public void clearNotificationFiles() throws Exception {
         JMX_FACADE_RUNTIME.delete();
         JMX_FACADE_RUNNING.delete();
     }
 
     @Test
-    public void checkNotifications() throws Exception {
-        controller.stop();
+    public void checkNotifications_startReloadStop() throws Exception {
         controller.start();
         controller.reload();
         controller.stop();
+        checkFacadeJmxNotifications(
+                createListOf("starting", "ok",
+                        "ok", "stopping",
+                        "starting", "ok",
+                        "ok", "stopping"),
+                createListOf("starting", "suspended",
+                        "suspended", "normal",
+                        "normal", "stopping",
+                        "starting", "suspended",
+                        "suspended", "normal",
+                        "normal", "suspending",
+                        "suspending", "suspended",
+                        "suspended", "stopping"
+                )
+        );
+    }
+
+    /**
+     * Test transition to restart-required state after an operation which requires restart is triggered.
+     */
+    @Test
+    public void checkNotifications_restartRequired() throws Exception {
+        controller.start();
+        forceRestartRequired(controller.getClient());
+        controller.stop();
+        controller.start();
+        controller.stop();
+
+        checkFacadeJmxNotifications(
+                createListOf("starting", "ok",          // start
+                        "ok", "restart-required",                      // force restart required
+                        "restart-required", "stopping",                // stop
+                        "starting", "ok",                              // start
+                        "ok", "stopping"),                             // stop
+                createListOf("starting", "suspended",   // start
+                        "suspended", "normal",
+                        "normal", "suspending",                        // stop
+                        "suspending", "suspended",
+                        "suspended", "stopping",
+                        "starting", "suspended",                       // start
+                        "suspended", "normal",
+                        "normal", "suspending",                        // stop
+                        "suspending", "suspended",
+                        "suspended", "stopping"
+                )
+        );
+
+    }
+
+    /**
+     * Force transition of the server into restart-required state.
+     */
+    private void forceRestartRequired(ManagementClient client) throws UnsuccessfulOperationException {
+        client.executeForResult(Operations.createOperation("server-set-restart-required"));
+    }
+
+    private List<Pair<String, String>> createListOf(String... transitionPairs) {
+        int i = 0;
+        List<Pair<String, String>> outcome = new ArrayList<>();
+        while (i < transitionPairs.length - 1) {
+            outcome.add(new ImmutablePair<>(transitionPairs[i], transitionPairs[i + 1]));
+            i += 2;
+        }
+        return outcome;
+    }
+
+
+    private void checkFacadeJmxNotifications(List<Pair<String, String>> configurationStateTransitions,
+                                             List<Pair<String, String>> runningStateTransitions)
+            throws IOException, InterruptedException {
         final long end = System.currentTimeMillis() + TimeoutUtil.adjust(20000);
         while (true) {
             try {
-                checkFacadeJmxNotifications();
+                readAndCheckFile(JMX_FACADE_RUNTIME, list -> {
+                      Assert.assertEquals(String.join(", ", list),
+                            configurationStateTransitions.size(), list.size());
+                    for (int i = 0; i < configurationStateTransitions.size(); i++) {
+                        Pair<String, String> transition = configurationStateTransitions.get(i);
+                        errorCollector.checkThat("Transition " + i + ": " + list.get(i),
+                                list.get(i),
+                                containsString(
+                                        "jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from '"
+                                                + transition.getLeft() + "' to '" + transition.getRight()
+                                                + "'"));
+                    }
+                });
+                readAndCheckFile(JMX_FACADE_RUNNING, list -> {
+                    Assert.assertEquals(String.join(", ", list),
+                            runningStateTransitions.size(), list.size());
+                    for (int i = 0; i < runningStateTransitions.size(); i++) {
+                        Pair<String, String> transition = runningStateTransitions.get(i);
+                        errorCollector.checkThat("Transition " + i + ": " + list.get(i),
+                                list.get(i),
+                                containsString(
+                                        "jboss.root:type=state The attribute 'RunningState' has changed from '"
+                                                + transition.getLeft() + "' to '" + transition.getRight()
+                                                + "'"));
+                    }
+                });
                 break;
             } catch (AssertionError e) {
                 if (System.currentTimeMillis() > end) {
@@ -94,37 +205,6 @@ public class JmxControlledStateNotificationsTestCase {
                 Thread.sleep(1000);
             }
         }
-    }
-
-    private void checkFacadeJmxNotifications() throws IOException {
-        readAndCheckFile(JMX_FACADE_RUNTIME, list -> {
-            //The output after starting the server with the subsystem registering the notication handler enabled,
-            //and performing a reload on it
-            Assert.assertEquals(Arrays.toString(list.toArray(new String[list.size()])), 5, list.size());
-            //stop
-            Assert.assertTrue("Line " + list.get(0), list.get(0).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'ok' to 'stopping'"));
-            Assert.assertTrue("Line " + list.get(1),list.get(1).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'starting' to 'ok'"));
-            Assert.assertTrue("Line " + list.get(2), list.get(2).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'ok' to 'stopping'"));
-            Assert.assertTrue("Line " + list.get(3), list.get(3).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'starting' to 'ok'"));
-            Assert.assertTrue("Line " + list.get(4), list.get(4).contains("jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from 'ok' to 'stopping'"));
-        });
-        readAndCheckFile(JMX_FACADE_RUNNING, list -> {
-            //The output after starting the server with the subsystem registering the notication handler enabled,
-            //and performing a reload on it
-            Assert.assertEquals(Arrays.toString(list.toArray(new String[list.size()])), 11, list.size());
-            //stop
-            Assert.assertTrue("Line " + list.get(0), list.get(0).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'normal' to 'suspending'"));
-            Assert.assertTrue("Line " + list.get(1), list.get(1).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'suspending' to 'suspended'"));
-            Assert.assertTrue("Line " + list.get(2), list.get(2).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'suspended' to 'stopping'"));
-            Assert.assertTrue("Line " + list.get(3), list.get(3).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'starting' to 'suspended'"));
-            Assert.assertTrue("Line " + list.get(4), list.get(4).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'suspended' to 'normal'"));
-            Assert.assertTrue("Line " + list.get(5), list.get(5).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'normal' to 'stopping'"));
-            Assert.assertTrue("Line " + list.get(6), list.get(6).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'starting' to 'suspended'"));
-            Assert.assertTrue("Line " + list.get(7), list.get(7).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'suspended' to 'normal'"));
-            Assert.assertTrue("Line " + list.get(8), list.get(8).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'normal' to 'suspending'"));
-            Assert.assertTrue("Line " + list.get(9), list.get(9).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'suspending' to 'suspended'"));
-            Assert.assertTrue("Line " + list.get(10), list.get(10).contains("jboss.root:type=state The attribute 'RunningState' has changed from 'suspended' to 'stopping'"));
-        });
     }
 
     private void readAndCheckFile(File file, Consumer<List<String>> consumer) throws IOException {

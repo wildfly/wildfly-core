@@ -26,7 +26,6 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -36,7 +35,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
@@ -51,7 +49,6 @@ import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.dmr.Property;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -68,6 +65,7 @@ import org.wildfly.security.auth.server.ServerAuthenticationContext;
 import org.wildfly.security.authz.Attributes;
 import org.wildfly.security.authz.AuthorizationIdentity;
 import org.wildfly.security.authz.MapAttributes;
+import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.password.Password;
@@ -95,7 +93,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler ADD = new IdentityAddHandler();
     private static final OperationStepHandler REMOVE = new IdentityRemoveHandler();
 
-    IdentityResourceDefinition(ResourceDefinition parentResource) {
+    IdentityResourceDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.IDENTITY),
                 ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.MODIFIABLE_SECURITY_REALM, ElytronDescriptionConstants.IDENTITY))
                 .setAddHandler(ADD)
@@ -521,33 +519,39 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
                     .build();
         }
 
+        static AttributeDefinition[] SUPPORTED_PASSWORDS = new AttributeDefinition[] {
+            Bcrypt.OBJECT_DEFINITION,
+            Clear.OBJECT_DEFINITION,
+            SimpleDigest.OBJECT_DEFINITION,
+            SaltedSimpleDigest.OBJECT_DEFINITION,
+            Digest.OBJECT_DEFINITION
+        };
+
         public static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver resourceDescriptionResolver) {
-            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.SET_PASSWORD, resourceDescriptionResolver,
-                    Bcrypt.OBJECT_DEFINITION,
-                    Clear.OBJECT_DEFINITION,
-                    SimpleDigest.OBJECT_DEFINITION,
-                    SaltedSimpleDigest.OBJECT_DEFINITION,
-                    Digest.OBJECT_DEFINITION), new PasswordSetHandler());
+            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.SET_PASSWORD, resourceDescriptionResolver, SUPPORTED_PASSWORDS), new PasswordSetHandler());
         }
 
         @Override
         protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
             ModifiableRealmIdentity realmIdentity = getRealmIdentity(context);
-            List<ModelNode> modelNodes = operation.asList();
-            Property passwordProperty = modelNodes.get(2).asProperty();
             PathAddress currentAddress = context.getCurrentAddress();
             String principalName = currentAddress.getLastElement().getValue();
+            List<Credential> passwords = new ArrayList<>();
 
             try {
-                realmIdentity.setCredentials(Collections.singleton(new PasswordCredential(createPassword(context, principalName, passwordProperty))));
+                for (AttributeDefinition passwordDef : SUPPORTED_PASSWORDS) {
+                    String passwordType = passwordDef.getName();
+                    if (operation.hasDefined(passwordType)) {
+                        passwords.add(new PasswordCredential(createPassword(context, principalName, passwordType, operation.get(passwordType))));
+                    }
+                }
+                realmIdentity.setCredentials(passwords);
             } catch (NoSuchAlgorithmException | InvalidKeySpecException | RealmUnavailableException e) {
                 throw ROOT_LOGGER.couldNotCreatePassword(e);
             }
         }
 
-        private Password createPassword(final OperationContext parentContext, final String principalName, Property passwordProperty) throws OperationFailedException, NoSuchAlgorithmException, InvalidKeySpecException {
-            String passwordType = passwordProperty.getName();
-            ModelNode passwordNode = passwordProperty.getValue();
+        private Password createPassword(final OperationContext parentContext, final String principalName, String passwordType, ModelNode passwordNode) throws OperationFailedException, NoSuchAlgorithmException, InvalidKeySpecException {
             String password = Bcrypt.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
             final PasswordSpec passwordSpec;
             final String algorithm;

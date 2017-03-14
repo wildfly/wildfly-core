@@ -21,13 +21,15 @@
  */
 package org.jboss.as.test.integration.domain;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_FAILURE_DESCRIPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
@@ -41,6 +43,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainControllerClientConfig;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
@@ -93,7 +96,10 @@ public class SlaveSynchronizationTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         DomainTestSupport testSupport = DomainTestSupport.create(
-                        DomainTestSupport.Configuration.create(SlaveSynchronizationTestCase.class.getSimpleName(), "domain-configs/domain-synchronization.xml", "host-configs/host-synchronization-master.xml", "host-configs/host-synchronization-hc2.xml"));
+                        DomainTestSupport.Configuration.create(SlaveSynchronizationTestCase.class.getSimpleName(),
+                                "domain-configs/domain-synchronization.xml",
+                                "host-configs/host-synchronization-master.xml",
+                                "host-configs/host-synchronization-hc2.xml"));
         ExtensionSetup.initializeErrorExtension(testSupport);
         testSupport = null;
         domainControllerClientConfig = DomainControllerClientConfig.create();
@@ -139,6 +145,10 @@ public class SlaveSynchronizationTestCase {
         hostConfig.setHostCommandLineProperties("-Djboss.test.host.master.address=" + masterAddress + " -Djboss.test.host.slave.address=" + slaveAddress);
         hostConfig.setHostCommandLineProperties("-D" + ErrorExtension.FAIL_REMOVAL + "=true " +
                         hostConfig.getHostCommandLineProperties());
+        if (Boolean.getBoolean("wildfly."+ HOSTS[host] + ".debug")) {
+            hostConfig.setHostCommandLineProperties("-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y "
+                    + hostConfig.getHostCommandLineProperties());
+        }
         URL url = tccl.getResource("domain-configs/domain-synchronization.xml");
         assert url != null;
         hostConfig.setDomainConfigFile(new File(url.toURI()).getAbsolutePath());
@@ -173,16 +183,25 @@ public class SlaveSynchronizationTestCase {
 
         stopServer(masterClient, hc2RemovedServerConfig);
         result = removeServer(masterClient, hc2RemovedServerConfig);
-        DomainTestSupport.validateFailedResponse(result);
+        //Synchronization error
+        String msg = HostControllerLogger.ROOT_LOGGER.hostDomainSynchronizationError("");
+        msg = msg.substring(0, msg.length() -1);
+        Assert.assertThat(DomainTestSupport.validateFailedResponse(result).asString(), containsString(msg));
         Assert.assertTrue(exists(masterClient, hc2RemovedServer));
         Assert.assertTrue(exists(masterClient, hc2RemovedServerConfig));
     }
 
+    @Test
+    public void testRemoveRunningServer() throws Exception {
+       PathAddress mainOneAddress = PathAddress.pathAddress("host", "hc2").append("server-config", "server-one");
+       Assert.assertTrue(DomainTestUtils.checkState(masterClient, mainOneAddress.toModelNode(), "STARTED"));
+       ModelNode result = masterClient.execute(Util.createRemoveOperation(mainOneAddress));
+       ModelNode failure = DomainTestSupport.validateFailedResponse(result);
+       Assert.assertThat("Failure " + failure.toString(), failure.get(HOST_FAILURE_DESCRIPTIONS).get("hc2").asString(), is(HostControllerLogger.ROOT_LOGGER.serverStillRunning("server-one")));
+    }
+
     private ModelNode removeServer(final ModelControllerClient client, final ModelNode address) throws IOException, MgmtOperationException {
-        ModelNode removeServer = new ModelNode();
-        removeServer.get(OP).set(REMOVE);
-        removeServer.get(OP_ADDR).set(address);
-        return client.execute(removeServer);
+        return client.execute(Util.createRemoveOperation(PathAddress.pathAddress(address)));
     }
 
     private void stopServer(final ModelControllerClient client, final ModelNode address) throws IOException, MgmtOperationException {

@@ -52,7 +52,7 @@
 
     <domain-controller>
         <!-- Remote domain controller configuration with a host and port -->
-        <remote host="${jboss.test.host.master.address}" port="9999" security-realm="ManagementRealm" ignore-unused-configuration="true">
+        <remote host="${jboss.test.host.master.address}" port="9999" username="slave" security-realm="ManagementRealm" ignore-unused-configuration="true">
         </remote>
     </domain-controller>
 

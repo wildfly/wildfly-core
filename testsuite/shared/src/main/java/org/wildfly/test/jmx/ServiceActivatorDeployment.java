@@ -130,6 +130,10 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
         }
     }
 
+    public InjectedValue<PluggableMBeanServer> getMBeanServerInjector() {
+        return mbeanServerValue;
+    }
+
     @Override
     public Void getValue() throws IllegalStateException, IllegalArgumentException {
         return null;

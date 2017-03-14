@@ -68,25 +68,30 @@ if errorlevel == 1 (
 ) else (
   echo logging.configuration already set in JAVA_OPTS
 )
-if "x%LOGGING_CONFIG%" == "x" (
-  "%JAVA%" %JAVA_OPTS% ^
-      -jar "%JBOSS_RUNJAR%" ^
-      -mp "%JBOSS_MODULEPATH%" ^
-       org.jboss.as.cli ^
-         %*
-) else (
-  "%JAVA%" %JAVA_OPTS% "%LOGGING_CONFIG%" ^
-      -jar "%JBOSS_RUNJAR%" ^
-      -mp "%JBOSS_MODULEPATH%" ^
-       org.jboss.as.cli ^
-       %*
-)
 
-set /A RC=%errorlevel%
-:END
-if "x%NOPAUSE%" == "x" pause
+rem Force following commands to be loaded in memory.
+rem This protects the running script from being rewritten.
+(
+    if "x%LOGGING_CONFIG%" == "x" (
+      "%JAVA%" %JAVA_OPTS% ^
+          -jar "%JBOSS_RUNJAR%" ^
+          -mp "%JBOSS_MODULEPATH%" ^
+           org.jboss.as.cli ^
+             %*
+    ) else (
+      "%JAVA%" %JAVA_OPTS% "%LOGGING_CONFIG%" ^
+          -jar "%JBOSS_RUNJAR%" ^
+          -mp "%JBOSS_MODULEPATH%" ^
+           org.jboss.as.cli ^
+           %*
+    )
 
-if "x%RC%" == "x" (
-  set /A RC=0
+    set /A RC=%errorlevel%
+    :END
+    if "x%NOPAUSE%" == "x" pause
+
+    if "x%RC%" == "x" (
+      set /A RC=0
+    )
+    exit /B %RC%
 )
-exit /B %RC%

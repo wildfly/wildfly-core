@@ -84,6 +84,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TYPE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.USE_CIPHER_SUITES_ORDER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.VALUE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.WANT_CLIENT_AUTH;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.WRAP;
 import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
 import java.util.Arrays;
@@ -366,6 +367,9 @@ class TlsParser {
                         break;
                     case SESSION_TIMEOUT:
                         SSLDefinitions.SESSION_TIMEOUT.parseAndSetParameter(value, addServerSSLContext, reader);
+                        break;
+                    case WRAP:
+                        SSLDefinitions.WRAP.parseAndSetParameter(value, addServerSSLContext, reader);
                         break;
                     case KEY_MANAGERS:
                         SSLDefinitions.KEY_MANAGERS.parseAndSetParameter(value, addServerSSLContext, reader);
@@ -885,6 +889,7 @@ class TlsParser {
                 SSLDefinitions.USE_CIPHER_SUITES_ORDER.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.MAXIMUM_SESSION_CACHE_SIZE.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.SESSION_TIMEOUT.marshallAsAttribute(serverSSLContext, writer);
+                SSLDefinitions.WRAP.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.KEY_MANAGERS.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.TRUST_MANAGERS.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.PROVIDERS.marshallAsAttribute(serverSSLContext, writer);

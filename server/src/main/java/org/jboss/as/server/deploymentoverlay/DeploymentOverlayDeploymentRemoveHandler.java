@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 
 import java.util.Collections;
+import java.util.Set;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -59,22 +60,24 @@ public class DeploymentOverlayDeploymentRemoveHandler extends AbstractRemoveStep
 
     @Override
     protected void performRemove(OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        final String runtimeName = context.getCurrentAddressValue();
-        if (REDEPLOY_AFFECTED_DEFINITION.resolveModelAttribute(context, operation).asBoolean()) {
-            if (SERVER_GROUP.equals(context.getCurrentAddress().getElement(0).getKey())) {
-                PathAddress overlayAddress = context.getCurrentAddress().getParent();
-                OperationStepHandler handler = context.getRootResourceRegistration().getOperationHandler(overlayAddress, REDEPLOY_LINKS);
-                ModelNode redeployAffectedOperation = Util.createOperation(REDEPLOY_LINKS, overlayAddress);
-                redeployAffectedOperation.get(DEPLOYMENTS).setEmptyList().add(runtimeName);
-                redeployAffectedOperation.get(DEPLOYMENT_OVERLAY_LINK_REMOVAL).set(true);
-                assert handler != null;
-                assert redeployAffectedOperation.isDefined();
-                context.addStep(redeployAffectedOperation, handler, OperationContext.Stage.MODEL);
-            } else {
-                AffectedDeploymentOverlay.redeployLinks(context, PathAddress.EMPTY_ADDRESS, Collections.singleton(runtimeName));
+            final String runtimeName = context.getCurrentAddressValue();
+            if (REDEPLOY_AFFECTED_DEFINITION.resolveModelAttribute(context, operation).asBoolean()) {
+                if (SERVER_GROUP.equals(context.getCurrentAddress().getElement(0).getKey())) {
+                    PathAddress overlayAddress = context.getCurrentAddress().getParent();
+                    OperationStepHandler handler = context.getRootResourceRegistration().getOperationHandler(overlayAddress, REDEPLOY_LINKS);
+                    ModelNode redeployAffectedOperation = Util.createOperation(REDEPLOY_LINKS, overlayAddress);
+                    redeployAffectedOperation.get(DEPLOYMENTS).setEmptyList().add(runtimeName);
+                    redeployAffectedOperation.get(DEPLOYMENT_OVERLAY_LINK_REMOVAL).set(true);
+                    assert handler != null;
+                    assert redeployAffectedOperation.isDefined();
+                    context.addStep(redeployAffectedOperation, handler, OperationContext.Stage.MODEL, true);
+                    return;
+                } else {
+                    Set<String> deploymentNames = AffectedDeploymentOverlay.listDeployments(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), Collections.singleton(runtimeName));
+                    AffectedDeploymentOverlay.redeployDeployments(context, PathAddress.EMPTY_ADDRESS, deploymentNames);
+                }
             }
-        }
-        super.performRemove(context, operation, model);
+            super.performRemove(context, operation, model);
     }
 
     /**

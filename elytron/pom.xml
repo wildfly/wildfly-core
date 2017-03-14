@@ -23,12 +23,12 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.0.Beta7-SNAPSHOT</version>
+        <version>3.0.0.Beta8-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-elytron</artifactId>
 
-    <name>WildFly: Subsystem Artifact</name>
+    <name>WildFly: Elytron Subsystem</name>
 
     <properties>
         <!-- TODO Elytron Remove once parent on M17 -->

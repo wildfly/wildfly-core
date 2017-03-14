@@ -29,7 +29,8 @@ ACTION: add
 
   Depending on the arguments the action
   - always creates a new overlay with content;
-  - optionally links it to the specified existing deployments;
+  - optionally links it to the specified deployments. Referenced deployments are
+    not required to exist.
   - also optionally re-deploys the affected (linked) deployments.
 
   deployment-overlay add --name=overlay_name
@@ -37,24 +38,22 @@ ACTION: add
       [--server-groups=server_group_name(,server-group-name)* |
        --all-server-groups]
       [--deployments=deployment_name(,deployment_name)*]
-      [--wildcards=wildcard_name(,wildcard_name)*]
       [--redeploy-affected]
       [--headers={operation_header (;operation_header)*}]
 
 ACTION: remove
 
   Depending on the arguments the action may:
-  - unlink deployments (if --deployments or --wildcards argument is specified);
+  - unlink deployments (if --deployments);
   - remove content (if --content argument is specified);
   - remove the overlay altogether with its content and links;
   - re-deploy affected deployments.
     
   deployment-overlay remove --name=overlay_name
-      [--content=archive_path=(,archive_path)*]
+      [--content=archive_path(,archive_path)*]
       [--server-groups=server_group_name(,server_group_name)* |
        --all-relevant-server-groups]
       [--deployments=deployment_name(,deployment_name)*]
-      [--wildcards=wildcard_name(,wildcard_name)*]
       [--redeploy-affected]
       [--headers={operation_header (;operation_header)*}]
         
@@ -66,8 +65,8 @@ ACTION: remove
   (or --all-relevant-server-groups), all the links to the overlay will be
   removed from the specified server groups. The content will remain untouched.
 
-  --content, --deployments and --wildcards target specific content and links
-  to the specified deployments and wildcards.
+  --content and --deployments target specific content and links
+  to the specified deployments.
 
 ACTION: upload
 
@@ -81,14 +80,14 @@ ACTION: upload
 
 ACTION: link
 
-  Creates links between an overlay and existing deployments and optionally
-  re-deploys linked deployments.
+  Creates links between an overlay and deployments and optionally
+  re-deploys existing linked deployments. Referenced deployments are not required
+  to exist.
 
   deployment-overlay link --name=overlay_name
       [--server-groups=server_group_name(,server_group_name)* |
        --all-server-groups]
-      (--deployment=deployment_name(,deployment_name)* |
-       --wildcards=wildcard_name(,wildcard_name)*)
+      --deployment=deployment_name(,deployment_name)*
       [--redeploy-affected]
       [--headers={operation_header (;operation_header)*}]
 
@@ -171,16 +170,12 @@ ARGUMENTS
                        relevant (according to the other specified arguments)
                        server groups should be targeted.
 
- --deployments       - a comma-separated list of deployment names that,
+ --deployments       - a comma-separated list of deployment runtime names that,
                        depending on the action, should be linked to or
                        unlinked from the specified overlay.
 
                        NOTE: In non-interactive mode the list must be surrounded
                        by square brackets e.g. [test.war,*-admin.war].
-
- --wildcards         - a comma-separated list of wildcarded deployment names
-                       that, depending on the action, should be linked to or
-                       unlinked from the specified overlay. 
 
  --redeploy-affected - signifies that in addition to the specified action,
                        all the affected by the action deployments should

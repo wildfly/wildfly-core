@@ -19,7 +19,7 @@
 
 <config default-supplement="standalone" >
     <extension-module>org.wildfly.extension.elytron</extension-module>
-    <subsystem xmlns="urn:wildfly:elytron:1.0" initial-providers="combined-providers">
+    <subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers">
         <providers>
             <provider-loader name="elytron" module="org.wildfly.security.elytron" />
             <provider-loader name="openssl" module="org.wildfly.openssl" />
@@ -113,7 +113,14 @@
             </http-authentication-factory>
         </replacement>
         <replacement placeholder="SASL_DEFINITIONS">
-            <sasl-authentication-factory name="application-sasl-authentication" sasl-server-factory="configured" security-domain="ApplicationDomain"/>
+            <sasl-authentication-factory name="application-sasl-authentication" sasl-server-factory="configured" security-domain="ApplicationDomain">
+                <mechanism-configuration>
+                    <mechanism mechanism-name="JBOSS-LOCAL-USER" realm-mapper="local" />
+                    <mechanism mechanism-name="DIGEST-MD5">
+                        <mechanism-realm realm-name="ApplicationRealm" />
+                    </mechanism>
+                </mechanism-configuration>
+            </sasl-authentication-factory>
         </replacement>
     </supplement>
 

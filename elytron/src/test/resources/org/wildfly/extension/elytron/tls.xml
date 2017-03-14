@@ -43,7 +43,7 @@
         </trust-managers>
         <server-ssl-contexts>
             <server-ssl-context name="server" protocols="TLSv1.2" want-client-auth="true" need-client-auth="true" authentication-optional="true" use-cipher-suites-order="false" maximum-session-cache-size="10"
-                session-timeout="120" key-managers="serverKey" trust-managers="serverTrust" providers="custom-loader" provider-name="first" />
+                session-timeout="120" wrap="false" key-managers="serverKey" trust-managers="serverTrust" providers="custom-loader" provider-name="first" />
         </server-ssl-contexts>
         <client-ssl-contexts>
             <client-ssl-context name="client" protocols="TLSv1.3 TLSv1.2" use-cipher-suites-order="true" key-managers="clientKey" trust-managers="serverTrust" providers="custom-loader" provider-name="first" />
