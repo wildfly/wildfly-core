@@ -284,6 +284,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 33, value = "Unable to access entry [%s] from key store [%s].")
     RuntimeException unableToAccessEntryFromKeyStore(String keyStore, String alias);
 
+    @Message(id = 34, value = "A principal query can only have a single key mapper")
+    OperationFailedException jdbcRealmOnlySingleKeyMapperAllowed();
+
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
     IllegalArgumentException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);
