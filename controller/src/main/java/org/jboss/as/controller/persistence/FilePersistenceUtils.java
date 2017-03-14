@@ -101,11 +101,7 @@ class FilePersistenceUtils {
     static File writeToTempFile(ExposedByteArrayOutputStream marshalled, File tempFileName, File fileName) throws IOException {
         Path targetPath = tempFileName.toPath();
         deleteFile(tempFileName);
-        try {
-            createTempFileWithAttributes(targetPath, fileName);
-        } catch (IOException ioex) {
-           ioex.printStackTrace();
-        }
+        createTempFileWithAttributes(targetPath, fileName);
         try (InputStream is = marshalled.getInputStream()) {
             Files.copy(is, targetPath, StandardCopyOption.REPLACE_EXISTING);
         }

@@ -3510,4 +3510,13 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 438, value = "Couldn't convert '%s' into proper warning level, threshold falling back to 'ALL'. Possible values: SEVERE,WARNING,INFO,CONFIG,FINE,FINER,FINEST,ALL,OFF")
     String couldntConvertWarningLevel(String level);
+
+    @Message(id = 439, value = "Failed to commit configuration to %s")
+    RuntimeException failedToCommitPersistentConfiguration(@Cause Throwable cause, String name);
+
+    @Message(id = 440, value = "Failed to store configuration to %s")
+    ConfigurationPersistenceException failedToStorePersistentConfiguration(@Cause Throwable cause, String name);
+
+    @Message(id = 441, value = "Permission denied writing to file or directory: %s")
+    ConfigurationPersistenceException fileOrDirectoryWritePermissionDenied(String name);
 }

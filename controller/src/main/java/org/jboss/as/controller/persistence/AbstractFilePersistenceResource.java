@@ -51,11 +51,19 @@ public abstract class AbstractFilePersistenceResource implements ConfigurationPe
     }
 
     @Override
+    public void prepare() throws ConfigurationPersistenceException {
+        if (marshalled == null) {
+            throw ControllerLogger.ROOT_LOGGER.rollbackAlreadyInvoked();
+        }
+        doPrepare(marshalled);
+    }
+
+    @Override
     public void commit() {
         if (marshalled == null) {
             throw ControllerLogger.ROOT_LOGGER.rollbackAlreadyInvoked();
         }
-        doCommit(marshalled);
+        doCommit();
     }
 
     @Override
@@ -63,5 +71,6 @@ public abstract class AbstractFilePersistenceResource implements ConfigurationPe
         marshalled = null;
     }
 
-    protected abstract void doCommit(ExposedByteArrayOutputStream marshalled);
+    protected abstract void doCommit();
+    protected abstract void doPrepare(final ExposedByteArrayOutputStream marshalled) throws ConfigurationPersistenceException;
 }

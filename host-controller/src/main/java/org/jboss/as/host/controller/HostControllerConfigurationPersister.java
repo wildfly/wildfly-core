@@ -175,6 +175,16 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
                     delegates[1].rollback();
                 }
             }
+
+            @Override
+            public void prepare() throws ConfigurationPersistenceException {
+                if (delegates[0] != null) {
+                    delegates[0].prepare();
+                }
+                if (delegates[1] != null) {
+                    delegates[1].prepare();
+                }
+            }
         };
     }
 

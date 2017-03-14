@@ -895,7 +895,9 @@ public class PersistanceResourceTestCase {
     }
 
     private void store(TestConfigurationPersister persister, String s) throws Exception {
-        persister.store(new ModelNode(s), Collections.<PathAddress>emptySet()).commit();
+        final ConfigurationPersister.PersistenceResource res = persister.store(new ModelNode(s), Collections.<PathAddress>emptySet());
+        res.prepare();
+        res.commit();
     }
 
     private File createDir(File dir, String name) {

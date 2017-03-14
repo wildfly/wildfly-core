@@ -22,11 +22,11 @@
 
 package org.jboss.as.controller.persistence;
 
-import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
-
 import java.io.File;
 
 import org.jboss.dmr.ModelNode;
+
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 /**
  * {@link ConfigurationPersister.PersistenceResource} that persists to a file upon commit.
@@ -36,26 +36,48 @@ import org.jboss.dmr.ModelNode;
 public class FilePersistenceResource extends AbstractFilePersistenceResource {
 
     protected final File fileName;
+    protected File tempFile;
 
     FilePersistenceResource(final ModelNode model, final File fileName, final AbstractConfigurationPersister persister) throws ConfigurationPersistenceException {
         super(model, persister);
         this.fileName = fileName;
-
+        this.tempFile = null;
     }
 
+    @Override
+    protected void doPrepare(final ExposedByteArrayOutputStream marshalled) throws ConfigurationPersistenceException {
+        assert tempFile == null;
+        boolean failed = false;
+        tempFile = FilePersistenceUtils.createTempFile(fileName);
+        try {
+            FilePersistenceUtils.writeToTempFile(marshalled, tempFile, fileName);
+            //verify that the target is writable
+            if (fileName.exists() && !fileName.canWrite()) {
+                throw MGMT_OP_LOGGER.fileOrDirectoryWritePermissionDenied(fileName.getName());
+            }
+            // otherwise the file doesn't exist, but we should have write perms to the directory from the writeToTempFile() above.
+        } catch (Exception e) {
+            failed = true;
+            throw MGMT_OP_LOGGER.failedToStorePersistentConfiguration(e, fileName.getName());
+        } finally {
+            if (failed && tempFile.exists() && !tempFile.delete()) {
+                MGMT_OP_LOGGER.cannotDeleteTempFile(tempFile.getName());
+                tempFile.deleteOnExit();
+            }
+        }
+    }
 
     @Override
-    protected void doCommit(ExposedByteArrayOutputStream marshalled) {
-        final File tempFileName = FilePersistenceUtils.createTempFile(fileName);
+    protected void doCommit() {
+        assert tempFile != null;
         try {
-            FilePersistenceUtils.writeToTempFile(marshalled, tempFileName, fileName);
-            FilePersistenceUtils.moveTempFileToMain(tempFileName, fileName);
+            FilePersistenceUtils.moveTempFileToMain(tempFile, fileName);
         } catch (Exception e) {
-            MGMT_OP_LOGGER.failedToStoreConfiguration(e, fileName.getName());
+            throw MGMT_OP_LOGGER.failedToCommitPersistentConfiguration(e, fileName.getName());
         } finally {
-            if (tempFileName.exists() && !tempFileName.delete()) {
-                MGMT_OP_LOGGER.cannotDeleteTempFile(tempFileName.getName());
-                tempFileName.deleteOnExit();
+            if (tempFile.exists() && !tempFile.delete()) {
+                MGMT_OP_LOGGER.cannotDeleteTempFile(tempFile.getName());
+                tempFile.deleteOnExit();
             }
         }
     }

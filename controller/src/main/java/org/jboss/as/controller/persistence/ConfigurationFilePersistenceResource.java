@@ -25,6 +25,7 @@ package org.jboss.as.controller.persistence;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.jboss.dmr.ModelNode;
 
@@ -38,6 +39,7 @@ public class ConfigurationFilePersistenceResource extends AbstractFilePersistenc
 
     private final ConfigurationFile configurationFile;
     protected final File fileName;
+    protected File tempFile;
 
 
     ConfigurationFilePersistenceResource(final ModelNode model, final ConfigurationFile configurationFile,
@@ -45,37 +47,53 @@ public class ConfigurationFilePersistenceResource extends AbstractFilePersistenc
         super(model, persister);
         this.configurationFile = configurationFile;
         this.fileName = configurationFile.getMainFile();
+        this.tempFile = null;
     }
 
     @Override
-    public void doCommit(ExposedByteArrayOutputStream marshalled) {
-        final File tempFileName;
-
-        if ( FilePersistenceUtils.isParentFolderWritable(fileName) ){
-            tempFileName = FilePersistenceUtils.createTempFile(fileName);
-        }else{
-            tempFileName = FilePersistenceUtils.createTempFile(configurationFile.getConfigurationDir(), fileName.getName());
-        }
-
+    public void doPrepare(final ExposedByteArrayOutputStream marshalled) throws ConfigurationPersistenceException {
+        assert tempFile == null;
         try {
-            try {
-                FilePersistenceUtils.writeToTempFile(marshalled, tempFileName, fileName);
-            } catch (Exception e) {
-                MGMT_OP_LOGGER.failedToStoreConfiguration(e, fileName.getName());
-                return;
+            if (FilePersistenceUtils.isParentFolderWritable(fileName)) {
+                tempFile = FilePersistenceUtils.createTempFile(fileName);
+            } else {
+                tempFile = FilePersistenceUtils.createTempFile(configurationFile.getConfigurationDir(), fileName.getName());
             }
+            FilePersistenceUtils.writeToTempFile(marshalled, tempFile, fileName);
+            if (fileName.exists() && !fileName.canWrite()) {
+                throw MGMT_OP_LOGGER.fileOrDirectoryWritePermissionDenied(fileName.getName());
+            }
+            // otherwise the file doesn't exist, but we should have write perms to the directory from the writeToTempFile() above.
+        } catch (IOException e) {
+            throw MGMT_OP_LOGGER.failedToStorePersistentConfiguration(e, configurationFile.getMainFile().getName());
+        }
+    }
+
+    @Override
+    public void doCommit() {
+        try {
             try {
                 configurationFile.backup();
             } finally {
-                configurationFile.commitTempFile(tempFileName);
+                configurationFile.commitTempFile(tempFile);
             }
             configurationFile.fileWritten();
         } catch (ConfigurationPersistenceException e) {
-           MGMT_OP_LOGGER.errorf(e, e.toString());
+            throw MGMT_OP_LOGGER.failedToCommitPersistentConfiguration(e, configurationFile.getMainFile().getName());
         } finally {
-            if (tempFileName.exists() && !tempFileName.delete()) {
-                MGMT_OP_LOGGER.cannotDeleteTempFile(tempFileName.getName());
-                tempFileName.deleteOnExit();
+           removeTempfile();
+        }
+    }
+
+    @Override
+    public void rollback() {
+        removeTempfile();
+    }
+
+    void removeTempfile() {
+        if (tempFile.exists()) {
+            if (!tempFile.delete()) {
+                MGMT_OP_LOGGER.cannotDeleteTempFile(tempFile.getName());
             }
         }
     }

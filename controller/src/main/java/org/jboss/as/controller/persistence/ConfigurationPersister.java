@@ -42,7 +42,6 @@ public interface ConfigurationPersister {
      * to control whether the stored model should be flushed to permanent storage.
      */
     interface PersistenceResource {
-
         /**
          * Flush the stored model to permanent storage.
          */
@@ -52,6 +51,16 @@ public interface ConfigurationPersister {
          * Discard the changes.
          */
         void rollback();
+
+        /**
+         * Perform any needed pre-commit checks / preparation
+         * This method can be used to create temporary resources, and perform
+         * any required checks for appropriate permissions and persistence before commit() is called.
+         * @throws ConfigurationPersistenceException on any failure
+         */
+        default void prepare() throws ConfigurationPersistenceException {
+            // does nothing
+        }
     }
 
     /**
