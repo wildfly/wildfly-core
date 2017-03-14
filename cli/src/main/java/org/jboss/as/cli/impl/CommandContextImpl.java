@@ -187,6 +187,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.stdio.StdioContext;
+import org.wildfly.security.auth.callback.CallbackUtil;
 import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.callback.OptionalNameCallback;
 import org.wildfly.security.credential.PasswordCredential;
@@ -1833,49 +1834,62 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     realm = defaultText;
                     rcb.setText(defaultText); // For now just use the realm suggested.
                 } else if (current instanceof RealmChoiceCallback) {
-                    throw new UnsupportedCallbackException(current, "Realm choice not currently supported.");
+                    RealmChoiceCallback rcc = (RealmChoiceCallback) current;
+                    final int defaultChoice = rcc.getDefaultChoice();
+                    rcc.setSelectedIndex(defaultChoice);
+                    realm = rcc.getChoices()[defaultChoice];
                 } else if (current instanceof OptionalNameCallback) {
                     NameCallback ncb = (NameCallback) current;
                     // set it if we have one
-                    String username = this.username;
                     if (username != null) {
+                        // use cached name
                         ncb.setName(username);
+                        connInfoBean.setUsername(username);
                     } else {
                         final String defaultName = ncb.getDefaultName();
                         if (defaultName != null) {
+                            // accept suggested name but do not set our cached name
                             ncb.setName(defaultName);
+                            connInfoBean.setUsername(defaultName);
                         }
                     }
                 } else if (current instanceof NameCallback) {
                     NameCallback ncb = (NameCallback) current;
                     final String defaultName = ncb.getDefaultName();
-                    if (defaultName != null) {
-                        // do not prompt
-                        username = defaultName;
-                    } else if (username == null) {
-                        showRealm();
-                        try {
-                            if(console == null) {
-                                if(ERROR_ON_INTERACT) {
-                                    interactionDisabled();
+                    if (username != null) {
+                        // use cached name
+                        ncb.setName(username);
+                        connInfoBean.setUsername(username);
+                    } else {
+                        if (defaultName != null) {
+                            // accept suggested name but do not set our cached name
+                            ncb.setName(defaultName);
+                            connInfoBean.setUsername(defaultName);
+                        } else {
+                            showRealm();
+                            try {
+                                if(console == null) {
+                                    if(ERROR_ON_INTERACT) {
+                                        interactionDisabled();
+                                    }
+                                    initBasicConsole(null);
                                 }
-                                initBasicConsole(null);
+                                console.setCompletion(false);
+                                console.getHistory().setUseHistory(false);
+                                username = readLine("Username: ", false);
+                                console.getHistory().setUseHistory(true);
+                                console.setCompletion(true);
+                            } catch (CommandLineException e) {
+                                // the messages of the cause are lost if nested here
+                                throw new IOException("Failed to read username: " + e.getLocalizedMessage());
                             }
-                            console.setCompletion(false);
-                            console.getHistory().setUseHistory(false);
-                            username = readLine("Username: ", false);
-                            console.getHistory().setUseHistory(true);
-                            console.setCompletion(true);
-                        } catch (CommandLineException e) {
-                            // the messages of the cause are lost if nested here
-                            throw new IOException("Failed to read username: " + e.getLocalizedMessage());
-                        }
-                        if (username == null || username.length() == 0) {
-                            throw new SaslException("No username supplied.");
+                            if (username == null || username.length() == 0) {
+                                throw new SaslException("No username supplied.");
+                            }
+                            ncb.setName(username);
+                            connInfoBean.setUsername(username);
                         }
                     }
-                    connInfoBean.setUsername(username);
-                    ncb.setName(username);
                 } else if (current instanceof PasswordCallback && digest == null) {
                     // If a digest had been set support for PasswordCallback is disabled.
                     if (password == null) {
@@ -1935,10 +1949,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         final byte[] bytes = CodePointIterator.ofString(digest).hexDecode().drain();
                         cc.setCredential(new PasswordCredential(DigestPassword.createRaw(DigestPassword.ALGORITHM_DIGEST_MD5, username, realm, bytes)));
                     } else {
-                        throw new UnsupportedCallbackException(current);
+                        CallbackUtil.unsupported(current);
                     }
                 } else {
-                    throw new UnsupportedCallbackException(current);
+                    CallbackUtil.unsupported(current);
                 }
             }
         }

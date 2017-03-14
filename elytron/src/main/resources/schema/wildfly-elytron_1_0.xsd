@@ -1431,6 +1431,20 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="key-store" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A key store from where the certificate with a public key should be loaded from.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="certificate" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the certificate with a public key to load from the key store.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="oauth2IntrospectionTokenRealmValidatorType">
@@ -1583,6 +1597,13 @@
             <xs:annotation>
                 <xs:documentation>
                     The read timeout for an LDAP operation in miliseconds.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="module" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of module that will be used to load custom context.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

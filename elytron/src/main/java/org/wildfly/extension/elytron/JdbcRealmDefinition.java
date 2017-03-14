@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_S
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
@@ -57,8 +58,10 @@ import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.dmr.Property;
 import org.jboss.msc.inject.InjectionException;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
@@ -569,27 +572,6 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                     .install();
         }
 
-        private KeyMapper[] resolveKeyMappers(OperationContext context, ModelNode authenticationQueryNode) throws OperationFailedException {
-            List<KeyMapper> keyMappers = new ArrayList<>();
-
-            for (String name : authenticationQueryNode.keys()) {
-                ModelNode propertyNode = authenticationQueryNode.require(name);
-                PasswordMapperObjectDefinition mapperResource = PrincipalQueryAttributes.SUPPORTED_PASSWORD_MAPPERS.get(name);
-
-                if (mapperResource == null) {
-                    continue;
-                }
-
-                try {
-                    keyMappers.add(mapperResource.toPasswordKeyMapper(context, propertyNode));
-                } catch (InvalidKeyException e) {
-                    throw new OperationFailedException("Invalid key type.", e);
-                }
-            }
-
-            return keyMappers.toArray(new KeyMapper[keyMappers.size()]);
-        }
-
         private AttributeMapper[] resolveAttributeMappers(OperationContext context, ModelNode principalQueryNode) throws OperationFailedException {
             List<AttributeMapper> attributeMappers = new ArrayList<>();
 
@@ -618,5 +600,41 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
         protected ServiceName getParentServiceName(PathAddress pathAddress) {
             return SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(SecurityRealm.class);
         }
+
+        @Override
+        protected void validateUpdatedModel(OperationContext context, Resource model) throws OperationFailedException {
+            Property property = model.getModel().asProperty();
+            resolveKeyMappers(context, property.getValue().get(0));
+        }
+    }
+
+    private static KeyMapper resolveKeyMappers(OperationContext context, ModelNode authenticationQueryNode) throws OperationFailedException {
+        KeyMapper keyMapper = null;
+
+        for (String name : authenticationQueryNode.keys()) {
+            ModelNode propertyNode = authenticationQueryNode.require(name);
+
+            if (!propertyNode.isDefined()) {
+                continue;
+            }
+
+            PasswordMapperObjectDefinition mapperResource = PrincipalQueryAttributes.SUPPORTED_PASSWORD_MAPPERS.get(name);
+
+            if (mapperResource == null) {
+                continue;
+            }
+
+            if (keyMapper != null) {
+                throw ROOT_LOGGER.jdbcRealmOnlySingleKeyMapperAllowed();
+            }
+
+            try {
+                keyMapper = mapperResource.toPasswordKeyMapper(context, propertyNode);
+            } catch (InvalidKeyException e) {
+                throw new OperationFailedException("Invalid key type.", e);
+            }
+        }
+
+        return keyMapper;
     }
 }
