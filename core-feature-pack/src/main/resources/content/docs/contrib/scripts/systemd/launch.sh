@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ "x$WILDFLY_HOME" = "x" ]; then
     WILDFLY_HOME="/opt/wildfly"
