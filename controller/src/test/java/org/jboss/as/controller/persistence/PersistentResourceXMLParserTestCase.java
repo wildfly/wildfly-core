@@ -80,6 +80,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
 import org.junit.Test;
+import org.projectodd.vdx.core.XMLStreamValidationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
@@ -178,6 +179,34 @@ public class PersistentResourceXMLParserTestCase {
         String out = stringWriter.toString();
         Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
 
+    }
+
+    @Test(expected = XMLStreamValidationException.class)
+    public void testInvalidMultipleGroups() throws Exception {
+        MyParser parser = new AttributeGroupParser();
+        String xml = readResource("invalid-multiple-groups-subsystem.xml");
+        StringReader strReader = new StringReader(xml);
+
+        XMLMapper mapper = XMLMapper.Factory.create();
+        mapper.registerRootElement(new QName(MyParser.NAMESPACE, "subsystem"), parser);
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StreamSource(strReader));
+        List<ModelNode> operations = new ArrayList<>();
+        mapper.parseDocument(operations, reader);
+    }
+
+    @Test(expected = XMLStreamValidationException.class)
+    public void testInvalidMultipleObjectTypes() throws Exception {
+        MyParser parser = new AttributeGroupParser();
+        String xml = readResource("invalid-multiple-object-type-subsystem.xml");
+        StringReader strReader = new StringReader(xml);
+
+        XMLMapper mapper = XMLMapper.Factory.create();
+        mapper.registerRootElement(new QName(MyParser.NAMESPACE, "subsystem"), parser);
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StreamSource(strReader));
+        List<ModelNode> operations = new ArrayList<>();
+        mapper.parseDocument(operations, reader);
     }
 
     @Test(expected = XMLStreamException.class)
@@ -582,6 +611,15 @@ public class PersistentResourceXMLParserTestCase {
 
         }
 
+        static final ObjectTypeAttributeDefinition USERS_PROPERTIES = ObjectTypeAttributeDefinition.Builder.of("user-properties",
+                create("path", ModelType.STRING, false)
+                        .setAllowExpression(false)
+                        .build(),
+                create("relative-to", ModelType.STRING, false)
+                        .setAllowExpression(false)
+                        .build())
+                .build();
+
 
         static final ObjectListAttributeDefinition INTERCEPTORS = ObjectListAttributeDefinition.Builder.of("interceptors", CLASS)
                 .setAllowNull(true)
@@ -633,6 +671,7 @@ public class PersistentResourceXMLParserTestCase {
                 attributes.add(WRAPPED_PROPERTIES);
                 attributes.add(ALIAS);
                 attributes.add(COMPLEX_MAP);
+                attributes.add(USERS_PROPERTIES);
                 return attributes;
             }
         };
@@ -646,6 +685,15 @@ public class PersistentResourceXMLParserTestCase {
                 attributes.add(MAX_REGIONS);
                 attributes.add(ALIAS);
                 attributes.add(COMPLEX_MAP2);
+                return attributes;
+            }
+        };
+
+        static final PersistentResourceDefinition OBJECT_TYPE_TEST = new PersistentResourceDefinition(PathElement.pathElement("object-type-test"), new NonResolvingResourceDescriptionResolver()) {
+            @Override
+            public Collection<AttributeDefinition> getAttributes() {
+                Collection<AttributeDefinition> attributes = new ArrayList<>();
+                attributes.add(USERS_PROPERTIES);
                 return attributes;
             }
         };
@@ -716,6 +764,7 @@ public class PersistentResourceXMLParserTestCase {
                 List<PersistentResourceDefinition> children = new ArrayList<>();
                 children.add(RESOURCE_INSTANCE);
                 children.add(BUFFER_CACHE_INSTANCE);
+                children.add(OBJECT_TYPE_TEST);
                 return children;
             }
         };
@@ -740,7 +789,8 @@ public class PersistentResourceXMLParserTestCase {
                                             WRAPPED_PROPERTIES_GROUP,
                                             WRAPPED_PROPERTIES,
                                             ALIAS,
-                                            COMPLEX_MAP
+                                            COMPLEX_MAP,
+                                            USERS_PROPERTIES
                                     )
                     )
                     .addChild(
@@ -748,6 +798,10 @@ public class PersistentResourceXMLParserTestCase {
                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
                                     .addAttribute(COMPLEX_MAP2)
+                    )
+                    .addChild(
+                            builder(OBJECT_TYPE_TEST.getPathElement())
+                                    .addAttribute(USERS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
                     )
                     .build();
         }
@@ -772,13 +826,18 @@ public class PersistentResourceXMLParserTestCase {
                                             nonGroupAttr1,
                                             PROPERTIES,
                                             WRAPPED_PROPERTIES_GROUP,
-                                            ALIAS
+                                            ALIAS,
+                                            USERS_PROPERTIES
                                     )
                     )
                     .addChild(
                             builder(BUFFER_CACHE_INSTANCE.getPathElement())
                                     .addAttributes(BUFFER_SIZE, BUFFERS_PER_REGION, MAX_REGIONS)
                                     .addAttribute(ALIAS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
+                    )
+                    .addChild(
+                            builder(OBJECT_TYPE_TEST.getPathElement())
+                                    .addAttribute(USERS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
                     )
                     .build();
         }

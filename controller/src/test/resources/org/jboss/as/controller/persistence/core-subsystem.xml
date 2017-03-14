@@ -38,7 +38,6 @@
                 <property name="bar" value="${bar.prop:2}"/>
             </properties>
         </state-listener>
-        <state-listener class="org.bar.listener" module="org.bar"/>
         <identity-mapping rdn-identifier="uid" use-recursive-search="true" search-base-dn="dc=elytron,dc=wildfly,dc=org" iterator-filter="(uid=*)"
                           new-identity-parent-dn="dc=elytron,dc=wildfly,dc=org">
             <attribute-mapping>

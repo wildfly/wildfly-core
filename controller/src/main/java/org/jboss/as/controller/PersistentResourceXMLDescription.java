@@ -173,6 +173,11 @@ public final class PersistentResourceXMLDescription {
 
     private void parseGroup(XMLExtendedStreamReader reader, ModelNode op, boolean wildcard) throws XMLStreamException {
         Map<String, AttributeDefinition> groupAttrs = attributesByGroup.get(reader.getLocalName());
+        for (AttributeDefinition attrGroup : groupAttrs.values()) {
+            if (op.hasDefined(attrGroup.getName())) {
+                throw ParseUtils.unexpectedElement(reader);
+            }
+        }
         parseAttributes(reader, op, groupAttrs, wildcard);
         // Check if there are also element attributes inside a group
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
