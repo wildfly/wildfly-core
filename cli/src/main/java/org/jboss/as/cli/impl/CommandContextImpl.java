@@ -600,21 +600,21 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         final DataSourceAddCompositeHandler dsAddHandler = new DataSourceAddCompositeHandler(this, "/subsystem=datasources/data-source");
         dsAddHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
         dsHandler.addHandler(Util.ADD, dsAddHandler);
-        cmdRegistry.registerHandler(dsHandler, "data-source");
+        cmdRegistry.registerHandler(dsHandler, dsHandler.getCommandName());
         final GenericTypeOperationHandler xaDsHandler = new GenericTypeOperationHandler(this, "/subsystem=datasources/xa-data-source", null);
         xaDsHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
         // override the xa add operation with the handler that accepts xa props
         final XADataSourceAddCompositeHandler xaDsAddHandler = new XADataSourceAddCompositeHandler(this, "/subsystem=datasources/xa-data-source");
         xaDsAddHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
         xaDsHandler.addHandler(Util.ADD, xaDsAddHandler);
-        cmdRegistry.registerHandler(xaDsHandler, "xa-data-source");
+        cmdRegistry.registerHandler(xaDsHandler, xaDsHandler.getCommandName());
         cmdRegistry.registerHandler(new JDBCDriverInfoHandler(this), "jdbc-driver-info");
 
         // rollout plan
         final GenericTypeOperationHandler rolloutPlan = new GenericTypeOperationHandler(this, "/management-client-content=rollout-plans/rollout-plan", null);
         rolloutPlan.addValueConverter("content", HeadersArgumentValueConverter.INSTANCE);
         rolloutPlan.addValueCompleter("content", RolloutPlanCompleter.INSTANCE);
-        cmdRegistry.registerHandler(rolloutPlan, "rollout-plan");
+        cmdRegistry.registerHandler(rolloutPlan, rolloutPlan.getCommandName());
 
         // supported but hidden from tab-completion until stable implementation
         cmdRegistry.registerHandler(new ArchiveHandler(this), false, "archive");

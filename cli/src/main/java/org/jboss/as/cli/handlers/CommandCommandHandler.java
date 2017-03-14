@@ -186,7 +186,7 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
             if(cmdRegistry.getCommandHandler(cmdName) != null) {
                 throw new CommandFormatException("Command '" + cmdName + "' already registered.");
             }
-            cmdRegistry.registerHandler(new GenericTypeOperationHandler(ctx, nodePath, propName), cmdName);
+            cmdRegistry.registerHandler(new GenericTypeOperationHandler(cmdName, ctx, nodePath, propName), cmdName);
             return;
         }
 

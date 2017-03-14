@@ -94,13 +94,53 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
     private WritePropertyHandler writePropHandler;
     private Map<String, OperationCommand> opHandlers;
 
+    /**
+     * Generic command constructor.
+     *
+     * @param ctx The CommandContext.
+     * @param nodeType The resource type. This type is used to name the command.
+     * @param idProperty The property name that identify the resource.
+     */
     public GenericTypeOperationHandler(CommandContext ctx, String nodeType, String idProperty) {
-        this(ctx, nodeType, idProperty, "read-attribute", "read-children-names", "read-children-resources",
+        this(null, ctx, nodeType, idProperty);
+    }
+
+    /**
+     * Generic command constructor.
+     *
+     * @param commandName The name of the command. If null, nodeType is used.
+     * @param ctx The CommandContext.
+     * @param nodeType The resource type.
+     * @param idProperty The property name that identify the resource.
+     */
+    public GenericTypeOperationHandler(String commandName, CommandContext ctx, String nodeType, String idProperty) {
+        this(commandName, ctx, nodeType, idProperty, "read-attribute", "read-children-names", "read-children-resources",
                 "read-children-types", "read-operation-description", "read-operation-names",
                 "read-resource-description", "validate-address", "write-attribute", "undefine-attribute", "whoami");
     }
 
+    /**
+     * Generic command constructor.
+     *
+     * @param ctx The CommandContext.
+     * @param nodeType The resource type. This type is used to name the command.
+     * @param idProperty The property name that identify the resource.
+     * @param excludeOperations The list of operations to exclude.
+     */
     public GenericTypeOperationHandler(CommandContext ctx, String nodeType, String idProperty, String... excludeOperations) {
+        this(null, ctx, nodeType, idProperty, excludeOperations);
+    }
+
+    /**
+     * Generic command constructor.
+     *
+     * @param commandName The name of the command. If null, nodeType is used.
+     * @param ctx The CommandContext.
+     * @param nodeType The resource type.
+     * @param idProperty The property name that identify the resource.
+     * @param excludeOperations The list of operations to exclude.
+     */
+    public GenericTypeOperationHandler(String commandName, CommandContext ctx, String nodeType, String idProperty, String... excludeOperations) {
 
         super(ctx, "generic-type-operation", true);
 
@@ -122,10 +162,13 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
         helpArg = new ArgumentWithoutValue(this, "--help", "-h");
 
         addRequiredPath(nodeType);
-        this.commandName = getRequiredType();
-        if(this.commandName == null) {
+
+        this.commandName = commandName == null ? getRequiredType() : commandName;
+
+        if (this.commandName == null) {
             throw new IllegalArgumentException("The node path doesn't end on a type: '" + nodeType + "'");
         }
+
         this.idProperty = idProperty;
 
         if(excludeOperations != null) {
@@ -246,6 +289,10 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
         staticArgs.put(profile.getFullName(), profile);
         staticArgs.put(name.getFullName(), name);
         staticArgs.put(operation.getFullName(), operation);
+    }
+
+    public String getCommandName() {
+        return commandName;
     }
 
     public void addValueConverter(String propertyName, ArgumentValueConverter converter) {
