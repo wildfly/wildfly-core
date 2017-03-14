@@ -102,6 +102,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.DelegatingServiceBuilder;
 import org.jboss.as.controller.transform.ContextAttachments;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
@@ -145,9 +146,9 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final ModelControllerImpl modelController;
     private final OperationHeaders operationHeaders;
     private final OperationMessageHandler messageHandler;
-    private final Map<ServiceName, ServiceController<?>> realRemovingControllers = new HashMap<ServiceName, ServiceController<?>>();
+    private final Map<ServiceName, ServiceController<?>> realRemovingControllers = new HashMap<>();
     // protected by "realRemovingControllers"
-    private final Map<ServiceName, Step> removalSteps = new HashMap<ServiceName, Step>();
+    private final Map<ServiceName, Step> removalSteps = new HashMap<>();
     private final OperationAttachments attachments;
     /** Tracks the addresses associated with writes to the model.
      * We use a map with dummy values just to take advantage of ConcurrentHashMap  */
@@ -228,7 +229,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.modelController = modelController;
         this.messageHandler = messageHandler;
         this.attachments = attachments;
-        this.affectsModel = booting ? new ConcurrentHashMap<PathAddress, Object>(16 * 16) : new HashMap<PathAddress, Object>(1);
+        this.affectsModel = booting ? new ConcurrentHashMap<>(16 * 16) : new HashMap<>(1);
         this.operationHeaders = operationHeaders;
         this.hostServerGroupTracker = hostServerGroupTracker;
         this.activeOperationResource = new ActiveOperationResource();
@@ -709,8 +710,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
-    public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
-
+    public CapabilitiesServiceTarget getServiceTarget() throws UnsupportedOperationException {
         return getServiceTarget(activeStep);
     }
 
@@ -723,7 +723,7 @@ final class OperationContextImpl extends AbstractOperationContext {
      *                           the {@link org.jboss.as.controller.OperationStepHandler} that is making the call.
      * @return the service target
      */
-    ServiceTarget getServiceTarget(final Step targetActiveStep) throws UnsupportedOperationException {
+    CapabilitiesServiceTarget getServiceTarget(final Step targetActiveStep) throws UnsupportedOperationException {
 
         readOnly = false;
 
@@ -1098,7 +1098,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             if (element.isMultiTarget()) {
                 throw ControllerLogger.ROOT_LOGGER.cannotRemove("*");
             }
-            if (! i.hasNext()) {
+            if (!i.hasNext()) {
                 model = model.removeChild(element);
             } else {
                 model = requireChild(model, element, address);
@@ -1827,7 +1827,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 hostServerGroupEffect = HostServerGroupTracker.HostServerGroupEffect.forServer(opId.address, serverGroup, host);
             } else {
                 hostServerGroupEffect =
-                    hostServerGroupTracker.getHostServerGroupEffects(opId.address, operation, managementModel.getRootResource());
+                                    hostServerGroupTracker.getHostServerGroupEffects(opId.address, operation, managementModel.getRootResource());
             }
             targetResource = TargetResource.forDomain(opId.address, mrr, resource, hostServerGroupEffect, hostServerGroupEffect);
         } else {
@@ -2018,7 +2018,7 @@ final class OperationContextImpl extends AbstractOperationContext {
      * Service target that delegates to another target for most calls, but during execution of the
      * management op that created it does management specific integration and limits the available API.
      */
-    private static class ContextServiceTarget implements ServiceTarget {
+    private class ContextServiceTarget implements CapabilitiesServiceTarget {
 
         private final ServiceTarget delegate;
         private final Set<ContextServiceBuilder> builders = new HashSet<>();
@@ -2060,8 +2060,17 @@ final class OperationContextImpl extends AbstractOperationContext {
             return csb;
         }
 
-        public <T> ServiceBuilder<T> addService(final ServiceName name, final Service<T> service) {
-            return addServiceValue(name, new ImmediateValue<Service<T>>(service));
+        public <T> CapabilitiesServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
+            return new CapabilitiesServiceBuilderImpl<>(addServiceValue(name, new ImmediateValue<>(service)));
+        }
+
+        @Override
+        public <T> CapabilitiesServiceBuilder<T> addCapability(final RuntimeCapability<?> capability, final Service<T> service) throws IllegalArgumentException {
+            if (capability.isDynamicallyNamed()){
+                return addService(capability.getCapabilityServiceName(getCurrentAddressValue()), service);
+            }else{
+                return addService(capability.getCapabilityServiceName(), service);
+            }
         }
 
         public ServiceTarget addMonitor(final StabilityMonitor monitor) {
@@ -2159,12 +2168,13 @@ final class OperationContextImpl extends AbstractOperationContext {
     /**
      * Service builder that integrates service installation work with overall execution of a management op.
      */
-    private static class ContextServiceBuilder<T> implements ServiceBuilder<T> {
+    private static class ContextServiceBuilder<T> extends DelegatingServiceBuilder<T> {
 
         private final ServiceBuilder<T> realBuilder;
         private volatile ContextServiceInstaller serviceInstaller;
 
         ContextServiceBuilder(final ServiceBuilder<T> realBuilder, final ContextServiceInstaller serviceInstaller) {
+            super(realBuilder);
             this.realBuilder = realBuilder;
             this.serviceInstaller = serviceInstaller;
         }
@@ -2177,112 +2187,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             this.serviceInstaller = null;
         }
 
-        public ServiceBuilder<T> addAliases(final ServiceName... aliases) {
-            realBuilder.addAliases(aliases);
-            return this;
-        }
-
-        public ServiceBuilder<T> setInitialMode(final ServiceController.Mode mode) {
-            realBuilder.setInitialMode(mode);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependencies(final ServiceName... dependencies) {
-            realBuilder.addDependencies(dependencies);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependencies(final DependencyType dependencyType, final ServiceName... dependencies) {
-            realBuilder.addDependencies(dependencyType, dependencies);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependencies(final Iterable<ServiceName> dependencies) {
-            realBuilder.addDependencies(dependencies);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependencies(final DependencyType dependencyType, final Iterable<ServiceName> dependencies) {
-            realBuilder.addDependencies(dependencyType, dependencies);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependency(final ServiceName dependency) {
-            realBuilder.addDependency(dependency);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependency(final DependencyType dependencyType, final ServiceName dependency) {
-            realBuilder.addDependency(dependencyType, dependency);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependency(final ServiceName dependency, final Injector<Object> target) {
-            realBuilder.addDependency(dependency, target);
-            return this;
-        }
-
-        public ServiceBuilder<T> addDependency(final DependencyType dependencyType, final ServiceName dependency, final Injector<Object> target) {
-            realBuilder.addDependency(dependencyType, dependency, target);
-            return this;
-        }
-
-        public <I> ServiceBuilder<T> addDependency(final ServiceName dependency, final Class<I> type, final Injector<I> target) {
-            realBuilder.addDependency(dependency, type, target);
-            return this;
-        }
-
-        public <I> ServiceBuilder<T> addDependency(final DependencyType dependencyType, final ServiceName dependency, final Class<I> type, final Injector<I> target) {
-            realBuilder.addDependency(dependencyType, dependency, type, target);
-            return this;
-        }
-
-        public <I> ServiceBuilder<T> addInjection(final Injector<? super I> target, final I value) {
-            realBuilder.addInjection(target, value);
-            return this;
-        }
-
-        public <I> ServiceBuilder<T> addInjectionValue(final Injector<? super I> target, final Value<I> value) {
-            realBuilder.addInjectionValue(target, value);
-            return this;
-        }
-
-        public ServiceBuilder<T> addInjection(final Injector<? super T> target) {
-            realBuilder.addInjection(target);
-            return this;
-        }
-
-        public ServiceBuilder<T> addMonitor(StabilityMonitor monitor) {
-            realBuilder.addMonitor(monitor);
-            return this;
-        }
-
-        public ServiceBuilder<T> addMonitors(StabilityMonitor... monitors) {
-            realBuilder.addMonitors(monitors);
-            return this;
-        }
-
-        @SuppressWarnings("deprecation")
-        public ServiceBuilder<T> addListener(final ServiceListener<? super T> listener) {
-            realBuilder.addListener(listener);
-            return this;
-        }
-
-        @SafeVarargs
-        @SuppressWarnings("deprecation")
-        public final ServiceBuilder<T> addListener(final ServiceListener<? super T>... listeners) {
-            realBuilder.addListener(listeners);
-            return this;
-        }
-
-        @SuppressWarnings("deprecation")
-        public ServiceBuilder<T> addListener(final Collection<? extends ServiceListener<? super T>> listeners) {
-            realBuilder.addListener(listeners);
-            return this;
-        }
-
         public ServiceController<T> install() throws ServiceRegistryException, IllegalStateException {
-
             ContextServiceInstaller installer = this.serviceInstaller;
             return installer == null ? realBuilder.install() : installer.installService(realBuilder);
         }
@@ -2399,7 +2304,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         public boolean compareAndSetMode(Mode expected,
-                org.jboss.msc.service.ServiceController.Mode newMode) {
+                                         org.jboss.msc.service.ServiceController.Mode newMode) {
             checkModeTransition(newMode);
             boolean changed = controller.compareAndSetMode(expected, newMode);
             if (changed) {
@@ -2692,6 +2597,32 @@ final class OperationContextImpl extends AbstractOperationContext {
         @Override
         public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart) {
             return getCapabilityServiceName(capabilityBaseName).append(dynamicPart);
+        }
+    }
+
+
+    private class CapabilitiesServiceBuilderImpl<T> extends DelegatingServiceBuilder<T> implements CapabilitiesServiceBuilder<T> {
+        CapabilitiesServiceBuilderImpl(ServiceBuilder<T> delegate) {
+            super(delegate);
+        }
+
+        public <I> CapabilitiesServiceBuilder<T> addCapabilityRequirement(String capabilityName, String referenceName, Class<I> type, Injector<I> target) {
+            final ServiceName serviceName = getCapabilityServiceName(capabilityName, referenceName, type);
+            addDependency(serviceName, type, target);
+            return this;
+        }
+
+        @Override
+        public <I> CapabilitiesServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target) {
+            final ServiceName serviceName = getCapabilityServiceName(capabilityName, type);
+            addDependency(serviceName, type, target);
+            return this;
+        }
+
+        @Override
+        public CapabilitiesServiceBuilder<T>  setInitialMode(ServiceController.Mode mode) {
+            super.setInitialMode(mode);
+            return this;
         }
     }
 
