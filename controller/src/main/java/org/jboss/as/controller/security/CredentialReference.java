@@ -98,12 +98,15 @@ public final class CredentialReference {
                 .build();
         credentialAliasAttribute = new SimpleAttributeDefinitionBuilder(ALIAS, ModelType.STRING, true)
                 .setXmlName(ALIAS)
+                .setAllowExpression(true)
                 .build();
         credentialTypeAttribute = new SimpleAttributeDefinitionBuilder(TYPE, ModelType.STRING, true)
                 .setXmlName(TYPE)
+                .setAllowExpression(true)
                 .build();
         clearTextAttribute = new SimpleAttributeDefinitionBuilder(CLEAR_TEXT, ModelType.STRING, true)
                 .setXmlName(CLEAR_TEXT)
+                .setAllowExpression(true)
                 .build();
         credentialReferenceAttributeDefinition = getAttributeBuilder(CREDENTIAL_REFERENCE, CREDENTIAL_REFERENCE, false).build();
     }
