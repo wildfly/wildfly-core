@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.POSSIBLE_CAUSES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICES_MISSING_TRANSITIVE_DEPENDENCIES;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -232,7 +235,22 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
     }
 
     static ModelNode extractTransitiveDependencyProblemDescription(ModelNode failureDescription) {
-        return extractIfPresent(ControllerLogger.ROOT_LOGGER.missingTransitiveDependencyProblem(), failureDescription);
+        ModelNode transitiveDependencyProblemDescription = null;
+        ModelNode missingTransitiveDesc = extractIfPresent(ControllerLogger.ROOT_LOGGER.missingTransitiveDependencyProblem(), failureDescription);
+        if (missingTransitiveDesc != null) {
+            ModelNode missingTransitiveDeps = extractIfPresent(ControllerLogger.ROOT_LOGGER.missingTransitiveDependents(), missingTransitiveDesc);
+            ModelNode allMissingList = extractIfPresent(ControllerLogger.ROOT_LOGGER.missingTransitiveDependencies(), missingTransitiveDesc);
+            if (allMissingList != null || missingTransitiveDeps != null) {
+                transitiveDependencyProblemDescription = new ModelNode();
+                if (missingTransitiveDeps != null) {
+                    transitiveDependencyProblemDescription.get(SERVICES_MISSING_TRANSITIVE_DEPENDENCIES).set(missingTransitiveDeps);
+                }
+                if (allMissingList != null) {
+                    transitiveDependencyProblemDescription.get(POSSIBLE_CAUSES).set(allMissingList);
+                }
+            }
+        }
+        return transitiveDependencyProblemDescription;
     }
 
     private static ModelNode extractIfPresent(String key, ModelNode modelNode) {
