@@ -195,6 +195,9 @@ public interface AttributeParsers {
         public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
             assert attribute instanceof ObjectTypeAttributeDefinition;
 
+            if (operation.hasDefined(attribute.getName())) {
+                throw ParseUtils.unexpectedElement(reader);
+            }
             if (attribute.getXmlName().equals(reader.getLocalName())) {
                 ObjectTypeAttributeDefinition objectType = ((ObjectTypeAttributeDefinition) attribute);
                 ModelNode op = operation.get(attribute.getName());
