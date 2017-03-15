@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.junit.Ignore;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -193,7 +192,6 @@ public class CliAliasTestCase {
      *
      * @throws Exception
      */
-    @Ignore("WFCORE-1853")
     @Test
     public void testAliasPersistenceCtrlC() throws Exception {
         final File aliasFile = temporaryUserHome.newFile(".aesh_aliases");
