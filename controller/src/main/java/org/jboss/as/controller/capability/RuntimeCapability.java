@@ -26,7 +26,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.msc.service.ServiceName;
 
@@ -39,6 +41,17 @@ import org.jboss.msc.service.ServiceName;
  */
 public class RuntimeCapability<T> extends AbstractCapability  {
 
+    //todo remove, here only for binary compatibility of elytron subsystem, drop once it is in.
+    public static String buildDynamicCapabilityName(String baseName, String dynamicNameElement) {
+        return buildDynamicCapabilityName(baseName, new String[]{dynamicNameElement});
+    }
+
+    //only here for binary compatibility, remove once elytron subsystem lands
+    public RuntimeCapability<T> fromBaseCapability(String dynamicElement) {
+        return fromBaseCapability(new String[]{dynamicElement});
+    }
+    //end remove
+
     /**
      * Constructs a full capability name from a static base name and a dynamic element.
      *
@@ -46,10 +59,15 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      * @param dynamicNameElement  the dynamic portion of the name. Cannot be {@code null}
      * @return the full capability name. Will not return {@code null}
      */
-    public static String buildDynamicCapabilityName(String baseName, String dynamicNameElement) {
+    public static String buildDynamicCapabilityName(String baseName, String ... dynamicNameElement) {
         assert baseName != null;
         assert dynamicNameElement != null;
-        return baseName + "." + dynamicNameElement;
+        assert dynamicNameElement.length > 0;
+        StringBuilder sb = new StringBuilder(baseName);
+        for (String part:dynamicNameElement){
+            sb.append(".").append(part);
+        }
+        return sb.toString();
     }
 
     /**
@@ -62,7 +80,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      * @param <T> the type of the runtime API object exposed by the capability
      * @return the fully name capability.
      *
-     * @deprecated use {@link #fromBaseCapability(String)} on {@code base}
+     * @deprecated use {@link #fromBaseCapability(String...)} on {@code base}
      */
     @Deprecated
     public static <T> RuntimeCapability<T> fromBaseCapability(RuntimeCapability<T> base, String dynamicElement) {
@@ -88,7 +106,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      */
     @Deprecated
     public RuntimeCapability(String name, T runtimeAPI, Set<String> requirements, Set<String> optionalRequirements) {
-        super(name, false, requirements, optionalRequirements, null, null, null);
+        super(name, false, requirements, optionalRequirements, null, null, null, null);
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = null;
         this.serviceName = null;
@@ -119,7 +137,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      */
     @Deprecated
     public RuntimeCapability(String name, T runtimeAPI, String... requirements) {
-        super(name, false, new HashSet<>(Arrays.asList(requirements)), null, null, null, null);
+        super(name, false, new HashSet<>(Arrays.asList(requirements)), null, null, null, null, null);
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = null;
         this.serviceName = null;
@@ -131,7 +149,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      */
     private RuntimeCapability(Builder<T> builder) {
         super(builder.baseName, builder.dynamic, builder.requirements, builder.optionalRequirements,
-                builder.runtimeOnlyRequirements, builder.dynamicRequirements, builder.dynamicOptionalRequirements);
+                builder.runtimeOnlyRequirements, builder.dynamicRequirements, builder.dynamicOptionalRequirements, builder.dynamicNameMapper);
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
         this.serviceName = ServiceName.parse(builder.baseName);
@@ -139,15 +157,17 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     }
 
     /**
-     * Constructor for use by {@link #fromBaseCapability(String)}
+     * Constructor for use by {@link #fromBaseCapability(String...)}
      */
-    private RuntimeCapability(String baseName, String dynamicElement, Class<?> serviceValueType, T runtimeAPI,
+    private RuntimeCapability(String baseName, Class<?> serviceValueType, T runtimeAPI,
                               Set<String> requirements, Set<String> optionalRequirements,
                               Set<String> runtimeOnlyRequirements, Set<String> dynamicRequirements,
                               Set<String> dynamicOptionalRequirements,
-                              boolean allowMultipleRegistrations) {
+                              boolean allowMultipleRegistrations,
+                              Function<PathAddress,String[]> dynamicNameMapper, String... dynamicElement
+                              ) {
         super(buildDynamicCapabilityName(baseName, dynamicElement), false, requirements,
-                optionalRequirements, runtimeOnlyRequirements, dynamicRequirements, dynamicOptionalRequirements);
+                optionalRequirements, runtimeOnlyRequirements, dynamicRequirements, dynamicOptionalRequirements, dynamicNameMapper);
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = serviceValueType;
         this.serviceName = dynamicElement == null ? ServiceName.parse(baseName) : ServiceName.parse(baseName).append(dynamicElement);
@@ -189,15 +209,30 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      * Gets the name of the service provided by this capability, if there is one. Only usable with
      * {@link #isDynamicallyNamed() dynamically named} capabilities.
      *
-     * @param dynamicNameElement the dynamic portion of the capability name. Cannot be {@code null}
+     * @param dynamicNameElements the dynamic portion of the capability name. Cannot be {@code null}
      *
      * @return the name of the service. Will not be {@code null}
      *
      * @throws IllegalArgumentException if the capability does not provide a service
      * @throws AssertionError if {@link #isDynamicallyNamed()} does not return {@code true}
      */
-    public ServiceName getCapabilityServiceName(String dynamicNameElement) {
-        return getCapabilityServiceName(dynamicNameElement, null);
+    public ServiceName getCapabilityServiceName(String... dynamicNameElements) {
+        return getCapabilityServiceName(null, dynamicNameElements);
+    }
+
+    /**
+     * Gets the name of the service provided by this capability, if there is one. Only usable with
+     * {@link #isDynamicallyNamed() dynamically named} capabilities.
+     *
+     * @param address Path address for which service name is calculated from Cannot be {@code null}
+     *
+     * @return the name of the service. Will not be {@code null}
+     *
+     * @throws IllegalArgumentException if the capability does not provide a service
+     * @throws AssertionError if {@link #isDynamicallyNamed()} does not return {@code true}
+     */
+    public ServiceName getCapabilityServiceName(PathAddress address) {
+        return getCapabilityServiceName(address, null);
     }
 
     /**
@@ -215,7 +250,29 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      * @throws IllegalStateException if {@link #isDynamicallyNamed()} does not return {@code true}
      */
     public ServiceName getCapabilityServiceName(String dynamicNameElement, Class<?> serviceValueType) {
-        return fromBaseCapability(dynamicNameElement).getCapabilityServiceName(serviceValueType);
+        return getCapabilityServiceName(serviceValueType, dynamicNameElement);
+    }
+
+    public ServiceName getCapabilityServiceName(Class<?> serviceValueType, String... dynamicNameElements) {
+        return fromBaseCapability(dynamicNameElements).getCapabilityServiceName(serviceValueType);
+    }
+
+    /**
+     * Gets the name of service provided by this capability.
+     *
+     * @param address the path from which dynamic portion of the capability name is calculated from. Cannot be {@code null}
+     * @param serviceValueType the expected type of the service's value. Only used to provide validate that
+     *                         the service value type provided by the capability matches the caller's
+     *                         expectation. May be {@code null} in which case no validation is performed
+     *
+     * @return the name of the service. Will not be {@code null}
+     *
+     * @throws IllegalArgumentException if the capability does not provide a service or if its value type
+     *                                  is not assignable to {@code serviceValueType}
+     * @throws IllegalStateException if {@link #isDynamicallyNamed()} does not return {@code true}
+     */
+    public ServiceName getCapabilityServiceName(PathAddress address, Class<?> serviceValueType) {
+        return fromBaseCapability(address).getCapabilityServiceName(serviceValueType);
     }
 
     /**
@@ -259,15 +316,38 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      *
      * @throws AssertionError if {@link #isDynamicallyNamed()} returns {@code false}
      */
-    public RuntimeCapability<T> fromBaseCapability(String dynamicElement) {
+    public RuntimeCapability<T> fromBaseCapability(String ... dynamicElement) {
         assert isDynamicallyNamed();
         assert dynamicElement != null;
-        assert dynamicElement.length() > 0;
-        return new RuntimeCapability<T>(getName(), dynamicElement, serviceValueType, runtimeAPI,
+        assert dynamicElement.length > 0;
+        return new RuntimeCapability<T>(getName(), serviceValueType, runtimeAPI,
                 getRequirements(), getOptionalRequirements(),
-                getRuntimeOnlyRequirements(), getDynamicRequirements(), getDynamicOptionalRequirements(),
-                allowMultipleRegistrations);
+                getRuntimeOnlyRequirements(), getDynamicRequirements(),
+                getDynamicOptionalRequirements(), allowMultipleRegistrations,
+                dynamicNameMapper, dynamicElement);
 
+    }
+
+    /**
+     * Creates a fully named capability from a {@link #isDynamicallyNamed() dynamically named} base
+     * capability. Capability providers should use this method to generate fully named capabilities in logic
+     * that handles dynamically named resources.
+     *
+     * @param path the dynamic portion of the full capability name. Cannot be {@code null} or empty
+     * @return the fully named capability.
+     *
+     * @throws AssertionError if {@link #isDynamicallyNamed()} returns {@code false}
+     */
+    public RuntimeCapability<T> fromBaseCapability(PathAddress path) {
+        assert isDynamicallyNamed();
+        assert path != null;
+        String[] dynamicElement = dynamicNameMapper.apply(path);
+        assert dynamicElement.length > 0;
+        return new RuntimeCapability<>(getName(), serviceValueType, runtimeAPI,
+                getRequirements(), getOptionalRequirements(),
+                getRuntimeOnlyRequirements(), getDynamicRequirements(),
+                        getDynamicOptionalRequirements(), allowMultipleRegistrations,
+                        dynamicNameMapper, dynamicElement);
     }
 
     /**
@@ -286,6 +366,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         private Set<String> dynamicRequirements;
         private Set<String> dynamicOptionalRequirements;
         private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
+        private Function<PathAddress, String[]> dynamicNameMapper = AbstractCapability::addressValueToDynamicName;
 
         /**
          * Create a builder for a non-dynamic capability with no custom runtime API.
@@ -471,6 +552,18 @@ public class RuntimeCapability<T> extends AbstractCapability  {
          */
         public Builder<T> setAllowMultipleRegistrations(boolean allowMultipleRegistrations) {
             this.allowMultipleRegistrations = allowMultipleRegistrations;
+            return this;
+        }
+
+        /*
+         * Sets dynamic name mapper, can be used for cases when you need to customize dynamic name
+         *
+         * @param mapper function
+         * @return the builder
+         */
+        public Builder<T> setDynamicNameMapper(Function<PathAddress,String[]> mapper) {
+            assert mapper != null;
+            this.dynamicNameMapper = mapper;
             return this;
         }
 

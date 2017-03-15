@@ -51,6 +51,7 @@ import org.jboss.msc.value.InjectedValue;
  *
  * @author Brian Stansberry
  */
+@SuppressWarnings("deprecation")
 public class CustomContextExtension implements Extension {
 
     private static final Logger log = Logger.getLogger(CustomContextExtension.class);

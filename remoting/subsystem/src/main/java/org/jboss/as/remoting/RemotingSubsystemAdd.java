@@ -32,8 +32,6 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
 import org.xnio.XnioWorker;
@@ -76,8 +74,6 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
 
         final OptionMap map = EndpointConfigFactory.populate(context, endpointModel);
 
-        final ServiceTarget serviceTarget = context.getServiceTarget();
-
         // create endpoint
         final String nodeName = WildFlySecurityManager.getPropertyPrivileged(RemotingExtension.NODE_NAME_PROPERTY, null);
         final EndpointService endpointService = new EndpointService(nodeName, EndpointService.EndpointType.SUBSYSTEM, map);
@@ -91,9 +87,8 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
             }
         }
 
-        final ServiceName workerService = context.getCapabilityServiceName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, workerName, XnioWorker.class);
-        serviceTarget.addService(RemotingServices.SUBSYSTEM_ENDPOINT, endpointService)
-                .addDependency(workerService, XnioWorker.class, endpointService.getWorker())
+        context.getCapabilityServiceTarget().addCapability(RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY, endpointService)
+                .addCapabilityRequirement(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, XnioWorker.class, endpointService.getWorker(), workerName)
                 .install();
     }
 

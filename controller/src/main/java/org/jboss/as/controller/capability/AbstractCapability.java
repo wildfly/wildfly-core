@@ -25,6 +25,9 @@ package org.jboss.as.controller.capability;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
+
+import org.jboss.as.controller.PathAddress;
 
 /**
  * Base class for a core or subsystem capability.
@@ -45,6 +48,7 @@ public abstract class AbstractCapability implements Capability {
     // specify the dynamic part of the requirement name, and a
     // runtime-only requirement by definition cannot be specified
     // via configuration
+    final Function<PathAddress,String[]> dynamicNameMapper;
 
     /**
      * Creates a new capability
@@ -56,13 +60,14 @@ public abstract class AbstractCapability implements Capability {
 *                            capability will have a hard requirement once the full name is known. May be {@code null}
      * @param dynamicOptionalRequirements names of other dynamically named capabilities upon a concrete instance of which this
 *                            capability will have an optional requirement once the full name is known. May be {@code null}
+     * @param dynamicNameMapper
      */
     protected AbstractCapability(final String name, final boolean dynamic,
                                  final Set<String> requirements,
                                  final Set<String> optionalRequirements,
                                  final Set<String> runtimeOnlyRequirements,
                                  final Set<String> dynamicRequirements,
-                                 final Set<String> dynamicOptionalRequirements) {
+                                 final Set<String> dynamicOptionalRequirements, Function<PathAddress, String[]> dynamicNameMapper) {
         assert name != null;
         this.name = name;
         this.dynamic = dynamic;
@@ -71,6 +76,11 @@ public abstract class AbstractCapability implements Capability {
         this.runtimeOnlyRequirements = establishRequirements(runtimeOnlyRequirements);
         this.dynamicRequirements = establishRequirements(dynamicRequirements);
         this.dynamicOptionalRequirements = establishRequirements(dynamicOptionalRequirements);
+        if (dynamicNameMapper != null) {
+            this.dynamicNameMapper = dynamicNameMapper;
+        } else {
+            this.dynamicNameMapper = AbstractCapability::addressValueToDynamicName;
+        }
     }
 
     private static Set<String> establishRequirements(Set<String> input) {
@@ -79,6 +89,16 @@ public abstract class AbstractCapability implements Capability {
         } else {
             return Collections.emptySet();
         }
+    }
+
+    /**
+     * resolves dynamic name from path address that return last element value are result
+     *
+     * @param pathAddress
+     * @return dynamic part of address
+     */
+    public static String[] addressValueToDynamicName(PathAddress pathAddress){
+        return new String[]{pathAddress.getLastElement().getValue()};
     }
 
     /**
@@ -183,6 +203,15 @@ public abstract class AbstractCapability implements Capability {
             throw new IllegalStateException();
         }
         return name + "." + dynamicNameElement;
+    }
+
+    @Override
+    public String getDynamicName(PathAddress address) {
+        if (!dynamic) {
+            throw new IllegalStateException();
+        }
+        String[] dynamicElements = dynamicNameMapper.apply(address);
+        return RuntimeCapability.buildDynamicCapabilityName(name, dynamicElements);
     }
 
 //    /**

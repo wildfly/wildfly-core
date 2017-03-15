@@ -90,7 +90,7 @@ class WorkerThreadPoolVsEndpointHandler implements OperationStepHandler {
             // WFCORE-778 don't do this on an HC so we won't mistakenly trigger a requirement
             // in a profile meant for servers that don't have the io subsystem
             if (context.getProcessType().isServer()) {
-                RemotingEndpointResource.WORKER.addCapabilityRequirements(context, new ModelNode()); // use an undefined node so WORKER will use its default value
+                RemotingEndpointResource.WORKER.addCapabilityRequirements(context, resource, new ModelNode()); // use an undefined node so WORKER will use its default value
             }
         }
     }

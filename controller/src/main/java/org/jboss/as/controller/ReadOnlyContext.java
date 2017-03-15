@@ -189,6 +189,11 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
+    public CapabilityServiceTarget getCapabilityServiceTarget() throws UnsupportedOperationException {
+        return primaryContext.getCapabilityServiceTarget();
+    }
+
+    @Override
     public void acquireControllerLock() {
         if (lockStep == null) {
             try {
