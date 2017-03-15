@@ -45,8 +45,12 @@ public class ExpressionBaseState extends DefaultParsingState {
     }
 
     public ExpressionBaseState(String id, boolean enterLeaveContent, CharacterHandlerMap enterStateHandlers) {
+        this(id, enterLeaveContent, enterStateHandlers, true);
+    }
+
+    public ExpressionBaseState(String id, boolean enterLeaveContent, CharacterHandlerMap enterStateHandlers, boolean resolveSystemProperties) {
         super(id, enterLeaveContent, enterStateHandlers);
-        this.resolveSystemProperties = true;
+        this.resolveSystemProperties = resolveSystemProperties;
         this.exceptionIfNotResolved = true;
         putExpressionHandler();
     }
@@ -57,6 +61,13 @@ public class ExpressionBaseState extends DefaultParsingState {
 
     public ExpressionBaseState(String id, boolean resolveSystemProperties, boolean exceptionIfNotResolved) {
         super(id);
+        this.resolveSystemProperties = resolveSystemProperties;
+        this.exceptionIfNotResolved = exceptionIfNotResolved;
+        putExpressionHandler();
+    }
+
+    public ExpressionBaseState(String id, boolean resolveSystemProperties, boolean exceptionIfNotResolved, boolean enterLeaveContent) {
+        super(id, enterLeaveContent);
         this.resolveSystemProperties = resolveSystemProperties;
         this.exceptionIfNotResolved = exceptionIfNotResolved;
         putExpressionHandler();
