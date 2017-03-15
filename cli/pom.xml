@@ -228,7 +228,7 @@
                             <!-- fork is needed so compiler args can be used -->
                             <fork>true</fork>
                             <compilerArgs>
-                                <arg>-J--add-modules=java.annotations.common,jdk.jconsole</arg>
+                                <arg>-J--add-modules=java.xml.ws.annotation,jdk.jconsole</arg>
                                 <arg>--add-modules=jdk.jconsole</arg>
                             </compilerArgs>
                         </configuration>
