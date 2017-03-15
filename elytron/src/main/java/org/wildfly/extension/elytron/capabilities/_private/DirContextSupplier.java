@@ -15,20 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.wildfly.extension.elytron.capabilities;
+package org.wildfly.extension.elytron.capabilities._private;
 
-import org.wildfly.security.SecurityFactory;
-import org.wildfly.security.credential.Credential;
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
+
+import org.wildfly.common.function.ExceptionSupplier;
 
 /**
- * A {@link SecurityFactory} that returns a {@link Credential}.
+ * A {@link Supplier} for obtaining {@link DirContext} instances.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public interface CredentialSecurityFactory extends SecurityFactory<Credential> {
+public interface DirContextSupplier extends ExceptionSupplier<DirContext, NamingException> {
 
-    static CredentialSecurityFactory from(final SecurityFactory<? extends Credential> function) {
-        return function::create;
+    static DirContextSupplier from(final ExceptionSupplier<DirContext, NamingException> supplier) {
+        return supplier::get;
     }
 
 }

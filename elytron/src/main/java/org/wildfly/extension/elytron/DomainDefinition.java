@@ -75,7 +75,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.DomainService.RealmDependency;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
-import org.wildfly.extension.elytron.capabilities.SecurityEventListener;
+import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmMapper;
 import org.wildfly.security.auth.server.RealmUnavailableException;

@@ -48,7 +48,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
-import org.wildfly.extension.elytron.capabilities.SecurityEventListener;
+import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.audit.AuditEndpoint;
 import org.wildfly.security.audit.AuditLogger;
 import org.wildfly.security.audit.EventPriority;

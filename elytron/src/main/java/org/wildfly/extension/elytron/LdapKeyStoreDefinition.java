@@ -63,7 +63,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.wildfly.extension.elytron.capabilities.DirContextSupplier;
+import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.security.keystore.LdapKeyStore;
 
 /**

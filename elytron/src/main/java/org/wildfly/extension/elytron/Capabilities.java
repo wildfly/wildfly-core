@@ -30,10 +30,10 @@ import javax.security.sasl.SaslServerFactory;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.ServiceBuilder;
-import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
-import org.wildfly.extension.elytron.capabilities.DirContextSupplier;
+import org.wildfly.extension.elytron.capabilities._private.CredentialSecurityFactory;
+import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
-import org.wildfly.extension.elytron.capabilities.SecurityEventListener;
+import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;

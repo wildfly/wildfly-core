@@ -33,7 +33,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.extension.elytron.capabilities.DirContextSupplier;
+import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.security.keystore.LdapKeyStore;
 import org.wildfly.security.keystore.UnmodifiableKeyStore;
 

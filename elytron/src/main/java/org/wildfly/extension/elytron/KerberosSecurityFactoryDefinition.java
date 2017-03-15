@@ -56,7 +56,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
-import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
+import org.wildfly.extension.elytron.capabilities._private.CredentialSecurityFactory;
 import org.wildfly.security.auth.util.GSSCredentialSecurityFactory;
 
 import javax.xml.stream.XMLStreamException;
