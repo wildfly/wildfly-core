@@ -56,6 +56,7 @@ import org.jboss.as.controller.operations.common.InterfaceCriteriaWriteHandler;
 import org.jboss.as.controller.operations.common.InterfaceRemoveHandler;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
+import org.jboss.as.controller.operations.validation.SubnetValidator;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -122,6 +123,7 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
             .build();
     public static final AttributeDefinition SUBNET_MATCH = SimpleAttributeDefinitionBuilder.create(localName(Element.SUBNET_MATCH), ModelType.STRING)
             .setAllowExpression(true).setAllowNull(true).addAlternatives(ModelDescriptionConstants.ANY_ADDRESS).setRestartAllServices()
+            .setValidator(new SubnetValidator(true, true))
             .build();
     public static final AttributeDefinition UP = SimpleAttributeDefinitionBuilder.create(localName(Element.UP), ModelType.BOOLEAN)
             .setAllowExpression(false).setAllowNull(true).addAlternatives(ModelDescriptionConstants.ANY_ADDRESS).setRestartAllServices()
