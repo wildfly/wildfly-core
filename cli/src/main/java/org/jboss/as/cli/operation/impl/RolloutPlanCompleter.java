@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2016, Red Hat, Inc., and individual contributors
+ * Copyright 2017, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -110,14 +110,33 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
 
         if(rollout.hasProperties()) {
             final String lastName = rollout.getLastPropertyName();
-            if(Util.ROLLBACK_ACROSS_GROUPS.startsWith(lastName)) {
+            if (Util.ROLLBACK_ACROSS_GROUPS.equals(lastName)) {
+                if (rollout.getLastPropertyValue() != null) {
+                    return -1;
+                }
+                candidates.add("}");
+                candidates.add(";");
+                return rollout.getLastChunkIndex() + lastName.length();
+            }
+            if (Util.ROLLBACK_ACROSS_GROUPS.startsWith(lastName)) {
                 candidates.add(Util.ROLLBACK_ACROSS_GROUPS);
             }
             return rollout.getLastChunkIndex();
         }
 
+        final List<String> serverGroups = Util.getServerGroups(ctx.getModelControllerClient());
+        boolean containsAllGroups = true;
+        for (String group : serverGroups) {
+            if (!rollout.containsGroup(group)) {
+                containsAllGroups = false;
+                break;
+            }
+        }
+
         if(rollout.endsOnGroupSeparator()) {
-            final List<String> serverGroups = Util.getServerGroups(ctx.getModelControllerClient());
+            if (containsAllGroups) {
+                return -1;
+            }
             for(String group : serverGroups) {
                 if(!rollout.containsGroup(group)) {
                     candidates.add(group);
@@ -131,15 +150,16 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
             return -1;
         }
 
-        if(lastGroup.endsOnPropertyListEnd()) {
-            candidates.add("^");
-            candidates.add(",");
-            if(Character.isWhitespace(buffer.charAt(buffer.length() - 1))) {
-                // header properties
+        if (lastGroup.endsOnPropertyListEnd()) {
+            if (!containsAllGroups) {
+                candidates.add("^");
+                candidates.add(",");
+            } else if (Character.isWhitespace(buffer.charAt(buffer.length() - 1))) {
                 candidates.add(Util.ROLLBACK_ACROSS_GROUPS);
+
+            } else {
+                candidates.add(" ");
             }
-            candidates.add(";");
-            candidates.add("}");
             return buffer.length();
         }
 
@@ -220,23 +240,21 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
             return lastGroup.getLastChunkIndex();
         }
 
-        if(Character.isWhitespace(buffer.charAt(buffer.length() - 1))) {
-            candidates.add("(");
-            candidates.add("^");
-            candidates.add(",");
-            // header propersties
+        if (Character.isWhitespace(buffer.charAt(buffer.length() - 1))) {
             candidates.add(Util.ROLLBACK_ACROSS_GROUPS);
-            candidates.add(";");
-            candidates.add("}");
             return buffer.length();
         }
 
         int result = lastGroup.getLastChunkIndex();
 
         final String groupName = lastGroup.getGroupName();
-        final List<String> serverGroups = Util.getServerGroups(ctx.getModelControllerClient());
-        for(String group : serverGroups) {
-            if(group.startsWith(groupName)) {
+
+        boolean isLastGroup = false;
+        for (String group : serverGroups) {
+            if (group.equals(groupName)) {
+                isLastGroup = true;
+            }
+            if (!isLastGroup && group.startsWith(groupName)) {
                 candidates.add(group);
             }
         }
@@ -244,13 +262,16 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
         if(Util.NAME.startsWith(groupName)) {
             candidates.add("name=");
         } else {
-            if (candidates.size() == 1) {
-                final String group = candidates.get(0);
-                candidates.set(0, group + '(');
-                candidates.add(group + ',');
-                candidates.add(group + '^');
-                candidates.add(group + ';');
-                candidates.add(group + '}');
+            if (candidates.isEmpty()) {
+                if (isLastGroup) {
+                    candidates.add("(");
+                    if (containsAllGroups) {
+                        candidates.add(Util.ROLLBACK_ACROSS_GROUPS);
+                    } else {
+                        candidates.add(",");
+                        candidates.add("^");
+                    }
+                }
             }
         }
 
