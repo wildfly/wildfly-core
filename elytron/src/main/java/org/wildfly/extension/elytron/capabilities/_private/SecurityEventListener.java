@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.wildfly.extension.elytron.capabilities;
+package org.wildfly.extension.elytron.capabilities._private;
 
 import java.util.function.Consumer;
 

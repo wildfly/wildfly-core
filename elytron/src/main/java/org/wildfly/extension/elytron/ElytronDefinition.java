@@ -63,7 +63,7 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
+import org.wildfly.extension.elytron.capabilities._private.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.security.Version;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
