@@ -53,6 +53,7 @@ import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceContainer;
@@ -119,6 +120,15 @@ public abstract class AbstractControllerService implements Service<ModelControll
     protected static final RuntimeCapability<Void> CLIENT_FACTORY_CAPABILITY =
             RuntimeCapability.Builder.of("org.wildfly.managment.model-controller-client-factory", ModelControllerClientFactory.class)
             .build();
+
+    /**
+     * Capability users of the controller use to coordinate changes to paths.
+     * This capability isn't necessarily directly related to this class but we declare it
+     * here as it's as good a place as any at this time.
+     */
+    public static final RuntimeCapability<Void> PATH_MANAGER_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.management.path-manager", PathManager.class)
+                    .build();
 
     private static final OperationDefinition INIT_CONTROLLER_OP = new SimpleOperationDefinitionBuilder("boottime-controller-initializer-step", null)
         .setPrivateEntry()
@@ -324,6 +334,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
                     new ValueService<ModelControllerClientFactory>(new ImmediateValue<ModelControllerClientFactory>(clientFactory)))
                     .install();
         }
+        capabilityRegistry.publish();  // These are visible immediately; no waiting for finishBoot
+                                       // We publish even if we didn't register anything in case parent services did
 
         this.controller = controller;
 

@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootContext;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ManagementModel;
@@ -59,7 +60,9 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
-import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
@@ -443,6 +446,12 @@ public final class ServerService extends AbstractControllerService {
 
         // Platform MBeans
         rootResource.registerChild(PlatformMBeanConstants.ROOT_PATH, new RootPlatformMBeanResource());
+
+        final CapabilityRegistry capabilityRegistry = configuration.getCapabilityRegistry();
+        capabilityRegistry.registerCapability(
+                new RuntimeCapabilityRegistration(PATH_MANAGER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+        capabilityRegistry.registerPossibleCapability(PATH_MANAGER_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+
     }
 
     @Override

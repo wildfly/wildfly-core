@@ -137,7 +137,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                 new RuntimeExpressionResolver(vaultReader), capabilityRegistry);
         this.type = type;
         this.runningModeControl = runningModeControl;
-        this.pathManagerService = type == TestModelType.STANDALONE ? new ServerPathManagerService() : new HostPathManagerService();
+        this.pathManagerService = type == TestModelType.STANDALONE ? new ServerPathManagerService(capabilityRegistry) : new HostPathManagerService(capabilityRegistry);
         this.modelInitializer = modelInitializer;
         this.rootResourceDefinition = rootResourceDefinition;
         this.processState = processState;

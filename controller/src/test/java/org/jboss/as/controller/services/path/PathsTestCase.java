@@ -804,7 +804,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
     @Override
     protected void initModel(ManagementModel managementModel) {
         ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
-        pathManagerService = new PathManagerService() {
+        pathManagerService = new PathManagerService(managementModel.getCapabilityRegistry()) {
             {
                 super.addHardcodedAbsolutePath(getContainer(), "hardcoded", "/hard/coded");
             }

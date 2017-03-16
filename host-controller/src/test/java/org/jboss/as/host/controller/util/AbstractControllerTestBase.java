@@ -114,7 +114,7 @@ public abstract class AbstractControllerTestBase {
     protected final DomainController domainController;
     protected volatile DelegatingResourceDefinitionInitializer initializer;
     private final TestDelegatingResourceDefiniton rootResourceDefinition;
-    private final CapabilityRegistry capabilityRegistry;
+    protected final CapabilityRegistry capabilityRegistry;
 
     protected AbstractControllerTestBase() {
         this(ProcessType.EMBEDDED_SERVER);
