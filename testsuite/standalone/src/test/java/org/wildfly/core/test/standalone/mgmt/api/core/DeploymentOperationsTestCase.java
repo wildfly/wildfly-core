@@ -63,6 +63,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.PropertyPermission;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +77,7 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -586,6 +588,12 @@ public class DeploymentOperationsTestCase {
         final Properties properties = new Properties();
         properties.put(deploymentName + "Service", "isNew");
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(deploymentName, properties);
+        archive.delete("META-INF/permissions.xml");
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new PropertyPermission("test.deployment.trivial.prop", "write"),
+                new PropertyPermission(TEST_DEPLOYMENT_NAME + "Service", "write"),
+                new PropertyPermission("service", "write")
+        ), "permissions.xml");
         final ModelControllerClient client = managementClient.getControllerClient();
         final ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(client);
 
@@ -613,6 +621,12 @@ public class DeploymentOperationsTestCase {
         final Properties properties = new Properties();
         properties.put(deploymentName + "Service", "isNew");
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(deploymentName, properties);
+        archive.delete("META-INF/permissions.xml");
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new PropertyPermission("test.deployment.trivial.prop", "write"),
+                new PropertyPermission(TEST_DEPLOYMENT_NAME + "Service", "write"),
+                new PropertyPermission("service", "write")
+        ), "permissions.xml");
         final ModelControllerClient client = managementClient.getControllerClient();
         final File archiveDir = new File("target/archives");
         archiveDir.mkdirs();
