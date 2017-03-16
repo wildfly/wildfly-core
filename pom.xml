@@ -1704,7 +1704,7 @@
                 </modular.jdk.args>
                 <!-- [WFCORE-1494] remove JUL workaround -->
                 <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true -Dsun.reflect.debugModuleAccessChecks=true</modular.jdk.props>
-                <version.org.jboss.byteman>4.0.0-BETA2</version.org.jboss.byteman>
+                <version.org.jboss.byteman>4.0.0-BETA3</version.org.jboss.byteman>
             </properties>
             <build>
                 <plugins>
@@ -1717,7 +1717,7 @@
                             <!-- fork is needed so compiler args can be used -->
                             <fork>true</fork>
                             <compilerArgs>
-                                <arg>-J--add-modules=java.annotations.common</arg>
+                                <arg>-J--add-modules=java.xml.ws.annotation</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
