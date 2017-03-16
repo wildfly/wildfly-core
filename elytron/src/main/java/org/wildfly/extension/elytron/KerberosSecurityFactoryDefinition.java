@@ -164,9 +164,15 @@ class KerberosSecurityFactoryDefinition {
                     serviceBuilder.addDependency(pathName(relativeTo));
                 }
 
-                final Map<String, Object> options = new HashMap<>();
-                for(Property option : OPTIONS.resolveModelAttribute(context, model).asPropertyList()) {
-                    options.put(option.getName(), option.getValue());
+                ModelNode optionsNode = OPTIONS.resolveModelAttribute(context, model);
+                final Map<String, Object> options;
+                if (optionsNode.isDefined()) {
+                    options = new HashMap<>();
+                    for (Property option : optionsNode.asPropertyList()) {
+                        options.put(option.getName(), option.getValue());
+                    }
+                } else {
+                    options = null;
                 }
 
                 return () -> {
