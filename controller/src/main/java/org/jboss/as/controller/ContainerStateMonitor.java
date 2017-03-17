@@ -160,41 +160,68 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
      */
     private synchronized ContainerStateChangeReport createContainerStateChangeReport(boolean resetHistory) {
 
-        final Map<ServiceName, Set<ServiceName>> missingDeps = new HashMap<ServiceName, Set<ServiceName>>();
-        for (ServiceController<?> controller : problems) {
-            for (ServiceName missing : controller.getImmediateUnavailableDependencies()) {
-                Set<ServiceName> dependents = missingDeps.get(missing);
-                if (dependents == null) {
-                    dependents = new HashSet<ServiceName>();
-                    missingDeps.put(missing, dependents);
-                }
-                dependents.add(controller.getName());
+        final Map<ServiceName, Set<ServiceName>> missingDeps;
+        if (problems.isEmpty()) {
+            missingDeps = Collections.emptyMap();
+        } else {
+            missingDeps =new HashMap<ServiceName, Set<ServiceName>>(problems.size());
+            for (ServiceController<?> controller : problems) {
+                if (controller.getState() != ServiceController.State.REMOVED) {
+                    for (ServiceName missing : controller.getImmediateUnavailableDependencies()) {
+                        Set<ServiceName> dependents = missingDeps.get(missing);
+                        if (dependents == null) {
+                            dependents = new HashSet<ServiceName>();
+                            missingDeps.put(missing, dependents);
+                        }
+                        dependents.add(controller.getName());
+                    }
+                } // else it's no longer a problem
             }
         }
 
         final Set<ServiceName> previousMissing = previousMissingDepSet;
 
         // no longer missing deps...
-        final Map<ServiceName, Boolean> noLongerMissingServices = new TreeMap<ServiceName, Boolean>();
-        for (ServiceName name : previousMissing) {
-            if (! missingDeps.containsKey(name)) {
-                ServiceController<?> controller = serviceRegistry.getService(name);
-                noLongerMissingServices.put(name, controller != null);
+        final Map<ServiceName, Boolean> noLongerMissingServices;
+        if (previousMissing.isEmpty()) {
+            noLongerMissingServices = Collections.emptyMap();
+        } else {
+            noLongerMissingServices = new TreeMap<ServiceName, Boolean>();
+            for (ServiceName name : previousMissing) {
+                if (!missingDeps.containsKey(name)) {
+                    ServiceController<?> controller = serviceRegistry.getService(name);
+                    noLongerMissingServices.put(name, controller != null);
+                }
             }
         }
 
         // newly missing deps
-        final Map<ServiceName, MissingDependencyInfo> missingServices = new TreeMap<ServiceName, MissingDependencyInfo>();
-        for (Map.Entry<ServiceName, Set<ServiceName>> entry : missingDeps.entrySet()) {
-            final ServiceName name = entry.getKey();
-            if (! previousMissing.contains(name)) {
-                ServiceController<?> controller = serviceRegistry.getService(name);
-                boolean unavailable = controller != null;
-                missingServices.put(name, new MissingDependencyInfo(name, unavailable, entry.getValue()));
+        final Map<ServiceName, MissingDependencyInfo> missingServices;
+        if (missingDeps.isEmpty()) {
+            missingServices = Collections.emptyMap();
+        } else {
+            missingServices = new TreeMap<ServiceName, MissingDependencyInfo>();
+            for (Map.Entry<ServiceName, Set<ServiceName>> entry : missingDeps.entrySet()) {
+                final ServiceName name = entry.getKey();
+                if (!previousMissing.contains(name)) {
+                    ServiceController<?> controller = serviceRegistry.getService(name);
+                    boolean unavailable = controller != null;
+                    missingServices.put(name, new MissingDependencyInfo(name, unavailable, entry.getValue()));
+                }
             }
         }
 
-        final Set<ServiceController<?>> currentFailedControllers = new HashSet<ServiceController<?>>(failed);
+        final Set<ServiceController<?>> currentFailedControllers;
+        if (failed.isEmpty()) {
+            currentFailedControllers = Collections.emptySet();
+        } else {
+            currentFailedControllers = new HashSet<>(failed.size());
+            for (ServiceController<?> controller : failed) {
+                if (controller.getState() != ServiceController.State.REMOVED) {
+                    currentFailedControllers.add(controller);
+                } // else it's no longer failed since it's gone
+            }
+        }
 
         if (resetHistory)  {
             previousMissingDepSet = new HashSet<ServiceName>(missingDeps.keySet());
