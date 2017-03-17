@@ -322,6 +322,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 918, value = "Invalid user name '%s' because the realm %s only supports lower case alias names")
     OperationFailedException invalidUsername(String username, String realmName);
 
+    @Message(id = 919, value = "Invalid alias name '%s' because the credential store %s only supports lower case alias names")
+    OperationFailedException invalidAliasName(String alias, String credntialStore);
     /*
      * Identity Resource Messages - 1000
      */

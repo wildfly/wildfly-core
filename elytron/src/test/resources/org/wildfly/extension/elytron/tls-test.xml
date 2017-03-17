@@ -14,7 +14,7 @@
         </filesystem-realm>
     </security-realms>
     <credential-stores>
-        <credential-store name="test">
+        <credential-store name="test" case-sensitive="false">
             <uri>cr-store://test/target/tlstest.keystore</uri>
             <credential-reference clear-text="super_secret"/>
         </credential-store>

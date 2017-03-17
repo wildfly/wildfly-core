@@ -4631,6 +4631,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates that the credential sotre is case sensitive and should then allow for upper case in alias.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <!--
