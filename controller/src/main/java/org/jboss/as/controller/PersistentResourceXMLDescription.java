@@ -182,8 +182,8 @@ public final class PersistentResourceXMLDescription {
         // Check if there are also element attributes inside a group
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             String attrName = reader.getLocalName();
-            if (attributeElements.containsKey(attrName) && groupAttrs.containsKey(attrName)) {
-                AttributeDefinition ad = attributeElements.get(reader.getLocalName());
+            if (groupAttrs.containsKey(attrName) && groupAttrs.containsKey(attrName)) {
+                AttributeDefinition ad = groupAttrs.get(reader.getLocalName());
                 ad.getParser().parseElement(ad, reader, op);
             } else {
                 throw ParseUtils.unexpectedElement(reader);
