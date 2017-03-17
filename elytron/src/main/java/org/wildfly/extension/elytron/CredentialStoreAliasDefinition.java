@@ -66,7 +66,6 @@ import org.wildfly.security.password.spec.ClearPasswordSpec;
  */
 class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
 
-    static final String OTHER = "Other";
     private static final Class<?>[] SUPPORTED_CREDENTIAL_TYPES = {
             PasswordCredential.class
     };
@@ -74,9 +73,8 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition ENTRY_TYPE;
 
     static {
-        List<String> entryTypes = Stream.of(SUPPORTED_CREDENTIAL_TYPES).map(Class::getName)
+        List<String> entryTypes = Stream.of(SUPPORTED_CREDENTIAL_TYPES).map(Class::getCanonicalName)
                 .collect(Collectors.toList());
-        entryTypes.add(OTHER);
         ENTRY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENTRY_TYPE, ModelType.STRING, true)
                 .setStorageRuntime()
                 .setAllowedValues(entryTypes.toArray(new String[entryTypes.size()]))
@@ -191,7 +189,7 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
             ServiceController<CredentialStore> serviceContainer = (ServiceController<CredentialStore>) context.getServiceRegistry(true).getRequiredService(credentialStoreServiceName);
             CredentialStore credentialStore = ((CredentialStoreService) serviceContainer.getService()).getValue();
             try {
-                if (entryType == null || ClearPassword.ALGORITHM_CLEAR.equals(entryType)) {
+                if (entryType == null || entryType.equals(PasswordCredential.class.getCanonicalName())) {
                     if (credentialStore.exists(alias, PasswordCredential.class)) {
                         throw ROOT_LOGGER.credentialAlreadyExists(alias, PasswordCredential.class.getName());
                     }
