@@ -158,8 +158,6 @@ class CredentialSecurityFactoryParser {
 
         add.get(OP_ADDR).set(parentAddress).add(KERBEROS_SECURITY_FACTORY, name);
 
-        requireNoContent(reader);
-
         operations.add(add);
     }
 
