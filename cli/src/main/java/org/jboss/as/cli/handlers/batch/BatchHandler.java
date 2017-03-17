@@ -152,8 +152,11 @@ public class BatchHandler extends CommandHandlerWithHelp {
                 String line = reader.readLine();
                 batchManager.activateNewBatch();
                 final Batch batch = batchManager.getActiveBatch();
-                while(line != null) {
-                    batch.add(ctx.toBatchedCommand(line));
+                while (line != null) {
+                    line = line.trim();
+                    if (!line.isEmpty() && line.charAt(0) != '#') {
+                        batch.add(ctx.toBatchedCommand(line));
+                    }
                     line = reader.readLine();
                 }
             } catch(IOException e) {

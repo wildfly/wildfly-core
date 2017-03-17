@@ -152,9 +152,12 @@ public class BatchFileTestCase {
         }
 
         try (Writer writer = Files.newBufferedWriter(TMP_FILE.toPath(), StandardCharsets.UTF_8)){
-            for(String line : cmd) {
+            for (String line : cmd) {
+                writer.write("# Some comment\n");
                 writer.write(line);
                 writer.write('\n');
+                writer.write("     \n");
+                writer.write("\n");
             }
         } catch (IOException e) {
             fail("Failed to write to " + TMP_FILE.getAbsolutePath() + ": " + e.getLocalizedMessage());
