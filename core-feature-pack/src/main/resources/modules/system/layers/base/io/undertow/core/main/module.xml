@@ -36,6 +36,7 @@
                 <paths>
                     <!-- Needed for HTTP2 and SPDY support-->
                     <path name="org/eclipse/jetty/alpn"/>
+                    <path name="sun/security/ssl" />
                 </paths>
             </system>
     </dependencies>

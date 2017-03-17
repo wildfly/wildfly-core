@@ -106,6 +106,7 @@
                 <path name="sun/security/util"/>
                 <path name="sun/security/krb5"/>
                 <path name="sun/security/krb5/internal"/>
+                <path name="sun/security/ssl" />
                 <path name="sun/util"/>
                 <path name="sun/util/calendar"/>
                 <path name="sun/util/locale"/>
