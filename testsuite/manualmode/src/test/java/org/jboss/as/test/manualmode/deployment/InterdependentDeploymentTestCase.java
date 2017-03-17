@@ -115,6 +115,15 @@ public class InterdependentDeploymentTestCase {
         dependents.put("e", getDependentDeployment("e", ServiceActivatorDeploymentE.class, "interrelated-a.jar","interrelated-d.jar"));
         dependents.put("f", getDependentDeployment("f", ServiceActivatorDeploymentF.class, "interrelated-a.jar","interrelated-c.jar","interrelated-d.jar"));
 
+        deplA.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new PropertyPermission("interrelated-a.jar", "write"),
+                new PropertyPermission("interrelated-b.jar", "write"),
+                new PropertyPermission("interrelated-c.jar", "write"),
+                new PropertyPermission("interrelated-d.jar", "write"),
+                new PropertyPermission("interrelated-e.jar", "write"),
+                new PropertyPermission("interrelated-f.jar", "write")
+        ), "permissions.xml");
+
         List<InputStream> streams = new ArrayList<>();
         ModelNode add = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
         ModelNode steps = add.get("steps");
@@ -160,7 +169,7 @@ public class InterdependentDeploymentTestCase {
                 final JavaArchive replA = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("interrelated-a.jar",
                         Collections.singletonMap("interrelated-a.jar", newVal));
 
-                deplA.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                replA.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
                         new PropertyPermission("interrelated-a.jar", "write"),
                         new PropertyPermission("interrelated-b.jar", "write"),
                         new PropertyPermission("interrelated-c.jar", "write"),
