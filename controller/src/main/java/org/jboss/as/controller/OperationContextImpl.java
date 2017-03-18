@@ -466,11 +466,19 @@ final class OperationContextImpl extends AbstractOperationContext {
                 waitForRemovals();
                 ContainerStateMonitor.ContainerStateChangeReport changeReport =
                         modelController.awaitContainerStateChangeReport(timeout, TimeUnit.MILLISECONDS);
-                // If any services are missing, add a verification handler to see if we caused it
-                if (changeReport != null && !changeReport.getMissingServices().isEmpty()) {
-                    ServiceRemovalVerificationHandler removalVerificationHandler = new ServiceRemovalVerificationHandler(changeReport);
-                    addStep(new ModelNode(), new ModelNode(), PathAddress.EMPTY_ADDRESS, removalVerificationHandler, Stage.VERIFY);
+                if (changeReport != null && changeReport.hasNewProblems()) {
+                    // If any services are missing, add a verification handler to see if we caused it
+                    if (!changeReport.getMissingServices().isEmpty()) {
+                        ServiceRemovalVerificationHandler removalVerificationHandler = new ServiceRemovalVerificationHandler(changeReport);
+                        addStep(new ModelNode(), new ModelNode(), PathAddress.EMPTY_ADDRESS, removalVerificationHandler, Stage.VERIFY);
+                    }
+                    // Add a step to report a failure if it looks as if no other verification has done so.
+                    // This handler will report directly to the initial response as its reporting means
+                    // we don't know what exact step (e.g. in a composite) triggered the problem
+                    ContainerStateVerificationHandler csvh = new ContainerStateVerificationHandler(changeReport);
+                    addStep(initialResponse, initialOperation, PathAddress.EMPTY_ADDRESS, csvh, Stage.VERIFY);
                 }
+
             } catch (TimeoutException te) {
                 getBlockingTimeout().timeoutDetected();
                 // Deliberate log and throw; we want to log this but the caller method passes a slightly different
@@ -2257,8 +2265,20 @@ final class OperationContextImpl extends AbstractOperationContext {
                 // else a handler already recorded a failure; don't overwrite
             }
 
-            if (!missingByStep.isEmpty() && context.isRollbackOnRuntimeFailure()) {
-                context.setRollbackOnly();
+            if (!missingByStep.isEmpty()) {
+
+                // Notify ContainerStateVerificationHandler that we've reported an issue so it
+                // doesn't need to. (Even if we didn't report anything because the step already
+                // had a failure message, we know there was a failure reported, which is what matters)
+                context.attach(ContainerStateVerificationHandler.FAILURE_REPORTED_ATTACHMENT, Boolean.TRUE);
+
+                if (context.isRollbackOnRuntimeFailure()) {
+                    // We likely have altered the result of an already executed step,
+                    // so it having a failure description won't trigger rollback the
+                    // way a failure message normal does when the step completes execution.
+                    // So, trigger rollback directly
+                    context.setRollbackOnly();
+                }
             }
             context.completeStep(RollbackHandler.NOOP_ROLLBACK_HANDLER);
         }

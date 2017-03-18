@@ -3489,4 +3489,7 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 440, value = "Cannot delete file or directory %s")
     void cannotDeleteFileOrDirectory(File file);
+
+    @Message(id = 441, value = "Operation has resulted in failed or missing services %n")
+    String serviceStatusReportFailureHeader();
 }

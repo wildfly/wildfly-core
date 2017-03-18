@@ -169,6 +169,8 @@ abstract class AbstractOperationContext implements OperationContext {
     private boolean executing;
     /** First response node provided to addStep  */
     ModelNode initialResponse;
+    /** Operation provided to addStep along with initialResponse */
+    ModelNode initialOperation;
 
     /** Operations that were added by the controller, before execution started */
     private final List<ModelNode> controllerOperations = new ArrayList<ModelNode>(2);
@@ -350,6 +352,7 @@ abstract class AbstractOperationContext implements OperationContext {
             recordControllerOperation(operation);
             if (initialResponse == null) {
                 initialResponse = response;
+                initialOperation = operation;
             }
         }
     }
