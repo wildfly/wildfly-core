@@ -1439,7 +1439,12 @@ abstract class AbstractOperationContext implements OperationContext {
                     response.get(OUTCOME).set(cancelled ? CANCELLED : FAILED);
                     response.get(ROLLED_BACK).set(true);
                 } else {
-                    response.get(OUTCOME).set(hasFailed() ? FAILED : SUCCESS);
+                    boolean failed = hasFailed();
+                    response.get(OUTCOME).set(failed ? FAILED : SUCCESS);
+                    if (failed) {
+                        // We didn't roll back despite failure. Report this
+                        response.get(ROLLED_BACK).set(false);
+                    }
                 }
                 if (ControllerLogger.MGMT_OP_LOGGER.isTraceEnabled()
                         && (forStage == Stage.MODEL || forStage == Stage.DOMAIN)) {
