@@ -26,7 +26,8 @@ import java.util.Date;
 /**
  *
  * Retain information about the current connection to the server, the information is
- * username, date and hour since logged in. If an SSL connection exposes the server certificate.
+ * address, username, date and hour since logged in. If an SSL
+ * connection exposes the server certificate.
  *
  * @author Claudio Miranda
  *
@@ -39,6 +40,14 @@ public interface ConnectionInfo {
     boolean isDisableLocalAuth() ;
     String getUsername();
     Date getLoggedSince() ;
-    X509Certificate[] getServerCertificates() ;
+    X509Certificate[] getServerCertificates();
 
+    /**
+     * Returns the Controller Address. If a ModelControllerClient has been
+     * passed to the CommandContext and no connection occured, then the address
+     * is unknown.
+     *
+     * @return The Controller Address if known. Otherwise returns null.
+     */
+    ControllerAddress getControllerAddress();
 }
