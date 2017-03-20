@@ -964,6 +964,13 @@
                 <xs:sequence>
                     <xs:element name="principal-query" type="authenticationQueryType" maxOccurs="unbounded"/>
                 </xs:sequence>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1252,6 +1259,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1309,6 +1323,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1347,6 +1368,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1376,6 +1404,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1397,6 +1432,13 @@
                     <xs:annotation>
                         <xs:documentation>
                             The name of the claim that should be used to obtain the principal's name. Defaults to 'username'.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -1445,6 +1487,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="oauth2IntrospectionTokenRealmValidatorType">
@@ -1485,6 +1534,13 @@
             <xs:annotation>
                 <xs:documentation>
                     A policy that defines how host names should be verified when using HTTPS. Allowed values: "ANY".
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates that the realm is case sensitive and should then allow for upper case in user names.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4559,15 +4615,15 @@
     </xs:complexType>
 
     <!--
-        General Types
-     -->
+       General Types
+    -->
 
-     <xs:complexType name="basicFileType">
-         <xs:annotation>
-             <xs:documentation>
-                 Minimal attributes required to specify the location to a file.
-             </xs:documentation>
-         </xs:annotation>
+    <xs:complexType name="basicFileType">
+        <xs:annotation>
+            <xs:documentation>
+                Minimal attributes required to specify the location to a file.
+            </xs:documentation>
+        </xs:annotation>
         <xs:attribute name="relative-to" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -4583,7 +4639,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-     </xs:complexType>
+    </xs:complexType>
 
     <xs:complexType name="fileType">
         <xs:annotation>
@@ -4594,7 +4650,7 @@
         <xs:complexContent>
             <xs:extension base="basicFileType">
                 <xs:attribute name="required" type="xs:boolean"
-                    use="optional" default="false">
+                              use="optional" default="false">
                     <xs:annotation>
                         <xs:documentation>
                             It is possible that a KeyStore definition can be created to a
