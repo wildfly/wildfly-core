@@ -7,10 +7,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.notification.Notification;
-import org.jboss.as.controller.notification.NotificationFilter;
-import org.jboss.as.controller.notification.NotificationHandler;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -66,6 +62,7 @@ public class SuspendController implements Service<SuspendController> {
     }
 
     public void setStartSuspended(boolean startSuspended) {
+        //TODO: it is not very clear what this boolean stands for now.
         this.startSuspended = startSuspended;
         state = State.SUSPENDED;
     }
@@ -149,19 +146,7 @@ public class SuspendController implements Service<SuspendController> {
 
     @Override
     public synchronized void start(StartContext startContext) throws StartException {
-        if(!startSuspended) {
-            final NotificationFilter filter = notification -> notification.getType().equals(ModelDescriptionConstants.BOOT_COMPLETE_NOTIFICATION);
-            NotificationHandler handler = new NotificationHandler() {
-                @Override
-                public void handleNotification(Notification notification) {
-                    resume();
-                    modelControllerInjectedValue.getValue().getNotificationRegistry().unregisterNotificationHandler(NOTIFICATION_ADDRESS, this, filter);
-                }
-            };
-            modelControllerInjectedValue.getValue().getNotificationRegistry().registerNotificationHandler(NOTIFICATION_ADDRESS, handler, filter);
-            //if the service bounces we don't want to auto resume if we are suspended
-            startSuspended = true;
-        } else {
+        if(startSuspended) {
             ServerLogger.AS_ROOT_LOGGER.startingServerSuspended();
         }
     }

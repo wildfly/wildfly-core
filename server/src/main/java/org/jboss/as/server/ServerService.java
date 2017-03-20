@@ -298,8 +298,8 @@ public final class ServerService extends AbstractControllerService {
             newExtDirs[extDirs.length] = new File(serverEnvironment.getServerBaseDir(), "lib/ext");
             serviceTarget.addService(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX,
                     new ExtensionIndexService(newExtDirs)).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
-            Boolean suspend = runningModeControl.getSuspend();
-            suspendController.setStartSuspended(suspend != null ? suspend : serverEnvironment.isStartSuspended());
+            final Boolean suspend = runningModeControl.getSuspend()!= null ? runningModeControl.getSuspend() : serverEnvironment.isStartSuspended();
+            suspendController.setStartSuspended(suspend);
             runningModeControl.setSuspend(false);
             context.getServiceTarget().addService(SuspendController.SERVICE_NAME, suspendController)
                     .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, suspendController.getModelControllerInjectedValue())
@@ -387,7 +387,7 @@ public final class ServerService extends AbstractControllerService {
 
                 ok = boot(bootOps, failOnRuntime);
                 if (ok) {
-                    finishBoot();
+                    finishBoot(suspend);
                 }
             } finally {
                 DeployerChainAddHandler.INSTANCE.clearDeployerMap();
@@ -413,6 +413,13 @@ public final class ServerService extends AbstractControllerService {
                     ServerLogger.ROOT_LOGGER.fatal(message);
                 }
             }, 1);
+        }
+    }
+
+    protected void finishBoot(boolean suspend) throws ConfigurationPersistenceException {
+        super.finishBoot();
+        if (!suspend) {
+            suspendController.resume();
         }
     }
 
