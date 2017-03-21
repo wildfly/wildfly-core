@@ -37,7 +37,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.nio.file.Files;
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
 import java.util.ArrayList;
@@ -94,7 +96,14 @@ class ProviderDefinitions {
     static final SimpleMapAttributeDefinition CONFIGURATION = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.CONFIGURATION, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
             .setAllowExpression(true)
-            .setAlternatives(ElytronDescriptionConstants.PATH)
+            .setAlternatives(ElytronDescriptionConstants.PATH, ElytronDescriptionConstants.ARGUMENT)
+            .build();
+
+    static final SimpleAttributeDefinition ARGUMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ARGUMENT, ModelType.STRING, true)
+            .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
+            .setRequires(ElytronDescriptionConstants.CLASS_NAMES)
+            .setAlternatives(ElytronDescriptionConstants.PATH, ElytronDescriptionConstants.CONFIGURATION)
+            .setAllowExpression(true)
             .build();
 
     private static final AggregateComponentDefinition<Provider[]> AGGREGATE_PROVIDERS = AggregateComponentDefinition.create(Provider[].class,
@@ -107,7 +116,7 @@ class ProviderDefinitions {
     }
 
     static ResourceDefinition getProviderLoaderDefinition() {
-        AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE, CLASS_NAMES, PATH, RELATIVE_TO, CONFIGURATION };
+        AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE, CLASS_NAMES, PATH, RELATIVE_TO, ARGUMENT, CONFIGURATION };
         AbstractAddStepHandler add = new TrivialAddHandler<Provider[]>(Provider[].class, attributes, PROVIDERS_RUNTIME_CAPABILITY) {
 
             @Override
@@ -119,6 +128,7 @@ class ProviderDefinitions {
             protected ValueSupplier<Provider[]> getValueSupplier(ServiceBuilder<Provider[]> serviceBuilder,OperationContext context, ModelNode model) throws OperationFailedException {
                 final String module = asStringIfDefined(context, MODULE, model);
                 final String[] classNames = asStringArrayIfDefined(context, CLASS_NAMES, model);
+                final String argument = asStringIfDefined(context, ARGUMENT, model);
 
                 final Properties properties;
                 ModelNode configuration = CONFIGURATION.resolveModelAttribute(context, model);
@@ -145,6 +155,8 @@ class ProviderDefinitions {
 
                     @Override
                     public Provider[] get() throws StartException {
+
+
                         try {
                             ClassLoader classLoader = doPrivileged((PrivilegedExceptionAction<ClassLoader>) () -> resolveClassLoader(module));
                             final List<Provider> loadedProviders;
@@ -152,7 +164,12 @@ class ProviderDefinitions {
                                 loadedProviders = new ArrayList<>(classNames.length);
                                 for (String className : classNames) {
                                     Class<? extends Provider> providerClazz = classLoader.loadClass(className).asSubclass(Provider.class);
-                                    loadedProviders.add(providerClazz.newInstance());
+                                    if (argument == null) {
+                                        loadedProviders.add(providerClazz.newInstance());
+                                    } else {
+                                        Constructor<? extends Provider> constructor = doPrivileged((PrivilegedExceptionAction<Constructor<? extends Provider>>) () ->  providerClazz.getConstructor(String.class));
+                                        loadedProviders.add(constructor.newInstance(new Object[] { argument }));
+                                    }
                                 }
                             } else {
                                 loadedProviders = new ArrayList<>();
@@ -180,6 +197,8 @@ class ProviderDefinitions {
                             }
 
                             return providers;
+                        } catch (PrivilegedActionException e) {
+                            throw new StartException(e.getCause());
                         } catch (Exception e) {
                             throw new StartException(e);
                         }
